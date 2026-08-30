@@ -16,6 +16,9 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/preferences/application/learner_preferences_use_cases.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -23,6 +26,7 @@ import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/learning_pack_catalog_screen.dart';
 import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
+import 'package:vocab_learning_app/screens/learning_preference_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/study_planning_hub_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -50,6 +54,10 @@ void main() {
 
     final entry = find.byKey(const ValueKey<String>('home/study-planning'));
     expect(entry, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('home/learning-preferences')),
+      findsNothing,
+    );
     await tester.tap(entry);
     await tester.pumpAndSettle();
     expect(find.byType(StudyPlanningHubScreen), findsOneWidget);
@@ -108,6 +116,92 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(LearningGoalsScreen), findsOneWidget);
+  });
+
+  testWidgets('f35 hub owns the typed preference quiz child action', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database),
+        child: const MaterialApp(home: StudyPlanningHubScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('home/learning-preferences')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('study-planning/open-learning-preferences'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LearningPreferenceQuizScreen), findsOneWidget);
+    expect(
+      find.byType(StudyPlanningHubScreen, skipOffstage: false),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('f35 hub hides preference quiz when dependency is absent', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, includeLearnerPreferences: false),
+        child: const MaterialApp(home: StudyPlanningHubScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('study-planning/open-learning-preferences'),
+      ),
+      findsNothing,
+    );
+    expect(find.byType(LearningPreferenceQuizScreen), findsNothing);
+  });
+
+  testWidgets('f35 open preference quiz follows the live parent kill switch', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final registry = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    addTearDown(registry.dispose);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, features: registry),
+        child: MaterialApp(
+          home: MainNavigationScreen(featureRegistry: registry),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home/study-planning')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('study-planning/open-learning-preferences')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningPreferenceQuizScreen), findsOneWidget);
+
+    registry.emergencyOff(Feature.studyPlanning);
+    await tester.pump();
+
+    expect(find.byType(LearningPreferenceQuizScreen), findsNothing);
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
   });
 
   testWidgets('an open catalog child follows the live parent kill switch', (
@@ -297,6 +391,7 @@ AppDependencies _dependencies(
   AppDatabase database, {
   FeatureRegistry features = const BuildFeatureRegistry.allEnabled(),
   LearningGoalUseCases? learningGoals,
+  bool includeLearnerPreferences = true,
 }) {
   final research = InertResearchDependencies(database);
   final owner = _Owner();
@@ -333,6 +428,13 @@ AppDependencies _dependencies(
           nowUtc: () => DateTime.utc(2026, 8, 25),
           generateId: () => 'goal:test',
         ),
+    learnerPreferences: includeLearnerPreferences
+        ? LearnerPreferencesUseCases(
+            repository: _Preferences(),
+            owners: owner,
+            nowUtc: () => DateTime.utc(2026, 8, 30),
+          )
+        : null,
   );
 }
 
@@ -387,6 +489,27 @@ final class _Goals implements LearningGoalRepository {
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
   }) async {}
+}
+
+final class _Preferences implements LearnerPreferencesRepository {
+  LearnerPreferences current = LearnerPreferences.defaults(
+    ownerId: 'local:study-planning',
+    updatedAtUtc: DateTime.utc(2026, 8, 30),
+  );
+
+  @override
+  Future<LearnerPreferences> read(String ownerId) async => current;
+
+  @override
+  Future<void> save(
+    LearnerPreferences preferences, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    current = preferences;
+  }
 }
 
 final class _Packs implements LearningPackRepository {

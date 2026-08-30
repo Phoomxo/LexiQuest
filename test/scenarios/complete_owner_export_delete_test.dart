@@ -27,7 +27,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v20 lifecycle classifies owner and non-owner tables exactly once',
+    'current v21 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -48,7 +48,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(43),
+        hasLength(44),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -60,7 +60,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(33),
+        hasLength(34),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -318,6 +318,22 @@ void main() {
         'timezoneId',
         'timezoneOffsetMinutes',
         'isEnabled',
+      });
+      final learnerPreferences = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'learner_preferences',
+      );
+      expect(learnerPreferences.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        learnerPreferences.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(learnerPreferences.allowedExportFields.toSet(), {
+        'recordCount',
+        'preferenceVersion',
+        'goal',
+        'availableMinutesPerDay',
+        'activityPreference',
+        'updatedAtUtc',
       });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
@@ -884,7 +900,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(43));
+      expect(archiveTables, hasLength(44));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -923,6 +939,7 @@ void main() {
         'sessionConfigurations',
         'learningTimeSegments',
         'learningGoals',
+        'learnerPreferences',
       ]) {
         final descriptor = ownerLifecycleManifest.singleWhere(
           (entry) => entry.alias == alias,
@@ -987,6 +1004,19 @@ void main() {
           .singleWhere((entry) => entry['alias'] == 'studyReminders');
       expect(reminderArchive['records'], [
         {'recordCount': 1},
+      ]);
+      final learnerPreferenceArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'learnerPreferences');
+      expect(learnerPreferenceArchive['records'], [
+        {'recordCount': 1},
+        {
+          'preferenceVersion': 1,
+          'goal': 'examPreparation',
+          'availableMinutesPerDay': 45,
+          'activityPreference': 'quiz',
+          'updatedAtUtc': '1970-01-01T00:00:00.020Z',
+        },
       ]);
       final assignmentArchive = archiveTables
           .cast<Map<String, dynamic>>()
@@ -1207,12 +1237,32 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      // v20 also deletes the owner's durable session-configuration binding.
-      expect(deleted, 36);
+      // v21 also deletes the owner's durable learner preference.
+      expect(deleted, 37);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v20 retains exactly one row for every direct-owner lifecycle entry,
+      // v21 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 36);
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 37);
+      expect(
+        await database
+            .customSelect(
+              'SELECT COUNT(*) AS count FROM learner_preferences '
+              "WHERE owner_id = 'owner-a'",
+            )
+            .map((row) => row.read<int>('count'))
+            .getSingle(),
+        0,
+      );
+      expect(
+        await database
+            .customSelect(
+              'SELECT COUNT(*) AS count FROM learner_preferences '
+              "WHERE owner_id = 'owner-b'",
+            )
+            .map((row) => row.read<int>('count'))
+            .getSingle(),
+        1,
+      );
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
@@ -1401,6 +1451,12 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     'updated_at_utc_ms) '
     "VALUES ('a:reminder', 'owner-a', 'a:goal', 'goalDeadline', "
     "1788152400000, 'Asia/Bangkok', 420, 0, 20, 20)",
+  );
+  await database.customInsert(
+    'INSERT INTO learner_preferences '
+    '(owner_id, preference_version, goal, available_minutes_per_day, '
+    'activity_preference, updated_at_utc_ms) VALUES '
+    "('owner-a', 1, 'examPreparation', 45, 'quiz', 20)",
   );
   await database.customInsert(
     'INSERT INTO assessment_runs '

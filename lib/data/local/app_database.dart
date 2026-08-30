@@ -11,6 +11,7 @@ import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
 import 'tables/planning_tables.dart';
+import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/research_tables.dart';
@@ -68,10 +69,11 @@ part 'app_database.g.dart';
     LearningTimeSegments,
     LearningGoals,
     StudyReminders,
+    LearnerPreferences,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 20;
+  static const int currentSchemaVersion = 21;
 
   AppDatabase(super.executor);
 
@@ -286,6 +288,9 @@ final class AppDatabase extends _$AppDatabase {
           learningSessions,
           learningSessions.configurationActiveEffortUs,
         );
+      }
+      if (from < 21 && !await _tableExists('learner_preferences')) {
+        await migrator.createTable(learnerPreferences);
       }
     },
     beforeOpen: (details) async {

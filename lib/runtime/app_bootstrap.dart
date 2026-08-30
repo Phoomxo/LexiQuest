@@ -82,6 +82,8 @@ import '../features/quest/data/drift_quest_repository.dart';
 import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
+import '../features/preferences/application/learner_preferences_use_cases.dart';
+import '../features/preferences/data/drift_learner_preferences_repository.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_avatar_progression_eligibility.dart';
 import '../features/rewards/data/drift_reward_projection_rebuilder.dart';
@@ -142,6 +144,7 @@ typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
+typedef SyncTriggerRequestObserver = void Function(SyncTriggerReason reason);
 typedef AccountGatewayFactory = AccountGateway Function();
 typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
 typedef ExportArtifactStoreFactory = ExportArtifactStore Function();
@@ -317,6 +320,7 @@ final class AppBootstrap {
     required this.createEntryStateStore,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
+    this.observeSyncTriggerRequest,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
     this.buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
@@ -346,6 +350,8 @@ final class AppBootstrap {
     this.learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
     this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
+    this.learnerPreferenceSyncRollout =
+        const LearnerPreferenceSyncRollout.off(),
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -379,6 +385,8 @@ final class AppBootstrap {
         const LearningTimeSegmentSyncRollout.off(),
     LearningGoalSyncRollout learningGoalSyncRollout =
         const LearningGoalSyncRollout.off(),
+    LearnerPreferenceSyncRollout learnerPreferenceSyncRollout =
+        const LearnerPreferenceSyncRollout.off(),
   }) {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
@@ -394,12 +402,14 @@ final class AppBootstrap {
         auth: FirebaseAuth.instance,
         learningTimeSegmentRollout: learningTimeSegmentSyncRollout,
         learningGoalRollout: learningGoalSyncRollout,
+        learnerPreferenceRollout: learnerPreferenceSyncRollout,
       ),
       accountGatewayFactory: () =>
           FirebaseAccountGateway(FirebaseAuth.instance),
       cloudSyncEnabled: productionCloudSyncEnabledByDefault,
       learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
       learningGoalSyncRollout: learningGoalSyncRollout,
+      learnerPreferenceSyncRollout: learnerPreferenceSyncRollout,
       reminderSchedulerFactory: PlatformReminderScheduler.production,
     );
   }
@@ -417,6 +427,7 @@ final class AppBootstrap {
   final AppEntryStateStoreFactory createEntryStateStore;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
+  final SyncTriggerRequestObserver? observeSyncTriggerRequest;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
   final FeatureRegistry buildFeatureRegistry;
@@ -430,6 +441,7 @@ final class AppBootstrap {
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
+  final LearnerPreferenceSyncRollout learnerPreferenceSyncRollout;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ExportArtifactStoreFactory exportStoreFactory;
   final CameraGatewayFactory cameraGatewayFactory;
@@ -727,6 +739,22 @@ final class AppBootstrap {
           );
         }
       }
+      if (learnerPreferenceSyncRollout.enabled) {
+        if (gateway is! LearnerPreferenceSyncRolloutGateway) {
+          throw StateError(
+            'Learner-preference sync rollout must be shared by store and gateway.',
+          );
+        }
+        final rolloutGateway = gateway as LearnerPreferenceSyncRolloutGateway;
+        if (!identical(
+          rolloutGateway.learnerPreferenceSyncRollout,
+          learnerPreferenceSyncRollout,
+        )) {
+          throw StateError(
+            'Learner-preference sync rollout must be shared by store and gateway.',
+          );
+        }
+      }
       final policy = CloudSyncPolicyProvider(
         buildEnabled: cloudSyncEnabled,
         cache: DriftCloudPolicyCache(database),
@@ -744,6 +772,7 @@ final class AppBootstrap {
           avatarProgressionEligibility: avatarProgressionEligibility,
           learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
           learningGoalSyncRollout: learningGoalSyncRollout,
+          learnerPreferenceSyncRollout: learnerPreferenceSyncRollout,
         ),
         gateway: gateway,
         policyProvider: policy.call,
@@ -757,6 +786,8 @@ final class AppBootstrap {
             SyncCollection.learningTimeSegments,
           if (learningGoalSyncRollout.allowsClaims)
             SyncCollection.learningGoals,
+          if (learnerPreferenceSyncRollout.allowsClaims)
+            SyncCollection.learnerPreferences,
         },
       );
       syncTrigger = SyncTrigger(syncEngine.run);
@@ -765,6 +796,7 @@ final class AppBootstrap {
     void notifyLocalMutation() {
       final trigger = syncTrigger;
       if (trigger != null) {
+        observeSyncTriggerRequest?.call(SyncTriggerReason.localMutation);
         trigger.requestDetached(SyncTriggerReason.localMutation);
       }
     }
@@ -854,6 +886,14 @@ final class AppBootstrap {
       ),
       nowUtc: () => DateTime.now().toUtc(),
       generateId: () => 'goal:${idGenerator.v4()}',
+    );
+    final learnerPreferences = LearnerPreferencesUseCases(
+      repository: DriftLearnerPreferencesRepository(
+        database,
+        onLocalMutation: () async => notifyLocalMutation(),
+      ),
+      owners: localOwners,
+      nowUtc: () => DateTime.now().toUtc(),
     );
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
@@ -1309,6 +1349,7 @@ final class AppBootstrap {
       contentManifests: contentManifests,
       studyPlanning: studyPlanning,
       learningGoals: learningGoals,
+      learnerPreferences: learnerPreferences,
       studyReminders: studyReminders,
       progress: progress,
       rewards: rewards,

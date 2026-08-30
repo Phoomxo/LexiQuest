@@ -40,6 +40,13 @@ void main() {
       deployedAssessmentRunRulesRevision: assessmentRunV1RulesRevision,
       protocolModeCatalog: _catalog,
     );
+    const staleAssessmentRules =
+        ResearchCollectionSyncRollout.researchAssessmentV1(
+          deployedExperimentAssignmentRulesRevision:
+              experimentAssignmentV1RulesRevision,
+          deployedAssessmentRunRulesRevision: 'assessment-run-v1-r1',
+          protocolModeCatalog: _catalog,
+        );
 
     expect(assignmentOnly.allowsExperimentAssignmentClaims, isTrue);
     expect(assignmentOnly.allowsAssessmentRunClaims, isFalse);
@@ -51,6 +58,13 @@ void main() {
     );
     expect(combined.allowsExperimentAssignmentClaims, isTrue);
     expect(combined.allowsAssessmentRunClaims, isTrue);
+    expect(
+      staleAssessmentRules.allowsAssessmentRunClaims,
+      isFalse,
+      reason:
+          'the pre-f35 rules token cannot authorize the widened v15-v21 '
+          'assessment payload contract',
+    );
   });
 
   test(

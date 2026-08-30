@@ -6,6 +6,7 @@ import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'learning_pack_catalog_screen.dart';
 import 'learning_goals_screen.dart';
+import 'learning_preference_quiz_screen.dart';
 
 /// The sole production study-planning parent. Future study-planning actions
 /// remain children of this hub and do not receive their own feature delivery.
@@ -14,6 +15,7 @@ final class StudyPlanningHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Study planning')),
       body: Center(
@@ -72,6 +74,31 @@ final class StudyPlanningHubScreen extends StatelessWidget {
                   label: const Text('Learning goals'),
                 ),
               ),
+              if (dependencies?.learnerPreferences != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  button: true,
+                  label: 'Open editable learning preferences',
+                  child: OutlinedButton.icon(
+                    key: const ValueKey<String>(
+                      'study-planning/open-learning-preferences',
+                    ),
+                    onPressed: () => AppNavigator.pushPage<void>(
+                      context,
+                      AppPage<void>(
+                        name: 'study-planning/learning-preferences',
+                        builder: (_) => ProductionFeatureGate(
+                          feature: Feature.studyPlanning,
+                          registry: dependencies?.features,
+                          builder: (_) => const LearningPreferenceQuizScreen(),
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.tune_outlined),
+                    label: const Text('Learning preferences'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -38,6 +38,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
@@ -518,6 +519,7 @@ void main() {
       expect(store.payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
       expect(store.learningTimeSegmentSyncRollout.allowsClaims, isFalse);
       expect(store.learningGoalSyncRollout.allowsClaims, isFalse);
+      expect(store.learnerPreferenceSyncRollout.allowsClaims, isFalse);
       expect(
         dependencies.syncEngine!.optionalPullCollections,
         isNot(contains(SyncCollection.learningTimeSegments)),
@@ -525,6 +527,10 @@ void main() {
       expect(
         dependencies.syncEngine!.optionalPullCollections,
         isNot(contains(SyncCollection.learningGoals)),
+      );
+      expect(
+        dependencies.syncEngine!.optionalPullCollections,
+        isNot(contains(SyncCollection.learnerPreferences)),
       );
       expect(
         store.projections.evidenceDecisions.rolloutModeProvider,
@@ -571,6 +577,12 @@ void main() {
       );
       expect(dependencies.createLessonController, isNotNull);
       expect(dependencies.learningGoals, isNotNull);
+      expect(dependencies.learnerPreferences, isNotNull);
+      expect(dependencies.studyPlanning, isNotNull);
+      expect(
+        dependencies.hasComposedDependencyFor(Feature.studyPlanning),
+        isTrue,
+      );
       final lessonController = dependencies.createLessonController!(
         lessonModes.find(LessonMode.meaningQuiz)!.adapter,
       );
@@ -578,6 +590,37 @@ void main() {
       expect(lessonController.state.status, LessonSessionStatus.planned);
       lessonController.dispose();
     });
+
+    test(
+      'learner preference commit requests local-mutation sync once and replay is silent',
+      () async {
+        final reasons = <SyncTriggerReason>[];
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          syncGatewayFactory: () => _BootstrapSyncGateway(),
+          observeSyncTriggerRequest: reasons.add,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        await dependencies.learnerPreferences!.save(
+          goal: LearnerPreferenceGoal.examPreparation,
+          availableMinutesPerDay: 45,
+          activityPreference: LearnerActivityPreference.quiz,
+        );
+        await dependencies.learnerPreferences!.save(
+          goal: LearnerPreferenceGoal.examPreparation,
+          availableMinutesPerDay: 45,
+          activityPreference: LearnerActivityPreference.quiz,
+        );
+
+        expect(reasons, <SyncTriggerReason>[SyncTriggerReason.localMutation]);
+      },
+    );
 
     test(
       'bootstrap composes reminders without requesting permission',

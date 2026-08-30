@@ -8,18 +8,18 @@ import 'migration_v13_to_v14_test.dart' as inventory_fixture;
 import 'migration_v14_to_v15_test.dart' as fixture;
 
 void main() {
-  test('frozen v15 upgrades through the named current v20 inventory', () async {
+  test('frozen v15 upgrades through the named current v21 inventory', () async {
     final database = AppDatabase(
       NativeDatabase.memory(setup: fixture.createSchemaFifteenFixture),
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 20);
+    expect(AppDatabase.currentSchemaVersion, 21);
     final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
       15,
     );
     expect(v15Inventory, hasLength(33));
-    expect(currentDatabaseTableInventory, hasLength(43));
+    expect(currentDatabaseTableInventory, hasLength(44));
     expect(currentDatabaseTableInventory.difference(v15Inventory), {
       'learning_packs',
       'learning_pack_items',
@@ -31,6 +31,7 @@ void main() {
       'learning_goals',
       'study_reminders',
       'session_configurations',
+      'learner_preferences',
     });
     await expectCurrentDatabaseContract(database);
 

@@ -353,6 +353,55 @@ goal sync does not erase stored goals, and older binaries must not open v19.
 
 ---
 
+### v20 — Released Session Configuration Authority
+**Reserved:** 2026-08-26
+**Implemented:** 2026-08-26
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added owner-scoped `session_configurations` as the durable, validated session
+configuration authority keyed by `(owner_id, mode)`. Each row pins content
+identity, stable typed serialization, and its UTC update time. The canonical
+`learning_sessions` table also gained nullable configuration identity and JSON
+audit pins plus `configuration_active_effort_us`; historical sessions preserve
+their null/zero defaults.
+
+The new table raises the named inventory from 42 to 43. It participates in
+owner upgrade, export, and explicit owner deletion through the shared lifecycle
+manifest.
+
+**Migration safety:** v19→v20 adds exactly `session_configurations` and the
+three backward-compatible `learning_sessions` columns. All 42 v19 tables and
+rows remain intact. Rollback is forward-only: disabling configuration UI does
+not erase stored configuration or session audit pins, no downgrade migration is
+provided, and older binaries must not open a v20 database.
+
+---
+
+### v21 — Learner Preference Authority
+**Reserved:** 2026-08-30
+**Implemented:** 2026-08-30
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added exactly one owner-scoped `learner_preferences` table as the editable
+learner-default authority. Its single row per owner stores the bounded
+preference version, goal, available minutes per day, activity preference, UTC
+update time, and local/cloud revision and tombstone fields. It never assigns an
+experiment cohort, overrides protocol constraints, or creates learning evidence.
+
+The new table raises the named current inventory from 43 to 44. Existing owner
+lifecycle, revisioned sync, archive/export, consent-withdrawal retention, and
+explicit owner deletion authorities include it.
+
+**Migration safety:** v20→v21 adds exactly `learner_preferences`; all 43 v20
+tables, session configuration rows, and learning data remain intact. Rollback
+is forward-only: disabling preference UI or sync retains the local row for
+archive/delete, no downgrade migration is provided, and older binaries must not
+open a v21 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -374,6 +423,8 @@ goal sync does not erase stored goals, and older binaries must not open v19.
 | 2026-08-24 | Reserved and implemented v17 saved learning intent plus the f21 content-report lifecycle table. | LexiQuest integration |
 | 2026-08-24 | Reserved and implemented v18 trustworthy active learning-time segments with monotonic duration. | LexiQuest integration |
 | 2026-08-25 | Reserved and implemented v19 language-learning goals plus the f27 reminder lifecycle table. | LexiQuest integration |
+| 2026-08-26 | Recorded released v20 session configuration authority and session audit pins. | LexiQuest integration |
+| 2026-08-30 | Recorded forward-only v21 learner preferences, raising the named inventory to 44 tables. | LexiQuest integration |
 
 ---
 

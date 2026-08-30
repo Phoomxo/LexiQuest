@@ -125,6 +125,7 @@ void main() {
         SyncCollection.contentQualityReports,
         SyncCollection.learningTimeSegments,
         SyncCollection.learningGoals,
+        SyncCollection.learnerPreferences,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
@@ -143,6 +144,7 @@ void main() {
             _contentQualityReportCloudEntityId(),
           SyncCollection.learningTimeSegments => _learningTimeSegmentId(),
           SyncCollection.learningGoals => 'goal:generic',
+          SyncCollection.learnerPreferences => 'current',
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
@@ -177,6 +179,9 @@ void main() {
             goalId: entityId,
             updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
+          SyncCollection.learnerPreferences => _learnerPreferencePayload(
+            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
         final mutation = PushMutation(
@@ -197,6 +202,12 @@ void main() {
             SyncCollection.learningTimeSegments =>
               LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
                 entityId,
+              ),
+            SyncCollection.learnerPreferences =>
+              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                payload: payload,
+                baseRevision: 0,
+                resultingRevision: 1,
               ),
             _ => 'operation:${collection.entityType}:v1',
           },
@@ -219,6 +230,7 @@ void main() {
           collection: collection,
           documentId: entityId,
           data: encoded,
+          expectedFirebaseUid: mutation.firebaseUid,
         );
 
         expect(decoded.collection, collection, reason: collection.name);
@@ -1049,6 +1061,106 @@ void main() {
           reason: mismatch.key,
         );
       }
+    });
+
+    test(
+      'learner preference receipt is bound to exact same-revision payload',
+      () {
+        final firstPayload = _learnerPreferencePayload(
+          updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        );
+        final secondPayload = <String, Object?>{
+          ...firstPayload,
+          'goal': 'conversationConfidence',
+          'availableMinutesPerDay': 30,
+          'activityPreference': 'speaking',
+          'updatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch + 1,
+        };
+        PushMutation mutation(Map<String, Object?> payload) => PushMutation(
+          operationId:
+              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                payload: payload,
+                baseRevision: 0,
+                resultingRevision: 1,
+              ),
+          firebaseUid: 'firebase-user-1',
+          collection: SyncCollection.learnerPreferences,
+          entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            payload['updatedAtUtcMs']! as int,
+            isUtc: true,
+          ),
+          payload: payload,
+        );
+
+        final first = mutation(firstPayload);
+        final second = mutation(secondPayload);
+        final firstReceipt = FirestoreSyncCodec.encodeOperation(
+          first,
+          acknowledgedAt: Timestamp.fromDate(serverUpdatedAt),
+        );
+
+        expect(first.operationId, isNot(second.operationId));
+        expect(
+          () => FirestoreSyncCodec.decodeAcknowledgement(
+            firstReceipt,
+            expectedMutation: second,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      },
+    );
+
+    test('learner preference pull reads only current and filters its singleton '
+        'cursor exactly', () async {
+      final paths = <String>[];
+      Future<Map<String, Object?>?> readDocument(String path) async {
+        paths.add(path);
+        final payload = _learnerPreferencePayload(
+          updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        );
+        return <String, Object?>{
+          'schemaVersion': 1,
+          'entityId': 'current',
+          'revision': 1,
+          'isDeleted': false,
+          'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+          'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+          'lastOperationId':
+              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                payload: payload,
+                baseRevision: 0,
+                resultingRevision: 1,
+              ),
+          'payload': payload,
+        };
+      }
+
+      final first = await FirestoreSyncGateway.pullLearnerPreferenceSingleton(
+        firebaseUid: 'firebase-user-1',
+        after: null,
+        readDocument: readDocument,
+      );
+      expect(paths, [
+        'field_users/firebase-user-1/learner_preferences/current',
+      ]);
+      expect(first.changes, hasLength(1));
+      expect(first.changes.single.entityId, 'current');
+      expect(first.hasMore, isFalse);
+      expect(first.nextCursor, isNotNull);
+
+      final replay = await FirestoreSyncGateway.pullLearnerPreferenceSingleton(
+        firebaseUid: 'firebase-user-1',
+        after: first.nextCursor,
+        readDocument: readDocument,
+      );
+      expect(replay.changes, isEmpty);
+      expect(replay.nextCursor, first.nextCursor);
+      expect(replay.hasMore, isFalse);
     });
 
     test('rejects a missing server timestamp', () {
@@ -3079,6 +3191,16 @@ Map<String, Object?> _learningGoalPayload({
   'updatedAtUtcMs': updatedAtUtcMs,
   'isDeleted': isDeleted,
 };
+
+Map<String, Object?> _learnerPreferencePayload({required int updatedAtUtcMs}) =>
+    <String, Object?>{
+      'ownerId': 'firebase-user-1',
+      'preferenceVersion': 1,
+      'goal': 'balancedGrowth',
+      'availableMinutesPerDay': 20,
+      'activityPreference': 'mixedPractice',
+      'updatedAtUtcMs': updatedAtUtcMs,
+    };
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.independentRecall,

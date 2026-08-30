@@ -17,12 +17,13 @@ const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
 const String vocabularyWordV2RulesRevision = 'vocabulary-word-v2-r1';
 const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
-const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
+const String assessmentRunV1RulesRevision = 'assessment-run-v1-r2';
 const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
 const String contentQualityReportV1RulesRevision =
     'content-quality-report-v1-r1';
 const String learningTimeSegmentV1RulesRevision = 'learning-time-segment-v1-r1';
 const String learningGoalV1RulesRevision = 'learning-goal-v1-r1';
+const String learnerPreferenceV1RulesRevision = 'learner-preference-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -60,6 +61,10 @@ enum SyncCollection {
 
   /// Mutable owner-scoped language-learning deadline intent.
   learningGoals,
+
+  /// Mutable owner-scoped editable learning defaults. This is deliberately
+  /// separate from experiment assignment authority.
+  learnerPreferences,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -77,6 +82,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.contentQualityReports => 'content_quality_reports',
     SyncCollection.learningTimeSegments => 'learning_time_segments',
     SyncCollection.learningGoals => 'learning_goals',
+    SyncCollection.learnerPreferences => 'learner_preferences',
   };
 
   String get entityType => switch (this) {
@@ -93,6 +99,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.contentQualityReports => 'contentQualityReport',
     SyncCollection.learningTimeSegments => 'learningTimeSegment',
     SyncCollection.learningGoals => 'learningGoal',
+    SyncCollection.learnerPreferences => 'learnerPreference',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -108,6 +115,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.contentQualityReports => const <int>{1},
     SyncCollection.learningTimeSegments => const <int>{1},
     SyncCollection.learningGoals => const <int>{1},
+    SyncCollection.learnerPreferences => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -155,7 +163,125 @@ final class SyncPayloadRollout {
     SyncCollection.learningTimeSegments =>
       collection.defaultWritePayloadVersion,
     SyncCollection.learningGoals => collection.defaultWritePayloadVersion,
+    SyncCollection.learnerPreferences => collection.defaultWritePayloadVersion,
   };
+}
+
+final class LearnerPreferenceSyncRollout {
+  const LearnerPreferenceSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '';
+
+  const LearnerPreferenceSyncRollout.v1({required this.deployedRulesRevision})
+    : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+
+  bool get allowsClaims =>
+      enabled && deployedRulesRevision == learnerPreferenceV1RulesRevision;
+}
+
+abstract final class LearnerPreferenceSyncPayloadContract {
+  static const String canonicalEntityId = 'current';
+  static const Set<String> keys = <String>{
+    'ownerId',
+    'preferenceVersion',
+    'goal',
+    'availableMinutesPerDay',
+    'activityPreference',
+    'updatedAtUtcMs',
+  };
+  static const Set<String> goals = <String>{
+    'balancedGrowth',
+    'examPreparation',
+    'conversationConfidence',
+    'vocabularyGrowth',
+  };
+  static const Set<String> activities = <String>{
+    'mixedPractice',
+    'quiz',
+    'speaking',
+    'reading',
+    'vocabulary',
+  };
+
+  static String canonicalOperationId({
+    required Map<String, Object?> payload,
+    required int baseRevision,
+    required int resultingRevision,
+  }) {
+    final preferenceVersion = payload['preferenceVersion'];
+    final goal = payload['goal'];
+    final availableMinutesPerDay = payload['availableMinutesPerDay'];
+    final activityPreference = payload['activityPreference'];
+    final updatedAtUtcMs = payload['updatedAtUtcMs'];
+    if (preferenceVersion is! int ||
+        preferenceVersion != 1 ||
+        goal is! String ||
+        !goals.contains(goal) ||
+        availableMinutesPerDay is! int ||
+        availableMinutesPerDay < 1 ||
+        availableMinutesPerDay > 240 ||
+        activityPreference is! String ||
+        !activities.contains(activityPreference) ||
+        updatedAtUtcMs is! int ||
+        updatedAtUtcMs < 0 ||
+        baseRevision < 0 ||
+        resultingRevision != baseRevision + 1) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final identity = <Object>[
+      'v1',
+      preferenceVersion,
+      goal,
+      availableMinutesPerDay,
+      activityPreference,
+      updatedAtUtcMs,
+      baseRevision,
+      resultingRevision,
+    ].join('|');
+    return 'learner-preference-operation:v1:'
+        '${sha256.convert(utf8.encode(identity))}';
+  }
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required String expectedEntityId,
+    required String expectedOwnerId,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+  }) {
+    if (isDeleted ||
+        expectedEntityId != canonicalEntityId ||
+        payload.length != keys.length ||
+        !payload.keys.every(keys.contains)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final ownerId = payload['ownerId'];
+    final preferenceVersion = payload['preferenceVersion'];
+    final goal = payload['goal'];
+    final availableMinutesPerDay = payload['availableMinutesPerDay'];
+    final activityPreference = payload['activityPreference'];
+    final updatedAtUtcMs = payload['updatedAtUtcMs'];
+    if (ownerId is! String ||
+        ownerId != expectedOwnerId ||
+        ownerId.isEmpty ||
+        ownerId != ownerId.trim() ||
+        preferenceVersion != 1 ||
+        goal is! String ||
+        !goals.contains(goal) ||
+        availableMinutesPerDay is! int ||
+        availableMinutesPerDay < 1 ||
+        availableMinutesPerDay > 240 ||
+        activityPreference is! String ||
+        !activities.contains(activityPreference) ||
+        updatedAtUtcMs is! int ||
+        updatedAtUtcMs < 0 ||
+        updatedAtUtcMs != clientUpdatedAtUtcMs) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
 }
 
 /// Canonical cloud identity for one immutable achievement-definition unlock.
@@ -1161,7 +1287,15 @@ abstract final class AssessmentRunSyncPayloadContract {
           !const <String>{'pre', 'post'}.contains(phase) ||
           experimentVersion <= 0 ||
           consentVersion <= 0 ||
-          !const <int>{15, 16, 17, 18, 19}.contains(databaseSchemaVersion) ||
+          !const <int>{
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+          }.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
           !supportedFeatureContractIdentities.any(

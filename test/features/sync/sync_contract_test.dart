@@ -60,6 +60,7 @@ void main() {
           SyncCollection.contentQualityReports: <int>{1},
           SyncCollection.learningTimeSegments: <int>{1},
           SyncCollection.learningGoals: <int>{1},
+          SyncCollection.learnerPreferences: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -144,6 +145,57 @@ void main() {
             isDeleted: false,
             clientUpdatedAtUtcMs: payload['updatedAtUtcMs']! as int,
             expectedEntityId: 'goal:ielts',
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      }
+    });
+
+    test('f35 learner preference v1 is exact and rollout defaults off', () {
+      final payload = <String, Object?>{
+        'ownerId': 'firebase-user-1',
+        'preferenceVersion': 1,
+        'goal': 'examPreparation',
+        'availableMinutesPerDay': 45,
+        'activityPreference': 'quiz',
+        'updatedAtUtcMs': 1788048000000,
+      };
+      LearnerPreferenceSyncPayloadContract.requireCanonical(
+        payload: payload,
+        expectedEntityId: 'current',
+        expectedOwnerId: 'firebase-user-1',
+        isDeleted: false,
+        clientUpdatedAtUtcMs: 1788048000000,
+      );
+      expect(const LearnerPreferenceSyncRollout.off().allowsClaims, isFalse);
+      expect(
+        const LearnerPreferenceSyncRollout.v1(
+          deployedRulesRevision: learnerPreferenceV1RulesRevision,
+        ).allowsClaims,
+        isTrue,
+      );
+      expect(
+        const LearnerPreferenceSyncRollout.v1(
+          deployedRulesRevision: 'stale-rules',
+        ).allowsClaims,
+        isFalse,
+      );
+      for (final invalid in <Map<String, Object?>>[
+        {...payload, 'learningStyle': 'visual'},
+        {...payload}..remove('activityPreference'),
+        {...payload, 'goal': 'visualLearner'},
+        {...payload, 'availableMinutesPerDay': 0},
+        {...payload, 'availableMinutesPerDay': 241},
+        {...payload, 'activityPreference': 'personalityDriven'},
+        {...payload, 'updatedAtUtcMs': 1},
+      ]) {
+        expect(
+          () => LearnerPreferenceSyncPayloadContract.requireCanonical(
+            payload: invalid,
+            expectedEntityId: 'current',
+            expectedOwnerId: 'firebase-user-1',
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 1788048000000,
           ),
           throwsA(isA<InvalidSyncPayloadFailure>()),
         );

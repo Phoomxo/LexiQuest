@@ -145,6 +145,22 @@ final class ExportLearningGoalRow {
   final DateTime updatedAtUtc;
 }
 
+final class ExportLearnerPreferenceRow {
+  const ExportLearnerPreferenceRow({
+    required this.preferenceVersion,
+    required this.goal,
+    required this.availableMinutesPerDay,
+    required this.activityPreference,
+    required this.updatedAtUtc,
+  });
+
+  final int preferenceVersion;
+  final String goal;
+  final int availableMinutesPerDay;
+  final String activityPreference;
+  final DateTime updatedAtUtc;
+}
+
 final class ExportDataSet {
   const ExportDataSet({
     required this.vocabulary,
@@ -253,6 +269,31 @@ final class DriftExportReader {
             row.createdAtUtcMs,
             isUtc: true,
           ),
+          updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.updatedAtUtcMs,
+            isUtc: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<List<ExportLearnerPreferenceRow>> loadLearnerPreferences(
+    String ownerId,
+  ) async {
+    final rows =
+        await (database.select(database.learnerPreferences)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
+            ))
+            .get();
+    return List<ExportLearnerPreferenceRow>.unmodifiable(
+      rows.map(
+        (row) => ExportLearnerPreferenceRow(
+          preferenceVersion: row.preferenceVersion,
+          goal: row.goal,
+          availableMinutesPerDay: row.availableMinutesPerDay,
+          activityPreference: row.activityPreference,
           updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
             row.updatedAtUtcMs,
             isUtc: true,

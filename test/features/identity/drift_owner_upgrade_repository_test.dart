@@ -117,6 +117,260 @@ void main() {
   });
 
   test(
+    'f35 owner upgrade rehomes preference and its durable outbox once',
+    () async {
+      expect(ownerUpgradeInventory, contains('learner_preferences'));
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms, local_revision, '
+        'cloud_revision, last_acknowledged_at_utc_ms, '
+        'server_updated_at_utc_ms) VALUES '
+        "('guest-owner', 1, 'examPreparation', 45, 'quiz', 30, 2, 2, 25, 25)",
+      );
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'payload_version, base_revision, state, attempt_count, '
+        'created_at_utc_ms) VALUES '
+        "('learnerPreference:guest-owner:1', 'guest-owner', "
+        "'learnerPreference', 'guest-owner', 'upsert', 1, 0, "
+        "'pending', 0, 30)",
+      );
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final preference = await database
+          .customSelect(
+            'SELECT owner_id, preference_version, goal, '
+            'available_minutes_per_day, activity_preference, updated_at_utc_ms, '
+            'local_revision, cloud_revision, last_acknowledged_at_utc_ms, '
+            'server_updated_at_utc_ms '
+            'FROM learner_preferences',
+          )
+          .getSingle();
+      expect(preference.data, {
+        'owner_id': 'account-owner',
+        'preference_version': 1,
+        'goal': 'examPreparation',
+        'available_minutes_per_day': 45,
+        'activity_preference': 'quiz',
+        'updated_at_utc_ms': 30,
+        'local_revision': 1,
+        'cloud_revision': 0,
+        'last_acknowledged_at_utc_ms': null,
+        'server_updated_at_utc_ms': null,
+      });
+      final operation = await database
+          .customSelect(
+            "SELECT owner_id, entity_type, state FROM outbox_operations "
+            "WHERE entity_type = 'learnerPreference' AND state = 'pending'",
+          )
+          .getSingle();
+      expect(operation.read<String>('owner_id'), 'account-owner');
+      expect(operation.read<String>('entity_type'), 'learnerPreference');
+      expect(operation.read<String>('state'), 'pending');
+    },
+  );
+
+  test(
+    'f35 owner merge resolves singleton preference and preserves one claimable intent',
+    () async {
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms, local_revision, '
+        'cloud_revision, last_acknowledged_at_utc_ms, '
+        'server_updated_at_utc_ms) VALUES '
+        "('guest-owner', 1, 'conversationConfidence', 30, 'speaking', "
+        '40, 2, 0, NULL, NULL), '
+        "('account-owner', 1, 'examPreparation', 45, 'quiz', 30, 2, 2, 25, 25)",
+      );
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'payload_version, base_revision, state, attempt_count, '
+        'created_at_utc_ms) VALUES '
+        "('learnerPreference:guest-owner:2', 'guest-owner', "
+        "'learnerPreference', 'guest-owner', 'upsert', 1, 1, 'pending', 0, 40), "
+        "('learnerPreference:account-owner:1', 'account-owner', "
+        "'learnerPreference', 'account-owner', 'upsert', 1, 0, 'pending', 0, 30)",
+      );
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final preferences = await database
+          .customSelect(
+            'SELECT owner_id, goal, available_minutes_per_day, '
+            'activity_preference, local_revision, cloud_revision '
+            'FROM learner_preferences',
+          )
+          .get();
+      expect(preferences, hasLength(1));
+      expect(preferences.single.data, {
+        'owner_id': 'account-owner',
+        'goal': 'conversationConfidence',
+        'available_minutes_per_day': 30,
+        'activity_preference': 'speaking',
+        'local_revision': 3,
+        'cloud_revision': 2,
+      });
+
+      final operations = await database
+          .customSelect(
+            "SELECT operation_id, owner_id, entity_id, state, base_revision "
+            "FROM outbox_operations WHERE entity_type = 'learnerPreference' "
+            'ORDER BY operation_id',
+          )
+          .get();
+      expect(
+        operations.where((row) => row.read<String>('state') == 'pending'),
+        hasLength(1),
+      );
+      final pending = operations.singleWhere(
+        (row) => row.read<String>('state') == 'pending',
+      );
+      expect(
+        pending.read<String>('operation_id'),
+        'learnerPreference:account-owner:3',
+      );
+      expect(pending.read<String>('owner_id'), 'account-owner');
+      expect(pending.read<String>('entity_id'), 'account-owner');
+      expect(pending.read<int>('base_revision'), 2);
+
+      final gate = DriftOwnerOperationGate(database);
+      expect(
+        await gate.tryAcquire(
+          token: 'preference-merge-claim',
+          nowUtc: DateTime.utc(2026, 7, 30, 12, 1),
+          leaseDuration: const Duration(minutes: 5),
+        ),
+        isTrue,
+      );
+      final store = DriftSyncStore(
+        database,
+        learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v1(
+          deployedRulesRevision: learnerPreferenceV1RulesRevision,
+        ),
+      );
+      final first = await store.claimPending(
+        ownerId: 'account-owner',
+        firebaseUid: 'firebase-user',
+        limit: 1,
+        leaseToken: 'preference-merge-lease-1',
+        ownerGateToken: 'preference-merge-claim',
+        leaseDuration: const Duration(minutes: 1),
+        nowUtc: DateTime.utc(2026, 7, 30, 12, 1),
+      );
+      expect(first, hasLength(1));
+      expect(first.single.mutation.entityId, 'current');
+      expect(first.single.mutation.payload['goal'], 'conversationConfidence');
+      expect(
+        await store.releaseClaim(
+          claim: first.single,
+          ownerGateToken: 'preference-merge-claim',
+          nowUtc: DateTime.utc(2026, 7, 30, 12, 1),
+        ),
+        isTrue,
+      );
+      final replay = await store.claimPending(
+        ownerId: 'account-owner',
+        firebaseUid: 'firebase-user',
+        limit: 1,
+        leaseToken: 'preference-merge-lease-2',
+        ownerGateToken: 'preference-merge-claim',
+        leaseDuration: const Duration(minutes: 1),
+        nowUtc: DateTime.utc(2026, 7, 30, 12, 1),
+      );
+      expect(
+        replay.single.mutation.operationId,
+        first.single.mutation.operationId,
+      );
+      expect(replay.single.mutation.payload, first.single.mutation.payload);
+    },
+  );
+
+  test(
+    'f35 owner merge keeps the newer target preference deterministically',
+    () async {
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms) VALUES '
+        "('guest-owner', 1, 'vocabularyGrowth', 25, 'vocabulary', 30), "
+        "('account-owner', 1, 'examPreparation', 45, 'quiz', 40)",
+      );
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'payload_version, base_revision, state, attempt_count, '
+        'created_at_utc_ms) VALUES '
+        "('learnerPreference:guest-owner:1', 'guest-owner', "
+        "'learnerPreference', 'guest-owner', 'upsert', 1, 0, 'pending', 0, 30), "
+        "('learnerPreference:account-owner:1', 'account-owner', "
+        "'learnerPreference', 'account-owner', 'upsert', 1, 0, 'pending', 0, 40)",
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final preference = await database
+          .customSelect(
+            'SELECT owner_id, goal, available_minutes_per_day, '
+            'activity_preference, updated_at_utc_ms FROM learner_preferences',
+          )
+          .getSingle();
+      expect(preference.data, {
+        'owner_id': 'account-owner',
+        'goal': 'examPreparation',
+        'available_minutes_per_day': 45,
+        'activity_preference': 'quiz',
+        'updated_at_utc_ms': 40,
+      });
+      final operations = await database
+          .customSelect(
+            "SELECT operation_id, owner_id, entity_id, state FROM outbox_operations "
+            "WHERE entity_type = 'learnerPreference' ORDER BY operation_id",
+          )
+          .get();
+      expect(
+        operations
+            .where((row) => row.read<String>('state') == 'pending')
+            .map((row) => row.read<String>('operation_id')),
+        <String>['learnerPreference:account-owner:1'],
+      );
+      expect(
+        operations
+            .singleWhere(
+              (row) =>
+                  row.read<String>('operation_id') ==
+                  'learnerPreference:guest-owner:1',
+            )
+            .read<String>('state'),
+        'superseded',
+      );
+      expect(
+        operations.every(
+          (row) =>
+              row.read<String>('owner_id') == 'account-owner' &&
+              row.read<String>('entity_id') == 'account-owner',
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  test(
     'f16 upgrade rebinds preference and durable session configuration identity',
     () async {
       final configuration = SessionConfiguration.validated(
@@ -4204,6 +4458,40 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  final sessionConfiguration = SessionConfiguration.validated(
+    schemaVersion: sessionConfigurationSchemaVersion,
+    policyVersion: sessionConfigurationPolicyVersion,
+    ownerId: 'guest-owner',
+    mode: LessonMode.meaningQuiz,
+    itemCount: 3,
+    direction: SessionDirection.mixed,
+    difficulty: SessionDifficulty.standard,
+    hintBudget: 1,
+    timing: const SessionTiming.untimedAlternative(
+      maximumActiveEffort: Duration(minutes: 15),
+    ),
+    packIdentity: null,
+    protocolId: 'protocol:complete-owner-inventory',
+    protocolVersion: '1',
+    protocolLimitsIdentity: 'sha256:complete-owner-inventory-limits',
+  );
+  await database
+      .into(database.sessionConfigurations)
+      .insert(
+        SessionConfigurationsCompanion.insert(
+          ownerId: 'guest-owner',
+          mode: sessionConfiguration.mode.name,
+          contentIdentity: sessionConfiguration.contentIdentity,
+          stableSerialization: sessionConfiguration.stableSerialization,
+          updatedAtUtcMs: 10,
+        ),
+      );
+  await database.customInsert(
+    'INSERT INTO learner_preferences '
+    '(owner_id, preference_version, goal, available_minutes_per_day, '
+    'activity_preference, updated_at_utc_ms) VALUES '
+    "('guest-owner', 1, 'balancedGrowth', 20, 'mixedPractice', 10)",
+  );
   final assignmentId =
       DriftExperimentAssignmentRepository.canonicalAssignmentId(
         ownerId: 'guest-owner',

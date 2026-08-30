@@ -22,3 +22,7 @@ abstract interface class LearningTimeSegmentSyncRolloutGateway {
 abstract interface class LearningGoalSyncRolloutGateway {
   LearningGoalSyncRollout get learningGoalSyncRollout;
 }
+
+abstract interface class LearnerPreferenceSyncRolloutGateway {
+  LearnerPreferenceSyncRollout get learnerPreferenceSyncRollout;
+}

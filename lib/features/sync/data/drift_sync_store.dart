@@ -49,6 +49,8 @@ final class DriftSyncStore implements SyncStore {
     this.learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
     this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
+    this.learnerPreferenceSyncRollout =
+        const LearnerPreferenceSyncRollout.off(),
     this.consentRegistry = const NoOpConsentRegistry(),
     DriftAvatarProgressionEligibility? avatarProgressionEligibility,
   }) : projections = DriftLearningProjectionRebuilder(
@@ -80,6 +82,7 @@ final class DriftSyncStore implements SyncStore {
   final ContentQualityReportSyncRollout contentQualityReportSyncRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
+  final LearnerPreferenceSyncRollout learnerPreferenceSyncRollout;
   final ConsentRegistry consentRegistry;
   final DriftLearningProjectionRebuilder projections;
   final DriftAvatarProgressionEligibility avatarProgressionEligibility;
@@ -1037,6 +1040,15 @@ final class DriftSyncStore implements SyncStore {
             cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
         expectedEntityId: cloudEntity.entityId,
       );
+    } else if (cloudEntity.collection == SyncCollection.learnerPreferences) {
+      LearnerPreferenceSyncPayloadContract.requireCanonical(
+        payload: cloudEntity.payload,
+        expectedEntityId: cloudEntity.entityId,
+        expectedOwnerId: mutation.firebaseUid,
+        isDeleted: cloudEntity.isDeleted,
+        clientUpdatedAtUtcMs:
+            cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      );
     }
 
     return database.transaction(() async {
@@ -1070,6 +1082,14 @@ final class DriftSyncStore implements SyncStore {
       }
       if (cloudEntity.collection == SyncCollection.achievementUnlocks) {
         await _resolveAchievementUnlockConflict(
+          operation: operation,
+          cloudEntity: cloudEntity,
+          resolvedAtUtc: resolvedAtUtc,
+        );
+        return true;
+      }
+      if (cloudEntity.collection == SyncCollection.learnerPreferences) {
+        await _resolveLearnerPreferenceConflict(
           operation: operation,
           cloudEntity: cloudEntity,
           resolvedAtUtc: resolvedAtUtc,
@@ -1149,6 +1169,12 @@ final class DriftSyncStore implements SyncStore {
           await _applySavedLearningItemConflict(operation, cloudEntity);
         case SyncCollection.learningGoals:
           await _applyLearningGoal(
+            operation.ownerId,
+            cloudEntity,
+            handlePendingConflict: false,
+          );
+        case SyncCollection.learnerPreferences:
+          await _applyLearnerPreference(
             operation.ownerId,
             cloudEntity,
             handlePendingConflict: false,
@@ -1331,6 +1357,8 @@ final class DriftSyncStore implements SyncStore {
               await _applyLearningTimeSegment(canonicalOwnerId, entity);
             case SyncCollection.learningGoals:
               await _applyLearningGoal(canonicalOwnerId, entity);
+            case SyncCollection.learnerPreferences:
+              await _applyLearnerPreference(canonicalOwnerId, entity);
           }
         }
 
@@ -1419,6 +1447,9 @@ final class DriftSyncStore implements SyncStore {
     }
     if (operation.entityType == SyncCollection.learningGoals.entityType) {
       return learningGoalSyncRollout.allowsClaims;
+    }
+    if (operation.entityType == SyncCollection.learnerPreferences.entityType) {
+      return learnerPreferenceSyncRollout.allowsClaims;
     }
     if (operation.entityType ==
         SyncCollection.experimentAssignments.entityType) {
@@ -2350,6 +2381,50 @@ final class DriftSyncStore implements SyncStore {
           clientUpdatedAtUtc: _utc(goal.updatedAtUtcMs),
           payload: payload,
         );
+      case 'learnerPreference':
+        final preference =
+            await (database.select(database.learnerPreferences)
+                  ..where((row) => row.ownerId.equals(operation.ownerId)))
+                .getSingleOrNull();
+        final localRevision = _operationRevision(operation);
+        if (preference == null ||
+            !learnerPreferenceSyncRollout.allowsClaims ||
+            operation.operationKind != SyncOperationKind.upsert.name ||
+            operation.payloadVersion != 1 ||
+            localRevision <= baseRevision ||
+            localRevision > preference.localRevision ||
+            operation.entityId != operation.ownerId) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final payload = _learnerPreferencePayload(
+          preference,
+          firebaseUid: firebaseUid,
+        );
+        LearnerPreferenceSyncPayloadContract.requireCanonical(
+          payload: payload,
+          expectedEntityId:
+              LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+          expectedOwnerId: firebaseUid,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: preference.updatedAtUtcMs,
+        );
+        return PushMutation(
+          operationId:
+              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                payload: payload,
+                baseRevision: baseRevision,
+                resultingRevision: localRevision,
+              ),
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.learnerPreferences,
+          entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: baseRevision,
+          localRevision: localRevision,
+          clientUpdatedAtUtc: _utc(preference.updatedAtUtcMs),
+          payload: payload,
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2452,6 +2527,16 @@ final class DriftSyncStore implements SyncStore {
                 serverUpdatedAtUtcMs: Value(acknowledgedMs),
               ),
             );
+      case 'learnerPreference':
+        await (database.update(
+          database.learnerPreferences,
+        )..where((row) => row.ownerId.equals(operation.ownerId))).write(
+          db.LearnerPreferencesCompanion(
+            cloudRevision: Value(acknowledgement.resultingRevision),
+            lastAcknowledgedAtUtcMs: Value(acknowledgedMs),
+            serverUpdatedAtUtcMs: Value(acknowledgedMs),
+          ),
+        );
       case 'savedLearningItem':
         await (database.update(database.savedLearningItems)..where(
               (row) =>
@@ -2624,6 +2709,12 @@ final class DriftSyncStore implements SyncStore {
                 ))
                 .getSingle();
         return _learningGoalPayload(goal);
+      case 'learnerPreference':
+        final preference = await (database.select(
+          database.learnerPreferences,
+        )..where((row) => row.ownerId.equals(operation.ownerId))).getSingle();
+        final firebaseUid = await _boundFirebaseUid(operation.ownerId);
+        return _learnerPreferencePayload(preference, firebaseUid: firebaseUid);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2740,7 +2831,7 @@ final class DriftSyncStore implements SyncStore {
       contentChecksumSha256 = incomingChecksum;
     } else {
       contentRevision = 1;
-      contentChecksumSha256 = incomingChecksum;
+      contentChecksumSha256 = null;
     }
     await database
         .into(database.vocabularyWords)
@@ -3105,6 +3196,211 @@ final class DriftSyncStore implements SyncStore {
             isDeleted: Value(entity.isDeleted),
           ),
         );
+  }
+
+  Future<void> _applyLearnerPreference(
+    String ownerId,
+    SyncEntity entity, {
+    bool handlePendingConflict = true,
+  }) async {
+    final firebaseUid = await _boundFirebaseUid(ownerId);
+    LearnerPreferenceSyncPayloadContract.requireCanonical(
+      payload: entity.payload,
+      expectedEntityId: entity.entityId,
+      expectedOwnerId: firebaseUid,
+      isDeleted: entity.isDeleted,
+      clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
+    if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
+      return;
+    }
+    final payload = entity.payload;
+    await database
+        .into(database.learnerPreferences)
+        .insertOnConflictUpdate(
+          db.LearnerPreferencesCompanion.insert(
+            ownerId: ownerId,
+            preferenceVersion: payload['preferenceVersion']! as int,
+            goal: payload['goal']! as String,
+            availableMinutesPerDay: payload['availableMinutesPerDay']! as int,
+            activityPreference: payload['activityPreference']! as String,
+            updatedAtUtcMs: payload['updatedAtUtcMs']! as int,
+            localRevision: Value(entity.revision),
+            cloudRevision: Value(entity.revision),
+            lastAcknowledgedAtUtcMs: Value(
+              entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+            ),
+            serverUpdatedAtUtcMs: Value(
+              entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+            ),
+            isDeleted: const Value(false),
+          ),
+        );
+  }
+
+  Future<void> _resolveLearnerPreferenceConflict({
+    required db.OutboxOperation operation,
+    required SyncEntity cloudEntity,
+    required DateTime resolvedAtUtc,
+  }) async {
+    final current = await (database.select(
+      database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(operation.ownerId))).getSingleOrNull();
+    if (current == null ||
+        operation.entityId != operation.ownerId ||
+        cloudEntity.revision <= current.cloudRevision) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final cloudUpdatedAtUtcMs = cloudEntity.payload['updatedAtUtcMs']! as int;
+    final preserveNewerLocalIntent =
+        current.updatedAtUtcMs > cloudUpdatedAtUtcMs;
+    final outcome = preserveNewerLocalIntent
+        ? 'newerLocalIntentRebased'
+        : 'cloudWins';
+    final localSnapshot = <String, Object?>{
+      'entityId': current.ownerId,
+      'localRevision': current.localRevision,
+      'cloudRevision': current.cloudRevision,
+      ..._learnerPreferencePayload(
+        current,
+        firebaseUid: cloudEntity.payload['ownerId']! as String,
+      ),
+    };
+    final cloudSnapshot = <String, Object?>{
+      'collection': cloudEntity.collection.wireName,
+      'entityId': cloudEntity.entityId,
+      'revision': cloudEntity.revision,
+      'isDeleted': cloudEntity.isDeleted,
+      'payloadVersion': cloudEntity.payloadVersion,
+      'clientUpdatedAtUtcMs':
+          cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      'serverUpdatedAtUtcMicros':
+          cloudEntity.serverUpdatedAtUtc.microsecondsSinceEpoch,
+      'payload': cloudEntity.payload,
+    };
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id: 'conflict:${operation.operationId}:${cloudEntity.revision}',
+            ownerId: operation.ownerId,
+            entityType: operation.entityType,
+            entityId: operation.entityId,
+            localRevision: current.localRevision,
+            cloudRevision: cloudEntity.revision,
+            resolutionPolicy: 'latestUpdatedAtUtc',
+            outcome: outcome,
+            localSnapshotJson: Value(jsonEncode(localSnapshot)),
+            cloudSnapshotJson: Value(jsonEncode(cloudSnapshot)),
+            resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+
+    if (!preserveNewerLocalIntent) {
+      await _applyLearnerPreference(
+        operation.ownerId,
+        cloudEntity,
+        handlePendingConflict: false,
+      );
+      await (database.update(
+        database.outboxOperations,
+      )..where((row) => row.operationId.equals(operation.operationId))).write(
+        const db.OutboxOperationsCompanion(
+          state: Value('conflictResolved'),
+          nextAttemptAtUtcMs: Value(null),
+          leaseToken: Value(null),
+          leaseExpiresAtUtcMs: Value(null),
+          failureCode: Value('cloudWins'),
+        ),
+      );
+      return;
+    }
+
+    await _replaceLearnerPreferenceDeliveryAfterCloudAdvance(
+      operation: operation,
+      current: current,
+      firebaseUid: cloudEntity.payload['ownerId']! as String,
+      cloudEntity: cloudEntity,
+      replacementState: 'pending',
+      nextAttemptAtUtcMs: null,
+    );
+  }
+
+  Future<void> _replaceLearnerPreferenceDeliveryAfterCloudAdvance({
+    required db.OutboxOperation operation,
+    required db.LearnerPreferenceRow current,
+    required String firebaseUid,
+    required SyncEntity cloudEntity,
+    required String replacementState,
+    required int? nextAttemptAtUtcMs,
+  }) async {
+    if (!const <String>{
+      'pending',
+      'retryWaiting',
+      'blockedAuth',
+    }.contains(replacementState)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final rebasedRevision = cloudEntity.revision + 1;
+    final payload = _learnerPreferencePayload(
+      current,
+      firebaseUid: firebaseUid,
+    );
+    final cloudOperationId =
+        LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+          payload: payload,
+          baseRevision: cloudEntity.revision,
+          resultingRevision: rebasedRevision,
+        );
+    final replacementOperationId = 'local:$cloudOperationId';
+    await (database.update(
+      database.outboxOperations,
+    )..where((row) => row.operationId.equals(operation.operationId))).write(
+      const db.OutboxOperationsCompanion(
+        state: Value('superseded'),
+        nextAttemptAtUtcMs: Value(null),
+        leaseToken: Value(null),
+        leaseExpiresAtUtcMs: Value(null),
+        failureCode: Value('rebasedAfterCloudAdvance'),
+      ),
+    );
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          db.OutboxOperationsCompanion.insert(
+            operationId: replacementOperationId,
+            ownerId: current.ownerId,
+            entityType: SyncCollection.learnerPreferences.entityType,
+            entityId: current.ownerId,
+            operationKind: SyncOperationKind.upsert.name,
+            payloadVersion: const Value(1),
+            baseRevision: Value(cloudEntity.revision),
+            state: Value(replacementState),
+            attemptCount: const Value(0),
+            nextAttemptAtUtcMs: Value(nextAttemptAtUtcMs),
+            leaseToken: const Value(null),
+            leaseExpiresAtUtcMs: const Value(null),
+            lastAttemptAtUtcMs: const Value(null),
+            createdAtUtcMs: current.updatedAtUtcMs,
+            acknowledgedAtUtcMs: const Value(null),
+            failureCode: const Value(null),
+          ),
+        );
+    await (database.update(
+      database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(current.ownerId))).write(
+      db.LearnerPreferencesCompanion(
+        localRevision: Value(rebasedRevision),
+        cloudRevision: Value(cloudEntity.revision),
+        lastAcknowledgedAtUtcMs: Value(
+          cloudEntity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+        ),
+        serverUpdatedAtUtcMs: Value(
+          cloudEntity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+        ),
+      ),
+    );
   }
 
   Future<void> _applyLearningTimeSegment(
@@ -4809,6 +5105,9 @@ final class DriftSyncStore implements SyncStore {
   }
 
   Future<bool> _preparePullApply(String ownerId, SyncEntity entity) async {
+    if (entity.collection == SyncCollection.learnerPreferences) {
+      return _prepareLearnerPreferencePullApply(ownerId, entity);
+    }
     late final int localRevision;
     late final int cloudRevision;
     late final int? serverUpdatedAtUtcMs;
@@ -4900,6 +5199,8 @@ final class DriftSyncStore implements SyncStore {
           'cloudRevision': current.cloudRevision,
           ..._learningGoalPayload(current),
         };
+      case SyncCollection.learnerPreferences:
+        throw const InvalidSyncPayloadFailure();
       case SyncCollection.attempts:
       case SyncCollection.readingEvents:
       case SyncCollection.rewardTransactions:
@@ -4972,6 +5273,139 @@ final class DriftSyncStore implements SyncStore {
           ),
         );
     return true;
+  }
+
+  Future<bool> _prepareLearnerPreferencePullApply(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
+    final current = await (database.select(
+      database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+    if (current == null) return true;
+    final incomingServerMs = entity.serverUpdatedAtUtc.millisecondsSinceEpoch;
+    final currentServerUpdatedAtUtcMs = current.serverUpdatedAtUtcMs;
+    if (entity.revision < current.cloudRevision ||
+        (entity.revision == current.cloudRevision &&
+            currentServerUpdatedAtUtcMs != null &&
+            incomingServerMs <= currentServerUpdatedAtUtcMs)) {
+      return false;
+    }
+    if (current.localRevision <= current.cloudRevision) return true;
+
+    final operations =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityId.equals(current.ownerId) &
+                  row.entityType.equals(
+                    SyncCollection.learnerPreferences.entityType,
+                  ) &
+                  row.state.isIn(const <String>[
+                    'pending',
+                    'retryWaiting',
+                    'inFlight',
+                    'blockedAuth',
+                    'permanentFailure',
+                  ]),
+            ))
+            .get();
+    final incomingUpdatedAtUtcMs = entity.payload['updatedAtUtcMs']! as int;
+    final preserveNewerLocalIntent =
+        current.updatedAtUtcMs > incomingUpdatedAtUtcMs;
+    final localSnapshot = <String, Object?>{
+      'entityId': current.ownerId,
+      'localRevision': current.localRevision,
+      'cloudRevision': current.cloudRevision,
+      ..._learnerPreferencePayload(
+        current,
+        firebaseUid: entity.payload['ownerId']! as String,
+      ),
+    };
+    final cloudSnapshot = <String, Object?>{
+      'collection': entity.collection.wireName,
+      'entityId': entity.entityId,
+      'revision': entity.revision,
+      'isDeleted': entity.isDeleted,
+      'payloadVersion': entity.payloadVersion,
+      'clientUpdatedAtUtcMs': entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      'serverUpdatedAtUtcMicros':
+          entity.serverUpdatedAtUtc.microsecondsSinceEpoch,
+      'payload': entity.payload,
+    };
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id:
+                'conflict:pull:${entity.collection.wireName}:'
+                '${entity.entityId}:${current.localRevision}:${entity.revision}',
+            ownerId: ownerId,
+            entityType: entity.collection.entityType,
+            entityId: entity.entityId,
+            localRevision: current.localRevision,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'latestUpdatedAtUtc',
+            outcome: preserveNewerLocalIntent
+                ? 'newerLocalIntentRebased'
+                : 'cloudWins',
+            localSnapshotJson: Value(jsonEncode(localSnapshot)),
+            cloudSnapshotJson: Value(jsonEncode(cloudSnapshot)),
+            resolvedAtUtcMs: incomingServerMs,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+
+    if (!preserveNewerLocalIntent) {
+      await (database.update(database.outboxOperations)..where(
+            (row) =>
+                row.ownerId.equals(ownerId) &
+                row.entityId.equals(current.ownerId) &
+                row.entityType.equals(
+                  SyncCollection.learnerPreferences.entityType,
+                ) &
+                row.state.isIn(const <String>[
+                  'pending',
+                  'retryWaiting',
+                  'inFlight',
+                  'blockedAuth',
+                ]),
+          ))
+          .write(
+            const db.OutboxOperationsCompanion(
+              state: Value('conflictResolved'),
+              leaseToken: Value(null),
+              leaseExpiresAtUtcMs: Value(null),
+              nextAttemptAtUtcMs: Value(null),
+              failureCode: Value('cloudWins'),
+            ),
+          );
+      return true;
+    }
+
+    final claimable = operations
+        .where((operation) => operation.state != 'permanentFailure')
+        .toList(growable: false);
+    if (operations.length != 1 || claimable.length != 1) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final operation = claimable.single;
+    final replacementState = switch (operation.state) {
+      'retryWaiting' => 'retryWaiting',
+      'blockedAuth' => 'blockedAuth',
+      _ => 'pending',
+    };
+    await _replaceLearnerPreferenceDeliveryAfterCloudAdvance(
+      operation: operation,
+      current: current,
+      firebaseUid: entity.payload['ownerId']! as String,
+      cloudEntity: entity,
+      replacementState: replacementState,
+      nextAttemptAtUtcMs: replacementState == 'retryWaiting'
+          ? operation.nextAttemptAtUtcMs
+          : null,
+    );
+    return false;
   }
 }
 
@@ -5272,6 +5706,18 @@ Map<String, Object?> _learningGoalPayload(db.LearningGoalRow goal) =>
       'updatedAtUtcMs': goal.updatedAtUtcMs,
       'isDeleted': goal.isDeleted,
     };
+
+Map<String, Object?> _learnerPreferencePayload(
+  db.LearnerPreferenceRow preference, {
+  required String firebaseUid,
+}) => <String, Object?>{
+  'ownerId': firebaseUid,
+  'preferenceVersion': preference.preferenceVersion,
+  'goal': preference.goal,
+  'availableMinutesPerDay': preference.availableMinutesPerDay,
+  'activityPreference': preference.activityPreference,
+  'updatedAtUtcMs': preference.updatedAtUtcMs,
+};
 
 Map<String, Object?> _rewardTransactionPayload(
   db.RewardTransaction transaction,
@@ -5688,6 +6134,9 @@ int _operationRevision(db.OutboxOperation operation) {
   );
   if (srsRevision != null) return srsRevision;
   if (operation.entityType == 'srsState') {
+    return operation.baseRevision + 1;
+  }
+  if (operation.entityType == SyncCollection.learnerPreferences.entityType) {
     return operation.baseRevision + 1;
   }
   for (final segment in operation.operationId.split(':').reversed) {

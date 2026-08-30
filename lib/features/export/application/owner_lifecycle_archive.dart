@@ -161,6 +161,7 @@ final class OwnerLifecycleArchiveExporter {
       'session_configurations' => _sessionConfigurations(ownerId),
       'learning_time_segments' => _learningTimeSegments(ownerId),
       'learning_goals' => _learningGoals(ownerId),
+      'learner_preferences' => _learnerPreferences(ownerId),
       'answer_attempts' => _answerAttempts(ownerId),
       'srs_states' => _srsStates(ownerId),
       'reading_progress_entries' => _readingProgress(ownerId, documentAliases),
@@ -668,6 +669,23 @@ final class OwnerLifecycleArchiveExporter {
           'timezoneOffsetMinutes': row.timezoneOffsetMinutes,
           'status': _safeLabel(row.status),
           'createdAtUtc': row.createdAtUtc.toIso8601String(),
+          'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _learnerPreferences(String ownerId) async {
+    final rows = await DriftExportReader(
+      database,
+    ).loadLearnerPreferences(ownerId);
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'preferenceVersion': row.preferenceVersion,
+          'goal': _safeLabel(row.goal),
+          'availableMinutesPerDay': row.availableMinutesPerDay,
+          'activityPreference': _safeLabel(row.activityPreference),
           'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
         },
     ];

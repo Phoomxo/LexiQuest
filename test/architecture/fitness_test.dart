@@ -835,6 +835,9 @@ void main() {
         'speakToText',
         'shadowing',
         'readingExposure',
+        'dictation',
+        'sentenceScramble',
+        'wordScramble',
       };
       expect(
         CurrentActivityInput.values.map((value) => value.name).toSet(),
@@ -1050,7 +1053,7 @@ void main() {
           .map((entry) => entry.tableName)
           .toList(growable: false);
 
-      expect(liveTables, hasLength(43));
+      expect(liveTables, hasLength(44));
       expect(manifestTables, hasLength(liveTables.length));
       expect(manifestTables.toSet(), hasLength(manifestTables.length));
       expect(manifestTables.toSet(), liveTables.toSet());

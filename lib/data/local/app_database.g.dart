@@ -28632,6 +28632,737 @@ class StudyRemindersCompanion extends UpdateCompanion<StudyReminderRow> {
   }
 }
 
+class $LearnerPreferencesTable extends LearnerPreferences
+    with TableInfo<$LearnerPreferencesTable, LearnerPreferenceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearnerPreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _preferenceVersionMeta = const VerificationMeta(
+    'preferenceVersion',
+  );
+  @override
+  late final GeneratedColumn<int> preferenceVersion = GeneratedColumn<int>(
+    'preference_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+    'goal',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _availableMinutesPerDayMeta =
+      const VerificationMeta('availableMinutesPerDay');
+  @override
+  late final GeneratedColumn<int> availableMinutesPerDay = GeneratedColumn<int>(
+    'available_minutes_per_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (available_minutes_per_day >= 1 AND available_minutes_per_day <= 240)',
+  );
+  static const VerificationMeta _activityPreferenceMeta =
+      const VerificationMeta('activityPreference');
+  @override
+  late final GeneratedColumn<String> activityPreference =
+      GeneratedColumn<String>(
+        'activity_preference',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    preferenceVersion,
+    goal,
+    availableMinutesPerDay,
+    activityPreference,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learner_preferences';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearnerPreferenceRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('preference_version')) {
+      context.handle(
+        _preferenceVersionMeta,
+        preferenceVersion.isAcceptableOrUnknown(
+          data['preference_version']!,
+          _preferenceVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_preferenceVersionMeta);
+    }
+    if (data.containsKey('goal')) {
+      context.handle(
+        _goalMeta,
+        goal.isAcceptableOrUnknown(data['goal']!, _goalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalMeta);
+    }
+    if (data.containsKey('available_minutes_per_day')) {
+      context.handle(
+        _availableMinutesPerDayMeta,
+        availableMinutesPerDay.isAcceptableOrUnknown(
+          data['available_minutes_per_day']!,
+          _availableMinutesPerDayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_availableMinutesPerDayMeta);
+    }
+    if (data.containsKey('activity_preference')) {
+      context.handle(
+        _activityPreferenceMeta,
+        activityPreference.isAcceptableOrUnknown(
+          data['activity_preference']!,
+          _activityPreferenceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activityPreferenceMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  LearnerPreferenceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearnerPreferenceRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      preferenceVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}preference_version'],
+      )!,
+      goal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal'],
+      )!,
+      availableMinutesPerDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}available_minutes_per_day'],
+      )!,
+      activityPreference: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_preference'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+    );
+  }
+
+  @override
+  $LearnerPreferencesTable createAlias(String alias) {
+    return $LearnerPreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class LearnerPreferenceRow extends DataClass
+    implements Insertable<LearnerPreferenceRow> {
+  final String ownerId;
+  final int preferenceVersion;
+  final String goal;
+  final int availableMinutesPerDay;
+  final String activityPreference;
+  final int updatedAtUtcMs;
+  final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
+  final bool isDeleted;
+  const LearnerPreferenceRow({
+    required this.ownerId,
+    required this.preferenceVersion,
+    required this.goal,
+    required this.availableMinutesPerDay,
+    required this.activityPreference,
+    required this.updatedAtUtcMs,
+    required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
+    required this.isDeleted,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['preference_version'] = Variable<int>(preferenceVersion);
+    map['goal'] = Variable<String>(goal);
+    map['available_minutes_per_day'] = Variable<int>(availableMinutesPerDay);
+    map['activity_preference'] = Variable<String>(activityPreference);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    return map;
+  }
+
+  LearnerPreferencesCompanion toCompanion(bool nullToAbsent) {
+    return LearnerPreferencesCompanion(
+      ownerId: Value(ownerId),
+      preferenceVersion: Value(preferenceVersion),
+      goal: Value(goal),
+      availableMinutesPerDay: Value(availableMinutesPerDay),
+      activityPreference: Value(activityPreference),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
+      isDeleted: Value(isDeleted),
+    );
+  }
+
+  factory LearnerPreferenceRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearnerPreferenceRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      preferenceVersion: serializer.fromJson<int>(json['preferenceVersion']),
+      goal: serializer.fromJson<String>(json['goal']),
+      availableMinutesPerDay: serializer.fromJson<int>(
+        json['availableMinutesPerDay'],
+      ),
+      activityPreference: serializer.fromJson<String>(
+        json['activityPreference'],
+      ),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'preferenceVersion': serializer.toJson<int>(preferenceVersion),
+      'goal': serializer.toJson<String>(goal),
+      'availableMinutesPerDay': serializer.toJson<int>(availableMinutesPerDay),
+      'activityPreference': serializer.toJson<String>(activityPreference),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+    };
+  }
+
+  LearnerPreferenceRow copyWith({
+    String? ownerId,
+    int? preferenceVersion,
+    String? goal,
+    int? availableMinutesPerDay,
+    String? activityPreference,
+    int? updatedAtUtcMs,
+    int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+    bool? isDeleted,
+  }) => LearnerPreferenceRow(
+    ownerId: ownerId ?? this.ownerId,
+    preferenceVersion: preferenceVersion ?? this.preferenceVersion,
+    goal: goal ?? this.goal,
+    availableMinutesPerDay:
+        availableMinutesPerDay ?? this.availableMinutesPerDay,
+    activityPreference: activityPreference ?? this.activityPreference,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
+    isDeleted: isDeleted ?? this.isDeleted,
+  );
+  LearnerPreferenceRow copyWithCompanion(LearnerPreferencesCompanion data) {
+    return LearnerPreferenceRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      preferenceVersion: data.preferenceVersion.present
+          ? data.preferenceVersion.value
+          : this.preferenceVersion,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      availableMinutesPerDay: data.availableMinutesPerDay.present
+          ? data.availableMinutesPerDay.value
+          : this.availableMinutesPerDay,
+      activityPreference: data.activityPreference.present
+          ? data.activityPreference.value
+          : this.activityPreference,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnerPreferenceRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('preferenceVersion: $preferenceVersion, ')
+          ..write('goal: $goal, ')
+          ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
+          ..write('activityPreference: $activityPreference, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    preferenceVersion,
+    goal,
+    availableMinutesPerDay,
+    activityPreference,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearnerPreferenceRow &&
+          other.ownerId == this.ownerId &&
+          other.preferenceVersion == this.preferenceVersion &&
+          other.goal == this.goal &&
+          other.availableMinutesPerDay == this.availableMinutesPerDay &&
+          other.activityPreference == this.activityPreference &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
+          other.isDeleted == this.isDeleted);
+}
+
+class LearnerPreferencesCompanion
+    extends UpdateCompanion<LearnerPreferenceRow> {
+  final Value<String> ownerId;
+  final Value<int> preferenceVersion;
+  final Value<String> goal;
+  final Value<int> availableMinutesPerDay;
+  final Value<String> activityPreference;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
+  final Value<bool> isDeleted;
+  final Value<int> rowid;
+  const LearnerPreferencesCompanion({
+    this.ownerId = const Value.absent(),
+    this.preferenceVersion = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.availableMinutesPerDay = const Value.absent(),
+    this.activityPreference = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearnerPreferencesCompanion.insert({
+    required String ownerId,
+    required int preferenceVersion,
+    required String goal,
+    required int availableMinutesPerDay,
+    required String activityPreference,
+    required int updatedAtUtcMs,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       preferenceVersion = Value(preferenceVersion),
+       goal = Value(goal),
+       availableMinutesPerDay = Value(availableMinutesPerDay),
+       activityPreference = Value(activityPreference),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearnerPreferenceRow> custom({
+    Expression<String>? ownerId,
+    Expression<int>? preferenceVersion,
+    Expression<String>? goal,
+    Expression<int>? availableMinutesPerDay,
+    Expression<String>? activityPreference,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
+    Expression<bool>? isDeleted,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (preferenceVersion != null) 'preference_version': preferenceVersion,
+      if (goal != null) 'goal': goal,
+      if (availableMinutesPerDay != null)
+        'available_minutes_per_day': availableMinutesPerDay,
+      if (activityPreference != null) 'activity_preference': activityPreference,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearnerPreferencesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<int>? preferenceVersion,
+    Value<String>? goal,
+    Value<int>? availableMinutesPerDay,
+    Value<String>? activityPreference,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
+    Value<bool>? isDeleted,
+    Value<int>? rowid,
+  }) {
+    return LearnerPreferencesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      preferenceVersion: preferenceVersion ?? this.preferenceVersion,
+      goal: goal ?? this.goal,
+      availableMinutesPerDay:
+          availableMinutesPerDay ?? this.availableMinutesPerDay,
+      activityPreference: activityPreference ?? this.activityPreference,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
+      isDeleted: isDeleted ?? this.isDeleted,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (preferenceVersion.present) {
+      map['preference_version'] = Variable<int>(preferenceVersion.value);
+    }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (availableMinutesPerDay.present) {
+      map['available_minutes_per_day'] = Variable<int>(
+        availableMinutesPerDay.value,
+      );
+    }
+    if (activityPreference.present) {
+      map['activity_preference'] = Variable<String>(activityPreference.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnerPreferencesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('preferenceVersion: $preferenceVersion, ')
+          ..write('goal: $goal, ')
+          ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
+          ..write('activityPreference: $activityPreference, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -28712,6 +29443,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $LearningTimeSegmentsTable(this);
   late final $LearningGoalsTable learningGoals = $LearningGoalsTable(this);
   late final $StudyRemindersTable studyReminders = $StudyRemindersTable(this);
+  late final $LearnerPreferencesTable learnerPreferences =
+      $LearnerPreferencesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -28760,6 +29493,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningTimeSegments,
     learningGoals,
     studyReminders,
+    learnerPreferences,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -29526,6 +30260,30 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_studyRemindersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearnerPreferencesTable,
+    List<LearnerPreferenceRow>
+  >
+  _learnerPreferencesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learnerPreferences,
+        aliasName: 'local_owners__id__learner_preferences__owner_id',
+      );
+
+  $$LearnerPreferencesTableProcessedTableManager get learnerPreferencesRefs {
+    final manager = $$LearnerPreferencesTableTableManager(
+      $_db,
+      $_db.learnerPreferences,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learnerPreferencesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -30392,6 +31150,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$StudyRemindersTableFilterComposer(
             $db: $db,
             $table: $db.studyReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learnerPreferencesRefs(
+    Expression<bool> Function($$LearnerPreferencesTableFilterComposer f) f,
+  ) {
+    final $$LearnerPreferencesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learnerPreferences,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearnerPreferencesTableFilterComposer(
+            $db: $db,
+            $table: $db.learnerPreferences,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -31316,6 +32099,32 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> learnerPreferencesRefs<T extends Object>(
+    Expression<T> Function($$LearnerPreferencesTableAnnotationComposer a) f,
+  ) {
+    final $$LearnerPreferencesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learnerPreferences,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearnerPreferencesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learnerPreferences,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -31365,6 +32174,7 @@ class $$LocalOwnersTableTableManager
             bool learningTimeSegmentsRefs,
             bool learningGoalsRefs,
             bool studyRemindersRefs,
+            bool learnerPreferencesRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -31457,6 +32267,7 @@ class $$LocalOwnersTableTableManager
                 learningTimeSegmentsRefs = false,
                 learningGoalsRefs = false,
                 studyRemindersRefs = false,
+                learnerPreferencesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -31494,6 +32305,7 @@ class $$LocalOwnersTableTableManager
                     if (learningTimeSegmentsRefs) db.learningTimeSegments,
                     if (learningGoalsRefs) db.learningGoals,
                     if (studyRemindersRefs) db.studyReminders,
+                    if (learnerPreferencesRefs) db.learnerPreferences,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -32191,6 +33003,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learnerPreferencesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearnerPreferenceRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learnerPreferencesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learnerPreferencesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -32245,6 +33078,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool learningTimeSegmentsRefs,
         bool learningGoalsRefs,
         bool studyRemindersRefs,
+        bool learnerPreferencesRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -53390,6 +54224,469 @@ typedef $$StudyRemindersTableProcessedTableManager =
       StudyReminderRow,
       PrefetchHooks Function({bool ownerId, bool goalId})
     >;
+typedef $$LearnerPreferencesTableCreateCompanionBuilder =
+    LearnerPreferencesCompanion Function({
+      required String ownerId,
+      required int preferenceVersion,
+      required String goal,
+      required int availableMinutesPerDay,
+      required String activityPreference,
+      required int updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+typedef $$LearnerPreferencesTableUpdateCompanionBuilder =
+    LearnerPreferencesCompanion Function({
+      Value<String> ownerId,
+      Value<int> preferenceVersion,
+      Value<String> goal,
+      Value<int> availableMinutesPerDay,
+      Value<String> activityPreference,
+      Value<int> updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+
+final class $$LearnerPreferencesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearnerPreferencesTable,
+          LearnerPreferenceRow
+        > {
+  $$LearnerPreferencesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learner_preferences__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearnerPreferencesTableFilterComposer
+    extends Composer<_$AppDatabase, $LearnerPreferencesTable> {
+  $$LearnerPreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get preferenceVersion => $composableBuilder(
+    column: $table.preferenceVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get availableMinutesPerDay => $composableBuilder(
+    column: $table.availableMinutesPerDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityPreference => $composableBuilder(
+    column: $table.activityPreference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearnerPreferencesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearnerPreferencesTable> {
+  $$LearnerPreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get preferenceVersion => $composableBuilder(
+    column: $table.preferenceVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get availableMinutesPerDay => $composableBuilder(
+    column: $table.availableMinutesPerDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityPreference => $composableBuilder(
+    column: $table.activityPreference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearnerPreferencesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearnerPreferencesTable> {
+  $$LearnerPreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get preferenceVersion => $composableBuilder(
+    column: $table.preferenceVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<int> get availableMinutesPerDay => $composableBuilder(
+    column: $table.availableMinutesPerDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get activityPreference => $composableBuilder(
+    column: $table.activityPreference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearnerPreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearnerPreferencesTable,
+          LearnerPreferenceRow,
+          $$LearnerPreferencesTableFilterComposer,
+          $$LearnerPreferencesTableOrderingComposer,
+          $$LearnerPreferencesTableAnnotationComposer,
+          $$LearnerPreferencesTableCreateCompanionBuilder,
+          $$LearnerPreferencesTableUpdateCompanionBuilder,
+          (LearnerPreferenceRow, $$LearnerPreferencesTableReferences),
+          LearnerPreferenceRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LearnerPreferencesTableTableManager(
+    _$AppDatabase db,
+    $LearnerPreferencesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearnerPreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearnerPreferencesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearnerPreferencesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<int> preferenceVersion = const Value.absent(),
+                Value<String> goal = const Value.absent(),
+                Value<int> availableMinutesPerDay = const Value.absent(),
+                Value<String> activityPreference = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnerPreferencesCompanion(
+                ownerId: ownerId,
+                preferenceVersion: preferenceVersion,
+                goal: goal,
+                availableMinutesPerDay: availableMinutesPerDay,
+                activityPreference: activityPreference,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required int preferenceVersion,
+                required String goal,
+                required int availableMinutesPerDay,
+                required String activityPreference,
+                required int updatedAtUtcMs,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnerPreferencesCompanion.insert(
+                ownerId: ownerId,
+                preferenceVersion: preferenceVersion,
+                goal: goal,
+                availableMinutesPerDay: availableMinutesPerDay,
+                activityPreference: activityPreference,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearnerPreferencesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LearnerPreferencesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearnerPreferencesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearnerPreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearnerPreferencesTable,
+      LearnerPreferenceRow,
+      $$LearnerPreferencesTableFilterComposer,
+      $$LearnerPreferencesTableOrderingComposer,
+      $$LearnerPreferencesTableAnnotationComposer,
+      $$LearnerPreferencesTableCreateCompanionBuilder,
+      $$LearnerPreferencesTableUpdateCompanionBuilder,
+      (LearnerPreferenceRow, $$LearnerPreferencesTableReferences),
+      LearnerPreferenceRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -53489,4 +54786,6 @@ class $AppDatabaseManager {
       $$LearningGoalsTableTableManager(_db, _db.learningGoals);
   $$StudyRemindersTableTableManager get studyReminders =>
       $$StudyRemindersTableTableManager(_db, _db.studyReminders);
+  $$LearnerPreferencesTableTableManager get learnerPreferences =>
+      $$LearnerPreferencesTableTableManager(_db, _db.learnerPreferences);
 }

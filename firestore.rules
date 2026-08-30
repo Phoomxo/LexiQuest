@@ -320,6 +320,57 @@ service cloud.firestore {
         == resource.data.payload.createdAtUtcMs;
     }
 
+    function fieldLearnerPreferencePayloadOk(uid, entityId) {
+      let payload = request.resource.data.payload;
+      return entityId == 'current'
+        && payload.keys().hasOnly([
+             'ownerId', 'preferenceVersion', 'goal',
+             'availableMinutesPerDay', 'activityPreference',
+             'updatedAtUtcMs'
+           ])
+        && payload.keys().size() == 6
+        && payload.ownerId is string
+        && payload.ownerId == uid
+        && payload.preferenceVersion is int
+        && payload.preferenceVersion == 1
+        && payload.goal is string
+        && payload.goal in [
+             'balancedGrowth', 'examPreparation',
+             'conversationConfidence', 'vocabularyGrowth'
+           ]
+        && payload.availableMinutesPerDay is int
+        && payload.availableMinutesPerDay >= 1
+        && payload.availableMinutesPerDay <= 240
+        && payload.activityPreference is string
+        && payload.activityPreference in [
+             'mixedPractice', 'quiz', 'speaking', 'reading', 'vocabulary'
+           ]
+        && payload.updatedAtUtcMs is int
+        && payload.updatedAtUtcMs >= 0
+        && payload.updatedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && !request.resource.data.isDeleted
+        && request.resource.data.lastOperationId is string
+        && request.resource.data.lastOperationId.matches(
+             '^learner-preference-operation:v1:[0-9a-f]{64}$'
+           );
+    }
+
+    function fieldLearnerPreferenceCreateOk(uid, entityId) {
+      return fieldLearnerPreferencePayloadOk(uid, entityId)
+        && request.resource.data.revision == 1;
+    }
+
+    function fieldLearnerPreferenceUpdateOk(uid, entityId) {
+      return fieldLearnerPreferencePayloadOk(uid, entityId)
+        && resource.data.schemaVersion == 1
+        && resource.data.entityId == 'current'
+        && resource.data.payload.ownerId == uid
+        && resource.data.payload.preferenceVersion == 1
+        && !resource.data.isDeleted
+        && request.resource.data.revision == resource.data.revision + 1;
+    }
+
     function fieldWordCategoryExists(uid) {
       return existsAfter(
         /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
@@ -801,7 +852,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && payload.featureContractRevision == '1.0.0'
@@ -930,7 +981,7 @@ service cloud.firestore {
              'rewardTransaction', 'srsState', 'achievementUnlock',
              'experimentAssignment', 'assessmentRun', 'savedLearningItem',
              'contentQualityReport', 'learningTimeSegment',
-             'learningGoal'
+             'learningGoal', 'learnerPreference'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -1047,6 +1098,42 @@ service cloud.firestore {
         && entity.entityId == entityId
         && entity.lastOperationId == request.resource.data.operationId
         && entity.revision == request.resource.data.resultingRevision;
+    }
+
+    function fieldOperationMatchesLearnerPreference(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/learner_preferences/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return entityId == 'current'
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.operationId
+             == 'learner-preference-operation:v1:'
+                  + hashing.sha256((
+                      'v1|' + string(entity.payload.preferenceVersion)
+                      + '|' + entity.payload.goal
+                      + '|' + string(entity.payload.availableMinutesPerDay)
+                      + '|' + entity.payload.activityPreference
+                      + '|' + string(entity.payload.updatedAtUtcMs)
+                      + '|' + string(request.resource.data.baseRevision)
+                      + '|' + string(request.resource.data.resultingRevision)
+                    ).toUtf8()).toHexString().lower()
+        && ((!exists(entityPath)
+             && request.resource.data.baseRevision == 0
+             && request.resource.data.resultingRevision == 1)
+            || (exists(entityPath)
+                && get(entityPath).data.revision
+                     == request.resource.data.baseRevision
+                && request.resource.data.resultingRevision
+                     == request.resource.data.baseRevision + 1))
+        && entity.schemaVersion == 1
+        && entity.entityId == 'current'
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == request.resource.data.resultingRevision
+        && !entity.isDeleted
+        && entity.payload.ownerId == uid
+        && entity.serverUpdatedAt == request.resource.data.acknowledgedAt;
     }
 
     function fieldOperationMatchesAttempt(uid) {
@@ -1204,17 +1291,19 @@ service cloud.firestore {
                     ? fieldOperationMatchesLearningTimeSegment(uid)
                     : entityType == 'learningGoal'
                       ? fieldOperationMatchesLearningGoal(uid)
-                  : entityType == 'attempt'
-                    ? fieldOperationMatchesAttempt(uid)
-                    : entityType == 'readingEvent'
-                      ? fieldOperationMatchesReadingEvent(uid)
-                      : entityType == 'rewardTransaction'
-                        ? fieldOperationMatchesRewardTransaction(uid)
-                        : entityType == 'srsState'
-                          ? fieldOperationMatchesSrsState(uid)
-                          : entityType == 'achievementUnlock'
-                            ? fieldOperationMatchesAchievementUnlock(uid)
-                            : false;
+                      : entityType == 'learnerPreference'
+                        ? fieldOperationMatchesLearnerPreference(uid)
+                        : entityType == 'attempt'
+                          ? fieldOperationMatchesAttempt(uid)
+                          : entityType == 'readingEvent'
+                            ? fieldOperationMatchesReadingEvent(uid)
+                            : entityType == 'rewardTransaction'
+                              ? fieldOperationMatchesRewardTransaction(uid)
+                              : entityType == 'srsState'
+                                ? fieldOperationMatchesSrsState(uid)
+                                : entityType == 'achievementUnlock'
+                                  ? fieldOperationMatchesAchievementUnlock(uid)
+                                  : false;
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
@@ -1484,6 +1573,19 @@ service cloud.firestore {
           && fieldLearningGoalPayloadOk(goalId)
           && fieldLearningGoalCreatedAtStable()
           && fieldOperationLinksEntity(uid, 'learningGoal', goalId);
+        allow delete: if false;
+      }
+
+      match /learner_preferences/{entityId} {
+        allow read: if ownsFieldUser(uid) && entityId == 'current';
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(entityId)
+          && fieldLearnerPreferenceCreateOk(uid, entityId)
+          && fieldOperationLinksEntity(uid, 'learnerPreference', entityId);
+        allow update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(entityId)
+          && fieldLearnerPreferenceUpdateOk(uid, entityId)
+          && fieldOperationLinksEntity(uid, 'learnerPreference', entityId);
         allow delete: if false;
       }
 

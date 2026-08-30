@@ -10,10 +10,15 @@ const {
 const {
   deleteDoc,
   doc,
+  documentId,
   getDoc,
+  getDocs,
+  collection,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } = require('firebase/firestore');
 
@@ -780,6 +785,72 @@ function writeFieldLearningGoal(db, {
     entityType: 'learningGoal',
     entityId,
     operationKind,
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
+function fieldLearnerPreferencePayload(overrides = {}) {
+  return {
+    ownerId: alice,
+    preferenceVersion: 1,
+    goal: 'examPreparation',
+    availableMinutesPerDay: 45,
+    activityPreference: 'quiz',
+    updatedAtUtcMs: 1788048000000,
+    ...overrides,
+  };
+}
+
+function fieldLearnerPreferenceOperationId(
+  payload,
+  baseRevision,
+  resultingRevision,
+) {
+  const identity = [
+    'v1',
+    payload.preferenceVersion,
+    payload.goal,
+    payload.availableMinutesPerDay,
+    payload.activityPreference,
+    payload.updatedAtUtcMs,
+    baseRevision,
+    resultingRevision,
+  ].join('|');
+  return `learner-preference-operation:v1:${createHash('sha256')
+    .update(identity, 'utf8').digest('hex')}`;
+}
+
+function writeFieldLearnerPreference(db, {
+  uid = alice,
+  payload = fieldLearnerPreferencePayload({ ownerId: uid }),
+  entityId = 'current',
+  operationId,
+  revision = 1,
+  baseRevision = 0,
+  clientUpdatedAtUtcMs = payload.updatedAtUtcMs,
+} = {}) {
+  const resolvedOperationId = operationId ??
+    fieldLearnerPreferenceOperationId(payload, baseRevision, revision);
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'learner_preferences', entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload,
+    revision,
+    isDeleted: false,
+    clientUpdatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: resolvedOperationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', resolvedOperationId), {
+    schemaVersion: 1,
+    operationId: resolvedOperationId,
+    entityType: 'learnerPreference',
+    entityId,
+    operationKind: 'upsert',
     baseRevision,
     resultingRevision: revision,
     acknowledgedAt: serverTimestamp(),
@@ -2158,30 +2229,47 @@ describe('assessment_runs revisioned research contract', () => {
     )));
   });
 
-  it('accepts assessment evidence pinned to current database schema v19', async () => {
+  it('accepts assessment evidence pinned to supported database schemas through v21', async () => {
     const db = authDb();
-    const assignmentId = 'experiment-assignment:assessment-cloud-v16';
+    const assignmentId = 'experiment-assignment:assessment-cloud-schema';
     await assertSucceeds(
       writeFieldExperimentAssignment(db, {
         entityId: assignmentId,
-        operationId: 'experiment-assignment-operation-assessment-v16',
+        operationId: 'experiment-assignment-operation-assessment-schema',
         payload: fieldExperimentAssignmentPayload({
           assignmentId,
           assignedAtUtcMs: 4600,
         }),
       }),
     );
-    await assertSucceeds(
-      writeFieldAssessmentRun(db, {
-        entityId: 'assessment-run-v16',
-        operationId: 'assessmentRun:assessment-run-v16:1',
-        payload: fieldAssessmentRunPayload({
-          runId: 'assessment-run-v16',
-          assignmentId,
-          databaseSchemaVersion: 19,
+    for (const databaseSchemaVersion of [19, 20, 21]) {
+      const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
+      await assertSucceeds(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            assignmentId,
+            databaseSchemaVersion,
+          }),
         }),
-      }),
-    );
+      );
+    }
+    for (const databaseSchemaVersion of [14, 22]) {
+      const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            assignmentId,
+            databaseSchemaVersion,
+          }),
+        }),
+      );
+    }
   });
 
   it('allows only revision-two Completed or Abandoned terminal updates', async () => {
@@ -3167,6 +3255,120 @@ describe('learning_goals exact owner-scoped payload contract', () => {
       revision: 2,
       baseRevision: 1,
     }));
+  });
+});
+
+describe('learner_preferences exact owner-scoped payload contract', () => {
+  it('allows only the authenticated singleton-constrained read query', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearnerPreference(db));
+    const preferences = collection(
+      db,
+      'field_users',
+      alice,
+      'learner_preferences',
+    );
+    await assertSucceeds(getDocs(query(
+      preferences,
+      where(documentId(), '==', 'current'),
+    )));
+    await assertFails(getDocs(preferences));
+  });
+
+  it('allows exact current create and revisioned editable override', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearnerPreference(db));
+    await assertSucceeds(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({
+        goal: 'conversationConfidence',
+        availableMinutesPerDay: 30,
+        activityPreference: 'speaking',
+        updatedAtUtcMs: 1788134400000,
+      }),
+      revision: 2,
+      baseRevision: 1,
+    }));
+  });
+
+  it('binds same-revision operation receipts to the exact payload', async () => {
+    const db = authDb();
+    const first = fieldLearnerPreferencePayload();
+    const second = fieldLearnerPreferencePayload({
+      goal: 'conversationConfidence',
+      availableMinutesPerDay: 30,
+      activityPreference: 'speaking',
+      updatedAtUtcMs: 1788048000001,
+    });
+    const firstOperationId = fieldLearnerPreferenceOperationId(first, 0, 1);
+    const secondOperationId = fieldLearnerPreferenceOperationId(second, 0, 1);
+    if (firstOperationId === secondOperationId) {
+      throw new Error('Distinct preference payloads shared one operation id.');
+    }
+    await assertSucceeds(writeFieldLearnerPreference(db, { payload: first }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      payload: second,
+      operationId: firstOperationId,
+    }));
+  });
+
+  it('rejects extra missing unknown out-of-range and cross-owner payloads', async () => {
+    const db = authDb();
+    const canonical = fieldLearnerPreferencePayload();
+    const missing = { ...canonical };
+    delete missing.activityPreference;
+    const cases = [
+      { ...canonical, learningStyle: 'visual' },
+      { ...canonical, personality: 'competitive' },
+      missing,
+      { ...canonical, ownerId: bob },
+      { ...canonical, preferenceVersion: 2 },
+      { ...canonical, goal: 'visualLearner' },
+      { ...canonical, availableMinutesPerDay: 0 },
+      { ...canonical, availableMinutesPerDay: 241 },
+      { ...canonical, activityPreference: 'personalityDriven' },
+      { ...canonical, updatedAtUtcMs: -1 },
+    ];
+    for (const [index, payload] of cases.entries()) {
+      await assertFails(writeFieldLearnerPreference(db, {
+        payload,
+        operationId: `learnerPreference:invalid:${index}`,
+      }));
+    }
+    await assertFails(writeFieldLearnerPreference(authDb(bob), { uid: alice }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      entityId: 'another-document',
+      operationId: 'learnerPreference:another-document:1',
+    }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      clientUpdatedAtUtcMs: canonical.updatedAtUtcMs + 1,
+    }));
+  });
+
+  it('rejects revision gaps immutable owner changes and deletion', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearnerPreference(db));
+    await assertFails(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({
+        updatedAtUtcMs: 1788134400000,
+      }),
+      revision: 3,
+      baseRevision: 1,
+    }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({
+        ownerId: bob,
+        updatedAtUtcMs: 1788134400000,
+      }),
+      revision: 2,
+      baseRevision: 1,
+    }));
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learner_preferences',
+      'current',
+    )));
   });
 });
 

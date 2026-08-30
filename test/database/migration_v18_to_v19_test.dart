@@ -13,12 +13,13 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 20);
-    expect(currentDatabaseTableInventory, hasLength(43));
+    expect(AppDatabase.currentSchemaVersion, 21);
+    expect(currentDatabaseTableInventory, hasLength(44));
     expect(currentDatabaseTableInventory.difference(schemaEighteenInventory), {
       'learning_goals',
       'study_reminders',
       'session_configurations',
+      'learner_preferences',
     });
     await expectCurrentDatabaseContract(database);
     expect(await _count(database, 'learning_goals'), 0);
@@ -84,6 +85,7 @@ final schemaEighteenInventory = currentDatabaseTableInventory.difference(const {
   'learning_goals',
   'study_reminders',
   'session_configurations',
+  'learner_preferences',
 });
 
 void createSchemaEighteenFixture(dynamic sqlite) {

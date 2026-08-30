@@ -135,6 +135,46 @@ void main() {
     expect(rows.single.status, 'active');
   });
 
+  test(
+    'owner archive retains the exact learner preference after consent withdrawal',
+    () async {
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms) VALUES '
+        "('local:owner', 1, 'examPreparation', 45, 'quiz', 20)",
+      );
+      await consent.withdraw();
+
+      final artifact = await exports.prepare(
+        format: ExportFormat.ownerArchiveJson,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final envelope =
+          jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+      final content = envelope['content'] as Map<String, dynamic>;
+      final preferenceTable = (content['tables'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .singleWhere((table) => table['alias'] == 'learnerPreferences');
+
+      expect(preferenceTable['records'], [
+        {'recordCount': 1},
+        {
+          'preferenceVersion': 1,
+          'goal': 'examPreparation',
+          'availableMinutesPerDay': 45,
+          'activityPreference': 'quiz',
+          'updatedAtUtc': '1970-01-01T00:00:00.020Z',
+        },
+      ]);
+    },
+  );
+
   test('CSV and Anki neutralize spreadsheet formulas', () async {
     await database.customUpdate(
       "UPDATE vocabulary_words SET spelling = '=2+2', meaning = '@SUM(1,1)' "

@@ -251,6 +251,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          await _mergeLearnerPreferences(source.id, target.id, upgradedAt);
           await _mergeAssessmentRuns(source.id, target.id);
           await _mergeExperimentAssignments(source.id, target.id);
           conflicts += await _discardNaturalKeyDuplicates(
@@ -2842,6 +2843,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
     for (final table in ownerUpgradeInventory) {
+      if (table == 'learner_preferences') continue;
       await _updateOwner(table, sourceId, targetId);
     }
     await _database.customUpdate(
@@ -3182,6 +3184,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     String ownerId,
     int rehomedAtUtcMs,
   ) async {
+    await _resetLearnerPreferenceForCloudNamespace(ownerId, rehomedAtUtcMs);
     await (_database.update(
       _database.vocabularyCategories,
     )..where((row) => row.ownerId.equals(ownerId))).write(
@@ -3355,6 +3358,149 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             );
       }
     }
+  }
+
+  Future<void> _mergeLearnerPreferences(
+    String sourceId,
+    String targetId,
+    int rehomedAtUtcMs,
+  ) async {
+    final source = await (_database.select(
+      _database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(sourceId))).getSingleOrNull();
+    if (source == null) return;
+    final target = await (_database.select(
+      _database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(targetId))).getSingleOrNull();
+    await (_database.delete(
+      _database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(sourceId))).go();
+    if (target != null && source.updatedAtUtcMs <= target.updatedAtUtcMs) {
+      await _retireLearnerPreferenceSourceOutbox(
+        sourceOwnerId: sourceId,
+        targetOwnerId: targetId,
+      );
+      return;
+    }
+    final baseRevision = target?.cloudRevision ?? 0;
+    final localRevision = baseRevision + 1;
+    await _database
+        .into(_database.learnerPreferences)
+        .insertOnConflictUpdate(
+          db.LearnerPreferencesCompanion.insert(
+            ownerId: targetId,
+            preferenceVersion: source.preferenceVersion,
+            goal: source.goal,
+            availableMinutesPerDay: source.availableMinutesPerDay,
+            activityPreference: source.activityPreference,
+            updatedAtUtcMs: source.updatedAtUtcMs,
+            localRevision: Value(localRevision),
+            cloudRevision: Value(baseRevision),
+            lastAcknowledgedAtUtcMs: Value(target?.lastAcknowledgedAtUtcMs),
+            serverUpdatedAtUtcMs: Value(target?.serverUpdatedAtUtcMs),
+            isDeleted: Value(source.isDeleted),
+          ),
+        );
+    await _replaceLearnerPreferenceOutbox(
+      sourceOwnerId: sourceId,
+      targetOwnerId: targetId,
+      baseRevision: baseRevision,
+      localRevision: localRevision,
+      rehomedAtUtcMs: rehomedAtUtcMs,
+    );
+  }
+
+  Future<void> _resetLearnerPreferenceForCloudNamespace(
+    String ownerId,
+    int rehomedAtUtcMs,
+  ) async {
+    final preference = await (_database.select(
+      _database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+    if (preference == null) return;
+    await (_database.update(
+      _database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.LearnerPreferencesCompanion(
+        localRevision: Value(1),
+        cloudRevision: Value(0),
+        lastAcknowledgedAtUtcMs: Value(null),
+        serverUpdatedAtUtcMs: Value(null),
+      ),
+    );
+    await _replaceLearnerPreferenceOutbox(
+      sourceOwnerId: ownerId,
+      targetOwnerId: ownerId,
+      baseRevision: 0,
+      localRevision: 1,
+      rehomedAtUtcMs: rehomedAtUtcMs,
+    );
+  }
+
+  Future<void> _retireLearnerPreferenceSourceOutbox({
+    required String sourceOwnerId,
+    required String targetOwnerId,
+  }) {
+    return _database.customUpdate(
+      "UPDATE outbox_operations SET owner_id = ?, entity_id = ?, "
+      "state = 'superseded', next_attempt_at_utc_ms = NULL, "
+      'lease_token = NULL, lease_expires_at_utc_ms = NULL, '
+      "failure_code = 'guestUpgradePreferenceReplaced' "
+      "WHERE entity_type = 'learnerPreference' AND owner_id = ?",
+      variables: [
+        Variable<String>(targetOwnerId),
+        Variable<String>(targetOwnerId),
+        Variable<String>(sourceOwnerId),
+      ],
+      updates: {_database.outboxOperations},
+    );
+  }
+
+  Future<void> _replaceLearnerPreferenceOutbox({
+    required String sourceOwnerId,
+    required String targetOwnerId,
+    required int baseRevision,
+    required int localRevision,
+    required int rehomedAtUtcMs,
+  }) async {
+    await _database.customUpdate(
+      "UPDATE outbox_operations SET owner_id = ?, entity_id = ?, "
+      "state = 'superseded', next_attempt_at_utc_ms = NULL, "
+      'lease_token = NULL, lease_expires_at_utc_ms = NULL, '
+      "failure_code = 'guestUpgradePreferenceReplaced' "
+      "WHERE entity_type = 'learnerPreference' "
+      "AND (owner_id = ? OR (owner_id = ? AND state NOT IN "
+      "('acknowledged', 'superseded', 'conflictResolved')))",
+      variables: [
+        Variable<String>(targetOwnerId),
+        Variable<String>(targetOwnerId),
+        Variable<String>(sourceOwnerId),
+        Variable<String>(targetOwnerId),
+      ],
+      updates: {_database.outboxOperations},
+    );
+    await _database
+        .into(_database.outboxOperations)
+        .insertOnConflictUpdate(
+          db.OutboxOperationsCompanion.insert(
+            operationId: 'learnerPreference:$targetOwnerId:$localRevision',
+            ownerId: targetOwnerId,
+            entityType: 'learnerPreference',
+            entityId: targetOwnerId,
+            operationKind: 'upsert',
+            payloadVersion: const Value(1),
+            baseRevision: Value(baseRevision),
+            state: const Value('pending'),
+            attemptCount: const Value(0),
+            nextAttemptAtUtcMs: const Value(null),
+            leaseToken: const Value(null),
+            leaseExpiresAtUtcMs: const Value(null),
+            lastAttemptAtUtcMs: const Value(null),
+            createdAtUtcMs: rehomedAtUtcMs,
+            acknowledgedAtUtcMs: const Value(null),
+            failureCode: const Value(null),
+          ),
+        );
   }
 
   Future<void> _reviveConvertedTargetAvatarPermissionFailures({

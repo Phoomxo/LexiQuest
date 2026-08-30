@@ -16,7 +16,8 @@ final class FirestoreSyncGateway
     implements
         SyncGateway,
         LearningTimeSegmentSyncRolloutGateway,
-        LearningGoalSyncRolloutGateway {
+        LearningGoalSyncRolloutGateway,
+        LearnerPreferenceSyncRolloutGateway {
   factory FirestoreSyncGateway({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
@@ -29,6 +30,8 @@ final class FirestoreSyncGateway
         const LearningTimeSegmentSyncRollout.off(),
     LearningGoalSyncRollout learningGoalRollout =
         const LearningGoalSyncRollout.off(),
+    LearnerPreferenceSyncRollout learnerPreferenceRollout =
+        const LearnerPreferenceSyncRollout.off(),
     ContentQualityReportPushAuthorizer contentQualityReportPushAuthorizer =
         _denyContentQualityReportPush,
   }) => FirestoreSyncGateway._(
@@ -40,6 +43,7 @@ final class FirestoreSyncGateway
     contentQualityReportRollout,
     learningTimeSegmentRollout,
     learningGoalRollout,
+    learnerPreferenceRollout,
     contentQualityReportPushAuthorizer,
   );
 
@@ -52,6 +56,7 @@ final class FirestoreSyncGateway
     this._contentQualityReportRollout,
     this._learningTimeSegmentRollout,
     this._learningGoalRollout,
+    this._learnerPreferenceRollout,
     this._contentQualityReportPushAuthorizer,
   );
 
@@ -63,6 +68,7 @@ final class FirestoreSyncGateway
   final ContentQualityReportSyncRollout _contentQualityReportRollout;
   final LearningTimeSegmentSyncRollout _learningTimeSegmentRollout;
   final LearningGoalSyncRollout _learningGoalRollout;
+  final LearnerPreferenceSyncRollout _learnerPreferenceRollout;
   final ContentQualityReportPushAuthorizer _contentQualityReportPushAuthorizer;
 
   @override
@@ -71,6 +77,10 @@ final class FirestoreSyncGateway
 
   @override
   LearningGoalSyncRollout get learningGoalSyncRollout => _learningGoalRollout;
+
+  @override
+  LearnerPreferenceSyncRollout get learnerPreferenceSyncRollout =>
+      _learnerPreferenceRollout;
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
@@ -91,6 +101,10 @@ final class FirestoreSyncGateway
     }
     if (mutation.collection == SyncCollection.learningGoals &&
         !_learningGoalRollout.allowsClaims) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    if (mutation.collection == SyncCollection.learnerPreferences &&
+        !_learnerPreferenceRollout.allowsClaims) {
       throw const PermissionDeniedSyncFailure();
     }
 
@@ -212,6 +226,30 @@ final class FirestoreSyncGateway
         !_learningGoalRollout.allowsClaims) {
       return PullPage(changes: const [], nextCursor: after, hasMore: false);
     }
+    if (collection == SyncCollection.learnerPreferences &&
+        !_learnerPreferenceRollout.allowsClaims) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+
+    if (collection == SyncCollection.learnerPreferences) {
+      try {
+        return await pullLearnerPreferenceSingleton(
+          firebaseUid: firebaseUid,
+          after: after,
+          readDocument: (documentPath) async =>
+              (await _firestore
+                      .doc(documentPath)
+                      .get(const GetOptions(source: Source.server)))
+                  .data(),
+        );
+      } on SyncFailure {
+        rethrow;
+      } on FirebaseException catch (error) {
+        throw FirestoreSyncErrorMapper.fromCode(error.code);
+      } catch (_) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    }
 
     Query<Map<String, dynamic>> query = _firestore
         .collection('field_users')
@@ -259,6 +297,39 @@ final class FirestoreSyncGateway
     }
   }
 
+  static Future<PullPage> pullLearnerPreferenceSingleton({
+    required String firebaseUid,
+    required SyncCursor? after,
+    required Future<Map<String, Object?>?> Function(String documentPath)
+    readDocument,
+  }) async {
+    final documentPath =
+        'field_users/$firebaseUid/${SyncCollection.learnerPreferences.wireName}/'
+        '${LearnerPreferenceSyncPayloadContract.canonicalEntityId}';
+    final data = await readDocument(documentPath);
+    if (data == null) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+    final entity = FirestoreSyncCodec.decodeEntity(
+      collection: SyncCollection.learnerPreferences,
+      documentId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+      data: data,
+      expectedFirebaseUid: firebaseUid,
+    );
+    final cursor = SyncCursor(
+      serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+      documentId: entity.entityId,
+    );
+    if (after != null && _compareSyncCursors(cursor, after) <= 0) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+    return PullPage(
+      changes: <SyncEntity>[entity],
+      nextCursor: cursor,
+      hasMore: false,
+    );
+  }
+
   @override
   Future<CloudSyncPolicy> fetchPolicy() async {
     try {
@@ -287,6 +358,12 @@ final class FirestoreSyncGateway
       throw const InvalidSyncPayloadFailure();
     }
   }
+}
+
+int _compareSyncCursors(SyncCursor left, SyncCursor right) {
+  final timestamp = left.serverUpdatedAtUtc.compareTo(right.serverUpdatedAtUtc);
+  if (timestamp != 0) return timestamp;
+  return left.documentId.compareTo(right.documentId);
 }
 
 final class FirestoreSyncPreflight {
@@ -419,6 +496,22 @@ final class FirestoreSyncPreflight {
         isDeleted: isDeleted,
         clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
         expectedEntityId: entityId,
+      );
+    } else if (collection == SyncCollection.learnerPreferences) {
+      final preferencePayload = payload;
+      if (preferencePayload == null ||
+          entityId == null ||
+          firebaseUid == null ||
+          isDeleted == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearnerPreferenceSyncPayloadContract.requireCanonical(
+        payload: preferencePayload,
+        expectedEntityId: entityId,
+        expectedOwnerId: firebaseUid,
+        isDeleted: isDeleted,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
       );
     }
     return beginTransaction();
@@ -579,6 +672,18 @@ final class FirestoreSyncCodec {
           clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
           expectedEntityId: entityId,
         );
+      } else if (collection == SyncCollection.learnerPreferences) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        if (expectedFirebaseUid == null) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        LearnerPreferenceSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          expectedEntityId: entityId,
+          expectedOwnerId: expectedFirebaseUid,
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+        );
       }
       return SyncEntity(
         collection: collection,
@@ -604,13 +709,15 @@ final class FirestoreSyncCodec {
     Map<String, Object?> data, {
     required PushMutation expectedMutation,
   }) {
+    _requireValidPayload(expectedMutation);
     if (expectedMutation.collection == SyncCollection.achievementUnlocks ||
         expectedMutation.collection == SyncCollection.experimentAssignments ||
         expectedMutation.collection == SyncCollection.assessmentRuns ||
         expectedMutation.collection == SyncCollection.savedLearningItems ||
         expectedMutation.collection == SyncCollection.contentQualityReports ||
         expectedMutation.collection == SyncCollection.learningTimeSegments ||
-        expectedMutation.collection == SyncCollection.learningGoals) {
+        expectedMutation.collection == SyncCollection.learningGoals ||
+        expectedMutation.collection == SyncCollection.learnerPreferences) {
       _requireExactKeys(data, _operationEnvelopeKeys);
     }
     if (_requiredInt(data, 'schemaVersion') !=
@@ -778,6 +885,28 @@ final class FirestoreSyncCodec {
         clientUpdatedAtUtcMs:
             mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
         expectedEntityId: mutation.entityId,
+      );
+      return;
+    }
+    if (mutation.collection == SyncCollection.learnerPreferences) {
+      if (mutation.payloadVersion != 1 ||
+          mutation.operationKind != SyncOperationKind.upsert ||
+          mutation.localRevision != mutation.baseRevision + 1 ||
+          mutation.operationId !=
+              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                payload: mutation.payload,
+                baseRevision: mutation.baseRevision,
+                resultingRevision: mutation.localRevision,
+              )) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearnerPreferenceSyncPayloadContract.requireCanonical(
+        payload: mutation.payload,
+        expectedEntityId: mutation.entityId,
+        expectedOwnerId: mutation.firebaseUid,
+        isDeleted: false,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
       );
       return;
     }
