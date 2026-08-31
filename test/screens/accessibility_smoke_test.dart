@@ -437,10 +437,9 @@ void main() {
         final editableSemantics = tester
             .getSemantics(editable)
             .getSemanticsData();
-        expect(editableSemantics.hasFlag(SemanticsFlag.isTextField), isTrue);
+        expect(editableSemantics.flagsCollection.isTextField, isTrue);
         expect(
-          editableSemantics.hasFlag(SemanticsFlag.hasEnabledState) &&
-              editableSemantics.hasFlag(SemanticsFlag.isEnabled),
+          editableSemantics.flagsCollection.isEnabled.toBoolOrNull() == true,
           isTrue,
           reason: 'the typed alternative must remain enabled for switch input',
         );

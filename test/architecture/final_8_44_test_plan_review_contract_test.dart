@@ -42,6 +42,7 @@ void main() {
 
       final requiredExactInputs = <String>{
         'package.json',
+        'pubspec.lock',
         'pubspec.yaml',
         'firebase.json',
         'firestore.rules',
@@ -381,6 +382,7 @@ bool _isExecutableGateInput(String path) {
       path.startsWith('tool/') ||
       path.startsWith('android/') ||
       path == 'package.json' ||
+      path == 'pubspec.lock' ||
       path == 'pubspec.yaml' ||
       path == 'firebase.json' ||
       path == 'firestore.rules';

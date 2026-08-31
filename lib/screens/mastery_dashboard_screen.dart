@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/progress/domain/learning_calendar.dart';
 import '../features/progress/domain/personal_learning_profile.dart';
 import '../features/progress/domain/progress_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import 'learning_calendar_screen.dart';
 
@@ -321,8 +322,10 @@ Future<void> _openLearningCalendar(
   BuildContext context,
   LearningCalendarSnapshot calendar,
 ) async {
-  await Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
+  await AppNavigator.pushPage<void>(
+    context,
+    AppPage<void>(
+      name: 'progress/learning-calendar',
       builder: (_) => LearningCalendarScreen(loader: () async => calendar),
     ),
   );

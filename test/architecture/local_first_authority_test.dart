@@ -244,6 +244,22 @@ void _expectOrdered(
   }
 }
 
+bool _purchaseCommitPrecedesMutation(String source) {
+  final code = _maskDartCommentsAndStrings(source);
+  const resultAssignment = 'final result = await _avatarOperation(';
+  const purchaseClosure = '() => repository.purchase(';
+  const mutationNotification = 'onLocalMutation?.call()';
+  final resultOffset = code.indexOf(resultAssignment);
+  final purchaseOffset = code.indexOf(purchaseClosure, resultOffset + 1);
+  final notificationOffset = code.indexOf(
+    mutationNotification,
+    purchaseOffset + 1,
+  );
+  return resultOffset >= 0 &&
+      purchaseOffset > resultOffset &&
+      notificationOffset > purchaseOffset;
+}
+
 final class _CreatePathContract {
   const _CreatePathContract({
     required this.path,
@@ -466,10 +482,21 @@ Future<void> createRecord() {
       _read('lib/features/rewards/application/reward_use_cases.dart'),
       'Future<PurchaseResult> purchase',
     );
-    _expectOrdered(rewards, <String>[
-      'await repository.purchase',
-      'onLocalMutation?.call()',
-    ], reason: 'Rewards must notify sync only after its repository commit');
+    expect(
+      _purchaseCommitPrecedesMutation(rewards),
+      isTrue,
+      reason: 'Rewards must notify sync only after its repository commit',
+    );
+
+    final avatarOperation = _requiredMethodBody(
+      _read('lib/features/rewards/application/reward_use_cases.dart'),
+      'Future<T> _avatarOperation<T>',
+    );
+    expect(
+      avatarOperation,
+      contains('return await operation();'),
+      reason: 'The avatar wrapper must await the repository operation.',
+    );
 
     final bootstrap = _read('lib/runtime/app_bootstrap.dart');
     expect(
@@ -495,6 +522,40 @@ Future<void> createRecord() {
       isFalse,
       reason: 'f40 reuses domain repositories and the existing outbox.',
     );
+  });
+
+  test('reward purchase inspector rejects an unawaited purchase wrapper', () {
+    const committed = '''
+Future<PurchaseResult> purchase() async {
+  final currentAccount = await _avatarOperation(
+    owner.id,
+    () => repository.load(owner.id),
+  );
+  final result = await _avatarOperation(
+    owner.id,
+    () => repository.purchase(item),
+  );
+  onLocalMutation?.call();
+  return result;
+}
+''';
+    const unawaitedPurchase = '''
+Future<PurchaseResult> purchase() async {
+  final currentAccount = await _avatarOperation(
+    owner.id,
+    () => repository.load(owner.id),
+  );
+  final result = _avatarOperation(
+    owner.id,
+    () => repository.purchase(item),
+  );
+  onLocalMutation?.call();
+  return await result;
+}
+''';
+
+    expect(_purchaseCommitPrecedesMutation(committed), isTrue);
+    expect(_purchaseCommitPrecedesMutation(unawaitedPurchase), isFalse);
   });
 
   test('retry and restart preserve one bounded durable operation identity', () {

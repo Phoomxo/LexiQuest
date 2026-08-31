@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
@@ -31,6 +32,7 @@ const _requiredSourcePaths = <String>{
   'tool/cli/verify-product-completion.ps1',
   'tool/cli/tests/verify-product-completion.tests.ps1',
   'package.json',
+  'pubspec.lock',
   'pubspec.yaml',
   'firebase.json',
   'firestore.rules',
@@ -168,6 +170,66 @@ void main() {
       expect(
         (database['tables'] as List<dynamic>).toSet(),
         currentDatabaseTableInventory,
+      );
+    });
+
+    test('hashes pubspec lock and rejects lock-only source drift', () {
+      final artifacts = buildFinalTestPlanArtifacts(
+        repositoryRoot: Directory.current,
+        sourceCommit: _fixtureSourceCommit,
+      );
+      final manifest = _decode(artifacts.normalizedJson);
+      final sources = _maps(manifest['sources']);
+      final lockSource = sources.singleWhere(
+        (source) => source['path'] == 'pubspec.lock',
+      );
+      expect(
+        lockSource['sha256'],
+        sha256.convert(File('pubspec.lock').readAsBytesSync()).toString(),
+      );
+
+      final stale = _clone(manifest);
+      final staleLock = _maps(
+        stale['sources'],
+      ).singleWhere((source) => source['path'] == 'pubspec.lock');
+      staleLock['sha256'] = sha256
+          .convert(utf8.encode('lock-only-drift'))
+          .toString();
+      stale['sourceFingerprint'] = sha256
+          .convert(
+            utf8.encode(
+              jsonEncode(<String, Object?>{'sources': stale['sources']}),
+            ),
+          )
+          .toString();
+      expect(
+        () => validateFinalTestPlanManifest(
+          stale,
+          repositoryRoot: Directory.current,
+          expectedSourceCommit: _fixtureSourceCommit,
+        ),
+        throwsA(isA<FinalTestPlanContractFailure>()),
+      );
+
+      final outputRoot = Directory.systemTemp.createTempSync(
+        'lexiquest-final-test-plan-lock-drift-',
+      );
+      addTearDown(() => outputRoot.deleteSync(recursive: true));
+      _markdownFile(outputRoot)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(artifacts.markdown);
+      _jsonFile(outputRoot)
+        ..createSync(recursive: true)
+        ..writeAsStringSync(
+          '${const JsonEncoder.withIndent('  ').convert(stale)}\n',
+        );
+      expect(
+        runFinalTestPlanGenerator(
+          const <String>['--check', '--source-commit', _fixtureSourceCommit],
+          repositoryRoot: Directory.current,
+          outputRoot: outputRoot,
+        ),
+        1,
       );
     });
 

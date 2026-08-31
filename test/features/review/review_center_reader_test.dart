@@ -1575,7 +1575,7 @@ vocabulary_domain.VocabularyWord _packagedWord({
     englishDefinition: definition,
     verifiedContentRevision: 1,
     verifiedArtifactChecksumSha256: artifactChecksum,
-    examples: [if (example != null) example],
+    examples: [?example],
   ),
 );
 

@@ -533,17 +533,33 @@ final interpolated = '${PendingCapability.interpolated()}';
         'lib/features/learning/application/learning_use_cases.dart';
     const evidenceAuthority =
         'lib/features/learning/application/current_activity_evidence.dart';
-    const capabilityAuthorities = <String, String>{
-      'OwnerBoundLearningEvidenceBasis': learningAuthority,
-      'ResolvedLearningEvidenceRecord': learningAuthority,
-      'PendingLearningSessionClose': learningAuthority,
-      'PendingReadingProgress': learningAuthority,
-      'PendingCurrentActivityEvidence': evidenceAuthority,
-    };
+    const capabilityAuthorities =
+        <String, ({String authorityPath, int privateAccessCount})>{
+          'OwnerBoundLearningEvidenceBasis': (
+            authorityPath: learningAuthority,
+            privateAccessCount: 2,
+          ),
+          'ResolvedLearningEvidenceRecord': (
+            authorityPath: learningAuthority,
+            privateAccessCount: 2,
+          ),
+          'PendingLearningSessionClose': (
+            authorityPath: learningAuthority,
+            privateAccessCount: 3,
+          ),
+          'PendingReadingProgress': (
+            authorityPath: learningAuthority,
+            privateAccessCount: 2,
+          ),
+          'PendingCurrentActivityEvidence': (
+            authorityPath: evidenceAuthority,
+            privateAccessCount: 3,
+          ),
+        };
 
     for (final entry in capabilityAuthorities.entries) {
       final type = entry.key;
-      final authorityPath = entry.value;
+      final authorityPath = entry.value.authorityPath;
       expect(
         _matchCounts(codeOnly, RegExp('\\bfinal\\s+class\\s+$type\\b')),
         <String, int>{authorityPath: 1},
@@ -556,7 +572,7 @@ final interpolated = '${PendingCapability.interpolated()}';
       );
       expect(
         _matchCounts(codeOnly, _privateCapabilityAccessPattern(type)),
-        <String, int>{authorityPath: 2},
+        <String, int>{authorityPath: entry.value.privateAccessCount},
         reason: '$type must be declared and minted only inside $authorityPath',
       );
     }

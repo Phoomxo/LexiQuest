@@ -2978,12 +2978,10 @@ final class _CoordinatedLearningRepository
     required this.blockAbandon,
     required this.blockAnswer,
     required this.blockFinish,
-    required bool loseAnswerAckOnce,
-    required bool loseMatchingCloseAckOnce,
-    required bool blockMatchingCheckpoint,
-  }) : _loseAnswerAckOnce = loseAnswerAckOnce,
-       _loseMatchingCloseAckOnce = loseMatchingCloseAckOnce,
-       _blockMatchingCheckpoint = blockMatchingCheckpoint;
+    required this._loseAnswerAckOnce,
+    required this._loseMatchingCloseAckOnce,
+    required this._blockMatchingCheckpoint,
+  });
 
   final LearningRepository delegate;
   final bool delayDue;

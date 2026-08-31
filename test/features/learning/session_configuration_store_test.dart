@@ -8,11 +8,9 @@ import 'package:vocab_learning_app/features/learning/data/drift_session_configur
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
-import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
-import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 

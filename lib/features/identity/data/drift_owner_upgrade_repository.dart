@@ -12,6 +12,7 @@ import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/evidence_policy_rollout.dart' as evidence_rollout;
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning/domain/session_configuration.dart';
@@ -55,7 +56,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     this.ownerGateWaitTimeout = const Duration(seconds: 30),
     this.evidencePolicy = const EvidenceEligibilityPolicySet(),
     this.rolloutModeProvider =
-        const FixedEvidencePolicyRolloutModeProvider.legacy(),
+        const evidence_rollout.FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : ownerOperationGate =
            ownerOperationGate ?? DriftOwnerOperationGate(_database);
 
@@ -73,7 +74,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   final Duration ownerGateRetryInterval;
   final Duration ownerGateWaitTimeout;
   final EvidenceEligibilityPolicy evidencePolicy;
-  final EvidencePolicyRolloutModeProvider rolloutModeProvider;
+  final evidence_rollout.EvidencePolicyRolloutModeProvider rolloutModeProvider;
   Future<void> _writeGate = Future<void>.value();
 
   @override

@@ -35,6 +35,7 @@ const _baseSourcePaths = <String>[
   'tool/cli/run-android-smoke.ps1',
   'tool/cli/tests/run-android-smoke.tests.ps1',
   'package.json',
+  'pubspec.lock',
   'pubspec.yaml',
   'firebase.json',
   'firestore.rules',

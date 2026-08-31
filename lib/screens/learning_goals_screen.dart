@@ -6,6 +6,7 @@ import '../features/goals/domain/learning_goal_repository.dart';
 import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/reminders/domain/study_reminder.dart';
 import '../features/reminders/domain/study_reminder_repository.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'study_reminder_settings_screen.dart';
@@ -94,8 +95,10 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
     StudyReminderUseCases reminders,
     StudyReminderMutationGuard mutationAllowed,
   ) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'goals/study-reminder-settings',
         builder: (_) => StudyReminderSettingsScreen(
           useCases: reminders,
           source: StudyReminderSource.goalDeadline(goal.id),

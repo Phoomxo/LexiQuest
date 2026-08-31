@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -1048,7 +1047,7 @@ void main() {
       _BootstrapReminderFailure.isSupported,
       _BootstrapReminderFailure.permissionState,
       _BootstrapReminderFailure.pendingEntries,
-    ])
+    ]) {
       test(
         'optional reminder ${failure.name} failure does not abort bootstrap',
         () async {
@@ -1097,6 +1096,7 @@ void main() {
           expect(scheduler.permissionRequests, 0);
         },
       );
+    }
 
     test(
       'feature-off cleanup contains one cancellation failure and continues',
@@ -1167,7 +1167,7 @@ void main() {
       _BootstrapReminderFailure.isSupported,
       _BootstrapReminderFailure.permissionState,
       _BootstrapReminderFailure.pendingEntries,
-    ])
+    ]) {
       test(
         'feature-off reminder cleanup survives ${failure.name} failure',
         () async {
@@ -1231,6 +1231,7 @@ void main() {
           expect(reminder.isDeleted, isFalse);
         },
       );
+    }
 
     test(
       'learning-time sync bootstrap is exact-revision gated and pull-aware',
@@ -3916,7 +3917,7 @@ void main() {
       },
     );
 
-    for (final releaseAfterSweep in <bool>[false, true])
+    for (final releaseAfterSweep in <bool>[false, true]) {
       test(
         'independent bootstrap stale schedule self-cancels '
         '${releaseAfterSweep ? 'after the post-delete sweep' : 'during secret deletion'}',
@@ -4009,6 +4010,7 @@ void main() {
           }
         },
       );
+    }
 
     test(
       'background bootstrap fails closed for only the owner already fenced',
