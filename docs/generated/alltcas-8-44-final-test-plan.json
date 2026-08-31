@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ac433e4b3f0feaeb48aeeb6a224e3db1a8173830",
-  "sourceFingerprint": "fd974dbceaabe3d40fd850edd94f74c4e9e30d5d68473c80ff3cadbb7bf4497f",
+  "sourceCommit": "da7681e1e992630b43fd5cf5a06ed6e62b164a67",
+  "sourceFingerprint": "b685b97890f10e82ff1794c0e63483dc90a0be8f7daf67c4f597bf4216c91ff3",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -121,7 +121,7 @@
     },
     {
       "path": "test",
-      "sha256": "3fa030c983d45a0aaf457a17ae50d88c6d9f24d06d1c74ab82ea158d722447f4"
+      "sha256": "b1957c01b922ac1743dcd95ecf184e2f93eab8a0209e0402d821807b2c9aa34d"
     },
     {
       "path": "test/architecture",
@@ -349,7 +349,7 @@
     },
     {
       "path": "test/scenarios/guest_upgrade_restart_test.dart",
-      "sha256": "8f8ffc4553f36d69febd52639f916e99b11435b8f6970dbff447506a91e7fd0a"
+      "sha256": "5b5f2de8576227497713e0307f2e4b7e1882fe2992829897ddc9d72bd1072ad6"
     },
     {
       "path": "test/scenarios/production_learning_restart_test.dart",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit ac433e4b3f0feaeb48aeeb6a224e3db1a8173830",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit da7681e1e992630b43fd5cf5a06ed6e62b164a67",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

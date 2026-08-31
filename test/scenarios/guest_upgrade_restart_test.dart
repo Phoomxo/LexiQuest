@@ -25,8 +25,11 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -37,6 +40,7 @@ import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
@@ -244,7 +248,14 @@ void main() {
             .get();
         expect(
           storedAfterReplay.map((event) => event.eventId).toSet(),
-          <String>{learningEventId, decisionEventId},
+          <String>{
+            learningEventId,
+            decisionEventId,
+            'streak-cutover:$accountOwnerId:'
+                'v${DriftStreakRepository.cutoverVersion}',
+            'avatar-progression-cutover:$accountOwnerId:'
+                'v${DriftAvatarProgressionEligibility.cutoverVersion}',
+          },
         );
         expect(
           storedAfterReplay
@@ -503,6 +514,12 @@ void main() {
           "'2026.08', 1786449600000)",
           variables: [Variable<String>(guestAssignmentId)],
         );
+        final guestAchievementOperationIds =
+            await _canonicalAchievementOperationIds(
+              syncDatabase,
+              ownerId: 'guest-owner',
+            );
+        expect(guestAchievementOperationIds, hasLength(1));
         await upgradeDatabase.customSelect('SELECT 1').getSingle();
 
         final owners = DriftLocalOwnerRepository(
@@ -599,6 +616,12 @@ void main() {
         releaseTriggerWait.complete();
         final newResult = await requestedDuringUpgrade;
         expect(newResult.status, SyncRunStatus.completed);
+        final accountAchievementOperationIds =
+            await _canonicalAchievementOperationIds(
+              syncDatabase,
+              ownerId: 'account-owner',
+            );
+        expect(accountAchievementOperationIds, isNotEmpty);
 
         final oldNamespaceCalls = gateway.pushFirebaseUids
             .where((uid) => uid == 'anonymous-old')
@@ -622,19 +645,22 @@ void main() {
             .map((row) => row.read<String>('id'))
             .get();
         expect(finalPointIds, finalCanonicalPointIds);
-        final canonicalOperationIds = <String>{
+        const nonAchievementOperationIds = <String>{
           'operation:category',
           'operation:word',
           'operation:attempt',
           'operation:reading',
           'operation:reward',
           'operation:srs',
-          'operation:achievement',
         };
         final expectedOperationIdentities = <String>{
-          for (final operationId in canonicalOperationIds)
+          for (final operationId in nonAchievementOperationIds)
             'anonymous-old:$operationId',
-          for (final operationId in canonicalOperationIds)
+          for (final operationId in guestAchievementOperationIds)
+            'anonymous-old:$operationId',
+          for (final operationId in nonAchievementOperationIds)
+            'firebase-new:$operationId',
+          for (final operationId in accountAchievementOperationIds)
             'firebase-new:$operationId',
           for (final pointId in finalCanonicalPointIds)
             'firebase-new:${_legacyBackfillOperationId(pointId)}',
@@ -644,7 +670,10 @@ void main() {
           expectedOperationIdentities,
         );
         expect(gateway.namespaceApplyCounts.values, everyElement(1));
-        expect(gateway.namespaceApplyCounts, hasLength(16));
+        expect(
+          gateway.namespaceApplyCounts,
+          hasLength(expectedOperationIdentities.length),
+        );
 
         final beforeReopen = await _inventorySnapshot(syncDatabase);
         expect(beforeReopen['activeOwnerId'], 'account-owner');
@@ -827,6 +856,7 @@ void main() {
       var leaseSequence = 0;
       var conflictSequence = 0;
       var operationTokenSequence = 0;
+      final generatedBindConflictTokens = <String>[];
       final gateway = _AnonymousBoundCloud(nowUtc);
 
       AppDatabase openDatabase() => AppDatabase(NativeDatabase(File(path)));
@@ -859,9 +889,22 @@ void main() {
         final seededInventory = await _completeInventoryIdentity(database);
         final seededCounts = await _completeInventoryCounts(database);
         final seededForeign = await _foreignOwnerSnapshot(database);
+        final seededGuestOperationIds = await _operationIdsForOwner(
+          database,
+          'guest-owner',
+        );
+        final seededForeignOperationIds = await _operationIdsForOwner(
+          database,
+          'foreign-owner',
+        );
 
         expect(seededCounts.keys.toSet(), ownerUpgradeInventory);
         expect(seededCounts.values, everyElement(greaterThanOrEqualTo(1)));
+        expect(seededGuestOperationIds, contains('operation:achievement'));
+        expect(
+          seededGuestOperationIds.intersection(seededForeignOperationIds),
+          isEmpty,
+        );
         expect(await _tableCount(database, 'vocabulary_import_rows'), 2);
         expect(await _tableCount(database, 'quest_objective_progress'), 2);
         expect(await _projectionEventCount(database, 'guest-owner'), 2);
@@ -870,7 +913,11 @@ void main() {
         final repository = DriftOwnerUpgradeRepository(
           database,
           nowUtc: () => nowUtc,
-          generateConflictId: () => 'bind-${conflictSequence++}',
+          generateConflictId: () {
+            final token = 'bind-${conflictSequence++}';
+            generatedBindConflictTokens.add(token);
+            return token;
+          },
           generateOwnerId: () => 'unexpected-guest',
           generateOwnerOperationToken: () =>
               'bind-operation-${operationTokenSequence++}',
@@ -887,7 +934,8 @@ void main() {
         )..where((row) => row.isActive.equals(true))).getSingle();
         final resetOperations = await database
             .customSelect(
-              'SELECT operation_id, attempt_count, state, failure_code '
+              'SELECT operation_id, entity_type, attempt_count, state, '
+              'failure_code '
               'FROM outbox_operations WHERE owner_id = ? '
               'ORDER BY operation_id',
               variables: [const Variable<String>('guest-owner')],
@@ -895,6 +943,26 @@ void main() {
             .get();
         final boundInventory = await _completeInventoryIdentity(database);
         final boundCounts = await _completeInventoryCounts(database);
+        final achievementOperationIds = await _canonicalAchievementOperationIds(
+          database,
+          ownerId: 'guest-owner',
+        );
+        final learningTimeOperationIds =
+            await _canonicalLearningTimeOperationIds(
+              database,
+              ownerId: 'guest-owner',
+            );
+        final learnerPreferenceOperationId =
+            await _localLearnerPreferenceOperationId(
+              database,
+              ownerId: 'guest-owner',
+            );
+        final rehomeOperationIds = generatedBindConflictTokens
+            .map((token) => 'rehome:$token')
+            .toSet();
+        expect(achievementOperationIds, isNotEmpty);
+        expect(learningTimeOperationIds, hasLength(1));
+        expect(rehomeOperationIds, hasLength(3));
 
         expect(bound.mode, OwnerUpgradeMode.anonymousBound);
         expect(bound.targetOwnerId, 'guest-owner');
@@ -902,42 +970,156 @@ void main() {
         expect(ownerAfterBind.firebaseUid, 'firebase-new');
         expect(ownerAfterBind.isActive, isTrue);
         for (final entry in seededInventory.entries) {
+          if (entry.key == 'outbox_operations') continue;
           expect(boundInventory[entry.key], containsAll(entry.value));
         }
+        final expectedBindAuditEventIds = <String>{
+          'streak-cutover:guest-owner:'
+              'v${DriftStreakRepository.cutoverVersion}',
+          'avatar-progression-cutover:guest-owner:'
+              'v${DriftAvatarProgressionEligibility.cutoverVersion}',
+        };
         expect(
-          boundCounts['reward_transactions'],
-          seededCounts['reward_transactions']! + 1,
+          boundInventory['events_v2']!.toSet().difference(
+            seededInventory['events_v2']!.toSet(),
+          ),
+          expectedBindAuditEventIds,
+          reason:
+              'Anonymous binding must add only the two durable policy '
+              'cutover audit events.',
+        );
+        final expectedBindAddedOperationIds = <String>{
+          learnerPreferenceOperationId,
+          ...learningTimeOperationIds,
+          ...rehomeOperationIds,
+          _legacyBackfillOperationId('points-1'),
+        };
+        final expectedResetOperationIds = <String>{
+          ...seededGuestOperationIds,
+          ...expectedBindAddedOperationIds,
+        };
+        final resetOperationIds = resetOperations
+            .map((row) => row.read<String>('operation_id'))
+            .toList(growable: false);
+        final resetOperationEntityTypes = <String, String>{
+          for (final row in resetOperations)
+            row.read<String>('operation_id'): row.read<String>('entity_type'),
+        };
+        expect(resetOperationIds.toSet(), expectedResetOperationIds);
+        expect(
+          resetOperationIds,
+          hasLength(expectedResetOperationIds.length),
+          reason: 'Owner binding must not duplicate durable local outbox work.',
         );
         expect(
-          boundCounts['outbox_operations'],
-          seededCounts['outbox_operations']! + 2,
+          resetOperationIds.toSet(),
+          containsAll(seededGuestOperationIds),
+          reason: 'Binding must retain every durable seeded operation.',
         );
         expect(
-          resetOperations
-              .map((row) => row.read<String>('operation_id'))
-              .toSet(),
+          resetOperationIds.toSet().difference(seededGuestOperationIds),
+          expectedBindAddedOperationIds,
+          reason:
+              'Only row-derived preference/time work, generated rehome work, '
+              'and the deterministic reward backfill may extend the outbox.',
+        );
+        expect(
+          resetOperationIds.toSet().intersection(achievementOperationIds),
+          isEmpty,
+          reason:
+              'Canonical achievement transport IDs must not replace durable '
+              'local operation IDs before sync.',
+        );
+        final localAchievementOperationIds = resetOperationEntityTypes.entries
+            .where((entry) => entry.value == 'achievementUnlock')
+            .map((entry) => entry.key)
+            .toSet();
+        final rehomedRewardOperationIds = rehomeOperationIds
+            .where(
+              (operationId) =>
+                  resetOperationEntityTypes[operationId] == 'rewardTransaction',
+            )
+            .toSet();
+        expect(
           <String>{
-            'operation:category',
-            'operation:word',
-            'operation:attempt',
-            'operation:reading',
-            'operation:reward',
-            'operation:srs',
-            'operation:achievement',
-            'assessmentRun:assessment-inventory-run:1',
-            'assessmentRun:assessment-inventory-run:2',
-            // Owner binding requeues its audit operation separately from the
-            // deterministic legacy-reward backfill.
-            'rehome:bind-0',
-            _legacyBackfillOperationId('points-1'),
+            for (final operationId in rehomeOperationIds)
+              resetOperationEntityTypes[operationId]!,
           },
+          <String>{'rewardTransaction', 'savedLearningItem', 'learningGoal'},
         );
-        for (final entry in seededCounts.entries) {
-          if (entry.key == 'reward_transactions' ||
-              entry.key == 'outbox_operations') {
-            continue;
-          }
-          expect(boundCounts[entry.key], entry.value);
+        expect(rehomedRewardOperationIds, hasLength(1));
+        expect(localAchievementOperationIds, const <String>{
+          'operation:achievement',
+        });
+        final localRewardOperationIds = resetOperationEntityTypes.entries
+            .where((entry) => entry.value == 'rewardTransaction')
+            .map((entry) => entry.key)
+            .toSet();
+        expect(localRewardOperationIds, <String>{
+          'operation:reward',
+          ...rehomedRewardOperationIds,
+          _legacyBackfillOperationId('points-1'),
+        });
+        const defaultOffEntityTypes = <String>{
+          'assessmentRun',
+          'savedLearningItem',
+          'learningTimeSegment',
+          'learningGoal',
+          'learnerPreference',
+        };
+        final expectedOperationEntityTypes = <String>{
+          ..._completeInventoryEntityTypes,
+          ...defaultOffEntityTypes,
+        };
+        expect(
+          resetOperationEntityTypes.values.toSet(),
+          expectedOperationEntityTypes,
+          reason:
+              'Post-bind outbox types must retain every rollout-off durable '
+              'operation alongside the complete sync inventory.',
+        );
+        final expectedPendingOperationIds = resetOperationEntityTypes.entries
+            .where((entry) => defaultOffEntityTypes.contains(entry.value))
+            .map((entry) => entry.key)
+            .toSet();
+        expect(expectedPendingOperationIds, <String>{
+          'assessmentRun:assessment-inventory-run:1',
+          'assessmentRun:assessment-inventory-run:2',
+          learnerPreferenceOperationId,
+          ...learningTimeOperationIds,
+          ...rehomeOperationIds.where(
+            (operationId) =>
+                resetOperationEntityTypes[operationId] == 'savedLearningItem' ||
+                resetOperationEntityTypes[operationId] == 'learningGoal',
+          ),
+        });
+        final expectedBoundOperationIds = <String>{
+          ...seededForeignOperationIds,
+          ...expectedResetOperationIds,
+        };
+        final boundOperationIds = boundInventory['outbox_operations']!;
+        expect(boundOperationIds.toSet(), expectedBoundOperationIds);
+        expect(
+          boundOperationIds,
+          hasLength(expectedBoundOperationIds.length),
+          reason: 'The complete owner outbox must remain duplicate-free.',
+        );
+        final expectedBoundCounts = Map<String, int>.from(seededCounts)
+          ..['events_v2'] =
+              seededCounts['events_v2']! + expectedBindAuditEventIds.length
+          ..['reward_transactions'] = seededCounts['reward_transactions']! + 1
+          ..['outbox_operations'] = expectedBoundOperationIds.length;
+        expect(
+          boundCounts.keys.toSet(),
+          expectedBoundCounts.keys.toSet(),
+          reason: 'Bound inventory table coverage must remain exact.',
+        );
+        for (final entry in expectedBoundCounts.entries) {
+          expect(
+            boundCounts[entry.key],
+            entry.value,
+            reason: 'Unexpected post-bind row count for ${entry.key}.',
+          );
         }
         expect(await _foreignOwnerSnapshot(database), seededForeign);
         expect(
@@ -1000,14 +1182,59 @@ void main() {
         final afterReplay = await _completeInventorySnapshot(database);
 
         expect(firstReplay.status, SyncRunStatus.completed);
-        expect(firstReplay.pushed, 9);
+        final expectedReplayLocalOperationIds = expectedResetOperationIds
+            .difference(expectedPendingOperationIds);
+        final expectedReplayOperationIds = <String>{
+          for (final operationId in expectedReplayLocalOperationIds)
+            if (resetOperationEntityTypes[operationId] != 'achievementUnlock')
+              operationId,
+          ...achievementOperationIds,
+        };
+        final expectedReplayIdentities = <String>{
+          for (final operationId in expectedReplayOperationIds)
+            'firebase-new:$operationId',
+        };
+        final expectedAchievementReplayIdentities = <String>{
+          for (final operationId in achievementOperationIds)
+            'firebase-new:$operationId',
+        };
+        expect(firstReplay.pushed, expectedReplayLocalOperationIds.length);
         expect(gateway.pushFirebaseUids, everyElement('firebase-new'));
-        expect(gateway.namespaceApplyCounts, hasLength(9));
+        expect(
+          gateway.pushFirebaseUids,
+          hasLength(expectedReplayLocalOperationIds.length),
+        );
+        expect(
+          gateway.namespaceApplyCounts.keys.toSet(),
+          expectedReplayIdentities,
+        );
+        expect(
+          gateway.namespaceApplyCounts,
+          hasLength(expectedReplayIdentities.length),
+        );
         expect(gateway.namespaceApplyCounts.values, everyElement(1));
+        expect(
+          gateway.namespaceApplyCounts.keys.toSet().intersection(
+            expectedAchievementReplayIdentities,
+          ),
+          expectedAchievementReplayIdentities,
+          reason:
+              'Only the replay phase may translate local achievement work to '
+              'its exact canonical cloud identities.',
+        );
+        for (final operationId in localAchievementOperationIds) {
+          expect(
+            gateway.namespaceApplyCounts,
+            isNot(contains('firebase-new:$operationId')),
+            reason:
+                'Achievement transport must use only its canonical cloud '
+                'operation identity.',
+          );
+        }
         expect(afterReplay['activeOwnerId'], 'guest-owner');
         expect(afterReplay['inventoryIdentity'], boundInventory);
         expect(afterReplay['inventoryCounts'], boundCounts);
-        expect(afterReplay['operationTypes'], _completeInventoryEntityTypes);
+        expect(afterReplay['operationTypes'], expectedOperationEntityTypes);
         expect(await _foreignOwnerSnapshot(database), seededForeign);
         final afterReplayOperationRows =
             afterReplay['operationRows']! as List<String>;
@@ -1023,11 +1250,40 @@ void main() {
           'assessmentRun:assessment-inventory-run:2|assessmentRun|'
               'assessment-inventory-run|pending|0|null',
         ]);
-        expect(nonAssessmentOperationRows, hasLength(9));
+        final afterReplayRowsByOperationId = <String, String>{
+          for (final row in afterReplayOperationRows) row.split('|').first: row,
+        };
         expect(
-          nonAssessmentOperationRows,
+          afterReplayRowsByOperationId.keys.toSet(),
+          expectedResetOperationIds,
+        );
+        final pendingOperationRows = <String>[
+          for (final operationId in expectedPendingOperationIds)
+            afterReplayRowsByOperationId[operationId]!,
+        ];
+        expect(
+          pendingOperationRows,
+          hasLength(expectedPendingOperationIds.length),
+        );
+        expect(pendingOperationRows, everyElement(endsWith('|pending|0|null')));
+        final acknowledgedOperationRows = <String>[
+          for (final operationId in expectedReplayLocalOperationIds)
+            afterReplayRowsByOperationId[operationId]!,
+        ];
+        expect(
+          acknowledgedOperationRows,
+          hasLength(expectedReplayLocalOperationIds.length),
+        );
+        expect(
+          acknowledgedOperationRows,
           everyElement(
             allOf(contains('|acknowledged|1|'), isNot(endsWith('|null'))),
+          ),
+        );
+        expect(
+          nonAssessmentOperationRows,
+          hasLength(
+            expectedResetOperationIds.length - assessmentOperationRows.length,
           ),
         );
         final pushesAfterReplay = gateway.pushFirebaseUids.length;
@@ -1058,6 +1314,7 @@ void main() {
         expect(replayedBinding.targetOwnerId, 'guest-owner');
         expect(secondReplay.status, SyncRunStatus.completed);
         expect(secondReplay.pushed, 0);
+        expect(stable['operationTypes'], expectedOperationEntityTypes);
         expect(gateway.pushFirebaseUids, hasLength(pushesAfterReplay));
         expect(gateway.namespaceApplyCounts.values, everyElement(1));
         expect(stable, afterReplay);
@@ -1874,11 +2131,18 @@ const Map<String, String> _inventoryIdentityColumns = <String, String>{
   'research_consents': 'id',
   'experiment_assignments': 'id',
   'assessment_runs': 'id',
+  'saved_learning_items': 'id',
+  'content_quality_reports': 'id',
   'vocabulary_categories': 'id',
   'vocabulary_words': 'id',
   'vocabulary_imports': 'id',
   'vocabulary_import_rows': 'id',
   'learning_sessions': 'id',
+  'session_configurations': "owner_id || ':' || mode",
+  'learning_time_segments': 'id',
+  'learning_goals': 'id',
+  'study_reminders': 'id',
+  'learner_preferences': 'owner_id',
   'answer_attempts': 'id',
   'srs_states': 'id',
   'reading_progress_entries': 'id',
@@ -1932,6 +2196,47 @@ Future<int> _tableCount(AppDatabase database, String table) => database
     .customSelect('SELECT COUNT(*) AS count FROM $table')
     .getSingle()
     .then((row) => row.read<int>('count'));
+
+Future<Set<String>> _operationIdsForOwner(
+  AppDatabase database,
+  String ownerId,
+) => database
+    .customSelect(
+      'SELECT operation_id FROM outbox_operations WHERE owner_id = ? '
+      'ORDER BY operation_id',
+      variables: [Variable<String>(ownerId)],
+    )
+    .map((row) => row.read<String>('operation_id'))
+    .get()
+    .then((rows) => Set<String>.unmodifiable(rows));
+
+Future<Set<String>> _canonicalLearningTimeOperationIds(
+  AppDatabase database, {
+  required String ownerId,
+}) async {
+  final segments = await (database.select(
+    database.learningTimeSegments,
+  )..where((row) => row.ownerId.equals(ownerId))).get();
+  final operationIds = segments
+      .map((segment) => LearningTimeSegment.canonicalOperationId(segment.id))
+      .toSet();
+  expect(
+    operationIds,
+    hasLength(segments.length),
+    reason: 'Every immutable learning-time segment must own one operation ID.',
+  );
+  return Set<String>.unmodifiable(operationIds);
+}
+
+Future<String> _localLearnerPreferenceOperationId(
+  AppDatabase database, {
+  required String ownerId,
+}) async {
+  final preference = await (database.select(
+    database.learnerPreferences,
+  )..where((row) => row.ownerId.equals(ownerId))).getSingle();
+  return 'learnerPreference:${preference.ownerId}:${preference.localRevision}';
+}
 
 Future<int> _ownerRowCount(
   AppDatabase database,
@@ -2142,6 +2447,31 @@ String _legacyBackfillOperationId(String pointId) {
   return 'rewardTransaction:reward:legacy:$digest:1';
 }
 
+Future<Set<String>> _canonicalAchievementOperationIds(
+  AppDatabase database, {
+  required String ownerId,
+}) async {
+  final unlocks = await (database.select(
+    database.achievementUnlocks,
+  )..where((row) => row.ownerId.equals(ownerId))).get();
+  final operationIds = unlocks
+      .map(
+        (unlock) => AchievementUnlockSyncPayloadContract.canonicalOperationId(
+          achievementId: unlock.achievementId,
+          definitionVersion: unlock.definitionVersion,
+          sourceEventId: unlock.sourceEventId,
+          unlockedAtUtcMs: unlock.unlockedAtUtcMs,
+        ),
+      )
+      .toSet();
+  expect(
+    operationIds,
+    hasLength(unlocks.length),
+    reason: 'Every immutable achievement unlock must own one operation ID.',
+  );
+  return Set<String>.unmodifiable(operationIds);
+}
+
 Future<void> _seedCompleteSyncInventory(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO local_owners '
@@ -2272,6 +2602,21 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
     "'station', 'station', 'noun', 'manual', 0, 1, 3, 0, 10, 10)",
   );
   await database.customInsert(
+    'INSERT INTO saved_learning_items '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision, '
+    'is_deleted) VALUES '
+    "('saved-1', 'guest-owner', 'lexicalMetadata', 'word-1', 1, "
+    '10, 10, 1, 0, 0)',
+  );
+  await database.customInsert(
+    'INSERT INTO content_quality_reports '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'reason_code, comment, submitted_at_utc_ms) VALUES '
+    "('report-1', 'guest-owner', 'lexicalMetadata', 'word-1', 1, "
+    "'incorrectMeaning', NULL, 10)",
+  );
+  await database.customInsert(
     "INSERT INTO vocabulary_imports VALUES "
     "('import-1', 'guest-owner', 'category-1', 'csv', 'travel.csv', "
     "'hash-1', 'complete', 1, 0, 0, 10, 11)",
@@ -2285,6 +2630,70 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
     "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
     "app_version, build_id) VALUES ('session-1', 'guest-owner', "
     "'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
+  );
+  final sessionConfiguration = SessionConfiguration.validated(
+    schemaVersion: sessionConfigurationSchemaVersion,
+    policyVersion: sessionConfigurationPolicyVersion,
+    ownerId: 'guest-owner',
+    mode: LessonMode.meaningQuiz,
+    itemCount: 1,
+    direction: SessionDirection.mixed,
+    difficulty: SessionDifficulty.standard,
+    hintBudget: 1,
+    timing: const SessionTiming.untimedAlternative(
+      maximumActiveEffort: Duration(minutes: 15),
+    ),
+    packIdentity: null,
+    protocolId: 'protocol:complete-owner-inventory',
+    protocolVersion: '1',
+    protocolLimitsIdentity: 'sha256:complete-owner-inventory-limits',
+  );
+  await database
+      .into(database.sessionConfigurations)
+      .insert(
+        SessionConfigurationsCompanion.insert(
+          ownerId: 'guest-owner',
+          mode: sessionConfiguration.mode.name,
+          contentIdentity: sessionConfiguration.contentIdentity,
+          stableSerialization: sessionConfiguration.stableSerialization,
+          updatedAtUtcMs: 10,
+        ),
+      );
+  final learningTimeSegmentId = LearningTimeSegment.canonicalId(
+    sessionId: 'session-1',
+    activeStartOffsetMs: 0,
+    captureSource: LearningTimeCaptureSource.automaticLesson,
+  );
+  await database.customInsert(
+    'INSERT INTO learning_time_segments '
+    '(id, owner_id, session_id, active_start_offset_ms, active_duration_ms, '
+    'started_at_utc_ms, ended_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, capture_source) VALUES '
+    "(?, 'guest-owner', 'session-1', 0, 10, 10, 20, 'Asia/Bangkok', 420, "
+    "'automaticLesson')",
+    variables: [Variable<String>(learningTimeSegmentId)],
+  );
+  await database.customInsert(
+    'INSERT INTO learning_goals '
+    '(id, owner_id, kind, title, deadline_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, status, created_at_utc_ms, updated_at_utc_ms) '
+    "VALUES ('goal-1', 'guest-owner', 'languageTest', "
+    "'IELTS practice target', 1788238800000, 'Asia/Bangkok', 420, "
+    "'active', 10, 10)",
+  );
+  await database.customInsert(
+    'INSERT INTO study_reminders '
+    '(id, owner_id, goal_id, source_kind, scheduled_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, is_enabled, created_at_utc_ms, '
+    'updated_at_utc_ms) '
+    "VALUES ('reminder-1', 'guest-owner', 'goal-1', 'goalDeadline', "
+    "1788152400000, 'Asia/Bangkok', 420, 0, 10, 10)",
+  );
+  await database.customInsert(
+    'INSERT INTO learner_preferences '
+    '(owner_id, preference_version, goal, available_minutes_per_day, '
+    'activity_preference, updated_at_utc_ms) VALUES '
+    "('guest-owner', 1, 'balancedGrowth', 20, 'mixedPractice', 10)",
   );
   await _seedCompleteInventoryAssessmentRun(
     database,
