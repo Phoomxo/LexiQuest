@@ -25,6 +25,7 @@ import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
+import '../features/offline_content/application/offline_content_manager.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/preferences/application/learner_preferences_use_cases.dart';
 import '../features/preferences/application/display_preferences_controller.dart';
@@ -98,6 +99,7 @@ final class AppDependencies {
     this.learningGoals,
     this.learnerPreferences,
     this.displayPreferences,
+    this.offlineContent,
     this.studyReminders,
     this.progress,
     this.rewards,
@@ -158,6 +160,7 @@ final class AppDependencies {
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;
   final DisplayPreferencesController? displayPreferences;
+  final OfflineContentManager? offlineContent;
   final StudyReminderUseCases? studyReminders;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
@@ -213,7 +216,7 @@ final class AppDependencies {
     Feature.studyPlanning => studyPlanning != null,
     Feature.researchAssessment => assessment != null,
     Feature.dailyContinuity => false,
-    Feature.offlineContent => false,
+    Feature.offlineContent => offlineContent != null,
   };
 
   Future<void> dispose() {

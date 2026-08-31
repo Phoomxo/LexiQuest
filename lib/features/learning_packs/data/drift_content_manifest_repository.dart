@@ -19,6 +19,67 @@ final class DriftContentManifestRepository
   final ContentQualityPolicy policy;
   final ContentArtifactBytesLoader? loadArtifactBytes;
 
+  /// Provisions a compile-time reviewed packaged artifact through the existing
+  /// f04 manifest authority. Replays are byte-equivalent no-ops; any row or
+  /// identity collision fails closed through the immutable-revision contract.
+  Future<void> provisionPackagedArtifact(
+    VerifiedContentManifest artifact,
+  ) async {
+    final verified = policy.requireVerified(
+      manifest: artifact.manifest,
+      bytes: artifact.bytes,
+    );
+    final manifest = verified.manifest;
+    if (manifest.provenance != ContentProvenance.packaged) {
+      throw const ContentQualityFailure(
+        ContentQualityFailureCode.missingProvenance,
+      );
+    }
+    await database.transaction(() async {
+      final collisions =
+          await (database.select(database.contentManifests)..where(
+                (row) =>
+                    row.id.equals(manifest.storageId) |
+                    (row.contentType.equals(manifest.identity.type.name) &
+                        row.contentId.equals(manifest.identity.id) &
+                        row.revision.equals(manifest.identity.revision)),
+              ))
+              .get();
+      if (collisions.isNotEmpty) {
+        if (collisions.length == 1 &&
+            _sameManifestRow(collisions.single, manifest)) {
+          return;
+        }
+        throw const ContentQualityFailure(
+          ContentQualityFailureCode.immutableRevisionConflict,
+        );
+      }
+      await database
+          .into(database.contentManifests)
+          .insert(
+            ContentManifestsCompanion.insert(
+              id: manifest.storageId,
+              contentType: manifest.identity.type.name,
+              contentId: manifest.identity.id,
+              revision: manifest.identity.revision,
+              checksumSha256: manifest.checksumSha256,
+              byteLength: manifest.byteLength,
+              provenance: manifest.provenance.name,
+              sourceUri: manifest.sourceUri,
+              reviewState: manifest.reviewState.name,
+              publicationState: manifest.publicationState.name,
+              createdAtUtcMs: manifest.createdAtUtc.millisecondsSinceEpoch,
+              reviewedAtUtcMs: Value<int>(
+                manifest.reviewedAtUtc!.millisecondsSinceEpoch,
+              ),
+              publishedAtUtcMs: Value<int>(
+                manifest.publishedAtUtc!.millisecondsSinceEpoch,
+              ),
+            ),
+          );
+    });
+  }
+
   @override
   Future<VerifiedContentManifest> requireVerified(
     ContentIdentity identity,
@@ -195,6 +256,21 @@ final class DriftContentManifestRepository
     );
   }
 }
+
+bool _sameManifestRow(ContentManifestRow row, ContentManifest manifest) =>
+    row.id == manifest.storageId &&
+    row.contentType == manifest.identity.type.name &&
+    row.contentId == manifest.identity.id &&
+    row.revision == manifest.identity.revision &&
+    row.checksumSha256 == manifest.checksumSha256 &&
+    row.byteLength == manifest.byteLength &&
+    row.provenance == manifest.provenance.name &&
+    row.sourceUri == manifest.sourceUri &&
+    row.reviewState == manifest.reviewState.name &&
+    row.publicationState == manifest.publicationState.name &&
+    row.createdAtUtcMs == manifest.createdAtUtc.millisecondsSinceEpoch &&
+    row.reviewedAtUtcMs == manifest.reviewedAtUtc?.millisecondsSinceEpoch &&
+    row.publishedAtUtcMs == manifest.publishedAtUtc?.millisecondsSinceEpoch;
 
 T? _enumByName<T extends Enum>(Iterable<T> values, String name) {
   for (final value in values) {

@@ -35,6 +35,12 @@ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
+import 'package:vocab_learning_app/features/offline_content/data/model_download_adapter.dart';
+import 'package:vocab_learning_app/features/offline_content/data/voice_pack_download_adapter.dart';
+import 'package:vocab_learning_app/features/offline_content/data/drift_offline_content_repository.dart';
+import 'package:vocab_learning_app/features/offline_content/domain/offline_content_state.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
@@ -78,6 +84,7 @@ import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/voice/standard_voice_pack_download_manager.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
@@ -183,6 +190,29 @@ void _installNoOpSecureStorage() {
     };
   });
   addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+}
+
+void _installApplicationSupportDirectory() {
+  const channel = MethodChannel('plugins.flutter.io/path_provider');
+  final supportDirectory = Directory.systemTemp.createTempSync(
+    'lexiquest-app-bootstrap-test-',
+  );
+  final messenger =
+      TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(channel, (call) async {
+    if (call.method != 'getApplicationSupportDirectory') {
+      throw MissingPluginException(
+        'Unexpected path_provider method in AppBootstrap test: ${call.method}',
+      );
+    }
+    return supportDirectory.path;
+  });
+  addTearDown(() {
+    messenger.setMockMethodCallHandler(channel, null);
+    if (supportDirectory.existsSync()) {
+      supportDirectory.deleteSync(recursive: true);
+    }
+  });
 }
 
 Future<void> _insertFrozenLearningEvidence(
@@ -426,6 +456,8 @@ EvidenceContext _bootstrapMissingAssessmentEvidence() {
 
 void main() {
   group('AppBootstrap.initialize', () {
+    setUp(_installApplicationSupportDirectory);
+
     test(
       'research configuration failure propagates before composition',
       () async {
@@ -649,6 +681,29 @@ void main() {
         dependencies.hasComposedDependencyFor(Feature.studyPlanning),
         isTrue,
       );
+      expect(dependencies.offlineContent, isA<OfflineContentManager>());
+      expect(
+        (dependencies.offlineContent! as VerifiedOfflineContentManager).adapters
+            .whereType<ModelDownloadAdapter>(),
+        hasLength(1),
+        reason: 'production must compose the existing model authority adapter',
+      );
+      expect(
+        (dependencies.offlineContent! as VerifiedOfflineContentManager).adapters
+            .whereType<VoicePackDownloadAdapter>(),
+        hasLength(1),
+        reason:
+            'production must compose the existing voice-pack authority adapter',
+      );
+      expect(
+        dependencies.hasComposedDependencyFor(Feature.offlineContent),
+        isTrue,
+      );
+      expect(
+        dependencies.features.stateOf(Feature.offlineContent),
+        FeatureState.hidden,
+        reason: 'composition must not auto-enable the implemented-Off feature',
+      );
       final lessonController = dependencies.createLessonController!(
         lessonModes.find(LessonMode.meaningQuiz)!.adapter,
       );
@@ -656,6 +711,136 @@ void main() {
       expect(lessonController.state.status, LessonSessionStatus.planned);
       lessonController.dispose();
     });
+
+    test(
+      'f44 review bootstrap reconciles offline artifacts before exposure',
+      () async {
+        final manager = _ReconcilingOfflineContentManager();
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          offlineContentOverride: manager,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        addTearDown(dependencies.dispose);
+
+        expect(manager.reconcileCalls, 1);
+        expect(dependencies.offlineContent, same(manager));
+        await dependencies.dispose();
+        expect(manager.disposeCalls, 1);
+      },
+    );
+
+    test(
+      'f44 second review bootstrap resolves canonical voice manifest without network',
+      () async {
+        final supportDirectory = await Directory.systemTemp.createTemp(
+          'lexiquest-bootstrap-voice-',
+        );
+        addTearDown(() async {
+          if (await supportDirectory.exists()) {
+            await supportDirectory.delete(recursive: true);
+          }
+        });
+        var supportDirectoryCalls = 0;
+        final database = _testDatabase();
+        final catalog = OfflineVoicePackManifestCatalog.production;
+        final identity = catalog.identities.single;
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          applicationSupportDirectoryProvider: () async {
+            supportDirectoryCalls += 1;
+            return supportDirectory;
+          },
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        final adapter =
+            (dependencies.offlineContent! as VerifiedOfflineContentManager)
+                .adapters
+                .whereType<VoicePackDownloadAdapter>()
+                .single;
+        final manifest = await DriftOfflineContentRepository(
+          database,
+        ).requireManifest(identity);
+        final manifestAuthority = DriftContentManifestRepository(
+          database,
+          loadArtifactBytes: (candidate) async => candidate == identity
+              ? catalog.requireReceiptBytes(identity)
+              : null,
+        );
+        await manifestAuthority.provisionPackagedArtifact(
+          catalog.requireContentArtifact(identity),
+        );
+
+        expect(adapter.supports(manifest), isTrue);
+        expect(
+          await database.select(database.contentManifests).get(),
+          hasLength(1),
+        );
+        expect(supportDirectoryCalls, 1);
+        await dependencies.dispose();
+        expect(
+          () => adapter.manager.install(catalog.requireManifest(identity)),
+          throwsStateError,
+        );
+      },
+    );
+
+    test(
+      'f44 final review bootstrap cancels voice before draining offline work',
+      () async {
+        final supportDirectory = await Directory.systemTemp.createTemp(
+          'lexiquest-bootstrap-voice-dispose-',
+        );
+        addTearDown(() async {
+          if (await supportDirectory.exists()) {
+            await supportDirectory.delete(recursive: true);
+          }
+        });
+        final source = _SlowBootstrapVoiceSource();
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          applicationSupportDirectoryProvider: () async => supportDirectory,
+          standardVoicePackSourceOverride: source,
+          voicePackAvailableBytesOverride: (_) async => 64 * 1024 * 1024,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        final identity = OfflineVoicePackManifestCatalog.productionIdentity;
+        final download = dependencies.offlineContent!.download(identity);
+        final downloadResult = expectLater(
+          download,
+          throwsA(
+            isA<VoiceFailure>().having(
+              (failure) => failure.category,
+              'category',
+              VoiceFailureCategory.cancelled,
+            ),
+          ),
+        );
+        await source.started.future;
+
+        await dependencies.dispose().timeout(const Duration(milliseconds: 300));
+
+        await downloadResult;
+        await source.closed.future.timeout(const Duration(milliseconds: 300));
+        expect(source.cancelCalls, 1);
+      },
+    );
 
     test(
       'learner preference commit requests local-mutation sync once and replay is silent',
@@ -2928,9 +3113,62 @@ void main() {
     testWidgets(
       'real quiz route captures lifecycle effort and abandons on exit',
       (tester) async {
+        const phaseTimeout = Duration(seconds: 5);
+        Future<T> bounded<T>(String phase, Future<T> Function() operation) =>
+            operation().timeout(
+              phaseTimeout,
+              onTimeout: () => throw TimeoutException(
+                'Timed out during real quiz lifecycle phase: $phase',
+                phaseTimeout,
+              ),
+            );
+        Future<void> settle(String phase) async {
+          for (var pump = 0; pump < 40; pump += 1) {
+            await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+            await tester.pump(const Duration(milliseconds: 50));
+            if (!tester.binding.hasScheduledFrame) {
+              return;
+            }
+          }
+          throw TimeoutException(
+            'Timed out settling real quiz lifecycle phase: $phase',
+            const Duration(seconds: 2),
+          );
+        }
+
+        Future<void> settleUntil(String phase, Finder expected) async {
+          for (var pump = 0; pump < 40; pump += 1) {
+            await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+            await tester.pump(const Duration(milliseconds: 50));
+            if (expected.evaluate().isNotEmpty) {
+              return;
+            }
+          }
+          throw TimeoutException(
+            'Timed out waiting during real quiz lifecycle phase: $phase',
+            const Duration(seconds: 2),
+          );
+        }
+
+        Future<T> databasePhase<T extends Object>(
+          String phase,
+          Future<T> Function() operation,
+        ) async {
+          final result = await tester.runAsync(() => bounded(phase, operation));
+          return result ??
+              (throw StateError('Database phase returned no result: $phase'));
+        }
+
+        Future<void> databaseVoidPhase(
+          String phase,
+          Future<void> Function() operation,
+        ) async {
+          await tester.runAsync(() => bounded(phase, operation));
+        }
+
         var monotonicMicros = 0;
         final database = _testDatabase();
-        final dependencies = await AppBootstrap(
+        final bootstrap = AppBootstrap(
           createDatabase: () => database,
           initializeFirebase: () async {},
           initializeSupabase: () async {},
@@ -2941,43 +3179,90 @@ void main() {
           learningTimeCaptureRollout:
               const LearningTimeCaptureRollout.internal(),
           focusTimerRollout: const FocusTimerRollout.internal(),
-        ).initialize();
-        final category = await dependencies.vocabulary!.createCategory(
-          'Time capture',
         );
-        await dependencies.vocabulary!.createWord(
-          CreateWordCommand(
-            categoryId: category.id,
-            spelling: 'durable',
-            meaning: 'lasting',
-            partOfSpeech: 'adjective',
+        final initializedDependencies = await tester.runAsync(
+          () => bounded('bootstrap initialization', bootstrap.initialize),
+        );
+        final dependencies =
+            initializedDependencies ??
+            (throw StateError('Bootstrap initialization returned no result.'));
+        var cleanedUp = false;
+        Future<void> cleanup() async {
+          if (cleanedUp) return;
+          cleanedUp = true;
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          try {
+            await bounded(
+              'route unmount',
+              () => tester.pumpWidget(const SizedBox.shrink()),
+            );
+            await bounded('route unmount pump', tester.pump);
+          } finally {
+            await tester.runAsync(
+              () => bounded('dependency disposal', dependencies.dispose),
+            );
+          }
+        }
+
+        addTearDown(cleanup);
+        final category = await databasePhase(
+          'category creation',
+          () => dependencies.vocabulary!.createCategory('Time capture'),
+        );
+        await databaseVoidPhase(
+          'word creation',
+          () => dependencies.vocabulary!.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'durable',
+              meaning: 'lasting',
+              partOfSpeech: 'adjective',
+            ),
           ),
         );
 
-        await tester.pumpWidget(
-          AppDependenciesScope(
-            dependencies: dependencies,
-            child: const MaterialApp(home: ChooseModeScreen()),
+        await bounded(
+          'choose-mode mount',
+          () => tester.pumpWidget(
+            AppDependenciesScope(
+              dependencies: dependencies,
+              child: const MaterialApp(home: ChooseModeScreen()),
+            ),
           ),
         );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('session-configuration-sheet')),
-          findsOneWidget,
+        await settle('choose-mode mount');
+        await bounded(
+          'quiz mode tap',
+          () =>
+              tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz'))),
         );
-        await tester.enterText(
-          find.byKey(const ValueKey('session-item-count')),
-          '1',
+        final sessionConfigurationSheet = find.byKey(
+          const ValueKey('session-configuration-sheet'),
+        );
+        await settleUntil(
+          'session configuration open',
+          sessionConfigurationSheet,
+        );
+        expect(sessionConfigurationSheet, findsOneWidget);
+        await bounded(
+          'session item-count input',
+          () => tester.enterText(
+            find.byKey(const ValueKey('session-item-count')),
+            '1',
+          ),
         );
         tester.testTextInput.hide();
-        await tester.pumpAndSettle();
+        await settle('session item-count entry');
         final start = find.byKey(const ValueKey('session-config-start'));
-        await tester.ensureVisible(start);
-        await tester.pump();
-        await tester.tap(start);
-        await tester.pumpAndSettle();
+        await bounded(
+          'start action visibility',
+          () => tester.ensureVisible(start),
+        );
+        await bounded('start action visibility pump', tester.pump);
+        await bounded('session start tap', () => tester.tap(start));
+        await settleUntil('quiz route start', find.byType(QuizScreen));
         expect(find.byType(QuizScreen), findsOneWidget);
         expect(find.byType(FocusTimerWidget), findsOneWidget);
 
@@ -2985,24 +3270,36 @@ void main() {
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.inactive,
         );
-        await tester.pumpAndSettle();
+        await settle('inactive lifecycle commit');
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
         );
-        await tester.pumpAndSettle();
+        await settle('resumed lifecycle');
         monotonicMicros += const Duration(seconds: 2).inMicroseconds;
-        await tester.pageBack();
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('ออก'));
-        await tester.pumpAndSettle();
+        await bounded('lesson back request', tester.pageBack);
+        await settle('abandon confirmation open');
+        await bounded(
+          'abandon confirmation tap',
+          () => tester.tap(find.text('ออก')),
+        );
+        await settle('abandon confirmation commit');
 
-        final sessions = await database.select(database.learningSessions).get();
-        final segments = await database
-            .select(database.learningTimeSegments)
-            .get();
-        final timeOutbox = await (database.select(
-          database.outboxOperations,
-        )..where((row) => row.entityType.equals('learningTimeSegment'))).get();
+        final sessions = await databasePhase(
+          'session readback',
+          () => database.select(database.learningSessions).get(),
+        );
+        final segments = await databasePhase(
+          'active-time readback',
+          () => database.select(database.learningTimeSegments).get(),
+        );
+        final timeOutbox = await databasePhase(
+          'active-time outbox readback',
+          () =>
+              (database.select(database.outboxOperations)..where(
+                    (row) => row.entityType.equals('learningTimeSegment'),
+                  ))
+                  .get(),
+        );
         expect(sessions, hasLength(1));
         expect(sessions.single.state, 'abandoned');
         expect(segments, hasLength(2));
@@ -3011,14 +3308,21 @@ void main() {
           9000,
         );
         expect(timeOutbox, hasLength(2));
-        expect(await database.select(database.srsStates).get(), isEmpty);
         expect(
-          await database.select(database.pointsLedgerEntries).get(),
+          await databasePhase(
+            'SRS projection readback',
+            () => database.select(database.srsStates).get(),
+          ),
           isEmpty,
         );
-        tester.binding.handleAppLifecycleStateChanged(
-          AppLifecycleState.resumed,
+        expect(
+          await databasePhase(
+            'points projection readback',
+            () => database.select(database.pointsLedgerEntries).get(),
+          ),
+          isEmpty,
         );
+        await cleanup();
       },
     );
 
@@ -4505,6 +4809,8 @@ void main() {
       () async {
         final database = AppDatabase(NativeDatabase.memory());
         final bytes = _verifiedLexicalArtifactBytes();
+        final voiceCatalog = OfflineVoicePackManifestCatalog.production;
+        final voiceIdentity = voiceCatalog.identities.single;
         await _seedPackagedLexicalArtifact(database, bytes);
         final requested = <ContentIdentity>[];
         final bootstrap = AppBootstrap(
@@ -4516,7 +4822,10 @@ void main() {
           createEntryStateStore: _createSignedOutEntryState,
           loadContentArtifactBytes: (identity) async {
             requested.add(identity);
-            return identity == _lexicalIdentity ? bytes : null;
+            if (identity == _lexicalIdentity) return bytes;
+            return identity == voiceIdentity
+                ? voiceCatalog.requireReceiptBytes(identity)
+                : null;
           },
         );
         AppDependencies? dependencies;
@@ -4526,7 +4835,7 @@ void main() {
             'word:station',
           ]);
 
-          expect(requested, const [_lexicalIdentity]);
+          expect(requested, <ContentIdentity>[voiceIdentity, _lexicalIdentity]);
           expect(words.single.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
           expect(words.single.richMetadata!.audio!.assetId, 'audio:station:en');
         } finally {
@@ -4869,6 +5178,55 @@ final class _BootstrapAiTutorController implements AiTutorController {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _SlowBootstrapVoiceSource implements StandardVoicePackByteSource {
+  final Completer<void> started = Completer<void>();
+  final Completer<void> closed = Completer<void>();
+  int cancelCalls = 0;
+
+  @override
+  Future<StandardVoicePackByteResponse> open(
+    Uri uri, {
+    required int start,
+    StandardVoicePackCancellation? cancellation,
+  }) async {
+    final bytes = OfflineVoicePackManifestCatalog.production
+        .requirePackagedFileBytes(uri);
+    var subscriptionCancelled = false;
+    late final StreamController<List<int>> controller;
+    controller = StreamController<List<int>>(
+      onListen: () async {
+        if (!started.isCompleted) started.complete();
+        for (final byte in bytes.skip(start)) {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+          if (subscriptionCancelled ||
+              cancellation?.isCancelled == true ||
+              controller.isClosed) {
+            break;
+          }
+          controller.add(<int>[byte]);
+        }
+        if (!subscriptionCancelled && !controller.isClosed) {
+          await controller.close();
+          if (!closed.isCompleted) closed.complete();
+        }
+      },
+      onCancel: () {
+        subscriptionCancelled = true;
+        cancelCalls += 1;
+        scheduleMicrotask(() async {
+          if (!controller.isClosed) await controller.close();
+          if (!closed.isCompleted) closed.complete();
+        });
+      },
+    );
+    return StandardVoicePackByteResponse(
+      statusCode: start == 0 ? 200 : 206,
+      contentRangeStart: start == 0 ? null : start,
+      bytes: controller.stream,
+    );
+  }
 }
 
 final class _BootstrapManagedVoiceProvider implements ManagedVoiceProvider {
@@ -5360,4 +5718,43 @@ enum _BootstrapReminderFailure {
   pendingEntries,
   schedule,
   cancel,
+}
+
+final class _ReconcilingOfflineContentManager implements OfflineContentManager {
+  int reconcileCalls = 0;
+  int disposeCalls = 0;
+
+  @override
+  Future<bool> canRemove(ContentIdentity identity) async => false;
+
+  @override
+  Future<List<OfflineContentState>> catalog() async => const [];
+
+  @override
+  Future<int> cleanupForDiskPressure({required int bytesToFree}) async => 0;
+
+  @override
+  Future<void> dispose() async {
+    disposeCalls += 1;
+  }
+
+  @override
+  Future<OfflineContentState> download(ContentIdentity identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> reconcile() async {
+    reconcileCalls += 1;
+  }
+
+  @override
+  Future<int> removeBytes(ContentIdentity identity) async => 0;
+
+  @override
+  Future<OfflineContentState> repair(ContentIdentity identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<OfflineContentState> verify(ContentIdentity identity) =>
+      throw UnimplementedError();
 }

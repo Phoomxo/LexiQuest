@@ -5,10 +5,14 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/offline_content/application/offline_content_manager.dart';
 import '../features/preferences/application/display_preferences_controller.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
+import 'offline_content_manager_screen.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({
@@ -36,6 +40,9 @@ class _SettingScreenState extends State<SettingScreen> {
   LocalDataEraser? _localDataEraser;
   LocalOwnerRepository? _localOwners;
   DisplayPreferencesController? _displayPreferences;
+  OfflineContentManager? _offlineContent;
+  FeatureRegistry? _featureRegistry;
+  Listenable? _featureChanges;
   bool _busy = false;
   bool _displayBusy = false;
 
@@ -49,6 +56,8 @@ class _SettingScreenState extends State<SettingScreen> {
     _localDataEraser ??=
         widget.localDataEraser ?? dependencies?.localDataEraser;
     _localOwners ??= widget.localOwners ?? dependencies?.localOwners;
+    _offlineContent ??= dependencies?.offlineContent;
+    _bindFeatureRegistry(dependencies?.features);
     _bindDisplayPreferences(
       widget.displayPreferences ?? dependencies?.displayPreferences,
     );
@@ -76,10 +85,54 @@ class _SettingScreenState extends State<SettingScreen> {
     if (mounted) setState(() {});
   }
 
+  void _bindFeatureRegistry(FeatureRegistry? registry) {
+    if (identical(_featureRegistry, registry)) return;
+    _featureChanges?.removeListener(_onFeatureRegistryChanged);
+    _featureRegistry = registry;
+    final changes = registry is Listenable ? registry as Listenable : null;
+    _featureChanges = changes;
+    changes?.addListener(_onFeatureRegistryChanged);
+  }
+
+  void _onFeatureRegistryChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _displayPreferences?.removeListener(_onDisplayPreferencesChanged);
+    _featureChanges?.removeListener(_onFeatureRegistryChanged);
     super.dispose();
+  }
+
+  Future<void> _openOfflineContent() async {
+    final manager = _offlineContent;
+    final registry = _featureRegistry;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (manager == null ||
+        registry == null ||
+        !registry.isEnabled(Feature.offlineContent) ||
+        dependencies == null ||
+        !identical(dependencies.offlineContent, manager) ||
+        !dependencies.hasComposedDependencyFor(Feature.offlineContent)) {
+      return;
+    }
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'settings/offline-content',
+        builder: (_) => ProductionFeatureGate(
+          feature: Feature.offlineContent,
+          registry: registry,
+          builder: (_) => OfflineContentManagerScreen(
+            manager: manager,
+            canInvoke: () =>
+                registry.isEnabled(Feature.offlineContent) &&
+                identical(dependencies.offlineContent, manager),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _selectTheme(ThemeMode mode) async {
@@ -335,6 +388,18 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
             ),
           ),
+          if (_offlineContent != null &&
+              _featureRegistry?.isVisible(Feature.offlineContent) == true)
+            ListTile(
+              key: const ValueKey<String>('settings/offline-content'),
+              minTileHeight: 48,
+              leading: const Icon(Icons.offline_pin_outlined),
+              title: const Text('เนื้อหาออฟไลน์'),
+              subtitle: const Text(
+                'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+              ),
+              onTap: _openOfflineContent,
+            ),
           if (_researchConsent case final consent?)
             FutureBuilder(
               future: consent.load(),

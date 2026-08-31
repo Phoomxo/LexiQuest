@@ -539,6 +539,47 @@ void main() {
     },
   );
 
+  test(
+    'f44 review removal serializes with the active model download authority',
+    () async {
+      final bytes = utf8.encode('serialized-model-removal');
+      final manifest = _manifestFor(bytes);
+      final source = _BlockingModelSource(bytes);
+      final manager = ModelDownloadManager(
+        repository: repository,
+        source: source,
+        verifier: _RecordingVerifier(),
+        modelDirectory: () async => directory,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+      );
+
+      final download = manager.downloadAndActivate(manifest);
+      await source.started.future;
+      var removalCompleted = false;
+      var removedRecords = 0;
+      final removal = manager
+          .removeInstalled(
+            manifest,
+            removeRecord: () async {
+              removedRecords += 1;
+              repository.record = null;
+            },
+          )
+          .whenComplete(() => removalCompleted = true);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(removalCompleted, isFalse);
+      source.release.complete();
+      final activated = await download;
+      expect(await File(activated.localPath!).exists(), isTrue);
+
+      expect(await removal, bytes.length);
+      expect(await File(activated.localPath!).exists(), isFalse);
+      expect(repository.record, isNull);
+      expect(removedRecords, 1);
+    },
+  );
+
   test('dispose cancels and waits for an active download', () async {
     final bytes = utf8.encode('stalled-download');
     final manifest = _manifestFor(bytes);
@@ -687,6 +728,36 @@ final class _CancellationAwareSource implements ModelByteSource {
       },
     );
     return ModelByteResponse(statusCode: 200, bytes: controller.stream);
+  }
+}
+
+final class _BlockingModelSource implements ModelByteSource {
+  _BlockingModelSource(this.bytes);
+
+  final List<int> bytes;
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<ModelByteResponse> open(
+    Uri uri, {
+    required int start,
+    ModelCancellation? cancellation,
+  }) async {
+    late final StreamController<List<int>> controller;
+    controller = StreamController<List<int>>(
+      onListen: () async {
+        started.complete();
+        await release.future;
+        controller.add(bytes.sublist(start));
+        await controller.close();
+      },
+    );
+    return ModelByteResponse(
+      statusCode: start == 0 ? 200 : 206,
+      contentRangeStart: start == 0 ? null : start,
+      bytes: controller.stream,
+    );
   }
 }
 

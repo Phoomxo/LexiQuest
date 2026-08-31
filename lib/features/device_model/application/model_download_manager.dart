@@ -71,6 +71,7 @@ final class ModelDownloadManager {
   final ModelVerifiedActivationRecorder? onCachedArtifactVerified;
   Future<ModelDownloadRecord>? _inFlight;
   ModelCancellation? _activeCancellation;
+  final Set<Future<Object?>> _pendingOperations = <Future<Object?>>{};
   bool _disposed = false;
 
   Future<ModelDownloadRecord> downloadAndActivate(
@@ -96,22 +97,65 @@ final class ModelDownloadManager {
           }
         });
     _inFlight = operation;
+    _track(operation);
     return operation;
+  }
+
+  /// Removes the canonical verified model under the same per-model file lock
+  /// used by download and activation. The caller-owned record deletion runs
+  /// only after the authoritative bytes have been validated and removed.
+  Future<int> removeInstalled(
+    ModelManifest manifest, {
+    required Future<void> Function() removeRecord,
+  }) => withRemovalLease(
+    manifest,
+    (removeInstalled) => removeInstalled(removeRecord: removeRecord),
+  );
+
+  /// Acquires the model operation/file lease before invoking [operation]. The
+  /// provided remover cannot escape this callback, preventing callers from
+  /// opening a database transaction while waiting for an active download.
+  Future<T> withRemovalLease<T>(
+    ModelManifest manifest,
+    Future<T> Function(ModelInstalledRemoval removeInstalled) operation,
+  ) {
+    if (_disposed) {
+      throw StateError('ModelDownloadManager is disposed.');
+    }
+    final running = _inFlight;
+    final waitForDownload = running == null
+        ? Future<void>.value()
+        : running.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    final leasedOperation = waitForDownload.then<T>(
+      (_) => _withRemovalLock(manifest, operation),
+    );
+    _track(leasedOperation);
+    return leasedOperation;
   }
 
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
     _activeCancellation?.cancel();
-    final running = _inFlight;
-    if (running != null) {
+    final pending = _pendingOperations.toList(growable: false);
+    for (final operation in pending) {
       try {
-        await running;
+        await operation;
       } catch (_) {
         // Disposal waits for all file/database writes but does not rethrow the
         // operation result into application shutdown.
       }
     }
+  }
+
+  void _track(Future<Object?> operation) {
+    _pendingOperations.add(operation);
+    operation.then<void>(
+      (_) => _pendingOperations.remove(operation),
+      onError: (Object _, StackTrace _) {
+        _pendingOperations.remove(operation);
+      },
+    );
   }
 
   Future<ModelDownloadRecord> _performWithModelLock(
@@ -138,6 +182,87 @@ final class ModelDownloadManager {
         await lock.close();
       }
     }
+  }
+
+  Future<T> _withRemovalLock<T>(
+    ModelManifest manifest,
+    Future<T> Function(ModelInstalledRemoval removeInstalled) operation,
+  ) async {
+    final directory = await modelDirectory();
+    await directory.create(recursive: true);
+    final absoluteDirectory = directory.absolute;
+    final resolvedDirectory = await absoluteDirectory.resolveSymbolicLinks();
+    if (_normalizedPath(absoluteDirectory.path) !=
+        _normalizedPath(resolvedDirectory)) {
+      throw const ModelLifecycleException(ModelFailureCode.unavailable);
+    }
+    final root = Directory(resolvedDirectory);
+    final lockFile = File(
+      '${root.path}${Platform.pathSeparator}${manifest.fileStem}.lock',
+    );
+    final cancellation = ModelCancellation();
+    final lock = await _acquireLock(lockFile, cancellation);
+    var leaseActive = true;
+    try {
+      if (_disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
+      Future<int> removeInstalled({
+        required Future<void> Function() removeRecord,
+      }) {
+        if (!leaseActive) {
+          throw StateError('Model removal lease is no longer active.');
+        }
+        return _removeInstalledLocked(manifest, root, removeRecord);
+      }
+
+      return await operation(removeInstalled);
+    } finally {
+      leaseActive = false;
+      try {
+        lock.unlockSync();
+      } finally {
+        await lock.close();
+      }
+    }
+  }
+
+  Future<int> _removeInstalledLocked(
+    ModelManifest manifest,
+    Directory root,
+    Future<void> Function() removeRecord,
+  ) async {
+    final record = await repository.find(manifest.recordId);
+    final canonical = File(
+      '${root.path}${Platform.pathSeparator}${manifest.fileStem}.tflite',
+    );
+    if (record == null ||
+        (record.state != ModelDownloadState.ready &&
+            record.state != ModelDownloadState.active) ||
+        record.id != manifest.recordId ||
+        record.modelVersion != manifest.version ||
+        record.expectedChecksum != manifest.expectedSha256 ||
+        record.expectedBytes != manifest.expectedBytes ||
+        record.downloadedBytes != manifest.expectedBytes) {
+      throw const ModelLifecycleException(ModelFailureCode.unavailable);
+    }
+    final type = await FileSystemEntity.type(
+      canonical.path,
+      followLinks: false,
+    );
+    if (type != FileSystemEntityType.file) {
+      throw const ModelLifecycleException(ModelFailureCode.unavailable);
+    }
+    final resolvedFile = await canonical.absolute.resolveSymbolicLinks();
+    if (_normalizedPath(resolvedFile) !=
+            _normalizedPath(canonical.absolute.path) ||
+        !await _isValidModelFile(canonical, manifest)) {
+      throw const ModelLifecycleException(ModelFailureCode.checksumMismatch);
+    }
+    final bytes = await canonical.length();
+    await canonical.delete();
+    await removeRecord();
+    return bytes;
   }
 
   Future<RandomAccessFile> _acquireLock(
@@ -481,4 +606,12 @@ final class ModelDownloadManager {
     );
     throw ModelLifecycleException(code);
   }
+
+  String _normalizedPath(String value) {
+    final normalized = value.replaceAll('\\', '/');
+    return Platform.isWindows ? normalized.toLowerCase() : normalized;
+  }
 }
+
+typedef ModelInstalledRemoval =
+    Future<int> Function({required Future<void> Function() removeRecord});

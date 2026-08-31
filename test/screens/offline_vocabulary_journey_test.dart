@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
+import 'package:vocab_learning_app/features/offline_content/data/drift_offline_content_repository.dart';
+import 'package:vocab_learning_app/features/offline_content/domain/offline_content_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/import_vocabulary.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -27,9 +32,19 @@ void main() {
   late AppDependencies dependencies;
   late DateTime nowUtc;
   late int idCounter;
+  late Directory offlineDirectory;
+  late OfflineContentManager offlineContent;
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
+    offlineDirectory = await Directory.systemTemp.createTemp(
+      'lexiquest-offline-vocabulary-',
+    );
+    addTearDown(() async {
+      if (await offlineDirectory.exists()) {
+        await offlineDirectory.delete(recursive: true);
+      }
+    });
     nowUtc = DateTime.utc(2026, 7, 30, 13);
     idCounter = 0;
     final owners = DriftLocalOwnerRepository(
@@ -45,6 +60,13 @@ void main() {
       nowUtc: () => nowUtc,
     );
     final research = InertResearchDependencies(database);
+    offlineContent = VerifiedOfflineContentManager(
+      repository: DriftOfflineContentRepository(database),
+      adapters: const <OfflineContentDownloadAdapter>[],
+      removalAuthority: const UnpinnedOfflineContentRemovalAuthority(),
+      rootDirectory: () async => offlineDirectory,
+      nowUtc: () => nowUtc,
+    );
     dependencies = AppDependencies(
       initialRoute: AppRoute.home,
       runtimeStatus: const AppRuntimeStatus(
@@ -71,6 +93,7 @@ void main() {
         generateId: () => 'import-${++idCounter}',
         nowUtc: () => nowUtc,
       ),
+      offlineContent: offlineContent,
     );
   });
 
@@ -155,6 +178,11 @@ void main() {
 
       expect(find.text('station'), findsOneWidget);
       expect(find.textContaining('สถานี'), findsOneWidget);
+      expect(
+        await offlineContent.cleanupForDiskPressure(bytesToFree: 1024),
+        0,
+        reason: 'empty offline cleanup must not affect local vocabulary',
+      );
 
       await tester.pumpWidget(const SizedBox.shrink());
       await pumpCategories(tester);

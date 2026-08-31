@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -76,6 +77,12 @@ import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/motivation/data/drift_streak_repository.dart';
+import '../features/offline_content/application/offline_content_manager.dart';
+import '../features/offline_content/data/drift_offline_content_repository.dart';
+import '../features/offline_content/data/learning_pack_download_adapter.dart';
+import '../features/offline_content/data/model_download_adapter.dart';
+import '../features/offline_content/data/voice_pack_download_adapter.dart';
+import '../features/offline_content/domain/offline_content_repository.dart';
 import '../features/quest/application/quest_catalog_provider.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/quest/data/drift_quest_repository.dart';
@@ -127,6 +134,10 @@ import '../features/vocabulary/data/drift_vocabulary_repository.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
+import '../voice/http_standard_voice_pack_source.dart';
+import '../voice/platform_filesystem_capacity.dart';
+import '../voice/standard_voice_pack_download_manager.dart';
+import '../voice/standard_voice_pack_manifest.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -148,6 +159,7 @@ typedef SyncGatewayFactory = SyncGateway Function();
 typedef SyncTriggerRequestObserver = void Function(SyncTriggerReason reason);
 typedef AccountGatewayFactory = AccountGateway Function();
 typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
+typedef ApplicationSupportDirectoryProvider = Future<Directory> Function();
 typedef ExportArtifactStoreFactory = ExportArtifactStore Function();
 typedef CameraGatewayFactory = CameraGateway Function();
 typedef SpeechRecognitionGatewayFactory = SpeechRecognitionGateway Function();
@@ -185,6 +197,11 @@ final RegExp _bundledLexicalWordId = RegExp(r'^word:[a-z0-9][a-z0-9_-]{0,95}$');
 Future<Uint8List?> _productionContentArtifactBytes(
   ContentIdentity identity,
 ) async {
+  if (identity.type == ContentType.offlineArtifact) {
+    final catalog = OfflineVoicePackManifestCatalog.production;
+    if (catalog.resolve(identity) == null) return null;
+    return catalog.requireReceiptBytes(identity);
+  }
   final path = _bundledLexicalMetadataAssetPath(identity);
   if (path == null) return null;
   try {
@@ -194,6 +211,31 @@ Future<Uint8List?> _productionContentArtifactBytes(
   } on Object {
     return null;
   }
+}
+
+Future<Map<ContentIdentity, StandardVoicePackManifest>>
+_canonicalVoicePackManifests(
+  OfflineContentRepository offlineRepository,
+  ContentManifestRepository contentManifests,
+) async {
+  final result = <ContentIdentity, StandardVoicePackManifest>{};
+  for (final state in await offlineRepository.catalog()) {
+    if (state.identity.type != ContentType.offlineArtifact) continue;
+    try {
+      final verified = await contentManifests.requireVerified(state.identity);
+      final decoded = jsonDecode(
+        const Utf8Decoder(allowMalformed: false).convert(verified.bytes),
+      );
+      if (decoded is! Map<String, dynamic>) continue;
+      final manifest = StandardVoicePackManifest.fromJson(decoded);
+      final canonical = utf8.encode(jsonEncode(manifest.toJson()));
+      if (!listEquals(canonical, verified.bytes)) continue;
+      result[state.identity] = manifest;
+    } on Object {
+      // Non-voice offline artifacts remain owned by their exact adapters.
+    }
+  }
+  return Map<ContentIdentity, StandardVoicePackManifest>.unmodifiable(result);
 }
 
 String? _bundledLexicalMetadataAssetPath(ContentIdentity identity) {
@@ -340,7 +382,11 @@ final class AppBootstrap {
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
     SessionConfigurationProtocolCatalog? sessionConfigurationProtocolCatalog,
     this.assessmentOverride,
+    this.offlineContentOverride,
+    ApplicationSupportDirectoryProvider? applicationSupportDirectoryProvider,
     ContentArtifactBytesLoader? loadContentArtifactBytes,
+    this.standardVoicePackSourceOverride,
+    this.voicePackAvailableBytesOverride,
     LearningTimeMonotonicMicros? learningTimeMonotonicMicros,
     this.activeLearningIdleTimeout = const Duration(minutes: 5),
     this.learningTimeCaptureRollout =
@@ -378,6 +424,9 @@ final class AppBootstrap {
        learningTimezoneId = learningTimezoneId ?? _systemLearningTimezoneId,
        learningTimeMonotonicMicros =
            learningTimeMonotonicMicros ?? _systemLearningTimeMonotonicMicros,
+       applicationSupportDirectoryProvider =
+           applicationSupportDirectoryProvider ??
+           getApplicationSupportDirectory,
        loadContentArtifactBytes =
            loadContentArtifactBytes ?? _productionContentArtifactBytes;
 
@@ -423,6 +472,8 @@ final class AppBootstrap {
   final ResearchProtocolModeCatalog researchProtocolModeCatalog;
   final SessionConfigurationProtocolCatalog sessionConfigurationProtocolCatalog;
   final AssessmentUseCases? assessmentOverride;
+  final OfflineContentManager? offlineContentOverride;
+  final ApplicationSupportDirectoryProvider applicationSupportDirectoryProvider;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final AppEntryStateStoreFactory createEntryStateStore;
@@ -451,6 +502,8 @@ final class AppBootstrap {
   final ManagedAiTutorBuilder buildAiTutor;
   final ManagedVoiceBuilder buildVoice;
   final ContentArtifactBytesLoader loadContentArtifactBytes;
+  final StandardVoicePackByteSource? standardVoicePackSourceOverride;
+  final Future<int> Function(Directory root)? voicePackAvailableBytesOverride;
   Future<AppDependencies>? _initialization;
 
   Future<AppDependencies> initialize() {
@@ -475,6 +528,10 @@ final class AppBootstrap {
     resources.own(database.close);
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
+    Future<Directory>? applicationSupportDirectoryFuture;
+    Future<Directory> resolveApplicationSupportDirectory() =>
+        applicationSupportDirectoryFuture ??=
+            applicationSupportDirectoryProvider();
     final ownerOperationGate = DriftOwnerOperationGate(database);
     const evidencePolicy = EvidenceEligibilityPolicySet();
     final localOwners = DriftLocalOwnerRepository(
@@ -859,6 +916,13 @@ final class AppBootstrap {
       database,
       loadArtifactBytes: loadContentArtifactBytes,
     );
+    final productionVoicePackCatalog =
+        OfflineVoicePackManifestCatalog.production;
+    for (final identity in productionVoicePackCatalog.identities) {
+      await contentManifests.provisionPackagedArtifact(
+        productionVoicePackCatalog.requireContentArtifact(identity),
+      );
+    }
     final contrastiveFeedback = contrastiveFeedbackRollout.allowsPresentation
         ? ContrastiveFeedbackUseCases(manifests: contentManifests)
         : null;
@@ -1155,7 +1219,7 @@ final class AppBootstrap {
       source: modelByteSource,
       verifier: const LiteRtModelFileVerifier(),
       modelDirectory: () async {
-        final support = await getApplicationSupportDirectory();
+        final support = await resolveApplicationSupportDirectory();
         return Directory('${support.path}${Platform.pathSeparator}models');
       },
       nowUtc: () => DateTime.now().toUtc(),
@@ -1165,6 +1229,72 @@ final class AppBootstrap {
           ({required modelVersion, required completionId}) =>
               downloadCounter.reconcileCompletion(modelVersion, completionId),
     );
+    final offlineContentRepository = DriftOfflineContentRepository(database);
+    final voicePackManifests = await _canonicalVoicePackManifests(
+      offlineContentRepository,
+      contentManifests,
+    );
+    final voicePackCatalog = OfflineVoicePackManifestCatalog(
+      voicePackManifests,
+      packagedFiles: productionVoicePackCatalog.packagedFiles,
+    );
+    final StandardVoicePackByteSource voicePackSource;
+    final sourceOverride = standardVoicePackSourceOverride;
+    if (sourceOverride != null) {
+      voicePackSource = sourceOverride;
+    } else {
+      final voicePackClient = http.Client();
+      resources.own(() async => voicePackClient.close());
+      voicePackSource = CatalogStandardVoicePackSource(
+        catalog: voicePackCatalog,
+        fallback: HttpStandardVoicePackSource(voicePackClient),
+      );
+    }
+    final voicePackDownloadManager = StandardVoicePackDownloadManager(
+      rootDirectory: () async {
+        final support = await resolveApplicationSupportDirectory();
+        return Directory('${support.path}${Platform.pathSeparator}voice-packs');
+      },
+      source: voicePackSource,
+      availableBytes:
+          voicePackAvailableBytesOverride ??
+          const PlatformFilesystemCapacity().availableBytes,
+    );
+    final offlineContent =
+        offlineContentOverride ??
+        VerifiedOfflineContentManager(
+          repository: offlineContentRepository,
+          adapters: <OfflineContentDownloadAdapter>[
+            LearningPackDownloadAdapter(contentManifests),
+            ModelDownloadAdapter(
+              manager: modelDownloadManager,
+              resolveManifest: (identity) =>
+                  identity.type == ContentType.offlineArtifact &&
+                      identity.id == ModelManifest.fieldImageClassifier.id &&
+                      identity.revision == 1
+                  ? ModelManifest.fieldImageClassifier
+                  : null,
+              removeModel: (manifest) async {
+                await (database.delete(
+                  database.modelDownloads,
+                )..where((row) => row.id.equals(manifest.recordId))).go();
+              },
+            ),
+            VoicePackDownloadAdapter(
+              manager: voicePackDownloadManager,
+              catalog: voicePackCatalog,
+            ),
+          ],
+          removalAuthority: DriftOfflineContentRemovalAuthority(database),
+          rootDirectory: () async {
+            final support = await resolveApplicationSupportDirectory();
+            return Directory(
+              '${support.path}${Platform.pathSeparator}offline-content',
+            );
+          },
+          nowUtc: () => DateTime.now().toUtc(),
+        );
+    await offlineContent.reconcile();
     final deviceModels = DeviceModelUseCases(
       manifest: ModelManifest.fieldImageClassifier,
       repository: modelRepository,
@@ -1177,6 +1307,10 @@ final class AppBootstrap {
           ),
     );
     resources.own(deviceModels.dispose);
+    resources.own(offlineContent.dispose);
+    // Reverse-order disposal must cancel the adapter authority before the
+    // offline manager drains its operation queue.
+    resources.own(voicePackDownloadManager.dispose);
     final objectScanner = ObjectScannerUseCases(
       camera: cameraGatewayFactory(),
       deviceModels: deviceModels,
@@ -1371,6 +1505,7 @@ final class AppBootstrap {
       learningGoals: learningGoals,
       learnerPreferences: learnerPreferences,
       displayPreferences: displayPreferences,
+      offlineContent: offlineContent,
       studyReminders: studyReminders,
       progress: progress,
       rewards: rewards,
