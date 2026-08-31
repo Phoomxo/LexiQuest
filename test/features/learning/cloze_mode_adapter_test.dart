@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -227,7 +228,7 @@ void main() {
         'word:airport',
         'airport',
         2,
-        _checksumB,
+        _canonicalCoreChecksum('airport'),
       );
       await _insertWord(
         database,
@@ -235,7 +236,7 @@ void main() {
         'word:station',
         'station',
         3,
-        _checksumA,
+        _canonicalCoreChecksum('station'),
       );
       await _insertWord(
         database,
@@ -243,7 +244,7 @@ void main() {
         'word:market',
         'market',
         4,
-        _checksumC,
+        _canonicalCoreChecksum('market'),
       );
       learning = LearningUseCases(
         owners: owners,
@@ -268,21 +269,21 @@ void main() {
               id: 'word:airport',
               spelling: 'airport',
               revision: 2,
-              checksum: _checksumB,
+              checksum: _canonicalCoreChecksum('airport'),
               examples: const <String>['The airport is busy.'],
             ),
             _lexicalWord(
               id: 'word:station',
               spelling: 'station',
               revision: 3,
-              checksum: _checksumA,
+              checksum: _canonicalCoreChecksum('station'),
               examples: const <String>['The station closes.'],
             ),
             _lexicalWord(
               id: 'word:market',
               spelling: 'market',
               revision: 4,
-              checksum: _checksumC,
+              checksum: _canonicalCoreChecksum('market'),
               examples: const <String>['The market opens early.'],
             ),
           ],
@@ -336,21 +337,21 @@ void main() {
               id: 'word:airport',
               spelling: 'airport',
               revision: 2,
-              checksum: _checksumB,
+              checksum: _canonicalCoreChecksum('airport'),
               examples: const <String>['The airport is busy.'],
             ),
             _lexicalWord(
               id: 'word:station',
               spelling: 'station',
               revision: 3,
-              checksum: _checksumA,
+              checksum: _canonicalCoreChecksum('station'),
               examples: const <String>['The station closes.'],
             ),
             _lexicalWord(
               id: 'word:market',
               spelling: 'market',
               revision: 4,
-              checksum: _checksumC,
+              checksum: _canonicalCoreChecksum('market'),
               examples: const <String>['The market opens early.'],
             ),
           ],
@@ -406,21 +407,21 @@ void main() {
               id: 'word:airport',
               spelling: 'airport',
               revision: 2,
-              checksum: _checksumB,
+              checksum: _canonicalCoreChecksum('airport'),
               examples: const <String>['The airport is busy.'],
             ),
             _lexicalWord(
               id: 'word:station',
               spelling: 'station',
               revision: 3,
-              checksum: _checksumA,
+              checksum: _canonicalCoreChecksum('station'),
               examples: const <String>['The station closes.'],
             ),
             _lexicalWord(
               id: 'word:market',
               spelling: 'market',
               revision: 4,
-              checksum: _checksumC,
+              checksum: _canonicalCoreChecksum('market'),
               examples: const <String>['The market opens early.'],
             ),
           ],
@@ -544,6 +545,19 @@ Future<void> _insertWord(
         createdAtUtcMs: 1,
         updatedAtUtcMs: 1,
       ),
+    );
+
+String _canonicalCoreChecksum(String spelling) =>
+    ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: 'category:travel',
+      spelling: spelling,
+      normalizedSpelling: spelling,
+      meaning: 'meaning',
+      normalizedMeaning: 'meaning',
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'manual',
+      isGlobal: false,
     );
 
 final class _LostAckLearningRepository implements LearningRepository {

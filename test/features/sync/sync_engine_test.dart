@@ -811,18 +811,20 @@ void main() {
     final result = await engine().run();
 
     expect(result.status, SyncRunStatus.completed);
-    final expectedCollections = SyncCollection.values
-        .where(
-          (collection) => collection != SyncCollection.learningTimeSegments,
-        )
-        .toList(growable: false);
-    expect(gateway.pulledCollections, hasLength(expectedCollections.length));
-    for (final collection in expectedCollections) {
-      expect(
-        gateway.pulledCollections.where((value) => value == collection),
-        hasLength(1),
-      );
-    }
+    const expectedCollections = <SyncCollection>[
+      SyncCollection.categories,
+      SyncCollection.words,
+      SyncCollection.savedLearningItems,
+      SyncCollection.contentQualityReports,
+      SyncCollection.experimentAssignments,
+      SyncCollection.assessmentRuns,
+      SyncCollection.attempts,
+      SyncCollection.readingEvents,
+      SyncCollection.rewardTransactions,
+      SyncCollection.srsStates,
+      SyncCollection.achievementUnlocks,
+    ];
+    expect(gateway.pulledCollections, expectedCollections);
     expect(
       gateway.pulledCollections,
       isNot(contains(SyncCollection.learningTimeSegments)),
@@ -837,13 +839,20 @@ void main() {
     ).run();
 
     expect(result.status, SyncRunStatus.completed);
-    expect(gateway.pulledCollections, hasLength(SyncCollection.values.length));
-    for (final collection in SyncCollection.values) {
-      expect(
-        gateway.pulledCollections.where((value) => value == collection),
-        hasLength(1),
-      );
-    }
+    expect(gateway.pulledCollections, const <SyncCollection>[
+      SyncCollection.categories,
+      SyncCollection.words,
+      SyncCollection.savedLearningItems,
+      SyncCollection.contentQualityReports,
+      SyncCollection.experimentAssignments,
+      SyncCollection.assessmentRuns,
+      SyncCollection.attempts,
+      SyncCollection.readingEvents,
+      SyncCollection.rewardTransactions,
+      SyncCollection.srsStates,
+      SyncCollection.achievementUnlocks,
+      SyncCollection.learningTimeSegments,
+    ]);
   });
 
   test('first permanent pull failure stops all later collections', () async {

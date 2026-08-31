@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
@@ -1472,72 +1473,82 @@ void main() {
     expect(await store.readCheckpoint('owner-a', SyncCollection.words), isNull);
   });
 
-  test('legacy word payload persists a canonical core checksum', () async {
-    await _insertCategory(
-      database,
-      ownerId: 'owner-a',
-      id: 'category:travel',
-      name: 'Travel',
-    );
-    final changedAt = nowUtc.add(const Duration(seconds: 1));
-    final cursor = SyncCursor(
-      serverUpdatedAtUtc: changedAt,
-      documentId: 'word:station',
-    );
+  test(
+    'legacy word payload preserves null storage and exposes canonical read identity',
+    () async {
+      await _insertCategory(
+        database,
+        ownerId: 'owner-a',
+        id: 'category:travel',
+        name: 'Travel',
+      );
+      final changedAt = nowUtc.add(const Duration(seconds: 1));
+      final cursor = SyncCursor(
+        serverUpdatedAtUtc: changedAt,
+        documentId: 'word:station',
+      );
 
-    await store.applyPullPage(
-      ownerId: 'owner-a',
-      collection: SyncCollection.words,
-      ownerGateToken: 'test-owner-gate',
-      nowUtc: changedAt,
-      page: PullPage(
-        changes: <SyncEntity>[
-          SyncEntity(
-            collection: SyncCollection.words,
-            entityId: 'word:station',
-            revision: 1,
-            isDeleted: false,
-            payloadVersion: 1,
-            clientUpdatedAtUtc: changedAt,
-            serverUpdatedAtUtc: changedAt,
-            payload: <String, Object?>{
-              'categoryId': 'category:travel',
-              'spelling': 'station',
-              'normalizedSpelling': 'station',
-              'meaning': 'สถานี',
-              'normalizedMeaning': 'สถานี',
-              'partOfSpeech': 'noun',
-              'cefrLevel': null,
-              'source': 'manual',
-              'isGlobal': false,
-              'isDeleted': false,
-              'createdAtUtcMs': 0,
-              'updatedAtUtcMs': changedAt.millisecondsSinceEpoch,
-            },
-          ),
-        ],
-        nextCursor: cursor,
-        hasMore: false,
-      ),
-    );
+      await store.applyPullPage(
+        ownerId: 'owner-a',
+        collection: SyncCollection.words,
+        ownerGateToken: 'test-owner-gate',
+        nowUtc: changedAt,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.words,
+              entityId: 'word:station',
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: changedAt,
+              serverUpdatedAtUtc: changedAt,
+              payload: <String, Object?>{
+                'categoryId': 'category:travel',
+                'spelling': 'station',
+                'normalizedSpelling': 'station',
+                'meaning': 'สถานี',
+                'normalizedMeaning': 'สถานี',
+                'partOfSpeech': 'noun',
+                'cefrLevel': null,
+                'source': 'manual',
+                'isGlobal': false,
+                'isDeleted': false,
+                'createdAtUtcMs': 0,
+                'updatedAtUtcMs': changedAt.millisecondsSinceEpoch,
+              },
+            ),
+          ],
+          nextCursor: cursor,
+          hasMore: false,
+        ),
+      );
 
-    final word = await database.select(database.vocabularyWords).getSingle();
-    expect(word.contentRevision, 1);
-    expect(
-      word.contentChecksumSha256,
-      ContentQualityPolicy.vocabularyChecksumSha256(
-        categoryId: 'category:travel',
-        spelling: 'station',
-        normalizedSpelling: 'station',
-        meaning: 'สถานี',
-        normalizedMeaning: 'สถานี',
-        partOfSpeech: 'noun',
-        cefrLevel: null,
-        source: 'manual',
-        isGlobal: false,
-      ),
-    );
-  });
+      final word = await database.select(database.vocabularyWords).getSingle();
+      expect(word.contentRevision, 1);
+      expect(word.contentChecksumSha256, isNull);
+      final readableWord =
+          (await DriftLearningRepository(database).listQuizWords(
+            ownerId: 'owner-a',
+            categoryId: 'category:travel',
+            limit: 1,
+          )).single;
+      expect(
+        readableWord.contentChecksumSha256,
+        ContentQualityPolicy.vocabularyChecksumSha256(
+          categoryId: 'category:travel',
+          spelling: 'station',
+          normalizedSpelling: 'station',
+          meaning: 'สถานี',
+          normalizedMeaning: 'สถานี',
+          partOfSpeech: 'noun',
+          cefrLevel: null,
+          source: 'manual',
+          isGlobal: false,
+        ),
+      );
+    },
+  );
 
   test(
     'stored cursor rejects a lexicographically older cursor before mutation',

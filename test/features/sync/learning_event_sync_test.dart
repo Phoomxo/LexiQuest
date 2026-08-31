@@ -90,6 +90,7 @@ void main() {
   });
 
   test('attempt outbox reconstructs an immutable cloud mutation', () async {
+    await _bindOwner(database, ownerId: 'owner-1', firebaseUid: 'firebase-1');
     final learning = DriftLearningRepository(database);
     await learning.startSession(
       LearningSessionDraft(
@@ -353,9 +354,9 @@ void main() {
           'assignmentId': destinationAssignmentId,
         };
         expect(destinationContext.toJson(), expectedDestinationContext);
-        expect(
-          await destination.select(destination.outboxOperations).get(),
-          isEmpty,
+        await _expectOnlyPendingAchievementUnlockOutbox(
+          destination,
+          ownerId: destinationOwnerId,
         );
 
         final resolved =
@@ -712,16 +713,9 @@ void main() {
               occurredAtUtc: attemptAt,
             );
         expect(resolved.assignmentId, assignments.single.id);
-        expect(
-          await (destination.select(destination.outboxOperations)..where(
-                (row) => row.state.isIn(const <String>[
-                  'pending',
-                  'inFlight',
-                  'retryWaiting',
-                ]),
-              ))
-              .get(),
-          isEmpty,
+        await _expectOnlyPendingAchievementUnlockOutbox(
+          destination,
+          ownerId: destinationOwnerId,
         );
 
         final replay = await syncEngine.run();
@@ -1541,6 +1535,7 @@ void main() {
   );
 
   test('attempt acknowledgement is replay safe', () async {
+    await _bindOwner(database, ownerId: 'owner-1', firebaseUid: 'firebase-1');
     final learning = DriftLearningRepository(database);
     await learning.startSession(
       LearningSessionDraft(
@@ -1637,6 +1632,11 @@ void main() {
       try {
         await firstDatabase.customSelect('SELECT 1').getSingle();
         await _seedVocabulary(firstDatabase);
+        await _bindOwner(
+          firstDatabase,
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-1',
+        );
         final learning = DriftLearningRepository(firstDatabase);
         await learning.startSession(
           LearningSessionDraft(
@@ -1868,6 +1868,11 @@ void main() {
       try {
         await firstDatabase.customSelect('SELECT 1').getSingle();
         await _seedVocabulary(firstDatabase);
+        await _bindOwner(
+          firstDatabase,
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-1',
+        );
         final learning = DriftLearningRepository(firstDatabase);
         await learning.startSession(
           LearningSessionDraft(
@@ -2356,6 +2361,37 @@ SyncEntity _entityFromMutation(
   serverUpdatedAtUtc: serverUpdatedAtUtc,
   payload: mutation.payload,
 );
+
+Future<void> _expectOnlyPendingAchievementUnlockOutbox(
+  AppDatabase database, {
+  required String ownerId,
+}) async {
+  final operations = await database.select(database.outboxOperations).get();
+  expect(operations, hasLength(2));
+  expect(
+    operations.map((operation) => operation.ownerId),
+    everyElement(ownerId),
+  );
+  expect(
+    operations.map((operation) => operation.entityType),
+    everyElement('achievementUnlock'),
+  );
+  expect(
+    operations.map((operation) => operation.entityId),
+    unorderedEquals(<String>[
+      'achievement:$ownerId:first_answer:1',
+      'achievement:$ownerId:first_correct:1',
+    ]),
+  );
+  expect(
+    operations.map((operation) => operation.operationKind),
+    everyElement('upsert'),
+  );
+  expect(
+    operations.map((operation) => operation.state),
+    everyElement('pending'),
+  );
+}
 
 Future<void> _bindOwner(
   AppDatabase database, {

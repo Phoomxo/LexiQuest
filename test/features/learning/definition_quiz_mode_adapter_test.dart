@@ -18,6 +18,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart'
     show normalizeVocabularyText;
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
@@ -325,7 +326,7 @@ void main() {
         id: 'word:airport',
         spelling: 'airport',
         revision: 2,
-        checksum: _checksumB,
+        checksum: _canonicalCoreChecksum('airport'),
       );
       await _insertDefinitionWord(
         database,
@@ -333,7 +334,7 @@ void main() {
         id: 'word:station',
         spelling: 'station',
         revision: 3,
-        checksum: _checksumA,
+        checksum: _canonicalCoreChecksum('station'),
       );
       learning = LearningUseCases(
         owners: owners,
@@ -359,14 +360,14 @@ void main() {
               id: 'word:airport',
               spelling: 'airport',
               revision: 2,
-              checksum: _checksumB,
+              checksum: _canonicalCoreChecksum('airport'),
               definition: 'A place where aircraft arrive and depart.',
             ),
             _lexicalWord(
               id: 'word:station',
               spelling: 'station',
               revision: 3,
-              checksum: _checksumA,
+              checksum: _canonicalCoreChecksum('station'),
               definition: 'A place where trains stop for passengers.',
             ),
           ],
@@ -442,14 +443,14 @@ void main() {
               id: 'word:airport',
               spelling: 'airport',
               revision: 2,
-              checksum: _checksumB,
+              checksum: _canonicalCoreChecksum('airport'),
               definition: 'A place where aircraft arrive and depart.',
             ),
             _lexicalWord(
               id: 'word:station',
               spelling: 'station',
               revision: 3,
-              checksum: _checksumA,
+              checksum: _canonicalCoreChecksum('station'),
               definition: 'A place where trains stop for passengers.',
             ),
           ],
@@ -607,6 +608,19 @@ Future<void> _insertDefinitionWord(
         createdAtUtcMs: 1,
         updatedAtUtcMs: 1,
       ),
+    );
+
+String _canonicalCoreChecksum(String spelling) =>
+    ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: 'category:travel',
+      spelling: spelling,
+      normalizedSpelling: spelling,
+      meaning: 'ความหมาย',
+      normalizedMeaning: 'ความหมาย',
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'manual',
+      isGlobal: false,
     );
 
 final class _LostAckLearningRepository implements LearningRepository {

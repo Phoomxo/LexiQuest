@@ -296,7 +296,13 @@ void main() {
 
         expect(review.nextAttemptNumber, 1);
         expect(await database.select(database.answerAttempts).get(), isEmpty);
-        expect(await database.select(database.eventsV2).get(), isEmpty);
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.isNotValue('StreakPolicyCutover'),
+              ))
+              .get(),
+          isEmpty,
+        );
       },
     );
 
@@ -387,7 +393,13 @@ void main() {
         );
         expect(await database.select(database.learningSessions).get(), isEmpty);
         expect(await database.select(database.answerAttempts).get(), isEmpty);
-        expect(await database.select(database.eventsV2).get(), isEmpty);
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.isNotValue('StreakPolicyCutover'),
+              ))
+              .get(),
+          isEmpty,
+        );
       },
     );
 

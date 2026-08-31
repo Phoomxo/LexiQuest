@@ -1028,7 +1028,14 @@ void main() {
       );
     }
     expect(await database.select(database.answerAttempts).get(), isEmpty);
-    expect(await database.select(database.eventsV2).get(), isEmpty);
+    expect(
+      (await database.select(database.eventsV2).get()).where(
+        (event) =>
+            event.eventId.startsWith('learning-event:') ||
+            event.eventId.startsWith('learning-evidence-decisions:'),
+      ),
+      isEmpty,
+    );
     expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
 

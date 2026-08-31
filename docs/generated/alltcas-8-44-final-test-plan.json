@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "db843d5bdc619504cc2ce4a2727165318d53fedb",
-  "sourceFingerprint": "bc4faf095b1893051f2c8611d3a2abf0af99f78461c5d212038fe6c1f8e65894",
+  "sourceCommit": "04527b7fd468f8cf67b8f517d49548e1db61c277",
+  "sourceFingerprint": "a10a85d37130cfd81a5584806e29a89c8c5992ef8762f884d85afe40cf897152",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -121,7 +121,7 @@
     },
     {
       "path": "test",
-      "sha256": "847a080091a7d6893688080e00479666f491292744275390083ff2a3b6e6ad91"
+      "sha256": "d2885a002483ec623b00a89581357512966a04a87d540e449f9f7e19a7a90f91"
     },
     {
       "path": "test/architecture",
@@ -261,11 +261,11 @@
     },
     {
       "path": "test/features/learning",
-      "sha256": "0d0afab9dbb4847defa3872793e3b6305a76c4b0c093f2d70ce1857bfed6839f"
+      "sha256": "36cf8430573642b863533420b82c925e618dca4a03c9751fc7d17e3936a489c5"
     },
     {
       "path": "test/features/learning_packs",
-      "sha256": "ce816008623a1366c6163058df95845bc7ef28d148d1f45d316dc9e2aaa7e1c3"
+      "sha256": "f8810485f07031cee21d66d0ad93a69179aba3c3f38e273489c7318975ea9fc0"
     },
     {
       "path": "test/features/media_practice",
@@ -317,7 +317,7 @@
     },
     {
       "path": "test/features/sync",
-      "sha256": "26665c9ba9e192f713af8f195e002000054ae20d7bb50de990ba2865bd811272"
+      "sha256": "a2afed08fbfa2ddb37950b455b1783fc9a72afbab2b41eb0ed50101fdb54976c"
     },
     {
       "path": "test/features/time_tracking",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit db843d5bdc619504cc2ce4a2727165318d53fedb",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 04527b7fd468f8cf67b8f517d49548e1db61c277",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

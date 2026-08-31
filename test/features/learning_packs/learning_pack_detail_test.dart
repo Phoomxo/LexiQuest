@@ -182,12 +182,18 @@ void main() {
 
       expect(view.activities.map((activity) => activity.mode).toList(), const [
         LessonMode.associativeReading,
+        LessonMode.cefrReading,
         LessonMode.cloze,
         LessonMode.definitionQuiz,
+        LessonMode.dictation,
         LessonMode.flashcard,
         LessonMode.matching,
         LessonMode.meaningQuiz,
+        LessonMode.sentenceScramble,
+        LessonMode.shadowing,
+        LessonMode.speaking,
         LessonMode.typedRecall,
+        LessonMode.wordScramble,
       ]);
       expect(
         view.activities
@@ -562,6 +568,7 @@ VocabularyWord _definitionWord({
         : RichLexicalMetadata(
             englishDefinition: definition,
             examples: examples,
+            verifiedContentRevision: 1,
             verifiedArtifactChecksumSha256:
                 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
           ),
@@ -734,6 +741,9 @@ Future<void> _insertVerifiedPack(
 }
 
 Future<void> _insertLearnerProgress(AppDatabase database) async {
+  await (database.update(database.vocabularyWords)
+        ..where((word) => word.id.equals('word:station')))
+      .write(const VocabularyWordsCompanion(ownerId: Value('owner:detail')));
   await database
       .into(database.learningSessions)
       .insert(
