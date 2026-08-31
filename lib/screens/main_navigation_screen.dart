@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../features/assessment/domain/assessment_models.dart';
 import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
+import '../features/review/domain/review_queue_item.dart';
+import '../features/today_hub/domain/today_hub_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/production_feature_gate.dart';
@@ -21,13 +25,17 @@ import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'ghost_shadow_duel_screen.dart';
 import 'export_center_screen.dart';
+import 'learning_history_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
+import 'pre_post_assessment_screen.dart';
 import 'quest_status_screen.dart';
+import 'review_center_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
 import 'study_planning_hub_screen.dart';
+import 'today_hub_screen.dart';
 import 'weakness_clinic_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -147,6 +155,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         label: 'เรียนรู้',
       ),
       _NavigationEntry(
+        id: 'today',
+        productionEntryId: 'home/today',
+        visibilityFeatures: const [Feature.dailyContinuity],
+        requiresComposedDependency: true,
+        screen: _gate('today', Feature.dailyContinuity, _buildTodayHub),
+        icon: Icons.today_outlined,
+        selectedIcon: Icons.today,
+        label: 'วันนี้',
+      ),
+      _NavigationEntry(
         id: 'study-planning',
         productionEntryId: 'home/study-planning',
         visibilityFeatures: const [Feature.studyPlanning],
@@ -217,6 +235,171 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       feature: feature,
       registry: widget.featureRegistry,
       builder: builder,
+    );
+  }
+
+  Widget _buildTodayHub(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final todayHub = dependencies?.todayHub;
+    if (dependencies == null ||
+        todayHub == null ||
+        !dependencies.hasComposedDependencyFor(Feature.dailyContinuity)) {
+      return const ProductionFeatureUnavailable(
+        feature: Feature.dailyContinuity,
+        reason: ProductionFeatureUnavailableReason.missingDependency,
+      );
+    }
+    return TodayHubScreen(
+      useCases: todayHub,
+      actions: _MainNavigationTodayHubActions(
+        resume: _resumeFromToday,
+        startRecommendation: _startTodayRecommendation,
+        openReview: _openTodayReview,
+        openHistory: _openTodayHistory,
+        startAssessment: _openTodayAssessment,
+      ),
+      features: widget.featureRegistry ?? dependencies.features,
+      assessmentAvailable: dependencies.assessment != null,
+    );
+  }
+
+  Future<void> _resumeFromToday(LearningSessionSummary session) async {
+    if (!await _todayOwnerMatches(session.ownerId) || !mounted) {
+      throw StateError('Today resume no longer belongs to the active owner.');
+    }
+    _selectLearningFromToday();
+  }
+
+  Future<void> _startTodayRecommendation(
+    TodayHubRecommendation recommendation,
+  ) async {
+    final ownerId = recommendation.result.ownerId;
+    if (!recommendation.isAuthoritative ||
+        ownerId == null ||
+        !await _todayOwnerMatches(ownerId) ||
+        !mounted) {
+      throw StateError('Today recommendation is no longer authoritative.');
+    }
+    final mode = recommendation.result.recommendedMode;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final registration = mode == null
+        ? null
+        : dependencies?.lessonModes?.resolve(mode);
+    if (registration == null ||
+        dependencies?.features.isEnabled(registration.feature) != true) {
+      throw StateError('Today recommendation mode is unavailable.');
+    }
+    _selectLearningFromToday();
+  }
+
+  void _selectLearningFromToday() {
+    if (!_visibleEntries.any((entry) => entry.id == 'learning')) {
+      throw StateError('The canonical learning destination is unavailable.');
+    }
+    setState(() => _selectedEntryId = 'learning');
+  }
+
+  Future<bool> _todayOwnerMatches(String ownerId) async {
+    final identities = AppDependenciesScope.maybeOf(
+      context,
+    )?.activeOwnerIdentities;
+    if (identities == null) return false;
+    try {
+      return await identities.requireSingleActiveOwnerId() == ownerId;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _openTodayReview(List<TodayHubReviewWorkItem> work) async {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final reviewCenter = dependencies?.reviewCenter;
+    if (reviewCenter == null || !mounted) {
+      throw StateError('Review Center is unavailable.');
+    }
+    _pushDestination(
+      'home/today/review',
+      (_) => ReviewCenterScreen(
+        useCases: reviewCenter,
+        lessonShellBuilder: (item) =>
+            _buildTodayReviewLesson(dependencies!, item),
+      ),
+    );
+  }
+
+  UnifiedLessonShellLease _buildTodayReviewLesson(
+    AppDependencies dependencies,
+    ReviewQueueItem item,
+  ) {
+    final learning = dependencies.learning;
+    final createController = dependencies.createLessonController;
+    final registration = dependencies.lessonModes?.resolve(
+      LessonMode.meaningQuiz,
+    );
+    if (learning == null || createController == null || registration == null) {
+      throw StateError('Review lesson authority is unavailable.');
+    }
+    final controller = createController(registration.adapter);
+    return UnifiedLessonShellLease(
+      controller: controller,
+      learning: learning,
+      nowUtc: () => DateTime.now().toUtc(),
+      contrastiveFeedback: dependencies.contrastiveFeedback,
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('ทบทวนคำศัพท์')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('${item.spelling}\n${item.meaning}'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openTodayHistory() async {
+    final history = AppDependenciesScope.maybeOf(context)?.learningHistory;
+    if (history == null || !mounted) {
+      throw StateError('Learning History is unavailable.');
+    }
+    _pushDestination(
+      'home/today/history',
+      (_) => LearningHistoryScreen(useCases: history),
+    );
+  }
+
+  Future<void> _openTodayAssessment(
+    TodayHubAssignedAssessment assessment,
+  ) async {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final useCases = dependencies?.assessment;
+    final features = _features(context);
+    if (useCases == null ||
+        features?.isEnabled(Feature.researchAssessment) != true ||
+        !await _todayOwnerMatches(assessment.run.ownerId) ||
+        !mounted) {
+      throw StateError('Assigned assessment is unavailable.');
+    }
+    final run = assessment.run;
+    _pushDestination(
+      'research/assessment',
+      (_) => ProductionFeatureGate(
+        feature: Feature.researchAssessment,
+        registry: widget.featureRegistry ?? dependencies?.features,
+        builder: (_) => PrePostAssessmentScreen(
+          useCases: useCases,
+          command: AssessmentStartCommand(
+            runId: run.id,
+            learningSessionId: run.learningSessionId,
+            studyCycleId: run.studyCycleId,
+            phase: run.phase,
+            instrumentId: run.instrumentId,
+            instrumentVersion: run.instrumentVersion,
+            formId: run.formId,
+            formVersion: run.formVersion,
+          ),
+        ),
+      ),
     );
   }
 
@@ -773,6 +956,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
     );
   }
+}
+
+final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {
+  const _MainNavigationTodayHubActions({
+    required this._resume,
+    required this._startRecommendation,
+    required this._openReview,
+    required this._openHistory,
+    required this._startAssessment,
+  });
+
+  final Future<void> Function(LearningSessionSummary session) _resume;
+  final Future<void> Function(TodayHubRecommendation recommendation)
+  _startRecommendation;
+  final Future<void> Function(List<TodayHubReviewWorkItem> work) _openReview;
+  final Future<void> Function() _openHistory;
+  final Future<void> Function(TodayHubAssignedAssessment assessment)
+  _startAssessment;
+
+  @override
+  Future<void> resume(LearningSessionSummary session) => _resume(session);
+
+  @override
+  Future<void> startRecommendation(TodayHubRecommendation recommendation) =>
+      _startRecommendation(recommendation);
+
+  @override
+  Future<void> openReview(List<TodayHubReviewWorkItem> work) =>
+      _openReview(work);
+
+  @override
+  Future<void> openHistory() => _openHistory();
+
+  @override
+  Future<void> startAssessment(TodayHubAssignedAssessment assessment) =>
+      _startAssessment(assessment);
 }
 
 final class _MainSessionConfigurationContext {

@@ -158,12 +158,38 @@ final class RecommendationUseCases {
         protocolConstraint: RecommendationProtocolConstraint.open,
       );
     }
-    String ownerId;
+    return loadForRequest(
+      ownerId: suppliedOwnerId,
+      evaluatedAtUtc: now,
+      timezoneId: timezoneId,
+      protocol: protocol,
+      learnerOverride: learnerOverride,
+    );
+  }
+
+  /// Evaluates recommendation policy against one caller-pinned Today request.
+  /// This path never samples this use case's clock or active-owner callback.
+  Future<RecommendationPanelResult> loadForRequest({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+    required String timezoneId,
+    RecallLadderProtocolLimits? protocol,
+    LessonMode? learnerOverride,
+  }) async {
+    if (!evaluatedAtUtc.isUtc) {
+      throw ArgumentError.value(
+        evaluatedAtUtc,
+        'evaluatedAtUtc',
+        'must be UTC',
+      );
+    }
+    _canonicalIdentifier(timezoneId, 'timezoneId');
+    String canonicalOwnerId;
     try {
-      ownerId = _canonicalIdentifier(suppliedOwnerId, 'activeOwnerId');
-      if (!await reader.hasActiveOwner(ownerId)) {
+      canonicalOwnerId = _canonicalIdentifier(ownerId, 'ownerId');
+      if (!await reader.hasActiveOwner(canonicalOwnerId)) {
         return RecommendationPanelResult.unavailable(
-          ownerId: ownerId,
+          ownerId: canonicalOwnerId,
           reason: RecommendationPanelReason.canonicalAuthorityUnavailable,
           freshness: RecommendationEvidenceFreshness.missing,
           protocolConstraint: RecommendationProtocolConstraint.open,
@@ -177,6 +203,23 @@ final class RecommendationUseCases {
         protocolConstraint: RecommendationProtocolConstraint.open,
       );
     }
+    return _loadPolicy(
+      ownerId: canonicalOwnerId,
+      evaluatedAtUtc: evaluatedAtUtc,
+      requestTimezoneId: timezoneId,
+      protocol: protocol,
+      learnerOverride: learnerOverride,
+    );
+  }
+
+  Future<RecommendationPanelResult> _loadPolicy({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+    required String requestTimezoneId,
+    required RecallLadderProtocolLimits? protocol,
+    required LessonMode? learnerOverride,
+  }) async {
+    final now = evaluatedAtUtc;
     if (protocol != null &&
         (protocol.ownerId != ownerId ||
             protocol.version != RecallLadderProtocolLimits.currentVersion ||
@@ -219,7 +262,7 @@ final class RecommendationUseCases {
       snapshot = await reader.load(
         ownerId: ownerId,
         nowUtc: now,
-        timezoneId: timezoneId,
+        timezoneId: requestTimezoneId,
       );
     } on FormatException {
       return _neutral(

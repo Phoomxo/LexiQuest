@@ -4,17 +4,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
+import 'package:vocab_learning_app/features/history/domain/learning_history_models.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
+import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
+import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
+import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_category.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
@@ -30,6 +41,7 @@ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
+import 'package:vocab_learning_app/screens/today_hub_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -37,6 +49,186 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'f42 Today delivery fails closed for default-off or missing dependency',
+    (tester) async {
+      final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          const BuildFeatureRegistry.fieldDefaults(),
+          todayHub: loader,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+      expect(loader.calls, 0);
+
+      await tester.pumpWidget(
+        _mainNavigationApp(const BuildFeatureRegistry.allEnabled()),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'f42 live Today delivery opens the real Hub and emergency-off removes it',
+    (tester) async {
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
+      final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+      await tester.pumpWidget(_mainNavigationApp(features, todayHub: loader));
+      await tester.pumpAndSettle();
+
+      final entry = find.byKey(const ValueKey<String>('home/today'));
+      expect(entry, findsOneWidget);
+      expect(
+        tester
+            .widgetList<NavigationDestination>(
+              find.byType(NavigationDestination),
+            )
+            .map((destination) => destination.label),
+        contains('วันนี้'),
+      );
+
+      await tester.tap(entry);
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayHubScreen), findsOneWidget);
+      expect(loader.calls, 1);
+
+      features.emergencyOff(Feature.dailyContinuity);
+      await tester.pump();
+      expect(find.byKey(const ValueKey<String>('home/today')), findsNothing);
+      expect(find.byType(TodayHubScreen), findsNothing);
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(loader.calls, 1);
+    },
+  );
+
+  testWidgets(
+    'f42 signoff Today delivery requires its Hub review and history authorities',
+    (tester) async {
+      for (final missing in <String>['review', 'history']) {
+        AppDependencies? composed;
+        final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+
+        await tester.pumpWidget(
+          _mainNavigationApp(
+            const BuildFeatureRegistry.allEnabled(),
+            todayHub: loader,
+            includeReviewCenter: missing != 'review',
+            includeLearningHistory: missing != 'history',
+            onDependencies: (value) => composed = value,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          composed!.hasComposedDependencyFor(Feature.dailyContinuity),
+          isFalse,
+          reason: 'missing $missing authority must fail closed',
+        );
+        expect(
+          find.byKey(const ValueKey<String>('home/today')),
+          findsNothing,
+          reason: 'missing $missing authority must hide Today delivery',
+        );
+        expect(loader.calls, 0);
+      }
+    },
+  );
+
+  testWidgets(
+    'f42 signoff Today owner validation never invokes the creating owner API',
+    (tester) async {
+      final owner = _NavigationOwner(ownerId: 'owner:different');
+      final loader = _NavigationTodayHubLoader(
+        _emptyTodayHubSnapshot(
+          resumableSession: LearningSessionSummary(
+            id: 'session:today-owner-check',
+            ownerId: 'owner:main-navigation',
+            activityType: 'meaningQuiz',
+            state: 'active',
+            startedAtUtc: DateTime.utc(2026, 8, 31, 7, 55),
+            correctCount: 0,
+            wrongCount: 0,
+            score: 0,
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          const BuildFeatureRegistry.allEnabled(),
+          todayHub: loader,
+          localOwners: owner,
+          activeOwnerIdentities: const _UnavailableNavigationOwnerIdentities(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final callsBeforeTodayAction = owner.getOrCreateCalls;
+
+      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('today-hub-resume-action')));
+      await tester.pumpAndSettle();
+
+      expect(
+        owner.getOrCreateCalls,
+        callsBeforeTodayAction,
+        reason: 'a read-only owner check must not create an owner',
+      );
+      expect(find.byType(TodayHubScreen), findsOneWidget);
+      expect(find.byType(ChooseModeScreen), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'f42 final signoff Today delivery requires every learning launch authority and identity',
+    (tester) async {
+      for (final missing in <String>[
+        'learning',
+        'lessonModes',
+        'createLessonController',
+        'reviewSessionAuthority',
+        'historySessionAuthority',
+      ]) {
+        AppDependencies? composed;
+        final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+
+        await tester.pumpWidget(
+          _mainNavigationApp(
+            const BuildFeatureRegistry.allEnabled(),
+            todayHub: loader,
+            includeLearning: missing != 'learning',
+            includeLessonModes: missing != 'lessonModes',
+            includeCreateLessonController: missing != 'createLessonController',
+            mismatchReviewSessionAuthority: missing == 'reviewSessionAuthority',
+            mismatchHistorySessionAuthority:
+                missing == 'historySessionAuthority',
+            onDependencies: (value) => composed = value,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          composed!.hasComposedDependencyFor(Feature.dailyContinuity),
+          isFalse,
+          reason: '$missing must fail closed',
+        );
+        expect(
+          find.byKey(const ValueKey<String>('home/today')),
+          findsNothing,
+          reason: '$missing must hide Today delivery',
+        );
+        expect(loader.calls, 0);
+      }
+    },
+  );
+
   testWidgets(
     'all-enabled composition renders seven destinations and switches tabs',
     (WidgetTester tester) async {
@@ -341,15 +533,44 @@ void main() {
   });
 }
 
-Widget _mainNavigationApp(FeatureRegistry registry) {
+Widget _mainNavigationApp(
+  FeatureRegistry registry, {
+  TodayHubSnapshotLoader? todayHub,
+  LocalOwnerRepository? localOwners,
+  ReviewOwnerIdentityReader? activeOwnerIdentities,
+  bool includeReviewCenter = true,
+  bool includeLearningHistory = true,
+  bool includeLearning = true,
+  bool includeLessonModes = true,
+  bool includeCreateLessonController = true,
+  bool mismatchReviewSessionAuthority = false,
+  bool mismatchHistorySessionAuthority = false,
+  ValueSetter<AppDependencies>? onDependencies,
+}) {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
   final research = InertResearchDependencies(database);
-  final owner = _NavigationOwner();
+  final owner = localOwners ?? _NavigationOwner();
+  final ownerIdentities =
+      activeOwnerIdentities ?? const _NavigationReviewOwnerIdentities();
   final progress = ProgressUseCases(
     owners: owner,
     queries: DriftProgressQueries(database),
     nowUtc: () => DateTime.utc(2026, 8, 24),
+  );
+  final learning = LearningUseCases(
+    owners: owner,
+    repository: _NavigationLearningRepository(),
+    generateId: () => 'navigation-learning',
+    nowUtc: () => DateTime.utc(2026, 8, 24),
+    buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+  );
+  final otherLearning = LearningUseCases(
+    owners: owner,
+    repository: _NavigationLearningRepository(),
+    generateId: () => 'navigation-other-learning',
+    nowUtc: () => DateTime.utc(2026, 8, 24),
+    buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
   );
   final dependencies = AppDependencies(
     initialRoute: AppRoute.home,
@@ -375,34 +596,185 @@ Widget _mainNavigationApp(FeatureRegistry registry) {
       generateId: () => 'navigation-vocabulary',
       nowUtc: () => DateTime.utc(2026, 8, 24),
     ),
-    learning: LearningUseCases(
-      owners: owner,
-      repository: _NavigationLearningRepository(),
-      generateId: () => 'navigation-learning',
-      nowUtc: () => DateTime.utc(2026, 8, 24),
-      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
-    ),
-    lessonModes: buildLessonModeRegistry(),
+    localOwners: owner,
+    learning: includeLearning ? learning : null,
+    lessonModes: includeLessonModes ? buildLessonModeRegistry() : null,
+    createLessonController: includeCreateLessonController
+        ? (adapter) =>
+              UnifiedLessonController(learning: learning, adapter: adapter)
+        : null,
     progress: progress,
+    todayHub: todayHub,
+    activeOwnerIdentities: ownerIdentities,
+    reviewCenter: includeReviewCenter
+        ? ReviewCenterUseCases(
+            reader: const _NavigationReviewReader(),
+            ownerIdentities: ownerIdentities,
+            sessionLauncher: _NavigationReviewSessionLauncher(
+              mismatchReviewSessionAuthority ? otherLearning : learning,
+            ),
+            nowUtc: () => DateTime.utc(2026, 8, 24),
+            timezoneId: 'Asia/Bangkok',
+          )
+        : null,
+    learningHistory: includeLearningHistory
+        ? LearningHistoryUseCases(
+            owners: owner,
+            reader: const _NavigationHistoryReader(),
+            sessionLauncher: _NavigationHistorySessionLauncher(
+              mismatchHistorySessionAuthority ? otherLearning : learning,
+            ),
+          )
+        : null,
     studyPlanning: StudyPlanningUseCases(
       packs: _NavigationLearningPacks(),
       progress: progress,
     ),
     aiTutor: _NavigationAiTutor(),
   );
+  onDependencies?.call(dependencies);
   return AppDependenciesScope(
     dependencies: dependencies,
     child: MaterialApp(home: MainNavigationScreen(featureRegistry: registry)),
   );
 }
 
-final class _NavigationOwner implements LocalOwnerRepository {
+TodayHubSnapshot _emptyTodayHubSnapshot({
+  LearningSessionSummary? resumableSession,
+}) => TodayHubSnapshot(
+  ownerId: 'owner:main-navigation',
+  evaluatedAtUtc: DateTime.utc(2026, 8, 31, 8),
+  sectionOrder: TodayHubSectionKind.values,
+  resumableSession: resumableSession,
+  assignedAssessment: null,
+  reviewWork: const <TodayHubReviewWorkItem>[],
+  recommendation: TodayHubRecommendation(
+    result: RecommendationPanelResult.unavailable(
+      ownerId: 'owner:main-navigation',
+      reason: RecommendationPanelReason.noEligibleActivity,
+      freshness: RecommendationEvidenceFreshness.missing,
+      protocolConstraint: RecommendationProtocolConstraint.open,
+    ),
+    isAuthoritative: false,
+    mergedInto: null,
+  ),
+  goals: const [],
+  reminders: const [],
+  quests: const [],
+  gentleStreak: null,
+  dependencyStates: <TodayHubDependency, TodayHubDependencyState>{
+    for (final dependency in TodayHubDependency.values)
+      dependency: TodayHubDependencyState.ready,
+  },
+);
+
+final class _NavigationTodayHubLoader implements TodayHubSnapshotLoader {
+  _NavigationTodayHubLoader(this.snapshot);
+
+  final TodayHubSnapshot snapshot;
+  int calls = 0;
+
   @override
-  Future<identity.LocalOwner> getOrCreateActiveOwner() async =>
-      identity.LocalOwner(
-        id: 'owner:main-navigation',
-        createdAtUtc: DateTime.utc(2026, 8, 24),
-      );
+  Future<TodayHubSnapshot> load() async {
+    calls += 1;
+    return snapshot;
+  }
+}
+
+final class _NavigationReviewReader implements ReviewCenterReader {
+  const _NavigationReviewReader();
+
+  @override
+  Future<List<ReviewQueueItem>> compose(ReviewQueueFilter filter) async =>
+      const <ReviewQueueItem>[];
+}
+
+final class _NavigationReviewOwnerIdentities
+    implements ReviewOwnerIdentityReader {
+  const _NavigationReviewOwnerIdentities();
+
+  @override
+  Future<String> requireSingleActiveOwnerId() async => 'owner:main-navigation';
+}
+
+final class _UnavailableNavigationOwnerIdentities
+    implements ReviewOwnerIdentityReader {
+  const _UnavailableNavigationOwnerIdentities();
+
+  @override
+  Future<String> requireSingleActiveOwnerId() =>
+      Future<String>.error(StateError('no active owner'));
+}
+
+final class _NavigationReviewSessionLauncher implements ReviewSessionLauncher {
+  const _NavigationReviewSessionLauncher(this.learning);
+
+  final LearningUseCases learning;
+
+  @override
+  Object get authorityIdentity => learning;
+
+  @override
+  Future<PinnedReviewSessionLaunch> start({
+    required String ownerId,
+    required List<ReviewedLexicalContentSnapshot> items,
+  }) => Future<PinnedReviewSessionLaunch>.error(
+    StateError('The navigation fixture has no review work.'),
+  );
+
+  @override
+  Future<void> abandon({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) async {}
+}
+
+final class _NavigationHistoryReader implements LearningHistoryReader {
+  const _NavigationHistoryReader();
+
+  @override
+  Future<List<LearningHistoryEntry>> list(HistoryFilter filter) async =>
+      const <LearningHistoryEntry>[];
+
+  @override
+  Future<LessonStartCommand> replayAsNewSession(
+    String sourceSessionId, {
+    required String replayOperationId,
+  }) => Future<LessonStartCommand>.error(
+    StateError('The navigation fixture has no history work.'),
+  );
+}
+
+final class _NavigationHistorySessionLauncher
+    implements LearningHistorySessionLauncher {
+  const _NavigationHistorySessionLauncher(this.learning);
+
+  final LearningUseCases learning;
+
+  @override
+  Object get authorityIdentity => learning;
+
+  @override
+  Future<void> start(LessonStartCommand command) => Future<void>.error(
+    StateError('The navigation fixture cannot start history work.'),
+  );
+}
+
+final class _NavigationOwner implements LocalOwnerRepository {
+  _NavigationOwner({this.ownerId = 'owner:main-navigation'});
+
+  final String ownerId;
+  int getOrCreateCalls = 0;
+
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async {
+    getOrCreateCalls += 1;
+    return identity.LocalOwner(
+      id: ownerId,
+      createdAtUtc: DateTime.utc(2026, 8, 24),
+    );
+  }
 
   @override
   Future<identity.LocalOwner> bindFirebaseUid(

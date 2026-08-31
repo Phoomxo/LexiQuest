@@ -78,6 +78,26 @@ const _productContractsByBroadFeature = <String, Set<FeatureContractId>>{
 };
 
 void main() {
+  test('f42 reuses the single canonical daily continuity delivery', () {
+    final expected = _broadDeliveries[Feature.dailyContinuity]!;
+    final delivery = productionFeatureContract[Feature.dailyContinuity]!;
+
+    expect(delivery.productionEntryId, expected.productionEntryId);
+    expect(delivery.screenClassName, expected.screenClassName);
+    expect(
+      productionFeatureContract.values.where(
+        (candidate) =>
+            candidate.productionEntryId == expected.productionEntryId,
+      ),
+      hasLength(1),
+      reason: 'f42 child actions must not create another runtime delivery.',
+    );
+    expect(
+      _productContractsByBroadFeature['dailyContinuity'],
+      contains(FeatureContractId.f42),
+    );
+  });
+
   test('runtime feature identities append exactly four broad parents', () {
     expect(
       Feature.values.map((feature) => feature.name).toList(growable: false),

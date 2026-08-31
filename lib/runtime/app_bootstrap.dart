@@ -47,6 +47,8 @@ import '../features/export/data/file_selector_export_store.dart';
 import '../features/export/domain/export_contracts.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/goals/data/drift_learning_goal_repository.dart';
+import '../features/history/application/learning_history_use_cases.dart';
+import '../features/history/data/drift_learning_history_reader.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -63,7 +65,10 @@ import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/data/drift_session_configuration_store.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_repository.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/lesson_session_state.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/learning_packs/data/drift_learning_pack_repository.dart';
@@ -96,6 +101,11 @@ import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_avatar_progression_eligibility.dart';
 import '../features/rewards/data/drift_reward_projection_rebuilder.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
+import '../features/recommendation/application/recommendation_use_cases.dart';
+import '../features/recommendation/data/drift_recommendation_reader.dart';
+import '../features/recommendation/domain/active_recall_ladder.dart';
+import '../features/review/application/review_center_use_cases.dart';
+import '../features/review/data/drift_review_center_reader.dart';
 import '../features/review/application/learner_intent_use_cases.dart';
 import '../features/review/application/content_report_use_cases.dart';
 import '../features/review/data/drift_content_quality_report_repository.dart';
@@ -125,6 +135,8 @@ import '../features/time_tracking/application/focus_timer_rollout.dart';
 import '../features/time_tracking/application/learning_time_capture_rollout.dart';
 import '../features/time_tracking/data/drift_learning_time_repository.dart';
 import '../features/time_tracking/domain/learning_time_segment.dart';
+import '../features/today_hub/application/today_hub_use_cases.dart';
+import '../features/today_hub/data/drift_today_hub_reader.dart';
 import '../features/sync/domain/sync_gateway.dart';
 import '../features/sync/domain/sync_entity.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
@@ -1151,14 +1163,15 @@ final class AppBootstrap {
       (await localOwners.getOrCreateActiveOwner()).id,
     );
 
+    final learningRepository = DriftLearningRepository(
+      database,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: evidenceRolloutModeProvider,
+      lexicalVocabulary: vocabularyRepository,
+    );
     final learning = LearningUseCases(
       owners: localOwners,
-      repository: DriftLearningRepository(
-        database,
-        evidencePolicy: evidencePolicy,
-        rolloutModeProvider: evidenceRolloutModeProvider,
-        lexicalVocabulary: vocabularyRepository,
-      ),
+      repository: learningRepository,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
@@ -1177,6 +1190,62 @@ final class AppBootstrap {
       database,
       owners: localOwners,
       onLocalMutation: () async => notifyLocalMutation(),
+    );
+    final reviewReader = DriftReviewCenterReader(
+      database,
+      contentManifests: contentManifests,
+    );
+    final activeOwnerIdentities = DriftReviewOwnerIdentityReader(database);
+    final reviewCenter = ReviewCenterUseCases(
+      reader: reviewReader,
+      ownerIdentities: activeOwnerIdentities,
+      sessionLauncher: LearningUseCasesReviewSessionLauncher(learning),
+      nowUtc: () => DateTime.now().toUtc(),
+      timezoneId: resolvedLearningTimezoneId,
+    );
+    final learningHistory = LearningHistoryUseCases(
+      owners: localOwners,
+      reader: DriftLearningHistoryReader(
+        database,
+        learningTime: learningTime,
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
+      sessionLauncher: _BootstrapLearningHistorySessionLauncher(
+        learning: learning,
+        repository: learningRepository,
+        buildInfo: const AppBuildInfo.fromEnvironment(),
+      ),
+    );
+    final recommendation = RecommendationUseCases(
+      reader: DriftRecommendationReader(
+        database,
+        preferences: learnerPreferencesRepository,
+      ),
+      nowUtc: () => DateTime.now().toUtc(),
+      timezoneId: resolvedLearningTimezoneId,
+      activeOwnerId: () => activeOwnerIdentities.requireSingleActiveOwnerId(),
+      modeAvailability: <LessonMode, RecallLadderModeAvailability>{
+        for (final mode in ActiveRecallLadder.canonicalModes)
+          mode: switch (lessonModes.find(mode)) {
+            null => RecallLadderModeAvailability.missing,
+            final registration when !registration.isDeliverable =>
+              RecallLadderModeAvailability.implementedOff,
+            final registration
+                when !runtimeFeatures.isEnabled(registration.feature) =>
+              RecallLadderModeAvailability.liveOff,
+            _ => RecallLadderModeAvailability.available,
+          },
+      },
+    );
+    final todayHub = TodayHubUseCases(
+      activeOwnerId: () => activeOwnerIdentities.requireSingleActiveOwnerId(),
+      reader: DriftTodayHubReader(
+        database,
+        reviewReader: reviewReader,
+        recommendationUseCases: recommendation,
+      ),
+      nowUtc: () => DateTime.now().toUtc(),
+      timezoneId: resolvedLearningTimezoneId,
     );
     ActiveLearningTimeController createActiveLearningTimeController() {
       final timezoneId = resolvedLearningTimezoneId;
@@ -1501,6 +1570,10 @@ final class AppBootstrap {
       contrastiveFeedback: contrastiveFeedback,
       learningReconciliation: learningReconciliation,
       contentManifests: contentManifests,
+      todayHub: todayHub,
+      reviewCenter: reviewCenter,
+      learningHistory: learningHistory,
+      activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       learningGoals: learningGoals,
       learnerPreferences: learnerPreferences,
@@ -1556,6 +1629,55 @@ final class AppBootstrap {
     } catch (_) {
       return null;
     }
+  }
+}
+
+final class _BootstrapLearningHistorySessionLauncher
+    implements LearningHistorySessionLauncher {
+  const _BootstrapLearningHistorySessionLauncher({
+    required this.learning,
+    required this.repository,
+    required this.buildInfo,
+  });
+
+  final LearningUseCases learning;
+  final LearningRepository repository;
+  final AppBuildInfo buildInfo;
+
+  @override
+  Object get authorityIdentity => learning;
+
+  @override
+  Future<void> start(LessonStartCommand command) async {
+    final ownerId = command.ownerId;
+    if (ownerId == null ||
+        ownerId.isEmpty ||
+        ownerId != ownerId.trim() ||
+        command.sessionId.isEmpty ||
+        command.sessionId != command.sessionId.trim() ||
+        !command.startedAtUtc.isUtc ||
+        command.startedAtUtc.millisecondsSinceEpoch < 0 ||
+        command.itemCount < 1) {
+      throw StateError('History replay command is not canonical.');
+    }
+    final configuration = command.configuration;
+    if (configuration == null ||
+        configuration.ownerId != ownerId ||
+        configuration.mode != command.mode ||
+        configuration.itemCount != command.itemCount) {
+      throw StateError('History replay configuration is inconsistent.');
+    }
+    await repository.startSession(
+      LearningSessionDraft(
+        id: command.sessionId,
+        ownerId: ownerId,
+        activityType: command.mode.id,
+        startedAtUtc: command.startedAtUtc,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+        sessionConfiguration: configuration,
+      ),
+    );
   }
 }
 

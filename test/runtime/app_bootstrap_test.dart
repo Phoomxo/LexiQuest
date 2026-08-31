@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/features/assessment/data/drift_assessment_rep
 import 'package:vocab_learning_app/features/assessment/domain/assessment_instrument_catalog.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -52,6 +53,7 @@ import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
 import 'package:vocab_learning_app/features/reminders/application/study_reminder_use_cases.dart';
@@ -69,6 +71,7 @@ import 'package:vocab_learning_app/features/time_tracking/application/learning_t
 import 'package:vocab_learning_app/runtime/runtime_flag_namespaces.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/focus_timer_rollout.dart';
 import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
+import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -4688,6 +4691,123 @@ void main() {
     });
 
     test(
+      'f42 bootstrap composes one read-only Today Hub and canonical child authorities',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await bootstrap.initialize();
+
+          expect(dependencies.todayHub, isA<TodayHubUseCases>());
+          expect(dependencies.reviewCenter, isA<ReviewCenterUseCases>());
+          expect(dependencies.learningHistory, isA<LearningHistoryUseCases>());
+          expect(
+            dependencies.reviewCenter!.sessionAuthorityIdentity,
+            same(dependencies.learning),
+          );
+          expect(
+            dependencies.learningHistory!.sessionAuthorityIdentity,
+            same(dependencies.learning),
+          );
+          expect(
+            dependencies.hasComposedDependencyFor(Feature.dailyContinuity),
+            isTrue,
+          );
+          expect(
+            dependencies.features.stateOf(Feature.dailyContinuity),
+            FeatureState.hidden,
+            reason: 'composition must not auto-enable f42 delivery',
+          );
+          expect(
+            await database
+                .customSelect(
+                  'SELECT COUNT(*) AS count FROM experiment_assignments',
+                )
+                .map((row) => row.read<int>('count'))
+                .getSingle(),
+            0,
+            reason: 'bootstrap composition must not assign a participant',
+          );
+
+          final owner = await dependencies.localOwners!
+              .getOrCreateActiveOwner();
+          await DriftExperimentAssignmentRepository(database).assignIfAbsent(
+            ownerId: owner.id,
+            experimentId: 'f42-read-only',
+            experimentVersion: 1,
+            cohort: 'control',
+            protocolVersion: 'protocol-1',
+            assignedAtUtc: DateTime.utc(2026, 8, 30),
+          );
+          final before = await _f42CanonicalSourceRows(database);
+
+          final snapshot = await dependencies.todayHub!.load();
+
+          expect(snapshot.ownerId, owner.id);
+          expect(await _f42CanonicalSourceRows(database), before);
+          expect(
+            await DriftExperimentAssignmentRepository(database).getAssignment(
+              ownerId: owner.id,
+              experimentId: 'f42-read-only',
+              experimentVersion: 1,
+            ),
+            isNotNull,
+          );
+        } finally {
+          await dependencies?.dispose();
+        }
+      },
+    );
+
+    test(
+      'f42 signoff Today Hub load without one active owner fails closed without creating rows',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await bootstrap.initialize();
+          await database.customStatement(
+            'UPDATE local_owners SET is_active = 0',
+          );
+          final before = await _f42AllTableRows(database);
+
+          Object? failure;
+          try {
+            await dependencies.todayHub!.load();
+          } catch (error) {
+            failure = error;
+          }
+
+          expect(failure, isA<StateError>());
+          expect(
+            await _f42AllTableRows(database),
+            before,
+            reason:
+                'a read-only Today load must not create a replacement owner',
+          );
+        } finally {
+          await dependencies?.dispose();
+        }
+      },
+    );
+
+    test(
       'production bootstrap keeps persisted v15 assessment runs dormant after restart',
       () async {
         final directory = await Directory.systemTemp.createTemp(
@@ -5562,6 +5682,58 @@ Future<int> _pendingReminderIntents(AppDatabase database) => database
     )
     .map((row) => row.read<int>('count'))
     .getSingle();
+
+Future<Map<String, List<Map<String, Object?>>>> _f42CanonicalSourceRows(
+  AppDatabase database,
+) async {
+  const tables = <String>[
+    'experiment_assignments',
+    'learning_sessions',
+    'answer_attempts',
+    'events_v2',
+    'assessment_runs',
+    'srs_states',
+    'learning_goals',
+    'study_reminders',
+    'quest_instances',
+    'streak_states',
+    'outbox_operations',
+  ];
+  return <String, List<Map<String, Object?>>>{
+    for (final table in tables)
+      table: await database
+          .customSelect('SELECT * FROM $table ORDER BY rowid')
+          .map((row) => Map<String, Object?>.unmodifiable(row.data))
+          .get(),
+  };
+}
+
+Future<Map<String, List<Map<String, Object?>>>> _f42AllTableRows(
+  AppDatabase database,
+) async {
+  final tables = database.allTables.toList()
+    ..sort(
+      (left, right) => left.actualTableName.compareTo(right.actualTableName),
+    );
+  return <String, List<Map<String, Object?>>>{
+    for (final table in tables)
+      table.actualTableName: await database
+          .customSelect(
+            'SELECT * FROM "${table.actualTableName}" ORDER BY rowid',
+          )
+          .map(
+            (row) => <String, Object?>{
+              for (final entry in row.data.entries)
+                entry.key: switch (entry.value) {
+                  Uint8List bytes => base64Encode(bytes),
+                  DateTime time => time.toUtc().toIso8601String(),
+                  final value => value,
+                },
+            },
+          )
+          .get(),
+  };
+}
 
 final class _BootstrapReminderScheduler implements ReminderScheduler {
   int initializeCalls = 0;

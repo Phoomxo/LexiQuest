@@ -9,6 +9,7 @@ import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
+import '../features/history/application/learning_history_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/contrastive_feedback_use_cases.dart';
@@ -37,6 +38,8 @@ import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/content_quality_report_repository.dart';
 import '../features/review/domain/learner_intent.dart';
 import '../features/review/domain/learner_intent_repository.dart';
+import '../features/review/application/review_center_use_cases.dart';
+import '../features/review/domain/review_queue_item.dart';
 import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -44,6 +47,7 @@ import '../features/time_tracking/application/active_learning_time_controller.da
 import '../features/time_tracking/application/focus_timer_rollout.dart';
 import '../features/time_tracking/application/learning_time_capture_rollout.dart';
 import '../features/time_tracking/domain/learning_time_repository.dart';
+import '../features/today_hub/application/today_hub_use_cases.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
@@ -95,6 +99,10 @@ final class AppDependencies {
     this.contrastiveFeedback,
     this.learningReconciliation,
     this.contentManifests,
+    this.todayHub,
+    this.reviewCenter,
+    this.learningHistory,
+    this.activeOwnerIdentities,
     this.studyPlanning,
     this.learningGoals,
     this.learnerPreferences,
@@ -156,6 +164,10 @@ final class AppDependencies {
   final ContrastiveFeedbackUseCases? contrastiveFeedback;
   final LearningReconciliationScheduler? learningReconciliation;
   final ContentManifestRepository? contentManifests;
+  final TodayHubSnapshotLoader? todayHub;
+  final ReviewCenterUseCases? reviewCenter;
+  final LearningHistoryUseCases? learningHistory;
+  final ReviewOwnerIdentityReader? activeOwnerIdentities;
   final StudyPlanningUseCases? studyPlanning;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;
@@ -215,7 +227,17 @@ final class AppDependencies {
     Feature.questV2 => true,
     Feature.studyPlanning => studyPlanning != null,
     Feature.researchAssessment => assessment != null,
-    Feature.dailyContinuity => false,
+    Feature.dailyContinuity =>
+      todayHub != null &&
+          reviewCenter != null &&
+          learningHistory != null &&
+          activeOwnerIdentities != null &&
+          learning != null &&
+          lessonModes != null &&
+          createLessonController != null &&
+          identical(reviewCenter?.ownerIdentities, activeOwnerIdentities) &&
+          identical(reviewCenter?.sessionAuthorityIdentity, learning) &&
+          identical(learningHistory?.sessionAuthorityIdentity, learning),
     Feature.offlineContent => offlineContent != null,
   };
 
