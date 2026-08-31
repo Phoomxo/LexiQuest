@@ -1,0 +1,1020 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "d6be10d2ac6206fb018730449483c33cc4ed04b2",
+  "sourceFingerprint": "a49e1b1470cabb36b260cc5745731ec1615bec384ed9b1225e332ba03f2f4acc",
+  "sources": [
+    {
+      "path": "android/app/build.gradle.kts",
+      "sha256": "dab1826bad73ab77293f4178123767bb73f1f7b59e680e303b3a80ef5563e737"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "sha256": "8feb6e73cb38506afd81646dd0d92e3ec6b5e155cecbb686136d53ac2fa4426a"
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "sha256": "218f400e3fff31c9c986a2535dfb974560e1b4d33cc27b7c1fee96a2b7e44454"
+    },
+    {
+      "path": "android/gradle.properties",
+      "sha256": "eff1f0d6433247801de558ea7049c662486a6c434a57a8c76aed9fcef06504e9"
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "sha256": "ca5efe2165c5023dd43b24d07c9591c375fb704209b51ec07da845a012febe85"
+    },
+    {
+      "path": "docs/database/schema_ledger.md",
+      "sha256": "9cde86ad610b156815b3ffe32f4d05dc648833a3221f8b27c235c66a7b1c2ad4"
+    },
+    {
+      "path": "docs/field/2026-08-09-runtime-feature-ledger.md",
+      "sha256": "6095df071f8c016da8a58595c2a4c832c3ce089c95b721367b340853eb056a01"
+    },
+    {
+      "path": "docs/generated/alltcas-idea-integration-feature-map.json",
+      "sha256": "f6f623bef0fbd3e2fdde6dbb34863282aeeb03ad8c8927ccc7a5a5ec349eae53"
+    },
+    {
+      "path": "docs/generated/alltcas-idea-integration-feature-map.md",
+      "sha256": "7b7d4ee9098512748d9dee5b94768df860a78dcd74c0fd1303cbc2822c3d798f"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-08-14-alltcas-8-44-capability-implementation-master-plan.md",
+      "sha256": "2730ec03b98a060b6860e0af10b0e5d438c0f888a152836a43cb9636ccc39581"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-08-31-alltcas-ui-evidence-acceptance-delta.md",
+      "sha256": "0b92a999042a14321d9a7364c706c09e5597c9992ac1f6ef2c2c7562f96e2f6f"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-08-14-lexiquest-alltcas-idea-integration-feature-contract-design.md",
+      "sha256": "de5466da020f02d098ba07c195d9ecc9d9e169457f373441e2734aec4473e76d"
+    },
+    {
+      "path": "firebase.json",
+      "sha256": "5c9af54c7944f5018ee079d00698182bf9bbe84c755f8227e611c6e76ba3c118"
+    },
+    {
+      "path": "firestore.rules",
+      "sha256": "03c95b6b0d20b694725e7ee68ffb27baf72909b2d426dbff5b0f852d01ec71d3"
+    },
+    {
+      "path": "integration_test/field_trial_core_journey_test.dart",
+      "sha256": "0e0abf928e4b64934f362cf0cc3852ada3826a5e9280f84129f00e24d37dc6e2"
+    },
+    {
+      "path": "integration_test/field_trial_feature_controls_test.dart",
+      "sha256": "5ac909b3c9c4e36a190088f2102f5db1e2cf2111241f4f63a488d23c85755092"
+    },
+    {
+      "path": "integration_test/field_trial_media_smoke_test.dart",
+      "sha256": "5e360720287fc8330bc5fc391910a9022ed9c8d451f84e4a6982421909ec98ee"
+    },
+    {
+      "path": "lib",
+      "sha256": "6bf2feea0adf65de0be3ec598b0345772da5ac01e3ee635e592103a8db3182ec"
+    },
+    {
+      "path": "lib/data/local/app_database.dart",
+      "sha256": "423ebf5357b2f4dc1131ea3b6b0a0d793fc79e0f883b5f96a03bdca8d952baac"
+    },
+    {
+      "path": "lib/features/assessment/domain/assessment_instrument_catalog.dart",
+      "sha256": "325cc34e1a93e17ceff52427704838b85c0827d9728e8cbee332f3b39c4cdd11"
+    },
+    {
+      "path": "lib/features/companion/domain/companion_reaction_catalog.dart",
+      "sha256": "d7d6e27a07472062a791ee5945de299659227347ee59dce21b810e30f7f09dac"
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "sha256": "e291855949fdecd130d3704edc39d2f43edf6acbcba026573df85ac6f5a692f3"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_entity.dart",
+      "sha256": "d1c7c754cbdd2ac8772f5b7ab760e6730c376e1f62e877b648ffb1b908a8e3b4"
+    },
+    {
+      "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
+      "sha256": "6990709b98202f4e253cd4e3e8f1402545bd36a50a4ed124855501f47746b77b"
+    },
+    {
+      "path": "lib/runtime/registries/feature.dart",
+      "sha256": "c4cbc0bf0cc76f11e03c74ff7fb4e9a057b8c27f7cb57e274c082a2bfdb863f7"
+    },
+    {
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "e37d9b14715b8c98367a5ded7556fdba116a764a9cc917bfc75fb81f2dddff52"
+    },
+    {
+      "path": "package.json",
+      "sha256": "907b67d276e9eabdcf1b11da23b69b81ed9f8d2ee0f096243b74b19eb8751c54"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "b8198835f1f4d1f5ce50b8fb6f42ead40aa4aac2f92ffeda90e6d7efe3780c22"
+    },
+    {
+      "path": "test",
+      "sha256": "652d1b7663b9465cb8251827c6cf6ad8ef9eca2c4577e43918a54ad00a917b38"
+    },
+    {
+      "path": "test/architecture",
+      "sha256": "338d7d1837c13574dc1443effe65295192da767e06078459d0f6d0ec419fe892"
+    },
+    {
+      "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
+      "sha256": "6edc9d0d89d430cbec81301d06d244435a201565d727c60cb4a4defd584da411"
+    },
+    {
+      "path": "test/architecture/final_8_44_test_plan_review_contract_test.dart",
+      "sha256": "f9d3277ef0ff2fe17e4e9cf485a330b3ce989dac723bfa1abbb00a3aa47e68ee"
+    },
+    {
+      "path": "test/data/local/app_database_migration_test.dart",
+      "sha256": "def99dfe5db6095ca9d01231ebd9d2ee1256296c5488738c8085819540495f3a"
+    },
+    {
+      "path": "test/database/migration_v11_to_v12_test.dart",
+      "sha256": "5f8a538f0d10286b0514a2488970dbeed13b9a657797e0280379b4e151f9fc88"
+    },
+    {
+      "path": "test/database/migration_v12_to_v13_test.dart",
+      "sha256": "f09fdddec5c8c9dce6f13283a20fa44fee231c39e7514e8342a6b62b47ac5423"
+    },
+    {
+      "path": "test/database/migration_v13_to_v14_test.dart",
+      "sha256": "b8147cd993fd8bf4528cac5ab5ce34d8504980dfacc8e920a1019053cc2a814b"
+    },
+    {
+      "path": "test/database/migration_v14_to_v15_test.dart",
+      "sha256": "16a33b5faacce5ebf410ceaaa48c11fc015fc9e50fc88b98ebcf8a5bedf99504"
+    },
+    {
+      "path": "test/database/migration_v15_to_v16_test.dart",
+      "sha256": "5c6a9cc2b2198bb12dcc43b56a50580f592dba2c9d3b6115bc28ddea34509914"
+    },
+    {
+      "path": "test/database/migration_v16_to_v17_test.dart",
+      "sha256": "b68d8dabcc4010a580c02667b80a5ce92b95be3a30a9dc906e7cb827b84109fb"
+    },
+    {
+      "path": "test/database/migration_v17_to_v18_test.dart",
+      "sha256": "fe2be6f94aaec08ec516d8fc81cf08daa57e09f7d03fa57bc446ee12b5876f01"
+    },
+    {
+      "path": "test/database/migration_v18_to_v19_test.dart",
+      "sha256": "20d1b141bff7f7091a4bd9ea191b19baac0ffacdcd78ecb858878edce3d21e79"
+    },
+    {
+      "path": "test/database/migration_v19_to_v20_test.dart",
+      "sha256": "b5c130558c3c692bf200791be11709f8dbbf42bceaafa3746b886b0f7216efcd"
+    },
+    {
+      "path": "test/database/migration_v1_to_v22_matrix_test.dart",
+      "sha256": "493e086fe808ccbaf517c4e6e836c46c9d6b548faf21067e89eb2dfe56f3e24d"
+    },
+    {
+      "path": "test/database/migration_v20_to_v21_test.dart",
+      "sha256": "9aea16047aa790af8bce55b8e8519fd77c08da01e3120a92167286c1468f6f96"
+    },
+    {
+      "path": "test/database/migration_v21_to_v22_test.dart",
+      "sha256": "955961132dfa8e6d34be4510bc73ee22f28b4c516b554b218c8e75e28ebca5ad"
+    },
+    {
+      "path": "test/database/migration_v6_to_v7_test.dart",
+      "sha256": "33eb52088c909a964dfbb9bee9db2988faab28f49c108ad3db05d3bf11ba524a"
+    },
+    {
+      "path": "test/database/migration_v7_to_v8_test.dart",
+      "sha256": "f672e596e791b539f384b65c872098a819aff891bdc15124725a056c768098fe"
+    },
+    {
+      "path": "test/database/migration_v8_to_v9_test.dart",
+      "sha256": "6f980b5e5a7f0edd69005160e9ef32871cf1a92a8f88d7690a8ff4f2f58f380b"
+    },
+    {
+      "path": "test/database/migration_v9_to_v10_test.dart",
+      "sha256": "cd37179b7791e661df0e932b4c41c64781946306628d983e466f86434399ca01"
+    },
+    {
+      "path": "test/features/accessibility",
+      "sha256": "0a69e142da559ebcd034be224126fb6e842c2f8f6100a228ad6600d31747276d"
+    },
+    {
+      "path": "test/features/account",
+      "sha256": "a48c1dabf63e91ab2d5dd3a50ee2ea81bda89f2a3f914dcc3372f69b77936d1b"
+    },
+    {
+      "path": "test/features/achievements",
+      "sha256": "262b60ad1a7138df4ef4b5d7447f25927a8322317894e31cc30226ceaf8af7ee"
+    },
+    {
+      "path": "test/features/ai_tutor",
+      "sha256": "e05739e34ca2e4eb9f782335f15bf18d0e78b9b3f25b236006b00bf585b22843"
+    },
+    {
+      "path": "test/features/assessment",
+      "sha256": "3b127c4729484366788a2bb8abee8e48b731bbbf996e399eff2b26ea8a3a89fd"
+    },
+    {
+      "path": "test/features/companion",
+      "sha256": "0e9ea2c013506036ced72b59b39374c4ea0a66de2070b76fb6457304adf883f9"
+    },
+    {
+      "path": "test/features/consent",
+      "sha256": "3cdaf35bd9e7d19eead12d13774d29b7ad0e8b48e86654bd9ddf450951f2747c"
+    },
+    {
+      "path": "test/features/device_model",
+      "sha256": "3d11ab99d00635f79feca55d4f69d4931ab1f9099452de30d7b9842fb40afb5b"
+    },
+    {
+      "path": "test/features/events",
+      "sha256": "a197f06f47a95192d873ff53f3e26aefdc78a0dc045e2fa6e903066ebef30339"
+    },
+    {
+      "path": "test/features/export",
+      "sha256": "52c11e0582909730d4706e43a7de55abe268fa74821b55066740e7609d5a6678"
+    },
+    {
+      "path": "test/features/gemini",
+      "sha256": "5d02d44b47eccbd94ba34915f6ee7c7b6edaa3aae564969d9adfd15b8edbee0e"
+    },
+    {
+      "path": "test/features/goals",
+      "sha256": "dcd800a7503a65074f88097e7ffa3c71517d302fe2588768aba18163c1ffe161"
+    },
+    {
+      "path": "test/features/history",
+      "sha256": "35ab1879e7e86533ed9fb269935482f98707c9b21ef5cb7d6e50f342ccd87eae"
+    },
+    {
+      "path": "test/features/identity",
+      "sha256": "ebd5f0035eefbf36c64bc7db0aa336c12ccf25956c7cfef29329934d9a5ab165"
+    },
+    {
+      "path": "test/features/learning",
+      "sha256": "ab2c8e17ee89864e931c6c416189a208ca94ea7638a3c2d12aed5c0e5f007e1c"
+    },
+    {
+      "path": "test/features/learning_packs",
+      "sha256": "ce816008623a1366c6163058df95845bc7ef28d148d1f45d316dc9e2aaa7e1c3"
+    },
+    {
+      "path": "test/features/media_practice",
+      "sha256": "2d9e8c909bf464845d042dd87bb0180c048cec62b2a16c722837d44759188f4b"
+    },
+    {
+      "path": "test/features/motivation",
+      "sha256": "7b15c11515fa406fcdae3811999c6238fa30c4eedf5a7b33eb6c6c2248c2ddad"
+    },
+    {
+      "path": "test/features/offline_content",
+      "sha256": "7e8c69d35eaf4c2c84b1c0a09c599cafeaeef14f9c57d7af49bc1c0df683a564"
+    },
+    {
+      "path": "test/features/preferences",
+      "sha256": "7e80b14fe74836c19b668dc0d98f54b26896b23605d6ce9857523c4f44893ad2"
+    },
+    {
+      "path": "test/features/progress",
+      "sha256": "a60845c59ae81c14ad30178b44f80713806176864a93a1a7d3277396bad797a2"
+    },
+    {
+      "path": "test/features/quest",
+      "sha256": "daa16a0b2cc472ebd35471230511c87aa97a0eddbe4a81f4e2058b2f3d644658"
+    },
+    {
+      "path": "test/features/recommendation",
+      "sha256": "3c1f96b195e98c409ec6d0365812739c193bb734c37c6a9cef6f29e819b123e6"
+    },
+    {
+      "path": "test/features/reminders",
+      "sha256": "045363e6a333eec65f31b55079df5cd2e28c0bb8e22efd87087822ada9ff4a32"
+    },
+    {
+      "path": "test/features/research",
+      "sha256": "0a81bd0254e2af85c5bc11dcc973a56cfda1a3cc6d5d50532cf9bdad7e17d342"
+    },
+    {
+      "path": "test/features/review",
+      "sha256": "c756960793d0322ae319d1c53f8d5eb651ba36df7d6ffd23525160ce1c9cd49c"
+    },
+    {
+      "path": "test/features/rewards",
+      "sha256": "5308cf6665465dc635e485c4dee7fc0a1aa52cd4848d3539249c04a89ba32e71"
+    },
+    {
+      "path": "test/features/session",
+      "sha256": "edfcd28374181a2715dc1a5af93adc25217f63a8cd4d8c054d68b942ed1c501e"
+    },
+    {
+      "path": "test/features/sync",
+      "sha256": "26665c9ba9e192f713af8f195e002000054ae20d7bb50de990ba2865bd811272"
+    },
+    {
+      "path": "test/features/time_tracking",
+      "sha256": "1e3f08bc0ed512f4af00e1473951156a49df3b64a21cc055d833c11d6e346339"
+    },
+    {
+      "path": "test/features/today_hub",
+      "sha256": "b96b8055a1aed9c3e38c9e1c8564dfec3aea458d7d270379a411abfae291ac15"
+    },
+    {
+      "path": "test/features/vocabulary",
+      "sha256": "68ef2f78e0650a0cc9b5ba93d4f316d8c0cb34ac2550efeff9cfcfbda9769b0f"
+    },
+    {
+      "path": "test/features/voice",
+      "sha256": "d5b4908103ab5182e89dccbfffa717ab5eecece8f093e28b31d948978b81b5ea"
+    },
+    {
+      "path": "test/runtime/runtime_feature_controls_test.dart",
+      "sha256": "ea9b285cc2fb3e33d1c06e6d003d6c72212e2d3aca0df2e697ddb15f6ff152aa"
+    },
+    {
+      "path": "test/scenarios/complete_owner_export_delete_test.dart",
+      "sha256": "1c8cebcff530d40842b48f9df0a3a30196206b8c2f8246ae1180b2071310d195"
+    },
+    {
+      "path": "test/scenarios/file_backed_sync_recovery_test.dart",
+      "sha256": "0adea411c16a426c8aab7cf9f2ceaa6de349ce68a7177ebed44561283bb0f4a7"
+    },
+    {
+      "path": "test/scenarios/guest_upgrade_restart_test.dart",
+      "sha256": "8f8ffc4553f36d69febd52639f916e99b11435b8f6970dbff447506a91e7fd0a"
+    },
+    {
+      "path": "test/scenarios/production_learning_restart_test.dart",
+      "sha256": "72a511e078f928bea8bdeeee85f0cc5489d862301d64811bdf164587467d93b4"
+    },
+    {
+      "path": "test/scenarios/runtime_kill_switch_journey_test.dart",
+      "sha256": "90d97cd84ea1998f03a7243015b095673f316f1ab27947ef066014936958d392"
+    },
+    {
+      "path": "test/screens",
+      "sha256": "20cbfaf71ae8ccfcc4bdc2812d12cf656a99a03ec427986dcf20db12fdf3b53b"
+    },
+    {
+      "path": "test/security/firebase-auth-emulator.test.cjs",
+      "sha256": "bbbc08652140de7d6f7c3b4377871d1187b6d6c48dd6abe425260c74c709e694"
+    },
+    {
+      "path": "test/security/firestore-rules.test.cjs",
+      "sha256": "249e2c2e15df7fd2afd8a963aaeaf7f13bbc0f7cb5118a72b8ee53fe271ca9c9"
+    },
+    {
+      "path": "test/support/current_database_contract.dart",
+      "sha256": "a430ff4171afc517a4f96d26fc60341d860bcf88834125b9dd342e8ad7a697cb"
+    },
+    {
+      "path": "test/widgets",
+      "sha256": "d16fdf0a770a763c0c18d8eb0faa87d80558360d1abcd28fb54ca0be613ff9b3"
+    },
+    {
+      "path": "tool",
+      "sha256": "024a06d684685b818d093a9ffdbc26d1fb5b2283b56fc411998f8f73b19773a7"
+    },
+    {
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "7e8a723fdea2a9a194d3ad76e79f03a18db79cb6747c29df083d105eb0ed6f75"
+    },
+    {
+      "path": "tool/cli/tests/run-android-smoke.tests.ps1",
+      "sha256": "fddef7c20b8aad3c4aa372c97d44bd846a673de8abb330e3d2a3b530f413c9bc"
+    },
+    {
+      "path": "tool/cli/tests/verify-product-completion.tests.ps1",
+      "sha256": "bbf1709a916405bd5e15aec246aa201e1e6e44cecd45deab6351c7f81f40e10d"
+    },
+    {
+      "path": "tool/cli/verify-product-completion.ps1",
+      "sha256": "19c8e1d4c3dd7f1697b4c87fdec2f69e3bcec49df46d2b139525366027b7d71e"
+    },
+    {
+      "path": "tool/feature_contract/generate_feature_map.dart",
+      "sha256": "58ef45baa3ffb5e6d488df121e8256d90de42dc714176e2fecc95ed16fe93852"
+    },
+    {
+      "path": "tool/final_test_plan/generate_final_test_plan.dart",
+      "sha256": "80847c40b21dfc05bee36f2304723106d77db6e5c061083226264fae92eae9ba"
+    }
+  ],
+  "productContract": {
+    "revision": "1.3.0",
+    "semanticHash": "41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4",
+    "capabilityCount": 44,
+    "completionContractCount": 8
+  },
+  "database": {
+    "schemaVersion": 22,
+    "tableCount": 44,
+    "tables": [
+      "achievement_unlocks",
+      "ai_usage_events",
+      "answer_attempts",
+      "assessment_runs",
+      "association_records",
+      "associative_memory_states",
+      "content_download_states",
+      "content_manifests",
+      "content_quality_reports",
+      "equipped_reward_items",
+      "events_v2",
+      "experiment_assignments",
+      "learner_preferences",
+      "learning_day_log",
+      "learning_goals",
+      "learning_pack_items",
+      "learning_packs",
+      "learning_sessions",
+      "learning_time_segments",
+      "local_owners",
+      "model_downloads",
+      "outbox_operations",
+      "owned_reward_items",
+      "points_ledger_entries",
+      "quest_definitions",
+      "quest_instances",
+      "quest_objective_progress",
+      "reading_events",
+      "reading_progress_entries",
+      "research_consents",
+      "reward_transactions",
+      "runtime_flags",
+      "saved_learning_items",
+      "session_configurations",
+      "speech_evidence",
+      "srs_states",
+      "streak_states",
+      "study_reminders",
+      "sync_checkpoints",
+      "sync_conflicts",
+      "vocabulary_categories",
+      "vocabulary_import_rows",
+      "vocabulary_imports",
+      "vocabulary_words"
+    ],
+    "migrationTransitions": [
+      "v1-to-v2",
+      "v2-to-v3",
+      "v3-to-v4",
+      "v4-to-v5",
+      "v5-to-v6",
+      "v6-to-v7",
+      "v7-to-v8",
+      "v8-to-v9",
+      "v9-to-v10",
+      "v10-to-v11",
+      "v11-to-v12",
+      "v12-to-v13",
+      "v13-to-v14",
+      "v14-to-v15",
+      "v15-to-v16",
+      "v16-to-v17",
+      "v17-to-v18",
+      "v18-to-v19",
+      "v19-to-v20",
+      "v20-to-v21",
+      "v21-to-v22"
+    ]
+  },
+  "runtime": {
+    "featureCount": 19,
+    "ledgerFeatureCount": 19,
+    "states": {
+      "vocabulary": "enabled",
+      "quiz": "enabled",
+      "srs": "enabled",
+      "reading": "enabled",
+      "mastery": "enabled",
+      "weakness": "enabled",
+      "ghostDuel": "enabled",
+      "achievements": "enabled",
+      "shop": "enabled",
+      "objectScanner": "limited",
+      "speechPractice": "limited",
+      "aiTutor": "limited",
+      "export": "enabled",
+      "shadowRewardV2": "hidden",
+      "questV2": "limited",
+      "studyPlanning": "hidden",
+      "researchAssessment": "hidden",
+      "dailyContinuity": "hidden",
+      "offlineContent": "hidden"
+    },
+    "codePresenceEnablesRuntime": false,
+    "runtimeVisibilityAssignsCohort": false,
+    "missingDependencyFailsClosed": true
+  },
+  "rulesRevisions": {
+    "legacy": "legacy-v1",
+    "answerAttemptV2": "answer-attempt-v2-r1",
+    "vocabularyWordV2": "vocabulary-word-v2-r1",
+    "experimentAssignmentV1": "experiment-assignment-v1-r1",
+    "assessmentRunV1": "assessment-run-v1-r3",
+    "savedLearningItemV1": "saved-learning-item-v1-r1",
+    "contentQualityReportV1": "content-quality-report-v1-r1",
+    "learningTimeSegmentV1": "learning-time-segment-v1-r1",
+    "learningGoalV1": "learning-goal-v1-r1",
+    "learnerPreferenceV1": "learner-preference-v1-r1"
+  },
+  "contentRevisionAuthorities": [
+    {
+      "authority": "contentManifests",
+      "source": "lib/features/learning_packs/domain/content_quality_policy.dart"
+    },
+    {
+      "authority": "assessmentInstrumentCatalog",
+      "source": "lib/features/assessment/domain/assessment_instrument_catalog.dart"
+    },
+    {
+      "authority": "companionReactionCatalog",
+      "source": "lib/features/companion/domain/companion_reaction_catalog.dart"
+    }
+  ],
+  "platform": {
+    "androidBuildRequired": true,
+    "androidSmokeRequired": true,
+    "iosExcludedByOwner": true,
+    "iosExclusionReason": "Owner-directed Android-first final verification scope."
+  },
+  "executionEvidence": {
+    "requiredFields": [
+      "sourceCommit",
+      "sourceFingerprint",
+      "schemaVersion",
+      "tableInventory",
+      "contractRevision",
+      "contractSemanticHash",
+      "contentRevisions",
+      "runtimeStates",
+      "rulesRevisions",
+      "command",
+      "exitCode",
+      "rollbackDrillResult"
+    ],
+    "codePresenceIsNotRolloutEvidence": true,
+    "localRulesSuccessIsNotDeploymentEvidence": true
+  },
+  "gates": [
+    {
+      "id": "contract-feature-map-drift",
+      "category": "contractDrift",
+      "command": "dart run tool/feature_contract/generate_feature_map.dart --check",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "tool/feature_contract/generate_feature_map.dart",
+        "docs/generated/alltcas-idea-integration-feature-map.json"
+      ]
+    },
+    {
+      "id": "contract-final-plan-drift",
+      "category": "contractDrift",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit d6be10d2ac6206fb018730449483c33cc4ed04b2",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "tool/final_test_plan/generate_final_test_plan.dart"
+      ]
+    },
+    {
+      "id": "architecture-contracts",
+      "category": "contractDrift",
+      "command": "flutter test --no-pub test/architecture",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/architecture"
+      ]
+    },
+    {
+      "id": "static-analysis",
+      "category": "contractDrift",
+      "command": "flutter analyze",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "lib",
+        "test",
+        "tool"
+      ]
+    },
+    {
+      "id": "unit-domain-suites",
+      "category": "unit",
+      "command": "flutter test --no-pub test/features/accessibility test/features/account test/features/achievements test/features/ai_tutor test/features/assessment test/features/companion test/features/consent test/features/device_model test/features/events test/features/gemini test/features/goals test/features/history test/features/learning test/features/learning_packs test/features/media_practice test/features/motivation test/features/preferences test/features/progress test/features/quest test/features/recommendation test/features/reminders test/features/research test/features/review test/features/rewards test/features/session test/features/sync test/features/time_tracking test/features/today_hub test/features/vocabulary test/features/voice --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/features/accessibility",
+        "test/features/account",
+        "test/features/achievements",
+        "test/features/ai_tutor",
+        "test/features/assessment",
+        "test/features/companion",
+        "test/features/consent",
+        "test/features/device_model",
+        "test/features/events",
+        "test/features/gemini",
+        "test/features/goals",
+        "test/features/history",
+        "test/features/learning",
+        "test/features/learning_packs",
+        "test/features/media_practice",
+        "test/features/motivation",
+        "test/features/preferences",
+        "test/features/progress",
+        "test/features/quest",
+        "test/features/recommendation",
+        "test/features/reminders",
+        "test/features/research",
+        "test/features/review",
+        "test/features/rewards",
+        "test/features/session",
+        "test/features/sync",
+        "test/features/time_tracking",
+        "test/features/today_hub",
+        "test/features/vocabulary",
+        "test/features/voice"
+      ]
+    },
+    {
+      "id": "widget-surface-suites",
+      "category": "widget",
+      "command": "flutter test --no-pub test/screens test/widgets --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/screens",
+        "test/widgets"
+      ]
+    },
+    {
+      "id": "integration-production-journeys",
+      "category": "integration",
+      "command": "flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_feature_controls_test.dart integration_test/field_trial_media_smoke_test.dart",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "integration_test/field_trial_feature_controls_test.dart",
+        "integration_test/field_trial_media_smoke_test.dart"
+      ]
+    },
+    {
+      "id": "migration-v1-to-v2",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v1 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v1-to-v2",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v2-to-v3",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v2 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v2-to-v3",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v3-to-v4",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v3 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v3-to-v4",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v4-to-v5",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v4 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v4-to-v5",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v5-to-v6",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v5 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v5-to-v6",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v6-to-v7",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v6_to_v7_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v6_to_v7_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v6-to-v7",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v7-to-v8",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v7_to_v8_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v7_to_v8_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v7-to-v8",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v8-to-v9",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v8_to_v9_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v8_to_v9_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v8-to-v9",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v9-to-v10",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v9_to_v10_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v9_to_v10_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v9-to-v10",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v10-to-v11",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v1_to_v22_matrix_test.dart --plain-name \"final test plan migration matrix: frozen v10 fixture reaches current with data intact\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v1_to_v22_matrix_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v10-to-v11",
+      "coverage": "frozenSourceFixture"
+    },
+    {
+      "id": "migration-v11-to-v12",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v11_to_v12_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v11_to_v12_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v11-to-v12",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v12-to-v13",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v12_to_v13_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v12_to_v13_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v12-to-v13",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v13-to-v14",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v13_to_v14_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v13_to_v14_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v13-to-v14",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v14-to-v15",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v14_to_v15_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v14_to_v15_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v14-to-v15",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v15-to-v16",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v15_to_v16_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v15_to_v16_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v15-to-v16",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v16-to-v17",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v16_to_v17_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v16_to_v17_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v16-to-v17",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v17-to-v18",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v17_to_v18_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v17_to_v18_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v17-to-v18",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v18-to-v19",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v18_to_v19_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v18_to_v19_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v18-to-v19",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v19-to-v20",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v19_to_v20_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v19_to_v20_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v19-to-v20",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v20-to-v21",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v20_to_v21_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v20_to_v21_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v20-to-v21",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v21-to-v22",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v21_to_v22_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v21_to_v22_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v21-to-v22",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-full-upgrade",
+      "category": "fullUpgrade",
+      "command": "flutter test --no-pub test/data/local/app_database_migration_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/data/local/app_database_migration_test.dart"
+      ]
+    },
+    {
+      "id": "firestore-rules-local-emulator",
+      "category": "firestoreRules",
+      "command": "npm run test:rules",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/security/firestore-rules.test.cjs"
+      ]
+    },
+    {
+      "id": "backend-auth-local-emulator",
+      "category": "backendAuth",
+      "command": "npm run test:auth",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/security/firebase-auth-emulator.test.cjs"
+      ]
+    },
+    {
+      "id": "owner-lifecycle-upgrade-restart",
+      "category": "ownerLifecycle",
+      "command": "flutter test --no-pub test/features/identity test/scenarios/guest_upgrade_restart_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/features/identity",
+        "test/scenarios/guest_upgrade_restart_test.dart"
+      ]
+    },
+    {
+      "id": "offline-restart-recovery",
+      "category": "offlineRestart",
+      "command": "flutter test --no-pub test/features/offline_content test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/production_learning_restart_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/features/offline_content",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/scenarios/production_learning_restart_test.dart"
+      ]
+    },
+    {
+      "id": "feature-default-off",
+      "category": "featureOff",
+      "command": "flutter test --no-pub test/runtime/runtime_feature_controls_test.dart --plain-name \"durable feature decision epochs distinguish off and clear\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/runtime/runtime_feature_controls_test.dart"
+      ]
+    },
+    {
+      "id": "feature-emergency-off",
+      "category": "emergencyOff",
+      "command": "flutter test --no-pub test/scenarios/runtime_kill_switch_journey_test.dart --plain-name \"production entry live route direct route and restart all fail closed\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ]
+    },
+    {
+      "id": "owner-export-withdraw-delete",
+      "category": "exportWithdrawDelete",
+      "command": "flutter test --no-pub test/features/export test/scenarios/complete_owner_export_delete_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/features/export",
+        "test/scenarios/complete_owner_export_delete_test.dart"
+      ]
+    },
+    {
+      "id": "android-debug-build",
+      "category": "androidBuild",
+      "command": "flutter build apk --debug --no-pub",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "android/app/build.gradle.kts"
+      ]
+    },
+    {
+      "id": "android-bounded-core-smoke",
+      "category": "androidSmoke",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/run-android-smoke.ps1",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "tool/cli/run-android-smoke.ps1",
+        "tool/cli/tests/run-android-smoke.tests.ps1",
+        "integration_test/field_trial_core_journey_test.dart"
+      ]
+    },
+    {
+      "id": "rollback-forward-only-drills",
+      "category": "rollbackDrill",
+      "command": "flutter test --no-pub test/scenarios/runtime_kill_switch_journey_test.dart --plain-name \"file-backed permanent clear and TTL controls converge across restart\" --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ]
+    }
+  ]
+}

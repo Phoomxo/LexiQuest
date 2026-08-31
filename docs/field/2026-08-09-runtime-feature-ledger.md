@@ -1,13 +1,16 @@
 # Runtime Feature Ledger — 2026-08-09 P0 Baseline
 
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
-Release reconciliation and the signed internal artifact are both bound to
-`c55f7bb13705256ecf39b9ce62ac524d0a1ad8f1`; later changes are limited to
-declared final-metadata documents.
+The signed internal artifact baseline is bound to
+`c55f7bb13705256ecf39b9ce62ac524d0a1ad8f1`. Substantive 8/44 source, schema,
+runtime, and test implementation continues through
+`d6be10d2ac6206fb018730449483c33cc4ed04b2` and is not covered by that signed
+artifact.
 
-This ledger is an inventory, not a release claim. It contains all 15 members of
-`Feature.values` and all 49 files returned by `rg --files lib/screens` (64 rows
-total). Production reachability was traced from `lib/main.dart` through Dart
+This ledger is an inventory, not a release claim. It contains all 19 members of
+`Feature.values` (the original 15 plus the four broad 8/44 delivery flags) and
+all screen rows returned by `rg --files lib/screens`. Production reachability
+was traced from `lib/main.dart` through Dart
 imports and then checked against the actual navigation callbacks. Dependency
 claims require either `AppDependenciesScope` lookup or an explicit value passed
 from a production caller. A filename, isolated widget test, or historical phase
@@ -48,6 +51,10 @@ states route-specific gaps rather than inventing field proof.
 | Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file artifact | Task 9 invokes export through the rendered production shell and verifies persisted learning after same-file restart; export construction, owner-consistency fencing, and selected-file writes have focused coverage | None; host test only | verified |
 | Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden`) | Empty frozen `productionEntryId` | Empty frozen `dependencyId`; Production does not construct or inject `ShadowRewardOrchestrator`, while durable learning projection uses the non-shadow reconciler | No delivery-owned store for this hidden row | Static production-composition boundary test | None | hidden |
 | Feature: quest V2 | `Feature.questV2` (`limited`) | `drawer/rewards/quests` → `QuestStatusScreen` (route `rewards/quests`) | `QuestUseCases`; supporting durable learning reconciler remains always composed because the switch gates UI invocation only | Drift quest definitions, instances, objective progress, reward receipts, and versioned learning projection receipts; `localOwnerId` | File-backed replay plus bootstrap emergency-off reconciliation and bounded owner-resolving Quest Status host tests | None; host/debug evidence only | verified |
+| Feature: study planning | `Feature.studyPlanning` (`hidden`) | `home/study-planning` → `StudyPlanningHubScreen` | `StudyPlanningUseCases`; the delivery remains unavailable when its composed dependency is absent | Drift pack, goal, reminder, configuration, and preference authorities remain independently owned | Focused production-navigation, bootstrap, restart, and lifecycle tests | None; implemented code is not rollout evidence | hidden |
+| Feature: research assessment | `Feature.researchAssessment` (`hidden`) | `research/assessment` → `PrePostAssessmentScreen` | Nullable `AssessmentUseCases`; invocation additionally requires exact consent, assignment, protocol, catalog, and rollout authority | Drift `assessment_runs`, canonical AnswerAttempts, LearningSessions, consent, and experiment assignments | Assessment isolation, sync, bootstrap-off, lifecycle, export, withdrawal, and restart tests | None; implemented code is not participant assignment or rollout evidence | hidden |
+| Feature: daily continuity | `Feature.dailyContinuity` (`hidden`) | `home/today` → `TodayHubScreen` | `TodayHubUseCases`; child Review, History, Recommendation, Quest, and Streak actions retain their canonical authorities | Read-only joins over sessions, SRS, review, history, recommendation, goals, quest, and streak | Focused Today Hub read-only, navigation, emergency-off, owner lifecycle, and restart tests | None; implemented code is not rollout evidence | hidden |
+| Feature: offline content | `Feature.offlineContent` (`hidden`) | `settings/offline-content` → `OfflineContentManagerScreen` | `OfflineContentManager`; invocation fails closed when dependency or runtime delivery is unavailable | Drift `content_download_states` plus verified manifest/artifact storage; no evidence ownership | Checksum quarantine, interrupted recovery, repair, removal, bootstrap, restart, and lifecycle tests | None; implemented code is not rollout evidence | hidden |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
 | Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope`; production route passes no dependency | Drift vocabulary import and word tables | Production Home shell opens the scoped bulk-add route; import behavior is not executed | None; host test only | wired |
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
@@ -369,10 +376,12 @@ the frozen product-completion gate reruns them. This is local `verified`
 evidence at the release-control level; it does not rewrite the more specific
 route rows above or promote any row to `field-certified`.
 
-The current signed internal APK is independently bound to source `c55f7bb`,
+The signed internal APK is independently bound to historical source `c55f7bb`,
 package `com.lexiquest.app`, version `1.0.0+14`, one pinned certificate, exact
-APK and model hashes, and embedded source/build/model provenance. It is the
-current frozen candidate; only declared final-metadata commits may follow it.
+APK and model hashes, and embedded source/build/model provenance. The current
+8/44 implementation baseline runs through
+`d6be10d2ac6206fb018730449483c33cc4ed04b2`; it contains substantive product
+implementation after `c55f7bb` and is not represented by that historical APK.
 
 Object Scanner, Speech Practice, and AI Tutor remain visible `limited`
 device/provider-dependent capabilities without exact-artifact physical or live
