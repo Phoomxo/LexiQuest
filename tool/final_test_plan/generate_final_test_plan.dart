@@ -578,15 +578,18 @@ List<Map<String, Object>> _buildGates(
       const <String>['test/screens', 'test/widgets'],
     ),
     _gate(
-      'integration-production-journeys',
+      'integration-feature-controls',
       'integration',
       'flutter test -d flutter-tester --no-pub --reporter compact '
-          'integration_test/field_trial_feature_controls_test.dart '
+          'integration_test/field_trial_feature_controls_test.dart',
+      const <String>['integration_test/field_trial_feature_controls_test.dart'],
+    ),
+    _gate(
+      'integration-media-smoke',
+      'integration',
+      'flutter test -d flutter-tester --no-pub --reporter compact '
           'integration_test/field_trial_media_smoke_test.dart',
-      const <String>[
-        'integration_test/field_trial_feature_controls_test.dart',
-        'integration_test/field_trial_media_smoke_test.dart',
-      ],
+      const <String>['integration_test/field_trial_media_smoke_test.dart'],
     ),
   ];
 
@@ -796,6 +799,19 @@ void _validateManifestShape(Map<Object?, Object?> manifest) {
     final refs = gate['sourceRefs'];
     if (refs is! List || refs.isEmpty) {
       throw FinalTestPlanContractFailure('Gate $id has no source refs.');
+    }
+    final isFlutterTester = RegExp(
+      r'(?:^|\s)-d\s+flutter-tester(?:\s|$)',
+    ).hasMatch(command);
+    if (isFlutterTester) {
+      final targets = _flutterTestCoverage(command).toList(growable: false);
+      if (targets.length != 1 ||
+          !targets.single.path.startsWith('integration_test/')) {
+        throw const FinalTestPlanContractFailure(
+          'flutter-tester integration gates must execute exactly one '
+          'integration test file.',
+        );
+      }
     }
     if (category == 'migrationTransition') {
       final transition = gate['transition'];

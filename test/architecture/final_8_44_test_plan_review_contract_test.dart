@@ -163,6 +163,52 @@ void main() {
   );
 
   test(
+    'final test plan review: flutter-tester integrations launch one file per process',
+    () {
+      final manifest = readManifest();
+      final integrationGates = manifestMaps(manifest, 'gates')
+          .where((gate) => gate['category'] == 'integration')
+          .toList(growable: false);
+      const expected = <String, ({String command, String source})>{
+        'integration-feature-controls': (
+          command:
+              'flutter test -d flutter-tester --no-pub --reporter compact '
+              'integration_test/field_trial_feature_controls_test.dart',
+          source: 'integration_test/field_trial_feature_controls_test.dart',
+        ),
+        'integration-media-smoke': (
+          command:
+              'flutter test -d flutter-tester --no-pub --reporter compact '
+              'integration_test/field_trial_media_smoke_test.dart',
+          source: 'integration_test/field_trial_media_smoke_test.dart',
+        ),
+      };
+
+      expect(
+        integrationGates.map((gate) => gate['id']).toSet(),
+        expected.keys.toSet(),
+      );
+      for (final gate in integrationGates) {
+        final id = gate['id']! as String;
+        final contract = expected[id]!;
+        final command = gate['command']! as String;
+        expect(command, contract.command, reason: id);
+        expect((gate['sourceRefs']! as List<Object?>).cast<String>(), <String>[
+          contract.source,
+        ], reason: id);
+        expect(
+          RegExp(r'integration_test/[^\s]+\.dart')
+              .allMatches(command)
+              .map((match) => match.group(0))
+              .toList(growable: false),
+          <String>[contract.source],
+          reason: '$id must start a fresh flutter-tester process',
+        );
+      }
+    },
+  );
+
+  test(
     'final test plan review: every migration gate executes a frozen fixture',
     () {
       final manifest = readManifest();

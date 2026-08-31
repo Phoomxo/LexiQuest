@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "5a9202581487eeac12d06f112e43bbcf4f0d43ba",
-  "sourceFingerprint": "167c0ad800f09da2123bbea479cb177ad32fbbce586506f05c3904986aeb3274",
+  "sourceCommit": "2a658243efb97f548f21349c47b26f8fc8d7cc15",
+  "sourceFingerprint": "019cb02e6fb95b4c5ecb417a3938c3cf5924794eafa401f4d52e62f091a1ea12",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -69,7 +69,7 @@
     },
     {
       "path": "integration_test/field_trial_media_smoke_test.dart",
-      "sha256": "5e360720287fc8330bc5fc391910a9022ed9c8d451f84e4a6982421909ec98ee"
+      "sha256": "54aa67bed2d6070a31b7f9cd25a6caa66997779e81315fce8a2bef9b414b02c0"
     },
     {
       "path": "lib",
@@ -121,19 +121,19 @@
     },
     {
       "path": "test",
-      "sha256": "a8405f47c839986fe91b5e2972efc2456753abe8490ea874df3a4b6473467948"
+      "sha256": "b123b76bfca9b5cd58bf949288c873e562c43531177519f48d69311024862036"
     },
     {
       "path": "test/architecture",
-      "sha256": "0a932a01eb9fcd0e97adbcb7a01da243ce7c384b1ee4ffd3c9ba1ad158f268d6"
+      "sha256": "eaa6db50a11d18acaea1fe932cc2ad770f685c0145d2777634cc37032675eae6"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
-      "sha256": "a7fcf770846b82bfa38087fc5aa0e876edd524f86c93472f7df9ed3718cf6e19"
+      "sha256": "2cacba1a21717ad7ec118dd5a6d506e06ea3057783dd91a05cb776c4c41b6332"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_review_contract_test.dart",
-      "sha256": "69e47b4533c6e5f702caf608aee4353ddc4cc4a57b937eb144a824481d1975ac"
+      "sha256": "de8a09d9d0456e39bae29afab3e06fa21a7536d2531082319405397e763d081a"
     },
     {
       "path": "test/data/local/app_database_migration_test.dart",
@@ -381,7 +381,7 @@
     },
     {
       "path": "tool",
-      "sha256": "e1f6cf4e2a77a9b01e4017f1e7100c6035d671b39da9cdf6c0a202585fb7a2dd"
+      "sha256": "41cd0fbc0e49621a8860ede8dec5119bc38088af0dc03d7b24b053fcfb91b5fc"
     },
     {
       "path": "tool/cli/run-android-smoke.ps1",
@@ -405,7 +405,7 @@
     },
     {
       "path": "tool/final_test_plan/generate_final_test_plan.dart",
-      "sha256": "c5aefb0c9a9f19cbfb3a813046d117f9677392de616039b3328fe7b46e318e8c"
+      "sha256": "bae5e169699ec10019c8396b3246b54b6b7640422d9521ef8fae9e48c2652678"
     }
   ],
   "productContract": {
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 5a9202581487eeac12d06f112e43bbcf4f0d43ba",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 2a658243efb97f548f21349c47b26f8fc8d7cc15",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
@@ -654,12 +654,20 @@
       ]
     },
     {
-      "id": "integration-production-journeys",
+      "id": "integration-feature-controls",
       "category": "integration",
-      "command": "flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_feature_controls_test.dart integration_test/field_trial_media_smoke_test.dart",
+      "command": "flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_feature_controls_test.dart",
       "expectedExitCode": 0,
       "sourceRefs": [
-        "integration_test/field_trial_feature_controls_test.dart",
+        "integration_test/field_trial_feature_controls_test.dart"
+      ]
+    },
+    {
+      "id": "integration-media-smoke",
+      "category": "integration",
+      "command": "flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_media_smoke_test.dart",
+      "expectedExitCode": 0,
+      "sourceRefs": [
         "integration_test/field_trial_media_smoke_test.dart"
       ]
     },

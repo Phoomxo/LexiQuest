@@ -315,6 +315,86 @@ void main() {
       },
     );
 
+    test('launches each flutter-tester integration in its own process', () {
+      final gates = _maps(_currentManifest()['gates']);
+      final integrationGates = gates
+          .where((gate) => gate['category'] == 'integration')
+          .toList(growable: false);
+      const expected = <String, ({String command, String source})>{
+        'integration-feature-controls': (
+          command:
+              'flutter test -d flutter-tester --no-pub --reporter compact '
+              'integration_test/field_trial_feature_controls_test.dart',
+          source: 'integration_test/field_trial_feature_controls_test.dart',
+        ),
+        'integration-media-smoke': (
+          command:
+              'flutter test -d flutter-tester --no-pub --reporter compact '
+              'integration_test/field_trial_media_smoke_test.dart',
+          source: 'integration_test/field_trial_media_smoke_test.dart',
+        ),
+      };
+
+      expect(
+        integrationGates.map((gate) => gate['id']).toSet(),
+        expected.keys.toSet(),
+      );
+      for (final gate in integrationGates) {
+        final id = gate['id']! as String;
+        final contract = expected[id]!;
+        final command = gate['command']! as String;
+        expect(command, contract.command, reason: id);
+        expect(gate['sourceRefs'], <String>[contract.source], reason: id);
+        expect(
+          RegExp(r'integration_test/[^\s]+\.dart')
+              .allMatches(command)
+              .map((match) => match.group(0))
+              .toList(growable: false),
+          <String>[contract.source],
+          reason: '$id must launch one integration file per flutter-tester',
+        );
+      }
+    });
+
+    test('rejects multi-file flutter-tester integration commands', () {
+      final invalid = _clone(_currentManifest());
+      final gates = invalid['gates']! as List<dynamic>;
+      gates.removeWhere(
+        (gate) => (gate as Map<String, dynamic>)['category'] == 'integration',
+      );
+      gates.add(<String, Object>{
+        'id': 'integration-invalid-multi-file',
+        'category': 'integration',
+        'command':
+            'flutter test -d flutter-tester --no-pub --reporter compact '
+            'integration_test/field_trial_feature_controls_test.dart '
+            'integration_test/field_trial_media_smoke_test.dart',
+        'expectedExitCode': 0,
+        'sourceRefs': const <String>[
+          'integration_test/field_trial_feature_controls_test.dart',
+          'integration_test/field_trial_media_smoke_test.dart',
+        ],
+      });
+
+      expect(
+        () => validateFinalTestPlanManifest(
+          invalid,
+          repositoryRoot: Directory.current,
+          expectedSourceCommit: _fixtureSourceCommit,
+        ),
+        throwsA(
+          isA<FinalTestPlanContractFailure>().having(
+            (failure) => failure.message,
+            'message',
+            contains(
+              'flutter-tester integration gates must execute exactly one '
+              'integration test file',
+            ),
+          ),
+        ),
+      );
+    });
+
     test('pins rollout separation and complete execution evidence', () {
       final manifest = _currentManifest();
       final runtime = manifest['runtime'] as Map<String, dynamic>;

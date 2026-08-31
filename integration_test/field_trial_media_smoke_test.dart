@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_us
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
 import 'package:vocab_learning_app/screens/shadowing_challenge_screen.dart';
@@ -138,7 +139,40 @@ void main() {
         await _pumpUntilFound(tester, find.byType(MainNavigationScreen));
         await tester.tap(find.byKey(const ValueKey('home/learn')));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Shadowing Challenge'));
+        final shadowingDestination = find.byKey(
+          const ValueKey<String>('home/learn/speech/shadowing'),
+        );
+        final modeScrollable = find.descendant(
+          of: find.byType(ChooseModeScreen),
+          matching: find.byType(Scrollable),
+        );
+        expect(modeScrollable, findsOneWidget);
+        await tester.scrollUntilVisible(
+          shadowingDestination,
+          240,
+          scrollable: modeScrollable,
+        );
+        await tester.pump();
+        expect(
+          tester
+              .getRect(modeScrollable)
+              .contains(tester.getCenter(shadowingDestination)),
+          isTrue,
+        );
+        await tester.tap(shadowingDestination);
+        final itemCount = find.byKey(
+          const ValueKey<String>('session-item-count'),
+        );
+        await _pumpUntilFound(tester, itemCount);
+        await tester.enterText(itemCount, '1');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pump();
+        final startSession = find.byKey(
+          const ValueKey<String>('session-config-start'),
+        );
+        await tester.ensureVisible(startSession);
+        await tester.pump();
+        await tester.tap(startSession);
         await _pumpUntilFound(tester, find.byType(ShadowingChallengeScreen));
         await _pumpUntilFound(tester, find.text('station'));
         await tester.tap(find.byKey(const ValueKey('shadowing-listen-button')));
