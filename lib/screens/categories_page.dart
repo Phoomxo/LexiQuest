@@ -91,35 +91,12 @@ class CategoriesPage extends StatelessWidget {
     BuildContext context,
     VocabularyUseCases useCases,
   ) async {
-    final controller = TextEditingController();
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('เพิ่มหมวดหมู่'),
-        content: TextField(
-          key: const ValueKey('category-name-field'),
-          controller: controller,
-          autofocus: true,
-          maxLength: maxCategoryNameLength,
-          decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
-          onSubmitted: (_) =>
-              _saveCategory(dialogContext, useCases, controller.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            key: const ValueKey('save-category'),
-            onPressed: () =>
-                _saveCategory(dialogContext, useCases, controller.text),
-            child: const Text('บันทึก'),
-          ),
-        ],
+      builder: (dialogContext) => _AddCategoryDialog(
+        onSave: (name) => _saveCategory(dialogContext, useCases, name),
       ),
     );
-    controller.dispose();
   }
 
   Future<void> _saveCategory(
@@ -181,6 +158,51 @@ class CategoriesPage extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _AddCategoryDialog extends StatefulWidget {
+  const _AddCategoryDialog({required this.onSave});
+
+  final Future<void> Function(String name) onSave;
+
+  @override
+  State<_AddCategoryDialog> createState() => _AddCategoryDialogState();
+}
+
+class _AddCategoryDialogState extends State<_AddCategoryDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('เพิ่มหมวดหมู่'),
+      content: TextField(
+        key: const ValueKey('category-name-field'),
+        controller: _controller,
+        autofocus: true,
+        maxLength: maxCategoryNameLength,
+        decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
+        onSubmitted: (_) => widget.onSave(_controller.text),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('ยกเลิก'),
+        ),
+        FilledButton(
+          key: const ValueKey('save-category'),
+          onPressed: () => widget.onSave(_controller.text),
+          child: const Text('บันทึก'),
+        ),
+      ],
+    );
   }
 }
 

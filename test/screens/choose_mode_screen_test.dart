@@ -2284,6 +2284,8 @@ void main() {
       for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
         await tester.pump(const Duration(milliseconds: 1));
       }
+      await tester.ensureVisible(next);
+      await tester.pump();
       await tester.tap(next);
       final input = find.byKey(const ValueKey<String>('typed-recall-input'));
       for (var pump = 0; pump < 50 && input.evaluate().isEmpty; pump++) {

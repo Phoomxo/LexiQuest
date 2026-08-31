@@ -116,19 +116,28 @@ void main() {
       expect(find.text('station'), findsOneWidget);
       expect(find.text('market'), findsOneWidget);
       expect(find.text('Completed sessions: 0'), findsOneWidget);
+      final scrollable = find.byType(Scrollable);
       await tester.scrollUntilVisible(
         find.text('Meaning quiz'),
         200,
-        scrollable: find.byType(Scrollable),
+        scrollable: scrollable,
       );
       await tester.pump();
       expect(find.bySemanticsLabel('Meaning quiz: Available'), findsOneWidget);
       expect(find.text('Matching'), findsNothing);
       expect(find.bySemanticsLabel('Matching: Unavailable'), findsNothing);
-      await tester.ensureVisible(find.text('Flashcards'));
+      await tester.scrollUntilVisible(
+        find.text('Flashcards'),
+        -200,
+        scrollable: scrollable,
+      );
       await tester.pump();
       expect(find.bySemanticsLabel('Flashcards: Available'), findsOneWidget);
-      await tester.ensureVisible(find.text('Associative reading'));
+      await tester.scrollUntilVisible(
+        find.text('Associative reading'),
+        -200,
+        scrollable: scrollable,
+      );
       await tester.pump();
       expect(
         find.bySemanticsLabel('Associative reading: Available'),

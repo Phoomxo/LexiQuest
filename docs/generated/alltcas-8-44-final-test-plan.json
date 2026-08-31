@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "04527b7fd468f8cf67b8f517d49548e1db61c277",
-  "sourceFingerprint": "a10a85d37130cfd81a5584806e29a89c8c5992ef8762f884d85afe40cf897152",
+  "sourceCommit": "5a9202581487eeac12d06f112e43bbcf4f0d43ba",
+  "sourceFingerprint": "167c0ad800f09da2123bbea479cb177ad32fbbce586506f05c3904986aeb3274",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -73,7 +73,7 @@
     },
     {
       "path": "lib",
-      "sha256": "f0323868760cddc9e6df3a2439cecfc27c4a03243c58fc74600dfd304d117028"
+      "sha256": "e78f34aea5b2910c6062fe82c079e22cd71eb5e1eeda4bde6b7ffe234acb98ef"
     },
     {
       "path": "lib/data/local/app_database.dart",
@@ -121,7 +121,7 @@
     },
     {
       "path": "test",
-      "sha256": "d2885a002483ec623b00a89581357512966a04a87d540e449f9f7e19a7a90f91"
+      "sha256": "a8405f47c839986fe91b5e2972efc2456753abe8490ea874df3a4b6473467948"
     },
     {
       "path": "test/architecture",
@@ -361,7 +361,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "82d75799a8bdedf50d73331e97aa9e0893b10f6aab38f875d71271ac554ef64e"
+      "sha256": "ea73ce9ff1f28a2c4ed79522f24d2e245e698cef37b0681c3079f53460f05fa3"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 04527b7fd468f8cf67b8f517d49548e1db61c277",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 5a9202581487eeac12d06f112e43bbcf4f0d43ba",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
+import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -399,7 +400,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(speechGateway.cancelCalls, 1);
-    expect(find.text('AI Provider BYOK'), findsOneWidget);
+    final unavailableFinder = find.byType(ProductionFeatureUnavailable);
+    expect(unavailableFinder, findsOneWidget);
+    expect(
+      tester.widget<ProductionFeatureUnavailable>(unavailableFinder).reason,
+      ProductionFeatureUnavailableReason.missingRegistry,
+    );
+    expect(
+      ModalRoute.of(tester.element(unavailableFinder))?.settings.name,
+      'ai-tutor/settings',
+    );
   });
 
   testWidgets('opening settings invalidates delayed reply and prevents TTS', (

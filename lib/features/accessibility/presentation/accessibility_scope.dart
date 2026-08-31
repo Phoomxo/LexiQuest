@@ -150,23 +150,42 @@ final class AccessibilityModeScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.paddingOf(context).top;
+    final bottomViewInset = MediaQuery.viewInsetsOf(context).bottom;
+    final appBarHeight = AppBar.preferredHeightFor(
+      context,
+      appBar.preferredSize,
+    );
+    final navigationHeight = topPadding + appBarHeight;
     return Scaffold(
-      body: Column(
-        children: <Widget>[
-          SizedBox(
-            height: topPadding + appBar.preferredSize.height,
-            child: AccessibilityNavigationBar(child: appBar),
-          ),
-          Expanded(
-            child: AccessibilityModeContentGroup(
-              child: MediaQuery.removePadding(
-                context: context,
-                removeTop: true,
-                child: body,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final unoccludedHeight = constraints.maxHeight + bottomViewInset;
+          final modeBodyHeight = unoccludedHeight > navigationHeight
+              ? unoccludedHeight - navigationHeight
+              : constraints.maxHeight;
+          return SingleChildScrollView(
+            child: SizedBox(
+              height: navigationHeight + modeBodyHeight,
+              child: Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: navigationHeight,
+                    child: AccessibilityNavigationBar(child: appBar),
+                  ),
+                  Expanded(
+                    child: AccessibilityModeContentGroup(
+                      child: MediaQuery.removePadding(
+                        context: context,
+                        removeTop: true,
+                        child: body,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

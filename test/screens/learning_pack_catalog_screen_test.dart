@@ -12,6 +12,10 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart'
+    as vocabulary_domain;
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -106,6 +110,12 @@ AppDependencies _dependencies(
     assignedLearningEventContext: research.assignedLearningEventContext,
     evidencePolicyRolloutModeProvider:
         research.evidencePolicyRolloutModeProvider,
+    vocabulary: VocabularyUseCases(
+      owners: owner,
+      vocabulary: _PinnedVocabulary(),
+      generateId: () => 'unused-catalog-vocabulary-id',
+      nowUtc: () => DateTime.utc(2026, 8, 24),
+    ),
     studyPlanning: StudyPlanningUseCases(
       packs: _Packs(),
       progress: ProgressUseCases(
@@ -170,6 +180,42 @@ final class _Owner implements LocalOwnerRepository {
     String ownerId,
     String firebaseUid,
   ) => getOrCreateActiveOwner();
+}
+
+final class _PinnedVocabulary implements VocabularyRepository {
+  @override
+  Future<List<vocabulary_domain.VocabularyWord>> readPinnedByIds(
+    Iterable<String> wordIds,
+  ) async {
+    final ids = wordIds.toList(growable: false);
+    if (ids.any((id) => id != 'word:station')) {
+      throw StateError('Unknown pinned vocabulary identity.');
+    }
+    return ids
+        .map(
+          (id) => vocabulary_domain.VocabularyWord(
+            id: id,
+            ownerId: 'packaged-owner',
+            categoryId: 'category:pack',
+            spelling: 'station',
+            normalizedSpelling: 'station',
+            meaning: 'สถานี',
+            normalizedMeaning: 'สถานี',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A1',
+            source: 'pack:v1',
+            isGlobal: true,
+            localRevision: 1,
+            isDeleted: false,
+            createdAtUtc: DateTime.utc(2026, 8, 24),
+            updatedAtUtc: DateTime.utc(2026, 8, 24),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _GuestSession implements GuestSessionService {

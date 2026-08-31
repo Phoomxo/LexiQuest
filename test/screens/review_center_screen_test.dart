@@ -562,13 +562,64 @@ void main() {
     final record = allTcasIdeaIntegrationCatalog.records.singleWhere(
       (candidate) => candidate.id == FeatureContractId.f22,
     );
+    final todayHubRecord = allTcasIdeaIntegrationCatalog.records.singleWhere(
+      (candidate) => candidate.id == FeatureContractId.f42,
+    );
+    final mainNavigation = File(
+      'lib/screens/main_navigation_screen.dart',
+    ).readAsStringSync();
+    final todayHub = File(
+      'lib/screens/today_hub_screen.dart',
+    ).readAsStringSync();
+    final productionEntryIds = RegExp(r"productionEntryId: '([^']+)'")
+        .allMatches(mainNavigation)
+        .map((match) => match.group(1))
+        .whereType<String>()
+        .toSet();
+    final drawerKeys = RegExp(r"ValueKey<String>\('([^']+)'\)")
+        .allMatches(mainNavigation)
+        .map((match) => match.group(1))
+        .whereType<String>()
+        .where((key) => key.startsWith('drawer/'))
+        .toSet();
+    final todayHubBuilderStart = mainNavigation.indexOf(
+      'Widget _buildTodayHub(BuildContext context)',
+    );
+    expect(todayHubBuilderStart, greaterThanOrEqualTo(0));
+    final todayHubBuilderEnd = mainNavigation.indexOf(
+      'Future<void> _resumeFromToday',
+      todayHubBuilderStart,
+    );
+    expect(todayHubBuilderEnd, greaterThan(todayHubBuilderStart));
+    final todayHubBuilder = mainNavigation.substring(
+      todayHubBuilderStart,
+      todayHubBuilderEnd,
+    );
 
     expect(record.dependencies, contains(FeatureContractId.f20));
     expect(record.dependencies, contains(FeatureContractId.f21));
+    expect(todayHubRecord.dependencies, contains(FeatureContractId.f22));
+    expect(productionEntryIds, contains('home/today'));
+    expect(productionEntryIds, isNot(contains('home/today/review')));
+    expect(productionEntryIds, isNot(contains('home/review')));
+    expect(drawerKeys, isNot(contains('drawer/review/center')));
+    expect(todayHub, contains("key: const ValueKey('today-hub-open-review')"));
     expect(
-      File('lib/screens/main_navigation_screen.dart').readAsStringSync(),
-      isNot(contains('ReviewCenterScreen')),
+      todayHub,
+      contains('widget.actions.openReview(snapshot.reviewWork)'),
     );
+    expect(todayHubBuilder, contains('openReview: _openTodayReview'));
+    expect(
+      todayHubBuilder,
+      contains('hasComposedDependencyFor(Feature.dailyContinuity)'),
+    );
+    expect(todayHubBuilder, contains('ProductionFeatureUnavailable'));
+    expect(
+      todayHubBuilder,
+      contains('ProductionFeatureUnavailableReason.missingDependency'),
+    );
+    expect(mainNavigation, contains("'home/today/review'"));
+    expect(mainNavigation, contains('ReviewCenterScreen('));
   });
 }
 

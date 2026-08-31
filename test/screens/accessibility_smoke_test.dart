@@ -312,6 +312,59 @@ void main() {
   );
 
   testWidgets(
+    'AccessibilityModeScaffold reserves the effective themed app bar height',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(appBarTheme: const AppBarTheme(toolbarHeight: 64)),
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(360, 600),
+              padding: EdgeInsets.only(top: 24),
+              viewInsets: EdgeInsets.only(bottom: 520),
+            ),
+            child: AccessibilityModeScaffold(
+              appBar: AppBar(
+                key: const ValueKey<String>('themed-accessibility-app-bar'),
+                title: const Text('Accessible mode'),
+              ),
+              body: const SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: TextField(
+                    key: ValueKey<String>('keyboard-reachable-mode-input'),
+                    decoration: InputDecoration(labelText: 'Mode input'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        tester
+            .getSize(
+              find.byKey(
+                const ValueKey<String>('themed-accessibility-app-bar'),
+              ),
+            )
+            .height,
+        88,
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('keyboard-reachable-mode-input')),
+      );
+      expect(
+        find.byKey(const ValueKey<String>('keyboard-reachable-mode-input')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'high contrast feedback retains text icon and live semantics instead of color alone',
     (tester) async {
       await tester.pumpWidget(
