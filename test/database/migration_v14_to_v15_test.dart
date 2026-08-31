@@ -15,11 +15,12 @@ void main() {
       addTearDown(database.close);
 
       expect(
+        database.schemaVersion,
         AppDatabase.currentSchemaVersion,
-        18,
-        reason: 'f24 owns the current v17-to-v18 schema advance.',
+        reason:
+            'The frozen v14 fixture must reach the canonical current schema '
+            'after preserving the exact v14-to-v15 boundary.',
       );
-      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
 
       final v14Inventory = fixture.migrationInventoryForSchemaVersion(14);
       final v15Inventory = fixture.migrationInventoryForSchemaVersion(15);
@@ -27,7 +28,7 @@ void main() {
       expect(v14Inventory, hasLength(32));
       expect(v15Inventory, hasLength(33));
       expect(v15Inventory.difference(v14Inventory), {'assessment_runs'});
-      expect(currentInventory, hasLength(40));
+      expect(currentInventory, hasLength(44));
       expect(currentInventory.difference(v15Inventory), {
         'learning_packs',
         'learning_pack_items',
@@ -36,6 +37,10 @@ void main() {
         'saved_learning_items',
         'content_quality_reports',
         'learning_time_segments',
+        'learning_goals',
+        'study_reminders',
+        'session_configurations',
+        'learner_preferences',
       });
       expect(await _tableNames(database), currentInventory);
       expect(
@@ -78,7 +83,13 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 18);
+      expect(
+        database.schemaVersion,
+        AppDatabase.currentSchemaVersion,
+        reason:
+            'The exact v15 assessment_runs contract must remain valid after '
+            'the v14 fixture reaches the canonical current schema.',
+      );
       expect(await _columnContract(database, 'assessment_runs'), const [
         (name: 'id', type: 'TEXT', notNull: true, primaryKey: true),
         (name: 'owner_id', type: 'TEXT', notNull: true, primaryKey: false),

@@ -16,11 +16,12 @@ void main() {
       const expectedCurrentInventory = currentDatabaseTableInventory;
       final actualInventory = await _tableNames(database);
 
-      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       expect(
+        database.schemaVersion,
         AppDatabase.currentSchemaVersion,
-        16,
-        reason: 'f04 owns the single v15-to-v16 schema advance.',
+        reason:
+            'The frozen v13 fixture must reach the canonical current schema '
+            'after preserving the exact v13-to-v14 boundary.',
       );
       expect(actualInventory, expectedCurrentInventory);
       expect(
