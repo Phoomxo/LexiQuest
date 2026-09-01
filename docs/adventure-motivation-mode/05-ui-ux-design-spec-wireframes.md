@@ -6,6 +6,7 @@
 **Date:** 2026-09-01
 **Baseline:** LexiQuest 8/44 at `99f7fb21`
 **References:** `AMM-AUDIT-001 v1.0`, `LQ-AMM-SRS-001 v1.0`, `LQ-AMM-SDS-001 v1.0`
+**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
 **Brand naming rule:** Show `LexiQuest`; do not add the removed “เก่งศัพท์” label
 
 ## 1. Experience Intent
@@ -63,31 +64,33 @@ After accepting a mission, the learner enters the existing Unified Lesson Shell.
 ## 4. Information Architecture
 
 ```text
-Existing Today destination
-├── Standard Today Hub (always available)
-└── Adventure presentation (hidden/default-off)
-    ├── Adventure Home
-    │   ├── Primary Mission Card
-    │   ├── Journey Map
-    │   ├── Equivalent Journey List
-    │   ├── Companion Summary
-    │   └── Status / fallback panel
-    ├── Mission Details sheet
-    │   ├── Why this mission
-    │   ├── Estimated duration / change duration
-    │   ├── Activity/count/accessibility summary
-    │   └── Start / return to Standard
-    ├── Existing Unified Lesson Shell
-    │   ├── Existing activity UI
-    │   ├── Existing feedback/hint
-    │   └── Adventure context outside answer semantics
-    ├── Adventure Result
-    │   ├── Learning
-    │   ├── Effort
-    │   ├── Engagement
-    │   ├── Existing reward/quest projection
-    │   └── Next action / Review
-    └── Optional Research Prompt (consented run only)
+Existing Learn destination (bottom navigation unchanged)
+└── additive card `learn/today-experience` (eligible only)
+    └── Today Experience Host
+        ├── Standard Today presentation (always available when Today dependency is ready)
+        └── Adventure presentation (hidden/default-off)
+            ├── Adventure Home
+            │   ├── Primary Mission Card
+            │   ├── Journey Map
+            │   ├── Equivalent Journey List
+            │   ├── Companion Summary
+            │   └── Status / fallback panel
+            ├── Mission Details sheet
+            │   ├── Why this mission
+            │   ├── Estimated duration / change duration
+            │   ├── Activity/count/accessibility summary
+            │   └── Start / return to Standard
+            ├── Existing Unified Lesson Shell
+            │   ├── Existing activity UI
+            │   ├── Existing feedback/hint
+            │   └── Adventure context outside answer semantics
+            ├── Adventure Result
+            │   ├── Learning
+            │   ├── Effort
+            │   ├── Engagement
+            │   ├── Existing reward/quest projection
+            │   └── Next action / Review
+            └── Optional Research Prompt (consented run only)
 ```
 
 There is no separate Adventure vocabulary library, flashcard library, profile, shop or history. Existing destinations remain the canonical place for those functions. Adventure deep-links to them through typed actions.
@@ -96,11 +99,13 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 
 ### 5.1 Entry outside a research protocol
 
-1. Today host resolves feature availability.
-2. If hidden/off/missing dependencies, render Standard with no dead Adventure entry.
-3. During prototype, an explicit session choice can preview Adventure without persistence.
-4. After preference v2 is deployed end-to-end, remember `standard` or `adventure` for the owner.
-5. Standard remains available through the top app bar and fallback panels.
+1. Learn surface remains unchanged and has no card while Adventure is hidden.
+2. When visible/enabled and Today/content dependencies are ready, show one additive Today Experience card; never add a bottom tab.
+3. Card opens the Today Experience Host, which resolves product presentation without reading research consent.
+4. A stale direct route renders Standard when Today dependency is ready; otherwise returns Learn with an actionable bounded reason.
+5. During prototype, an explicit session choice can preview Adventure without persistence.
+6. After preference v2 is deployed end-to-end, remember `standard` or `adventure` for the owner.
+7. Standard remains available through the top app bar and fallback panels.
 
 ### 5.2 Entry inside a research protocol
 
@@ -114,12 +119,13 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 
 | Location | System back result |
 |---|---|
-| Adventure Home | Existing parent/home behavior; no data mutation |
+| Adventure Home | Close Today Experience Host and return to Learn; no data mutation |
 | Mission sheet before start | Close sheet, remain Adventure Home |
 | Accepted lesson | Existing lesson close/abandon confirmation and lifecycle |
 | Result | Close result and recompose journey |
 | Research prompt | Skip/close without changing learning completion |
-| Error/fallback | Standard Today Hub |
+| Error/fallback with Today ready | Standard Today presentation |
+| Today dependency unavailable | Return to Learn with bounded reason |
 
 ### 5.4 Standard escape rule
 
@@ -129,7 +135,8 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 
 | Screen ID | Name | Purpose | Primary action | Canonical dependency |
 |---|---|---|---|---|
-| UX-01 | Today Presentation Resolver | Choose safe effective presentation | Continue to resolved view | feature/preference/assignment/consent |
+| UX-00 | Learn Today Experience Entry | Add one eligible entry without changing baseline navigation | Open Today Experience | feature/dependency only |
+| UX-01 | Product Presentation Resolver | Choose safe effective presentation | Continue to resolved view | feature/dependency/preference/assignment; no consent |
 | UX-02 | Adventure Home — Map | Show one mission and three-node journey | View/Start mission | Today Hub + journey projection |
 | UX-03 | Adventure Home — List | Accessible equivalent of map | View/Start mission | same snapshot as UX-02 |
 | UX-04 | Mission Details | Explain and confirm work | Start mission | session composer |
@@ -324,7 +331,9 @@ Existing quest/streak/reward outcomes appear in a fourth optional area “ผล
 
 | Feature | Dependency | Snapshot | Asset | Effective view |
 |---|---|---|---|---|
-| hidden/off | any | any | any | Standard; no Adventure entry |
+| hidden | any | any | any | Learn baseline; no card/spacing/dead route |
+| disabled/off | Today ready | any | any | Standard inside Today Experience Host |
+| stale route | Today unavailable | any | any | Return Learn with bounded reason |
 | on | missing | any | any | Standard + bounded unavailable reason |
 | on | ready | loading | verified | skeleton/busy; Standard available |
 | on | ready | valid | verified | Adventure map/list |
@@ -599,6 +608,7 @@ No lives, Adventure points or separate timer are present.
 ### 14.2 Prototype B — canonical read-only
 
 - Use real Today Hub readers in an internal/hidden route.
+- Internal route is not a production learner entry; production uses the eligible additive Learn card only after ADR-001 route gate.
 - No mission start or writes.
 - Validate deterministic projection, empty/stale/offline behavior and route disposition.
 

@@ -6,6 +6,7 @@
 **Date:** 2026-09-01
 **Baseline:** LexiQuest 8/44, commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; current baseline is suitable for planning but not Pilot/release clean
+**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
 
 ## 1. Purpose and Scope
 
@@ -17,16 +18,18 @@ Adventure เป็น presentation ทางเลือกของ Today Hub 
 
 ```text
 Learner
-  ├─ Standard Today Hub ───────────────────────────────┐
-  └─ Adventure Entry                                   │
-       ├─ Entry Decision: flag/preference/assignment   │
-       ├─ Journey Projection ◄─ canonical readers      │
-       ├─ Session Composer ◄─ Today Hub work           │
-       └─ Unified Lesson Shell ── Evidence Gateway ────┤
-                                                      ▼
-                         SRS/Mastery/History/Quest/Streak/Reward
-                                                      │
-                                  Result/Recovery ◄────┘
+  └─ Existing Learn surface
+       └─ additive `learn/today-experience` entry (eligible only)
+            ├─ Product Entry Decision: flag/dependency/preference/assignment
+            ├─ Standard Today presentation ────────────────────────────────┐
+            └─ Adventure presentation                                     │
+                 ├─ Journey Projection ◄─ canonical readers               │
+                 ├─ Session Composer ◄─ Today Hub work                    │
+                 └─ Unified Lesson Shell ── Evidence Gateway ─────────────┤
+                                                                         ▼
+                                    SRS/Mastery/History/Quest/Streak/Reward
+                                                                         │
+                                             Result/Recovery ◄────────────┘
 ```
 
 ## 3. Actors
@@ -51,6 +54,8 @@ Learner
 - **Eligible evidence:** evidence ที่ authority เดิมอนุญาตให้กระตุ้น motivation side effects
 - **Repair round:** การนำข้อที่ผิดกลับมาหนึ่งครั้งหลังมี 3–5 intervening items
 - **Natural breakpoint:** ก่อนเริ่ม session, หลัง session ปิดสำเร็จ หรือหน้า research transition ที่ไม่ขวางการเรียน
+- **Product entry decision:** การเลือก presentation โดยไม่อ่าน consent และไม่มีอำนาจสร้าง assignment/preference
+- **Research capture decision:** การอนุญาตบันทึก research record จาก assignment + consent + active run; ไม่มีอำนาจเปลี่ยน presentation
 
 ## 5. Assumptions and Constraints
 
@@ -63,6 +68,7 @@ Learner
 7. Network ไม่เป็น prerequisite ของ canonical local learning เมื่อ content มีในเครื่อง
 8. `dailyContinuity`/Today Hub is hidden in current production defaults; Adventure remains hidden until its canonical read dependency and Standard fallback both pass
 9. Current learner preference wire/rules contract is v1; durable `home_experience` requires a complete v2 migration/codec/rules/sync rollout
+10. Pilot v1 เป็น Android-only; iOS/desktop/AI Voice/field-model ที่ excluded ไม่ถือว่าผ่านและต้องมี gate ของตนก่อน enable
 
 ## 6. Functional Requirements
 
@@ -72,12 +78,12 @@ Learner
 |---|---|---|
 | AMM-FR-001 | ระบบต้องเพิ่ม `Feature.adventureMotivation` โดยไม่เปลี่ยนชื่อหรือลำดับ serialized name เดิม | Contract test |
 | AMM-FR-002 | `BuildFeatureRegistry.fieldDefaults()` ต้องกำหนด Adventure เป็น `hidden` | Unit/architecture test |
-| AMM-FR-003 | Adventure entry ต้องแสดงเมื่อ feature visible, enabled และ dependencies พร้อมครบเท่านั้น | Widget/integration test |
-| AMM-FR-004 | Missing, corrupt หรือ unknown feature configuration ต้อง resolve เป็น Standard | Unit test |
+| AMM-FR-003 | Additive card `learn/today-experience` ต้องอยู่ใน Learn surface เดิม แสดงเมื่อ feature visible/enabled และ dependencies พร้อมเท่านั้น; ห้ามเพิ่ม bottom-navigation destination | Widget/integration/architecture test |
+| AMM-FR-004 | Missing/corrupt/unknown configuration หรือ stale direct route ต้อง resolve เป็น Standard เมื่อ Today dependency พร้อม มิฉะนั้นกลับ Learn ด้วย bounded reason | Unit/navigation test |
 | AMM-FR-005 | Feature state ต้องไม่สร้าง เปลี่ยน หรือลบ experiment assignment | Research isolation test |
 | AMM-FR-006 | Outside protocol ระบบต้องใช้ session choice ใน Phase 1 และ `LearnerPreferences.homeExperience` ตั้งแต่ Phase 3 | Unit/migration test |
 | AMM-FR-007 | Inside protocol ระบบต้องเก็บ stable assignment เดิม แม้ผู้เรียน switch to Standard | Integration test |
-| AMM-FR-008 | `AdventureEntryDecision` ต้องมี availability, effective presentation, treatment identity, fallback reason และ version pins | Unit test |
+| AMM-FR-008 | `AdventureProductEntryDecision` ต้องมี entryDecisionId, availability, effective presentation, treatment identity, fallback reason และ version pins โดยห้ามมี consent receipt/measurement response เป็น input | Unit/architecture test |
 | AMM-FR-009 | Emergency-off ต้องบล็อก new Adventure start แต่ไม่ทำลาย accepted learning session | Scenario test |
 | AMM-FR-010 | Standard escape ต้องพร้อมโดยไม่ต้อง scroll บนทุก Adventure screen ระดับบน | Widget/UAT |
 
@@ -142,7 +148,7 @@ Learner
 | AMM-FR-045 | หนึ่ง learner submission ต้อง map ไป evidence identity เดียวข้าม retry/restart | Scenario test |
 | AMM-FR-046 | Adventure UI ต้องไม่เรียก Drift learning tables หรือ repositories โดยตรง | Architecture test |
 | AMM-FR-047 | Assessment session ต้องไม่ถูก wrap เป็น reward-granting mission | Research isolation test |
-| AMM-FR-048 | Consented exposure event ต้องเชื่อม presentation กับ learning session ด้วย `aggregateId = learningSessionId` และ `correlationId = adventurePlanId`; non-participant ต้องไม่มี persisted origin row | Contract/privacy test |
+| AMM-FR-048 | Consented pre-session exposure ต้องใช้ `AdventurePresentation/entryDecisionId` และ plan correlation เป็น optional; mission start/completion ต้องใช้ `LearningSession/learningSessionId` และ `correlationId = adventurePlanId`; ทุก event ใช้ deterministic occurrence key ตาม ADR-003 และ non-participant ไม่มี persisted origin row | Contract/privacy/idempotency test |
 
 ### 6.7 M07 — Motivation and Unlock Projection Reader
 
@@ -292,7 +298,7 @@ Learner
 | AMM-NFR-005 | Mixed-owner mutation ต้องถูก reject ก่อน write |
 | AMM-NFR-006 | Missing dependency ต้อง fallback ไม่ crash |
 | AMM-NFR-007 | App restart ต้อง recover accepted session ตาม lifecycle เดิม |
-| AMM-NFR-032 | Full baseline suite ต้องไม่มี unclassified failure และ 15 findings ที่บันทึกใน `AMM-AUDIT-001` ต้องมี fresh closure evidence ก่อน Pilot |
+| AMM-NFR-032 | Full logical/shared baseline suite ต้องไม่มี unclassified failure; 15 findings ใน `AMM-AUDIT-001` ต้องมี fresh closure หรือ explicit excluded-platform/capability disposition ตาม Android Pilot matrix ก่อน Pilot |
 | AMM-NFR-033 | Adventure implementation ต้องไม่ทำให้ Gitleaks, OSV, platform contract หรือ model-certification gate แย่ลง และ release ต้องผ่าน policy ที่อนุมัติ |
 
 ### 9.2 Performance budgets
@@ -351,18 +357,19 @@ Budgets วัดบน device certification profile ที่โครงกา
 
 **Main flow:**
 
-1. Learner opens Today destination.
-2. Entry Control reads feature state.
-3. Entry Control reads session choice or preference v2.
-4. When protocol active, Entry Control reads assignment without mutation.
-5. Today Hub composes normally.
-6. Journey Projection builds snapshot.
-7. Shell shows current mission, progress nodes and Standard switch.
+1. Learner opens existing Learn surface.
+2. Eligible additive card `learn/today-experience` appears without changing bottom navigation; learner opens it.
+3. Today Experience Host composes canonical Today snapshot once.
+4. Product Entry Control reads feature/dependency state, session choice/preference and stable assignment; it does not read consent.
+5. Journey Projection builds snapshot.
+6. Host renders resolved Standard or Adventure presentation.
+7. Adventure shell shows current mission, progress nodes and Standard switch when selected.
 
 **Alternate flows:**
 
-- Feature hidden/disabled/emergency-off → Standard
-- Dependency unavailable/corrupt → Standard with bounded fallback reason
+- Feature hidden → card absent; Learn surface remains baseline-equivalent
+- Stale direct route with Today ready → Standard
+- Today dependency unavailable/corrupt → return Learn with bounded fallback reason
 - Assets absent online → offer download; Standard remains available
 - Assets absent offline → Standard immediately
 - Preference Standard → Standard even if Adventure enabled
@@ -407,7 +414,7 @@ Budgets วัดบน device certification profile ที่โครงกา
 ### UC-05 — Switch to Standard during protocol
 
 1. Learner activates visible Standard switch.
-2. Active research recorder writes `AdventureSwitchedToStandard` only if consented run exists.
+2. Active research recorder writes `AdventureSwitchedToStandard` only if `AdventureResearchCaptureDecision` is eligible, using `AdventurePresentation/entryDecisionId` and optional plan correlation.
 3. Preference updates only when user explicitly chooses “จำตัวเลือกนี้” outside protocol policy.
 4. Assignment remains unchanged.
 5. Standard Today Hub opens with same canonical state.
@@ -442,8 +449,10 @@ Budgets วัดบน device certification profile ที่โครงกา
 ### 11.1 Entry state
 
 ```text
-hidden/disabled/emergencyOff ─────────► Standard
-visible + dependency missing/corrupt ─► Standard(reason)
+hidden ───────────────────────────────► Learn baseline (no card)
+stale route + Today unavailable ──────► Learn(reason)
+disabled/emergencyOff + Today ready ──► Standard
+visible + dependency missing/corrupt ─► Learn(reason)
 visible + preference standard ────────► Standard
 visible + preference adventure
        + dependencies ready ──────────► Adventure Ready
@@ -526,5 +535,5 @@ Adventure พร้อม Pilot เมื่อ:
 8. Duplicate reward known path เท่ากับ 0
 9. Standard fallback, offline, restart, corrupt bundle และ emergency-off ผ่าน
 10. Product Owner, CTO, QA, UX และ Research/Privacy owner ลงนาม gate ที่เกี่ยวข้อง
-11. `AMM-AUDIT-001` findings ที่จัดเป็น before-Pilot ปิดครบและ full Flutter suite มี fresh passing evidence
+11. `AMM-AUDIT-001` findings ที่จัดเป็น before-Pilot ของ Android path ปิดครบ; full inventory run มี fresh evidence, logical/shared/touched set ผ่าน และ finding ที่เหลือ map ไป explicit exclusion โดยไม่มี unclassified failure
 12. Gitleaks gate สะอาดตาม reviewed policy และ dependency/platform exceptions ที่กระทบ release มี approved disposition

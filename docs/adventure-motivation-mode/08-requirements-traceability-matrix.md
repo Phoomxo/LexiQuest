@@ -8,6 +8,7 @@
 **Design source:** `03-sds.md` v1.0
 **Delivery source:** `04-project-plan-wbs.md` v1.0
 **Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.0
+**Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.0
 
 ## 1. วิธีใช้ Matrix
 
@@ -36,12 +37,12 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 |---|---|---|---|---|---|---|
 | AMM-FR-001 | เพิ่ม broad feature แบบ additive ไม่เป็น f45 | M01 / §10 | 0.12–0.13 | ENT-001, OPS-015 | 001 | P |
 | AMM-FR-002 | default state = hidden | M01 / §10 | 0.12–0.13 | ENT-001 | 001 | P |
-| AMM-FR-003 | entry ต้องผ่าน feature/dependency gate | M01 / §3 | 0.14,1.11 | ENT-002–004 | 001–004 | P |
-| AMM-FR-004 | config ผิดต้อง Standard | M01 / §6 | 0.14,1.10 | ENT-006 | 001,004 | P |
+| AMM-FR-003 | eligible additive Learn card; no bottom tab | ADR-001 / M01 | 0.10,0.12,1.11 | ENT-001/003/004, UX-001/015 | 001,002 | P |
+| AMM-FR-004 | stale/config fallback Standard-or-Learn ตาม Today readiness | ADR-001 / M01 | 0.14,1.10–1.11 | ENT-002/003/006 | 001,004 | P |
 | AMM-FR-005 | feature state ไม่แก้ assignment | M01/M10 | 0.13,4.5 | ENT-010 | 003,026 | P |
 | AMM-FR-006 | Phase 1 session choice; Phase 3 preference | M01 | 1.9,3.3 | ENT-004/005, DAT-005 | 002,003 | P |
 | AMM-FR-007 | switch ไม่ rewrite stable assignment | M01/M10 | 4.5,4.8 | ENT-010, RSH-006 | 003,026 | P |
-| AMM-FR-008 | entry decision มี pins/reason ครบ | M01 | 0.14,0.16 | ENT-002–006 | 002–004 | P |
+| AMM-FR-008 | Product Entry มี entry ID/pins; ไม่มี consent input | ADR-002 / M01 | 0.14,0.16 | ENT-002–006, RSH-001–003 | 002–004,025–026 | P |
 | AMM-FR-009 | emergency-off บล็อก start ไม่ทำลาย session | M01/M09 | 2.12,5.7 | ENT-007–009, OPS-011 | 022,032 | P |
 | AMM-FR-010 | Standard escape ไม่ต้อง scroll | M01/M02 | 1.9,1.12 | UX-001/003/005 | 002,015,016 | P |
 | AMM-FR-011 | shell อ่าน snapshot ไม่เขียน repo | M02 | 1.6–1.11 | JRN-005, LRN-015 | 001,005 | P |
@@ -91,7 +92,7 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-FR-045 | submission identity เดียวข้าม retry | M06/M09 | 2.10–2.11 | LRN-011–013 | 006,009,010 | P |
 | AMM-FR-046 | Adventure UI ไม่ import/write Drift learning | M06 / §8 | 2.2–2.5 | architecture test, DAT-001 | 006 | P |
 | AMM-FR-047 | assessment ไม่เป็น reward mission | M06/M10 | 3.5 | LRN-014 | 024 | P |
-| AMM-FR-048 | consented exposure correlation แยกจาก evidence | M06/M10 | 4.7–4.8 | LRN-006, RSH-004/005 | 025,026 | P |
+| AMM-FR-048 | pre-session entry ID; mission session ID; deterministic occurrence | ADR-003 / M06/M10 | 4.7–4.8 | LRN-006, RSH-004–007 | 025,026 | P |
 | AMM-FR-049 | motivation อ่านหลัง evidence/side effect commit | M07 | 3.5–3.7 | REC-007/008 | 012 | P |
 | AMM-FR-050 | อ่าน receipts เดิม ห้าม grant/mutate | M07 | 3.5–3.7 | REC-007–010 | 012 | P |
 | AMM-FR-051 | เปิด map/story ไม่ได้ reward | M07 | 3.5–3.6 | REC-010 | 012 | P |
@@ -223,7 +224,7 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-NFR-029 | Drift code generated only | §11 | 3.2/4.3 | generated diff/toolchain gate | pre-build review | P/GOV |
 | AMM-NFR-030 | unit tests/doc comments | §12 | all build WPs | code review + family tests | N/A | P |
 | AMM-NFR-031 | feature-off ไม่ down-migrate | §13 | 3.2/4.3/6.1 | DAT-015 | 003,022 | P |
-| AMM-NFR-032 | 15 baseline findings closed before Pilot | §12/§13 | 0.3–0.9, BG-01–10 | fresh baseline suite | 032 | B→P |
+| AMM-NFR-032 | shared foundation clean + Android scoped dispositions | ADR-005 / §12/§13 | 0.3–0.9, BG-01–10 | fresh logical/Android matrix | 032 | B→P |
 | AMM-NFR-033 | scans/platform/model gates ไม่แย่ลง | §8/§12 | 0.6–0.9, BG-07–11 | Gitleaks/OSV/platform/model/diff | 032 | B→P |
 
 ## 10. Business Rules
@@ -265,14 +266,26 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | Gate | Requirements chiefly protected | Required evidence |
 |---|---|---|
 | G0A Implementation-ready | FR-001–010, NFR-001/005/006/026/030 | BL-05/06/07 + worktree bootstrap + touched-foundation green |
-| G0B Pilot-ready | NFR-032/033 และทุก safety invariant | ปิด 15 baseline findings + BG-01–BG-12 |
+| G0B Android Pilot-ready | NFR-032/033 และทุก safety invariant | shared/touched foundation clean + scoped BG-01–BG-12 + explicit exclusions |
 | MS-02 Hidden contract | FR-001–010, NFR-001 | feature-off equivalence |
 | MS-03 Read-only preview | FR-011–041, DATA-001 | deterministic/zero-write/schema v22 |
-| MS-04 Learning equivalence | FR-042–048/066–075 | exact command/evidence/restart equivalence |
+| MS-04 Product Core MVP decision | FR-042–048/066–075 | exact command/evidence/restart equivalence + Accept/Stop/Continue record |
 | MS-05 Core motivation | FR-049–065, DATA-002–006 | read-only receipt projection + preference lifecycle |
 | MS-06 Research ready | FR-076–090, DATA-007–013 | consent/assignment/rules/sync/export/delete/zero-row |
 | MS-07 Internal accepted | UI-001–014, NFR-008–031 | accessibility/offline/performance/UAT |
 | MS-08 Pilot accepted | FR-088/094/095, NFR-020–025/032/033 | protocol approvals, Pilot UAT, guardrails |
+
+## 12.1 Decision and Measurement Traceability
+
+| Decision/measurement | Requirements protected | WBS | Test/UAT evidence |
+|---|---|---|---|
+| ADR-001 Learn entry/no bottom tab | FR-003/004/010, NFR-001/006 | 0.10/0.12/1.11 | ENT-001–006, UX-001/015, UAT-001/002/004 |
+| ADR-002 Product vs Research decision | FR-005/007/008/076–085, BR-012–015 | 0.14/4.5/4.8 | ENT-010/011, RSH-001–009, UAT-025–028 |
+| ADR-003 Event identity | FR-048/082/083/096, NFR-020/027/028 | 4.7/4.8 | RSH-004–007, OPS-014, UAT-026 |
+| ADR-004 MVP stop point | DATA-001/002/007/013, NFR-031 | 1.13/2.14/3.1/4.2 | DAT-001–003/015, MS-04 decision |
+| ADR-005 Android Pilot scope | FR-094/095, NFR-032/033 | 0.6–0.9/5.2/5.10 | BG-01–12, OPS-015, UAT-032 |
+| MDS primary motivation/guardrails | FR-078–088, NFR-020–025 | 4.1/4.13/5.9–5.13 | RSH-001–015, UAT-025–029 |
+| MDS UAT sample | UI-001–014, NFR-015–019/025 | 5.4/5.8/5.12 | UX-001–015, UAT denominators/sign-off |
 
 ## 13. RTM Change Control Checklist
 

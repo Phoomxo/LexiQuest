@@ -18,6 +18,7 @@
 |---|---|---|---|
 | 00 | Document Set Index | ควบคุมเวอร์ชัน ลำดับอำนาจ และสถานะเอกสาร | Product Owner |
 | 00A | [Current System Audit](00a-current-system-audit.md) | หลักฐานระบบจริง gap/impact matrix ความเสี่ยง และ Go/No-Go gates | CTO + QA Lead + Product Owner |
+| 00B | [Architecture Decision Records](00b-architecture-decision-records.md) | ปิด decision เรื่อง Learn entry, consent boundary, event identity, MVP stop point และ Pilot scope | Product Owner + CTO |
 | 01 | [TOR](01-tor.md) | เป้าหมาย ขอบเขต ผลส่งมอบ เงื่อนไขตรวจรับ | Sponsor/Product Owner |
 | 02 | [SRS](02-srs.md) | Functional, data, integration และ non-functional requirements | Product Owner + CTO |
 | 03 | [SDS](03-sds.md) | Component, interface, data, failure, security/privacy และ deployment design | CTO/Tech Lead |
@@ -27,6 +28,7 @@
 | 06 | [Test Plan & Test Cases](06-test-plan-and-test-cases.md) | กลยุทธ์ทดสอบ ชุดข้อมูล test case และ exit criteria | QA Lead + CTO |
 | 07 | [UAT Script](07-uat-script.md) | ขั้นตอนตรวจรับโดยผู้ใช้ หลักฐาน และ sign-off | Product Owner/UAT Lead |
 | 08 | [Requirements Traceability Matrix](08-requirements-traceability-matrix.md) | เชื่อม requirement → design → WBS → test → UAT | BA/QA Lead |
+| 09 | [Measurement Decision Spec](09-measurement-decision-spec.md) | นิยาม Motivation/Engagement/Learning, threshold, sample rule และ Android Pilot matrix | Research + Product + Privacy |
 | PLAN | [Implementation Plan](../superpowers/plans/2026-09-01-adventure-motivation-mode-implementation.md) | งานระดับไฟล์และวงจร TDD สำหรับผู้พัฒนา | CTO/Tech Lead |
 
 ## 3. Precedence
@@ -37,11 +39,13 @@
 2. Current System Audit สำหรับข้อเท็จจริงของ baseline และ gate ปัจจุบัน
 3. TOR ที่อนุมัติแล้ว
 4. SRS ที่อนุมัติแล้ว
-5. SDS ที่อนุมัติแล้ว
-6. UI/UX Design Spec ที่อนุมัติแล้ว
-7. Requirements Traceability Matrix
-8. Project Plan/WBS และ Implementation Plan
-9. Test Plan และ UAT Script
+5. Architecture Decision Records ที่อนุมัติแล้วสำหรับ decision ที่ TOR/SRS มอบหมาย
+6. Measurement Decision Spec ที่อนุมัติแล้วสำหรับ metric/sample/decision rules
+7. SDS ที่อนุมัติแล้ว
+8. UI/UX Design Spec ที่อนุมัติแล้ว
+9. Requirements Traceability Matrix
+10. Project Plan/WBS และ Implementation Plan
+11. Test Plan และ UAT Script
 
 ข้อกำหนดด้าน data integrity, consent, accessibility, owner isolation และการคง Standard Today Hub เป็น fallback ลดทอนไม่ได้ด้วยแผนงานระดับล่าง
 
@@ -75,7 +79,12 @@
 9. `EventEnvelopeV2` ไม่ถูกแก้ฟิลด์หรือความหมายโดยปริยาย
 10. Owner-scoped data ใหม่ต้องรองรับ guest upgrade, sync, export, withdrawal, deletion และ retention
 11. Feature-off ต้อง behaviorally equivalent กับ baseline ยกเว้น schema ที่เพิ่มแบบ forward-compatible
-12. ห้ามกล่าวว่าชุดทดสอบ baseline ผ่านทั้งหมดจนกว่า 15 failures ใน Current System Audit จะถูกปิดและมีผลรันใหม่
+12. ห้ามกล่าวว่าชุดทดสอบ baseline ผ่านทั้งหมดจนกว่า 15 failures ใน Current System Audit จะถูกปิด; Android Pilot ใช้เฉพาะ fresh passing evidence ของ logical/shared + touched scope และต้องประกาศ capability exclusions ตาม ADR-005
+13. Product Entry ไม่มี consent เป็น input; Research Capture ไม่มีอำนาจเปลี่ยน presentation
+14. Production v1 ไม่เพิ่ม bottom tab; entry เป็น additive card `learn/today-experience` ใน Learn surface
+15. Pre-session event ใช้ entryDecisionId; mission event ใช้ learningSessionId ตาม ADR-003
+16. MS-04 เป็นจุด Accept/Stop/Continue ของ Product Core MVP ที่หยุดได้โดยไม่มี schema migration
+17. Pilot v1 เป็น Android-only; excluded platform/capability ไม่ถือว่าผ่าน
 
 ## 6. Review and Approval Workflow
 
@@ -98,6 +107,8 @@
 | UAT scripts | 32 | nonresearch, accessibility, lifecycle, research และ release |
 | Adventure modules | 11 | M01–M11; M07 เป็น read-only projection reader |
 | Current Drift tables | 44 | schema v22 baseline; Phase 1 ต้องไม่เพิ่มตาราง |
+| Architecture decisions | 5 | Entry, consent, events, increments, Pilot scope |
+| Measurement axes | 5 + reliability/safety | Motivation primary; Engagement/Effort/Learning แยกกัน |
 
 ตัวเลขนี้เป็น coverage inventory ไม่ใช่ผลผ่านการทดสอบ
 

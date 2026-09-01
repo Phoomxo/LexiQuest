@@ -4,7 +4,7 @@
 **Version:** 1.0
 **Status:** Draft for Product Owner/UAT Lead Review
 **Date:** 2026-09-01
-**References:** `AMM-AUDIT-001`, TOR, SRS, SDS, WBS, UI/UX Spec และ Test Plan v1.0
+**References:** `AMM-AUDIT-001`, TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.0
 **Baseline:** commit `99f7fb21`, Drift schema v22
 **Release warning:** baseline ปัจจุบันมี 3,202 tests ผ่าน / 15 tests ไม่ผ่าน จึงใช้เอกสารนี้ทำ dry run ได้ แต่ห้าม sign-off Pilot/Production จน `G0B` และ `BG-01–BG-12` ผ่าน
 
@@ -29,8 +29,8 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 |---|---|---|---|---|
 | Dry run | Product/UX/QA ภายใน | Hidden/local fixture | ตรวจ script, copy, flow และ fixture | แก้เอกสาร/defect เท่านั้น |
 | Internal UAT | Staff allowlist | Limited | UAT-001–024 และ 030–032 | MS-07/Internal acceptance |
-| Consented Pilot UAT | ผู้เข้าร่วมที่ผ่าน protocol | Pilot | UAT-001–032 รวม research cases | MS-08/Pilot decision |
-| Post-release smoke | eligible production sample | Enabled แบบควบคุม | critical path และ rollback | Increment continue/hold |
+| Consented Android Pilot UAT | ผู้เข้าร่วมที่ผ่าน protocol บน MDS Android matrix | Pilot | UAT-001–032 รวม research cases | MS-08/Pilot decision |
+| Post-release Android smoke | eligible production sample | Enabled แบบควบคุม | critical path และ rollback | Increment continue/hold |
 
 UAT ไม่แทน automated test, rules emulator, migration test, security/dependency gate หรือ accessibility certification
 
@@ -85,6 +85,22 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 - Thai/English locale parity fixture;
 - canonical Standard/Adventure pair ที่ work IDs, modes, revisions และ policy เท่ากัน
 
+### 4.4 Android device/profile allocation
+
+ไม่บังคับรันทุก script ซ้ำบนทุก profile แต่ทุก script ต้องผ่านอย่างน้อยหนึ่งครั้งบน mainstream Android และ critical subset ต้องผ่านตามตารางนี้:
+
+| Profile | จำนวน session ขั้นต่ำ | Required UAT subset |
+|---|---:|---|
+| Mainstream Android phone | ครอบคลุม general learner ≥12 | UAT-001–024 และ 030–032 อย่างน้อยหนึ่ง pass ต่อ case |
+| Small Android ≤360×640 + text 100%/200% | ≥1 | UAT-001/002/004/005/011/014/016/030/032 |
+| Android tablet portrait/landscape | ≥1 | UAT-002/005/011/014/015/030/032 |
+| TalkBack | ≥1 | UAT-002/004/005/007/011/015–017/019/032 |
+| Android Switch Access/external keyboard | ≥1 | UAT-002/004/005/007/011/015–017/032 |
+| Offline | ≥1 | UAT-004/005/010/018/022/032 |
+| Corrupt asset | ≥1 | UAT-004/019/022/032 |
+
+Accessibility participants รวมอย่างน้อย 4 moderated sessions ตาม MDS และหนึ่งคนอาจครอบคลุมหลาย profile ได้เมื่อบันทึก state/device แยกชัดเจน Research cases UAT-025–029 รันบน approved mainstream Android build; ไม่ต้องทำซ้ำบนทุก accessibility profile เว้นแต่ prompt/capture path ถูก profile นั้นเรียกใช้
+
 ## 5. Preconditions และ Stop Conditions
 
 ### 5.1 Preconditions ทุก script
@@ -136,9 +152,9 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
-| 1 | เปิด build ที่ Adventure hidden/disabled ด้วย U-A | เข้าประสบการณ์ Standard เดิม ไม่มี Adventure entry |
+| 1 | เปิด build ที่ Adventure hidden ด้วย U-A และเข้า Learn | Learn layout/action set เหมือน baseline ไม่มี Today Experience card หรือ bottom tab ใหม่ |
 | 2 | เปิด Vocabulary, Review/Mastery และ Profile ตามปกติ | route/action สำคัญทำงานเหมือน baseline |
-| 3 | ลองเปิด stale/direct Adventure route จาก test harness | ถูกส่งไป Standard อย่างปลอดภัย มี bounded fallback reason |
+| 3 | ลองเปิด stale/direct `learn/today-experience` จาก test harness | ถ้า Today ready แสดง Standard; ถ้าไม่พร้อมกลับ Learn พร้อม bounded reason |
 | 4 | ตรวจ diagnostic/write summary กับ QA | ไม่มี Adventure row, learning write หรือ reward write |
 
 **Pass:** ผู้ใช้ทำงาน Standard ต่อได้โดยไม่รู้สึกว่าฟีเจอร์ใหม่รบกวน
@@ -149,10 +165,10 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
-| 1 | เปิด Today ด้วย U-A ใน Internal build | เห็น choice ที่อธิบาย Adventure และ Standard ชัดเจน |
-| 2 | เลือก Adventure โดยไม่เลือก “จำการตั้งค่า” | Adventure Home แสดง mission เด่นหนึ่งรายการ |
+| 1 | เปิด Learn ด้วย U-A ใน Internal build | เห็น additive Today Experience card หนึ่งรายการ โดย bottom navigation เดิมไม่เปลี่ยน |
+| 2 | เปิด card แล้วเลือก Adventure โดยไม่เลือก “จำการตั้งค่า” | Today Experience Host แสดง Adventure Home และ mission เด่นหนึ่งรายการ |
 | 3 | สลับ Map → List → Map | node/order/selection/action ไม่เปลี่ยน |
-| 4 | กด “ใช้แบบมาตรฐาน” ที่ไม่ต้อง scroll | กลับ Standard ใน Today destination เดิม ไม่ stack home ซ้ำ |
+| 4 | กด “ใช้แบบมาตรฐาน” ที่ไม่ต้อง scroll | กลับ Standard ใน Today Experience Host เดิม ไม่ stack home ซ้ำ; Back กลับ Learn |
 | 5 | ปิดและเปิดแอป | Phase 1 กลับค่าเริ่มต้นตาม session policy; assignment ไม่เปลี่ยน |
 
 ### UAT-003 — จำ preference โดยไม่เปลี่ยนสิทธิ์หรือ cohort
@@ -173,10 +189,10 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
-| 1 | เปิด fixture ที่ catalog/required dependency หาย | Standard แสดงทันทีหรือมี action กลับ Standard ที่ชัดเจน |
+| 1 | เปิด fixture สองแบบ: Adventure catalog หายแต่ Today พร้อม และ Today dependency หาย | แบบแรกแสดง Standard; แบบหลังไม่แสดง card/กลับ Learn พร้อม bounded reason |
 | 2 | กด retry หนึ่งครั้ง | retry เป็น bounded single-flight ไม่มี repeated dialog/spinner loop |
 | 3 | เปิด diagnostics กับ QA | มี bounded reason code ไม่มี answer/direct identifier/raw story |
-| 4 | เปิด Vocabulary/Review ใน Standard | canonical learning ยังใช้งานได้ |
+| 4 | เมื่อ Today dependency หาย ตรวจการกลับ Learn; เมื่อเฉพาะ Adventure asset หายตรวจ Standard | fallback แยกตาม dependency และ canonical learning ยังใช้งานได้ |
 
 ## 8. UAT Scripts — Journey และ Learning
 
@@ -439,8 +455,8 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 |---:|---|---|
 | 1 | ทดสอบ consent-only fixture | ไม่มี research row เพราะ assignment/run ไม่ครบ |
 | 2 | ทดสอบ assignment-only fixture | ไม่มี research row เพราะ consent ไม่ครบ |
-| 3 | เปิด U-R1 ที่ gate ครบและเริ่ม mission | event หนึ่งรายการมี version pins/aggregate/correlation ตาม contract |
-| 4 | สลับ Standard | assignment ยัง Adventure; crossover เป็น secondary metadata เท่านั้น |
+| 3 | เปิด U-R1 ที่ gate ครบ: เปิด host ก่อน plan แล้วเริ่ม mission | Presented ใช้ entryDecisionId/optional plan; MissionStarted ใช้ learningSessionId/required planId |
+| 4 | สลับ Standard ทั้งก่อนและหลังมี plan | assignment ยัง Adventure; switch ใช้ entryDecisionId และ plan correlation เฉพาะเมื่อมี |
 | 5 | restart/replay | assignment ไม่ถูก rewrite และ event identity ไม่ซ้ำ |
 
 ### UAT-027 — Research prompt, Skip และ bounded response
@@ -507,7 +523,7 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
-| 1 | UAT Lead ตรวจ BG-01–BG-12 และ G0B | ทุก gate มี fresh evidence; ไม่มี historical result แทน current |
+| 1 | UAT Lead ตรวจ scoped BG-01–BG-12, G0B และ Android Pilot matrix | Android/shared gates มี fresh evidence; iOS/desktop/AI Voice/field-model แสดง excluded ไม่ใช่ pass |
 | 2 | ทำ smoke: entry → mission → answer → result → Standard | critical path ผ่านและ authority receipt ถูกต้อง |
 | 3 | ทำ nonparticipant zero-row smoke | count = 0 |
 | 4 | Release Owner ทำ emergency-off | new start blocked, accepted state safe, Standard restored |
@@ -529,10 +545,12 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 ### เกณฑ์ comprehension
 
-- อย่างน้อย 90% หา primary mission และ Standard switch ได้โดยไม่ช่วย;
-- อย่างน้อย 90% อธิบาย wrong-answer recovery ว่า “ฝึก/ทบทวนอีก” ไม่ใช่ “ถูกลงโทษ”;
-- อย่างน้อย 85% แยก Learning/Effort/Engagement ได้หลังอ่าน copy ครั้งเดียว;
-- 100% ของ research participants ระบุได้ว่า Skip/withdraw ได้และไม่กระทบสิทธิ์เรียน;
+- General learner representatives ขั้นต่ำ 12 คน;
+- อย่างน้อย 11/12 หา Learn card, primary mission และ Standard switch ได้โดยไม่ช่วย;
+- อย่างน้อย 11/12 อธิบาย wrong-answer recovery ว่า “ฝึก/ทบทวนอีก” ไม่ใช่ “ถูกลงโทษ”;
+- อย่างน้อย 11/12 แยก Learning/Effort/Engagement ได้หลังอ่าน copy ครั้งเดียว;
+- accessibility sessions ขั้นต่ำ 4 และ required path ต้องผ่านทุก session;
+- research comprehension participants ขั้นต่ำ 10 และ 10/10 ระบุได้ว่า Skip/withdraw ได้และไม่กระทบสิทธิ์เรียน;
 - shame/coercion/false mastery finding ที่ยืนยันแล้วต้องเป็นศูนย์ก่อน Pilot
 
 ค่าเหล่านี้เป็น acceptance threshold ของ UAT ไม่ใช่ผลวิจัยประสิทธิผล และห้ามตีความแทน protocol
@@ -556,7 +574,8 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 
 ### 16.1 Internal acceptance
 
-- UAT-001–024 และ 030–032 ผ่านบน required device/accessibility matrix;
+- UAT-001–024 และ 030–032 ผ่านอย่างน้อยหนึ่งครั้งบน mainstream Android และ critical subsets ผ่านบน profile ตามตาราง 4.4;
+- general learner representatives ≥12 และ accessibility sessions ≥4 พร้อม numerator/denominator ตาม MDS;
 - ไม่มี S0/S1 เปิดค้าง;
 - Standard fallback, restart, offline และ emergency-off ผ่าน;
 - baseline `G0A` ผ่าน และไม่มี unclassified failure ใน touched foundation;
@@ -567,6 +586,8 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 - Internal acceptance ผ่าน;
 - `G0B` และ `BG-01–BG-12` ผ่านด้วย fresh evidence;
 - UAT-025–029 ผ่านภายใต้ approved protocol;
+- research comprehension ≥10 และผ่าน 10/10;
+- Android Pilot matrix ครบ; excluded platforms/capabilities ระบุชัด;
 - nonparticipant zero-row และ withdrawal cutoff = 100%;
 - comprehension thresholds ผ่าน;
 - Research/Privacy, Accessibility, QA, Tech และ Product sign-off ครบ

@@ -21,7 +21,7 @@
 |---|---|---|
 | จัดทำเอกสารและ prototype แบบไม่เขียนข้อมูล | **GO** | learning core, evidence, SRS, progress, Today Hub และ lifecycle มี authority ชัดเจนพอให้วาง integration boundary |
 | เริ่ม implementation แบบ hidden/default-off | **CONDITIONAL GO** | ต้องปิด baseline blockers ที่เกี่ยวข้องกับไฟล์ที่จะเปลี่ยน และสร้าง feature contract/kill switch ก่อน |
-| เปิด Pilot หรือ production | **NO-GO ณ วันที่ตรวจ** | full Flutter suite ยังมี 15 failures, Gitleaks gate ยังไม่สะอาด, iOS contract ขาด Podfile, model gate ไม่พร้อม, dependency vulnerability และ release evidence ล้าสมัย |
+| เปิด Android Pilot v1 หรือ production | **NO-GO ณ วันที่ตรวจ** | Android Pilot ยังมี shared/touched-scope failures, Gitleaks/dependency disposition และ release evidence ที่ไม่พร้อม; iOS/desktop/AI Voice/field-model เป็น explicit exclusions ตาม ADR-005 และไม่ถูกนับว่า “ผ่าน” |
 
 ข้อค้นพบสำคัญที่สุดคือ **Today Hub ซึ่งเหมาะจะเป็นฐานของ Adventure มี implementation และ composition แล้ว แต่ถูกซ่อนใน production defaults** ผู้ใช้จึงมองไม่เห็นภาพรวม 8/44 แม้งานด้าน source จะเสร็จ การออกแบบ Adventure ต้องแก้ปัญหา “มองไม่เห็นคุณค่าของระบบเดิม” โดยฉายข้อมูลเดิมให้เข้าใจง่ายขึ้น ไม่ใช่สร้าง gameplay แยกที่ทำลาย flow เดิม
 
@@ -203,8 +203,8 @@ The approved design is:
 
 - `AdventureOriginContextV1` exists only as transient application metadata;
 - it is not serialized into `EvidenceContext`, answer payloads or `EventEnvelopeV2`;
-- consented research measurement links a learning session through a separate exposure event;
-- `aggregateId` may equal `learningSessionId` and `correlationId` may equal `adventurePlanId` in the measurement stream;
+- consented research measurement uses separate exposure events and never modifies learning evidence;
+- the later ADR-003 decision assigns pre-session events to `AdventurePresentation/entryDecisionId` and mission events to `LearningSession/learningSessionId` with plan correlation when required;
 - a nonparticipant receives no research exposure row.
 
 ### 6.4 Learning side effects
@@ -469,14 +469,15 @@ Historical evidence may explain decisions but must not be used as current pass e
 4. Drift multiple-database test warnings in touched areas.
 5. Deprecated Flutter test APIs in touched navigation tests.
 
-### 15.3 Must close before Pilot
+### 15.3 Must close before Android Pilot v1
 
-1. Full Flutter suite green with field-model tests either prepared and passing or explicitly moved to a separately enforced hardware gate.
+1. Logical/shared Flutter suite และ touched Adventure scope มี fresh passing evidence โดยไม่มี unclassified failure; field-model tests ต้องถูกแยกเป็น explicit excluded hardware gate และห้ามรายงานว่า passed.
 2. Preference v2 local migration, codec, rules and sync compatibility complete if durable choice is included.
 3. Measurement lifecycle, consent withdrawal, export/deletion and retention tests green.
 4. Accessibility, reduced motion, 200% text and screen-reader UAT complete.
 5. Offline, corrupt-asset, emergency-off and Standard fallback rehearsals complete.
-6. Pilot protocol, sample, stopping rule and crossover analysis approved.
+6. Pilot protocol, MDS sample calculation, stopping rule and crossover analysis approved.
+7. Android device matrix ผ่านครบ; iOS, desktop, AI Voice และ field model ระบุเป็น excluded พร้อม gate ก่อน enable ของตนเอง.
 
 ### 15.4 Must close before production release
 
@@ -506,7 +507,7 @@ Adventure implementation is acceptable only if all statements remain true:
 
 The current system has a strong local-first authority foundation suitable for an optional Adventure presentation. The safest direction is to build Adventure as a projection of Today Hub and existing learning/reward outcomes, with a new hidden runtime parent and no new progress authority.
 
-The baseline is **not release-clean**. The 15 Flutter failures are reproducible and mostly indicate stale contracts, missing test/platform prerequisites and test harness gaps rather than broad learning-core failure. Secret/dependency and evidence-freshness issues add independent release blockers.
+The baseline is **not release-clean**. The 15 Flutter failures are reproducible and mostly indicate stale contracts, missing test/platform prerequisites and test harness gaps rather than broad learning-core failure. Secret/dependency and evidence-freshness issues add independent release blockers. ADR-005 เปลี่ยนเฉพาะการจัดกลุ่ม gate ตาม capability: finding ที่อยู่นอก Android Pilot ไม่หายไปและไม่ถือว่าผ่าน แต่ไม่บล็อก Pilot path ที่ไม่เรียกใช้ capability นั้นเมื่อมี explicit exclusion และ owner approval.
 
 Accordingly:
 

@@ -4,6 +4,7 @@
 **Status:** PROPOSED FOR OWNER REVIEW
 **Baseline:** `99f7fb21` (`feature/alltcas-8-44-integration` remote baseline)
 **Audit:** `docs/adventure-motivation-mode/00a-current-system-audit.md` — planning GO, hidden implementation conditional, Pilot/production NO-GO until gates close
+**Decisions:** `docs/adventure-motivation-mode/00b-architecture-decision-records.md`, `docs/adventure-motivation-mode/09-measurement-decision-spec.md`
 **Scope:** ออกแบบระบบและลำดับการพัฒนาเท่านั้น ยังไม่เปิดใช้ใน production
 
 ## 1. Decision
@@ -12,7 +13,7 @@ LexiQuest จะพัฒนา **Adventure Motivation Mode** เป็นมุ
 
 การตัดสินใจหลักมีดังนี้:
 
-1. Standard Today Hub ยังคงเป็นเส้นทางหลักและเป็น fallback ที่ใช้งานได้เสมอ
+1. Existing Learn navigation ยังคงเดิม; eligible additive `learn/today-experience` entry เปิด host ที่มี Standard Today เป็น fallback โดยไม่เพิ่ม bottom tab
 2. Adventure ไม่มี authority ของ Vocabulary, SRS, Mastery, Assessment, Quest, Streak, Achievement, XP, Coins, Rewards, Recommendation, Today Hub หรือ History
 3. แผนที่และความก้าวหน้า Adventure ในรุ่นแรกเป็น rebuildable read model ไม่เพิ่ม `adventure_progress` table
 4. คำตอบทุกข้อยังผ่าน Unified Lesson Shell และ Evidence Gateway เดิม
@@ -128,11 +129,11 @@ Incorrect, hint-assisted, skipped, timed-out and technical-failure states are di
 ## 6. System Context
 
 ```text
-FeatureRegistry ───────────────┐
-ExperimentRegistry ───────────┤
-ConsentRegistry ──────────────┤
-                              ▼
-                    Adventure Entry Control
+Learner ─► Existing Learn Surface ─► eligible `learn/today-experience`
+                                          ▼
+FeatureRegistry ───────────────┐  Today Experience Host
+ExperimentRegistry ───────────┤           ▼
+LearnerPreferences ───────────┘  Product Entry Control (no consent)
                               ▼
 World/Story Catalog ──► Adventure Experience Shell
                               ▲
@@ -150,7 +151,7 @@ Today Hub/History/Quest ─► Journey Projection
                               ▼
                  Result/Recovery/Companion
                               ▼
-                 Research Measurement/Export
+ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Export
 ```
 
 ## 7. Module Map
@@ -162,6 +163,7 @@ Today Hub/History/Quest ─► Journey Projection
 - Resolve effective availability from `FeatureRegistry`;
 - apply hidden/internal/pilot/enabled/emergency-off states;
 - resolve Standard vs Adventure presentation without changing cohort;
+- expose one additive Learn entry only when eligible; never add a bottom tab;
 - expose typed unavailable/fallback states;
 - route to Standard Today Hub when any required dependency is unavailable
 
@@ -169,13 +171,12 @@ Today Hub/History/Quest ─► Journey Projection
 
 - `FeatureRegistry`;
 - `ExperimentRegistry` when a study protocol is active;
-- `ConsentRegistry` for research upload, not for ordinary local use;
 - session-local presentation choice in Phase 1;
 - `LearnerPreferences` v2 home-experience authority from Phase 3 onward
 
 **Produces**
 
-- `AdventureEntryDecision` with availability, presentation, treatment identity, fallback reason and version pins
+- `AdventureProductEntryDecision` with deterministic entryDecisionId, Learn/Standard/Adventure destination, treatment identity, fallback reason and version pins; no consent input
 
 **Persistence**
 
@@ -186,7 +187,7 @@ Today Hub/History/Quest ─► Journey Projection
 
 **Fail-safe**
 
-- Missing/malformed configuration resolves to Standard Today Hub;
+- Missing Adventure configuration resolves to Standard when Today is ready; missing Today dependency returns Learn with bounded reason;
 - emergency-off blocks new Adventure entry but lets an accepted lesson close safely
 
 ### M02 — Adventure Experience Shell
@@ -201,7 +202,7 @@ Today Hub/History/Quest ─► Journey Projection
 **Consumes**
 
 - `AdventureJourneySnapshot`;
-- `AdventureEntryDecision`;
+- `AdventureProductEntryDecision`;
 - theme/accessibility/motion settings
 
 **Produces**
@@ -318,7 +319,7 @@ Today Hub/History/Quest ─► Journey Projection
 - `EventEnvelopeV2` is not modified silently;
 - learning answer events retain their existing event types, payloads, `EvidenceContext` schema and semantics;
 - `AdventureOriginContextV1` is transient launch metadata from Session Composer to Learning Bridge and is never inserted into `EvidenceContext` or added as an `EventEnvelopeV2` field;
-- for an actively consented measurement run, separate Adventure exposure events link presentation to the existing learning session with `aggregateId = learningSessionId` and `correlationId = adventurePlanId`; non-participants receive no persisted origin row;
+- for an actively consented measurement run, pre-session events use `AdventurePresentation/entryDecisionId` with optional plan correlation while mission start/completion use `LearningSession/learningSessionId` with required `adventurePlanId`; non-participants receive no persisted origin row;
 - Adventure does not supply correctness, mastery weight or reward eligibility;
 - assessment sessions cannot be wrapped as reward-granting Adventure missions
 
@@ -578,16 +579,17 @@ Outside a research protocol, the learner may choose Standard or Adventure. Insid
 | Engagement | Start, completion, return, switch, quest/reward interaction | Product interaction, not mastery |
 | Motivation | Versioned bounded self-report instrument | Learner-reported motivation under a declared scoring rule |
 
-Promotion to Pilot requires:
+Promotion to Android Pilot requires:
 
 - stable assignment consistency of 100%;
 - zero known pathways from assessment to motivational rewards;
 - zero duplicate reward grants in retry/restart tests;
 - 100% complete required version metadata for eligible research records;
 - a pre-registered primary motivation outcome and learning guardrails;
+- MDS power/sample calculation and exact +5 motivation/learning guardrail decision rules;
 - no unresolved critical accessibility or evidence-integrity defect
 
-This product design does not choose a statistical effect-size threshold; the study protocol must declare it from its power analysis before participant enrollment.
+`LQ-AMM-MDS-001` fixes the planning effect threshold, guardrail margins, power formula and UAT minimum samples. The signed protocol may make safety/quality thresholds stricter but cannot relax or replace the primary rule after enrollment without a reported amendment.
 
 ## 14. Testing Strategy
 
@@ -658,7 +660,7 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - append the hidden `adventureMotivation` feature and update exhaustive registry/contract mappings without a database migration;
 - define World Catalog v1 and validator;
 - add negative architecture tests;
-- no navigation entry and no learner-facing activation
+- internal guarded route only; no production learner entry in Phase 0 and no bottom-tab change
 
 **Exit gate:** feature-off build is behaviorally equivalent to baseline.
 
@@ -673,6 +675,7 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - Standard switch and typed fallback;
 - session-local presentation choice only;
 - no schema change and no new database table
+- eligible additive Learn card/TodayExperienceHost seam only after ADR-001 navigation tests; hidden Learn remains baseline-equivalent
 
 **Exit gate:** Journey recomposes deterministically and cannot write progress.
 
@@ -688,7 +691,7 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - restart/resume/kill-switch integration;
 - separate result axes
 
-**Exit gate:** identical canonical evidence semantics between Standard and Adventure paths.
+**Exit gate:** identical canonical evidence semantics between Standard and Adventure paths, schema v22 unchanged, followed by MS-04 Product Owner Accept/Stop/Continue. Stop is a successful bounded Product Core MVP outcome and performs no migration.
 
 ### Phase 3 — Motivation and companion
 
@@ -713,14 +716,15 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - `motivation_measurement_runs` and `motivation_responses` on the actual reserved research migration (provisionally schema v24);
 - four registered Adventure exposure event payloads v1 in existing `EventsV2`;
 - motivation instrument and bounded response model;
-- consent/assignment enforcement;
+- separate Research Capture decision using consent/assignment/run, with no presentation authority;
+- lifecycle-specific event identities from ADR-003;
 - migration, lifecycle, sync/rules and export;
 - research-isolation tests;
 - pre-registered analysis protocol
 
 **Exit gate:** complete reconstructible metadata and withdrawal-safe behavior.
 
-### Phase 5 — Internal and Pilot rollout
+### Phase 5 — Internal and Android Pilot rollout
 
 **Modules:** all
 **Deliverables:**
@@ -728,7 +732,7 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - Internal dogfood with diagnostics;
 - accessibility and Thai-language review;
 - offline/content bundle repair;
-- small consented pilot;
+- Android-only consented pilot on the MDS device/sample matrix; iOS/desktop/AI Voice/field-model explicitly excluded;
 - guardrail and data-quality review;
 - emergency-off rehearsal
 

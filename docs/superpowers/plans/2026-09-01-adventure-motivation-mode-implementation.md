@@ -1,16 +1,17 @@
 # Adventure Motivation Mode — Implementation Plan
 
-> **Execution note:** แผนนี้เป็น blueprint สำหรับ session พัฒนาในอนาคต ไม่อนุญาตให้ implement Adventure จากงานเอกสารปัจจุบัน ผู้ลงมือควรใช้ skill `executing-plans` และทำทีละ checkpoint
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `subagent-driven-development` (recommended) or `executing-plans` to implement this plan task-by-task. This planning task does not authorize production implementation.
 
 **Goal:** เพิ่ม Adventure Motivation Mode เป็น optional presentation บน Today/learning authorities เดิม โดย Standard ยังคงเป็น fallback, evidence/reward semantics ไม่เปลี่ยน และ research data เกิดเฉพาะ consented protocol
 
-**Architecture:** Hidden broad runtime feature + fail-closed entry decision → deterministic read-only journey projection → canonical Today session composer → existing Unified Lesson Controller → existing Learning Side Effect Reconciler → read-only result/motivation projection. Preference และ research เพิ่มแบบ staged migration หลัง read-only prototype ผ่าน โดยไม่สร้าง `adventure_progress`
+**Architecture:** Existing Learn surface → eligible additive `learn/today-experience` card → TodayExperienceHost → consent-free Product Entry decision → deterministic read-only journey → canonical Today session composer → existing Unified Lesson Controller/Side Effect Reconciler → read-only result projection. Research Capture is a separate consented decision; preference/research migrations occur only after independent MVP gates and no `adventure_progress` is created.
 
 **Tech Stack:** Flutter/Dart, Material 3, Drift/SQLite, existing owner/sync/export/event contracts, Firebase rules emulator, Node test tooling
 
 **Authoritative documents:**
 
 - `docs/adventure-motivation-mode/00a-current-system-audit.md`
+- `docs/adventure-motivation-mode/00b-architecture-decision-records.md`
 - `docs/adventure-motivation-mode/01-tor.md`
 - `docs/adventure-motivation-mode/02-srs.md`
 - `docs/adventure-motivation-mode/03-sds.md`
@@ -19,6 +20,7 @@
 - `docs/adventure-motivation-mode/06-test-plan-and-test-cases.md`
 - `docs/adventure-motivation-mode/07-uat-script.md`
 - `docs/adventure-motivation-mode/08-requirements-traceability-matrix.md`
+- `docs/adventure-motivation-mode/09-measurement-decision-spec.md`
 
 **Pinned baseline:** `99f7fb21`, feature catalog revision 1.3.0/hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`, Drift schema v22, EventEnvelopeV2 unchanged
 
@@ -37,7 +39,12 @@
 9. Phase A ไม่มี schema; Phase B preference local; Phase C cloud preference/research หลัง rules/version cutoff พร้อม
 10. Standard fallback ต้องอยู่ในทุก phase และ emergency-off ต้องทดสอบก่อน Pilot
 11. ห้ามใช้ historical passing log แทน fresh evidence
-12. ก่อน Pilot ต้องปิด 15 baseline failures และผ่าน Gitleaks/OSV/platform/model gates ตาม policy ที่อนุมัติ
+12. ก่อน Android Pilot ต้องปิด shared/touched-foundation failures, ผ่าน Android/reachable capability gates และบันทึก iOS/desktop/AI Voice/field-model exclusions โดยไม่เรียกว่า passed
+13. ห้ามเพิ่ม bottom tab; production entry ใช้ `learn/today-experience` ภายใน Learn และ hidden path ต้อง baseline-equivalent
+14. Product Entry ห้ามอ่าน consent; Research Capture ห้ามเปลี่ยน presentation
+15. Pre-session research event ใช้ entryDecisionId; mission event ใช้ learningSessionId ตาม ADR-003
+16. หลัง MS-04 ต้องหยุดรอ Product Owner เลือก Accept/Stop/Continue; Stop ต้องไม่ทำ migration
+17. Pilot v1 เป็น Android-only; excluded capability/platform ห้ามรายงานว่า passed
 
 ## 1. Checkpoint 0 — Reproduce and Remediate the Baseline
 
@@ -102,7 +109,7 @@
 
 **Exit:** BL-07 seven failures green; no production path behavioral change
 
-### Task 0.4 — Close platform, model, fingerprint and supply-chain gates
+### Task 0.4 — Classify and close shared/Android Pilot baseline gates
 
 **Files:**
 
@@ -117,14 +124,14 @@
 **Steps:**
 
 1. Regenerate the fingerprint artifact from current source and review the diff; never hand-edit a digest.
-2. Mobile Owner decides whether iOS uses a tracked Podfile or a documented alternative; make the platform contract test express that decision.
-3. Prepare checksum-pinned model fixture using the approved model workflow and run benchmark/classifier certification separately from ordinary Flutter tests.
+2. Record iOS Podfile/notification issue as excluded from Android Pilot v1 and still blocked for iOS enablement; do not label its contract green.
+3. Record field-model/AI Voice as excluded unless reachable from the Android Pilot build; when reachable, prepare checksum-pinned fixtures and run their certification before Pilot.
 4. Replace synthetic secret-like fixtures with deterministic non-secret forms or add narrowly reviewed fingerprint allowlisting; rerun tracked-history Gitleaks.
 5. Upgrade LM `datasets` to a fixed compatible version (≥5.0.1) and resolve/approve Voice optional-GPU findings before policy expiry; run affected backend suites and OSV.
-6. Run default and serial full Flutter suites. Classify any new failure; target is zero unclassified failures.
-7. Archive BG-01–BG-11 evidence and commit each owner area separately.
+6. Run default and serial full Flutter inventory suites. Require the logical/shared/touched set to pass; map any remaining failure to an approved explicit exclusion and require zero unclassified failures.
+7. Archive shared/Android BG-01–BG-11 evidence plus an explicit exclusion matrix and commit each owner area separately.
 
-**Exit:** `G0A` for implementation; all items plus full clean gates required for `G0B` before Pilot
+**Exit:** `G0A` for implementation; shared/touched foundation clean and Android Pilot matrix green for `G0B`; excluded platforms remain blocked for their own enablement
 
 ## 2. Checkpoint 1 — Hidden Contract and Catalog Foundation
 
@@ -169,7 +176,7 @@
 5. Run tests twice with shuffled input order; output/errors must be deterministic.
 6. Commit domain and fixture separately from visual assets.
 
-### Task 1.3 — Implement fail-closed entry decision and dependency contract
+### Task 1.3 — Implement consent-free Product Entry decision and dependency contract
 
 **Files:**
 
@@ -185,11 +192,12 @@
 **Steps:**
 
 1. Write the ENT-001–012 decision table as parameterized failing tests.
-2. Implement `AdventureEntryDecision` with availability, effective presentation, treatment identity, fallback reason and version pins.
-3. Require identity-consistent Today/Learning/catalog dependencies; missing/unknown/corrupt inputs resolve Standard.
-4. Fence asynchronous resolution by owner/session generation.
-5. Verify feature state never creates/changes assignment or preference.
-6. Run entry, bootstrap, production gate and feature-off equivalence tests.
+2. Implement `AdventureProductEntryDecision` with deterministic entryDecisionId, availability, Learn/Standard/Adventure destination, treatment identity, fallback reason and version pins.
+3. Add an architecture test proving Product Entry has no `ConsentRegistry`, consent receipt or measurement response dependency.
+4. Require identity-consistent Today/Learning/catalog dependencies; missing Adventure assets resolve Standard when Today is ready, while missing Today returns Learn.
+5. Fence asynchronous resolution by owner/session generation.
+6. Verify feature state never creates/changes assignment or preference.
+7. Run entry, bootstrap, production gate and feature-off equivalence tests.
 
 **Checkpoint review:** focused diff must show hidden/default-off behavior, no schema diff and no Adventure presentation route yet
 
@@ -237,6 +245,8 @@
 **Files:**
 
 - Create: `lib/features/adventure/presentation/adventure_hub_screen.dart`
+- Create: `lib/features/adventure/presentation/adventure_today_entry_card.dart`
+- Create: `lib/features/adventure/presentation/today_experience_host.dart`
 - Create: `lib/features/adventure/presentation/adventure_mission_sheet.dart`
 - Create: `lib/features/adventure/presentation/widgets/adventure_map.dart`
 - Create: `lib/features/adventure/presentation/widgets/adventure_map_list.dart`
@@ -246,15 +256,17 @@
 - Create: `test/features/adventure/presentation/adventure_hub_screen_test.dart`
 - Create: `test/features/adventure/presentation/adventure_map_list_parity_test.dart`
 - Modify: `test/screens/main_navigation_screen_test.dart`
+- Modify: `test/navigation/navigation_glossary_test.dart`
 
 **Steps:**
 
-1. Write widget tests for one primary mission, always-visible Standard switch, loading/empty/stale/corrupt/offline/unavailable, CTA single-flight and Map/List parity.
-2. Render from `AdventureJourneySnapshot`; widgets receive callbacks/read models only.
-3. Host Standard/Adventure at the same Today destination; never reuse `LearningWorldMapScreen` or stack duplicate home routes.
-4. Use `M3Theme`, glossary keys, 48×48 targets and non-color state cues.
-5. Add semantics/focus/text-200%/dark/high-contrast/reduced-motion golden/widget coverage.
-6. Run navigation, Today Hub and all new widget tests.
+1. Write red navigation tests for stable child route `learn/today-experience`, no new bottom destination and byte/value-equivalent Learn layout when hidden.
+2. Write widget tests for one eligible additive Learn card, one primary mission, always-visible Standard switch, loading/empty/stale/corrupt/offline/unavailable, CTA single-flight and Map/List parity.
+3. Render from `AdventureJourneySnapshot`; widgets receive callbacks/read models only.
+4. Make `TodayExperienceHost` compose Today once and render Standard/Adventure; Back returns Learn and Standard switch does not stack routes.
+5. Never reuse `LearningWorldMapScreen`; use `M3Theme`, glossary keys, 48×48 targets and non-color state cues.
+6. Add semantics/focus/text-200%/dark/high-contrast/reduced-motion golden/widget coverage.
+7. Run navigation, Today Hub and all new widget tests.
 
 **Checkpoint review:** schema remains v22/44 tables; database write snapshot = zero; Standard fixtures equivalent; MS-03 evidence archived
 
@@ -333,7 +345,11 @@
 4. Add supportive Thai/English copy and technical-error state without shame/false mastery claim.
 5. Run REC-012–015 and UX-010–012 equivalents.
 
-**Checkpoint review:** Standard/Adventure command and evidence equivalence, duplicate count zero, assessment isolation, MS-04
+**Checkpoint review:** Standard/Adventure command and evidence equivalence, duplicate count zero, assessment isolation and schema v22. Record MS-04 Product Owner decision:
+
+- **Accept/Stop:** archive Product Core MVP hidden; perform no preference/research migration; plan execution ends successfully.
+- **Accept/Continue:** authorize Product Extension tasks only.
+- **Revise:** return only to the failed P2 work package and rerun the affected gate.
 
 ## 5. Checkpoint 4 — Preference, Canonical Motivation Projection and Companion
 
@@ -415,30 +431,34 @@
 
 **Steps:**
 
-1. Require approved protocol/instrument/form/response-code catalog before implementation.
+1. Require approved MDS/protocol/instrument/form/response-code catalog, +5 primary threshold, learning margins and signed power calculation before implementation.
 2. Read schema ledger and reserve the next actual number after preference migration; do not assume v24.
 3. Write red migration tests for exactly `motivation_measurement_runs` and `motivation_responses`, v1→current fixtures, owner IDs, unique/idempotent constraints and unknown-code rejection.
 4. Implement bounded domain models; no free text and no duplicated learning answer.
 5. Add forward-only tables/migration and regenerate Drift code.
 6. Run current/full migration matrix and exact table inventory.
 
-### Task 5.2 — Add consent/assignment/run-gated measurement use cases
+### Task 5.2 — Add separate Research Capture decision and measurement use cases
 
 **Files:**
 
 - Create: `lib/features/research/data/drift_motivation_measurement_repository.dart`
 - Create: `lib/features/research/application/motivation_measurement_use_cases.dart`
+- Create: `lib/features/research/application/adventure_research_capture_gate.dart`
 - Create: `test/features/research/drift_motivation_measurement_repository_test.dart`
 - Create: `test/features/research/motivation_measurement_use_cases_test.dart`
+- Create: `test/features/research/adventure_research_capture_gate_test.dart`
 - Reference: `lib/runtime/registries/experiment_registry.dart`
 
 **Steps:**
 
-1. Encode RSH-001–003 as red decision-table tests; each incomplete gate must create zero row/outbox.
-2. Implement owner-scoped idempotent run state machine with stable assignment and all version pins.
-3. Check withdrawal immediately before persistence/enqueue, not only when screen opens.
-4. Implement bounded response submit/skip; learning/reward/access remain unchanged.
-5. Test duplicate submit, owner switch, withdrawal race and restart.
+1. Encode RSH-001–003 as red decision-table tests; each incomplete gate must create zero row/outbox while Product Entry returns the same presentation decision.
+2. Add an architecture test forbidding Research Capture from importing/calling Product Entry mutation or presentation-selection APIs.
+3. Implement `AdventureResearchCaptureDecision` from stable assignment + consent + active run + versions; it has no presentation field/effect.
+4. Implement owner-scoped idempotent run state machine with stable assignment and all version pins.
+5. Check withdrawal immediately before persistence/enqueue, not only when screen opens.
+6. Implement bounded response submit/skip; learning/reward/access remain unchanged.
+7. Test duplicate submit, owner switch, withdrawal race and restart.
 
 ### Task 5.3 — Record exact consented Adventure exposure events
 
@@ -454,9 +474,11 @@
 
 1. Write allowlist tests for exactly four v1 payloads: Presented, MissionStarted, SwitchedToStandard, MissionCompleted.
 2. Assert EventEnvelopeV2 exact keyset unchanged.
-3. Require active consent, stable assignment and active run; nonparticipant remains zero-row.
-4. Correlate consented exposure with `aggregateId = learningSessionId`, `correlationId = adventurePlanId`; never persist origin into learning evidence.
-5. Test replay idempotency, crossover without reassignment and privacy-redacted diagnostics.
+3. Require an eligible `AdventureResearchCaptureDecision`; nonparticipant remains zero-row.
+4. Implement ADR-003 identities: Presented/Switch use `AdventurePresentation/entryDecisionId` with optional plan correlation; Started/Completed use `LearningSession/learningSessionId` with required planId.
+5. Derive deterministic occurrence keys; cap switchOrdinal at 10 and route excess to a bounded diagnostic counter.
+6. Never persist origin into learning evidence; assert EventEnvelopeV2 keyset unchanged.
+7. Test before-plan/after-plan events, lost acknowledgement, replay idempotency, crossover without reassignment and privacy-redacted diagnostics.
 
 ### Task 5.4 — Complete sync, rules and lifecycle coverage
 
@@ -526,14 +548,14 @@
 2. `flutter analyze --no-pub lib test` with any info-level disposition recorded;
 3. targeted adventure/domain/widget/architecture/scenario tests;
 4. current authority suites: Today, Learning, SRS, Mastery, Weakness, Quest, Streak, Achievement, Reward, Owner, Sync, Export;
-5. full Flutter suite default and serial;
+5. full Flutter inventory suite default and serial, with required logical/shared/touched pass set and explicit exclusion mapping;
 6. AI, Voice, LM and affected backend suites;
 7. Firestore/Auth emulator suites;
-8. tracked-history Gitleaks, OSV/dependency audits under approved scopes;
-9. platform contracts and field-model certification;
+8. tracked-history Gitleaks, OSV/dependency audits under approved Android/reachable scopes;
+9. Android platform contract; archive iOS/desktop/AI Voice/field-model as excluded and still blocked for their own enablement;
 10. focused diff, generated-code check, schema/table/manifest cardinality and feature-off comparison
 
-**Pass:** BG-01–BG-12 all green with fresh commit/build/environment evidence
+**Pass:** scoped BG-01–BG-12 green with fresh commit/build/environment evidence; exclusions have owner and are never counted as pass
 
 ### Task 6.4 — Execute UAT and rollout rehearsal
 
@@ -545,11 +567,11 @@
 
 **Steps:**
 
-1. Internal UAT: UAT-001–024 and 030–032; no open S0/S1.
+1. Internal UAT: UAT-001–024 and 030–032 with ≥12 learner representatives and ≥4 accessibility sessions; record every numerator/denominator; no open S0/S1.
 2. Complete ethics/guardian/assent approvals where applicable.
-3. Pilot UAT: UAT-025–029; nonparticipant zero-row and withdrawal cutoff must be 100%.
+3. Android Pilot UAT: UAT-025–029 with ≥10 research-comprehension participants and 10/10 Skip/withdraw understanding; nonparticipant zero-row and withdrawal cutoff must be 100%.
 4. Rehearse emergency-off twice: before Pilot and before Enabled.
-5. Roll out Hidden → Internal → Pilot → Enabled using bounded increments with Continue/Hold/Rollback decision each time.
+5. Roll out Hidden → Internal → Android Pilot → Android Enabled using MDS motivation/learning thresholds and Continue/Hold/Rollback decision each time.
 6. Update RTM statuses only from current evidence; archive decision log and unresolved backlog separately.
 
 ## 8. Pull Request and Commit Boundaries
@@ -582,6 +604,8 @@ Each PR must include:
 
 - [ ] 8/44 catalog exact; Adventure is not f45
 - [ ] feature hidden/default-off and Standard behavior equivalent
+- [ ] no new bottom tab; `learn/today-experience` is the only production entry and hidden Learn layout is equivalent
+- [ ] Product Entry has zero consent dependency; Research Capture has zero presentation authority
 - [ ] no `adventure_progress` or parallel learning/reward authority
 - [ ] EvidenceContext and EventEnvelopeV2 keysets unchanged
 - [ ] Adventure → Unified Lesson command/evidence equals Standard
@@ -590,8 +614,10 @@ Each PR must include:
 - [ ] actual migration numbers reserved, forward-only and full fixtures green
 - [ ] owner lifecycle, upgrade, sync, export/delete and rules complete
 - [ ] nonparticipant zero-row and withdrawal-before-enqueue proven
+- [ ] pre-session/session exposure identities and deterministic occurrence keys match ADR-003
 - [ ] accessibility/performance/offline/corrupt/emergency-off gates pass
-- [ ] all 15 baseline failures closed; Gitleaks/OSV/platform/model gates pass
-- [ ] UAT comprehension and defect thresholds pass
+- [ ] shared/touched foundation and Android Pilot gates pass; every excluded platform/capability is explicit and still blocked for its enablement
+- [ ] MDS motivation effect, learning margins, power/sample evidence and decision rule are applied without post-hoc relaxation
+- [ ] UAT ≥12 learners, ≥4 accessibility sessions and ≥10 research-comprehension participants meet exact count thresholds
 - [ ] RTM 174/174 requirements has current evidence and sign-off
 - [ ] Product, QA, Tech, Accessibility, Research/Privacy and Release decisions recorded

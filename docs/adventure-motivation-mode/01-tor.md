@@ -6,6 +6,7 @@
 **Date:** 2026-09-01
 **Project baseline:** LexiQuest 8/44 at commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0` — 3,202 Flutter tests pass / 15 fail; Pilot and production remain blocked
+**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
 **Document type:** Internal product-engineering TOR; procurement price and commercial payment terms are outside scope
 
 ## 1. Background
@@ -59,7 +60,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | Scope ID | งาน |
 |---|---|
 | TOR-S01 | เพิ่ม `Feature.adventureMotivation` แบบ fail-closed และ production contract |
-| TOR-S02 | Entry decision ที่รวม availability, preference, assignment, consent และ fallback โดยไม่เขียนทับกัน |
+| TOR-S02 | Additive entry `learn/today-experience` ภายใน Learn surface และ Product entry decision ที่รวม availability, dependency, preference, assignment และ fallback โดยไม่มี consent เป็น input |
 | TOR-S03 | Adventure shell: map/list, mission card, companion area, status/error/fallback states |
 | TOR-S04 | Versioned World/Story/Asset Catalog แบบ immutable และตรวจ checksum/localization/graph |
 | TOR-S05 | Journey Projection จาก Today Hub, Quest, Streak, Achievement, Reward, History และ pack completion |
@@ -84,6 +85,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 - Multiplayer, friend, room, chat, social network หรือ public leaderboard
 - Achievement share card ใน treatment แรก
 - การลบหรือ refactor `LearningWorldMapScreen` ซึ่งต้องเป็น cleanup change แยก
+- bottom-navigation destination ใหม่หรือการแทนที่ Learn screen เดิม
 - การกำหนด sample size/effect size โดยไม่มี protocol และ power analysis
 - Production enablement ก่อนผ่าน Pilot
 
@@ -122,7 +124,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 
 | Module | Name | TOR responsibility |
 |---|---|---|
-| M01 | Delivery & Entry Control | Availability, preference, assignment, consent, typed fallback |
+| M01 | Delivery & Entry Control | Learn-surface entry, availability, preference, assignment และ typed fallback; ไม่อ่าน consent |
 | M02 | Experience Shell | Render-only Adventure surface and state handling |
 | M03 | World, Story & Asset Catalog | Immutable versioned definitions and validation |
 | M04 | Journey Projection | Rebuildable map from canonical readers |
@@ -138,8 +140,8 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 
 | Deliverable ID | Deliverable | Minimum acceptance evidence |
 |---|---|---|
-| D01 | Approved TOR/SRS/SDS/RTM | Signed review record; zero unresolved authority conflict |
-| D02 | Feature contract foundation | Contract tests prove hidden default, no cohort assignment, old override compatibility |
+| D01 | Approved TOR/SRS/SDS/ADR/MDS/RTM | Signed review record; zero unresolved authority conflict; measurement decision complete |
+| D02 | Feature and entry contract foundation | Contract tests prove hidden default, no cohort assignment, no bottom-tab change, Learn-surface parity and old override compatibility |
 | D03 | World Catalog v1 + validator | Stable IDs, acyclic graph, complete locales, checksum and asset QA tests pass |
 | D04 | Read-only Adventure shell | Golden/widget/accessibility tests; zero domain writes; Standard escape visible |
 | D05 | Journey Projection | Deterministic/rebuild tests from identical canonical input |
@@ -151,8 +153,8 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | D11 | Research/planned schema v24 | actual ledger number reserved; consent, assignment, bounded response, events, withdrawal and retention tests pass |
 | D12 | UI/UX and content bundle | Thai/English, map-list parity, text scaling, reduced motion, asset checks |
 | D13 | Test report | Required suites run in approved Flutter environment; no unresolved blocker/critical defect |
-| D14 | UAT report | Required UAT scenarios pass; deviations dispositioned; sign-off recorded |
-| D15 | Rollout package | Internal/Pilot/Enabled gates, monitoring, emergency-off rehearsal and rollback record |
+| D14 | UAT report | Required UAT scenarios pass with denominator/numerator and minimum sample from MDS; deviations dispositioned; sign-off recorded |
+| D15 | Rollout package | Android Pilot matrix, explicit platform/capability exclusions, Internal/Pilot/Enabled gates, monitoring, emergency-off rehearsal and rollback record |
 
 ## 8. Technical Constraints
 
@@ -211,10 +213,11 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 
 ### G0B — Pilot/release-ready baseline
 
-- baseline 15 failures ถูกปิดหรือแยกเป็น enforced hardware/platform gate ที่มี owner และไม่ลด release coverage
-- full Flutter suite รันจริงทั้ง approved concurrency และบันทึกผลใหม่ที่ไม่มี unclassified failure
+- shared/touched-foundation failures ถูกปิดทั้งหมด และ baseline finding ทุกข้อมี owner/disposition ที่ตรวจย้อนกลับได้
+- full Flutter inventory suite รันจริงทั้ง approved concurrency; logical/shared/touched set ต้องผ่าน และ failure ที่เหลือต้อง map เป็น approved explicit exclusion โดยไม่มี unclassified failure
 - Gitleaks/OSV findings มี remediation หรือ approved time-bounded disposition ตาม release policy
-- iOS, model certification, backend, emulator และ dependency evidence ที่อยู่ใน release scope ผ่าน
+- Android Pilot v1 capability matrix ผ่านทุก gate ที่ reachable
+- iOS, desktop, AI Voice และ field-model ระบุเป็น excluded ไม่ใช่ passed; ยัง block การเปิดบน platform/capability นั้น
 
 ### G1 — Feature-off equivalence
 
@@ -244,11 +247,13 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 - duplicate reward known path 0
 - unresolved blocker/critical defect 0
 - protocol/instrument/scoring/sample-size method pre-registered
+- เกณฑ์ motivation/learning guardrail และ sample-size calculation ผ่าน `LQ-AMM-MDS-001`
+- Pilot report ระบุ Android-only และ capability exclusions
 - UAT sign-off ครบ
 
 ## 12. Project Approach
 
-ทำงาน 7 ระยะ:
+ทำงาน 7 ระยะภายใต้ 4 independently closable increments ตาม ADR-004:
 
 1. Phase 0 Baseline and contracts
 2. Phase 1 Read-only shell
@@ -258,7 +263,9 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 6. Phase 5 Internal and consented Pilot
 7. Phase 6 Controlled enablement
 
-แต่ละ phase ต้องส่งมอบ software ที่ทดสอบได้เอง มี reviewer gate และ commit แยก ห้ามเริ่ม phase ถัดไปเมื่อ exit gate ก่อนหน้ายังไม่ผ่าน
+แต่ละ phase ต้องส่งมอบ software ที่ทดสอบได้เอง มี reviewer gate และ commit แยก ห้าม merge phase ถัดไปเมื่อ exit gate ก่อนหน้ายังไม่ผ่าน งาน protocol ที่ไม่เขียน production state ทำคู่ขนานได้ตาม WBS
+
+หลัง Phase 2 ต้องมี **MS-04 Product MVP decision**: Accept/Stop/Continue การหยุดหลัง Phase 1 หรือ Phase 2 เมื่อ gate ผ่านเป็น bounded successful outcome และไม่บังคับให้ทำ preference/research migration
 
 ## 13. Governance and RACI Summary
 
@@ -307,13 +314,13 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | Research เก็บข้อมูลโดยไม่ยินยอม | Critical | Consent-aware recorder, rules tests, withdrawal gate |
 | Schema migration ทำ owner data เสีย | Critical | v1→current matrix, backup fixture, exact field preservation |
 | Baseline ทดสอบซ้ำไม่ได้ | High | G0 blocks implementation until clean evidence |
-| Today Hub มี implementation แต่ hidden ทำให้ entry source ใช้งานไม่ได้ | High | Hidden prototype ต้องทดสอบ dependency/fallback; ห้ามเปิด Adventure ก่อน canonical Today path พร้อม |
+| Today Hub มี implementation แต่ hidden ทำให้ entry source ใช้งานไม่ได้ | High | ADR-001 กำหนด internal route และ additive card ใน Learn; ห้ามเพิ่ม bottom tabหรือเปิด production card ก่อน canonical Today path พร้อม |
 | Preference v2 local/cloud version ไม่ตรงกัน | Critical | staged local→migration→rules/sync rollout และ fail closed |
 | Baseline 15 failures หรือ Gitleaks/OSV debt ถูกมองข้าม | Critical | Audit gate และ fresh evidence ก่อน Pilot/release |
 
 ## 17. Completion Definition
 
-โครงการถือว่าเสร็จเฉพาะเมื่อ:
+Full program ถือว่าเสร็จเมื่อ:
 
 1. Deliverables D01–D15 ผ่าน acceptance;
 2. Requirement ทุกข้อใน RTM มี design owner และ test evidence;
@@ -324,6 +331,8 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 7. Pilot evidence ได้รับอนุมัติให้ Enabled หรือมีการตัดสินใจเก็บ Hidden อย่างเป็นทางการ
 
 การเขียนโค้ดครบแต่ gate เหล่านี้ไม่ผ่าน ไม่ถือว่าโครงการเสร็จ
+
+Product Core MVP ถือว่าส่งมอบสำเร็จแยกได้เมื่อ Phase 2/MS-04 ผ่าน แม้ Product Owner ตัดสินใจ Stop และไม่อนุมัติ Increment C/D; ในกรณีนั้นต้อง archive decision/evidence, เก็บ feature hidden และไม่มี schema migration
 
 ## 18. Approval Record
 

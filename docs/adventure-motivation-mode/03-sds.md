@@ -7,6 +7,7 @@
 **SRS reference:** `LQ-AMM-SRS-001 v1.0`
 **Baseline:** commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; 15 baseline failures remain explicit gates
+**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
 
 ## 1. Design Decision Summary
 
@@ -14,14 +15,14 @@ Adventure เป็น bounded context ใหม่ที่ไม่มี writ
 
 การตัดสินใจที่ลดผลกระทบต่อ 8/44:
 
-1. Standard Today Hub compose ตามปกติก่อน Adventure เสมอ
+1. Learn surface เดิมไม่เปลี่ยนเมื่อ hidden; eligible additive entry เปิด `TodayExperienceHost` ซึ่ง compose Standard Today ก่อน Adventure เสมอ
 2. Journey เป็น pure/rebuildable projection; ไม่มี Adventure progress table
 3. Phase 1 ไม่มี schema migration
 4. Preference v2 วางแผนเพิ่มใน schema v23 หลัง shell/learning bridge ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
 5. Research tables วางแผนเพิ่มใน schema v24 หลัง feature core ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
 6. `EvidenceContext` และ learning-answer event ไม่เพิ่ม Adventure field
 7. `AdventureOriginContextV1` เป็น transient launch context
-8. เฉพาะ consented research exposure event เชื่อม presentation กับ session ID
+8. Consented pre-session exposure ใช้ entryDecisionId; mission exposure ใช้ learningSessionId ตาม ADR-003
 9. Runtime flag, preference, assignment และ consent แยก repositories/ports
 10. Existing static `LearningWorldMapScreen` ไม่ถูก reuse เป็น implementation
 
@@ -31,14 +32,17 @@ Adventure เป็น bounded context ใหม่ที่ไม่มี writ
 
 ```mermaid
 flowchart TD
-  USER[Learner] --> ENTRY[M01 Entry Control]
+  USER[Learner] --> LEARN[Existing Learn Surface]
+  LEARN -->|eligible additive card| HOST[Today Experience Host]
+  HOST --> ENTRY[M01 Product Entry Control]
   FLAGS[FeatureRegistry] --> ENTRY
   PREF[Learner Preferences] --> ENTRY
   EXP[ExperimentRegistry] --> ENTRY
-  CONSENT[ConsentRegistry] --> ENTRY
+  CATALOG[M03 World Catalog] --> ENTRY
+  ENTRY -->|Learn fallback| LEARN
   ENTRY -->|Standard| TODAY[Standard Today Hub]
   ENTRY -->|Adventure| SHELL[M02 Adventure Shell]
-  CATALOG[M03 World Catalog] --> PROJ[M04 Journey Projection]
+  CATALOG --> PROJ[M04 Journey Projection]
   TODAYREAD[Today Hub + canonical readers] --> PROJ
   PROJ --> SHELL
   SHELL --> COMPOSE[M05 Session Composer]
@@ -52,7 +56,10 @@ flowchart TD
   CANON --> RESULT[M09 Result & Recovery]
   EXISTING --> REACT[M08 Companion Reaction]
   RESULT --> PROJ
-  RESEARCH[M10 Measurement] -.consented only.-> EVENTS[EventsV2 + planned Research v24]
+  CONSENT[ConsentRegistry] --> CAPTURE[M10 Research Capture Decision]
+  EXP --> CAPTURE
+  CAPTURE -->|eligible only| RESEARCH[M10 Measurement]
+  RESEARCH -.consented only.-> EVENTS[EventsV2 + planned Research v24]
   OPS[M11 Operations] -.gates.-> ENTRY
 ```
 
@@ -111,6 +118,8 @@ Forbidden dependencies:
 ```dart
 enum AdventurePresentation { standard, adventure }
 
+enum AdventureEntryDestination { learn, standardToday, adventure }
+
 enum AdventureAvailability {
   available,
   hidden,
@@ -144,10 +153,11 @@ final class AdventureEntryRequest {
   final AdventurePresentation? sessionChoice;
 }
 
-final class AdventureEntryDecision {
-  const AdventureEntryDecision({
+final class AdventureProductEntryDecision {
+  const AdventureProductEntryDecision({
+    required this.entryDecisionId,
     required this.availability,
-    required this.presentation,
+    required this.destination,
     required this.fallbackReason,
     required this.catalogVersion,
     this.experimentId,
@@ -155,8 +165,9 @@ final class AdventureEntryDecision {
     this.assignmentId,
     this.treatment,
   });
+  final String entryDecisionId;
   final AdventureAvailability availability;
-  final AdventurePresentation presentation;
+  final AdventureEntryDestination destination;
   final AdventureFallbackReason fallbackReason;
   final String catalogVersion;
   final String? experimentId;
@@ -165,8 +176,8 @@ final class AdventureEntryDecision {
   final String? treatment;
 }
 
-abstract interface class AdventureEntryResolver {
-  Future<AdventureEntryDecision> resolve(AdventureEntryRequest request);
+abstract interface class AdventureProductEntryResolver {
+  Future<AdventureProductEntryDecision> resolve(AdventureEntryRequest request);
 }
 ```
 
@@ -174,16 +185,16 @@ abstract interface class AdventureEntryResolver {
 
 1. Noncanonical owner/time → reject input
 2. emergencyOff → Standard
-3. hidden/disabled → Standard
-4. required dependency unavailable → Standard
-5. catalog/content unavailable → Standard
+3. hidden on normal Learn render → no card; stale route uses Standard only when Today dependency is ready
+4. required Today dependency unavailable → Learn with bounded reason
+5. Adventure catalog/content unavailable while Today ready → Standard
 6. active protocol assignment conflict → Standard with conflict reason
 7. active protocol assignment → treatment presentation; Standard escape remains
 8. explicit session choice → choice
 9. persisted preference v2 → preference
 10. no choice/preference → Standard
 
-Entry resolver is read-only. It cannot create assignment, consent or preference.
+Product entry resolver is read-only. It cannot read/create consent, create assignment or mutate preference. `entryDecisionId` is deterministic for the owner-operation scope and is available only to UI/research correlation; it never enters learning evidence.
 
 ### 3.2 M02 — Experience Shell
 
@@ -361,7 +372,7 @@ abstract interface class AdventureSessionComposer {
     required AdventureMissionRef mission,
     required TodayHubSnapshot today,
     required SessionConfiguration requestedConfiguration,
-    required AdventureEntryDecision entry,
+    required AdventureProductEntryDecision entry,
   });
 }
 ```
@@ -516,6 +527,37 @@ Recovery uses existing resumable session authority. A persisted Adventure prefer
 - `lib/features/events/domain/adventure_event_payload_policy.dart`
 
 ```dart
+enum AdventureResearchCaptureReason {
+  eligible,
+  noAssignment,
+  noConsent,
+  noActiveRun,
+  withdrawn,
+  versionConflict,
+  ownerConflict,
+}
+
+final class AdventureResearchCaptureDecision {
+  const AdventureResearchCaptureDecision({
+    required this.isEligible,
+    required this.reason,
+    this.measurementRunId,
+    this.assignmentId,
+    this.consentReceiptId,
+  });
+  final bool isEligible;
+  final AdventureResearchCaptureReason reason;
+  final String? measurementRunId;
+  final String? assignmentId;
+  final String? consentReceiptId;
+}
+
+abstract interface class AdventureResearchCaptureGate {
+  Future<AdventureResearchCaptureDecision> evaluate(
+    AdventureExposureCandidate candidate,
+  );
+}
+
 enum MotivationMeasurementRunState {
   started,
   completed,
@@ -542,12 +584,12 @@ Behavior recorder creates only four event types, each eventVersion 1:
 
 | Event | Aggregate | Required bounded payload |
 |---|---|---|
-| `AdventurePresented` | `AdventurePresentation` / learningSessionId or entry decision ID | schemaVersion, planId?, catalogId/version, treatment, screenState |
+| `AdventurePresented` | `AdventurePresentation` / entryDecisionId | schemaVersion, planId?, catalogId/version, treatment, screenState |
 | `AdventureMissionStarted` | `LearningSession` / learningSessionId | schemaVersion, planId, nodeId, mode, contentCount |
-| `AdventureSwitchedToStandard` | `AdventurePresentation` / entry decision ID | schemaVersion, planId?, fromState, switchReason |
+| `AdventureSwitchedToStandard` | `AdventurePresentation` / entryDecisionId | schemaVersion, planId?, fromState, switchReason, switchOrdinal 1–10 |
 | `AdventureMissionCompleted` | `LearningSession` / learningSessionId | schemaVersion, planId, terminalState, activeDurationBucket |
 
-All payloads use catalog-owned codes and bounded integers. `correlationId` equals `adventurePlanId` when a plan exists. `ConsentContext` and `ExperimentContext` come from existing registries. Recorder fails closed if assignment/consent/run do not match.
+All payloads use catalog-owned codes and bounded integers. Pre-session events use `entryDecisionId` and optional `correlationId`; mission events require `learningSessionId` and `correlationId = adventurePlanId`. Deterministic occurrence keys follow ADR-003. `ConsentContext` and `ExperimentContext` come from existing registries. Recorder runs only after `AdventureResearchCaptureDecision.isEligible`; otherwise it produces zero row/outbox/upload and product presentation continues unchanged.
 
 ### 3.11 M11 — Operations, Quality and Reliability
 
@@ -675,7 +717,8 @@ Each new table appears exactly once in manifest. Preference is an extension of i
 ```mermaid
 sequenceDiagram
   actor L as Learner
-  participant E as Entry Control
+  participant H as Learn/Today Experience Host
+  participant E as Product Entry Control
   participant T as Today Hub
   participant J as Journey Projection
   participant C as Session Composer
@@ -684,10 +727,12 @@ sequenceDiagram
   participant G as Evidence Gateway
   participant R as LearningSideEffectReconciler
   participant P as Adventure Projection Reader
-  L->>E: open Adventure
-  E->>T: load canonical snapshot
-  T-->>E: TodayHubSnapshot
-  E->>J: compose(snapshot, catalog)
+  L->>H: open learn/today-experience
+  H->>T: load canonical snapshot once
+  T-->>H: TodayHubSnapshot / typed unavailable
+  H->>E: resolve product presentation(snapshot availability)
+  E-->>H: ProductEntryDecision
+  H->>J: compose(snapshot, catalog)
   J-->>L: AdventureJourneySnapshot
   L->>C: start mission(duration)
   C-->>B: AdventureSessionPlanV1
@@ -725,19 +770,19 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
   participant UI as Adventure UI
-  participant R as Behavior Recorder
+  participant R as Research Capture Gate/Recorder
   participant X as ExperimentRegistry
   participant C as ConsentRegistry
   participant E as EventsV2 Store
-  UI->>R: missionStarted(plan, sessionId)
+  UI->>R: exposure candidate(entryDecisionId or sessionId/planId)
   R->>X: exact assignment
   X-->>R: assignment
   R->>C: consent snapshot
   C-->>R: granted/not granted
   alt granted and matching active run
-    R->>E: EventEnvelopeV2 + payload v1
+    R->>E: idempotent EventEnvelopeV2 + payload v1
   else absent/withdrawn/conflict
-    R-->>UI: no research event; product continues
+    R-->>UI: ineligible(reason); zero row/outbox/upload; product continues
   end
 ```
 
@@ -824,7 +869,7 @@ This section uses bounded local controls; no repository-wide security worker is 
 Modify `AppDependencies` to add nullable Adventure facade during hidden phases:
 
 ```dart
-final AdventureEntryResolver? adventureEntry;
+final AdventureProductEntryResolver? adventureEntry;
 final AdventureJourneyReader? adventureJourney;
 final AdventureSessionComposer? adventureSessions;
 final AdventureLearningBridge? adventureLearning;
@@ -835,11 +880,14 @@ final AdventureMotivationProjectionReader? adventureMotivation;
 
 Navigation strategy:
 
-- Keep existing Today destination identity
-- At the Today destination host, resolve effective presentation
+- Keep existing bottom navigation and Learn destination identity unchanged
+- Register stable child route `learn/today-experience`; no new bottom tab
+- Show one additive Learn card only when feature/dependencies are eligible; hidden path leaves Learn layout baseline-equivalent
+- `TodayExperienceHost` composes the canonical Today snapshot once, then resolves effective product presentation without consent
 - Render `TodayHubScreen` or `AdventureHubScreen` from the same `TodayHubSnapshotLoader`
-- Direct/stale Adventure route goes through `ProductionFeatureGate`
+- Direct/stale route goes through `ProductionFeatureGate`; render Standard when Today is ready, otherwise return Learn with bounded reason
 - Standard switch replaces presentation within Today destination rather than stacking duplicate home routes
+- System Back from the host returns to Learn
 - Accepted lesson is still pushed through existing `AppNavigator`/registered lesson routes
 
 ## 11. Planned File Map
@@ -870,6 +918,8 @@ lib/features/adventure/
     packaged_adventure_world_catalog.dart
     adventure_world_catalog_validator.dart
   presentation/
+    adventure_today_entry_card.dart
+    today_experience_host.dart
     adventure_hub_screen.dart
     adventure_mission_sheet.dart
     adventure_result_screen.dart
@@ -888,6 +938,7 @@ lib/features/research/domain/motivation_instrument.dart
 lib/features/research/domain/motivation_measurement.dart
 lib/features/research/domain/motivation_measurement_repository.dart
 lib/features/research/application/motivation_measurement_use_cases.dart
+lib/features/research/application/adventure_research_capture_gate.dart
 lib/features/research/application/adventure_behavior_event_recorder.dart
 lib/features/research/data/drift_motivation_measurement_repository.dart
 lib/features/events/domain/adventure_event_payload_policy.dart
