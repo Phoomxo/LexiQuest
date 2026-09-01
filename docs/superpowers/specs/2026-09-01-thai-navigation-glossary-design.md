@@ -105,7 +105,7 @@ The following table is the implementation target. Icons use Material symbols alr
 | Stable destination/action | Thai label | Icon rationale | Selected pair |
 | --- | --- | --- | --- |
 | `home/vocabulary` | คลังคำศัพท์ | `menu_book_outlined` signals a word collection | `menu_book` |
-| `home/learn` | เรียนรู้ | `school_outlined` signals guided learning | `school` |
+| `home/learn` | การเรียนรู้ | `school_outlined` signals guided learning | `school` |
 | `home/today` | วันนี้ | `today_outlined` signals the current day | `today` |
 | `home/study-planning` | วางแผนการเรียน | `event_note_outlined` signals a schedule/plan | `event_note` |
 | `home/mastery` | ความชำนาญ | `analytics_outlined` signals an evidence summary | `analytics` |
