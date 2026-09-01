@@ -5,7 +5,7 @@
 **Date:** 2026-09-01
 **Product:** LexiQuest
 **Baseline:** commit `99f7fb21`, database schema v22
-**Planning branch:** `codex/adventure-motivation-plan`
+**Planning branch:** `feature/adventure-motivation-plan`
 **Scope:** planning and acceptance artifacts only; no production implementation is authorized by this document set
 
 ## 1. Purpose

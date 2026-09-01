@@ -26,7 +26,7 @@
 
 ## 0. Execution Guardrails
 
-1. เริ่มจาก isolated worktree/branch `codex/...`; รัน `flutter pub get --offline` แล้วพิสูจน์ว่า `.dart_tool/package_config.json` อยู่ใน worktree นั้น
+1. เริ่มจาก isolated worktree/branch `feature/...`; ห้ามใช้ prefix `codex`; รัน `flutter pub get --offline` แล้วพิสูจน์ว่า `.dart_tool/package_config.json` อยู่ใน worktree นั้น
 2. ห้ามแก้ production และ baseline-remediation ปะปน commit เดียวกัน
 3. ใช้ TDD: เขียน failing test → รันให้เห็น failure ที่ถูกเหตุ → ทำ minimal implementation → รัน targeted + related regression → focused diff review
 4. Adventure presentation ห้าม import Drift-generated rows หรือเรียก learning/reward repositories เพื่อ write
