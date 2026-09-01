@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
 import '../features/learning/application/native_mode_adapters.dart';
@@ -667,6 +668,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
   }
 
+  void _selectDestination(int index) {
+    setState(() {
+      _selectedEntryId = _visibleEntries[index].id;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final features = _features(context);
@@ -910,14 +917,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 height: 64,
                 child: Tooltip(
                   message: NavigationGlossary.require('home/profile').tooltip,
-                  child: TextButton.icon(
-                    key: const ValueKey<String>('profile-fallback-destination'),
-                    onPressed: () {
+                  child: Semantics(
+                    button: true,
+                    label: NavigationGlossary.require(
+                      'home/profile',
+                    ).semanticsLabel,
+                    onTap: () {
                       setState(() => _selectedEntryId = 'profile');
                     },
-                    icon: Icon(NavigationGlossary.require('home/profile').icon),
-                    label: Text(
-                      NavigationGlossary.require('home/profile').fullThaiLabel,
+                    excludeSemantics: true,
+                    child: TextButton.icon(
+                      key: const ValueKey<String>(
+                        'profile-fallback-destination',
+                      ),
+                      onPressed: () {
+                        setState(() => _selectedEntryId = 'profile');
+                      },
+                      icon: Icon(
+                        NavigationGlossary.require('home/profile').icon,
+                      ),
+                      label: Text(
+                        NavigationGlossary.require(
+                          'home/profile',
+                        ).fullThaiLabel,
+                      ),
                     ),
                   ),
                 ),
@@ -927,19 +950,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               selectedIndex: selectedDestinationIndex < 0
                   ? 0
                   : selectedDestinationIndex,
-              onDestinationSelected: (index) {
-                setState(() {
-                  _selectedEntryId = _visibleEntries[index].id;
-                });
-              },
+              onDestinationSelected: _selectDestination,
               destinations: [
-                for (final entry in _visibleEntries)
-                  NavigationDestination(
-                    key: ValueKey<String>(entry.productionEntryId),
-                    icon: Icon(entry.glossary.icon),
-                    selectedIcon: Icon(entry.glossary.selectedIcon!),
-                    label: entry.glossary.shortThaiLabel,
-                    tooltip: entry.glossary.tooltip,
+                for (final (index, entry) in _visibleEntries.indexed)
+                  Semantics(
+                    button: true,
+                    role: SemanticsRole.tab,
+                    selected:
+                        index ==
+                        (selectedDestinationIndex < 0
+                            ? 0
+                            : selectedDestinationIndex),
+                    label:
+                        '${entry.glossary.semanticsLabel}\n'
+                        '${MaterialLocalizations.of(context).tabLabel(tabIndex: index + 1, tabCount: _visibleEntries.length)}',
+                    onTap: () => _selectDestination(index),
+                    excludeSemantics: true,
+                    child: NavigationDestination(
+                      key: ValueKey<String>(entry.productionEntryId),
+                      icon: Icon(entry.glossary.icon),
+                      selectedIcon: Icon(entry.glossary.selectedIcon!),
+                      label: entry.glossary.shortThaiLabel,
+                      tooltip: entry.glossary.tooltip,
+                    ),
                   ),
               ],
             ),
@@ -1008,11 +1041,17 @@ Widget _glossaryDrawerTile({
 }) {
   return Tooltip(
     message: entry.tooltip,
-    child: ListTile(
-      key: key,
-      leading: Icon(entry.icon),
-      title: Text(entry.fullThaiLabel),
+    child: Semantics(
+      button: true,
+      label: entry.semanticsLabel,
       onTap: onTap,
+      excludeSemantics: true,
+      child: ListTile(
+        key: key,
+        leading: Icon(entry.icon),
+        title: Text(entry.fullThaiLabel),
+        onTap: onTap,
+      ),
     ),
   );
 }

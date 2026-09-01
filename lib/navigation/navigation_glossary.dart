@@ -433,7 +433,7 @@ abstract final class NavigationGlossary {
       shortThaiLabel: 'การแสดงผล',
       semanticsLabel: 'การตั้งค่าการแสดงผล',
       tooltip: 'การตั้งค่าการแสดงผล',
-      icon: Icons.tune_outlined,
+      icon: Icons.display_settings_outlined,
     ),
     'theme-system': NavigationGlossaryEntry(
       id: 'theme-system',

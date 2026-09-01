@@ -471,7 +471,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   leading: Icon(
                     session == null ? accountEntry.icon : Icons.verified_user,
                   ),
-                  title: Text(session?.email ?? 'โหมด Guest'),
+                  title: Text(session?.email ?? 'โหมดใช้งานในเครื่อง'),
                   subtitle: Text(
                     session == null
                         ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
@@ -604,7 +604,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   leading: Icon(logoutEntry.icon),
                   title: Text(logoutEntry.fullThaiLabel),
                   subtitle: const Text(
-                    'สร้างพื้นที่ Guest ใหม่โดยไม่ลบข้อมูลบัญชี',
+                    'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
                   ),
                   onTap: _busy ? null : _logout,
                 ),

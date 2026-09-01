@@ -274,7 +274,107 @@ void main() {
     },
   );
 
-  testWidgets('Thai glossary renders exact main and drawer destinations', (
+  testWidgets(
+    'Thai glossary bottom destinations preserve tab semantics and callbacks',
+    (WidgetTester tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          _mainNavigationApp(const BuildFeatureRegistry.fieldDefaults()),
+        );
+        await tester.pumpAndSettle();
+
+        const entryIds = <String>[
+          'home/vocabulary',
+          'home/learn',
+          'home/mastery',
+          'home/weakness',
+          'home/achievements',
+          'home/profile',
+        ];
+        final destinations = tester
+            .widgetList<NavigationDestination>(
+              find.byType(NavigationDestination),
+            )
+            .toList(growable: false);
+        expect(destinations, hasLength(entryIds.length));
+        expect(
+          destinations.map((destination) => destination.label),
+          entryIds.map(
+            (entryId) => NavigationGlossary.require(entryId).shortThaiLabel,
+          ),
+        );
+        final localizations = MaterialLocalizations.of(
+          tester.element(find.byType(NavigationBar)),
+        );
+
+        final learning = tester.widget<NavigationDestination>(
+          find.byKey(const ValueKey<String>('home/learn')),
+        );
+        expect(learning.label, 'การเรียนรู้');
+        expect((learning.icon as Icon).icon, Icons.school_outlined);
+        expect((learning.selectedIcon! as Icon).icon, Icons.school);
+
+        for (var index = 0; index < entryIds.length; index++) {
+          final entry = NavigationGlossary.require(entryIds[index]);
+          final data = _bottomDestinationSemantics(tester, entry);
+          expect(data.hasAction(SemanticsAction.tap), isTrue, reason: entry.id);
+          expect(data.role, SemanticsRole.tab, reason: entry.id);
+          expect(
+            data.hasFlag(SemanticsFlag.isSelected),
+            index == 0,
+            reason: entry.id,
+          );
+          expect(data.label, contains(entry.semanticsLabel), reason: entry.id);
+          expect(
+            data.label,
+            contains(
+              localizations.tabLabel(
+                tabIndex: index + 1,
+                tabCount: entryIds.length,
+              ),
+            ),
+            reason: entry.id,
+          );
+        }
+
+        for (var index = 1; index < entryIds.length; index++) {
+          final entry = NavigationGlossary.require(entryIds[index]);
+          tester.binding.pipelineOwner.semanticsOwner!.performAction(
+            _bottomDestinationNode(tester, entry).id,
+            SemanticsAction.tap,
+          );
+          await tester.pump();
+
+          final navigationBar = tester.widget<NavigationBar>(
+            find.byType(NavigationBar),
+          );
+          expect(navigationBar.selectedIndex, index);
+          for (
+            var candidateIndex = 0;
+            candidateIndex < entryIds.length;
+            candidateIndex++
+          ) {
+            final candidate = NavigationGlossary.require(
+              entryIds[candidateIndex],
+            );
+            expect(
+              _bottomDestinationSemantics(
+                tester,
+                candidate,
+              ).hasFlag(SemanticsFlag.isSelected),
+              candidateIndex == index,
+              reason: candidate.id,
+            );
+          }
+        }
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets('Thai glossary renders exact drawer destination semantics', (
     WidgetTester tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -283,42 +383,6 @@ void main() {
         _mainNavigationApp(const BuildFeatureRegistry.fieldDefaults()),
       );
       await tester.pumpAndSettle();
-
-      expect(
-        tester
-            .widgetList<NavigationDestination>(
-              find.byType(NavigationDestination),
-            )
-            .map((destination) => destination.label),
-        <String>[
-          'คลังคำศัพท์',
-          'การเรียนรู้',
-          'ความชำนาญ',
-          'ฝึกเพิ่ม',
-          'รางวัล',
-          'โปรไฟล์',
-        ],
-      );
-
-      final learning = tester.widget<NavigationDestination>(
-        find.byKey(const ValueKey<String>('home/learn')),
-      );
-      expect(learning.label, 'การเรียนรู้');
-      expect((learning.icon as Icon).icon, Icons.school_outlined);
-      expect((learning.selectedIcon! as Icon).icon, Icons.school);
-      _expectSingleThaiGlossaryAction(
-        tester,
-        action: find.byKey(const ValueKey<String>('home/learn')),
-        entryId: 'home/learn',
-        visibleLabel: learning.label,
-      );
-
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
-      await tester.pump();
-      expect(
-        find.byKey(const ValueKey<String>('production-feature-view-learning')),
-        findsOneWidget,
-      );
 
       await tester.tap(
         find.byKey(const ValueKey<String>('legacy-drawer-button')),
@@ -350,7 +414,7 @@ void main() {
         find.descendant(of: quests, matching: find.byIcon(Icons.flag_outlined)),
         findsOneWidget,
       );
-      _expectSingleThaiGlossaryAction(
+      _expectSingleThaiDrawerAction(
         tester,
         action: quests,
         entryId: 'drawer/rewards/quests',
@@ -596,7 +660,28 @@ void main() {
   });
 }
 
-void _expectSingleThaiGlossaryAction(
+SemanticsNode _bottomDestinationNode(
+  WidgetTester tester,
+  NavigationGlossaryEntry entry,
+) {
+  final matchingNodes = find
+      .bySemanticsLabel(RegExp(RegExp.escape(entry.semanticsLabel)))
+      .evaluate()
+      .toList(growable: false);
+  expect(matchingNodes, hasLength(1), reason: entry.id);
+  return tester.getSemantics(
+    find.byElementPredicate(
+      (element) => identical(element, matchingNodes.single),
+    ),
+  );
+}
+
+SemanticsData _bottomDestinationSemantics(
+  WidgetTester tester,
+  NavigationGlossaryEntry entry,
+) => _bottomDestinationNode(tester, entry).getSemanticsData();
+
+void _expectSingleThaiDrawerAction(
   WidgetTester tester, {
   required Finder action,
   required String entryId,
@@ -609,7 +694,7 @@ void _expectSingleThaiGlossaryAction(
   );
   expect(find.byTooltip(entry.tooltip), findsOneWidget);
   final semanticActions = find
-      .bySemanticsLabel(RegExp(RegExp.escape(visibleLabel)))
+      .bySemanticsLabel(RegExp('^${RegExp.escape(entry.semanticsLabel)}\$'))
       .evaluate()
       .toList(growable: false);
   expect(semanticActions, hasLength(1));

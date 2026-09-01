@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/progress/domain/learning_calendar.dart';
 import 'package:vocab_learning_app/features/progress/domain/personal_learning_profile.dart';
@@ -18,7 +19,6 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('ผู้เรียน Guest'), findsOneWidget);
         for (final label in <String>[
           'ความชำนาญ',
           'ทบทวนแบบเว้นระยะ (SRS)',
@@ -32,7 +32,8 @@ void main() {
         expect(find.text('80% จาก 10 คำตอบ'), findsOneWidget);
         expect(find.text('42 XP · ต่อเนื่อง 7 วัน'), findsOneWidget);
         expect(find.textContaining('คะแนนรวม'), findsNothing);
-        for (final entryId in NavigationGlossary.profileAxisIds) {
+        for (final MapEntry(key: entryId, value: expectedValue)
+            in _axisValues.entries) {
           final entry = NavigationGlossary.require(entryId);
           final tooltip = find.byWidgetPredicate(
             (widget) => widget is Tooltip && widget.message == entry.tooltip,
@@ -45,24 +46,32 @@ void main() {
             ),
             findsOneWidget,
           );
-          final semanticAxes = find
-              .descendant(of: tooltip, matching: find.byType(Semantics))
-              .evaluate()
-              .map((element) => element.widget)
-              .whereType<Semantics>()
-              .where(
-                (semantics) =>
-                    semantics.properties.label == entry.semanticsLabel &&
-                    semantics.properties.onTap == null,
-              )
-              .toList(growable: false);
-          expect(semanticAxes, hasLength(1));
+          final semanticAxis = find.bySemanticsLabel(
+            RegExp('^${RegExp.escape(entry.semanticsLabel)}\$'),
+          );
+          expect(semanticAxis, findsOneWidget);
+          final data = tester.getSemantics(semanticAxis).getSemanticsData();
+          expect(data.label, entry.semanticsLabel);
+          expect(data.value, expectedValue);
+          expect(data.hasAction(SemanticsAction.tap), isFalse);
         }
       } finally {
         semantics.dispose();
       }
     },
   );
+
+  testWidgets('Thai glossary local profile copy has no Guest fallback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: ProfileSettingsScreen(loader: () async => _profile)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ผู้เรียนในเครื่อง'), findsOneWidget);
+    expect(find.textContaining('Guest'), findsNothing);
+  });
 
   testWidgets('empty profile says no evidence instead of zero proficiency', (
     tester,
@@ -103,6 +112,15 @@ void main() {
 
 final _profile = _profileFixture();
 final _empty = _profileFixture(empty: true);
+
+const _axisValues = <String, String>{
+  'profile/mastery': '2 คำที่ชำนาญ',
+  'profile/srs': '1 คำถึงกำหนด จาก 3 คำ',
+  'profile/effort': '25 นาที 0 วินาที',
+  'profile/accuracy': '80% จาก 10 คำตอบ',
+  'profile/weakness': 'ไม่พบจุดอ่อนในหลักฐานปัจจุบัน',
+  'profile/engagement': '42 XP · ต่อเนื่อง 7 วัน',
+};
 
 PersonalLearningProfile _profileFixture({bool empty = false}) {
   final availability = empty

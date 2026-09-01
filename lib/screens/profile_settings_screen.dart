@@ -66,7 +66,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   leading: const CircleAvatar(
                     child: Icon(Icons.person_outline),
                   ),
-                  title: Text(account?.email ?? 'ผู้เรียน Guest'),
+                  title: Text(account?.email ?? 'ผู้เรียนในเครื่อง'),
                   subtitle: Text(
                     account == null
                         ? 'ข้อมูลอยู่ในเครื่อง'
@@ -150,6 +150,9 @@ class _AxisCard extends StatelessWidget {
       message: entry.tooltip,
       child: Semantics(
         label: entry.semanticsLabel,
+        value: value,
+        readOnly: true,
+        excludeSemantics: true,
         child: Card(
           child: ListTile(
             leading: Icon(entry.icon),

@@ -2,14 +2,19 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account/application/account_use_cases.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
+import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/preferences/application/display_preferences_controller.dart';
 import 'package:vocab_learning_app/features/preferences/application/learner_preferences_use_cases.dart';
 import 'package:vocab_learning_app/features/preferences/data/drift_learner_preferences_repository.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
 
@@ -73,6 +78,8 @@ void main() {
       expect(find.text('Erase all local data'), findsNothing);
       expect(find.text('สถานะการเชื่อมต่อระบบออนไลน์'), findsOneWidget);
       expect(find.text('Cloud ไม่พร้อม'), findsNothing);
+      expect(find.text('โหมดใช้งานในเครื่อง'), findsOneWidget);
+      expect(find.textContaining('Guest'), findsNothing);
       for (final entryId in <String>[
         'theme-system',
         'theme-light',
@@ -115,6 +122,33 @@ void main() {
       find.byKey(const ValueKey<String>('reduced-motion-switch')),
       findsNothing,
     );
+  });
+
+  testWidgets('Thai glossary authenticated logout copy has no Guest fallback', (
+    tester,
+  ) async {
+    final account = AccountUseCases(
+      gateway: _StaticAccountGateway(
+        const AccountSession(
+          uid: 'firebase-settings-owner',
+          email: 'learner@example.com',
+          isAnonymous: false,
+          emailVerified: true,
+        ),
+      ),
+      owners: _StaticLocalOwners(),
+      upgradeGuestOwner: UpgradeGuestOwner(_StaticOwnerUpgradeRepository()),
+      entryState: _StaticAppEntryStateStore(),
+    );
+
+    await tester.pumpWidget(MaterialApp(home: SettingScreen(account: account)));
+
+    expect(find.text('learner@example.com'), findsOneWidget);
+    expect(
+      find.text('สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Guest'), findsNothing);
   });
 }
 
@@ -167,4 +201,24 @@ final class _StaticLocalOwners implements LocalOwnerRepository {
     String ownerId,
     String firebaseUid,
   ) => throw UnimplementedError();
+}
+
+final class _StaticAccountGateway implements AccountGateway {
+  const _StaticAccountGateway(this.currentSession);
+
+  @override
+  final AccountSession currentSession;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _StaticOwnerUpgradeRepository implements OwnerUpgradeRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _StaticAppEntryStateStore implements AppEntryStateStore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
