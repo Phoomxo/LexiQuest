@@ -10,6 +10,7 @@ This decision is deliberately narrower than a field or production release decisi
 
 - Local implementation review: **Critical 0, Important 0, Minor 0 — READY**.
 - Field/release acceptance: **NOT READY and not claimed by this record**.
+- The full product/release verifier was not rerun after the final source changes. This record is therefore a bounded local implementation/source-closure record, not a full product-verifier or release certificate.
 - No production cloud deployment, Firestore Rules deployment, release signing, release packaging, push, or merge was performed as part of this verification.
 - Local Firestore/Auth emulator results are verification evidence only; they are not deployment evidence.
 - iOS was excluded by explicit owner direction. The Android-first verification did not modify or certify the parked iOS work.
@@ -78,41 +79,48 @@ The hidden and limited labels are delivery states, not evidence that a field coh
 
 ## Execution evidence
 
-### Fresh final-closure gates
+### Fresh final-source evidence
 
-These gates were run during the final closure sequence on the source fingerprints that introduced or last affected the covered paths. Every recorded command exited `0`. Where the transient console count was not retained in a durable artifact, this record intentionally does not invent a count.
+These bounded gates were run after the source changes represented by `f56e2eb5`, or—as noted for the debug build—against its production-identical documentation commit. Every command below exited `0`.
 
-| Closure | Exact command | Exit | Count/result | Closing commit |
-| --- | --- | ---: | --- | --- |
-| Architecture contracts | `flutter test --no-pub test/architecture` | 0 | passed; exact count not retained | `04527b7f` |
-| Unit/domain acceptance | `flutter test --no-pub test/features/accessibility test/features/account test/features/achievements test/features/ai_tutor test/features/assessment test/features/companion test/features/consent test/features/device_model test/features/events test/features/gemini test/features/goals test/features/history test/features/learning test/features/learning_packs test/features/media_practice test/features/motivation test/features/preferences test/features/progress test/features/quest test/features/recommendation test/features/reminders test/features/research test/features/review test/features/rewards test/features/session test/features/sync test/features/time_tracking test/features/today_hub test/features/vocabulary test/features/voice --reporter compact` | 0 | passed; exact count not retained | `5a920258` |
-| Widget surfaces | `flutter test --no-pub test/screens test/widgets --reporter compact` | 0 | passed; exact count not retained | `2a658243` |
-| Feature-control integration | `flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_feature_controls_test.dart` | 0 | passed | `ac433e4b` |
-| Media integration | `flutter test -d flutter-tester --no-pub --reporter compact integration_test/field_trial_media_smoke_test.dart` | 0 | passed | `ac433e4b` |
-| Migration transitions | Exact v1→v22 commands in the generated final plan | 0 | every transition passed; aggregate count not retained | `da7681e1` |
-| Full database upgrade | `flutter test --no-pub test/data/local/app_database_migration_test.dart --reporter compact` | 0 | passed; exact count not retained | `da7681e1` |
-| Owner lifecycle/restart | `flutter test --no-pub test/features/identity test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | 0 | passed; exact count not retained | `48ab0878` |
-| Android bounded core smoke | `powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/run-android-smoke.ps1` | 0 | 1/1 on HONOR DNP-NX9, Android 16 / SDK 36 | `f56e2eb5` |
+| Gate | Exact command | Exit | Count/result |
+| --- | --- | ---: | --- |
+| Runtime/bootstrap and offline composition | `flutter test --no-pub test/runtime/app_bootstrap_test.dart test/features/offline_content --reporter compact` | 0 | 114/114 |
+| Production-shell navigation | `flutter test --no-pub test/screens/production_shell_navigation_test.dart --reporter compact` | 0 | 11/11 |
+| Final-plan contracts | `flutter test --no-pub test/architecture/final_8_44_test_plan_contract_test.dart test/architecture/final_8_44_test_plan_review_contract_test.dart --reporter compact` | 0 | 18/18 |
+| Production-library analysis | `flutter analyze --no-pub lib` | 0 | no issues |
+| Focused physical-journey analysis | `flutter analyze --no-pub integration_test/field_trial_core_journey_test.dart` | 0 | no issues |
+| Focused formatter check | `dart format --output=none --set-exit-if-changed integration_test/field_trial_core_journey_test.dart` | 0 | 1 file checked, 0 changed |
+| Source whitespace check | `git diff --check` | 0 | clean |
+| Forward-only rollback drill | `flutter test --no-pub test/scenarios/runtime_kill_switch_journey_test.dart --plain-name "file-backed permanent clear and TTL controls converge across restart" --reporter compact` | 0 | 1/1 |
+| Android bounded core smoke | `powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/run-android-smoke.ps1` | 0 | 1/1 on HONOR DNP-NX9, Android 16 / SDK 36 |
 
-The Android run is local/debug physical-device acceptance. It is not a release-signed build, field certification, or production rollout.
+The Android smoke is local/debug physical-device acceptance. It is not a release-signed build, field certification, or production rollout.
 
-### Fingerprint-reused gates
+### Current debug-build evidence
 
-The following generated-plan gates retained their last successful results because the files covered by each gate had not changed after its accepted source fingerprint. They were not represented as fresh reruns at `f56e2eb5`:
+After the record-only commit `bccbe88370c22fd672d583008a3c9ea0d439abd3`, whose production source is identical to `f56e2eb598e88cbdf24d446c53051b262d284998`, the controller ran:
 
-| Gate | Exact command | Recorded exit/result |
-| --- | --- | --- |
-| Product-contract artifacts | `dart run tool/feature_contract/generate_feature_map.dart --check` | 0 / no drift |
-| Final test-plan artifacts | `dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 48ab087804eaddaf61948dd1a72769acf22c177a` | 0 / no drift |
-| Static analysis | `flutter analyze` | 0 / no issues at its accepted fingerprint |
-| Local Firestore Rules | `npm run test:rules` | 0 / local emulator passed; not deployment evidence |
-| Local Auth contract | `npm run test:auth` | 0 / local emulator passed; not deployment evidence |
-| Offline/restart recovery | `flutter test --no-pub test/features/offline_content test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/production_learning_restart_test.dart --reporter compact` | 0 / passed |
-| Default-Off | `flutter test --no-pub test/runtime/runtime_feature_controls_test.dart --plain-name "durable feature decision epochs distinguish off and clear" --reporter compact` | 0 / 1/1 |
-| Emergency-Off | `flutter test --no-pub test/scenarios/runtime_kill_switch_journey_test.dart --plain-name "production entry live route direct route and restart all fail closed" --reporter compact` | 0 / 1/1 |
-| Export/withdraw/delete | `flutter test --no-pub test/features/export test/scenarios/complete_owner_export_delete_test.dart --reporter compact` | 0 / passed; aggregate count not retained |
-| Android debug build | `flutter build apk --debug --no-pub` | 0 / debug build completed; no release artifact claimed |
-| Forward-only rollback drill | `flutter test --no-pub test/scenarios/runtime_kill_switch_journey_test.dart --plain-name "file-backed permanent clear and TTL controls converge across restart" --reporter compact` | 0 / 1/1 |
+`flutter build apk --debug --no-pub`
+
+The command exited `0` and produced `build\app\outputs\flutter-apk\app-debug.apk`. This is a current debug-signed build, not a release-signed artifact, release package, frozen field candidate, or deployment. No artifact digest is asserted because no digest was supplied with this build evidence.
+
+### Earlier gate results retained as historical context only
+
+The following successful gates explain the staged closure commits, but they are **not evidence that the complete gate remained green at `f56e2eb5`**. Production bootstrap/navigation and physical-journey sources changed later, so these results are context only and must not be treated as fingerprint-reused final-source proof.
+
+| Historical closure | Command/evidence | Historical result | Closing commit |
+| --- | --- | --- | --- |
+| Architecture contracts | `flutter test --no-pub test/architecture` | exit 0; exact count not retained | `04527b7f` |
+| Unit/domain acceptance | Generated-plan `unit-domain-suites` command | exit 0; exact count not retained | `5a920258` |
+| Widget surfaces | `flutter test --no-pub test/screens test/widgets --reporter compact` | exit 0; exact count not retained | `2a658243` |
+| Feature-control and media integration | Generated-plan `integration-feature-controls` and `integration-media-smoke` commands | exit 0 at their closure fingerprint | `ac433e4b` |
+| Migration transitions/full upgrade | Exact v1→v22 and full-upgrade commands in the generated final plan | exit 0 at their closure fingerprint | `da7681e1` |
+| Owner lifecycle/restart | `flutter test --no-pub test/features/identity test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | exit 0; exact count not retained | `48ab0878` |
+| Earlier full analysis | `flutter analyze` | exit 0 at an earlier fingerprint only | before `f56e2eb5` |
+| Earlier offline/restart suite | `flutter test --no-pub test/features/offline_content test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/production_learning_restart_test.dart --reporter compact` | exit 0 at an earlier fingerprint only | before `f56e2eb5` |
+| Earlier Android debug build | `flutter build apk --debug --no-pub` | exit 0 at an earlier fingerprint only | before `f56e2eb5` |
+| Local Firestore/Auth emulators | `npm run test:rules`; `npm run test:auth` | exit 0 at their recorded fingerprints; not deployment evidence | before `f56e2eb5` |
 
 ### Historical evidence explicitly excluded from the final-source claim
 
@@ -130,7 +138,7 @@ Local verification covers the eight shared completion contracts and their five t
 - controlled delivery, dependency gates, emergency-off, and forward-only rollback behavior;
 - accessibility and Android production-composition acceptance across the canonical mode set.
 
-The verified rollback drill passed locally. Because schema v22 is forward-only, rollback means disabling delivery and converging durable runtime controls; it does not mean downgrading the database or running an older binary against v22.
+The bounded rollback drill passed locally at the final source fingerprint. Because schema v22 is forward-only, rollback means disabling delivery and converging durable runtime controls; it does not mean downgrading the database or running an older binary against v22.
 
 ## Remaining field and release constraints
 
@@ -146,4 +154,4 @@ No frozen field-release candidate was replaced by this work.
 
 ## Working-tree hygiene
 
-At document creation, the staged set was empty. The only pre-existing working-tree changes were the explicitly protected Android-first parked iOS files and seven generated plugin registrants carrying line-ending noise. This document is the sole file authorized for staging in its commit.
+At the original document commit, the only pre-existing working-tree changes were the explicitly protected Android-first parked iOS files and seven generated plugin registrants carrying line-ending noise. This amendment changes only this verification record; staging and commit remain controller-owned.
