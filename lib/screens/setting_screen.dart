@@ -7,6 +7,7 @@ import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/offline_content/application/offline_content_manager.dart';
 import '../features/preferences/application/display_preferences_controller.dart';
+import '../navigation/navigation_glossary.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
@@ -310,6 +311,28 @@ class _SettingScreenState extends State<SettingScreen> {
     final session = _account?.currentSession;
     final cloudReady =
         dependencies?.runtimeStatus.firebase == RuntimeAvailability.ready;
+    final displayEntry = NavigationGlossary.require('settings/display');
+    final systemThemeEntry = NavigationGlossary.require('theme-system');
+    final lightThemeEntry = NavigationGlossary.require('theme-light');
+    final darkThemeEntry = NavigationGlossary.require('theme-dark');
+    final reducedMotionEntry = NavigationGlossary.require(
+      'reduced-motion-switch',
+    );
+    final accountEntry = NavigationGlossary.require('settings/account');
+    final offlineContentEntry = NavigationGlossary.require(
+      'settings/offline-content',
+    );
+    final researchConsentEntry = NavigationGlossary.require(
+      'settings/research-consent',
+    );
+    final cloudStatusEntry = NavigationGlossary.require(
+      'settings/cloud-status',
+    );
+    final changePasswordEntry = NavigationGlossary.require(
+      'settings/change-password',
+    );
+    final logoutEntry = NavigationGlossary.require('settings/logout');
+    final eraseLocalDataEntry = NavigationGlossary.require('erase-local-data');
     return Scaffold(
       appBar: AppBar(title: const Text('ตั้งค่า')),
       body: ListView(
@@ -322,83 +345,132 @@ class _SettingScreenState extends State<SettingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'การแสดงผล',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Tooltip(
+                      message: displayEntry.tooltip,
+                      child: Semantics(
+                        label: displayEntry.semanticsLabel,
+                        child: Row(
+                          children: [
+                            Icon(displayEntry.icon),
+                            const SizedBox(width: 8),
+                            Text(
+                              displayEntry.fullThaiLabel,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
                       alignment: WrapAlignment.spaceEvenly,
                       children: [
-                        ChoiceChip(
-                          key: const ValueKey<String>('theme-system'),
-                          selected: display.themeMode == ThemeMode.system,
-                          onSelected: _displayBusy
-                              ? null
-                              : (_) => _selectTheme(ThemeMode.system),
-                          label: const Text('ระบบ'),
-                          avatar: const Icon(Icons.settings_suggest_outlined),
+                        Tooltip(
+                          message: systemThemeEntry.tooltip,
+                          child: Semantics(
+                            label: systemThemeEntry.semanticsLabel,
+                            child: ChoiceChip(
+                              key: const ValueKey<String>('theme-system'),
+                              selected: display.themeMode == ThemeMode.system,
+                              onSelected: _displayBusy
+                                  ? null
+                                  : (_) => _selectTheme(ThemeMode.system),
+                              label: Text(systemThemeEntry.fullThaiLabel),
+                              avatar: Icon(systemThemeEntry.icon),
+                            ),
+                          ),
                         ),
-                        ChoiceChip(
-                          key: const ValueKey<String>('theme-light'),
-                          selected: display.themeMode == ThemeMode.light,
-                          onSelected: _displayBusy
-                              ? null
-                              : (_) => _selectTheme(ThemeMode.light),
-                          label: const Text('สว่าง'),
-                          avatar: const Icon(Icons.light_mode_outlined),
+                        Tooltip(
+                          message: lightThemeEntry.tooltip,
+                          child: Semantics(
+                            label: lightThemeEntry.semanticsLabel,
+                            child: ChoiceChip(
+                              key: const ValueKey<String>('theme-light'),
+                              selected: display.themeMode == ThemeMode.light,
+                              onSelected: _displayBusy
+                                  ? null
+                                  : (_) => _selectTheme(ThemeMode.light),
+                              label: Text(lightThemeEntry.fullThaiLabel),
+                              avatar: Icon(lightThemeEntry.icon),
+                            ),
+                          ),
                         ),
-                        ChoiceChip(
-                          key: const ValueKey<String>('theme-dark'),
-                          selected: display.themeMode == ThemeMode.dark,
-                          onSelected: _displayBusy
-                              ? null
-                              : (_) => _selectTheme(ThemeMode.dark),
-                          label: const Text('มืด'),
-                          avatar: const Icon(Icons.dark_mode_outlined),
+                        Tooltip(
+                          message: darkThemeEntry.tooltip,
+                          child: Semantics(
+                            label: darkThemeEntry.semanticsLabel,
+                            child: ChoiceChip(
+                              key: const ValueKey<String>('theme-dark'),
+                              selected: display.themeMode == ThemeMode.dark,
+                              onSelected: _displayBusy
+                                  ? null
+                                  : (_) => _selectTheme(ThemeMode.dark),
+                              label: Text(darkThemeEntry.fullThaiLabel),
+                              avatar: Icon(darkThemeEntry.icon),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    SwitchListTile(
-                      key: const ValueKey<String>('reduced-motion-switch'),
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('ลดการเคลื่อนไหว'),
-                      subtitle: const Text(
-                        'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                    Tooltip(
+                      message: reducedMotionEntry.tooltip,
+                      child: Semantics(
+                        label: reducedMotionEntry.semanticsLabel,
+                        child: SwitchListTile(
+                          key: const ValueKey<String>('reduced-motion-switch'),
+                          contentPadding: EdgeInsets.zero,
+                          secondary: Icon(reducedMotionEntry.icon),
+                          title: Text(reducedMotionEntry.fullThaiLabel),
+                          subtitle: const Text(
+                            'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                          ),
+                          value: display.reducedMotionEnabled,
+                          onChanged: _displayBusy ? null : _setReducedMotion,
+                        ),
                       ),
-                      value: display.reducedMotionEnabled,
-                      onChanged: _displayBusy ? null : _setReducedMotion,
                     ),
                   ],
                 ),
               ),
             ),
-          Card(
-            child: ListTile(
-              leading: Icon(
-                session == null ? Icons.person_outline : Icons.verified_user,
-              ),
-              title: Text(session?.email ?? 'โหมด Guest'),
-              subtitle: Text(
-                session == null
-                    ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
-                    : session.emailVerified
-                    ? 'ยืนยันอีเมลแล้ว'
-                    : 'รอยืนยันอีเมล',
+          Tooltip(
+            message: accountEntry.tooltip,
+            child: Semantics(
+              label: accountEntry.semanticsLabel,
+              child: Card(
+                child: ListTile(
+                  leading: Icon(
+                    session == null ? accountEntry.icon : Icons.verified_user,
+                  ),
+                  title: Text(session?.email ?? 'โหมด Guest'),
+                  subtitle: Text(
+                    session == null
+                        ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
+                        : session.emailVerified
+                        ? 'ยืนยันอีเมลแล้ว'
+                        : 'รอยืนยันอีเมล',
+                  ),
+                ),
               ),
             ),
           ),
           if (_offlineContent != null &&
               _featureRegistry?.isVisible(Feature.offlineContent) == true)
-            ListTile(
-              key: const ValueKey<String>('settings/offline-content'),
-              minTileHeight: 48,
-              leading: const Icon(Icons.offline_pin_outlined),
-              title: const Text('เนื้อหาออฟไลน์'),
-              subtitle: const Text(
-                'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+            Tooltip(
+              message: offlineContentEntry.tooltip,
+              child: Semantics(
+                label: offlineContentEntry.semanticsLabel,
+                child: ListTile(
+                  key: const ValueKey<String>('settings/offline-content'),
+                  minTileHeight: 48,
+                  leading: Icon(offlineContentEntry.icon),
+                  title: Text(offlineContentEntry.fullThaiLabel),
+                  subtitle: const Text(
+                    'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                  ),
+                  onTap: _openOfflineContent,
+                ),
               ),
-              onTap: _openOfflineContent,
             ),
           if (_researchConsent case final consent?)
             FutureBuilder(
@@ -406,69 +478,102 @@ class _SettingScreenState extends State<SettingScreen> {
               builder: (context, snapshot) {
                 final accepted = snapshot.data?.accepted ?? false;
                 return Card(
-                  child: ListTile(
-                    minTileHeight: 64,
-                    leading: Icon(
-                      accepted
-                          ? Icons.fact_check_outlined
-                          : Icons.assignment_outlined,
-                    ),
-                    title: const Text('ความยินยอมงานวิจัย'),
-                    subtitle: Text(
-                      accepted
-                          ? 'ยินยอมฉบับ ${ResearchConsentUseCases.currentVersion} — ถอนความยินยอมได้'
-                          : 'ยังไม่ยินยอม ข้อมูลจะไม่ถูกส่งออกเป็นชุดวิจัย',
-                    ),
-                    trailing: TextButton(
-                      onPressed:
-                          snapshot.connectionState == ConnectionState.waiting ||
-                              _busy
-                          ? null
-                          : () => _changeResearchConsent(!accepted),
-                      child: Text(accepted ? 'ถอน' : 'ยินยอม'),
+                  child: Tooltip(
+                    message: researchConsentEntry.tooltip,
+                    child: Semantics(
+                      label: researchConsentEntry.semanticsLabel,
+                      child: ListTile(
+                        minTileHeight: 64,
+                        leading: Icon(
+                          accepted
+                              ? researchConsentEntry.icon
+                              : Icons.assignment_outlined,
+                        ),
+                        title: Text(researchConsentEntry.fullThaiLabel),
+                        subtitle: Text(
+                          accepted
+                              ? 'ยินยอมฉบับ ${ResearchConsentUseCases.currentVersion} — ถอนความยินยอมได้'
+                              : 'ยังไม่ยินยอม ข้อมูลจะไม่ถูกส่งออกเป็นชุดวิจัย',
+                        ),
+                        trailing: TextButton(
+                          onPressed:
+                              snapshot.connectionState ==
+                                      ConnectionState.waiting ||
+                                  _busy
+                              ? null
+                              : () => _changeResearchConsent(!accepted),
+                          child: Text(accepted ? 'ถอน' : 'ยินยอม'),
+                        ),
+                      ),
                     ),
                   ),
                 );
               },
             ),
-          Card(
-            child: ListTile(
-              leading: Icon(
-                cloudReady
-                    ? Icons.cloud_done_outlined
-                    : Icons.cloud_off_outlined,
+          Tooltip(
+            message: cloudStatusEntry.tooltip,
+            child: Semantics(
+              label: cloudStatusEntry.semanticsLabel,
+              child: Card(
+                child: ListTile(
+                  leading: Icon(
+                    cloudReady
+                        ? cloudStatusEntry.icon
+                        : Icons.cloud_off_outlined,
+                  ),
+                  title: Text(cloudStatusEntry.fullThaiLabel),
+                  subtitle: Text(
+                    cloudReady
+                        ? 'พร้อมใช้งาน'
+                        : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+                  ),
+                ),
               ),
-              title: Text(cloudReady ? 'Cloud พร้อมใช้งาน' : 'Cloud ไม่พร้อม'),
-              subtitle: const Text('การเรียนออฟไลน์ยังทำงานได้ตามปกติ'),
             ),
           ),
           if (session != null && !session.isAnonymous) ...[
-            ListTile(
-              minTileHeight: 48,
-              leading: const Icon(Icons.password_outlined),
-              title: const Text('เปลี่ยนรหัสผ่าน'),
-              onTap: _busy ? null : _changePassword,
-            ),
-            ListTile(
-              minTileHeight: 48,
-              leading: const Icon(Icons.logout),
-              title: const Text('ออกจากระบบ'),
-              subtitle: const Text(
-                'สร้างพื้นที่ Guest ใหม่โดยไม่ลบข้อมูลบัญชี',
+            Tooltip(
+              message: changePasswordEntry.tooltip,
+              child: Semantics(
+                label: changePasswordEntry.semanticsLabel,
+                child: ListTile(
+                  minTileHeight: 48,
+                  leading: Icon(changePasswordEntry.icon),
+                  title: Text(changePasswordEntry.fullThaiLabel),
+                  onTap: _busy ? null : _changePassword,
+                ),
               ),
-              onTap: _busy ? null : _logout,
+            ),
+            Tooltip(
+              message: logoutEntry.tooltip,
+              child: Semantics(
+                label: logoutEntry.semanticsLabel,
+                child: ListTile(
+                  minTileHeight: 48,
+                  leading: Icon(logoutEntry.icon),
+                  title: Text(logoutEntry.fullThaiLabel),
+                  subtitle: const Text(
+                    'สร้างพื้นที่ Guest ใหม่โดยไม่ลบข้อมูลบัญชี',
+                  ),
+                  onTap: _busy ? null : _logout,
+                ),
+              ),
             ),
           ],
           if (_localDataEraser != null && _localOwners != null)
-            ListTile(
-              key: const ValueKey<String>('erase-local-data'),
-              minTileHeight: 48,
-              leading: const Icon(Icons.delete_forever_outlined),
-              title: const Text('Erase all local data'),
-              subtitle: const Text(
-                'Includes vocabulary, learning history, consent, and saved AI key.',
+            Tooltip(
+              message: eraseLocalDataEntry.tooltip,
+              child: Semantics(
+                label: eraseLocalDataEntry.semanticsLabel,
+                child: ListTile(
+                  key: const ValueKey<String>('erase-local-data'),
+                  minTileHeight: 48,
+                  leading: Icon(eraseLocalDataEntry.icon),
+                  title: Text(eraseLocalDataEntry.fullThaiLabel),
+                  subtitle: Text(eraseLocalDataEntry.tooltip),
+                  onTap: _busy ? null : _eraseLocalData,
+                ),
               ),
-              onTap: _busy ? null : _eraseLocalData,
             ),
           if (_busy)
             const Padding(

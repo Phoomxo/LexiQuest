@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/progress/domain/personal_learning_profile.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 
 typedef ProfileSettingsProfileLoader =
@@ -84,14 +85,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 ),
               _AxisCard(
-                label: 'Mastery',
+                entry: NavigationGlossary.require('profile/mastery'),
                 value: _available(
                   profile.mastery.availability,
                   '${profile.mastery.masteredWordCount} คำที่ชำนาญ',
                 ),
               ),
               _AxisCard(
-                label: 'SRS',
+                entry: NavigationGlossary.require('profile/srs'),
                 value: _available(
                   profile.srs.availability,
                   '${profile.srs.dueReviewCount} คำถึงกำหนด จาก '
@@ -99,21 +100,21 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
               ),
               _AxisCard(
-                label: 'Effort',
+                entry: NavigationGlossary.require('profile/effort'),
                 value: _available(
                   profile.effort.availability,
                   _duration(profile.effort.activeDuration),
                 ),
               ),
               _AxisCard(
-                label: 'Accuracy',
+                entry: NavigationGlossary.require('profile/accuracy'),
                 value: profile.accuracy.value == null
                     ? 'ยังไม่มีหลักฐาน'
                     : '${(profile.accuracy.value! * 100).toStringAsFixed(0)}% '
                           'จาก ${profile.accuracy.sampleSize} คำตอบ',
               ),
               _AxisCard(
-                label: 'Weakness',
+                entry: NavigationGlossary.require('profile/weakness'),
                 value: _available(
                   profile.weakness.availability,
                   profile.weakness.items.isEmpty
@@ -122,11 +123,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
               ),
               _AxisCard(
-                label: 'Engagement',
+                entry: NavigationGlossary.require('profile/engagement'),
                 value: _available(
                   profile.engagement.availability,
                   '${profile.engagement.totalXp} XP · '
-                  'Streak ${profile.engagement.currentStreakDays} วัน',
+                  'ต่อเนื่อง ${profile.engagement.currentStreakDays} วัน',
                 ),
               ),
             ],
@@ -138,15 +139,25 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 }
 
 class _AxisCard extends StatelessWidget {
-  const _AxisCard({required this.label, required this.value});
+  const _AxisCard({required this.entry, required this.value});
 
-  final String label;
+  final NavigationGlossaryEntry entry;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(title: Text(label), subtitle: Text(value)),
+    return Tooltip(
+      message: entry.tooltip,
+      child: Semantics(
+        label: entry.semanticsLabel,
+        child: Card(
+          child: ListTile(
+            leading: Icon(entry.icon),
+            title: Text(entry.fullThaiLabel),
+            subtitle: Text(value),
+          ),
+        ),
+      ),
     );
   }
 }

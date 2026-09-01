@@ -14,14 +14,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ผู้เรียน Guest'), findsOneWidget);
-    expect(find.text('Mastery'), findsOneWidget);
-    expect(find.text('SRS'), findsOneWidget);
-    expect(find.text('Effort'), findsOneWidget);
-    expect(find.text('Accuracy'), findsOneWidget);
-    expect(find.text('Weakness'), findsOneWidget);
-    expect(find.text('Engagement'), findsOneWidget);
+    for (final label in <String>[
+      'ความชำนาญ',
+      'ทบทวนแบบเว้นระยะ (SRS)',
+      'เวลาเรียนจริง',
+      'ความแม่นยำ',
+      'จุดที่ควรฝึกเพิ่ม',
+      'ความต่อเนื่องในการเรียน',
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
     expect(find.text('80% จาก 10 คำตอบ'), findsOneWidget);
-    expect(find.text('42 XP · Streak 7 วัน'), findsOneWidget);
+    expect(find.text('42 XP · ต่อเนื่อง 7 วัน'), findsOneWidget);
     expect(find.textContaining('คะแนนรวม'), findsNothing);
   });
 
