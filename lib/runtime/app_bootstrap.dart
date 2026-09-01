@@ -541,9 +541,15 @@ final class AppBootstrap {
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
     Future<Directory>? applicationSupportDirectoryFuture;
+    Future<Directory> loadCanonicalApplicationSupportDirectory() async {
+      final configured = await applicationSupportDirectoryProvider();
+      await configured.create(recursive: true);
+      return Directory(await configured.absolute.resolveSymbolicLinks());
+    }
+
     Future<Directory> resolveApplicationSupportDirectory() =>
         applicationSupportDirectoryFuture ??=
-            applicationSupportDirectoryProvider();
+            loadCanonicalApplicationSupportDirectory();
     final ownerOperationGate = DriftOwnerOperationGate(database);
     const evidencePolicy = EvidenceEligibilityPolicySet();
     final localOwners = DriftLocalOwnerRepository(

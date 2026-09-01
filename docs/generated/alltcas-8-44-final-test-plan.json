@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "da7681e1e992630b43fd5cf5a06ed6e62b164a67",
-  "sourceFingerprint": "b685b97890f10e82ff1794c0e63483dc90a0be8f7daf67c4f597bf4216c91ff3",
+  "sourceCommit": "48ab087804eaddaf61948dd1a72769acf22c177a",
+  "sourceFingerprint": "898beedb8fbe1fd08722d606662938b6d06a711d6c45c6adf8752b58684a7e31",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -61,7 +61,7 @@
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
-      "sha256": "0e0abf928e4b64934f362cf0cc3852ada3826a5e9280f84129f00e24d37dc6e2"
+      "sha256": "01f6b24f1a345d5b2d80fb745290884359910e75f4db79289b3da4a934bde518"
     },
     {
       "path": "integration_test/field_trial_feature_controls_test.dart",
@@ -73,7 +73,7 @@
     },
     {
       "path": "lib",
-      "sha256": "e78f34aea5b2910c6062fe82c079e22cd71eb5e1eeda4bde6b7ffe234acb98ef"
+      "sha256": "a6f390b828abf04e1db860ff46d0fa55c32303dc89303816da04836bfa7ef645"
     },
     {
       "path": "lib/data/local/app_database.dart",
@@ -121,7 +121,7 @@
     },
     {
       "path": "test",
-      "sha256": "b1957c01b922ac1743dcd95ecf184e2f93eab8a0209e0402d821807b2c9aa34d"
+      "sha256": "acb84e18184158177cd610d7f6e2b307d436554d4b4aa09d31003bb16a282c84"
     },
     {
       "path": "test/architecture",
@@ -361,7 +361,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "ea73ce9ff1f28a2c4ed79522f24d2e245e698cef37b0681c3079f53460f05fa3"
+      "sha256": "c34ee6cb74825d18a8dbc5a596f79ee94657f34bb7eda3118c7ae2ed0d10ac11"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit da7681e1e992630b43fd5cf5a06ed6e62b164a67",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 48ab087804eaddaf61948dd1a72769acf22c177a",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

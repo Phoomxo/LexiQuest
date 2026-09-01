@@ -739,6 +739,65 @@ void main() {
     );
 
     test(
+      'Android application-support alias is canonicalized before storage roots are derived',
+      () async {
+        final canonicalSupport = await Directory.systemTemp.createTemp(
+          'lexiquest-bootstrap-support-target-',
+        );
+        final alias = Link('${canonicalSupport.path}-alias');
+        addTearDown(() async {
+          if (await alias.exists()) await alias.delete();
+          if (await canonicalSupport.exists()) {
+            await canonicalSupport.delete(recursive: true);
+          }
+        });
+        try {
+          await alias.create(canonicalSupport.path);
+        } on FileSystemException {
+          markTestSkipped('symbolic links are unavailable on this platform');
+          return;
+        }
+        var supportDirectoryCalls = 0;
+
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          applicationSupportDirectoryProvider: () async {
+            supportDirectoryCalls += 1;
+            return Directory(alias.path);
+          },
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        final manager =
+            dependencies.offlineContent! as VerifiedOfflineContentManager;
+        final modelAdapter = manager.adapters
+            .whereType<ModelDownloadAdapter>()
+            .single;
+        final voiceAdapter = manager.adapters
+            .whereType<VoicePackDownloadAdapter>()
+            .single;
+        final canonicalPath = await canonicalSupport.resolveSymbolicLinks();
+        final roots = await Future.wait<Directory>(<Future<Directory>>[
+          modelAdapter.manager.modelDirectory(),
+          voiceAdapter.manager.rootDirectory(),
+          manager.rootDirectory(),
+        ]);
+
+        expect(roots.map((directory) => directory.path), <String>[
+          '$canonicalPath${Platform.pathSeparator}models',
+          '$canonicalPath${Platform.pathSeparator}voice-packs',
+          '$canonicalPath${Platform.pathSeparator}offline-content',
+        ]);
+        expect(supportDirectoryCalls, 1);
+      },
+    );
+
+    test(
       'f44 second review bootstrap resolves canonical voice manifest without network',
       () async {
         final supportDirectory = await Directory.systemTemp.createTemp(

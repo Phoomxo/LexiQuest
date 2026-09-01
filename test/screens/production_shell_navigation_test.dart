@@ -368,15 +368,16 @@ void main() {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
+    final settingsEntry = find.byKey(const ValueKey<String>('drawer/settings'));
     await tester.scrollUntilVisible(
-      find.text('ตั้งค่า'),
+      settingsEntry,
       200,
       scrollable: find.descendant(
         of: find.byType(Drawer),
         matching: find.byType(Scrollable),
       ),
     );
-    await tester.tap(find.text('ตั้งค่า'));
+    await tester.tap(settingsEntry);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 

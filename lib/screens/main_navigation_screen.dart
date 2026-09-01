@@ -891,6 +891,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               ListTile(
+                key: const ValueKey<String>('drawer/settings'),
                 leading: const Icon(Icons.settings),
                 title: const Text('ตั้งค่า'),
                 onTap: () =>
