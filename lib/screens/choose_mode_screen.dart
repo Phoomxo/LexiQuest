@@ -19,6 +19,7 @@ import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
@@ -75,10 +76,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.reading) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/associative-reading'),
-              icon: Icons.auto_stories_outlined,
-              title: 'Associative Reading',
-              subtitle:
-                  'Build durable memory cues from words in your vocabulary.',
+              glossary: NavigationGlossary.require(
+                'home/learn/associative-reading',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.associativeReading,
@@ -92,9 +92,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz'),
-              icon: Icons.quiz_outlined,
-              title: 'Quiz จากคลังคำศัพท์',
-              subtitle: 'คำตอบ คะแนน และกำหนดทบทวนจะบันทึกในเครื่อง',
+              glossary: NavigationGlossary.require('home/learn/quiz'),
               onTap: () => _openMode(
                 context,
                 LessonMode.meaningQuiz,
@@ -107,9 +105,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true && typedRecall != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/typed-recall'),
-              icon: Icons.keyboard_outlined,
-              title: 'Typed Recall',
-              subtitle: 'Recall and type the vocabulary spelling from memory.',
+              glossary: NavigationGlossary.require(
+                'home/learn/quiz/typed-recall',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.typedRecall,
@@ -122,9 +120,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true && matching != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/matching'),
-              icon: Icons.compare_arrows_outlined,
-              title: 'Matching',
-              subtitle: 'Match each vocabulary word with its meaning.',
+              glossary: NavigationGlossary.require('home/learn/quiz/matching'),
               onTap: () => _openMode(
                 context,
                 LessonMode.matching,
@@ -139,9 +135,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/cloze'),
-              icon: Icons.space_bar_outlined,
-              title: 'Cloze Test',
-              subtitle: 'Choose or type a word in a reviewed sentence.',
+              glossary: NavigationGlossary.require('home/learn/quiz/cloze'),
               onTap: () => _openMode(
                 context,
                 LessonMode.cloze,
@@ -154,9 +148,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/definition'),
-              icon: Icons.menu_book_outlined,
-              title: 'Definition Quiz',
-              subtitle: 'Choose a word from a reviewed English definition.',
+              glossary: NavigationGlossary.require(
+                'home/learn/quiz/definition',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.definitionQuiz,
@@ -169,9 +163,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.srs) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/srs'),
-              icon: Icons.event_repeat_outlined,
-              title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
-              subtitle: 'แสดงเฉพาะคำที่คำนวณจากประวัติคำตอบจริง',
+              glossary: NavigationGlossary.require('home/learn/srs'),
               onTap: () => _openMode(
                 context,
                 LessonMode.flashcard,
@@ -185,9 +177,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               cefrReading != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/reading/cefr'),
-              icon: Icons.chrome_reader_mode_outlined,
-              title: 'CEFR Reading',
-              subtitle: 'Read a levelled passage and hear words in context.',
+              glossary: NavigationGlossary.require('home/learn/reading/cefr'),
               onTap: () => _openMode(context, LessonMode.cefrReading, (
                 _,
                 adapter,
@@ -226,9 +216,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true && dictation != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/dictation'),
-              icon: Icons.hearing_outlined,
-              title: 'Dictation',
-              subtitle: 'Listen and type the vocabulary word.',
+              glossary: NavigationGlossary.require('home/learn/quiz/dictation'),
               onTap: () => _openMode(
                 context,
                 LessonMode.dictation,
@@ -249,9 +237,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               sentenceScramble != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/sentence-scramble'),
-              icon: Icons.format_list_numbered_outlined,
-              title: 'Sentence Scramble',
-              subtitle: 'Rebuild a vocabulary sentence in the correct order.',
+              glossary: NavigationGlossary.require(
+                'home/learn/quiz/sentence-scramble',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.sentenceScramble,
@@ -274,9 +262,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           if (features?.isVisible(Feature.quiz) == true && wordScramble != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/word-scramble'),
-              icon: Icons.extension_outlined,
-              title: 'Word Scramble',
-              subtitle: 'Rebuild a vocabulary word from shuffled letters.',
+              glossary: NavigationGlossary.require(
+                'home/learn/quiz/word-scramble',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.wordScramble,
@@ -297,9 +285,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               speaking != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/speech/speaking'),
-              icon: Icons.mic_outlined,
-              title: 'Speaking',
-              subtitle: 'Practice a word with on-device speech recognition.',
+              glossary: NavigationGlossary.require(
+                'home/learn/speech/speaking',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.speaking,
@@ -320,9 +308,9 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               shadowing != null)
             _LearningTile(
               key: const ValueKey<String>('home/learn/speech/shadowing'),
-              icon: Icons.record_voice_over_outlined,
-              title: 'Shadowing',
-              subtitle: 'Repeat a local vocabulary prompt after the model.',
+              glossary: NavigationGlossary.require(
+                'home/learn/speech/shadowing',
+              ),
               onTap: () => _openMode(
                 context,
                 LessonMode.shadowing,
@@ -362,64 +350,66 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     final registration = modes?.resolve(mode);
     if (registration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This lesson mode is unavailable.')),
+        const SnackBar(content: Text('โหมดการเรียนนี้ยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     if (mode == LessonMode.flashcard &&
         registration.adapter is! FlashcardModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This flashcard mode is unavailable.')),
+        const SnackBar(content: Text('โหมดทบทวนแบบเว้นระยะยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     final typedRecall = modes?.resolveTypedRecall();
     if (mode == LessonMode.associativeReading && typedRecall == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This typed recall mode is unavailable.')),
+        const SnackBar(content: Text('โหมดนึกคำแล้วพิมพ์ยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     if (mode == LessonMode.meaningQuiz &&
         registration.adapter is! MeaningQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This meaning quiz is unavailable.')),
+        const SnackBar(
+          content: Text('แบบทดสอบจากคลังคำศัพท์ยังไม่พร้อมใช้งาน'),
+        ),
       );
       return;
     }
     if (mode == LessonMode.typedRecall &&
         registration.adapter is! TypedRecallModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This typed recall mode is unavailable.')),
+        const SnackBar(content: Text('โหมดนึกคำแล้วพิมพ์ยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     if (mode == LessonMode.definitionQuiz &&
         registration.adapter is! DefinitionQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This definition quiz is unavailable.')),
+        const SnackBar(
+          content: Text('กิจกรรมเลือกคำจากคำอธิบายยังไม่พร้อมใช้งาน'),
+        ),
       );
       return;
     }
     if (mode == LessonMode.cloze && registration.adapter is! ClozeModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This cloze mode is unavailable.')),
+        const SnackBar(content: Text('กิจกรรมเติมคำในประโยคยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     if (mode == LessonMode.matching &&
         registration.adapter is! MatchingModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This matching mode is unavailable.')),
+        const SnackBar(content: Text('กิจกรรมจับคู่คำศัพท์ยังไม่พร้อมใช้งาน')),
       );
       return;
     }
     final features = widget.featureRegistry ?? dependencies?.features;
     if (features?.isEnabled(registration.feature) != true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This lesson mode is no longer available.'),
-        ),
+        const SnackBar(content: Text('โหมดการเรียนนี้ไม่พร้อมใช้งานแล้ว')),
       );
       return;
     }
@@ -813,7 +803,7 @@ class _NativeVocabularyModeLoaderState
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Scaffold(
-            body: Center(child: Text('This lesson mode is unavailable.')),
+            body: Center(child: Text('โหมดการเรียนนี้ยังไม่พร้อมใช้งาน')),
           );
         }
         final session = snapshot.data;
@@ -850,29 +840,30 @@ class _NativeVocabularyModeLoaderState
 }
 
 class _LearningTile extends StatelessWidget {
-  const _LearningTile({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _LearningTile({super.key, required this.glossary, required this.onTap});
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  final NavigationGlossaryEntry glossary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        minVerticalPadding: 16,
-        leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+      child: Tooltip(
+        message: glossary.tooltip,
+        child: Semantics(
+          button: true,
+          label: glossary.semanticsLabel,
+          onTap: onTap,
+          excludeSemantics: true,
+          child: ListTile(
+            minVerticalPadding: 16,
+            leading: Icon(glossary.icon),
+            title: Text(glossary.fullThaiLabel),
+            subtitle: Text(glossary.tooltip),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: onTap,
+          ),
+        ),
       ),
     );
   }

@@ -68,11 +68,38 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
-  final scrollable = find.byType(Scrollable).first;
-  tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  final scrollable = find
+      .descendant(
+        of: find.byType(ChooseModeScreen),
+        matching: find.byType(Scrollable),
+      )
+      .first;
+  var position = tester.state<ScrollableState>(scrollable).position;
+  position.jumpTo(position.minScrollExtent);
   await tester.pump();
+
   final entry = find.byKey(ValueKey<String>(entryId));
-  await tester.scrollUntilVisible(entry, 240, scrollable: scrollable);
+  for (var step = 0; step < 64 && entry.evaluate().length != 1; step += 1) {
+    position = tester.state<ScrollableState>(scrollable).position;
+    final nextPixels = (position.pixels + 240)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
+    if (nextPixels == position.pixels) break;
+    position.jumpTo(nextPixels);
+    await tester.pump();
+  }
+
+  if (entry.evaluate().length != 1) {
+    position = tester.state<ScrollableState>(scrollable).position;
+    fail(
+      'Choose Mode entry $entryId did not materialize exactly once; '
+      'pixels=${position.pixels}, '
+      'min=${position.minScrollExtent}, '
+      'max=${position.maxScrollExtent}.',
+    );
+  }
+
+  await tester.ensureVisible(entry);
   await tester.pump();
 }
 
@@ -403,10 +430,7 @@ void main() {
 
     expect(find.byType(SessionConfigurationSheet), findsNothing);
     expect(find.byType(UnifiedLessonShell), findsNothing);
-    expect(
-      find.text('This lesson mode is no longer available.'),
-      findsOneWidget,
-    );
+    expect(find.text('โหมดการเรียนนี้ไม่พร้อมใช้งานแล้ว'), findsOneWidget);
   });
 
   testWidgets('f13 shows every registered production native mode', (
@@ -437,6 +461,114 @@ void main() {
         findsOneWidget,
         reason: '$entryId must have one Choose Mode parent',
       );
+    }
+  });
+
+  testWidgets('Thai glossary covers every registered Choose Mode tile', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          featureRegistry: const BuildFeatureRegistry.allEnabled(),
+          lessonModes: buildLessonModeRegistry(
+            matchingDeliveryState: LessonModeDeliveryState.enabled,
+          ),
+        ),
+      ),
+    );
+
+    const cases = <(String, String, IconData)>[
+      (
+        'home/learn/associative-reading',
+        'อ่านเชื่อมโยงความจำ',
+        Icons.auto_stories_outlined,
+      ),
+      ('home/learn/quiz', 'แบบทดสอบจากคลังคำศัพท์', Icons.quiz_outlined),
+      (
+        'home/learn/quiz/typed-recall',
+        'นึกคำแล้วพิมพ์',
+        Icons.keyboard_outlined,
+      ),
+      (
+        'home/learn/quiz/matching',
+        'จับคู่คำศัพท์',
+        Icons.compare_arrows_outlined,
+      ),
+      ('home/learn/quiz/cloze', 'เติมคำในประโยค', Icons.space_bar_outlined),
+      (
+        'home/learn/quiz/definition',
+        'เลือกคำจากคำอธิบาย',
+        Icons.menu_book_outlined,
+      ),
+      ('home/learn/srs', 'ทบทวนแบบเว้นระยะ (SRS)', Icons.event_repeat_outlined),
+      (
+        'home/learn/reading/cefr',
+        'อ่านตามระดับภาษา CEFR',
+        Icons.chrome_reader_mode_outlined,
+      ),
+      ('home/learn/quiz/dictation', 'ฟังแล้วพิมพ์', Icons.hearing_outlined),
+      (
+        'home/learn/quiz/sentence-scramble',
+        'เรียงประโยค',
+        Icons.format_list_numbered_outlined,
+      ),
+      (
+        'home/learn/quiz/word-scramble',
+        'เรียงตัวอักษร',
+        Icons.extension_outlined,
+      ),
+      ('home/learn/speech/speaking', 'ฝึกออกเสียง', Icons.mic_outlined),
+      (
+        'home/learn/speech/shadowing',
+        'ฝึกพูดตามเสียง',
+        Icons.record_voice_over_outlined,
+      ),
+    ];
+    for (final (id, label, icon) in cases) {
+      await _scrollToModeEntry(tester, id);
+      final tile = find.byKey(ValueKey<String>(id));
+      expect(tile, findsOneWidget);
+      expect(
+        find.descendant(of: tile, matching: find.text(label)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: tile, matching: find.byIcon(icon)),
+        findsOneWidget,
+      );
+    }
+  });
+
+  testWidgets('Thai SRS semantics stays attached to its stable mode key', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final harness = await _SrsGateHarness.create();
+    addTearDown(harness.close);
+    try {
+      await harness.pump(tester);
+
+      await _scrollToModeEntry(tester, 'home/learn/srs');
+      final entry = find.byKey(const ValueKey<String>('home/learn/srs'));
+      expect(entry, findsOneWidget);
+      expect(
+        find.descendant(
+          of: entry,
+          matching: find.bySemanticsLabel('เปิดทบทวนแบบเว้นระยะ SRS'),
+        ),
+        findsOneWidget,
+      );
+
+      await _openConfiguredMode(tester, entry, itemCount: 1);
+      final screen = find.byType(SrsFlashcardsScreen);
+      expect(screen, findsOneWidget);
+      expect(
+        ModalRoute.of(tester.element(screen))?.settings.name,
+        'learning/srs',
+      );
+    } finally {
+      semantics.dispose();
     }
   });
 
