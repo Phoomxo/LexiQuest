@@ -245,10 +245,10 @@ void main() {
             .map((destination) => destination.label),
         <String>[
           'คลังคำศัพท์',
-          'เรียนรู้',
-          'แผนการเรียน',
-          'สถิติ',
-          'จุดอ่อน',
+          'การเรียนรู้',
+          'วางแผน',
+          'ความชำนาญ',
+          'ฝึกเพิ่ม',
           'รางวัล',
           'โปรไฟล์',
         ],
@@ -286,13 +286,28 @@ void main() {
           .map((destination) => destination.label),
       <String>[
         'คลังคำศัพท์',
-        'เรียนรู้',
-        'สถิติ',
-        'จุดอ่อน',
+        'การเรียนรู้',
+        'ความชำนาญ',
+        'ฝึกเพิ่ม',
         'รางวัล',
         'โปรไฟล์',
       ],
     );
+
+    final learning = tester.widget<NavigationDestination>(
+      find.byKey(const ValueKey<String>('home/learn')),
+    );
+    expect(learning.label, 'การเรียนรู้');
+    expect((learning.icon as Icon).icon, Icons.school_outlined);
+    expect((learning.selectedIcon! as Icon).icon, Icons.school);
+
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey<String>('production-feature-view-learning')),
+      findsOneWidget,
+    );
+
     await tester.tap(
       find.byKey(const ValueKey<String>('legacy-drawer-button')),
     );
@@ -300,7 +315,30 @@ void main() {
     expect(find.text('ร้านค้า'), findsOneWidget);
     expect(find.text('สแกนวัตถุ'), findsOneWidget);
     expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
-    expect(find.text('AI Tutor'), findsOneWidget);
+    expect(find.text('ผู้ช่วยสอน AI'), findsOneWidget);
+    expect(find.text('ตั้งค่าการเชื่อมต่อ AI'), findsOneWidget);
+
+    final quests = find.byKey(const ValueKey<String>('drawer/rewards/quests'));
+    await tester.scrollUntilVisible(
+      quests,
+      200,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(quests, findsOneWidget);
+    expect(
+      find.descendant(of: quests, matching: find.text('ภารกิจการเรียน')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: quests, matching: find.byIcon(Icons.flag_outlined)),
+      findsOneWidget,
+    );
+    expect(find.text('AI Tutor'), findsNothing);
+    expect(find.text('AI Provider BYOK'), findsNothing);
+    expect(find.text('Quests'), findsNothing);
   });
 
   testWidgets(

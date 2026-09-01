@@ -17,6 +17,7 @@ import '../runtime/app_runtime_status.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 import 'achievements_screen.dart';
 import 'ai_tutor_screen.dart';
 import 'ai_tutor_settings_screen.dart';
@@ -137,9 +138,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Feature.vocabulary,
           (_) => CategoriesPage(),
         ),
-        icon: Icons.menu_book_outlined,
-        selectedIcon: Icons.menu_book,
-        label: 'คลังคำศัพท์',
+        glossary: NavigationGlossary.require('home/vocabulary'),
       ),
       _NavigationEntry(
         id: 'learning',
@@ -150,9 +149,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           key: const ValueKey<String>('production-feature-view-learning'),
           child: ChooseModeScreen(featureRegistry: widget.featureRegistry),
         ),
-        icon: Icons.school_outlined,
-        selectedIcon: Icons.school,
-        label: 'เรียนรู้',
+        glossary: NavigationGlossary.require('home/learn'),
       ),
       _NavigationEntry(
         id: 'today',
@@ -160,9 +157,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         visibilityFeatures: const [Feature.dailyContinuity],
         requiresComposedDependency: true,
         screen: _gate('today', Feature.dailyContinuity, _buildTodayHub),
-        icon: Icons.today_outlined,
-        selectedIcon: Icons.today,
-        label: 'วันนี้',
+        glossary: NavigationGlossary.require('home/today'),
       ),
       _NavigationEntry(
         id: 'study-planning',
@@ -174,9 +169,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Feature.studyPlanning,
           (_) => const StudyPlanningHubScreen(),
         ),
-        icon: Icons.event_note_outlined,
-        selectedIcon: Icons.event_note,
-        label: 'แผนการเรียน',
+        glossary: NavigationGlossary.require('home/study-planning'),
       ),
       _NavigationEntry(
         id: 'mastery',
@@ -187,9 +180,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Feature.mastery,
           (_) => const MasteryDashboardScreen(),
         ),
-        icon: Icons.analytics_outlined,
-        selectedIcon: Icons.analytics,
-        label: 'สถิติ',
+        glossary: NavigationGlossary.require('home/mastery'),
       ),
       _NavigationEntry(
         id: 'weakness',
@@ -200,9 +191,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Feature.weakness,
           (_) => const WeaknessClinicScreen(),
         ),
-        icon: Icons.healing_outlined,
-        selectedIcon: Icons.healing,
-        label: 'จุดอ่อน',
+        glossary: NavigationGlossary.require('home/weakness'),
       ),
       _NavigationEntry(
         id: 'achievements',
@@ -213,18 +202,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           Feature.achievements,
           (_) => const AchievementsScreen(),
         ),
-        icon: Icons.emoji_events_outlined,
-        selectedIcon: Icons.emoji_events,
-        label: 'รางวัล',
+        glossary: NavigationGlossary.require('home/achievements'),
       ),
-      const _NavigationEntry(
+      _NavigationEntry(
         id: 'profile',
         productionEntryId: 'home/profile',
         alwaysVisible: true,
         screen: ProfileSettingsScreen(),
-        icon: Icons.person_outlined,
-        selectedIcon: Icons.person,
-        label: 'โปรไฟล์',
+        glossary: NavigationGlossary.require('home/profile'),
       ),
     ];
   }
@@ -796,9 +781,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ),
               if (features?.isVisible(Feature.vocabulary) == true)
-                ListTile(
-                  leading: const Icon(Icons.menu_book),
-                  title: const Text('คลังคำศัพท์'),
+                _glossaryDrawerTile(
+                  entry: NavigationGlossary.require('home/vocabulary'),
                   onTap: () {
                     _scaffoldKey.currentState?.closeDrawer();
                     setState(() {
@@ -807,10 +791,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   },
                 ),
               if (features?.isVisible(Feature.shop) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/rewards/shop'),
-                  leading: const Icon(Icons.shopping_bag),
-                  title: const Text('ร้านค้า'),
+                  entry: NavigationGlossary.require('drawer/rewards/shop'),
                   onTap: () => _pushFeatureDestination(
                     'rewards/shop',
                     Feature.shop,
@@ -818,10 +801,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               if (features?.isVisible(Feature.objectScanner) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/practice/object-scanner'),
-                  leading: const Icon(Icons.document_scanner_outlined),
-                  title: const Text('สแกนวัตถุ'),
+                  entry: NavigationGlossary.require(
+                    'drawer/practice/object-scanner',
+                  ),
                   onTap: () => _pushFeatureDestination(
                     'practice/object-scanner',
                     Feature.objectScanner,
@@ -830,17 +814,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               if (shadowingFeature != null &&
                   features?.isVisible(shadowingFeature) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/practice/shadowing'),
-                  leading: const Icon(Icons.mic_none),
-                  title: const Text('ฝึกพูดตามเสียง'),
+                  entry: NavigationGlossary.require(
+                    'drawer/practice/shadowing',
+                  ),
                   onTap: _pushRegisteredShadowing,
                 ),
               if (features?.isVisible(Feature.ghostDuel) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/learning/ghost-duel'),
-                  leading: const Icon(Icons.sports_esports_outlined),
-                  title: const Text('ดวลกับสถิติเดิม'),
+                  entry: NavigationGlossary.require(
+                    'drawer/learning/ghost-duel',
+                  ),
                   onTap: () => _pushFeatureDestination(
                     'learning/ghost-duel',
                     Feature.ghostDuel,
@@ -848,19 +834,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               if (features?.isVisible(Feature.aiTutor) == true) ...[
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/ai-tutor/chat'),
-                  leading: const Icon(Icons.chat_bubble_outline),
-                  title: const Text('AI Tutor'),
+                  entry: NavigationGlossary.require('drawer/ai-tutor/chat'),
                   onTap: () => _pushFeatureDestination(
                     'ai-tutor/chat',
                     Feature.aiTutor,
                     (_) => const AiTutorScreen(),
                   ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.key_outlined),
-                  title: const Text('AI Provider BYOK'),
+                _glossaryDrawerTile(
+                  key: const ValueKey<String>('drawer/ai-tutor/settings'),
+                  entry: NavigationGlossary.require('drawer/ai-tutor/settings'),
                   onTap: () => _pushFeatureDestination(
                     'ai-tutor/settings',
                     Feature.aiTutor,
@@ -869,10 +854,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
               ],
               if (features?.isVisible(Feature.export) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/export/center'),
-                  leading: const Icon(Icons.file_download_outlined),
-                  title: const Text('ส่งออกข้อมูล'),
+                  entry: NavigationGlossary.require('drawer/export/center'),
                   onTap: () => _pushFeatureDestination(
                     'export/center',
                     Feature.export,
@@ -880,20 +864,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               if (features?.isVisible(Feature.questV2) == true)
-                ListTile(
+                _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/rewards/quests'),
-                  leading: const Icon(Icons.flag_outlined),
-                  title: const Text('Quests'),
+                  entry: NavigationGlossary.require('drawer/rewards/quests'),
                   onTap: () => _pushFeatureDestination(
                     'rewards/quests',
                     Feature.questV2,
                     (_) => const QuestStatusScreen(),
                   ),
                 ),
-              ListTile(
+              _glossaryDrawerTile(
                 key: const ValueKey<String>('drawer/settings'),
-                leading: const Icon(Icons.settings),
-                title: const Text('ตั้งค่า'),
+                entry: NavigationGlossary.require('drawer/settings'),
                 onTap: () =>
                     _pushDestination('settings', (_) => const SettingScreen()),
               ),
@@ -926,13 +908,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ? BottomAppBar(
               child: SizedBox(
                 height: 64,
-                child: TextButton.icon(
-                  key: const ValueKey<String>('profile-fallback-destination'),
-                  onPressed: () {
-                    setState(() => _selectedEntryId = 'profile');
-                  },
-                  icon: const Icon(Icons.person_outlined),
-                  label: const Text('โปรไฟล์'),
+                child: Tooltip(
+                  message: NavigationGlossary.require('home/profile').tooltip,
+                  child: TextButton.icon(
+                    key: const ValueKey<String>('profile-fallback-destination'),
+                    onPressed: () {
+                      setState(() => _selectedEntryId = 'profile');
+                    },
+                    icon: Icon(NavigationGlossary.require('home/profile').icon),
+                    label: Text(
+                      NavigationGlossary.require('home/profile').fullThaiLabel,
+                    ),
+                  ),
                 ),
               ),
             )
@@ -949,9 +936,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 for (final entry in _visibleEntries)
                   NavigationDestination(
                     key: ValueKey<String>(entry.productionEntryId),
-                    icon: Icon(entry.icon),
-                    selectedIcon: Icon(entry.selectedIcon),
-                    label: entry.label,
+                    icon: Icon(entry.glossary.icon),
+                    selectedIcon: Icon(entry.glossary.selectedIcon!),
+                    label: entry.glossary.shortThaiLabel,
+                    tooltip: entry.glossary.tooltip,
                   ),
               ],
             ),
@@ -1013,14 +1001,28 @@ final class _MainSessionConfigurationContext {
   final SessionConfigurationResetRequired? protocolResetRequired;
 }
 
+Widget _glossaryDrawerTile({
+  required NavigationGlossaryEntry entry,
+  required VoidCallback onTap,
+  Key? key,
+}) {
+  return Tooltip(
+    message: entry.tooltip,
+    child: ListTile(
+      key: key,
+      leading: Icon(entry.icon),
+      title: Text(entry.fullThaiLabel),
+      onTap: onTap,
+    ),
+  );
+}
+
 final class _NavigationEntry {
   const _NavigationEntry({
     required this.id,
     required this.productionEntryId,
     required this.screen,
-    required this.icon,
-    required this.selectedIcon,
-    required this.label,
+    required this.glossary,
     this.visibilityFeatures = const [],
     this.alwaysVisible = false,
     this.showUnavailableWhenHidden = false,
@@ -1030,9 +1032,7 @@ final class _NavigationEntry {
   final String id;
   final String productionEntryId;
   final Widget screen;
-  final IconData icon;
-  final IconData selectedIcon;
-  final String label;
+  final NavigationGlossaryEntry glossary;
   final List<Feature> visibilityFeatures;
   final bool alwaysVisible;
   final bool showUnavailableWhenHidden;

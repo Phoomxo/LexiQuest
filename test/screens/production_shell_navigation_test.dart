@@ -256,9 +256,9 @@ void main() {
 
     expect(destinations.map((destination) => destination.label), <String>[
       'คลังคำศัพท์',
-      'เรียนรู้',
-      'สถิติ',
-      'จุดอ่อน',
+      'การเรียนรู้',
+      'ความชำนาญ',
+      'ฝึกเพิ่ม',
       'รางวัล',
       'โปรไฟล์',
     ]);
@@ -382,6 +382,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.byType(SettingScreen), findsOneWidget);
+    expect(
+      ModalRoute.of(tester.element(find.byType(SettingScreen)))?.settings.name,
+      'settings',
+    );
   });
 
   testWidgets(
