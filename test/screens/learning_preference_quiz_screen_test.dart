@@ -22,6 +22,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.widgetWithText(AppBar, 'การตั้งค่าการเรียน'), findsOneWidget);
     expect(find.textContaining('learning style'), findsNothing);
     expect(find.textContaining('personality'), findsNothing);
     final goal = tester.widget<DropdownButtonFormField<LearnerPreferenceGoal>>(

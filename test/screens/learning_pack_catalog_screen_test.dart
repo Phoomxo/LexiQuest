@@ -42,6 +42,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.widgetWithText(AppBar, 'ชุดเนื้อหาการเรียน'), findsOneWidget);
       expect(find.text('Travel basics'), findsOneWidget);
       expect(
         find.bySemanticsLabel('Travel basics, A1, travel, revision 1'),

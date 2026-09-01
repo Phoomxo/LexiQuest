@@ -43,6 +43,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.widgetWithText(AppBar, 'เป้าหมายการเรียน'), findsOneWidget);
     expect(find.text('IELTS practice target'), findsOneWidget);
     expect(find.textContaining('days'), findsOneWidget);
     expect(find.textContaining('admission', findRichText: true), findsNothing);

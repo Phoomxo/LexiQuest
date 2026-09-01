@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature.dart';
@@ -36,7 +37,11 @@ final class _LearningPackCatalogScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning packs')),
+      appBar: AppBar(
+        title: Text(
+          NavigationGlossary.require('study-planning/catalog').fullThaiLabel,
+        ),
+      ),
       body: FutureBuilder<LearningPackCatalog>(
         future: _catalog,
         builder: (context, snapshot) {

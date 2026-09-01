@@ -81,10 +81,27 @@ void main() {
       find.byType(StudyPlanningHubScreen, skipOffstage: false),
       findsOneWidget,
     );
+    expect(find.widgetWithText(AppBar, 'วางแผนการเรียน'), findsOneWidget);
     expect(find.byType(LearningPackCatalogScreen), findsNothing);
-    await tester.tap(
-      find.byKey(const ValueKey<String>('study-planning/open-catalog')),
+    final catalogAction = find.byKey(
+      const ValueKey<String>('study-planning/open-catalog'),
     );
+    expect(catalogAction, findsOneWidget);
+    expect(
+      find.descendant(
+        of: catalogAction,
+        matching: find.text('เลือกชุดเนื้อหาการเรียน'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: catalogAction,
+        matching: find.byIcon(Icons.menu_book_outlined),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(catalogAction);
     await tester.pumpAndSettle();
 
     expect(
@@ -92,6 +109,12 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
+    expect(
+      ModalRoute.of(
+        tester.element(find.byType(LearningPackCatalogScreen)),
+      )?.settings.name,
+      'study-planning/catalog',
+    );
   });
 
   testWidgets('the hub opens goals as a child without another main entry', (
@@ -111,11 +134,30 @@ void main() {
       find.byKey(const ValueKey<String>('home/study-planning')),
       findsNothing,
     );
-    await tester.tap(
-      find.byKey(const ValueKey<String>('study-planning/open-goals')),
+    final goalsAction = find.byKey(
+      const ValueKey<String>('study-planning/open-goals'),
     );
+    expect(goalsAction, findsOneWidget);
+    expect(
+      find.descendant(of: goalsAction, matching: find.text('เป้าหมายการเรียน')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: goalsAction,
+        matching: find.byIcon(Icons.flag_outlined),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(goalsAction);
     await tester.pumpAndSettle();
     expect(find.byType(LearningGoalsScreen), findsOneWidget);
+    expect(
+      ModalRoute.of(
+        tester.element(find.byType(LearningGoalsScreen)),
+      )?.settings.name,
+      'study-planning/goals',
+    );
   });
 
   testWidgets('f35 hub owns the typed preference quiz child action', (
@@ -135,17 +177,37 @@ void main() {
       find.byKey(const ValueKey<String>('home/learning-preferences')),
       findsNothing,
     );
-    await tester.tap(
-      find.byKey(
-        const ValueKey<String>('study-planning/open-learning-preferences'),
-      ),
+    final preferencesAction = find.byKey(
+      const ValueKey<String>('study-planning/open-learning-preferences'),
     );
+    expect(preferencesAction, findsOneWidget);
+    expect(
+      find.descendant(
+        of: preferencesAction,
+        matching: find.text('การตั้งค่าการเรียน'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: preferencesAction,
+        matching: find.byIcon(Icons.tune_outlined),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(preferencesAction);
     await tester.pumpAndSettle();
 
     expect(find.byType(LearningPreferenceQuizScreen), findsOneWidget);
     expect(
       find.byType(StudyPlanningHubScreen, skipOffstage: false),
       findsOneWidget,
+    );
+    expect(
+      ModalRoute.of(
+        tester.element(find.byType(LearningPreferenceQuizScreen)),
+      )?.settings.name,
+      'study-planning/learning-preferences',
     );
   });
 

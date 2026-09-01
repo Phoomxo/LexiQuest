@@ -43,7 +43,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ศูนย์ทบทวน'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'ศูนย์ทบทวน'), findsOneWidget);
     expect(find.text('ถึงกำหนด SRS'), findsOneWidget);
     expect(find.text('เคยตอบผิด'), findsOneWidget);
     expect(find.text('รายงานไว้: คำตอบ'), findsOneWidget);

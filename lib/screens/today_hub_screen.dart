@@ -6,6 +6,7 @@ import '../features/recommendation/application/recommendation_use_cases.dart';
 import '../features/review/domain/review_queue_item.dart';
 import '../features/today_hub/application/today_hub_use_cases.dart';
 import '../features/today_hub/domain/today_hub_models.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/registries/feature_registry.dart';
 
 abstract interface class TodayHubActionDelegate {
@@ -257,6 +258,13 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
 
   Widget _resumeCard(LearningSessionSummary session) {
     final busy = _inFlight.contains(_TodayHubAction.resume);
+    final entry = NavigationGlossary.require('today-hub-resume-action');
+    final onPressed = busy
+        ? null
+        : () => _runAction(
+            _TodayHubAction.resume,
+            () => widget.actions.resume(session),
+          );
     return Card(
       key: const ValueKey('today-hub-resume'),
       child: Padding(
@@ -271,16 +279,15 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
             const SizedBox(height: 8),
             Text('เซสชัน ${session.activityType}'),
             const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey('today-hub-resume-action'),
-              onPressed: busy
-                  ? null
-                  : () => _runAction(
-                      _TodayHubAction.resume,
-                      () => widget.actions.resume(session),
-                    ),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('เรียนต่อ'),
+            _glossaryAction(
+              entry: entry,
+              onTap: onPressed,
+              child: FilledButton.icon(
+                key: const ValueKey('today-hub-resume-action'),
+                onPressed: onPressed,
+                icon: Icon(entry.icon),
+                label: Text(entry.fullThaiLabel),
+              ),
             ),
           ],
         ),
@@ -323,6 +330,14 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
       );
     }
     final busy = _inFlight.contains(_TodayHubAction.recommendation);
+    final entry = NavigationGlossary.require('today-hub-start-recommendation');
+    final onPressed = busy
+        ? null
+        : () => _runAction(
+            _TodayHubAction.recommendation,
+            () => widget.actions.startRecommendation(recommendation),
+            allowed: () => recommendation.isAuthoritative,
+          );
     return Card(
       key: const ValueKey('today-hub-recommendation'),
       child: Padding(
@@ -337,17 +352,15 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
             const SizedBox(height: 8),
             Text(_recommendationReasonLabel(recommendation.result.reason)),
             const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey('today-hub-start-recommendation'),
-              onPressed: busy
-                  ? null
-                  : () => _runAction(
-                      _TodayHubAction.recommendation,
-                      () => widget.actions.startRecommendation(recommendation),
-                      allowed: () => recommendation.isAuthoritative,
-                    ),
-              icon: const Icon(Icons.auto_awesome_outlined),
-              label: const Text('เริ่มกิจกรรมที่แนะนำ'),
+            _glossaryAction(
+              entry: entry,
+              onTap: onPressed,
+              child: FilledButton.icon(
+                key: const ValueKey('today-hub-start-recommendation'),
+                onPressed: onPressed,
+                icon: Icon(entry.icon),
+                label: Text(entry.fullThaiLabel),
+              ),
             ),
           ],
         ),
@@ -362,6 +375,14 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
 
   Widget _assessmentCard(TodayHubAssignedAssessment assessment) {
     final busy = _inFlight.contains(_TodayHubAction.assessment);
+    final entry = NavigationGlossary.require('today-hub-assessment-action');
+    final onPressed = busy
+        ? null
+        : () => _runAction(
+            _TodayHubAction.assessment,
+            () => widget.actions.startAssessment(assessment),
+            allowed: () => _assessmentEnabled(assessment),
+          );
     return Card(
       key: const ValueKey('today-hub-assessment'),
       child: Padding(
@@ -374,17 +395,15 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey('today-hub-assessment-action'),
-              onPressed: busy
-                  ? null
-                  : () => _runAction(
-                      _TodayHubAction.assessment,
-                      () => widget.actions.startAssessment(assessment),
-                      allowed: () => _assessmentEnabled(assessment),
-                    ),
-              icon: const Icon(Icons.assignment_outlined),
-              label: const Text('เริ่มแบบประเมิน'),
+            _glossaryAction(
+              entry: entry,
+              onTap: onPressed,
+              child: FilledButton.icon(
+                key: const ValueKey('today-hub-assessment-action'),
+                onPressed: onPressed,
+                icon: Icon(entry.icon),
+                label: Text(entry.fullThaiLabel),
+              ),
             ),
           ],
         ),
@@ -420,35 +439,60 @@ final class _TodayHubScreenState extends State<TodayHubScreen> {
   Widget _childActions(TodayHubSnapshot snapshot) {
     final reviewBusy = _inFlight.contains(_TodayHubAction.review);
     final historyBusy = _inFlight.contains(_TodayHubAction.history);
+    final reviewEntry = NavigationGlossary.require('today-hub-open-review');
+    final historyEntry = NavigationGlossary.require('today-hub-open-history');
+    final openReview = reviewBusy
+        ? null
+        : () => _runAction(
+            _TodayHubAction.review,
+            () => widget.actions.openReview(snapshot.reviewWork),
+          );
+    final openHistory = historyBusy
+        ? null
+        : () => _runAction(_TodayHubAction.history, widget.actions.openHistory);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: <Widget>[
-        OutlinedButton.icon(
-          key: const ValueKey('today-hub-open-review'),
-          onPressed: reviewBusy
-              ? null
-              : () => _runAction(
-                  _TodayHubAction.review,
-                  () => widget.actions.openReview(snapshot.reviewWork),
-                ),
-          icon: const Icon(Icons.fact_check_outlined),
-          label: const Text('เปิดศูนย์ทบทวน'),
+        _glossaryAction(
+          entry: reviewEntry,
+          onTap: openReview,
+          child: OutlinedButton.icon(
+            key: const ValueKey('today-hub-open-review'),
+            onPressed: openReview,
+            icon: Icon(reviewEntry.icon),
+            label: Text(reviewEntry.fullThaiLabel),
+          ),
         ),
-        OutlinedButton.icon(
-          key: const ValueKey('today-hub-open-history'),
-          onPressed: historyBusy
-              ? null
-              : () => _runAction(
-                  _TodayHubAction.history,
-                  widget.actions.openHistory,
-                ),
-          icon: const Icon(Icons.history),
-          label: const Text('ดูประวัติการเรียน'),
+        _glossaryAction(
+          entry: historyEntry,
+          onTap: openHistory,
+          child: OutlinedButton.icon(
+            key: const ValueKey('today-hub-open-history'),
+            onPressed: openHistory,
+            icon: Icon(historyEntry.icon),
+            label: Text(historyEntry.fullThaiLabel),
+          ),
         ),
       ],
     );
   }
+
+  Widget _glossaryAction({
+    required NavigationGlossaryEntry entry,
+    required VoidCallback? onTap,
+    required Widget child,
+  }) => Tooltip(
+    message: entry.tooltip,
+    child: Semantics(
+      button: true,
+      enabled: onTap != null,
+      label: entry.semanticsLabel,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: child,
+    ),
+  );
 
   Widget _statusCard(String message) {
     return Card(

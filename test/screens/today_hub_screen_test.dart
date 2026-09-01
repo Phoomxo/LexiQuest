@@ -101,6 +101,86 @@ void main() {
   );
 
   testWidgets(
+    'Thai glossary actions retain their stable keys, icons, and delegates',
+    (tester) async {
+      final actions = _Actions();
+      await tester.pumpWidget(
+        _app(
+          snapshot: _snapshot(
+            resumableSession: _resumableSession(),
+            assignedAssessment: _assignedAssessment(),
+            reviewWork: <TodayHubReviewWorkItem>[_reviewWork()],
+            recommendation: _freshRecommendation(contentId: 'word:airport'),
+          ),
+          actions: actions,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      const cases = <(String, String, IconData)>[
+        ('today-hub-resume-action', 'เรียนต่อ', Icons.play_arrow),
+        (
+          'today-hub-start-recommendation',
+          'เริ่มกิจกรรมที่แนะนำ',
+          Icons.auto_awesome_outlined,
+        ),
+        (
+          'today-hub-assessment-action',
+          'เริ่มแบบประเมิน',
+          Icons.assignment_outlined,
+        ),
+        ('today-hub-open-review', 'เปิดศูนย์ทบทวน', Icons.fact_check_outlined),
+        ('today-hub-open-history', 'ดูประวัติการเรียน', Icons.history),
+      ];
+      for (final (key, label, icon) in cases) {
+        await _scrollToTodayHubAction(tester, key);
+        final action = find.byKey(ValueKey<String>(key));
+        expect(action, findsOneWidget);
+        expect(
+          find.descendant(of: action, matching: find.text(label)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: action, matching: find.byIcon(icon)),
+          findsOneWidget,
+        );
+      }
+
+      await _scrollToTodayHubAction(tester, 'today-hub-resume-action');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-resume-action')),
+      );
+      await tester.pump();
+      await _scrollToTodayHubAction(tester, 'today-hub-start-recommendation');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-start-recommendation')),
+      );
+      await tester.pump();
+      await _scrollToTodayHubAction(tester, 'today-hub-assessment-action');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-assessment-action')),
+      );
+      await tester.pump();
+      await _scrollToTodayHubAction(tester, 'today-hub-open-review');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-open-review')),
+      );
+      await tester.pump();
+      await _scrollToTodayHubAction(tester, 'today-hub-open-history');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-open-history')),
+      );
+      await tester.pump();
+
+      expect(actions.resumeCalls, 1);
+      expect(actions.recommendationCalls, 1);
+      expect(actions.assessmentCalls, 1);
+      expect(actions.reviewCalls, 1);
+      expect(actions.historyCalls, 1);
+    },
+  );
+
+  testWidgets(
     'f42 signoff exact merged recommendation renders one review card and no standalone action',
     (tester) async {
       final recommendation = _recommendedResult(contentId: 'word:station');
@@ -425,6 +505,45 @@ Widget _app({
     assessmentAvailable: assessmentAvailable,
   ),
 );
+
+Future<void> _scrollToTodayHubAction(
+  WidgetTester tester,
+  String actionKey,
+) async {
+  final scrollable = find
+      .descendant(
+        of: find.byType(TodayHubScreen),
+        matching: find.byType(Scrollable),
+      )
+      .first;
+  var position = tester.state<ScrollableState>(scrollable).position;
+  position.jumpTo(position.minScrollExtent);
+  await tester.pump();
+
+  final action = find.byKey(ValueKey<String>(actionKey));
+  for (var step = 0; step < 64 && action.evaluate().length != 1; step += 1) {
+    position = tester.state<ScrollableState>(scrollable).position;
+    final nextPixels = (position.pixels + 240)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
+    if (nextPixels == position.pixels) break;
+    position.jumpTo(nextPixels);
+    await tester.pump();
+  }
+
+  if (action.evaluate().length != 1) {
+    position = tester.state<ScrollableState>(scrollable).position;
+    fail(
+      'Today Hub action $actionKey did not materialize exactly once; '
+      'pixels=${position.pixels}, '
+      'min=${position.minScrollExtent}, '
+      'max=${position.maxScrollExtent}.',
+    );
+  }
+
+  await tester.ensureVisible(action);
+  await tester.pump();
+}
 
 const _ownerId = 'owner:today';
 const _checksum =

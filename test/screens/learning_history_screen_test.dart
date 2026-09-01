@@ -40,7 +40,7 @@ void main() {
       await tester.pumpWidget(_app(reader: reader));
       await tester.pumpAndSettle();
 
-      expect(find.text('ประวัติการเรียน'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'ประวัติการเรียน'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('learning-history-session:completed')),
         findsOneWidget,

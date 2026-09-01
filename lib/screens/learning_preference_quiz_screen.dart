@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/preferences/application/learner_preferences_use_cases.dart';
 import '../features/preferences/domain/learner_preferences.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
 
@@ -85,14 +86,26 @@ final class _LearningPreferenceQuizScreenState
     final useCases = _useCases(context);
     if (useCases == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Learning preferences')),
+        appBar: AppBar(
+          title: Text(
+            NavigationGlossary.require(
+              'study-planning/learning-preferences',
+            ).fullThaiLabel,
+          ),
+        ),
         body: const Center(
           child: Text('Learning preferences are unavailable.'),
         ),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning preferences')),
+      appBar: AppBar(
+        title: Text(
+          NavigationGlossary.require(
+            'study-planning/learning-preferences',
+          ).fullThaiLabel,
+        ),
+      ),
       body: FutureBuilder<LearnerPreferences>(
         future: _preference,
         builder: (context, snapshot) {

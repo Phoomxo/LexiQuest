@@ -5,6 +5,7 @@ import '../features/review/application/review_center_use_cases.dart';
 import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/review_queue_item.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 
 typedef ReviewLessonShellBuilder =
     UnifiedLessonShellLease Function(ReviewQueueItem item);
@@ -44,7 +45,11 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ศูนย์ทบทวน')),
+      appBar: AppBar(
+        title: Text(
+          NavigationGlossary.require('home/today/review').fullThaiLabel,
+        ),
+      ),
       body: FutureBuilder<List<ReviewQueueItem>>(
         future: _load,
         builder: (context, snapshot) {

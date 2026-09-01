@@ -5,6 +5,7 @@ import '../features/assessment/domain/assessment_models.dart';
 import '../features/history/application/learning_history_use_cases.dart';
 import '../features/history/domain/learning_history_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../navigation/navigation_glossary.dart';
 
 typedef LearningHistoryReplayOperationIdGenerator = String Function();
 
@@ -47,7 +48,11 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ประวัติการเรียน')),
+      appBar: AppBar(
+        title: Text(
+          NavigationGlossary.require('home/today/history').fullThaiLabel,
+        ),
+      ),
       body: FutureBuilder<List<LearningHistoryEntry>>(
         future: _load,
         builder: (context, snapshot) {

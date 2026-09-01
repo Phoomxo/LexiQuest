@@ -7,6 +7,7 @@ import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/reminders/domain/study_reminder.dart';
 import '../features/reminders/domain/study_reminder_repository.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'study_reminder_settings_screen.dart';
@@ -134,7 +135,11 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
     bool mutationAllowed() =>
         registry?.isEnabled(Feature.studyPlanning) ?? allowWithoutRegistry;
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning goals')),
+      appBar: AppBar(
+        title: Text(
+          NavigationGlossary.require('study-planning/goals').fullThaiLabel,
+        ),
+      ),
       floatingActionButton: useCases == null
           ? null
           : FloatingActionButton.extended(
