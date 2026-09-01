@@ -3,6 +3,7 @@
 **Date:** 2026-09-01
 **Status:** PROPOSED FOR OWNER REVIEW
 **Baseline:** `99f7fb21` (`feature/alltcas-8-44-integration` remote baseline)
+**Audit:** `docs/adventure-motivation-mode/00a-current-system-audit.md` — planning GO, hidden implementation conditional, Pilot/production NO-GO until gates close
 **Scope:** ออกแบบระบบและลำดับการพัฒนาเท่านั้น ยังไม่เปิดใช้ใน production
 
 ## 1. Decision
@@ -100,7 +101,7 @@ Baseline 8/44 มีข้อกำหนดที่ Adventure ต้องร�
 | Answer correctness/evidence | Learning/Evidence Gateway | Supply origin context only |
 | Review due state | SRS/Review | Read and launch only |
 | Mastery/weakness | Mastery projections | Read-only presentation |
-| Quest progress | Quest authority | Request/evaluate through use case |
+| Quest progress | Quest authority | Read committed/pending projection only |
 | Streak | Gentle Streak authority | Read reaction only |
 | Achievement | Achievement policy/projection | Read unlock result |
 | Lifetime XP/Coins | Reward authority | Read balance/progression; no direct write |
@@ -110,7 +111,7 @@ Baseline 8/44 มีข้อกำหนดที่ Adventure ต้องร�
 | Experiment assignment | Experiment Registry | Read exact assignment only |
 | Consent | Consent Registry | Enforce upload/research eligibility |
 | Adventure journey position | Derived Journey Projection | Rebuild from canonical readers; never write authority |
-| Motivation instrument responses | Research measurement authority (schema v24) | Collect through consent-aware use case only |
+| Motivation instrument responses | Research measurement authority (planned post-preference migration; provisionally schema v24) | Collect through consent-aware use case only |
 
 ### 5.2 Presentation can disappear
 
@@ -118,7 +119,7 @@ Adventure must be removable without migration rollback, evidence deletion or pro
 
 ### 5.3 Learning before reward
 
-Reward and narrative unlocks occur only after canonical learning/effort evidence commits successfully. A UI animation is never proof that a reward was granted.
+Reward and narrative unlock presentation occurs only after canonical learning/effort evidence and the existing side-effect authority produce the applicable committed receipt. A UI animation is never proof that a reward was granted.
 
 ### 5.4 Support before punishment
 
@@ -179,8 +180,8 @@ Today Hub/History/Quest ─► Journey Projection
 **Persistence**
 
 - Phase 1 developer/internal preview keeps the Standard/Adventure choice session-local and adds no schema migration;
-- before the choice is released as a durable product preference, schema v23 adds typed `homeExperience` to `LearnerPreferences`, bumps `preferenceVersion` from 1 to 2 and migrates every existing owner to `standard`;
-- schema v23 must update owner lifecycle, guest-upgrade, sync, conflict, export, deletion and rollback-compatibility tests;
+- before the choice is released as a durable product preference, the planned preference migration (provisionally schema v23) adds typed `homeExperience` to `LearnerPreferences`, bumps `preferenceVersion` from 1 to 2 and migrates every existing owner to `standard`;
+- the actual reserved preference migration must update owner lifecycle, guest-upgrade, sync, conflict, export, deletion and rollback-compatibility tests;
 - experiment assignment remains in the existing assignment authority
 
 **Fail-safe**
@@ -308,30 +309,32 @@ Today Hub/History/Quest ─► Journey Projection
 **Responsibility**
 
 - Launch the existing Unified Lesson Shell from an Adventure plan;
-- translate Adventure origin into approved typed context;
+- carry Adventure origin as a typed application-level launch context without changing learning evidence;
 - preserve session lifecycle, active-time tracking, hint classification and exact evidence retry;
 - prevent Adventure UI from invoking repositories directly
 
 **Rules**
 
 - `EventEnvelopeV2` is not modified silently;
-- learning answer events retain their existing event types and semantics; Adventure origin is carried by an approved `AdventureOriginContextV1` inside the supported versioned evidence-context boundary;
-- if that boundary cannot carry the context without changing existing semantics, implementation stops for an explicit envelope-version decision rather than adding fields to `EventEnvelopeV2`;
+- learning answer events retain their existing event types, payloads, `EvidenceContext` schema and semantics;
+- `AdventureOriginContextV1` is transient launch metadata from Session Composer to Learning Bridge and is never inserted into `EvidenceContext` or added as an `EventEnvelopeV2` field;
+- for an actively consented measurement run, separate Adventure exposure events link presentation to the existing learning session with `aggregateId = learningSessionId` and `correlationId = adventurePlanId`; non-participants receive no persisted origin row;
 - Adventure does not supply correctness, mastery weight or reward eligibility;
 - assessment sessions cannot be wrapped as reward-granting Adventure missions
 
-### M07 — Motivation & Unlock Coordinator
+### M07 — Motivation & Unlock Projection Reader
 
 **Responsibility**
 
-- React only to successfully committed eligible events;
-- call canonical Quest, Gentle Streak, Achievement and Reward application ports;
+- React only after successfully committed evidence and canonical side-effect receipts;
+- read Quest, Gentle Streak, Achievement and Reward outcomes through existing read ports;
 - derive story/cosmetic visibility from canonical receipts;
-- make all commands idempotent
+- leave all grant, mutation, retry and idempotency ownership with `LearningSideEffectReconciler` and existing authorities
 
 **Rules**
 
 - no duplicate quest/streak/reward repository;
+- no Adventure grant/mutation command or Adventure-owned reward idempotency key;
 - no reward for opening the map alone;
 - no reward from assessment evidence;
 - hint-assisted work remains guided practice;
@@ -417,14 +420,14 @@ Today Hub/History/Quest ─► Journey Projection
 
 **Persistence after MVP shell**
 
-The baseline database is schema v22. After schema v23 has introduced the durable home-experience preference, schema v24 adds exactly two owner-scoped research tables:
+The baseline database is schema v22. After the actual reserved preference migration has introduced durable home-experience preference, the planned following research migration (provisionally schema v24) adds exactly two owner-scoped research tables:
 
 - `motivation_measurement_runs`, represented by `MotivationMeasurementRun`, with owner ID, run ID, stable assignment ID, consent receipt ID, protocol/treatment/instrument/form versions, app/build version, started/completed timestamps and run status;
 - `motivation_responses`, represented by `MotivationResponse`, with owner ID, run ID, item catalog ID/version, bounded response code, ordinal value where defined and answered timestamp.
 
 For an actively consented measurement run with a stable assignment, Adventure behavior exposure is recorded in existing `EventsV2` through registered versioned event types with bounded payload v1: `AdventurePresented`, `AdventureMissionStarted`, `AdventureSwitchedToStandard` and `AdventureMissionCompleted`. These events use the frozen `EventEnvelopeV2`, its existing experiment/consent contexts and the existing outbox; they add no envelope fields and never replace learning-answer events. Non-participants do not receive research exposure rows merely for using Adventure.
 
-Schema v24 and the four event payload policies cannot ship until migration, identity, lifecycle, sync/rules, export, withdrawal, deletion, retention and replay-compatibility tests pass. If another change occupies schema v23 or v24 before implementation, the migration numbers are rebased upward in order; an occupied version is never reused.
+The actual reserved research migration and four event payload policies cannot ship until migration, identity, lifecycle, sync/rules, export, withdrawal, deletion, retention and replay-compatibility tests pass. If another change occupies provisional schema v23 or v24 before implementation, the migration numbers are rebased upward in order; an occupied version is never reused.
 
 ### M11 — Adventure Operations, Quality & Reliability
 
@@ -510,13 +513,13 @@ M01–M09 add no Adventure progress table. World progress is derived from canoni
 
 ### 10.2 Durable home-experience preference
 
-Schema v23 adds `home_experience TEXT NOT NULL DEFAULT 'standard'` to `learner_preferences`. The domain exposes only `HomeExperience.standard` and `HomeExperience.adventure`; unknown serialized values fail closed to Standard and are reported through bounded diagnostics. The migration bumps `preferenceVersion` to 2 without changing goal, duration, activity, theme or motion values. It ships in Phase 3 only after the read-only shell and learning bridge pass their exit gates.
+The planned preference migration, provisionally schema v23 but subject to ledger reservation, adds `home_experience TEXT NOT NULL DEFAULT 'standard'` to `learner_preferences`. The domain exposes only `HomeExperience.standard` and `HomeExperience.adventure`; unknown serialized values fail closed to Standard and are reported through bounded diagnostics. The migration bumps `preferenceVersion` to 2 without changing goal, duration, activity, theme or motion values. It ships in Phase 3 only after the read-only shell and learning bridge pass their exit gates.
 
 This preference expresses the learner's product choice only. It does not grant feature availability, create experiment assignment or imply research consent.
 
 ### 10.3 Durable research data and behavior events
 
-Schema v24 adds `motivation_measurement_runs` and `motivation_responses` only after the shell and learning bridge are proven. Every table must:
+The planned research migration, provisionally schema v24 but subject to ledger reservation after the preference migration, adds `motivation_measurement_runs` and `motivation_responses` only after the shell and learning bridge are proven. Every table must:
 
 - reference an owner and stable assignment;
 - pin protocol/treatment/instrument/form/content/policy/app/build versions;
@@ -640,7 +643,7 @@ This product design does not choose a statistical effect-size threshold; the stu
 
 ### 14.6 Baseline verification note
 
-On 2026-09-01, a bounded Flutter test launch from an isolated worktree at `99f7fb21` crashed inside Flutter 3.44.7 native-assets test compilation with `StateError: Bad state: No element` before tests executed. This is an environment/tooling failure, not evidence that the selected tests passed or failed. Implementation planning must include a clean baseline verification run after repairing or bypassing that SDK issue through an approved environment configuration.
+On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_config.json`, causing Dart to resolve package imports through the parent checkout. After `flutter pub get --offline`, bounded checks and the full suite ran successfully. The full Flutter suite produced the same result with default concurrency and `--concurrency=1`: **3,202 passed / 15 failed**. The failures are classified in `AMM-AUDIT-001`; they are primarily stale contracts, missing platform/model prerequisites and test-harness gaps, but the baseline must not be described as fully passing until their applicable gates close.
 
 ## 15. Delivery Phases
 
@@ -650,6 +653,7 @@ On 2026-09-01, a bounded Flutter test launch from an isolated worktree at `99f7f
 **Deliverables:**
 
 - freeze exact 8/44 baseline;
+- close Audit before-implementation findings and refresh the 63-screen reachability ledger;
 - add feature-contract design and dependency mapping;
 - append the hidden `adventureMotivation` feature and update exhaustive registry/contract mappings without a database migration;
 - define World Catalog v1 and validator;
@@ -678,7 +682,7 @@ On 2026-09-01, a bounded Flutter test launch from an isolated worktree at `99f7f
 **Deliverables:**
 
 - Unified Lesson Shell launch;
-- approved origin-context contract;
+- transient origin-context contract and unchanged-evidence equivalence proof;
 - exact evidence retry;
 - wrong-answer repair flow;
 - restart/resume/kill-switch integration;
@@ -691,9 +695,9 @@ On 2026-09-01, a bounded Flutter test launch from an isolated worktree at `99f7f
 **Modules:** M01, M07, M08
 **Deliverables:**
 
-- schema v23 durable `homeExperience` preference, defaulting every owner to Standard;
+- durable `homeExperience` preference on the actual reserved migration (provisionally schema v23), defaulting every owner to Standard;
 - preference v2 sync, conflict, guest-upgrade, export and delete support;
-- canonical Quest/Streak/Achievement/Reward integration;
+- read-only canonical Quest/Streak/Achievement/Reward receipt projection;
 - idempotent story/cosmetic unlock presentation;
 - scripted companion reactions;
 - no hearts, penalties or generative AI
@@ -706,7 +710,7 @@ On 2026-09-01, a bounded Flutter test launch from an isolated worktree at `99f7f
 **Deliverables:**
 
 - versioned treatment catalog;
-- schema v24 `motivation_measurement_runs` and `motivation_responses`;
+- `motivation_measurement_runs` and `motivation_responses` on the actual reserved research migration (provisionally schema v24);
 - four registered Adventure exposure event payloads v1 in existing `EventsV2`;
 - motivation instrument and bounded response model;
 - consent/assignment enforcement;
@@ -752,7 +756,7 @@ lib/features/adventure/
     adventure_journey_reader.dart
     adventure_session_composer.dart
     adventure_learning_bridge.dart
-    adventure_motivation_coordinator.dart
+    adventure_motivation_projection_reader.dart
     adventure_recovery_use_cases.dart
   presentation/
     adventure_hub_screen.dart
@@ -799,7 +803,7 @@ No module may be implemented before its incoming contract is tested.
 | Map inaccessible | Excludes users | map-list parity, semantic order, reduced motion |
 | Asset bundle corrupt/offline | Entry failure | checksum, quarantine, repair and Standard fallback |
 | Retry grants twice | Economy corruption | source evidence ID and idempotent receipts |
-| Adventure metadata mutates frozen V2 event | Contract break | approved versioned context or explicit new envelope version |
+| Adventure metadata mutates learning evidence or frozen V2 fields | Contract break | transient launch context plus separate consented exposure events; unchanged-evidence contract tests |
 | Research data cannot be withdrawn | Ethics/lifecycle failure | consent registry, outbox blocking, export/delete/retention tests |
 | Too many variables in first study | Uninterpretable result | one world, scripted companion, no AI/camera/social |
 | Completed 8/44 baseline is not reproducibly verified | Unknown regression source | repair SDK test crash and record clean baseline before production changes |
@@ -824,13 +828,13 @@ Adventure Motivation Mode is ready for Pilot only when all conditions hold:
 
 ## 20. Review Decision Requested
 
-Owner review should confirm these decisions before the task-by-task implementation plan is written:
+Owner review should confirm these decisions before the task-by-task implementation plan is executed:
 
 - 11-module architecture;
 - Adventure as optional Today Hub presentation;
 - no Adventure progress table in MVP;
-- session-local switch in Phase 1, followed by schema v23 durable preference in Phase 3;
+- session-local switch in Phase 1, followed by a durable preference on the actual reserved migration (provisionally schema v23) in Phase 3;
 - no AI/camera/multiplayer in first treatment;
 - Standard view always available;
-- schema v24 research measurement and registered Adventure exposure events added only after the learning bridge is proven;
+- research measurement on the actual reserved migration (provisionally schema v24) and registered Adventure exposure events added only after the learning bridge is proven;
 - rollout order Hidden → Internal → Pilot → Enabled

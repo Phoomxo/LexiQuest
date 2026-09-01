@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100" role="img" aria-labelledby="title desc">
+  <title id="title">LexiQuest Adventure Motivation Mode low fidelity wireframe overview</title>
+  <desc id="desc">Four phone wireframes show Adventure Home, Mission Details, Incorrect Feedback, and Result. Standard view remains visible and learning outcomes are separated from effort and engagement.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.phone{fill:#fff;stroke:#334155;stroke-width:3}.bar{fill:#e2e8f0;stroke:#64748b;stroke-width:1.5}.card{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.primary{fill:#1e88e5;stroke:#1565c0;stroke-width:1.5}.soft{fill:#e3f2fd;stroke:#1e88e5;stroke-width:1.5}.line{stroke:#64748b;stroke-width:2;fill:none}.dashed{stroke:#94a3b8;stroke-width:2;stroke-dasharray:7 6;fill:none}.txt{font-family:'Noto Sans Thai','Segoe UI',sans-serif;fill:#0f172a}.small{font-size:14px}.body{font-size:17px}.title{font-size:23px;font-weight:700}.label{font-size:16px;font-weight:700}.white{fill:#fff}.muted{fill:#475569}.caption{font-size:13px;fill:#475569}
+    </style>
+  </defs>
+  <rect class="bg" width="1600" height="1100"/>
+  <text class="txt title" x="60" y="50">LexiQuest — Adventure Motivation Mode / Low-fidelity overview</text>
+  <text class="txt body muted" x="60" y="82">Presentation layer over the existing Today Hub and Unified Lesson Shell · no “เก่งศัพท์” label · Standard always available</text>
+
+  <!-- Home -->
+  <g transform="translate(55,120)">
+    <text class="txt label" x="0" y="-18">UX-02 Adventure Home</text>
+    <rect class="phone" width="340" height="850" rx="28"/>
+    <rect class="bar" x="15" y="20" width="310" height="62" rx="12"/>
+    <text class="txt body" x="33" y="58">☰</text><text class="txt label" x="124" y="57">LexiQuest</text><text class="txt small" x="251" y="57">มาตรฐาน</text>
+    <text class="txt label" x="24" y="118">ภารกิจแนะนำวันนี้</text>
+    <rect class="soft" x="20" y="138" width="300" height="205" rx="18"/>
+    <text class="txt title" x="38" y="180">ทบทวนคำที่ถึงเวลา</text>
+    <text class="txt body" x="38" y="213">มี 8 คำจากประวัติการเรียน</text>
+    <text class="txt small muted" x="38" y="244">ประมาณ 7 นาที · ใช้ออฟไลน์ได้</text>
+    <rect class="primary" x="62" y="270" width="216" height="52" rx="15"/>
+    <text class="txt label white" x="128" y="303">ดูภารกิจ</text>
+    <text class="txt label" x="24" y="385">เส้นทางวันนี้</text><text class="txt small" x="234" y="384">แผนที่ | รายการ</text>
+    <circle cx="170" cy="445" r="28" fill="#d1fae5" stroke="#047857" stroke-width="2"/><text class="txt label" x="161" y="452">✓</text>
+    <text class="txt small" x="205" y="450">ทบทวนเดิม · เสร็จแล้ว</text>
+    <path class="line" d="M170 473 L170 535"/>
+    <circle cx="170" cy="570" r="33" fill="#e3f2fd" stroke="#1e88e5" stroke-width="4"/><text class="txt label" x="161" y="577">◎</text>
+    <text class="txt small" x="205" y="566">ภารกิจปัจจุบัน</text><text class="txt caption" x="205" y="589">พร้อมเริ่ม</text>
+    <path class="line" d="M170 603 L170 668"/>
+    <circle cx="170" cy="701" r="28" fill="#fff" stroke="#64748b" stroke-width="2"/><text class="txt label" x="162" y="708">○</text>
+    <text class="txt small" x="205" y="700">ฝึกจุดที่สับสน</text><text class="txt caption" x="205" y="723">ลำดับถัดไป</text>
+    <rect class="card" x="20" y="760" width="300" height="65" rx="16"/>
+    <text class="txt small" x="38" y="799">[ตัวละคร] “เริ่มเมื่อพร้อมนะ”</text>
+  </g>
+
+  <!-- Mission -->
+  <g transform="translate(450,120)">
+    <text class="txt label" x="0" y="-18">UX-04 Mission Details</text>
+    <rect class="phone" width="340" height="850" rx="28"/>
+    <rect class="bar" x="15" y="20" width="310" height="62" rx="12"/>
+    <text class="txt body" x="31" y="58">←</text><text class="txt label" x="83" y="57">รายละเอียดภารกิจ</text><text class="txt body" x="292" y="58">×</text>
+    <text class="txt title" x="25" y="130">ทบทวนคำที่ถึงเวลา</text>
+    <rect class="card" x="20" y="155" width="300" height="140" rx="16"/>
+    <text class="txt label" x="38" y="190">ทำไมเป็นภารกิจนี้</text>
+    <text class="txt body" x="38" y="224">มี 8 คำที่ถึงเวลาทบทวน</text>
+    <text class="txt body" x="38" y="252">จากระบบ SRS เดิม</text>
+    <text class="txt label" x="24" y="340">ใช้เวลาประมาณ</text>
+    <rect class="soft" x="20" y="362" width="86" height="50" rx="13"/><text class="txt small" x="41" y="393">5 นาที</text>
+    <rect class="card" x="118" y="362" width="94" height="50" rx="13"/><text class="txt small" x="137" y="393">10 นาที</text>
+    <rect class="card" x="224" y="362" width="96" height="50" rx="13"/><text class="txt small" x="239" y="393">ไม่จำกัด</text>
+    <rect class="card" x="20" y="446" width="300" height="170" rx="16"/>
+    <text class="txt label" x="38" y="481">สิ่งที่จะทำ</text>
+    <text class="txt body" x="38" y="517">• ทบทวน + จับคู่</text>
+    <text class="txt body" x="38" y="550">• 8 คำ</text>
+    <text class="txt body" x="38" y="583">• พร้อมใช้งานในเครื่อง</text>
+    <rect class="primary" x="20" y="680" width="300" height="56" rx="16"/>
+    <text class="txt label white" x="119" y="716">เริ่มภารกิจ</text>
+    <text class="txt small" x="45" y="774">ไว้ภายหลัง</text><text class="txt small" x="199" y="774">มุมมองมาตรฐาน</text>
+  </g>
+
+  <!-- Incorrect -->
+  <g transform="translate(845,120)">
+    <text class="txt label" x="0" y="-18">UX-06 Supportive Repair</text>
+    <rect class="phone" width="340" height="850" rx="28"/>
+    <rect class="bar" x="15" y="20" width="310" height="62" rx="12"/>
+    <text class="txt body" x="31" y="58">←</text><text class="txt label" x="83" y="57">ทบทวนคำศัพท์</text><text class="txt small" x="268" y="57">3/8</text>
+    <rect class="card" x="20" y="115" width="300" height="250" rx="16"/>
+    <text class="txt title" x="83" y="178">[คำถามเดิม]</text>
+    <path class="dashed" d="M55 220 H285"/>
+    <text class="txt body muted" x="78" y="282">Existing answer controls</text>
+    <rect x="20" y="405" width="300" height="260" rx="18" fill="#fff7ed" stroke="#c2410c" stroke-width="1.5"/>
+    <text class="txt title" x="42" y="451">ยังไม่ใช่คำนี้</text>
+    <text class="txt body" x="42" y="490">ดูความต่างจากคำตอบ</text>
+    <text class="txt body" x="42" y="520">ที่ตรวจทานแล้ว</text>
+    <path class="line" d="M42 545 H296"/>
+    <text class="txt small" x="42" y="578">จะกลับมาอีกครั้งหลังทำข้ออื่น</text>
+    <text class="txt small" x="42" y="607">ความคืบหน้าเดิมไม่ถูกลด</text>
+    <rect class="primary" x="92" y="700" width="156" height="54" rx="15"/>
+    <text class="txt label white" x="128" y="734">ไปข้อต่อไป</text>
+  </g>
+
+  <!-- Result -->
+  <g transform="translate(1240,120)">
+    <text class="txt label" x="0" y="-18">UX-07 Result</text>
+    <rect class="phone" width="305" height="850" rx="28"/>
+    <rect class="bar" x="15" y="20" width="275" height="62" rx="12"/>
+    <text class="txt label" x="35" y="57">ภารกิจเสร็จแล้ว</text><text class="txt small" x="217" y="57">มาตรฐาน</text>
+    <rect class="soft" x="18" y="110" width="269" height="155" rx="16"/>
+    <text class="txt label" x="35" y="145">สิ่งที่เรียนรู้</text>
+    <text class="txt body" x="35" y="181">จำได้เอง 5</text><text class="txt body" x="170" y="181">มีตัวช่วย 2</text>
+    <text class="txt body" x="35" y="218">เก็บไว้ทบทวน 1</text>
+    <rect class="card" x="18" y="285" width="269" height="120" rx="16"/>
+    <text class="txt label" x="35" y="320">ความพยายาม</text>
+    <text class="txt body" x="35" y="356">เรียนจริง 6 นาที · 8 ข้อ</text>
+    <rect class="card" x="18" y="425" width="269" height="120" rx="16"/>
+    <text class="txt label" x="35" y="460">สิ่งที่ทำในแอป</text>
+    <text class="txt body" x="35" y="496">จบภารกิจวันนี้ 1 ภารกิจ</text>
+    <rect class="card" x="18" y="565" width="269" height="130" rx="16"/>
+    <text class="txt label" x="35" y="600">ผลจากระบบเดิม</text>
+    <text class="txt body" x="35" y="636">Quest อัปเดตแล้ว</text>
+    <text class="txt body" x="35" y="665">Streak คงต่อเนื่อง</text>
+    <rect class="primary" x="18" y="735" width="269" height="56" rx="16"/>
+    <text class="txt label white" x="86" y="771">ดูเส้นทางต่อ</text>
+  </g>
+
+  <text class="txt caption" x="60" y="1040">Wireframe rule: Map and list share one snapshot; wrong answers do not reduce progress; result keeps Learning, Effort, Engagement separate; research is optional.</text>
+</svg>
