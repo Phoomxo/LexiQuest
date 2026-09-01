@@ -321,6 +321,7 @@ void main() {
           );
           expect(entry, findsOneWidget);
           await tester.ensureVisible(entry);
+          await tester.pump();
           await tester.tap(entry);
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));
@@ -488,7 +489,13 @@ void main() {
 
     await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pump();
-    await tester.tap(find.text('Associative Reading'));
+    final readingEntry = find.byKey(
+      const ValueKey<String>('home/learn/associative-reading'),
+    );
+    expect(readingEntry, findsOneWidget);
+    await tester.ensureVisible(readingEntry);
+    await tester.pump();
+    await tester.tap(readingEntry);
     await tester.pumpAndSettle();
     await _startConfiguredLessonIfPresent(
       tester,
@@ -509,7 +516,10 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(find.text('Associative Reading'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('home/learn/associative-reading')),
+      findsNothing,
+    );
   });
 
   testWidgets('production Learning excludes demo-only campaign entries', (
@@ -526,7 +536,18 @@ void main() {
     await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pump();
 
-    expect(find.text('Associative Reading'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('home/learn/associative-reading')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        NavigationGlossary.require(
+          'home/learn/associative-reading',
+        ).fullThaiLabel,
+      ),
+      findsOneWidget,
+    );
     expect(find.text('World Map'), findsNothing);
     expect(find.text('CEFR Diagnostic'), findsNothing);
   });
