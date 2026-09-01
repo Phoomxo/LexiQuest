@@ -11,6 +11,7 @@ import 'package:vocab_learning_app/features/recommendation/application/recommend
 import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/today_hub_screen.dart';
 
@@ -103,80 +104,90 @@ void main() {
   testWidgets(
     'Thai glossary actions retain their stable keys, icons, and delegates',
     (tester) async {
-      final actions = _Actions();
-      await tester.pumpWidget(
-        _app(
-          snapshot: _snapshot(
-            resumableSession: _resumableSession(),
-            assignedAssessment: _assignedAssessment(),
-            reviewWork: <TodayHubReviewWorkItem>[_reviewWork()],
-            recommendation: _freshRecommendation(contentId: 'word:airport'),
+      final semantics = tester.ensureSemantics();
+      try {
+        final actions = _Actions();
+        await tester.pumpWidget(
+          _app(
+            snapshot: _snapshot(
+              resumableSession: _resumableSession(),
+              assignedAssessment: _assignedAssessment(),
+              reviewWork: <TodayHubReviewWorkItem>[_reviewWork()],
+              recommendation: _freshRecommendation(contentId: 'word:airport'),
+            ),
+            actions: actions,
           ),
-          actions: actions,
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      const cases = <(String, String, IconData)>[
-        ('today-hub-resume-action', 'เรียนต่อ', Icons.play_arrow),
-        (
-          'today-hub-start-recommendation',
-          'เริ่มกิจกรรมที่แนะนำ',
-          Icons.auto_awesome_outlined,
-        ),
-        (
-          'today-hub-assessment-action',
-          'เริ่มแบบประเมิน',
-          Icons.assignment_outlined,
-        ),
-        ('today-hub-open-review', 'เปิดศูนย์ทบทวน', Icons.fact_check_outlined),
-        ('today-hub-open-history', 'ดูประวัติการเรียน', Icons.history),
-      ];
-      for (final (key, label, icon) in cases) {
-        await _scrollToTodayHubAction(tester, key);
-        final action = find.byKey(ValueKey<String>(key));
-        expect(action, findsOneWidget);
-        expect(
-          find.descendant(of: action, matching: find.text(label)),
-          findsOneWidget,
+        const cases = <(String, String, IconData)>[
+          ('today-hub-resume-action', 'เรียนต่อ', Icons.play_arrow),
+          (
+            'today-hub-start-recommendation',
+            'เริ่มกิจกรรมที่แนะนำ',
+            Icons.auto_awesome_outlined,
+          ),
+          (
+            'today-hub-assessment-action',
+            'เริ่มแบบประเมิน',
+            Icons.assignment_outlined,
+          ),
+          (
+            'today-hub-open-review',
+            'เปิดศูนย์ทบทวน',
+            Icons.fact_check_outlined,
+          ),
+          ('today-hub-open-history', 'ดูประวัติการเรียน', Icons.history),
+        ];
+        for (final (key, label, icon) in cases) {
+          await _scrollToTodayHubAction(tester, key);
+          final action = find.byKey(ValueKey<String>(key));
+          expect(action, findsOneWidget);
+          expect(
+            find.descendant(of: action, matching: find.text(label)),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(of: action, matching: find.byIcon(icon)),
+            findsOneWidget,
+          );
+          _expectSingleThaiGlossaryAction(action: action, entryId: key);
+        }
+
+        await _scrollToTodayHubAction(tester, 'today-hub-resume-action');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-hub-resume-action')),
         );
-        expect(
-          find.descendant(of: action, matching: find.byIcon(icon)),
-          findsOneWidget,
+        await tester.pump();
+        await _scrollToTodayHubAction(tester, 'today-hub-start-recommendation');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-hub-start-recommendation')),
         );
+        await tester.pump();
+        await _scrollToTodayHubAction(tester, 'today-hub-assessment-action');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-hub-assessment-action')),
+        );
+        await tester.pump();
+        await _scrollToTodayHubAction(tester, 'today-hub-open-review');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-hub-open-review')),
+        );
+        await tester.pump();
+        await _scrollToTodayHubAction(tester, 'today-hub-open-history');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-hub-open-history')),
+        );
+        await tester.pump();
+
+        expect(actions.resumeCalls, 1);
+        expect(actions.recommendationCalls, 1);
+        expect(actions.assessmentCalls, 1);
+        expect(actions.reviewCalls, 1);
+        expect(actions.historyCalls, 1);
+      } finally {
+        semantics.dispose();
       }
-
-      await _scrollToTodayHubAction(tester, 'today-hub-resume-action');
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-hub-resume-action')),
-      );
-      await tester.pump();
-      await _scrollToTodayHubAction(tester, 'today-hub-start-recommendation');
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-hub-start-recommendation')),
-      );
-      await tester.pump();
-      await _scrollToTodayHubAction(tester, 'today-hub-assessment-action');
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-hub-assessment-action')),
-      );
-      await tester.pump();
-      await _scrollToTodayHubAction(tester, 'today-hub-open-review');
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-hub-open-review')),
-      );
-      await tester.pump();
-      await _scrollToTodayHubAction(tester, 'today-hub-open-history');
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-hub-open-history')),
-      );
-      await tester.pump();
-
-      expect(actions.resumeCalls, 1);
-      expect(actions.recommendationCalls, 1);
-      expect(actions.assessmentCalls, 1);
-      expect(actions.reviewCalls, 1);
-      expect(actions.historyCalls, 1);
     },
   );
 
@@ -489,6 +500,37 @@ void main() {
       semantics.dispose();
     }
   });
+}
+
+void _expectSingleThaiGlossaryAction({
+  required Finder action,
+  required String entryId,
+}) {
+  final entry = NavigationGlossary.require(entryId);
+  final tooltip = find.ancestor(
+    of: action,
+    matching: find.byWidgetPredicate(
+      (widget) => widget is Tooltip && widget.message == entry.tooltip,
+    ),
+  );
+  expect(tooltip, findsOneWidget);
+  expect(
+    find.descendant(of: tooltip, matching: find.text(entry.fullThaiLabel)),
+    findsOneWidget,
+  );
+  final semanticActions = find
+      .ancestor(of: action, matching: find.byType(Semantics))
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Semantics>()
+      .where(
+        (semantics) =>
+            semantics.properties.label == entry.semanticsLabel &&
+            semantics.properties.onTap != null &&
+            semantics.excludeSemantics,
+      )
+      .toList(growable: false);
+  expect(semanticActions, hasLength(1));
 }
 
 Widget _app({

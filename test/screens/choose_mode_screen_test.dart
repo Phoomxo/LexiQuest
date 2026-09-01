@@ -44,6 +44,7 @@ import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_s
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -101,6 +102,37 @@ Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
 
   await tester.ensureVisible(entry);
   await tester.pump();
+}
+
+void _expectSingleThaiGlossaryAction({
+  required Finder action,
+  required String entryId,
+}) {
+  final entry = NavigationGlossary.require(entryId);
+  final tooltip = find.descendant(
+    of: action,
+    matching: find.byWidgetPredicate(
+      (widget) => widget is Tooltip && widget.message == entry.tooltip,
+    ),
+  );
+  expect(tooltip, findsOneWidget);
+  expect(
+    find.descendant(of: tooltip, matching: find.text(entry.fullThaiLabel)),
+    findsOneWidget,
+  );
+  final semanticActions = find
+      .descendant(of: action, matching: find.byType(Semantics))
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Semantics>()
+      .where(
+        (semantics) =>
+            semantics.properties.label == entry.semanticsLabel &&
+            semantics.properties.onTap != null &&
+            semantics.excludeSemantics,
+      )
+      .toList(growable: false);
+  expect(semanticActions, hasLength(1));
 }
 
 Future<void> _openConfiguredMode(
@@ -467,76 +499,86 @@ void main() {
   testWidgets('Thai glossary covers every registered Choose Mode tile', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ChooseModeScreen(
-          featureRegistry: const BuildFeatureRegistry.allEnabled(),
-          lessonModes: buildLessonModeRegistry(
-            matchingDeliveryState: LessonModeDeliveryState.enabled,
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChooseModeScreen(
+            featureRegistry: const BuildFeatureRegistry.allEnabled(),
+            lessonModes: buildLessonModeRegistry(
+              matchingDeliveryState: LessonModeDeliveryState.enabled,
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    const cases = <(String, String, IconData)>[
-      (
-        'home/learn/associative-reading',
-        'อ่านเชื่อมโยงความจำ',
-        Icons.auto_stories_outlined,
-      ),
-      ('home/learn/quiz', 'แบบทดสอบจากคลังคำศัพท์', Icons.quiz_outlined),
-      (
-        'home/learn/quiz/typed-recall',
-        'นึกคำแล้วพิมพ์',
-        Icons.keyboard_outlined,
-      ),
-      (
-        'home/learn/quiz/matching',
-        'จับคู่คำศัพท์',
-        Icons.compare_arrows_outlined,
-      ),
-      ('home/learn/quiz/cloze', 'เติมคำในประโยค', Icons.space_bar_outlined),
-      (
-        'home/learn/quiz/definition',
-        'เลือกคำจากคำอธิบาย',
-        Icons.menu_book_outlined,
-      ),
-      ('home/learn/srs', 'ทบทวนแบบเว้นระยะ (SRS)', Icons.event_repeat_outlined),
-      (
-        'home/learn/reading/cefr',
-        'อ่านตามระดับภาษา CEFR',
-        Icons.chrome_reader_mode_outlined,
-      ),
-      ('home/learn/quiz/dictation', 'ฟังแล้วพิมพ์', Icons.hearing_outlined),
-      (
-        'home/learn/quiz/sentence-scramble',
-        'เรียงประโยค',
-        Icons.format_list_numbered_outlined,
-      ),
-      (
-        'home/learn/quiz/word-scramble',
-        'เรียงตัวอักษร',
-        Icons.extension_outlined,
-      ),
-      ('home/learn/speech/speaking', 'ฝึกออกเสียง', Icons.mic_outlined),
-      (
-        'home/learn/speech/shadowing',
-        'ฝึกพูดตามเสียง',
-        Icons.record_voice_over_outlined,
-      ),
-    ];
-    for (final (id, label, icon) in cases) {
-      await _scrollToModeEntry(tester, id);
-      final tile = find.byKey(ValueKey<String>(id));
-      expect(tile, findsOneWidget);
-      expect(
-        find.descendant(of: tile, matching: find.text(label)),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: tile, matching: find.byIcon(icon)),
-        findsOneWidget,
-      );
+      const cases = <(String, String, IconData)>[
+        (
+          'home/learn/associative-reading',
+          'อ่านเชื่อมโยงความจำ',
+          Icons.auto_stories_outlined,
+        ),
+        ('home/learn/quiz', 'แบบทดสอบจากคลังคำศัพท์', Icons.quiz_outlined),
+        (
+          'home/learn/quiz/typed-recall',
+          'นึกคำแล้วพิมพ์',
+          Icons.keyboard_outlined,
+        ),
+        (
+          'home/learn/quiz/matching',
+          'จับคู่คำศัพท์',
+          Icons.compare_arrows_outlined,
+        ),
+        ('home/learn/quiz/cloze', 'เติมคำในประโยค', Icons.space_bar_outlined),
+        (
+          'home/learn/quiz/definition',
+          'เลือกคำจากคำอธิบาย',
+          Icons.menu_book_outlined,
+        ),
+        (
+          'home/learn/srs',
+          'ทบทวนแบบเว้นระยะ (SRS)',
+          Icons.event_repeat_outlined,
+        ),
+        (
+          'home/learn/reading/cefr',
+          'อ่านตามระดับภาษา CEFR',
+          Icons.chrome_reader_mode_outlined,
+        ),
+        ('home/learn/quiz/dictation', 'ฟังแล้วพิมพ์', Icons.hearing_outlined),
+        (
+          'home/learn/quiz/sentence-scramble',
+          'เรียงประโยค',
+          Icons.format_list_numbered_outlined,
+        ),
+        (
+          'home/learn/quiz/word-scramble',
+          'เรียงตัวอักษร',
+          Icons.extension_outlined,
+        ),
+        ('home/learn/speech/speaking', 'ฝึกออกเสียง', Icons.mic_outlined),
+        (
+          'home/learn/speech/shadowing',
+          'ฝึกพูดตามเสียง',
+          Icons.record_voice_over_outlined,
+        ),
+      ];
+      for (final (id, label, icon) in cases) {
+        await _scrollToModeEntry(tester, id);
+        final tile = find.byKey(ValueKey<String>(id));
+        expect(tile, findsOneWidget);
+        expect(
+          find.descendant(of: tile, matching: find.text(label)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: tile, matching: find.byIcon(icon)),
+          findsOneWidget,
+        );
+        _expectSingleThaiGlossaryAction(action: tile, entryId: id);
+      }
+    } finally {
+      semantics.dispose();
     }
   });
 

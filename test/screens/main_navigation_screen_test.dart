@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
@@ -31,6 +32,7 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_categor
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -272,73 +274,96 @@ void main() {
     },
   );
 
-  testWidgets('field composition exposes completed field destinations', (
+  testWidgets('Thai glossary renders exact main and drawer destinations', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      _mainNavigationApp(const BuildFeatureRegistry.fieldDefaults()),
-    );
-    await tester.pumpAndSettle();
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        _mainNavigationApp(const BuildFeatureRegistry.fieldDefaults()),
+      );
+      await tester.pumpAndSettle();
 
-    expect(
-      tester
-          .widgetList<NavigationDestination>(find.byType(NavigationDestination))
-          .map((destination) => destination.label),
-      <String>[
-        'คลังคำศัพท์',
-        'การเรียนรู้',
-        'ความชำนาญ',
-        'ฝึกเพิ่ม',
-        'รางวัล',
-        'โปรไฟล์',
-      ],
-    );
+      expect(
+        tester
+            .widgetList<NavigationDestination>(
+              find.byType(NavigationDestination),
+            )
+            .map((destination) => destination.label),
+        <String>[
+          'คลังคำศัพท์',
+          'การเรียนรู้',
+          'ความชำนาญ',
+          'ฝึกเพิ่ม',
+          'รางวัล',
+          'โปรไฟล์',
+        ],
+      );
 
-    final learning = tester.widget<NavigationDestination>(
-      find.byKey(const ValueKey<String>('home/learn')),
-    );
-    expect(learning.label, 'การเรียนรู้');
-    expect((learning.icon as Icon).icon, Icons.school_outlined);
-    expect((learning.selectedIcon! as Icon).icon, Icons.school);
+      final learning = tester.widget<NavigationDestination>(
+        find.byKey(const ValueKey<String>('home/learn')),
+      );
+      expect(learning.label, 'การเรียนรู้');
+      expect((learning.icon as Icon).icon, Icons.school_outlined);
+      expect((learning.selectedIcon! as Icon).icon, Icons.school);
+      _expectSingleThaiGlossaryAction(
+        tester,
+        action: find.byKey(const ValueKey<String>('home/learn')),
+        entryId: 'home/learn',
+        visibleLabel: learning.label,
+      );
 
-    await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
-    await tester.pump();
-    expect(
-      find.byKey(const ValueKey<String>('production-feature-view-learning')),
-      findsOneWidget,
-    );
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey<String>('production-feature-view-learning')),
+        findsOneWidget,
+      );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('legacy-drawer-button')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('ร้านค้า'), findsOneWidget);
-    expect(find.text('สแกนวัตถุ'), findsOneWidget);
-    expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
-    expect(find.text('ผู้ช่วยสอน AI'), findsOneWidget);
-    expect(find.text('ตั้งค่าการเชื่อมต่อ AI'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('legacy-drawer-button')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ร้านค้า'), findsOneWidget);
+      expect(find.text('สแกนวัตถุ'), findsOneWidget);
+      expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
+      expect(find.text('ผู้ช่วยสอน AI'), findsOneWidget);
+      expect(find.text('ตั้งค่าการเชื่อมต่อ AI'), findsOneWidget);
 
-    final quests = find.byKey(const ValueKey<String>('drawer/rewards/quests'));
-    await tester.scrollUntilVisible(
-      quests,
-      200,
-      scrollable: find.descendant(
-        of: find.byType(Drawer),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    expect(quests, findsOneWidget);
-    expect(
-      find.descendant(of: quests, matching: find.text('ภารกิจการเรียน')),
-      findsOneWidget,
-    );
-    expect(
-      find.descendant(of: quests, matching: find.byIcon(Icons.flag_outlined)),
-      findsOneWidget,
-    );
-    expect(find.text('AI Tutor'), findsNothing);
-    expect(find.text('AI Provider BYOK'), findsNothing);
-    expect(find.text('Quests'), findsNothing);
+      final quests = find.byKey(
+        const ValueKey<String>('drawer/rewards/quests'),
+      );
+      await tester.scrollUntilVisible(
+        quests,
+        200,
+        scrollable: find.descendant(
+          of: find.byType(Drawer),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(quests, findsOneWidget);
+      expect(
+        find.descendant(of: quests, matching: find.text('ภารกิจการเรียน')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: quests, matching: find.byIcon(Icons.flag_outlined)),
+        findsOneWidget,
+      );
+      _expectSingleThaiGlossaryAction(
+        tester,
+        action: quests,
+        entryId: 'drawer/rewards/quests',
+        visibleLabel: NavigationGlossary.require(
+          'drawer/rewards/quests',
+        ).fullThaiLabel,
+      );
+      expect(find.text('AI Tutor'), findsNothing);
+      expect(find.text('AI Provider BYOK'), findsNothing);
+      expect(find.text('Quests'), findsNothing);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets(
@@ -569,6 +594,35 @@ void main() {
 
     expect(find.byType(AiTutorSettingsScreen), findsOneWidget);
   });
+}
+
+void _expectSingleThaiGlossaryAction(
+  WidgetTester tester, {
+  required Finder action,
+  required String entryId,
+  required String visibleLabel,
+}) {
+  final entry = NavigationGlossary.require(entryId);
+  expect(
+    find.descendant(of: action, matching: find.text(visibleLabel)),
+    findsOneWidget,
+  );
+  expect(find.byTooltip(entry.tooltip), findsOneWidget);
+  final semanticActions = find
+      .bySemanticsLabel(RegExp(RegExp.escape(visibleLabel)))
+      .evaluate()
+      .toList(growable: false);
+  expect(semanticActions, hasLength(1));
+  final semanticAction = find.byElementPredicate(
+    (element) => identical(element, semanticActions.single),
+  );
+  expect(
+    tester
+        .getSemantics(semanticAction)
+        .getSemanticsData()
+        .hasAction(SemanticsAction.tap),
+    isTrue,
+  );
 }
 
 Widget _mainNavigationApp(

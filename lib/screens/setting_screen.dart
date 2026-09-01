@@ -368,7 +368,14 @@ class _SettingScreenState extends State<SettingScreen> {
                         Tooltip(
                           message: systemThemeEntry.tooltip,
                           child: Semantics(
+                            button: true,
+                            enabled: !_displayBusy,
                             label: systemThemeEntry.semanticsLabel,
+                            selected: display.themeMode == ThemeMode.system,
+                            onTap: _displayBusy
+                                ? null
+                                : () => _selectTheme(ThemeMode.system),
+                            excludeSemantics: true,
                             child: ChoiceChip(
                               key: const ValueKey<String>('theme-system'),
                               selected: display.themeMode == ThemeMode.system,
@@ -383,7 +390,14 @@ class _SettingScreenState extends State<SettingScreen> {
                         Tooltip(
                           message: lightThemeEntry.tooltip,
                           child: Semantics(
+                            button: true,
+                            enabled: !_displayBusy,
                             label: lightThemeEntry.semanticsLabel,
+                            selected: display.themeMode == ThemeMode.light,
+                            onTap: _displayBusy
+                                ? null
+                                : () => _selectTheme(ThemeMode.light),
+                            excludeSemantics: true,
                             child: ChoiceChip(
                               key: const ValueKey<String>('theme-light'),
                               selected: display.themeMode == ThemeMode.light,
@@ -398,7 +412,14 @@ class _SettingScreenState extends State<SettingScreen> {
                         Tooltip(
                           message: darkThemeEntry.tooltip,
                           child: Semantics(
+                            button: true,
+                            enabled: !_displayBusy,
                             label: darkThemeEntry.semanticsLabel,
+                            selected: display.themeMode == ThemeMode.dark,
+                            onTap: _displayBusy
+                                ? null
+                                : () => _selectTheme(ThemeMode.dark),
+                            excludeSemantics: true,
                             child: ChoiceChip(
                               key: const ValueKey<String>('theme-dark'),
                               selected: display.themeMode == ThemeMode.dark,
@@ -415,7 +436,15 @@ class _SettingScreenState extends State<SettingScreen> {
                     Tooltip(
                       message: reducedMotionEntry.tooltip,
                       child: Semantics(
+                        enabled: !_displayBusy,
                         label: reducedMotionEntry.semanticsLabel,
+                        toggled: display.reducedMotionEnabled,
+                        onTap: _displayBusy
+                            ? null
+                            : () => _setReducedMotion(
+                                !display.reducedMotionEnabled,
+                              ),
+                        excludeSemantics: true,
                         child: SwitchListTile(
                           key: const ValueKey<String>('reduced-motion-switch'),
                           contentPadding: EdgeInsets.zero,
@@ -459,7 +488,11 @@ class _SettingScreenState extends State<SettingScreen> {
             Tooltip(
               message: offlineContentEntry.tooltip,
               child: Semantics(
+                button: true,
+                enabled: true,
                 label: offlineContentEntry.semanticsLabel,
+                onTap: _openOfflineContent,
+                excludeSemantics: true,
                 child: ListTile(
                   key: const ValueKey<String>('settings/offline-content'),
                   minTileHeight: 48,
@@ -481,7 +514,17 @@ class _SettingScreenState extends State<SettingScreen> {
                   child: Tooltip(
                     message: researchConsentEntry.tooltip,
                     child: Semantics(
+                      enabled:
+                          snapshot.connectionState != ConnectionState.waiting &&
+                          !_busy,
                       label: researchConsentEntry.semanticsLabel,
+                      toggled: accepted,
+                      onTap:
+                          snapshot.connectionState == ConnectionState.waiting ||
+                              _busy
+                          ? null
+                          : () => _changeResearchConsent(!accepted),
+                      excludeSemantics: true,
                       child: ListTile(
                         minTileHeight: 64,
                         leading: Icon(
@@ -535,7 +578,11 @@ class _SettingScreenState extends State<SettingScreen> {
             Tooltip(
               message: changePasswordEntry.tooltip,
               child: Semantics(
+                button: true,
+                enabled: !_busy,
                 label: changePasswordEntry.semanticsLabel,
+                onTap: _busy ? null : _changePassword,
+                excludeSemantics: true,
                 child: ListTile(
                   minTileHeight: 48,
                   leading: Icon(changePasswordEntry.icon),
@@ -547,7 +594,11 @@ class _SettingScreenState extends State<SettingScreen> {
             Tooltip(
               message: logoutEntry.tooltip,
               child: Semantics(
+                button: true,
+                enabled: !_busy,
                 label: logoutEntry.semanticsLabel,
+                onTap: _busy ? null : _logout,
+                excludeSemantics: true,
                 child: ListTile(
                   minTileHeight: 48,
                   leading: Icon(logoutEntry.icon),
@@ -564,7 +615,11 @@ class _SettingScreenState extends State<SettingScreen> {
             Tooltip(
               message: eraseLocalDataEntry.tooltip,
               child: Semantics(
+                button: true,
+                enabled: !_busy,
                 label: eraseLocalDataEntry.semanticsLabel,
+                onTap: _busy ? null : _eraseLocalData,
+                excludeSemantics: true,
                 child: ListTile(
                   key: const ValueKey<String>('erase-local-data'),
                   minTileHeight: 48,

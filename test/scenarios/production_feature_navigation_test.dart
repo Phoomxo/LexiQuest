@@ -66,6 +66,7 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_reposit
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -208,6 +209,52 @@ void main() {
 
     expect(actual, expected);
   });
+
+  testWidgets(
+    'Thai glossary preserves exact production entry identity and live gates',
+    (tester) async {
+      for (final entryCase in productionEntries) {
+        final delivery = productionFeatureContract[entryCase.feature]!;
+        expect(delivery.productionEntryId, entryCase.id);
+        expect(
+          NavigationGlossary.require(entryCase.id).fullThaiLabel,
+          isNotEmpty,
+        );
+
+        final features = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.fieldDefaults(),
+        );
+        final database = AppDatabase(NativeDatabase.memory());
+        try {
+          await tester.pumpWidget(
+            MyApp(
+              dependencies: _dependencies(
+                features,
+                _QuestRepositoryFake(),
+                databaseOverride: database,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          await _openProductionEntry(tester, entryCase);
+          _expectEnabledDestination(tester, entryCase);
+          features.emergencyOff(entryCase.feature);
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 500));
+          _expectUnavailableGate(tester, entryCase);
+        } finally {
+          try {
+            await tester.pumpWidget(const SizedBox.shrink());
+            await tester.pumpAndSettle();
+          } finally {
+            features.dispose();
+            await database.close();
+          }
+        }
+      }
+    },
+  );
 
   for (final entryCase in productionEntries) {
     testWidgets('${entryCase.id} reaches its exact fail-closed V2 gate', (
@@ -690,6 +737,62 @@ void _expectEnabledDestination(
   if (entryCase.routeName != null) {
     final route = ModalRoute.of(tester.element(destination));
     expect(route?.settings.name, entryCase.routeName);
+  }
+}
+
+Future<void> _openProductionEntry(
+  WidgetTester tester,
+  _ProductionEntryCase entryCase,
+) async {
+  switch (entryCase.surface) {
+    case _EntrySurface.bottom:
+      final entry = find.byKey(ValueKey<String>(entryCase.id));
+      expect(entry, findsOneWidget);
+      await tester.tap(entry);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await _startConfiguredLessonIfPresent(tester, entryCase.destinationType);
+    case _EntrySurface.learning:
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pump();
+      final entry = find.byKey(ValueKey<String>(entryCase.id));
+      await tester.scrollUntilVisible(
+        entry,
+        120,
+        scrollable: find.descendant(
+          of: find.byType(ChooseModeScreen),
+          matching: find.byType(Scrollable),
+        ),
+        maxScrolls: 12,
+      );
+      expect(entry, findsOneWidget);
+      await tester.ensureVisible(entry);
+      await tester.pump();
+      await tester.tap(entry);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await _startConfiguredLessonIfPresent(tester, entryCase.destinationType);
+    case _EntrySurface.drawer:
+      await tester.tap(
+        find.byKey(const ValueKey<String>('legacy-drawer-button')),
+      );
+      await tester.pumpAndSettle();
+      final entry = find.byKey(ValueKey<String>(entryCase.id));
+      await tester.scrollUntilVisible(
+        entry,
+        150,
+        scrollable: find.descendant(
+          of: find.byType(Drawer),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.ensureVisible(entry);
+      await tester.pumpAndSettle();
+      expect(entry, findsOneWidget);
+      await tester.tap(entry);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await _startConfiguredLessonIfPresent(tester, entryCase.destinationType);
   }
 }
 

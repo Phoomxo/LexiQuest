@@ -2,32 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/progress/domain/learning_calendar.dart';
 import 'package:vocab_learning_app/features/progress/domain/personal_learning_profile.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
-  testWidgets('profile renders separate canonical learning axes', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(home: ProfileSettingsScreen(loader: () async => _profile)),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'Thai glossary profile axes remain distinct read-only semantics',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ProfileSettingsScreen(loader: () async => _profile),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-    expect(find.text('ผู้เรียน Guest'), findsOneWidget);
-    for (final label in <String>[
-      'ความชำนาญ',
-      'ทบทวนแบบเว้นระยะ (SRS)',
-      'เวลาเรียนจริง',
-      'ความแม่นยำ',
-      'จุดที่ควรฝึกเพิ่ม',
-      'ความต่อเนื่องในการเรียน',
-    ]) {
-      expect(find.text(label), findsOneWidget);
-    }
-    expect(find.text('80% จาก 10 คำตอบ'), findsOneWidget);
-    expect(find.text('42 XP · ต่อเนื่อง 7 วัน'), findsOneWidget);
-    expect(find.textContaining('คะแนนรวม'), findsNothing);
-  });
+        expect(find.text('ผู้เรียน Guest'), findsOneWidget);
+        for (final label in <String>[
+          'ความชำนาญ',
+          'ทบทวนแบบเว้นระยะ (SRS)',
+          'เวลาเรียนจริง',
+          'ความแม่นยำ',
+          'จุดที่ควรฝึกเพิ่ม',
+          'ความต่อเนื่องในการเรียน',
+        ]) {
+          expect(find.text(label), findsOneWidget);
+        }
+        expect(find.text('80% จาก 10 คำตอบ'), findsOneWidget);
+        expect(find.text('42 XP · ต่อเนื่อง 7 วัน'), findsOneWidget);
+        expect(find.textContaining('คะแนนรวม'), findsNothing);
+        for (final entryId in NavigationGlossary.profileAxisIds) {
+          final entry = NavigationGlossary.require(entryId);
+          final tooltip = find.byWidgetPredicate(
+            (widget) => widget is Tooltip && widget.message == entry.tooltip,
+          );
+          expect(tooltip, findsOneWidget);
+          expect(
+            find.descendant(
+              of: tooltip,
+              matching: find.text(entry.fullThaiLabel),
+            ),
+            findsOneWidget,
+          );
+          final semanticAxes = find
+              .descendant(of: tooltip, matching: find.byType(Semantics))
+              .evaluate()
+              .map((element) => element.widget)
+              .whereType<Semantics>()
+              .where(
+                (semantics) =>
+                    semantics.properties.label == entry.semanticsLabel &&
+                    semantics.properties.onTap == null,
+              )
+              .toList(growable: false);
+          expect(semanticAxes, hasLength(1));
+        }
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
 
   testWidgets('empty profile says no evidence instead of zero proficiency', (
     tester,

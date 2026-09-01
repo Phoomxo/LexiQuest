@@ -20,6 +20,7 @@ import 'package:vocab_learning_app/features/preferences/application/learner_pref
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
@@ -35,6 +36,32 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets('Thai glossary planning actions expose one semantic action', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    try {
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(database),
+          child: const MaterialApp(home: StudyPlanningHubScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      for (final entryId in NavigationGlossary.studyPlanningActionIds) {
+        _expectSingleThaiGlossaryAction(
+          action: find.byKey(ValueKey<String>(entryId)),
+          entryId: entryId,
+        );
+      }
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('the composed parent owns one canonical study-planning entry', (
     tester,
   ) async {
@@ -445,6 +472,37 @@ void main() {
       hasLength(1),
     );
   });
+}
+
+void _expectSingleThaiGlossaryAction({
+  required Finder action,
+  required String entryId,
+}) {
+  final entry = NavigationGlossary.require(entryId);
+  final tooltip = find.ancestor(
+    of: action,
+    matching: find.byWidgetPredicate(
+      (widget) => widget is Tooltip && widget.message == entry.tooltip,
+    ),
+  );
+  expect(tooltip, findsOneWidget);
+  expect(
+    find.descendant(of: tooltip, matching: find.text(entry.fullThaiLabel)),
+    findsOneWidget,
+  );
+  final semanticActions = find
+      .ancestor(of: action, matching: find.byType(Semantics))
+      .evaluate()
+      .map((element) => element.widget)
+      .whereType<Semantics>()
+      .where(
+        (semantics) =>
+            semantics.properties.label == entry.semanticsLabel &&
+            semantics.properties.onTap != null &&
+            semantics.excludeSemantics,
+      )
+      .toList(growable: false);
+  expect(semanticActions, hasLength(1));
 }
 
 Widget _catalogChild(BuildContext context) => const LearningPackCatalogScreen();
