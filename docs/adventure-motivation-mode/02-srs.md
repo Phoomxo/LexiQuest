@@ -1,12 +1,12 @@
 # Software Requirements Specification (SRS) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-SRS-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for Owner Review
 **Date:** 2026-09-01
 **Baseline:** LexiQuest 8/44, commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; current baseline is suitable for planning but not Pilot/release clean
-**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
+**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
 
 ## 1. Purpose and Scope
 
@@ -19,7 +19,7 @@ Adventure เป็น presentation ทางเลือกของ Today Hub 
 ```text
 Learner
   └─ Existing Learn surface
-       └─ additive `learn/today-experience` entry (eligible only)
+       └─ additive `home/learn/today-experience` entry (eligible only)
             ├─ Product Entry Decision: flag/dependency/preference/assignment
             ├─ Standard Today presentation ────────────────────────────────┐
             └─ Adventure presentation                                     │
@@ -78,12 +78,12 @@ Learner
 |---|---|---|
 | AMM-FR-001 | ระบบต้องเพิ่ม `Feature.adventureMotivation` โดยไม่เปลี่ยนชื่อหรือลำดับ serialized name เดิม | Contract test |
 | AMM-FR-002 | `BuildFeatureRegistry.fieldDefaults()` ต้องกำหนด Adventure เป็น `hidden` | Unit/architecture test |
-| AMM-FR-003 | Additive card `learn/today-experience` ต้องอยู่ใน Learn surface เดิม แสดงเมื่อ feature visible/enabled และ dependencies พร้อมเท่านั้น; ห้ามเพิ่ม bottom-navigation destination | Widget/integration/architecture test |
-| AMM-FR-004 | Missing/corrupt/unknown configuration หรือ stale direct route ต้อง resolve เป็น Standard เมื่อ Today dependency พร้อม มิฉะนั้นกลับ Learn ด้วย bounded reason | Unit/navigation test |
+| AMM-FR-003 | Additive card `home/learn/today-experience` ต้องอยู่ใน Learn surface เดิม แสดงเมื่อ feature visible/enabled และ dependencies พร้อมเท่านั้น; ห้ามเพิ่ม bottom-navigation destination | Widget/integration/architecture test |
+| AMM-FR-004 | hidden/disabled/unknown configuration หรือ stale direct route ต้องกลับ Learn โดยไม่สร้าง Host/snapshot/research row; Standard fallback อนุญาตเฉพาะ Host ที่ผ่าน entry authorization แล้ว | Unit/navigation test |
 | AMM-FR-005 | Feature state ต้องไม่สร้าง เปลี่ยน หรือลบ experiment assignment | Research isolation test |
 | AMM-FR-006 | Outside protocol ระบบต้องใช้ session choice ใน Phase 1 และ `LearnerPreferences.homeExperience` ตั้งแต่ Phase 3 | Unit/migration test |
 | AMM-FR-007 | Inside protocol ระบบต้องเก็บ stable assignment เดิม แม้ผู้เรียน switch to Standard | Integration test |
-| AMM-FR-008 | `AdventureProductEntryDecision` ต้องมี entryDecisionId, availability, effective presentation, treatment identity, fallback reason และ version pins โดยห้ามมี consent receipt/measurement response เป็น input | Unit/architecture test |
+| AMM-FR-008 | Product Entry ต้องมี entryAttemptId, availability, effective presentation, fallback reason/version pins และรับได้เฉพาะ `ActivePresentationPermit` projection โดยห้ามอ่าน raw consent/guardian/assent receipt หรือ measurement response | Unit/architecture test |
 | AMM-FR-009 | Emergency-off ต้องบล็อก new Adventure start แต่ไม่ทำลาย accepted learning session | Scenario test |
 | AMM-FR-010 | Standard escape ต้องพร้อมโดยไม่ต้อง scroll บนทุก Adventure screen ระดับบน | Widget/UAT |
 
@@ -148,7 +148,7 @@ Learner
 | AMM-FR-045 | หนึ่ง learner submission ต้อง map ไป evidence identity เดียวข้าม retry/restart | Scenario test |
 | AMM-FR-046 | Adventure UI ต้องไม่เรียก Drift learning tables หรือ repositories โดยตรง | Architecture test |
 | AMM-FR-047 | Assessment session ต้องไม่ถูก wrap เป็น reward-granting mission | Research isolation test |
-| AMM-FR-048 | Consented pre-session exposure ต้องใช้ `AdventurePresentation/entryDecisionId` และ plan correlation เป็น optional; mission start/completion ต้องใช้ `LearningSession/learningSessionId` และ `correlationId = adventurePlanId`; ทุก event ใช้ deterministic occurrence key ตาม ADR-003 และ non-participant ไม่มี persisted origin row | Contract/privacy/idempotency test |
+| AMM-FR-048 | Participant pre-session events ต้องใช้ `MeasurementOpportunity/opportunityId`; mission start/completion ผูก accepted `LearningSession/learningSessionId` และ opportunity เดิม; ทุก event pin assigned/effective presentation และ nonparticipant ไม่มี persisted origin/opportunity row | Contract/privacy/idempotency test |
 
 ### 6.7 M07 — Motivation and Unlock Projection Reader
 
@@ -198,17 +198,17 @@ Learner
 |---|---|---|
 | AMM-FR-076 | Assignment ต้องมาจาก `ExperimentRegistry` และคงที่ตาม experiment/version/owner | Repository/integration test |
 | AMM-FR-077 | Preference, feature flag, emergency-off หรือ crossover ต้องไม่ rewrite assignment | Isolation test |
-| AMM-FR-078 | Research collection ต้องเกิดเฉพาะ active consented measurement run ที่มี stable assignment | Consent/rules test |
+| AMM-FR-078 | Research collection และ protocol treatment ต้องเกิดเฉพาะ valid `ResearchParticipationPermit`; Product Entry เห็นเพียง active projection | Permit/consent/rules test |
 | AMM-FR-079 | Prompt ต้องอยู่ natural breakpoint มี Skip และไม่ขวาง learning completion | Widget/UAT |
 | AMM-FR-080 | `MotivationMeasurementRun` ต้อง pin protocol, treatment, assignment, consent, instrument, form, app/build และ policy/content versions | Repository test |
 | AMM-FR-081 | `MotivationResponse` ต้องใช้ bounded catalog response code ไม่มี free text | Domain/rules test |
-| AMM-FR-082 | ระบบต้องลงทะเบียน exposure events v1: `AdventurePresented`, `AdventureMissionStarted`, `AdventureSwitchedToStandard`, `AdventureMissionCompleted` | Event policy test |
-| AMM-FR-083 | Exposure event ต้องใช้ `EventEnvelopeV2` เดิมและไม่เพิ่ม envelope field | Contract test |
-| AMM-FR-084 | Non-participant ต้องไม่มี research exposure rows จากการใช้ Adventure ปกติ | Negative test |
+| AMM-FR-082 | ระบบต้องลงทะเบียน neutral Today Experience events v1: `TodayExperiencePresented`, `TodayExperiencePresentationChanged`, `TodayExperienceMissionStarted`, `TodayExperienceMissionCompleted` สำหรับทั้ง Standard/Adventure | Event policy test |
+| AMM-FR-083 | Neutral research event ต้องใช้ `EventEnvelopeV2` เดิมและไม่เพิ่ม envelope field | Contract test |
+| AMM-FR-084 | Non-participant ต้องไม่มี `MeasurementOpportunity` หรือ research event จากการใช้ Standard/Adventure ปกติ | Negative test |
 | AMM-FR-085 | Consent withdrawal ต้องหยุด create/enqueue/upload research record ใหม่ทันที | Integration/rules test |
 | AMM-FR-086 | Export ต้องแยก Outcome, Learning, Effort, Engagement และ Motivation | Export test |
 | AMM-FR-087 | Primary analysis ต้องรองรับ intention-to-treat; crossover/adherence เป็น secondary metadata | Data validation |
-| AMM-FR-088 | Protocol ที่เกี่ยวกับผู้เยาว์ต้องผ่าน applicable ethics review, guardian permission และ learner assent ก่อน collection | Governance/UAT precondition |
+| AMM-FR-088 | Minor protocol ต้องมี runtime-validated signed permit ที่อ้าง guardian permission และ learner assent ทั้งคู่ก่อน treatment/collection | Permit/rules/UAT |
 
 ### 6.11 M11 — Operations, Quality and Reliability
 
@@ -219,9 +219,17 @@ Learner
 | AMM-FR-091 | Offline entry ต้องเกิดเฉพาะเมื่อ required world/content revisions verify แล้ว | Offline scenario test |
 | AMM-FR-092 | Asset removal ต้องไม่ลบ learning evidence หรือ canonical progress | Integration test |
 | AMM-FR-093 | Corrupt bundle ต้อง quarantine และมี verify/repair/remove path | Offline test/UAT |
-| AMM-FR-094 | Feature promotion ต้องเป็น Hidden → Internal → Pilot → Enabled และต้องมี evidence gate | Release checklist |
-| AMM-FR-095 | Emergency-off rehearsal ต้องผ่านก่อน Pilot และก่อน Enabled | Operational test |
+| AMM-FR-094 | Feature promotion ต้องเป็น Hidden → Internal → Limited → Controlled Expansion → Enabled โดย MS-08A ไปได้สูงสุด Limited และ MS-08B จึงปล่อย class ต่อได้ | Release checklist |
+| AMM-FR-095 | Emergency-off rehearsal ต้องผ่านก่อน MS-08A และก่อน class-specific Controlled Expansion/Enabled | Operational test |
 | AMM-FR-096 | Unknown enum/event/schema payload ต้อง fail closed และไม่ overwrite compatible record | Compatibility test |
+| AMM-FR-097 | ระบบต้อง validate `ResearchParticipationPermit` และ expose `ActivePresentationPermit` แบบ minimal projection โดยไม่ส่ง raw receipt fields เข้า Product Entry | Permit/architecture test |
+| AMM-FR-098 | Permit missing/invalid/expired/revoked หรือ withdrawal ต้องหยุด treatment start ใหม่และ fallback `session choice → preference → Standard` โดยการเรียนทั่วไปยังใช้ได้ | Scenario/race test |
+| AMM-FR-099 | Standard และ Adventure ต้อง emit neutral event policy v1 ชุดเดียวกันพร้อม `assignedTreatment` และ `effectivePresentation` | Event-policy/equivalence test |
+| AMM-FR-100 | Participant Host opening ต้องมี `MeasurementOpportunity` เป็น denominator อิสระ; nonparticipant ต้องไม่มี research row | Repository/privacy test |
+| AMM-FR-101 | `entryAttemptId` ต้องเป็น UUID v4 หนึ่งค่าต่อ authorized Host opening และ reuse ระหว่าง rebuild/retry/switch | Identity/widget test |
+| AMM-FR-102 | `TodayExperienceHost` ต้อง load Today snapshot หนึ่งครั้งและส่ง object เดียวให้ `TodayHubView(snapshot)` หรือ `AdventureHubScreen(snapshot)` | Loader/identity test |
+| AMM-FR-103 | Minor enrollment ต้องใช้ guardian-led signed permit, age-band code, guardian receipt ref และ learner assent ref โดยไม่เก็บ DOB/guardian PII ในแอป | Domain/privacy/UAT |
+| AMM-FR-104 | Rollout ต้องตัดสินแยก `adult`/`minor`; class ที่ไม่ผ่าน sample, guardrail หรือ comprehension ต้องคง Limited | Release-decision test |
 
 ## 7. Preference and Database Requirements
 
@@ -233,13 +241,15 @@ Learner
 | AMM-DATA-004 | v22→v23 ต้องรักษา goal, available minutes, activity, theme, motion, timestamps และ revisions เดิมทุกค่า | Fixture comparison |
 | AMM-DATA-005 | Unknown home experience ต้องไม่เปิด Adventure และต้องแสดง Standard | Negative sync test |
 | AMM-DATA-006 | Preference mutation ต้องผ่าน `LearnerPreferencesUseCases` และ owner operation gate | Architecture/integration test |
-| AMM-DATA-007 | Migration research measurement ซึ่งวางแผนเป็น v24 ต้องเพิ่มตาราง `motivation_measurement_runs` และ `motivation_responses` เท่านั้น; หากเลขถูกจองแล้วต้องใช้เลขถัดไป | Schema/ledger test |
+| AMM-DATA-007 | Migration research measurement ซึ่งวางแผนเป็น v24 ต้องเพิ่ม `motivation_measurement_runs`, `motivation_responses`, `research_participation_permits` และ `measurement_opportunities`; หากเลขถูกจองแล้วต้องใช้เลขถัดไป | Schema/ledger test |
 | AMM-DATA-008 | Measurement run ID และ response identity ต้อง idempotent และ owner-scoped | Repository test |
 | AMM-DATA-009 | ทุก research row ต้องอยู่ใน owner lifecycle manifest หนึ่งครั้งพอดี | Manifest test |
 | AMM-DATA-010 | Guest upgrade ต้องย้าย preference/research rows และรักษา assignment/consent identity ตาม policy | Scenario test |
 | AMM-DATA-011 | Sync payload ต้อง versioned, bounded และ reject incompatible replay | Sync test |
 | AMM-DATA-012 | Export/delete/withdrawal/retention ต้องครอบคลุม v23/v24 records | Lifecycle test |
 | AMM-DATA-013 | หาก schema v23/v24 ถูกใช้ก่อน implementation ต้อง rebase เลขขึ้นตาม schema ledger และห้ามใช้เลขซ้ำ | Ledger review/test |
+| AMM-DATA-014 | `research_participation_permits` ต้องอยู่ใน owner lifecycle, sync, Firestore rules, export, withdrawal, deletion และ retention manifest พร้อม signature/revision conflict handling | Lifecycle/rules test |
+| AMM-DATA-015 | `measurement_opportunities` ต้องอยู่ใน lifecycle เดียวกันและ update switch ordinal 1–10 แบบ transaction; ส่วนเกินเพิ่มเฉพาะ suppressed counter | Repository/concurrency/lifecycle test |
 
 ## 8. External Interface Requirements
 
@@ -261,6 +271,9 @@ Learner
 | AMM-UI-012 | Technical failure copy ต้องบอก action ที่ทำได้และไม่กล่าวโทษผู้ใช้ |
 | AMM-UI-013 | Result ต้องใช้ข้อความที่แยก “เรียนรู้อะไร”, “ลงแรงเท่าไร”, “ทำอะไรในแอป” |
 | AMM-UI-014 | Research prompt ต้องอธิบายวัตถุประสงค์แบบสั้น มี Skip และ link ไป consent details |
+| AMM-UI-015 | Guardian permission flow ต้องอธิบาย purpose, data, Skip/withdraw/no-learning-impact และสถานะการออก permitอย่างชัดเจน |
+| AMM-UI-016 | Learner assent ต้องใช้ภาษาตาม age band มี Agree/Not now เท่าเทียมกันและ restore focus หลังจบ flow |
+| AMM-UI-017 | Invalid/expired/revoked permit ต้องอธิบายว่า research mode หยุดแต่ผู้เรียนยังเรียนต่อแบบ product ได้ พร้อม action กลับ Learn/Standard |
 
 ### 8.2 Existing application interfaces
 
@@ -269,8 +282,10 @@ Learner
 | `TodayHubSnapshotLoader.load()` | อ่าน canonical work หนึ่ง snapshot |
 | `TodayHubActionDelegate` | รักษา semantics ของ resume/review/history/assessment |
 | `FeatureRegistry` | ตรวจ visibility/invocation เท่านั้น |
-| `ExperimentRegistry.getAssignment()` | อ่าน assignment เท่านั้น |
-| `ConsentRegistry.snapshot()` | ตรวจ research processing eligibility |
+| `ExperimentRegistry.getAssignment()` | Enrollment authority ใช้อ่าน stable assignment; Product Entry ไม่อ่านโดยตรงเมื่อ protocol treatment มาจาก permit |
+| `ResearchParticipationPermitValidator` | ตรวจ owner/assignment/consent/guardian/assent/protocol/expiry/revocation/signature/revision และสร้าง active projection |
+| `ActivePresentationPermitReader` | ส่ง minimal projection ให้ Product Entry โดยไม่ expose receipt fields |
+| `ConsentRegistry.snapshot()` | ใช้เฉพาะ enrollment/capture/withdrawal authority; ไม่ส่งตรงเข้า Product Entry |
 | `LearnerPreferencesUseCases` | อ่าน/เปลี่ยน home presentation ตั้งแต่ v23 |
 | `UnifiedLessonController` | start, submit, complete, pause, resume, abandon |
 | `LearningSideEffectReconciler` + Quest/Streak/Reward readers | commit side effects ผ่าน authority เดิม แล้วให้ Adventure อ่านผล |
@@ -329,7 +344,7 @@ Budgets วัดบน device certification profile ที่โครงกา
 
 | ID | Requirement |
 |---|---|
-| AMM-NFR-020 | Data minimization: non-participant ไม่มี research exposure rows |
+| AMM-NFR-020 | Data minimization: non-participant ไม่มี `MeasurementOpportunity` หรือ persisted research event |
 | AMM-NFR-021 | Research response ไม่มี free text และไม่มี duplicated answer content |
 | AMM-NFR-022 | Withdrawal gate ต้องมีผลก่อน enqueue operation ถัดไป |
 | AMM-NFR-023 | Export/delete ต้องตรวจ owner isolation และ complete manifest |
@@ -346,6 +361,10 @@ Budgets วัดบน device certification profile ที่โครงกา
 | AMM-NFR-029 | Generated Drift code ต้องสร้างด้วย repository toolchain ไม่แก้ด้วยมือ |
 | AMM-NFR-030 | New modules ต้องมี unit tests และ public interfaces มี doc comments |
 | AMM-NFR-031 | การปิด feature ไม่ต้อง rollback database migration |
+| AMM-NFR-034 | หนึ่ง authorized Host opening ต้องเรียก `TodayHubSnapshotLoader.load()` หนึ่งครั้ง; rebuild/switch/focus restoration ห้าม reload |
+| AMM-NFR-035 | Offline permit verification ต้อง fail closed เมื่อ signature, expiry, revocation-known revision หรือ protocol ไม่ผ่าน โดย product learning ยังใช้ได้ |
+| AMM-NFR-036 | Class ที่ missing post >15% หรือ arm difference >5 percentage points ต้องถูกบล็อกที่ MS-08B |
+| AMM-NFR-037 | Release flag/eligibility ต้อง isolate adult/minor class เพื่อไม่ให้ class ที่ไม่ผ่านได้รับ Controlled Expansion/Enabled |
 
 ## 10. Core Use Cases
 
@@ -358,9 +377,9 @@ Budgets วัดบน device certification profile ที่โครงกา
 **Main flow:**
 
 1. Learner opens existing Learn surface.
-2. Eligible additive card `learn/today-experience` appears without changing bottom navigation; learner opens it.
+2. Eligible additive card `home/learn/today-experience` appears without changing bottom navigation; learner opens it.
 3. Today Experience Host composes canonical Today snapshot once.
-4. Product Entry Control reads feature/dependency state, session choice/preference and stable assignment; it does not read consent.
+4. Product Entry Control reads feature/dependency state, session choice/preference and optional `ActivePresentationPermit`; it never reads raw consent/guardian/assent receipts.
 5. Journey Projection builds snapshot.
 6. Host renders resolved Standard or Adventure presentation.
 7. Adventure shell shows current mission, progress nodes and Standard switch when selected.
@@ -368,7 +387,7 @@ Budgets วัดบน device certification profile ที่โครงกา
 **Alternate flows:**
 
 - Feature hidden → card absent; Learn surface remains baseline-equivalent
-- Stale direct route with Today ready → Standard
+- Hidden/disabled/unknown or stale direct route → Learn without constructing Host/snapshot
 - Today dependency unavailable/corrupt → return Learn with bounded fallback reason
 - Assets absent online → offer download; Standard remains available
 - Assets absent offline → Standard immediately
@@ -414,10 +433,10 @@ Budgets วัดบน device certification profile ที่โครงกา
 ### UC-05 — Switch to Standard during protocol
 
 1. Learner activates visible Standard switch.
-2. Active research recorder writes `AdventureSwitchedToStandard` only if `AdventureResearchCaptureDecision` is eligible, using `AdventurePresentation/entryDecisionId` and optional plan correlation.
+2. Active research recorder transactionally updates the opportunity and writes `TodayExperiencePresentationChanged` only when active permit/run remain valid, using `entryAttemptId` and bounded switch ordinal.
 3. Preference updates only when user explicitly chooses “จำตัวเลือกนี้” outside protocol policy.
 4. Assignment remains unchanged.
-5. Standard Today Hub opens with same canonical state.
+5. Pure `TodayHubView(snapshot)` renders from the same once-loaded snapshot inside the authorized Host.
 
 ### UC-06 — Withdraw research consent
 
@@ -425,7 +444,7 @@ Budgets วัดบน device certification profile ที่โครงกา
 2. Existing consent authority records withdrawal.
 3. Recorder rejects future research rows before enqueue.
 4. Pending upload is cancelled/blocked according to withdrawal policy.
-5. Product Adventure remains usable.
+5. Product learning remains usable; protocol treatment falls back through session choice/preference/Standard.
 6. Export/delete options remain available as policy permits.
 
 ### UC-07 — Corrupt or missing world asset
@@ -449,9 +468,8 @@ Budgets วัดบน device certification profile ที่โครงกา
 ### 11.1 Entry state
 
 ```text
-hidden ───────────────────────────────► Learn baseline (no card)
-stale route + Today unavailable ──────► Learn(reason)
-disabled/emergencyOff + Today ready ──► Standard
+hidden/disabled/unknown/stale route ──► Learn baseline/reason (no Host)
+emergencyOff before Host/start ───────► Learn or authorized-host Standard
 visible + dependency missing/corrupt ─► Learn(reason)
 visible + preference standard ────────► Standard
 visible + preference adventure
@@ -501,6 +519,11 @@ withdrawn is terminal for new research collection under that consent receipt.
 | AMM-BR-016 | Result axes are never collapsed into one score |
 | AMM-BR-017 | World v1 cannot branch into durable choices |
 | AMM-BR-018 | Standard fallback cannot be removed by a world catalog |
+| AMM-BR-019 | Active presentation permit มี precedence เหนือ session choice/preference เฉพาะ protocol treatment และ Product Entry ห้ามอ่าน raw receipts |
+| AMM-BR-020 | เมื่อไม่มี active permit ให้ใช้ session choice → preference → Standard และสร้าง research row เป็นศูนย์ |
+| AMM-BR-021 | Minor permit ต้องมี guardian permission + learner assent runtime evidence; governance checklist อย่างเดียวไม่พอ |
+| AMM-BR-022 | MS-08A ตัดสิน feasibility เท่านั้นและสถานะสูงสุดคือ Limited |
+| AMM-BR-023 | Controlled Expansion/Enabled ต้องผ่าน MS-08B แยก adult/minor และห้ามใช้ผลของอีก class แทนกัน |
 
 ## 13. Error Catalogue
 
@@ -523,12 +546,12 @@ withdrawn is terminal for new research collection under that consent receipt.
 
 ## 14. Acceptance Criteria
 
-Adventure พร้อม Pilot เมื่อ:
+Adventure พร้อมเข้าสู่ MS-08A Feasibility (สถานะสูงสุด Limited) เมื่อ:
 
-1. AMM-FR-001 ถึง AMM-FR-096 มี test or governance evidence ตาม RTM
-2. AMM-DATA-001 ถึง AMM-DATA-013 ผ่าน lifecycle/migration evidence
-3. AMM-UI-001 ถึง AMM-UI-014 ผ่าน widget/manual UX evidence
-4. AMM-NFR-001 ถึง AMM-NFR-033 ผ่าน budget/gate ที่ระบุ
+1. AMM-FR-001 ถึง AMM-FR-104 มี test or governance evidence ตาม RTM
+2. AMM-DATA-001 ถึง AMM-DATA-015 ผ่าน lifecycle/migration evidence
+3. AMM-UI-001 ถึง AMM-UI-017 ผ่าน widget/manual UX evidence
+4. AMM-NFR-001 ถึง AMM-NFR-037 และ AMM-BR-001 ถึง AMM-BR-023 ผ่าน budget/gate ที่ระบุ
 5. Required UAT cases ผ่าน 100%
 6. Blocker/Critical defect เท่ากับ 0
 7. Stable assignment และ required version metadata เท่ากับ 100%
@@ -537,3 +560,5 @@ Adventure พร้อม Pilot เมื่อ:
 10. Product Owner, CTO, QA, UX และ Research/Privacy owner ลงนาม gate ที่เกี่ยวข้อง
 11. `AMM-AUDIT-001` findings ที่จัดเป็น before-Pilot ของ Android path ปิดครบ; full inventory run มี fresh evidence, logical/shared/touched set ผ่าน และ finding ที่เหลือ map ไป explicit exclusion โดยไม่มี unclassified failure
 12. Gitleaks gate สะอาดตาม reviewed policy และ dependency/platform exceptions ที่กระทบ release มี approved disposition
+
+Controlled Expansion/Enabled ต้องผ่าน MS-08B เพิ่มเติมตาม MDS v1.1: powered sample ต่อ participant class, baseline-adjusted post-session ANCOVA, pre-registered multiple imputation/tipping-point, learning/safety thresholds, missing post ≤15%, arm difference ≤5 percentage points และ class-specific signed decision

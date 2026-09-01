@@ -1,10 +1,10 @@
 # UAT Script — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-UAT-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for Product Owner/UAT Lead Review
 **Date:** 2026-09-01
-**References:** `AMM-AUDIT-001`, TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.0
+**References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.1
 **Baseline:** commit `99f7fb21`, Drift schema v22
 **Release warning:** baseline ปัจจุบันมี 3,202 tests ผ่าน / 15 tests ไม่ผ่าน จึงใช้เอกสารนี้ทำ dry run ได้ แต่ห้าม sign-off Pilot/Production จน `G0B` และ `BG-01–BG-12` ผ่าน
 
@@ -17,11 +17,14 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 3. ใช้คำศัพท์ บทเรียน SRS, Mastery, Quest, Streak, Achievement, XP และ Coins จาก authority เดิม;
 4. ไม่ลงโทษ ไม่ทำให้อับอาย และไม่หักรางวัลเมื่อตอบผิด หยุดพัก หรือเกิด technical failure;
 5. ทำงานต่อได้เมื่อ offline, asset เสีย, app ปิดกลางคัน หรือ feature ถูกปิดฉุกเฉิน;
-6. แยก preference, feature availability, assignment และ consent ออกจากกัน;
+6. แยก preference, feature availability, assignment, raw consent/guardian/assent records และ participation permit ออกจากกัน;
 7. ไม่สร้างข้อมูลวิจัยสำหรับ non-participant;
 8. ใช้งานได้กับภาษาไทย screen reader, text 200%, high contrast และ reduced motion;
 9. รักษาแบรนด์ `LexiQuest` และไม่มีข้อความ “เก่งศัพท์” กลับเข้ามา;
-10. มีหลักฐานตรวจย้อนกลับถึง Requirement, WBS และ Test Case ได้
+10. มีหลักฐานตรวจย้อนกลับถึง Requirement, WBS และ Test Case ได้;
+11. แยก MS-08A Feasibility ออกจาก MS-08B Efficacy และ rollout adult/minor
+
+Controlled inventory รวม **38 UAT scripts (UAT-001–038)** ทุก script ยังเป็น Planned จนกว่าจะมี build, evidence และ sign-off ตาม gate
 
 ## 2. ขอบเขตและรอบ UAT
 
@@ -29,8 +32,9 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 |---|---|---|---|---|
 | Dry run | Product/UX/QA ภายใน | Hidden/local fixture | ตรวจ script, copy, flow และ fixture | แก้เอกสาร/defect เท่านั้น |
 | Internal UAT | Staff allowlist | Limited | UAT-001–024 และ 030–032 | MS-07/Internal acceptance |
-| Consented Android Pilot UAT | ผู้เข้าร่วมที่ผ่าน protocol บน MDS Android matrix | Pilot | UAT-001–032 รวม research cases | MS-08/Pilot decision |
-| Post-release Android smoke | eligible production sample | Enabled แบบควบคุม | critical path และ rollback | Increment continue/hold |
+| MS-08A Android Feasibility UAT | ผู้เข้าร่วม adult/minor ที่มี signed permit | Limited | UAT-001–037 ตาม applicability | MS-08A Limited/Revise/Stop |
+| MS-08B decision rehearsal | คณะตัดสินและ frozen class evidence | Limited | UAT-038 | Expand/Remain Limited/Stop แยก class |
+| Post-expansion Android smoke | class ที่ผ่าน MS-08B | Controlled | critical path, targeting and rollback | Increment continue/hold |
 
 UAT ไม่แทน automated test, rules emulator, migration test, security/dependency gate หรือ accessibility certification
 
@@ -44,7 +48,7 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 | Accessibility participant/reviewer | ตรวจ screen reader, keyboard, text scaling, contrast และ motion |
 | QA recorder | บันทึก actual result, timestamp, screenshot/log แบบไม่ติดข้อมูลส่วนบุคคล |
 | Tech Lead | แยก product defect ออกจาก fixture/environment defect และยืนยัน authority invariant |
-| Research/Privacy Owner | อนุมัติเฉพาะ UAT-025–029 และตรวจ consent/assignment/zero-row evidence |
+| Research/Privacy Owner | อนุมัติ UAT-025–038 ที่เกี่ยวข้องและตรวจ permit/consent/assent/opportunity/zero-row evidence |
 | Release Owner | ทำ emergency-off rehearsal และ rollout/rollback record |
 
 ผู้พัฒนาเจ้าของ implementation ไม่ควรเป็นผู้ sign-off script ของตนเองเพียงคนเดียว
@@ -70,8 +74,10 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 | U-C | owner มี accepted session ที่ resume ได้ |
 | U-D | guest มี progress/preference สำหรับทดสอบ upgrade |
 | U-E | owner มี equipped cosmetic และ canonical reward receipts |
-| U-R1 | consented participant, assigned Adventure, active run |
-| U-R2 | consented participant, assigned Standard, active run |
+| U-R1 | adult signed permit, assigned Adventure, active run |
+| U-R2 | adult signed permit, assigned Standard, active run |
+| U-M1 | minor permit with guardian permission + learner assent, assigned Adventure |
+| U-M2 | minor permit missing/invalid guardian or assent evidence |
 | U-NP | non-participant ไม่มี consent/run |
 | U-X | owner อื่นสำหรับตรวจ isolation |
 
@@ -91,15 +97,15 @@ UAT ไม่แทน automated test, rules emulator, migration test, security/
 
 | Profile | จำนวน session ขั้นต่ำ | Required UAT subset |
 |---|---:|---|
-| Mainstream Android phone | ครอบคลุม general learner ≥12 | UAT-001–024 และ 030–032 อย่างน้อยหนึ่ง pass ต่อ case |
-| Small Android ≤360×640 + text 100%/200% | ≥1 | UAT-001/002/004/005/011/014/016/030/032 |
+| Mainstream Android phone | ครอบคลุม general learner ≥12 โดย minors ≥4 | UAT-001–038 ตาม applicability อย่างน้อยหนึ่ง pass ต่อ case |
+| Small Android ≤360×640 + text 100%/200% | ≥1 | UAT-001/002/004/005/011/014/016/030/032–037 |
 | Android tablet portrait/landscape | ≥1 | UAT-002/005/011/014/015/030/032 |
-| TalkBack | ≥1 | UAT-002/004/005/007/011/015–017/019/032 |
-| Android Switch Access/external keyboard | ≥1 | UAT-002/004/005/007/011/015–017/032 |
-| Offline | ≥1 | UAT-004/005/010/018/022/032 |
+| TalkBack | ≥1 | UAT-002/004/005/007/011/015–017/019/032–037 |
+| Android Switch Access/external keyboard | ≥1 | UAT-002/004/005/007/011/015–017/032–037 |
+| Offline | ≥1 | UAT-004/005/010/018/022/032/033/035/037 |
 | Corrupt asset | ≥1 | UAT-004/019/022/032 |
 
-Accessibility participants รวมอย่างน้อย 4 moderated sessions ตาม MDS และหนึ่งคนอาจครอบคลุมหลาย profile ได้เมื่อบันทึก state/device แยกชัดเจน Research cases UAT-025–029 รันบน approved mainstream Android build; ไม่ต้องทำซ้ำบนทุก accessibility profile เว้นแต่ prompt/capture path ถูก profile นั้นเรียกใช้
+Accessibility participants รวมอย่างน้อย 4 moderated sessions ตาม MDS และหนึ่งคนอาจครอบคลุมหลาย profile ได้เมื่อบันทึก state/device แยกชัดเจน Research Prompt, guardian permission, learner assent, invalid permit และ withdrawal ต้องทำบน TalkBack, Switch Access/keyboard, text 200% และ offline profile ตาม UAT-037
 
 ## 5. Preconditions และ Stop Conditions
 
@@ -110,7 +116,7 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 3. เริ่ม screen recording/screenshot เมื่อได้รับอนุญาต;
 4. เก็บ database/event evidence ผ่าน approved diagnostic view ไม่เปิด raw answer/research payload;
 5. tester ต้องไม่เห็น expected result จนทำ action เสร็จ หากเป็น usability/comprehension test;
-6. research scripts ต้องมี ethics/guardian/assent approval ที่ applicable ก่อนเสมอ
+6. research scripts ต้องมี approved protocol และ signed permit fixture; minor ต้องมี guardian/assent runtime evidence ก่อนเสมอ
 
 ### 5.2 หยุดรอบทันทีเมื่อพบ
 
@@ -121,7 +127,7 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 - Standard fallback เข้าไม่ได้;
 - crash, retry loop, database corruption หรือ deletion กระทบ global content;
 - ข้อความตำหนิ/ลงโทษผู้เรียนหรือ false mastery claim;
-- consent withdrawal แล้วยังเกิด research enqueue ใหม่
+- permit/consent/assent withdrawal, expiry หรือ revocation แล้วยังเกิด treatment Host/start/research enqueue ใหม่
 
 ## 6. แบบบันทึกผลต่อ Script
 
@@ -154,7 +160,7 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 |---:|---|---|
 | 1 | เปิด build ที่ Adventure hidden ด้วย U-A และเข้า Learn | Learn layout/action set เหมือน baseline ไม่มี Today Experience card หรือ bottom tab ใหม่ |
 | 2 | เปิด Vocabulary, Review/Mastery และ Profile ตามปกติ | route/action สำคัญทำงานเหมือน baseline |
-| 3 | ลองเปิด stale/direct `learn/today-experience` จาก test harness | ถ้า Today ready แสดง Standard; ถ้าไม่พร้อมกลับ Learn พร้อม bounded reason |
+| 3 | ลองเปิด hidden/stale/direct `home/learn/today-experience` จาก test harness | กลับ Learn พร้อม bounded reason; Host/snapshot/opportunity count = 0 |
 | 4 | ตรวจ diagnostic/write summary กับ QA | ไม่มี Adventure row, learning write หรือ reward write |
 
 **Pass:** ผู้ใช้ทำงาน Standard ต่อได้โดยไม่รู้สึกว่าฟีเจอร์ใหม่รบกวน
@@ -434,7 +440,7 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 
 ## 12. UAT Scripts — Research, Consent และ Measurement
 
-ส่วนนี้รันได้เฉพาะเมื่อ `MS-06`, ethics/guardian/assent ที่ applicable และ Research/Privacy Owner อนุมัติแล้ว
+ส่วนนี้รันได้เฉพาะเมื่อ `MS-06`, approved protocol/ethics และ signed runtime permit fixture ครบ; minor fixture ต้องมี guardian permission + learner assent refs และ Research/Privacy Owner อนุมัติแล้ว
 
 ### UAT-025 — Non-participant ต้องเป็น zero-row
 
@@ -447,16 +453,16 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 | 3 | สลับ Standard แล้วกลับ Adventure | preference/presentation ทำงานโดยไม่สร้าง research |
 | 4 | ตรวจ local rows, outbox และ server fixture | exposure/measurement/origin persisted row = 0 |
 
-### UAT-026 — Consent/assignment/run gate และ stable assignment
+### UAT-026 — Permit/assignment/run gate และ stable assignment
 
 **Trace:** FR-076–080, BR-012–015; WBS 4.4/4.5; TC-RSH-002–004/006
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
-| 1 | ทดสอบ consent-only fixture | ไม่มี research row เพราะ assignment/run ไม่ครบ |
-| 2 | ทดสอบ assignment-only fixture | ไม่มี research row เพราะ consent ไม่ครบ |
-| 3 | เปิด U-R1 ที่ gate ครบ: เปิด host ก่อน plan แล้วเริ่ม mission | Presented ใช้ entryDecisionId/optional plan; MissionStarted ใช้ learningSessionId/required planId |
-| 4 | สลับ Standard ทั้งก่อนและหลังมี plan | assignment ยัง Adventure; switch ใช้ entryDecisionId และ plan correlation เฉพาะเมื่อมี |
+| 1 | ทดสอบ consent-only fixture | ไม่มี active permit/treatment/research row เพราะ assignment/run ไม่ครบ |
+| 2 | ทดสอบ assignment-only fixture | ไม่มี active permit/research row เพราะ consent ไม่ครบ |
+| 3 | เปิด U-R1 ที่ signed permit/run ครบ | opportunity เปิดก่อน `TodayExperiencePresented`; Started ผูก accepted learningSessionId |
+| 4 | สลับ Standard ทั้งก่อนและหลังมี plan | assignment ยัง Adventure; neutral change event pin assigned/effective presentation และ bounded ordinal |
 | 5 | restart/replay | assignment ไม่ถูก rewrite และ event identity ไม่ซ้ำ |
 
 ### UAT-027 — Research prompt, Skip และ bounded response
@@ -471,15 +477,15 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 | 4 | ใน run แยกเลือก bounded response | response code ที่อนุญาตบันทึกหนึ่งครั้ง ไม่มี free text |
 | 5 | กด submit ซ้ำ | idempotent; response ไม่ซ้ำ |
 
-### UAT-028 — Withdraw consent หยุด enqueue ทันที
+### UAT-028 — Withdraw consent/permit หยุด treatment และ enqueue ทันที
 
 **Trace:** FR-085, DATA-012, NFR-022; WBS 4.5/4.12; TC-RSH-008/009
 
 | Step | Tester action | Expected result/evidence |
 |---:|---|---|
 | 1 | เปิด prompt/event breakpoint ด้วย U-R1 | eligible state ยืนยันแล้ว |
-| 2 | withdraw consent ผ่าน approved flow ก่อน submit/enqueue | effective gate เปลี่ยนก่อน operation ถัดไป |
-| 3 | ลอง submit prompt/trigger exposure | rejected/suppressed โดย learning result ไม่เสีย |
+| 2 | withdraw consent/permit ผ่าน approved flow ก่อน submit/enqueue | active projection invalid ก่อน operation ถัดไป |
+| 3 | ลองเปิด treatment Host/start/submit prompt/trigger event | treatment/research operation rejected; product learning result ไม่เสีย |
 | 4 | ตรวจ local/outbox/server หลัง cutoff | ไม่มี research record ใหม่หลัง withdrawal timestamp |
 
 ### UAT-029 — Export และความเข้าใจแกนผลลัพธ์วิจัย
@@ -529,7 +535,81 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 | 4 | Release Owner ทำ emergency-off | new start blocked, accepted state safe, Standard restored |
 | 5 | คณะตัดสิน Continue/Hold/Rollback | decision, threshold, owner และ next review ถูกบันทึก |
 
-## 14. คำถามวัดความเข้าใจและแรงจูงใจ
+## 14. UAT Scripts — Participation Permit, Accessibility and Release Gates
+
+### UAT-033 — Guardian permit issuance and invalid permit
+
+**Trace:** FR-097/103, DATA-014, UI-015/017, NFR-035, BR-021; WBS 4.15/4.17/5.14; TC-DAT-017/018, TC-RSH-017/018/020, TC-UX-016/018
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | Guardian เปิด flow ของ U-M1 และอ่าน purpose/data/expiry/withdraw/no-learning-impact | อธิบายได้โดยไม่รับคำใบ้; actions Allow/Not now เท่าเทียมและไม่ preselect |
+| 2 | กด Allow ผ่าน approved enrollment | เกิด opaque guardian receipt ref; สถานะบอกว่ายังต้องมี learner assent ไม่ claim enrolled |
+| 3 | ตรวจ app data/export diagnostic | มี age-band code; ไม่มี full DOB/guardian PII |
+| 4 | เปิด U-M2 ที่ guardian ref หาย/signature ผิด/expired | active projection ไม่เกิด, zero opportunity/event; Continue learning ใช้ได้ |
+| 5 | Guardian กด Not now | learner เข้าผลิตภัณฑ์ต่อได้และไม่มี protocol treatment/research row |
+
+### UAT-034 — Learner assent and independent comprehension
+
+**Trace:** FR-098/103, UI-016/017, BR-021; WBS 4.17/5.14; TC-RSH-017/019, TC-UX-017/018
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | U-M1 เปิด assent หลัง guardian permission | copy ตาม age band พูดกับ learner โดยตรง; Agree/Not now เท่าเทียม |
+| 2 | Learner กด Not now | ไม่มี active permit/opportunity/event; กลับการเรียนและ focus ถูก restore |
+| 3 | ใน fixture ใหม่ Learner กด Agree | active projection เกิดเมื่อหลักฐานทุกส่วน valid เท่านั้น |
+| 4 | ถาม Skip/withdraw/no-learning-impact แยกจาก guardian | guardian และ learner ตอบผ่านเกณฑ์ของตนเอง; ห้ามใช้คำตอบแทนกัน |
+| 5 | ถอน assent หลังออก permit | projection invalid ก่อน operation ถัดไป; product learning ยังใช้ได้ |
+
+### UAT-035 — Expiry, revocation and withdrawal fallback
+
+**Trace:** FR-098, DATA-014/015, UI-017, NFR-035, BR-019/020; WBS 4.15/4.16/5.7; TC-ENT-015, TC-DAT-018/021, TC-OPS-018
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เปิด authorized Host ด้วย active permitและบันทึก snapshot fingerprint | Host/snapshot/opportunity เปิดครั้งเดียว |
+| 2 | ทำ permit expire/revoke/withdraw ก่อน mission start | new treatment start/capture ถูก block; assignment ไม่เปลี่ยน |
+| 3 | ตรวจ fallback ใน Host เดิม | session choice → preference → pure Standard view จาก snapshot เดิม |
+| 4 | เปิด stale/direct routeใหม่หลัง invalidation | กลับ Learn; ไม่สร้าง Host/snapshot/opportunity |
+| 5 | ทดสอบ offline invalid signature/known revocation revision | fail closed โดยไม่วน retry และยังเรียน product ได้ |
+
+### UAT-036 — Symmetric Standard/Adventure opportunity and events
+
+**Trace:** FR-099/100/101, DATA-015, NFR-034, BR-019/020; WBS 1.14/4.16/5.16; TC-ENT-014, TC-DAT-020/022, TC-RSH-021–024
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เปิด U-R1 Adventure และ U-R2 Standard ด้วย authorized Host | แต่ละ opening มี UUID/opportunity หนึ่งและ neutral event allowlistเดียวกัน |
+| 2 | เทียบ payload | ทั้งคู่ pin assignedTreatment/effectivePresentation; ไม่มี treatment-specific event name |
+| 3 | rebuild/retry/switch 12 ครั้ง | loader =1 ต่อ Host; ordinals 1–10 ไม่ซ้ำ; 2 ครั้งเกินเพิ่ม suppressed counter |
+| 4 | จำลอง Presented persistence failure | opportunity denominator ยังพบ; completeness reportชี้ missing event; replayไม่เพิ่ม denominator |
+| 5 | ทำ flow เดียวกันด้วย U-NP | transient UUID ได้ แต่ research tables/outbox/server =0 |
+
+### UAT-037 — Research-flow accessibility
+
+**Trace:** UI-014–017, NFR-016–019/034/035; WBS 4.17/5.15; TC-UX-019/020, TC-DAT-021
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | ใช้ TalkBack ทำ Prompt → Guardian → Assent → Invalid permit → Withdrawal | role/name/state/heading/action ถูก อ่านครั้งเดียว ไม่มี trap; Skip/Not now/Continue reachable |
+| 2 | ใช้ Switch Access/keyboard ทำ flow เดิม | logical focus order, 48×48 target, ไม่มี gesture-only action |
+| 3 | ใช้ text 200% บน narrow phone | essential copy/actionsไม่ clip; scrollได้; action hierarchyคงเดิม |
+| 4 | ปิด dialog/sheet ทุกชนิด | focus กลับ invoking controlและไม่ trigger submitซ้ำ |
+| 5 | ตัด networkระหว่าง validation/withdrawal | permit fail closed; ไม่มี enqueueหลัง cutoff; product learningยังใช้ได้ |
+
+### UAT-038 — Feasibility versus efficacy release decision
+
+**Trace:** FR-104, NFR-036/037, BR-022/023; WBS 5.13/5.17/6.4–6.10; TC-RSH-025–027, TC-OPS-016/017
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | ป้อน fixture ที่ MS-08A ผ่านแต่ sample ยังไม่ powered | decision สูงสุด Limited; UI/config ปฏิเสธ Enabled/Controlled |
+| 2 | ป้อน adult fixture ที่ powered/threshold ผ่าน และ minor incomplete | adult = eligible; minor = Remain Limited; targetingไม่รั่วข้าม class |
+| 3 | ป้อน class fixture missing post >15% หรือ arm difference >5pp | class นั้นถูก block แม้ ANCOVA estimate ผ่าน |
+| 4 | ตรวจ analysis package | baseline ≤24h, post หลัง first accepted completion ≤30m, ITT ANCOVA, MI และ tipping-point ครบ |
+| 5 | ทำ Controlled Expansion + emergency rollback rehearsal | เฉพาะ class approvedเข้าได้; signed decision/monitoring/rollback evidenceครบ |
+
+## 15. คำถามวัดความเข้าใจและแรงจูงใจ
 
 ถามหลังผู้ใช้ทำงานเอง ห้ามชี้นำคำตอบ:
 
@@ -546,16 +626,18 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 ### เกณฑ์ comprehension
 
 - General learner representatives ขั้นต่ำ 12 คน;
+- ใน 12 คนต้องมี minors อย่างน้อย 4 คน;
 - อย่างน้อย 11/12 หา Learn card, primary mission และ Standard switch ได้โดยไม่ช่วย;
 - อย่างน้อย 11/12 อธิบาย wrong-answer recovery ว่า “ฝึก/ทบทวนอีก” ไม่ใช่ “ถูกลงโทษ”;
 - อย่างน้อย 11/12 แยก Learning/Effort/Engagement ได้หลังอ่าน copy ครั้งเดียว;
 - accessibility sessions ขั้นต่ำ 4 และ required path ต้องผ่านทุก session;
 - research comprehension participants ขั้นต่ำ 10 และ 10/10 ระบุได้ว่า Skip/withdraw ได้และไม่กระทบสิทธิ์เรียน;
+- guardian–learner dyads ขั้นต่ำ 5 คู่ โดย guardian 5/5 และ learner 5/5 ต้องผ่าน Skip/withdraw/no-learning-impact แยกกัน;
 - shame/coercion/false mastery finding ที่ยืนยันแล้วต้องเป็นศูนย์ก่อน Pilot
 
 ค่าเหล่านี้เป็น acceptance threshold ของ UAT ไม่ใช่ผลวิจัยประสิทธิผล และห้ามตีความแทน protocol
 
-## 15. Defect และ Decision Log
+## 16. Defect และ Decision Log
 
 | Defect ID | UAT/Step | Severity | Actual/Expected | Evidence | Owner | Target | Retest | Disposition |
 |---|---|---|---|---|---|---|---|---|
@@ -563,16 +645,16 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 
 Severity:
 
-- **S0 Stop:** data loss/duplication, owner leak, consent violation, direct reward grant, Standard unavailable, corruption/retry loop;
+- **S0 Stop:** data loss/duplication, owner leak, permit/consent/assent violation, direct reward grant, Standard unavailable, cross-class rollout, corruption/retry loop;
 - **S1 Critical:** core mission unusable, wrong result meaning, critical accessibility blocker, emergency-off failure;
 - **S2 Major:** recoverable main-flow defect or widespread confusing copy;
 - **S3 Minor:** cosmetic/nonblocking issue
 
 S0/S1 ต้องแก้และ rerun affected scripts + regression ก่อน sign-off; S2 ต้องมี owner/date/accepted risk; S3 เข้า backlog ได้เมื่อไม่กระทบ comprehension/accessibility
 
-## 16. Exit Criteria และ Sign-off
+## 17. Exit Criteria และ Sign-off
 
-### 16.1 Internal acceptance
+### 17.1 Internal acceptance
 
 - UAT-001–024 และ 030–032 ผ่านอย่างน้อยหนึ่งครั้งบน mainstream Android และ critical subsets ผ่านบน profile ตามตาราง 4.4;
 - general learner representatives ≥12 และ accessibility sessions ≥4 พร้อม numerator/denominator ตาม MDS;
@@ -581,18 +663,30 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 - baseline `G0A` ผ่าน และไม่มี unclassified failure ใน touched foundation;
 - Requirement/Test/UAT links ใน RTM ตรงกับ build
 
-### 16.2 Pilot acceptance
+### 17.2 MS-08A Feasibility acceptance
 
 - Internal acceptance ผ่าน;
 - `G0B` และ `BG-01–BG-12` ผ่านด้วย fresh evidence;
-- UAT-025–029 ผ่านภายใต้ approved protocol;
-- research comprehension ≥10 และผ่าน 10/10;
+- UAT-025–037 ผ่านภายใต้ approved protocol ตาม applicability;
+- general learners ≥12 โดย minors ≥4; accessibility moderated sessions ≥4;
+- adult research comprehension ≥10 และผ่าน 10/10;
+- guardian–learner dyads ≥5; guardian 5/5 และ learner 5/5 ผ่านแยกกัน;
 - Android Pilot matrix ครบ; excluded platforms/capabilities ระบุชัด;
 - nonparticipant zero-row และ withdrawal cutoff = 100%;
 - comprehension thresholds ผ่าน;
-- Research/Privacy, Accessibility, QA, Tech และ Product sign-off ครบ
+- Research/Privacy, Accessibility, QA, Tech และ Product sign-off ครบ;
+- decision ได้เพียง Limited/Revise/Stop; ห้าม Controlled Expansion/Enabled หรือ efficacy claim
 
-### 16.3 Sign-off table
+### 17.3 MS-08B Efficacy acceptance
+
+- UAT-038 ผ่านด้วย frozen evidence ของ participant class นั้น;
+- powered sample, endpoint window, ANCOVA, MI/tipping-point และ learning/safety thresholds ผ่าน;
+- missing post ≤15% และ arm difference ≤5 percentage points;
+- rollout targeting แยก adult/minor และ cross-class negative smoke ผ่าน;
+- class ที่ไม่ผ่านยังคง Limited;
+- signed Expand/Remain Limited/Stop decision ครบ
+
+### 17.4 Sign-off table
 
 | Role | Decision | Name | Date | Build/evidence | Conditions |
 |---|---|---|---|---|---|

@@ -1,6 +1,6 @@
 # Adventure Motivation Mode — Document Set Index
 
-**Document set version:** 1.0
+**Document set version:** 1.1
 **Status:** Draft for Owner Review
 **Date:** 2026-09-01
 **Product:** LexiQuest
@@ -18,13 +18,14 @@
 |---|---|---|---|
 | 00 | Document Set Index | ควบคุมเวอร์ชัน ลำดับอำนาจ และสถานะเอกสาร | Product Owner |
 | 00A | [Current System Audit](00a-current-system-audit.md) | หลักฐานระบบจริง gap/impact matrix ความเสี่ยง และ Go/No-Go gates | CTO + QA Lead + Product Owner |
-| 00B | [Architecture Decision Records](00b-architecture-decision-records.md) | ปิด decision เรื่อง Learn entry, consent boundary, event identity, MVP stop point และ Pilot scope | Product Owner + CTO |
+| 00B | [Architecture Decision Records](00b-architecture-decision-records.md) | ปิด route authorization, permit boundary, neutral events/opportunity, snapshot, minor participation และ rollout gates | Product Owner + CTO |
 | 01 | [TOR](01-tor.md) | เป้าหมาย ขอบเขต ผลส่งมอบ เงื่อนไขตรวจรับ | Sponsor/Product Owner |
 | 02 | [SRS](02-srs.md) | Functional, data, integration และ non-functional requirements | Product Owner + CTO |
 | 03 | [SDS](03-sds.md) | Component, interface, data, failure, security/privacy และ deployment design | CTO/Tech Lead |
 | 04 | [Project Plan / WBS](04-project-plan-wbs.md) | ลำดับงาน dependency gate บทบาทและความเสี่ยง | Project Manager + CTO |
 | 05 | [UI/UX Design Spec & Wireframes](05-ui-ux-design-spec-wireframes.md) | Information architecture, screen states, copy, accessibility และ wireframes | Product/UX Owner |
 | 05A | [Wireframe Overview](05a-wireframe-overview.svg) | ภาพรวมหน้าจอหลักแบบ low fidelity | Product/UX Owner |
+| 05B | [Research Participation Wireframes](05b-research-participation-wireframes.svg) | Guardian permission, learner assent, prompt, invalid permit และ withdrawal continuation | Product/UX/Privacy Owner |
 | 06 | [Test Plan & Test Cases](06-test-plan-and-test-cases.md) | กลยุทธ์ทดสอบ ชุดข้อมูล test case และ exit criteria | QA Lead + CTO |
 | 07 | [UAT Script](07-uat-script.md) | ขั้นตอนตรวจรับโดยผู้ใช้ หลักฐาน และ sign-off | Product Owner/UAT Lead |
 | 08 | [Requirements Traceability Matrix](08-requirements-traceability-matrix.md) | เชื่อม requirement → design → WBS → test → UAT | BA/QA Lead |
@@ -63,16 +64,19 @@
 | Preference | ตัวเลือก Standard/Adventure ของผู้ใช้; ไม่ใช่ assignment |
 | Crossover | ผู้เข้าร่วมเปลี่ยนไปใช้ Standard ระหว่าง treatment; assignment เดิมไม่ถูกเขียนทับ |
 | Internal | เปิดเฉพาะทีมเพื่อทดสอบ ไม่ใช่ production rollout |
-| Pilot | การเปิดแบบจำกัดที่ผ่าน consent, protocol และ gate ทั้งหมด |
-| Enabled | เปิดใช้งานแบบควบคุมหลังผ่าน Pilot ไม่ได้หมายถึงเปิดให้ทุกคนทันที |
+| Active Presentation Permit | Minimal projection ที่ Product Entry ใช้เลือก protocol treatment โดยไม่เห็น raw receipts |
+| Measurement Opportunity | Participant-only denominator ต่อ authorized Host opening |
+| Limited | สถานะสูงสุดหลัง MS-08A Feasibility; ยังห้าม claim efficacy/ขยายทั่วไป |
+| Controlled Expansion | เปิดเฉพาะ participant class ที่ผ่าน MS-08B |
+| Enabled | เปิดใช้งานหลัง class-specific efficacy และ controlled rollout ผ่าน |
 
 ## 5. Invariants Across All Documents
 
-1. Standard Today Hub ต้องใช้งานได้เสมอและเป็น fallback
+1. Standard Today Hub เดิมยังอยู่; Standard fallback ผ่าน Adventure route ใช้ได้เฉพาะ Host ที่ authorized แล้ว ส่วน hidden/disabled/unknown/stale route กลับ Learn
 2. Adventure ไม่เป็นเจ้าของ Vocabulary, SRS, Mastery, Assessment, Quest, Streak, Achievement, XP, Coins, Reward, Recommendation, Today Hub หรือ History
 3. ไม่มี `adventure_progress` table ในขอบเขตนี้
 4. ทุกคำตอบผ่าน Unified Lesson Shell และ Evidence Gateway เดิม
-5. Feature state, learner preference, experiment assignment และ consent เป็นคนละ state
+5. Feature state, learner preference, experiment assignment, consent/guardian/assent receipts และ participation permit เป็นคนละ state
 6. ตอบผิดไม่ลด progress, streak, XP หรือสิทธิ์เรียน
 7. ไม่มี hearts/lives, forced timer, public leaderboard, generative AI, camera quest, multiplayer หรือ social network ใน treatment แรก
 8. งาน schema ใช้ migration ไปข้างหน้า: วางแผน v23 สำหรับ preference v2 และ v24 สำหรับ research measurement แต่ต้อง reserve จาก ledger จริง; หากเลขถูกใช้ก่อนเริ่มงานต้อง rebase ขึ้นโดยไม่ใช้ซ้ำ
@@ -80,11 +84,14 @@
 10. Owner-scoped data ใหม่ต้องรองรับ guest upgrade, sync, export, withdrawal, deletion และ retention
 11. Feature-off ต้อง behaviorally equivalent กับ baseline ยกเว้น schema ที่เพิ่มแบบ forward-compatible
 12. ห้ามกล่าวว่าชุดทดสอบ baseline ผ่านทั้งหมดจนกว่า 15 failures ใน Current System Audit จะถูกปิด; Android Pilot ใช้เฉพาะ fresh passing evidence ของ logical/shared + touched scope และต้องประกาศ capability exclusions ตาม ADR-005
-13. Product Entry ไม่มี consent เป็น input; Research Capture ไม่มีอำนาจเปลี่ยน presentation
-14. Production v1 ไม่เพิ่ม bottom tab; entry เป็น additive card `learn/today-experience` ใน Learn surface
-15. Pre-session event ใช้ entryDecisionId; mission event ใช้ learningSessionId ตาม ADR-003
+13. Product Entry ไม่อ่าน raw consent/guardian/assent; รับเฉพาะ active permit projection และเมื่อ projection invalid ใช้ session choice → preference → Standard
+14. Production v1 ไม่เพิ่ม bottom tab; entry เป็น additive card `home/learn/today-experience` ใน Learn surface
+15. Standard/Adventure ใช้ neutral event policy และ participant opportunity เดียวกัน; `entryAttemptId` เป็น UUID v4 หนึ่งค่าต่อ authorized Host opening
 16. MS-04 เป็นจุด Accept/Stop/Continue ของ Product Core MVP ที่หยุดได้โดยไม่มี schema migration
 17. Pilot v1 เป็น Android-only; excluded platform/capability ไม่ถือว่าผ่าน
+18. Today Experience Host load snapshot ครั้งเดียวและส่ง object เดียวให้ pure `TodayHubView(snapshot)`/`AdventureHubScreen(snapshot)`
+19. Minor treatment/research ต้องมี guardian-led signed permit ที่อ้าง guardian permission + learner assent; ไม่เก็บ full DOB/guardian PII
+20. MS-08A ให้ได้สูงสุด Limited; MS-08B ตัดสิน adult/minor แยกกัน
 
 ## 6. Review and Approval Workflow
 
@@ -95,19 +102,19 @@
 | G2 Experience | UI/UX Spec + wireframe accessibility review | flow และทุก screen state ถูกยืนยัน |
 | G3 Build Ready | Project Plan/WBS + Implementation Plan + Test Plan | งานระดับไฟล์และ test-first sequence พร้อม |
 | G4 Internal Ready | Test evidence ของ Phase 0–3 | feature ยัง hidden; ทีมทดลองได้ |
-| G5 Pilot Ready | Research, privacy, accessibility, offline, UAT evidence | เปิด Pilot แบบ consented ได้ |
-| G6 Enablement | Pilot report + rollback rehearsal | ขยายการเปิดแบบควบคุมได้ |
+| G5 / MS-08A Feasibility | Permit, data quality, privacy, accessibility, offline, comprehension/UAT | เปิด Limited study ต่อได้; no efficacy claim |
+| G6 / MS-08B Efficacy | Powered class analysis, missingness, learning/safety, UAT-038 | ขยายเฉพาะ adult/minor class ที่ผ่าน |
 
 ## 6.1 Controlled Coverage Totals
 
 | Artifact | Controlled count | หมายเหตุ |
 |---|---:|---|
-| SRS requirements | 174 | FR 96 + DATA 13 + UI 14 + NFR 33 + BR 18 |
-| Planned detailed test cases | 114 | ENT/JRN อย่างละ 12; LRN/REC/DAT/RSH/UX/OPS อย่างละ 15 |
-| UAT scripts | 32 | nonresearch, accessibility, lifecycle, research และ release |
+| SRS requirements | 196 | FR 104 + DATA 15 + UI 17 + NFR 37 + BR 23 |
+| Planned detailed test cases | 144 | ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20, OPS 18 |
+| UAT scripts | 38 | product, accessibility, lifecycle, participation, research และ release gates |
 | Adventure modules | 11 | M01–M11; M07 เป็น read-only projection reader |
 | Current Drift tables | 44 | schema v22 baseline; Phase 1 ต้องไม่เพิ่มตาราง |
-| Architecture decisions | 5 | Entry, consent, events, increments, Pilot scope |
+| Architecture decisions | 8 | Entry, permit, neutral events, increments, Pilot scope, snapshot, minors, MS-08A/B |
 | Measurement axes | 5 + reliability/safety | Motivation primary; Engagement/Effort/Learning แยกกัน |
 
 ตัวเลขนี้เป็น coverage inventory ไม่ใช่ผลผ่านการทดสอบ
@@ -133,5 +140,5 @@
 
 - อนุญาตให้ทำเอกสาร wireframe และ prototype ที่ไม่เขียนข้อมูล;
 - implementation แบบ hidden/default-off ต้องผ่าน gate “before implementation” ใน Audit;
-- ห้าม Pilot หรือ production enablement จนกว่า baseline, consent/lifecycle, accessibility, security/dependency และ release gates จะมี fresh passing evidence;
+- ห้าม MS-08A จน baseline, permit/lifecycle, accessibility, security/dependency และ release gates มี fresh passing evidence; ห้าม Controlled Expansion/Enabled จน class นั้นผ่าน MS-08B;
 - native-assets crash ที่บันทึกใน draft รุ่นก่อนหน้าไม่ใช่ข้อจำกัดปัจจุบันและห้ามนำมาใช้แทนผลตรวจล่าสุด

@@ -1,14 +1,14 @@
 # Requirements Traceability Matrix — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-RTM-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for BA/QA/Tech Review
 **Date:** 2026-09-01
-**Requirements source:** `02-srs.md` v1.0
-**Design source:** `03-sds.md` v1.0
-**Delivery source:** `04-project-plan-wbs.md` v1.0
-**Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.0
-**Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.0
+**Requirements source:** `02-srs.md` v1.1
+**Design source:** `03-sds.md` v1.1
+**Delivery source:** `04-project-plan-wbs.md` v1.1
+**Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.1
+**Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.1
 
 ## 1. วิธีใช้ Matrix
 
@@ -38,11 +38,11 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-FR-001 | เพิ่ม broad feature แบบ additive ไม่เป็น f45 | M01 / §10 | 0.12–0.13 | ENT-001, OPS-015 | 001 | P |
 | AMM-FR-002 | default state = hidden | M01 / §10 | 0.12–0.13 | ENT-001 | 001 | P |
 | AMM-FR-003 | eligible additive Learn card; no bottom tab | ADR-001 / M01 | 0.10,0.12,1.11 | ENT-001/003/004, UX-001/015 | 001,002 | P |
-| AMM-FR-004 | stale/config fallback Standard-or-Learn ตาม Today readiness | ADR-001 / M01 | 0.14,1.10–1.11 | ENT-002/003/006 | 001,004 | P |
+| AMM-FR-004 | unauthorized hidden/disabled/unknown/stale route → Learn; authorized Host may Standard fallback | ADR-001 / M01 | 0.14,1.10–1.14 | ENT-002/003/006/013 | 001,004,035 | P |
 | AMM-FR-005 | feature state ไม่แก้ assignment | M01/M10 | 0.13,4.5 | ENT-010 | 003,026 | P |
 | AMM-FR-006 | Phase 1 session choice; Phase 3 preference | M01 | 1.9,3.3 | ENT-004/005, DAT-005 | 002,003 | P |
 | AMM-FR-007 | switch ไม่ rewrite stable assignment | M01/M10 | 4.5,4.8 | ENT-010, RSH-006 | 003,026 | P |
-| AMM-FR-008 | Product Entry มี entry ID/pins; ไม่มี consent input | ADR-002 / M01 | 0.14,0.16 | ENT-002–006, RSH-001–003 | 002–004,025–026 | P |
+| AMM-FR-008 | Product Entry มี UUID/pins; active projection only, no raw receipts | ADR-002 / M01 | 0.14,0.16,4.15 | ENT-002–006/014/015, RSH-016–020 | 002–004,026,035 | P |
 | AMM-FR-009 | emergency-off บล็อก start ไม่ทำลาย session | M01/M09 | 2.12,5.7 | ENT-007–009, OPS-011 | 022,032 | P |
 | AMM-FR-010 | Standard escape ไม่ต้อง scroll | M01/M02 | 1.9,1.12 | UX-001/003/005 | 002,015,016 | P |
 | AMM-FR-011 | shell อ่าน snapshot ไม่เขียน repo | M02 | 1.6–1.11 | JRN-005, LRN-015 | 001,005 | P |
@@ -92,7 +92,7 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-FR-045 | submission identity เดียวข้าม retry | M06/M09 | 2.10–2.11 | LRN-011–013 | 006,009,010 | P |
 | AMM-FR-046 | Adventure UI ไม่ import/write Drift learning | M06 / §8 | 2.2–2.5 | architecture test, DAT-001 | 006 | P |
 | AMM-FR-047 | assessment ไม่เป็น reward mission | M06/M10 | 3.5 | LRN-014 | 024 | P |
-| AMM-FR-048 | pre-session entry ID; mission session ID; deterministic occurrence | ADR-003 / M06/M10 | 4.7–4.8 | LRN-006, RSH-004–007 | 025,026 | P |
+| AMM-FR-048 | pre-session opportunity; mission session link; neutral deterministic occurrence | ADR-003 / M06/M10 | 4.7–4.8/4.16 | LRN-006, RSH-004–007/021–024 | 025,026,036 | P |
 | AMM-FR-049 | motivation อ่านหลัง evidence/side effect commit | M07 | 3.5–3.7 | REC-007/008 | 012 | P |
 | AMM-FR-050 | อ่าน receipts เดิม ห้าม grant/mutate | M07 | 3.5–3.7 | REC-007–010 | 012 | P |
 | AMM-FR-051 | เปิด map/story ไม่ได้ reward | M07 | 3.5–3.6 | REC-010 | 012 | P |
@@ -132,25 +132,33 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 |---|---|---|---|---|---|---|
 | AMM-FR-076 | stable assignment จาก ExperimentRegistry | M10 | 4.4–4.5 | RSH-002–007 | 026 | P |
 | AMM-FR-077 | preference/feature/crossover ไม่ rewrite assignment | M10 | 4.5/4.8 | ENT-010, RSH-006/007 | 003,026 | P |
-| AMM-FR-078 | collect เมื่อ consent+assignment+run ครบ | M10 | 4.4–4.5/4.8 | RSH-001–004 | 025,026 | P |
+| AMM-FR-078 | protocol treatment/collect เมื่อ signed permit+run ครบ | M01/M10 | 4.5/4.8/4.15 | RSH-001–004/016–020 | 025,026,033–035 | P |
 | AMM-FR-079 | prompt ที่ breakpoint, Skip ได้ | M10 | 4.6 | RSH-010/011, UX-013 | 027 | P |
 | AMM-FR-080 | measurement run pins versions | M10 / §4 | 4.1–4.5 | RSH-004/014/015 | 026,029 | P |
 | AMM-FR-081 | bounded response ไม่มี free text | M10 | 4.1/4.5 | RSH-012/013 | 027 | P |
-| AMM-FR-082 | exact four exposure events v1 | M10 | 4.7–4.8 | RSH-004/006/007 | 026 | P |
+| AMM-FR-082 | exact four neutral events v1 for both treatments | M10 | 4.7–4.8/4.16 | RSH-004/006/007/021–024 | 026,036 | P |
 | AMM-FR-083 | ใช้ EventEnvelopeV2 เดิม | M10 | 4.7–4.8 | RSH-004, OPS-014 | 026,031 | P |
 | AMM-FR-084 | nonparticipant zero-row | M10 | 4.5/4.8 | ENT-011, RSH-001/005 | 025 | P |
 | AMM-FR-085 | withdrawal หยุด create/enqueue/upload | M10 | 4.5/4.12 | RSH-008/009 | 028 | P |
 | AMM-FR-086 | export แยกห้า axes | M10 | 4.12 | RSH-014 | 029 | P |
 | AMM-FR-087 | ITT primary; crossover secondary | M10 | 4.13 | RSH-015 | 026,029 | P |
-| AMM-FR-088 | ethics/guardian/assent ก่อน collection | M10 / §8 | 5.9 | governance checklist | 025–029 precondition | P/GOV |
+| AMM-FR-088 | minor guardian+assent runtime permit | M10 / §8 | 4.15/4.17/5.14 | RSH-017–020, UX-016/017 | 033,034 | P |
 | AMM-FR-089 | bounded operational diagnostics | M11 | 5.5–5.7/6.2 | OPS-007/008/011/013 | 004,019,022,031 | P |
 | AMM-FR-090 | diagnostics ไม่เก็บ sensitive payload | M11 / §8 | 6.2 | OPS-013 | 031 | P |
 | AMM-FR-091 | offline entry เฉพาะ verified revisions | M11/M03 | 2.13/5.5 | JRN-011, OPS-006 | 018 | P |
 | AMM-FR-092 | asset removal ไม่ลบ learning/progress | M11 | 5.5 | JRN-010–012 | 019 | P |
 | AMM-FR-093 | corrupt bundle repair/remove path | M11 | 5.5 | JRN-010–012, OPS-008 | 019 | P |
-| AMM-FR-094 | rollout Hidden→Internal→Pilot→Enabled | M11 / §13 | 5.1/5.10/6.1–6.5 | OPS-015 | 032 | P/GOV |
+| AMM-FR-094 | rollout Hidden→Internal→Limited→Controlled→Enabled | M11 / §13 | 5.1/5.10/5.13/6.7–6.9 | OPS-015–017 | 032,038 | P/GOV |
 | AMM-FR-095 | emergency-off rehearsal ก่อน rollout | M11 | 5.7/6.6 | OPS-011/015 | 022,032 | P |
 | AMM-FR-096 | unknown payload fail closed | M11 / §6 | 5.5/6.2 | OPS-014 | 031 | P |
+| AMM-FR-097 | validate signed permit; Product Entry sees active projection only | M01/M10 / ADR-002 | 4.15 | DAT-017/018, RSH-016–020 | 033–035 | P |
+| AMM-FR-098 | withdrawal/expiry/revocation fallback without learning loss | M01/M10 | 4.15/5.7 | ENT-015, DAT-021, OPS-018 | 028,035 | P |
+| AMM-FR-099 | neutral symmetric events for both treatments | M10 / ADR-003 | 4.16 | RSH-021/022/024 | 036 | P |
+| AMM-FR-100 | participant opportunity ledger; nonparticipant zero-row | M10 / §4 | 4.16 | DAT-022, RSH-023 | 025,036 | P |
+| AMM-FR-101 | one UUID v4 per Host opening, reuse on rebuild/retry/switch | M01/M10 | 1.14/4.16 | ENT-014, DAT-020 | 035,036 | P |
+| AMM-FR-102 | one Today load; pure Standard/Adventure views share snapshot | M01/M02 / ADR-006 | 1.14 | ENT-014 | 035,036 | P |
+| AMM-FR-103 | guardian-led minor permit; age-band/no guardian PII | M10 / ADR-007 | 4.15/4.17 | DAT-017/019, UX-016/017 | 033,034 | P |
+| AMM-FR-104 | adult/minor class-specific release isolation | M11 / ADR-008 | 4.19/6.7–6.9 | RSH-027, OPS-017 | 038 | P |
 
 ## 7. Data Requirements
 
@@ -162,13 +170,15 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-DATA-004 | migration รักษา v1 fields ทุกค่า | M01 | 3.1–3.2 | DAT-004 | 003 | P |
 | AMM-DATA-005 | unknown experience → effective Standard | M01 | 3.2–3.3 | DAT-006/007 | 003,004 | P |
 | AMM-DATA-006 | mutation ผ่าน use case/owner gate | M01 | 3.3 | DAT-005/010 | 003,023 | P |
-| AMM-DATA-007 | research migration เพิ่มเพียง runs/responses บนเลข reserve จริง | M10 / §4 | 0.11,4.2–4.3 | DAT-003/011 | 025–029 | P |
+| AMM-DATA-007 | research migration เพิ่ม 4 tables บนเลข reserve จริง | M10 / §4 | 0.11,4.2–4.3/4.15–4.16 | DAT-003/011/016 | 025–036 | P |
 | AMM-DATA-008 | research identity idempotent/owner-scoped | M10 | 4.3–4.5 | DAT-014, RSH-013 | 020,027 | P |
 | AMM-DATA-009 | research rows ครบ owner lifecycle manifest | M10 | 4.11 | DAT-011/012 | 020,021 | P |
 | AMM-DATA-010 | guest upgrade รักษา identity ตาม policy | M10/M01 | 3.4,4.11 | DAT-009 | 020 | P |
 | AMM-DATA-011 | sync payload versioned/bounded/reject replay | M10 | 3.4,4.9–4.10 | DAT-007/008/014 | 020,026–029 | P |
 | AMM-DATA-012 | lifecycle ครอบคลุม preference/research | M10/M11 | 3.4,4.11–4.12 | DAT-009–013 | 020,021,028,029 | P |
 | AMM-DATA-013 | schema ledger ห้าม reuse/released edit | §4/§13 | 0.11,3.1,4.2 | DAT-002/003 | pre-build review | P/GOV |
+| AMM-DATA-014 | participation permit lifecycle/rules/sync/export/withdraw/delete/retention | M10 / §4 | 4.9–4.12/4.15 | DAT-016–019/021 | 020,021,028,033–035 | P |
+| AMM-DATA-015 | opportunity lifecycle + transactional switch/suppression | M10 / §4 | 4.9–4.12/4.16 | DAT-016/019/020/022 | 025,036 | P |
 
 ## 8. UI/UX Requirements
 
@@ -188,6 +198,9 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-UI-012 | failure copy actionable/no blame | M02/M08/M11 | 1.10,3.11 | UX-011 | 004,014 | P |
 | AMM-UI-013 | Result copy แยกสามแกน | M09 | 2.8–2.9 | REC-012, UX-012 | 011 | P |
 | AMM-UI-014 | prompt purpose/Skip/consent details | M10 | 4.6 | RSH-010/011, UX-013 | 027 | P |
+| AMM-UI-015 | guardian permission flow and no-learning-impact copy | M10 / UX-12 | 4.17/5.14 | UX-016/019/020 | 033,037 | P |
+| AMM-UI-016 | age-banded independent learner assent | M10 / UX-13 | 4.17/5.14 | UX-017/019/020 | 034,037 | P |
+| AMM-UI-017 | invalid/expired/revoked permit product-continuation UX | M01/M10 / UX-14/15 | 4.17/5.15 | UX-018–020 | 035,037 | P |
 
 ## 9. Non-Functional Requirements
 
@@ -226,6 +239,10 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-NFR-031 | feature-off ไม่ down-migrate | §13 | 3.2/4.3/6.1 | DAT-015 | 003,022 | P |
 | AMM-NFR-032 | shared foundation clean + Android scoped dispositions | ADR-005 / §12/§13 | 0.3–0.9, BG-01–10 | fresh logical/Android matrix | 032 | B→P |
 | AMM-NFR-033 | scans/platform/model gates ไม่แย่ลง | §8/§12 | 0.6–0.9, BG-07–11 | Gitleaks/OSV/platform/model/diff | 032 | B→P |
+| AMM-NFR-034 | one loader call and snapshot identity per Host | §3 M01/§10 | 1.14 | ENT-014 | 035,036 | P |
+| AMM-NFR-035 | offline signed-permit validation fail closed | §3 M10/§8 | 4.15/5.15 | DAT-018/021, RSH-020 | 035,037 | P |
+| AMM-NFR-036 | >15% total or >5pp arm missing post blocks efficacy | MDS §7 | 4.18/6.4–6.5 | RSH-026/027 | 038 | P |
+| AMM-NFR-037 | adult/minor rollout isolation | §13 / ADR-008 | 4.19/6.7–6.9 | OPS-017 | 038 | P |
 
 ## 10. Business Rules
 
@@ -249,17 +266,22 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-BR-016 | result axes ไม่รวมคะแนนเดียว | M09 | 2.8–2.9 | REC-012 | 011 | P |
 | AMM-BR-017 | world v1 ไม่มี durable branching choice | M03 | 0.16–0.18 | catalog validator/review | 019 | P |
 | AMM-BR-018 | catalog เอา Standard fallback ออกไม่ได้ | M01/M03 | 0.18/1.10 | JRN-008–011 | 001,004,019 | P |
+| AMM-BR-019 | active permit precedence; no raw receipts in Product Entry | M01/M10 | 4.15 | ENT-010/015, RSH-016 | 026,035 | P |
+| AMM-BR-020 | no permit → session choice → preference → Standard; zero research rows | M01/M10 | 1.14/4.15 | ENT-015, DAT-022 | 025,035 | P |
+| AMM-BR-021 | minor requires guardian + assent runtime evidence | M10 | 4.15/4.17 | RSH-017–019 | 033,034 | P |
+| AMM-BR-022 | MS-08A ceiling is Limited | M11 / ADR-008 | 5.13/5.17 | OPS-016 | 038 | P/GOV |
+| AMM-BR-023 | MS-08B powered decision separate per class | M11 / MDS | 6.4–6.9 | RSH-027, OPS-017 | 038 | P/GOV |
 
 ## 11. Coverage Summary
 
 | Requirement family | Count | Design mapped | WBS mapped | Verification mapped | Current verified |
 |---|---:|---:|---:|---:|---:|
-| Functional | 96 | 96 | 96 | 96 | 0 — implementation not started |
-| Data | 13 | 13 | 13 | 13 | 0 — planned migrations not created |
-| UI/UX | 14 | 14 | 14 | 14 | 0 — wireframe/spec only |
-| Non-functional | 33 | 33 | 33 | 33 | 0 Adventure; baseline evidence recorded separately |
-| Business rules | 18 | 18 | 18 | 18 | 0 Adventure; authority behavior characterized in Audit |
-| **Total** | **174** | **174** | **174** | **174** | **0 Adventure verified** |
+| Functional | 104 | 104 | 104 | 104 | 0 — implementation not started |
+| Data | 15 | 15 | 15 | 15 | 0 — planned migrations not created |
+| UI/UX | 17 | 17 | 17 | 17 | 0 — wireframe/spec only |
+| Non-functional | 37 | 37 | 37 | 37 | 0 Adventure; baseline evidence recorded separately |
+| Business rules | 23 | 23 | 23 | 23 | 0 Adventure; authority behavior characterized in Audit |
+| **Total** | **196** | **196** | **196** | **196** | **0 Adventure verified** |
 
 ## 12. Gate Traceability
 
@@ -271,25 +293,29 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | MS-03 Read-only preview | FR-011–041, DATA-001 | deterministic/zero-write/schema v22 |
 | MS-04 Product Core MVP decision | FR-042–048/066–075 | exact command/evidence/restart equivalence + Accept/Stop/Continue record |
 | MS-05 Core motivation | FR-049–065, DATA-002–006 | read-only receipt projection + preference lifecycle |
-| MS-06 Research ready | FR-076–090, DATA-007–013 | consent/assignment/rules/sync/export/delete/zero-row |
-| MS-07 Internal accepted | UI-001–014, NFR-008–031 | accessibility/offline/performance/UAT |
-| MS-08 Pilot accepted | FR-088/094/095, NFR-020–025/032/033 | protocol approvals, Pilot UAT, guardrails |
+| MS-06 Research ready | FR-076–103, DATA-007–015 | permit/opportunity/neutral events/rules/sync/export/delete/zero-row |
+| MS-07 Internal accepted | UI-001–017, NFR-008–035 | product + research-flow accessibility/offline/performance/UAT |
+| MS-08A Feasibility | FR-088/094/095/097–103, NFR-020–025/032–035, BR-021/022 | protocol, permit, data quality, comprehension, safety; Limited ceiling |
+| MS-08B Efficacy per class | FR-104, NFR-036/037, BR-023 | powered ANCOVA/MI/tipping, learning/safety/missingness, UAT-038 |
 
 ## 12.1 Decision and Measurement Traceability
 
 | Decision/measurement | Requirements protected | WBS | Test/UAT evidence |
 |---|---|---|---|
-| ADR-001 Learn entry/no bottom tab | FR-003/004/010, NFR-001/006 | 0.10/0.12/1.11 | ENT-001–006, UX-001/015, UAT-001/002/004 |
-| ADR-002 Product vs Research decision | FR-005/007/008/076–085, BR-012–015 | 0.14/4.5/4.8 | ENT-010/011, RSH-001–009, UAT-025–028 |
-| ADR-003 Event identity | FR-048/082/083/096, NFR-020/027/028 | 4.7/4.8 | RSH-004–007, OPS-014, UAT-026 |
+| ADR-001 Learn entry/no bottom tab | FR-003/004/010/101, NFR-001/006 | 0.10/0.12/1.11/1.14 | ENT-001–006/013/014, UX-001/015, UAT-001/002/004/035/036 |
+| ADR-002 Active presentation permit | FR-005/007/008/076–085/097/098, BR-012–015/019/020 | 0.14/4.5/4.8/4.15 | ENT-010/011/015, RSH-001–020, UAT-025–035 |
+| ADR-003 Neutral events/opportunity | FR-048/082/083/096/099/100, DATA-015, NFR-020/027/028 | 4.7/4.8/4.16 | RSH-004–007/021–024, OPS-014, UAT-026/036 |
 | ADR-004 MVP stop point | DATA-001/002/007/013, NFR-031 | 1.13/2.14/3.1/4.2 | DAT-001–003/015, MS-04 decision |
 | ADR-005 Android Pilot scope | FR-094/095, NFR-032/033 | 0.6–0.9/5.2/5.10 | BG-01–12, OPS-015, UAT-032 |
-| MDS primary motivation/guardrails | FR-078–088, NFR-020–025 | 4.1/4.13/5.9–5.13 | RSH-001–015, UAT-025–029 |
-| MDS UAT sample | UI-001–014, NFR-015–019/025 | 5.4/5.8/5.12 | UX-001–015, UAT denominators/sign-off |
+| ADR-006 Single-load Today snapshot | FR-101/102, NFR-034 | 1.14 | ENT-014, UAT-035/036 |
+| ADR-007 Runtime minor participation | FR-088/103, DATA-014, UI-015/016, BR-021 | 4.15/4.17/5.14 | DAT-017–019, RSH-017–020, UX-016/017, UAT-033/034 |
+| ADR-008 Feasibility/Efficacy split | FR-094/104, NFR-036/037, BR-022/023 | 5.13/5.17/6.4–6.9 | RSH-027, OPS-016/017, UAT-038 |
+| MDS primary motivation/guardrails | FR-078–088/104, NFR-020–025/036/037 | 4.1/4.13/4.18/6.4–6.7 | RSH-001–027, UAT-025–038 |
+| MDS UAT sample | UI-001–017, NFR-015–019/025/035 | 5.4/5.8/5.12/5.14/5.15 | UX-001–020, UAT denominators/sign-off |
 
 ## 13. RTM Change Control Checklist
 
-- [ ] SRS requirement count/IDs ยังเป็น FR 96, DATA 13, UI 14, NFR 33, BR 18
+- [ ] SRS requirement count/IDs ยังเป็น FR 104, DATA 15, UI 17, NFR 37, BR 23 รวม 196
 - [ ] ไม่มี requirement ถูกลบหรือเปลี่ยนความหมายโดยไม่มี approved change request
 - [ ] SDS interface/module รองรับทุก requirement ที่เปลี่ยน
 - [ ] WBS dependency/effort/owner ถูกปรับตามผลกระทบ
@@ -298,6 +324,8 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 - [ ] Requirement ที่กระทบผู้เยาว์/วิจัยมี Privacy/Research review
 - [ ] Actual evidence อ้าง commit/build/environment เดียวกัน
 - [ ] Feature-off/Standard fallback coverage ยังครบ
+- [ ] Automated test inventory 144 และ UAT inventory 38; ทุก RTM reference resolve ได้
+- [ ] MS-08A ไม่ชี้ Enabled และ MS-08B แยก adult/minor
 - [ ] Product Owner, QA Lead และ Tech Lead อนุมัติ matrix revision
 
 ## 14. Approval

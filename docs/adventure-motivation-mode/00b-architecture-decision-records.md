@@ -1,180 +1,193 @@
 # Architecture Decision Records — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-ADR-001
-**Version:** 1.0
-**Status:** Proposed Decisions for Owner Approval
+**Version:** 1.1
+**Status:** Accepted for planning
 **Date:** 2026-09-01
 **Baseline:** LexiQuest `99f7fb21`, Drift schema v22
+**Authority:** TOR/SRS/SDS/WBS/UI/Test/UAT/RTM และ implementation plan ต้องสอดคล้องกับ ADR ชุดนี้
 
-## 1. Purpose
+## 1. Purpose and precedence
 
-เอกสารนี้ปิดความกำกวมที่พบจากรอบ critic โดยกำหนด decision ที่เอกสาร TOR/SRS/SDS/WBS/UI/Test/UAT/RTM และ Implementation Plan ต้องยึดร่วมกัน หากมีเอกสารขัดกันให้ ADR นี้มีอำนาจเหนือ design ระดับล่าง แต่ไม่เหนือ TOR/SRS ที่แก้ให้สอดคล้องแล้ว
+เอกสารนี้ปิดประเด็นจาก Critic รอบที่ 2 แบบ contract-first โดยไม่แก้ย้อนหลัง Current System Audit v1.0 หากเอกสารระดับล่างขัดกับ ADR นี้ ให้ใช้ ADR นี้และ Measurement Decision Spec v1.1 เป็นข้อกำหนดอ้างอิง แล้วแก้เอกสารระดับล่างใน change set เดียวกัน
 
-## ADR-001 — Production Entry Uses the Existing Learn Surface
-
-**Status:** Accepted for planning
-
-### Context
-
-Today Hub มี implementation แต่ `dailyContinuity` ยัง hidden ใน production baseline ขณะที่ Adventure อาศัย Today snapshot เป็น canonical work source การเขียนเพียงว่า “Existing Today destination” จึงไม่พอสำหรับ implementation และเสี่ยงให้นักพัฒนาเพิ่ม navigation ใหม่ตามความเข้าใจตนเอง
+## ADR-001 — Production entry uses the existing Learn surface
 
 ### Decision
 
-1. Adventure v1 **ไม่เพิ่ม bottom-navigation destination** และไม่เปลี่ยนลำดับ destination เดิม
-2. Internal prototype เปิดผ่าน guarded internal route เท่านั้น ไม่มี learner-facing navigation entry
-3. Production-eligible entry เป็น additive card/action หนึ่งรายการใน Learn surface เดิม ใช้ stable route identity `learn/today-experience`
-4. Card แสดงต่อเมื่อ:
-   - Adventure feature visibility ไม่ใช่ hidden;
-   - invocation enabled;
-   - Today snapshot dependency พร้อมและ owner identity ตรงกัน;
-   - world/content revision ที่จำเป็น verify ผ่าน
-5. การกด card เปิด `TodayExperienceHost` ภายใต้ Learn navigation family; host compose Today snapshot หนึ่งครั้งแล้วเลือก Standard หรือ Adventure presentation
-6. หาก Adventure hidden/off แต่ Today host ยังถูกเปิดจาก stale route ให้ render Standard Today presentation เมื่อ dependency พร้อม; ถ้า Today dependency ไม่พร้อมให้กลับ Learn พร้อม bounded reason
-7. “มุมมองมาตรฐาน” เปลี่ยน presentation ภายใน host เดิม ไม่ stack home route; system Back จาก host กลับ Learn
-8. Feature-off ต้องทำให้ Learn surface เทียบเท่า baseline: ไม่มี card, spacing ghost หรือ dead route
+1. Adventure v1 ไม่เพิ่ม bottom-navigation destination และไม่เปลี่ยนลำดับ destination เดิม
+2. Production entry เป็น additive card/action ใน Learn surface เดิม ใช้ navigation identity `home/learn/today-experience`
+3. Card แสดงเมื่อ feature visible, invocation enabled, owner ตรงกัน, Today dependency พร้อม และ content revision ตรวจสอบผ่านเท่านั้น
+4. การเปิด card ที่ผ่าน authorization จะสร้าง `entryAttemptId` แบบ UUID v4 หนึ่งครั้งต่อ Host opening แล้ว reuse ระหว่าง widget rebuild, loader retry และ presentation switch ของ opening เดิม
+5. hidden, disabled, unknown หรือ stale direct route ต้องกลับ Learn พร้อม bounded reason โดยห้ามสร้าง `TodayExperienceHost`, Today snapshot, research opportunity หรือ Standard presentation
+6. Standard fallback ใช้ได้เฉพาะภายใน `TodayExperienceHost` ที่ผ่าน entry authorization แล้ว เช่น Adventure content เสียหลัง Host เปิด หรือ active permit หมดอายุระหว่าง Host lifecycle
+7. “มุมมองมาตรฐาน” เปลี่ยน presentation ใน Host เดิม ไม่ stack home route; system Back จาก Host กลับ Learn
+8. emergency-off บล็อก Host ใหม่และ mission start ใหม่ทันที ส่วน accepted learning session ที่เริ่มแล้วต้องปิด/retire ตาม canonical lifecycle เดิมก่อนกลับ Learn/Standard
+9. เมื่อ feature hidden Learn surface ต้องเทียบเท่า baseline: ไม่มี card, spacing ghost, dead route หรือ write side effect
 
 ### Consequences
 
-- Flow เดิมไม่เปลี่ยนเมื่อ feature hidden
-- ไม่จำเป็นต้องเปิด Today เป็น bottom tab
-- ต้องเพิ่ม route-ledger entry และ navigation tests ก่อนสร้าง shell
-- UI prototype กับ production entry มีคนละ gate; internal route ห้ามหลุด production
+- route ledger และ stable navigation test ต้องใช้ identity เต็ม `home/learn/today-experience`
+- direct-route test ต้องแยก “ก่อน authorization” ซึ่งกลับ Learn ออกจาก “หลัง Host authorization” ซึ่งอนุญาต Standard fallback
+- internal prototype route ต้องไม่ถูก expose ใน production navigation
 
-### Rejected alternatives
-
-- **New Adventure bottom tab:** กระทบ information architecture และ flow เดิมมากเกินไป
-- **Reuse `LearningWorldMapScreen`:** ไม่มี canonical caller/authority และมี static CEFR state
-- **Replace Learn screen with Adventure:** ทำลาย feature-off equivalence และเข้าถึงฟังก์ชันเดิมยากขึ้น
-
-## ADR-002 — Product Entry and Research Capture Are Separate Decisions
-
-**Status:** Accepted for planning
+## ADR-002 — Protocol treatment requires an active presentation permit
 
 ### Context
 
-Consent กำหนดสิทธิ์ประมวลผลข้อมูลวิจัย ไม่ใช่สิทธิ์ใช้ Adventure หาก consent อยู่ใน product entry resolver มีความเสี่ยงที่ผู้ใช้ไม่ยินยอมแล้วถูกปิดฟีเจอร์หรือถูกเลือก presentation ต่างจากที่ควร
+Product Entry ต้องไม่อ่าน raw consent/guardian/assent receipt แต่ treatment assignment ใน protocol จะมีผลต่อ presentation ได้ต่อเมื่อสิทธิ์วิจัยทั้งหมดตรวจสอบแล้ว การแยก raw receipts ออกจาก Product Entry ลด coupling และยังทำให้ withdrawal หยุด treatment presentation ได้จริง
 
 ### Decision
 
-ใช้ decision สองชนิดที่ไม่เรียกกันเพื่อ mutation:
+```text
+ResearchParticipationPermit
+  id, ownerId, participantClass, ageBandCode
+  assignmentId, assignedTreatment
+  consentReceiptId
+  guardianPermissionReceiptRef?  // required for minor
+  learnerAssentReceiptRef?       // required for minor
+  protocolId/version
+  issuedAtUtc, expiresAtUtc, revokedAtUtc?
+  issuerKeyId, payloadSha256, signature
+  localRevision, cloudRevision, isDeleted
+
+ActivePresentationPermit
+  permitId, ownerId, assignedPresentation
+  protocolId/version, assignmentId, expiresAtUtc
+```
+
+1. Research enrollment authority ออก `ResearchParticipationPermit`; แอปไม่ออก permit เอง
+2. `ActivePresentationPermit` เป็น read-only projection หลังตรวจ owner, assignment, active consent, guardian permission และ learner assent สำหรับ minor, protocol/version, expiry, revocation, signature และ revision conflict แล้ว
+3. Product Entry อ่านได้เฉพาะ `ActivePresentationPermit` และห้ามเห็น consent, guardian หรือ assent fields/receipts
+4. protocol treatment มี precedence เฉพาะเมื่อ projection active; permit หาย, invalid, expired หรือ revoked ให้ fallback ตามลำดับ `session choice → LearnerPreferences.homeExperience → Standard`
+5. withdrawal ต้อง invalidate projection ก่อน operation ถัดไปและห้ามเริ่ม treatment Host/session ใหม่ ผู้ใช้ยังใช้การเรียนแบบ product ปกติได้
+6. nonparticipant และผู้ที่ไม่มี active permit ใช้ session choice/preference ได้ แต่ไม่มี protocol treatment หรือ research rows
+7. feature state, preference, assignment, consent และ permit ห้าม rewrite กัน
+
+### Consequences
+
+- Product Entry ไม่มี raw consent dependency แต่มี narrow dependency ต่อ active projection
+- offline entry ใช้ได้เฉพาะ permit ที่ลายเซ็นถูกต้อง ยังไม่หมดอายุ ไม่ถูก revoke ตาม local/cloud revision ที่รู้ล่าสุด และผ่าน protocol policy
+- withdrawal race, expired permit และ invalid signature เป็น blocking tests
+
+## ADR-003 — Neutral event policy and independent opportunity ledger
+
+### Decision
+
+ทั้ง Standard และ Adventure ใช้ event policy v1 ชุดเดียวกัน:
 
 ```text
-AdventureProductEntryDecision
-  inputs: owner, feature state, dependencies, catalog/content, stable assignment,
-          session choice, learner preference
-  output: effective Standard/Adventure presentation + bounded fallback reason
-  forbidden input: research consent receipt or measurement response
+TodayExperiencePresented
+TodayExperiencePresentationChanged
+TodayExperienceMissionStarted
+TodayExperienceMissionCompleted
+```
 
-AdventureResearchCaptureDecision
-  inputs: owner, candidate event, stable assignment, consent snapshot,
-          active measurement run, protocol/event versions
-  output: eligible / ineligible(reason)
-  effect: may authorize one idempotent research record; never changes presentation
+```text
+MeasurementOpportunity
+  id, ownerId, measurementRunId, permitId
+  entryAttemptId, assignedTreatment, effectivePresentation
+  presentedEventId?
+  learningSessionId?, startedEventId?, completedEventId?
+  lastSwitchOrdinal, suppressedSwitchCount
+  openedAtUtc, closedAtUtc?
 ```
 
 Rules:
 
-1. Product use continues when research decision is ineligible
-2. No consent, no active run, assignment conflict or withdrawal → zero research row/outbox/upload
-3. Feature, preference, consent and assignment never rewrite one another
-4. Product UI may show consent details only inside an approved optional research prompt
+1. เมื่อ participant เปิด Host ที่ authorized ให้สร้าง/เปิด opportunity หนึ่ง row ด้วย deterministic ID จาก `measurementRunId + permitId + entryAttemptId`
+2. `TodayExperiencePresented` ใช้ opportunity เป็น aggregate และ pin ทั้ง `assignedTreatment` กับ `effectivePresentation`
+3. presentation change ใช้ transaction เพิ่ม `lastSwitchOrdinal` ช่วง 1–10 และ emit event ด้วย occurrence key ที่รวม ordinal; หลัง 10 เพิ่มเฉพาะ `suppressedSwitchCount`
+4. mission started/completed ผูก `learningSessionId` และ update event IDs ใน opportunity เดิม โดยไม่เปลี่ยน canonical learning event
+5. participant denominator มาจาก opportunity ledger ไม่อนุมานจากจำนวน exposure events
+6. nonparticipant เก็บ `entryAttemptId` เป็น transient UI stateเท่านั้น และต้องสร้าง permit/opportunity/research event/outbox/upload เป็นศูนย์
+7. `EventEnvelopeV2` keyset ไม่เปลี่ยน; event ID ใช้ existing deterministic event identity policy
+8. replay/rebuild/retry ต้อง reuse opportunity/event identity และห้ามนับซ้ำ
 
 ### Consequences
 
-- M01 does not depend on `ConsentRegistry`
-- M10 owns consent lookup and must fail closed
-- UAT can prove “Adventure works + zero research rows” for nonparticipants
+- เปรียบเทียบ Standard/Adventure ได้แบบ symmetric
+- ตรวจ capture completeness ได้แม้ Presented event บางรายการล้มเหลว
+- ต้องเพิ่ม opportunity lifecycle, sync, rules, export, withdrawal, deletion และ retention coverage
 
-## ADR-003 — Exposure Event Identity Depends on Lifecycle Stage
+## ADR-004 — Product MVP has an independent stop/accept point
 
-**Status:** Accepted for planning
+แบ่งงานเป็นสี่ independently closable increments:
 
-### Context
+| Increment | Included | Base effort | Schema consequence | Exit decision |
+|---|---|---:|---|---|
+| A — Read-only Preview | baseline seams, hidden feature, catalog, deterministic journey, Host/View, Map/List | 90 pd | v22 unchanged | Accept preview / revise / stop |
+| B — Product Core MVP | canonical learning bridge, repair, result, restart, emergency-off | 48 pd | v22 unchanged | **MS-04 Accept / Stop / Continue** |
+| C — Product Extension | durable preference, canonical motivation receipts, companion | 48 pd | preference migration only | Accept extension / keep session-local |
+| D — Research, Minor Participation and Rollout | permit, measurement, minor UX, lifecycle, UAT, efficacy gates | 168 pd | research migration only | Limited / revise / stop / class expansion |
 
-`AdventurePresented` และบาง `AdventureSwitchedToStandard` events เกิดก่อนมี `AdventureSessionPlan` หรือ `learningSessionId` จึงไม่สามารถบังคับทุก exposure event ให้ใช้ learning-session aggregate ได้
+การหยุดหลัง Increment A หรือ B เป็น bounded outcome ที่สมบูรณ์เมื่อ gate ผ่าน Product Core MVP/MS-04 ต้องปิดได้โดยไม่มี research migration
+
+## ADR-005 — Pilot v1 is Android-only and capability-scoped
+
+1. Pilot v1 ใช้ Android release/profile build เท่านั้น
+2. required capabilities คือ Learn/authorized Today Host, local learning, SRS/Review, canonical reward projection, packaged world, offline recovery และ research lifecycle ที่ Pilot เรียกใช้
+3. iOS, desktop, AI Voice และ field model เป็น explicit exclusions ไม่ใช่ pass
+4. expansion platform/capability ต้องผ่าน change control และ rerun gate ที่เกี่ยวข้อง
+5. Android Pilot ต้องมี zero unclassified failure ใน shared/touched foundation และ approved Android matrix
+
+## ADR-006 — Today snapshot is loaded exactly once per Host opening
 
 ### Decision
 
-| Event | Aggregate type | Aggregate ID | Correlation ID | Deterministic occurrence key |
-|---|---|---|---|---|
-| `AdventurePresented` | `AdventurePresentation` | `entryDecisionId` | `adventurePlanId` เมื่อมี มิฉะนั้น null | `presented:<measurementRunId>:<entryDecisionId>` |
-| `AdventureSwitchedToStandard` | `AdventurePresentation` | `entryDecisionId` | `adventurePlanId` เมื่อมี มิฉะนั้น null | `switch-standard:<measurementRunId>:<entryDecisionId>:<switchOrdinal>` |
-| `AdventureMissionStarted` | `LearningSession` | `learningSessionId` | `adventurePlanId` required | `mission-start:<measurementRunId>:<learningSessionId>` |
-| `AdventureMissionCompleted` | `LearningSession` | `learningSessionId` | `adventurePlanId` required | `mission-complete:<measurementRunId>:<learningSessionId>` |
+```text
+TodayExperienceHost
+  authorize navigation and create/reuse entryAttemptId
+  TodayHubSnapshotLoader.load() exactly once
+  resolve ActivePresentationPermit/session choice/preference
+  render TodayHubView(snapshot) or AdventureHubScreen(snapshot)
 
-Additional rules:
+TodayHubScreen
+  legacy destination loader wrapper
+  load once, then render TodayHubView(snapshot)
 
-1. `entryDecisionId` เป็น transient product identity ที่สร้างแบบ deterministic ต่อ owner-operation scope; ไม่เข้า EvidenceContext
-2. `switchOrdinal` เป็น bounded integer 1–10 ต่อ entry decision; event ที่เกินถูก aggregate เป็น diagnostic counter ไม่สร้าง research row เพิ่ม
-3. Event ID derive จาก event type + occurrence key + eventVersion ผ่าน existing event identity policy
-4. Nonparticipant หรือ ineligible research capture decision สร้าง event เหล่านี้เป็นศูนย์
-5. `EventEnvelopeV2` keyset ไม่เปลี่ยน
+TodayHubView(snapshot)
+  pure Standard presentation; no loader/repository dependency
+```
 
-### Consequences
+1. Standard และ Adventure ใน Host เดียวกันต้องใช้ snapshot object/fingerprint เดียวกัน
+2. presentation switch, rebuild และ focus restoration ห้าม trigger load ใหม่
+3. explicit refresh ปิด opportunity/Host lifecycle เดิม แล้วสร้าง Host opening และ `entryAttemptId` ใหม่
+4. owner switch หรือ stale async result ต้อง discard ก่อน render/write
 
-- Pre-session และ session events ตรวจย้อนกลับได้โดยไม่ปลอม learning session
-- RTM/Test ต้องแยกกรณี before-plan, after-plan และ replay
+## ADR-007 — Minor participation is guardian-led and runtime-enforced
 
-## ADR-004 — Product MVP Has an Independent Stop/Accept Point
+1. research รองรับ `participantClass = adult | minor` และ randomization แยก strata
+2. guardian-led approved enrollment flow ออก signed permit โดยเก็บเพียง `ageBandCode`; ห้ามเก็บวันเกิดเต็มหรือ guardian PII ในแอป
+3. minor permit ต้องมีทั้ง `guardianPermissionReceiptRef` และ `learnerAssentReceiptRef`; ขาดอย่างใดอย่างหนึ่ง projection ต้อง invalid
+4. learner ปฏิเสธ/ถอน assent ได้โดยไม่เสียสิทธิ์เรียน และ invalidation ต้องใช้กติกาเดียวกับ consent withdrawal
+5. guardian permission, learner assent และ research prompt ต้องผ่าน TalkBack, Switch Access, text 200%, offline permit validation และ focus restoration
+6. governance checklist อย่างเดียวไม่ถือว่าเป็น runtime enforcement
 
-**Status:** Accepted for planning
+## ADR-008 — Feasibility and efficacy are separate release gates
 
-### Context
+| Gate | Purpose | Maximum resulting state |
+|---|---|---|
+| MS-08A Feasibility | data quality, usability, consent/assent comprehension, safety, reconstructibility | `Limited` |
+| MS-08B Efficacy | powered class-specific sample, primary motivation endpoint, learning and safety guardrails | Controlled Expansion/Enabled เฉพาะ class ที่ผ่าน |
 
-แผนเต็ม 294 person-days ครอบคลุม product shell, learning integration, preference, companion, research และ rollout การถือทั้งหมดเป็น deliverable เดียวเพิ่มความเสี่ยงต่อระบบเดิมและทำให้ไม่สามารถหยุดหลังพิสูจน์แนวคิดได้
+1. Small Pilot หรือ MS-08A ห้ามนำไป Enabled และห้าม claim motivation efficacy
+2. adult/minor class ใด sample, comprehension หรือ guardrail ไม่ครบ class นั้นต้องคง Limited แม้อีก class ผ่าน
+3. Controlled Expansion และ Enabled เริ่มได้เฉพาะ class ที่ MS-08B ผ่านและมี signed release decision
+4. emergency/critical guardrail มีอำนาจย้อนกลับเป็น Limited/Hidden แยกตาม class หรือทั้งหมด
 
-### Decision
+## 2. Decision compliance checklist
 
-แบ่ง funding/acceptance เป็นสี่ independently closable increments:
-
-| Increment | Included | Schema | Exit decision |
-|---|---|---|---|
-| A — Read-only Preview | baseline seams, hidden feature, catalog, deterministic journey, Map/List, internal route | v22 unchanged | Accept preview / revise / stop |
-| B — Product Core MVP | canonical learning bridge, repair, result, restart, emergency-off | v22 unchanged | **MS-04 Product MVP Accept / Stop / Continue** |
-| C — Product Extension | durable preference, read-only reward receipts, companion | preference migration only | Accept extension / keep session-local |
-| D — Research Add-on | instrument, research tables/events/rules/lifecycle, consented Pilot | research migration | Pilot / revise / stop research |
-
-Stopping after Increment A or B is a successful bounded outcome when its acceptance criteria pass; it is not a failed incomplete release. No schema migration is required to archive or remove A/B.
-
-### Consequences
-
-- Research cannot delay acceptance of a safe Product Core MVP
-- Preference/companion can be deferred without reworking learning evidence
-- WBS/contract must show separate budgets and change-control decisions
-
-## ADR-005 — Pilot v1 Is Android-Only and Capability-Scoped
-
-**Status:** Accepted for planning
-
-### Context
-
-Baseline has iOS Podfile/platform-contract, field-model and optional backend dependency findingsที่ไม่เกี่ยวกับทุก Adventure path การบังคับปิดทุก finding ก่อน Android-only Pilot อาจหยุดงานโดยไม่เพิ่มความปลอดภัย ขณะเดียวกันการละเว้นแบบไม่ประกาศจะลด release coverage
-
-### Decision
-
-1. First consented Pilot target คือ Android release/profile build เท่านั้น
-2. Required Pilot capabilities: Learn/Today host, local learning, SRS/Review, canonical reward projection, packaged Adventure world, offline recovery, identity/sync/export/research pathsที่ Pilot เรียกใช้
-3. iOS, desktop, AI Voice และ field-model capabilities เป็น `Excluded from Pilot v1`, ไม่ใช่ “ผ่าน”
-4. Finding ของ capability ที่ excluded ยังคงเป็น release blocker ก่อนเปิด Adventure บน capability/platform นั้น
-5. Android Pilot ยังต้องผ่าน full Flutter logical suite; platform/model/backend gates ใช้เฉพาะส่วนที่ reachable ตาม approved capability matrix
-6. การเพิ่ม platform หรือ capability ต้องเป็น change request พร้อม rerun gate ที่เกี่ยวข้อง
-
-### Consequences
-
-- G0B เปลี่ยนจาก blanket closure เป็น zero unclassified failure ใน shared/touched foundation + green Android Pilot matrix
-- เอกสารต้องรายงาน exclusions อย่างเปิดเผยและห้ามอ้าง cross-platform readiness
-
-## 2. Decision Compliance Checklist
-
-- [ ] Learn entry ไม่มีผลเมื่อ hidden และไม่มี bottom tab ใหม่
-- [ ] `learn/today-experience` อยู่ใน route ledger และ stable navigation tests
-- [ ] Product entry resolver ไม่มี consent dependency
-- [ ] Research capture decision ไม่มีอำนาจเปลี่ยน presentation
-- [ ] Pre-session/session event identities ตรงตาราง ADR-003
-- [ ] MS-04 มี owner decision และ stopping path
-- [ ] Preference/Research migrations ไม่ถูกทำก่อน increment gate
-- [ ] Pilot evidence ระบุ Android-only และ exclusions
-- [ ] Platform/capability expansion ผ่าน change control
+- [ ] route ledger ใช้ `home/learn/today-experience`; hidden/disabled/unknown direct route กลับ Learn
+- [ ] Standard fallback เกิดเฉพาะ authorized Host
+- [ ] Product Entry เห็นเฉพาะ `ActivePresentationPermit` projection
+- [ ] withdrawal/expiry/revocation หยุด treatment start แต่ไม่ปิดสิทธิ์เรียน
+- [ ] Standard และ Adventure ใช้ neutral events/opportunity ledger เดียวกัน
+- [ ] Host load Today snapshot ครั้งเดียวและ pure `TodayHubView(snapshot)`
+- [ ] minor permit ตรวจ guardian permission + learner assent ใน runtime
+- [ ] MS-08A จำกัดสถานะสูงสุดที่ Limited; MS-08B ตัดสินแยก adult/minor
+- [ ] Product Core MVP ปิดได้โดยไม่มี research migration
+- [ ] Android-only exclusions ถูกระบุโดยไม่อ้างว่า pass
 
 ## 3. Approval
 
@@ -185,3 +198,4 @@ Baseline has iOS Podfile/platform-contract, field-model and optional backend dep
 | UX Owner | Approve / Revise |  |  |  |
 | QA Lead | Approve / Revise |  |  |  |
 | Research/Privacy Owner | Approve / Revise |  |  |  |
+| Accessibility Owner | Approve / Revise |  |  |  |

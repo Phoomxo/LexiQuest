@@ -1,217 +1,252 @@
 # Measurement Decision Spec — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-MDS-001
-**Version:** 1.0
-**Status:** Planning Thresholds; Protocol Approval Required Before Research Pilot
+**Version:** 1.1
+**Status:** Planning thresholds; protocol approval required before enrollment
 **Date:** 2026-09-01
-**Applies to:** Android-only Pilot v1 under ADR-005
+**Applies to:** Android-only Pilot v1, adult and minor strata, under ADR-002/003/005/007/008
 
 ## 1. Purpose
 
-เอกสารนี้กำหนดว่า “Adventure กระตุ้นแรงจูงใจสำเร็จ” หมายถึงอะไร แยก Motivation, Engagement, Effort, Learning และ Outcome อย่างชัดเจน พร้อมสูตร เกณฑ์ตัดสิน sample rule และ guardrails ที่ใช้ได้จริง โดยไม่ตีความ app open, XP หรือ streak เป็นแรงจูงใจโดยอัตโนมัติ
+เอกสารนี้กำหนด measurement population, timepoint, estimand, missing-data policy, sample rule, feasibility gate และ efficacy gate ที่ใช้ตัดสิน Adventure Motivation Mode โดยแยก Motivation, Engagement, Effort, Learning และ Safety ออกจากกันอย่างชัดเจน App open, XP, Coin, streak, animation view หรือ map tap ไม่ใช่ motivation endpoint
 
-## 2. Measurement Principles
+## 2. Measurement principles
 
-1. **Motivation is primary:** วัดจาก bounded instrument score ที่ผู้เข้าร่วมตอบโดยสมัครใจ
-2. **Engagement is secondary:** start/completion/return เป็นพฤติกรรม ไม่ใช่แรงจูงใจโดยตัวมันเอง
-3. **Learning is a guardrail and outcome:** Adventure ต้องไม่เพิ่ม engagement แลกกับ learning ที่แย่ลง
-4. **Effort is descriptive:** active duration, hints และ repair ไม่ถูกรวมเป็นคะแนนคุณค่าคน
-5. **Intention-to-treat is primary:** วิเคราะห์ตาม stable assignment แม้ crossover
-6. **Nonparticipant zero-row:** ผู้ใช้ทั่วไปไม่มี research exposure/response row
-7. **No efficacy claim from UAT:** UAT พิสูจน์ usability/comprehension ไม่ใช่ผลเชิงสาเหตุ
-8. **No post-hoc threshold relaxation:** การเปลี่ยน threshold หลังเห็นผลต้องเป็น exploratory analysis และห้ามใช้ตัดสิน primary success
+1. Motivation เป็น primary endpoint จาก bounded validated instrument ที่ตอบโดยสมัครใจ
+2. Engagement เป็น secondary behavior ไม่ใช่ motivation proxy
+3. Learning เป็น outcome/guardrail; ห้ามแลก learning quality กับ engagement
+4. ITT เป็น primary analysis ตาม assigned treatment แม้ presentation switch/crossover
+5. Standard และ Adventure ใช้ neutral events/opportunity contract เดียวกัน
+6. participant denominator มาจาก `MeasurementOpportunity`; ห้ามอนุมานจาก event ที่ capture สำเร็จ
+7. nonparticipant zero-row: ไม่มี permit/opportunity/response/research event/outbox/upload
+8. adult และ minor เป็น pre-specified strata; powered sample และ release decision แยก class
+9. UAT/MS-08A พิสูจน์ feasibility/usability/comprehension ไม่ใช่ efficacy
+10. threshold, timepoint, imputation และ analysis code ต้อง pre-register ก่อน enrollment และห้ามผ่อนหลังเห็นผล
 
-## 3. Measurement Population
+## 3. Population and participation contract
 
-### 3.1 Research population
+### 3.1 Eligibility
 
-- owner มี stable experiment assignment;
-- active measurement run pin protocol/treatment/instrument/form/app/build/content/policy versions;
-- consent active at capture time;
-- guardian permission/learner assent ครบเมื่อ applicable;
-- Android device/build อยู่ใน Pilot matrix;
-- owner หนึ่งคนอยู่ใน primary analysis หนึ่ง assignment เท่านั้น
+ผู้เข้าร่วมต้องมี `ResearchParticipationPermit` ที่:
 
-### 3.2 Exclusions from primary efficacy analysis
+- owner, stable assignment, protocol/version และ assigned treatment ตรงกัน
+- active consent ครบ
+- `participantClass` เป็น `adult` หรือ `minor` และมี approved `ageBandCode`
+- minor มี guardian permission และ learner assent receipt references ทั้งคู่
+- signature/payload SHA-256/revisions ตรวจสอบผ่าน ยังไม่หมดอายุ ไม่ถูก revoke/delete
+- Android build/content/instrument/form อยู่ใน approved Pilot matrix
 
-- invalid or missing assignment metadata;
-- consent absent before first research capture;
-- instrument version not in approved catalog;
-- app/build outside Pilot matrix;
-- integrity failure that makes learning-session linkage unreconstructible
+Product Entry รับเฉพาะ `ActivePresentationPermit` projection และไม่อ่าน raw receipts การไม่มี/ถอน permit ไม่ตัดสิทธิ์เรียน แต่ห้ามใช้ protocol treatment และห้ามสร้าง research data ใหม่
 
-Exclusion ไม่ลบ canonical learning data และต้องรายงาน count/reason ทุกประเภท การถอน consent ปฏิบัติตาม approved protocol/retention policy ไม่ถูกตีความเป็น negative motivation
+### 3.2 Analysis populations
 
-## 4. Measurement Axes and Exact Definitions
+- **ITT primary:** ทุก owner ที่ randomized และได้รับ valid permit ก่อน first authorized Host opening วิเคราะห์ตาม assigned treatment
+- **Safety:** ทุก participant ที่เปิด authorized Host หรือเริ่ม accepted session
+- **Per-protocol supportive:** ผู้ที่มี active permit ครบ window และไม่มี major protocol deviation; ไม่แทน ITT
+- **Nonparticipant:** ไม่อยู่ใน research population และต้องมี research row เท่ากับศูนย์
+
+การถอน consent/assent หลัง randomization ไม่ลบคนออกจาก ITT โดยอัตโนมัติ การใช้ข้อมูลที่มีอยู่และ deletion ใช้ approved protocol/retention policy และต้องรายงาน disposition โดยไม่ imputing เหตุผลว่าเป็น negative motivation
+
+## 4. Opportunity and neutral event policy
+
+หนึ่ง authorized Host opening สร้าง `entryAttemptId` UUID v4 หนึ่งครั้งและ participant-only opportunity หนึ่ง row:
+
+```text
+TodayExperiencePresented
+TodayExperiencePresentationChanged
+TodayExperienceMissionStarted
+TodayExperienceMissionCompleted
+```
+
+- event ทุกชนิด pin `assignedTreatment` และ `effectivePresentation`
+- `lastSwitchOrdinal` emit ได้ 1–10 แบบ transactional; ส่วนเกินเพิ่ม `suppressedSwitchCount`
+- Presented/Changed ผูก opportunity; Started/Completed ผูก accepted `learningSessionId` และ opportunity เดิม
+- capture completeness = opportunities ที่มี required event/linkage ครบ ÷ eligible opportunities
+- replay ใช้ deterministic identity และห้ามเพิ่ม numerator/denominator ซ้ำ
+
+## 5. Exact endpoint definitions
 
 | Axis | Metric | Exact definition | Role |
 |---|---|---|---|
-| Motivation | `motivationNormalizedScore` | approved instrument scoring result mapped monotonically to 0–100; higher = more autonomous willingness to continue | Primary |
-| Motivation | `motivationDelta` | post-session score − pre-session score when protocol uses paired form | Primary supportive |
-| Engagement | `voluntaryMissionStartRate` | unique eligible presentations followed by `AdventureMissionStarted`/Standard equivalent within the same assigned opportunity ÷ unique eligible presentations | Secondary |
+| Motivation | `postMotivationNormalizedScore` | approved post form score mapped monotonically 0–100 | Primary outcome |
+| Motivation | `baselineMotivationNormalizedScore` | approved baseline form score mapped 0–100 | Required covariate |
+| Motivation | `motivationChangeScore` | post − baseline | Supportive |
+| Engagement | `voluntaryMissionStartRate` | opportunities with an accepted voluntary start ÷ eligible opportunities | Secondary |
 | Engagement | `missionCompletionRate` | completed accepted sessions ÷ accepted sessions, excluding typed technical invalidation | Secondary |
-| Engagement | `return7dRate` | owners with one voluntary eligible learning start in days 1–7 after index session ÷ eligible owners with complete observation window | Secondary |
-| Effort | `activeDurationBucket` | existing active-learning-time policy bucket; background/idle excluded | Descriptive |
+| Engagement | `return7dRate` | eligible owners with voluntary canonical start during days 1–7 after index session ÷ owners with complete window | Secondary |
+| Effort | `activeDurationBucket` | canonical active-learning-time bucket; idle/background excluded | Descriptive |
 | Effort | `guidedResponseRate` | guided eligible responses ÷ all eligible responses | Descriptive |
-| Effort | `repairOpportunityRate` | items offered one in-session repair ÷ incorrect eligible items | Quality |
 | Learning | `independentRecallAccuracy` | correct independent-recall evidence ÷ eligible independent-recall evidence | Guardrail |
-| Learning | `reviewResolutionRate` | due review items resolved per existing SRS policy ÷ due review items admitted | Guardrail |
-| Reliability | `duplicateEvidenceOrRewardCount` | confirmed duplicated canonical evidence or canonical side effect from one source identity | Stop guardrail |
-| Safety | `criticalIntegrityPrivacyAccessibilityCount` | confirmed S0/S1 issue in evidence, owner isolation, consent, Standard escape or required accessibility path | Stop guardrail |
+| Learning | `reviewResolutionRate` | due review items resolved under existing SRS policy ÷ due items admitted | Guardrail |
+| Reliability | `duplicateEvidenceOrRewardCount` | confirmed duplicate canonical evidence/side effect from one source identity | Stop guardrail |
+| Safety | `criticalIntegrityPrivacyAccessibilityCount` | confirmed S0/S1 issue in evidence, owner isolation, participation, Standard escape or required accessibility flow | Stop guardrail |
 
-XP, Coins, streak length, app opens, animation views และ map taps ห้ามใช้เป็น Motivation metric
+### 5.1 Primary timepoints
 
-## 5. Primary Estimand and Success Threshold
+1. baseline ต้อง completed หลัง permit issuance และไม่เกิน 24 ชั่วโมงก่อนผู้เรียนเห็น treatment presentation ครั้งแรก
+2. first treatment exposure คือ `TodayExperiencePresented` รายการแรกของ permit หลัง baseline
+3. index session คือ accepted learning session แรกหลัง first treatment exposure
+4. post ต้อง completed หลัง index session status `completed` และภายใน 30 นาทีของ canonical completion timestamp
+5. response ก่อน completion, เกิน 30 นาที, ผิด form/version หรือไม่มี reconstructible index session เป็น protocol deviation และไม่ใช้เป็น observed primary post
+6. ผู้ที่ไม่เริ่มหรือไม่ complete index sessionยังอยู่ใน ITT และใช้ missing-data policy ไม่ถูกตัดออก
 
-Primary estimand:
+## 6. Primary estimand and analysis
 
 ```text
-ITT motivation effect
-= adjusted mean(motivationNormalizedScore | assigned Adventure)
- - adjusted mean(motivationNormalizedScore | assigned Standard)
+ITT motivation effect by participant class
+= adjusted mean(postMotivationNormalizedScore | assigned Adventure)
+ - adjusted mean(postMotivationNormalizedScore | assigned Standard)
 ```
 
-Adjustment covariates ต้อง pre-register ก่อน enrollment และจำกัดเฉพาะ baseline score, declared age band when ethically approved, prior canonical learning activity bucket และ instrument form; ห้ามเลือก covariate หลังเห็นผล
+Primary model เป็น ANCOVA ของ post score โดยปรับ baseline score และ pre-registered covariates เท่านั้น: prior canonical learning activity bucket และ instrument form; age ใช้เพียง randomization stratum/class และ approved age-band term ห้ามเลือก covariate หลังเห็นผล
 
-### Controlled-expansion success
+รายงาน adult และ minor แยกกันพร้อม treatment estimate, standard error, two-sided 95% CI, sample disposition และ missingness ห้าม pool เพื่อให้ class ที่ sample ไม่ครบผ่าน gate การวิเคราะห์ pooled interaction เป็น secondary เท่านั้น
 
-Adventure มีสิทธิ์เข้าสู่ controlled expansion เมื่อครบทุกข้อ:
+## 7. Missing-data policy
 
-1. estimated ITT motivation effect ≥ **+5.0 points** บนสเกล 0–100;
-2. two-sided 95% confidence interval lower bound > **0.0**;
-3. one-sided 95% confidence lower bound ของ independent-recall accuracy difference (Adventure − Standard) > **−3 percentage points**;
-4. one-sided 95% confidence lower bound ของ review-resolution-rate difference > **−5 percentage points**;
-5. duplicate evidence/reward count = **0**;
-6. critical integrity/privacy/accessibility count = **0**;
-7. required metadata completeness = **100%**;
-8. UAT comprehension gates ผ่าน
+1. primary ITT ใช้ pre-registered multiple imputation ภายใน participant class โดยรวม treatment, baseline, permitted pre-treatment covariates และ observed outcome predictors ที่ระบุล่วงหน้า
+2. จำนวน imputations อย่างน้อย `max(20, ceil(percentMissingPost))` และใช้ Rubin's rules
+3. complete-case result เป็น supportive
+4. tipping-point sensitivity shift imputed Adventure outcomes ลงและ/หรือ Standard outcomes ขึ้นตาม grid ที่ pre-register จน conclusion เปลี่ยน พร้อมรายงาน tipping value
+5. missing post รวมมากกว่า 15% ใน class ใด หรือ absolute arm difference มากกว่า 5 percentage points ให้ class นั้น **ห้ามผ่าน MS-08B** ไม่ว่าค่า estimate จะผ่าน
+6. ห้ามเติมค่าศูนย์, last observation carried forward หรือ exclude non-completer แบบ post-randomization ใน primary analysis
 
-หาก motivation ไม่ผ่านแต่ engagement สูงขึ้น ห้ามกล่าวว่า Adventure กระตุ้นแรงจูงใจสำเร็จ
+## 8. Efficacy thresholds
 
-### Pilot feasibility success
+participant class มีสิทธิ์ผ่าน MS-08B เมื่อครบทุกข้อ:
 
-Pilot อาจถือว่า feasibility ผ่านโดยไม่ claim efficacy เมื่อ:
+1. adjusted ITT motivation effect ≥ +5.0 points บนสเกล 0–100
+2. two-sided 95% CI lower bound > 0.0
+3. one-sided 95% lower bound ของ independent-recall difference > −3 percentage points
+4. one-sided 95% lower bound ของ review-resolution difference > −5 percentage points
+5. duplicate evidence/reward count = 0
+6. critical integrity/privacy/accessibility count = 0
+7. permit/opportunity/assignment/version metadata completeness = 100%
+8. missing-data gate ใน §7 ผ่าน
+9. powered sample ของ class นั้นครบ
+10. class-specific UAT/comprehension gate ผ่าน
 
-- eligible research capture completeness ≥99%;
-- assignment/version metadata =100%;
-- instrument completion ≥85% ของผู้ที่เปิด promptและไม่ Skip;
-- crossover/replay reconstruct ได้ 100%;
-- stop guardrails =0;
-- protocol-approved efficacy sample ยังไม่ครบ
+Engagement สูงขึ้นโดย motivation หรือ learning ไม่ผ่าน ห้าม claim ว่ากระตุ้นแรงจูงใจสำเร็จ
 
-ผล feasibility ใช้ตัดสิน “ทำการศึกษาต่อหรือไม่” ไม่ใช้เปิด Enabled แบบอ้างผลแรงจูงใจ
+## 9. Sample-size rule
 
-## 6. Sample Size Rule
-
-Research Lead ต้องคำนวณก่อน enrollment ด้วย primary effect 5 points, two-sided alpha 0.05 และ power 0.80:
-
-```text
-n_per_arm_raw = ceil(2 × (1.96 + 0.84)^2 × sigma^2 ÷ 5^2)
-n_per_arm = ceil(n_per_arm_raw ÷ (1 - expectedAttritionRate))
-```
-
-Learning guardrails ต้องมี non-inferiority power calculation แยก โดยใช้ margin เป็นสัดส่วน (`0.03` หรือ `0.05`):
+Research Lead คำนวณและ sign แยก `adult`/`minor` ก่อน enrollment ด้วย effect 5 points, two-sided alpha 0.05 และ power 0.80:
 
 ```text
+n_per_arm_motivation_raw
+  = ceil(2 × (1.96 + 0.84)^2 × sigma^2 ÷ 5^2)
+n_per_arm_motivation
+  = ceil(n_per_arm_motivation_raw ÷ (1 - expectedAttritionRate))
+
 n_per_arm_guardrail_raw
   = ceil(2 × (1.645 + 0.84)^2 × p0 × (1 - p0) ÷ margin^2)
 n_per_arm_guardrail
   = ceil(n_per_arm_guardrail_raw ÷ (1 - expectedAttritionRate))
 
-final_n_per_arm
+final_n_per_arm_per_class
   = max(n_per_arm_motivation,
         n_per_arm_independent_recall,
         n_per_arm_review_resolution)
 ```
 
-- `sigma` มาจาก approved instrument validation evidence หรือ blinded internal variance estimate ที่กำหนดไว้ใน protocol;
-- `p0` มาจาก frozen Standard historical estimate ก่อน enrollment; หากไม่มีใช้ `0.50` แบบ conservative;
-- `expectedAttritionRate` ต้องอยู่ช่วง 0.00–0.30 และ pin ก่อน enrollment;
-- cluster/repeated-measure design ต้องเพิ่ม design effect ที่ pre-register;
-- สูตร guardrail เป็น planning normal approximation; Statistician/Research Lead ต้องยืนยัน exact analysis method และปรับ sample เมื่อ baseline rate, repeated observations หรือ clustering ต้องใช้วิธีอื่น;
-- ห้ามเริ่ม efficacy enrollment หากไม่มี inputs/outputs ทั้ง primary และ guardrail พร้อมลายเซ็น Research/Privacy Owner;
-- ห้ามหยุดเมื่อผลดูดี เว้นแต่ protocol มี pre-registered sequential boundary
+- `sigma` มาจาก validation evidence หรือ blinded estimate ที่ระบุไว้ล่วงหน้า
+- `p0` มาจาก frozen Standard estimate; หากไม่มีใช้ 0.50
+- attrition อยู่ช่วง 0.00–0.30 และ pin ก่อน enrollment
+- repeated/cluster design ต้องเพิ่ม pre-registered design effect
+- ห้าม optional stopping เว้นแต่มี sequential boundary ที่อนุมัติล่วงหน้า
 
-## 7. UAT Sample and Acceptance Rule
+## 10. MS-08A Feasibility gate
 
-### 7.1 General learner UAT
+MS-08A ผ่านได้เมื่อ:
 
-- ผู้ใช้ตัวแทนขั้นต่ำ 12 คน;
-- ทุกคนทำ UAT-001/002/005/007/011/014 และ comprehension questions;
-- เกณฑ์ 90% แปลเป็นอย่างน้อย **11/12** ผ่าน;
-- เกณฑ์ 85% แปลเป็นอย่างน้อย **11/12** ผ่าน;
-- shame/coercion/false mastery confirmed finding =0
+- eligible capture completeness ≥99%
+- permit/assignment/version metadata =100%
+- opportunity/event/session reconstruction =100%
+- instrument completion ≥85% ของผู้ที่เปิด promptและไม่ Skip
+- stop guardrails =0
+- UAT และ comprehension minimums ผ่าน
+- withdrawal/expiry/revocation cutoff และ nonparticipant zero-row ผ่าน 100%
 
-### 7.2 Accessibility UAT
+ผลสูงสุดหลัง MS-08A คือ `Limited` เพื่อทำ approved study ต่อ ห้าม Controlled Expansion/Enabled และห้าม efficacy claim
 
-อย่างน้อย 4 moderated sessions ซึ่งอาจ overlap กับ 12 คนได้:
+## 11. MS-08B Efficacy gate and class isolation
 
-1. Android screen-reader user;
-2. Android Switch Access หรือ external-keyboard accessibility user บน supported Android test host;
-3. text 200% + narrow Android viewport user;
-4. reduced-motion/high-contrast/no-audio user
+- รันเมื่อ powered sample, analysis freeze และ evidence package ของ class นั้นครบ
+- adult ผ่านไม่ได้ทำให้ minor ผ่าน และ minor ผ่านไม่ได้ทำให้ adult ผ่าน
+- class ที่ไม่ครบ sample/guardrail/comprehension/missing-data gate ต้องคง Limited หรือหยุด
+- Controlled Expansion/Enabled เฉพาะ class ที่ผ่าน §8 พร้อม Product, Research, Privacy, QA และ Accessibility sign-off
+- critical guardrail สามารถ emergency-off ทั้งหมดหรือ class-specific ตาม blast radius
 
-Required primary mission, Standard escape, Start, answer, Result และ error recovery ต้องผ่านทุก session; aggregate percentage ใช้กลบ critical accessibility failure ไม่ได้
+## 12. UAT sample and acceptance
 
-### 7.3 Research comprehension UAT
+### 12.1 General learners
 
-- research participants ขั้นต่ำ 10 คนก่อน Pilot enrollment เต็ม;
-- **10/10** ต้องระบุได้ว่า Skip/withdraw ได้และไม่กระทบสิทธิ์เรียน;
-- ผู้ที่ตอบไม่ได้ต้องไม่ enroll จน copy/consent process ถูกแก้และ retest
+- อย่างน้อย 12 คน และมี minors อย่างน้อย 4 คน
+- required general flow ≥11/12; confirmed shame/coercion/false mastery =0
 
-## 8. Android Pilot v1 Matrix
+### 12.2 Accessibility
 
-| Profile | Required state | Required UAT coverage | Evidence |
-|---|---|---|---|
-| Small Android phone | logical viewport ≤360×640, text 100%/200% | 001/002/004/005/011/014/016/030/032 | layout, target, performance |
-| Mainstream Android phone | current supported Android range, release/profile build | 001–032 ตามรอบที่ applicable; ทุก case อย่างน้อยหนึ่ง pass | full core/UAT/performance |
-| Android tablet | portrait + landscape | 002/005/011/014/015/030/032 | responsive/List parity |
-| TalkBack profile | screen reader on certified phone | 002/004/005/007/011/015–017/019/032 | traversal/action/state |
-| Switch/keyboard profile | Android Switch Access หรือ external keyboard | 002/004/005/007/011/015–017/032 | focus/action/state |
-| Offline profile | verified local world/content | 004/005/010/018/022/032 | complete/restart/sync replay |
-| Corrupt asset profile | checksum mismatch | 004/019/022/032 | quarantine/repair/Standard |
+อย่างน้อย 4 moderated sessions ครอบคลุม TalkBack, Switch Access/keyboard, text 200% narrow viewport และ reduced-motion/high-contrast/no-audio อาจ overlap กับ general sample ได้ แต่ต้องบันทึก profile แยก
 
-เลข UAT ในตารางย่อจาก `UAT-xxx` และไม่หมายความว่าทุก case ต้องทำซ้ำบนทุก profile; mapping นี้เป็นขั้นต่ำ ส่วน case ที่แตะ profile เพิ่มต้องถูกเพิ่มตาม risk-based change review
+Research Prompt, guardian permission, learner assent, Standard escape, permit invalid/expired, withdrawal และ focus restoration ต้องผ่าน profile ที่เกี่ยวข้องทุก session; aggregate percentage ใช้กลบ critical failureไม่ได้
 
-iOS/desktop evidence ไม่ถูกนับเป็น Pilot v1 pass และเอกสารผลต้องเขียนว่า excluded
+### 12.3 Research comprehension
 
-## 9. Decision Matrix
+- adult research comprehension อย่างน้อย 10 คน; **10/10** เข้าใจ Skip, withdraw และ no-learning-impact
+- guardian–learner dyads อย่างน้อย 5 คู่
+- guardian **5/5** และ learner **5/5** ต้องตอบ Skip/withdraw/no-learning-impact ได้แยกกัน
+- ผู้ที่ไม่ผ่านห้าม enroll จน copy/process ถูกแก้และ retest
+
+## 13. Android Pilot matrix
+
+| Profile | Minimum research/minor coverage | Evidence |
+|---|---|---|
+| Mainstream Android | UAT-001–038 ตาม applicability | full core, permit, opportunity, gate decision |
+| Small phone + text 200% | Research Prompt, guardian, assent, invalid permit | layout, target, focus restoration |
+| TalkBack | prompt, guardian, assent, withdrawal, Standard continuation | traversal, role, state, action |
+| Switch Access/keyboard | prompt, guardian, assent, withdrawal | focus order, no trap, restored focus |
+| Offline | signed permit validation, expiry/revocation-known state, learning continuation | fail-closed permit; product remains usable |
+| Corrupt asset/config | authorized-Host Standard fallback; unauthorized route returns Learn | no loop, bounded reason |
+
+iOS, desktop, AI Voice และ field model เป็น excluded from Pilot v1 และห้ามนับเป็น pass
+
+## 14. Decision matrix
 
 | Evidence | Decision |
 |---|---|
-| Stop guardrail >0 | Emergency-off / stop Pilot / investigate |
-| Learning guardrail ต่ำกว่า margin | Stop expansion; investigate learning flow |
-| Motivation threshold ผ่าน + guardrails ผ่าน | Eligible for controlled Android expansion |
-| Motivation ไม่ผ่าน แต่ feasibility ผ่าน | Keep Limited; revise treatment or end study |
-| Engagement เพิ่ม แต่ Motivation/Learning ไม่ผ่าน | Do not claim success; revise/stop |
-| Sample/power ไม่ครบ | No efficacy conclusion; continue only under approved protocol |
-| Metadata <100% | Primary analysis invalid; hold |
-| UAT comprehension ไม่ผ่าน | Revise UI/copy before Pilot |
+| stop guardrail >0 | emergency-off / stop / investigate |
+| nonparticipant research row >0 | stop; privacy/integrity incident |
+| MS-08A ผ่าน แต่ powered sample ไม่ครบ | remain Limited; no efficacy conclusion |
+| efficacy threshold ผ่าน แต่ missing-data gate ไม่ผ่าน | remain Limited; no expansion |
+| adult MS-08B ผ่าน; minor ไม่ผ่าน/ไม่ครบ | expand adult only; minor remains Limited |
+| class ผ่าน MS-08B ทุก threshold | eligible for class-specific controlled expansion |
+| UAT/comprehension ไม่ผ่าน | revise UI/copy/process and retest |
 
-## 10. Required Evidence Package
+## 15. Required evidence package
 
-- protocol ID/version และ dated pre-registration;
-- instrument/form/scoring catalog IDs and checksums;
-- sample-size inputs/output and approval;
-- assignment/consent/run reconstruction report;
-- analysis code/version and immutable input fingerprint;
-- ITT primary table, confidence interval and missingness;
-- crossover/adherence secondary table;
-- learning/safety/accessibility guardrail report;
-- UAT denominator/numerator per threshold;
-- Android device/build matrix;
-- Continue/Hold/Stop decision with signatories
+- protocol/pre-registration ID, version and dated approvals
+- permit issuer key/version, signature/revocation verification report
+- assignment and participant-class reconstruction
+- instrument/form/scoring checksums
+- class-specific sample-size inputs/output and approval
+- opportunity/event/session completeness report
+- frozen analysis code/version and immutable input fingerprint
+- ITT ANCOVA table, MI diagnostics, complete-case and tipping-point results
+- learning/safety/accessibility guardrail report
+- UAT numerator/denominator and comprehension records
+- Android device/build matrix and explicit exclusions
+- MS-08A and MS-08B signed decisions per participant class
 
-## 11. Change Control
+## 16. Change control
 
-ก่อน enrollment เปลี่ยน threshold/instrument/sample rule ได้ผ่าน Product + Research + Privacy approval และ protocol version bump หลัง enrollment การเปลี่ยน primary endpoint, threshold หรือ exclusions ต้องรายงานเป็น amendment; analysis เดิมยังคงอยู่และผลใหม่เป็น secondary/exploratory เว้นแต่ ethics/statistical governance อนุมัติเป็นอย่างอื่น
+ก่อน enrollment การเปลี่ยน endpoint/timepoint/threshold/instrument/sample/imputation/strata ต้องผ่าน Product + Research + Privacy approval และ protocol version bump หลัง enrollmentต้องเก็บ analysis เดิม รายงาน amendment และถือผลใหม่เป็น secondary/exploratory เว้นแต่ ethics/statistical governance อนุมัติเป็นอย่างอื่น
 
-## 12. Approval
+## 17. Approval
 
 | Role | Decision | Name | Date | Evidence reference |
 |---|---|---|---|---|
 | Product Owner | Approve / Revise |  |  |  |
-| Research Lead | Approve / Revise |  |  |  |
+| Research Lead/Statistician | Approve / Revise |  |  |  |
 | Privacy/Ethics Owner | Approve / Revise |  |  |  |
 | QA/Data Quality Lead | Approve / Revise |  |  |  |
 | Accessibility Owner | Approve / Revise |  |  |  |

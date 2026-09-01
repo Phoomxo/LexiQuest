@@ -1,13 +1,14 @@
 # UI/UX Design Specification and Wireframes — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-UX-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for Owner and Learner Review
 **Date:** 2026-09-01
 **Baseline:** LexiQuest 8/44 at `99f7fb21`
-**References:** `AMM-AUDIT-001 v1.0`, `LQ-AMM-SRS-001 v1.0`, `LQ-AMM-SDS-001 v1.0`
-**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
+**References:** `AMM-AUDIT-001 v1.0`, `LQ-AMM-SRS-001 v1.1`, `LQ-AMM-SDS-001 v1.1`
+**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
 **Brand naming rule:** Show `LexiQuest`; do not add the removed “เก่งศัพท์” label
+**Visual companions:** [`05a-wireframe-overview.svg`](05a-wireframe-overview.svg) and [`05b-research-participation-wireframes.svg`](05b-research-participation-wireframes.svg)
 
 ## 1. Experience Intent
 
@@ -42,7 +43,7 @@ Every recommendation includes a bounded reason from the current authority, for e
 - “ต่อจากบทที่เรียนค้างไว้”;
 - “ฝึกจุดที่ยังสับสนจากคำตอบล่าสุด”.
 
-When canonical data is stale or unavailable, the UI says so and routes to Standard; it does not invent a mission.
+After Host authorization, when canonical data becomes stale or Adventure content is unavailable, the UI says so and can render Standard from the same snapshot; before authorization it returns Learn. It never invents a mission.
 
 ### 2.4 Existing learning remains familiar
 
@@ -59,15 +60,17 @@ After accepting a mission, the learner enters the existing Unified Lesson Shell.
 | Screen-reader/keyboard user | Map cannot be spatial-only | List parity, semantic state, logical traversal |
 | Reduced-motion user | Animation is distracting | Zero-duration transitions and static companion pose |
 | Offline learner | Needs predictable behavior | Verified-local status and immediate Standard fallback |
-| Research participant | Must understand optional prompt | Natural breakpoint, Skip, consent details, no learning block |
+| Adult research participant | Must understand optional prompt and permit status | Natural breakpoint, Skip, consent details, no learning block |
+| Guardian | Must grant/refuse permission without pressure | Plain purpose/data/withdraw/no-learning-impact and explicit issue state |
+| Minor learner | Must assent independently in age-banded language | Equal Agree/Not now actions; guardian permission never substitutes assent |
 
 ## 4. Information Architecture
 
 ```text
 Existing Learn destination (bottom navigation unchanged)
-└── additive card `learn/today-experience` (eligible only)
+└── additive card `home/learn/today-experience` (eligible only)
     └── Today Experience Host
-        ├── Standard Today presentation (always available when Today dependency is ready)
+        ├── Standard `TodayHubView(snapshot)` (available only after Host authorization)
         └── Adventure presentation (hidden/default-off)
             ├── Adventure Home
             │   ├── Primary Mission Card
@@ -90,7 +93,11 @@ Existing Learn destination (bottom navigation unchanged)
             │   ├── Engagement
             │   ├── Existing reward/quest projection
             │   └── Next action / Review
-            └── Optional Research Prompt (consented run only)
+            └── Optional Research Participation
+                ├── Guardian permission (minor)
+                ├── Learner assent (minor)
+                ├── Research prompt (active permit/run)
+                └── Invalid/expired/revoked permit → product continuation
 ```
 
 There is no separate Adventure vocabulary library, flashcard library, profile, shop or history. Existing destinations remain the canonical place for those functions. Adventure deep-links to them through typed actions.
@@ -101,19 +108,19 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 
 1. Learn surface remains unchanged and has no card while Adventure is hidden.
 2. When visible/enabled and Today/content dependencies are ready, show one additive Today Experience card; never add a bottom tab.
-3. Card opens the Today Experience Host, which resolves product presentation without reading research consent.
-4. A stale direct route renders Standard when Today dependency is ready; otherwise returns Learn with an actionable bounded reason.
+3. Card authorization creates one `entryAttemptId`, opens Today Experience Host and loads one Today snapshot; Product Entry reads only an optional active permit projection, never raw receipts.
+4. Hidden/disabled/unknown or stale direct route returns Learn without constructing Host/snapshot/research opportunity.
 5. During prototype, an explicit session choice can preview Adventure without persistence.
 6. After preference v2 is deployed end-to-end, remember `standard` or `adventure` for the owner.
 7. Standard remains available through the top app bar and fallback panels.
 
 ### 5.2 Entry inside a research protocol
 
-1. Stable assignment selects the intended treatment.
-2. Consent gates research measurement, not the right to learn.
+1. A valid signed `ActivePresentationPermit` selects the intended protocol treatment.
+2. Active permit gates protocol treatment and research measurement, not the right to learn.
 3. A learner assigned Adventure may switch to Standard.
-4. The assignment is not rewritten; a consented crossover event records the presentation switch.
-5. A withdrawn or nonconsented user continues product use with zero research rows.
+4. The assignment is not rewritten; a neutral presentation-change event records crossover in the participant opportunity.
+5. A withdrawn, expired, revoked or nonparticipant user falls back through session choice/preference/Standard and continues product learning; no new research row is created.
 
 ### 5.3 Back behavior
 
@@ -124,7 +131,9 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 | Accepted lesson | Existing lesson close/abandon confirmation and lifecycle |
 | Result | Close result and recompose journey |
 | Research prompt | Skip/close without changing learning completion |
-| Error/fallback with Today ready | Standard Today presentation |
+| Guardian permission/learner assent | Not now/decline without changing learning access |
+| Unauthorized entry | Return Learn; do not show Standard through the hidden route |
+| Authorized Host error with snapshot | Standard `TodayHubView(snapshot)` |
 | Today dependency unavailable | Return to Learn with bounded reason |
 
 ### 5.4 Standard escape rule
@@ -136,7 +145,7 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 | Screen ID | Name | Purpose | Primary action | Canonical dependency |
 |---|---|---|---|---|
 | UX-00 | Learn Today Experience Entry | Add one eligible entry without changing baseline navigation | Open Today Experience | feature/dependency only |
-| UX-01 | Product Presentation Resolver | Choose safe effective presentation | Continue to resolved view | feature/dependency/preference/assignment; no consent |
+| UX-01 | Product Presentation Resolver | Choose safe effective presentation | Continue to resolved view | feature/dependency/preference/active permit projection; no raw receipts |
 | UX-02 | Adventure Home — Map | Show one mission and three-node journey | View/Start mission | Today Hub + journey projection |
 | UX-03 | Adventure Home — List | Accessible equivalent of map | View/Start mission | same snapshot as UX-02 |
 | UX-04 | Mission Details | Explain and confirm work | Start mission | session composer |
@@ -147,6 +156,10 @@ There is no separate Adventure vocabulary library, flashcard library, profile, s
 | UX-09 | Empty/Unavailable/Fallback | Preserve access when data/assets fail | Open Standard | Today/asset/dependency state |
 | UX-10 | Research Prompt | Optional bounded response | Submit/Skip | consented measurement run |
 | UX-11 | Presentation Preference | Save Standard/Adventure later | Save | learner preference v2 |
+| UX-12 | Guardian Permission | Explain and issue/decline minor permission | Allow / Not now / details | approved enrollment + guardian receipt authority |
+| UX-13 | Learner Assent | Obtain independent age-banded assent | Agree / Not now | guardian-approved enrollment + assent authority |
+| UX-14 | Permit Invalid/Expired/Revoked | Explain research mode stopped | Continue learning / details | validated permit status |
+| UX-15 | Withdrawal Continuation | Confirm research stopped without product penalty | Continue Standard/product choice | withdrawal result |
 
 ## 7. Global Layout and Design Tokens
 
@@ -325,6 +338,26 @@ Existing quest/streak/reward outcomes appear in a fourth optional area “ผล
 - Link to consent details.
 - Closing/Skip never changes reward, progression or next learning access.
 
+### 8.11 Guardian permission
+
+- Guardian-led surface states purpose, bounded data, duration/expiry, withdrawal and that refusal has no effect on learning.
+- `Allow participation` and `Not now` are visually balanced; no preselected consent and no countdown.
+- Success shows “permission recorded; learner assent still required” rather than “enrolled”.
+- The app stores an opaque receipt reference and age-band code, never guardian PII or full DOB.
+
+### 8.12 Learner assent
+
+- Uses short age-banded copy and addresses the learner directly.
+- `I agree` and `Not now` remain independently actionable even when guardian permission exists.
+- Not now returns to learning with zero protocol treatment/research rows.
+- Completion restores focus to the control that opened the flow and announces one concise status.
+
+### 8.13 Invalid, expired, revoked or withdrawn permit
+
+- State headline says research mode has stopped; it never says learning access was removed.
+- Primary action is `Continue learning`; secondary action opens participation details when permitted.
+- If the Host was already authorized, fallback uses the once-loaded Standard view; a new unauthorized direct route returns Learn.
+
 ## 9. Detailed Screen States
 
 ### UX-02/03 Adventure Home state matrix
@@ -332,9 +365,9 @@ Existing quest/streak/reward outcomes appear in a fourth optional area “ผล
 | Feature | Dependency | Snapshot | Asset | Effective view |
 |---|---|---|---|---|
 | hidden | any | any | any | Learn baseline; no card/spacing/dead route |
-| disabled/off | Today ready | any | any | Standard inside Today Experience Host |
-| stale route | Today unavailable | any | any | Return Learn with bounded reason |
-| on | missing | any | any | Standard + bounded unavailable reason |
+| hidden/disabled/unknown direct entry | any | any | any | Return Learn; no Host/snapshot/opportunity |
+| stale route | any | any | any | Return Learn with bounded reason |
+| on but dependency missing before authorization | missing | any | any | Return Learn; card absent |
 | on | ready | loading | verified | skeleton/busy; Standard available |
 | on | ready | valid | verified | Adventure map/list |
 | on | ready | stale | verified | stale label, unsafe CTA disabled, refresh |
@@ -430,6 +463,18 @@ Use `M3Theme.motionDuration`. When `MediaQuery.disableAnimations` or saved reduc
 ### 11.5 Contrast and non-color state
 
 WCAG 2.2 AA applies to text and controls. Every state has at least two of icon, text, shape and pattern. High contrast derives from the accessibility scope, not a parallel theme.
+
+### 11.6 Mandatory research/minor accessibility matrix
+
+| Flow | TalkBack | Switch Access/keyboard | Text 200% | Focus restoration | Offline validation |
+|---|---|---|---|---|---|
+| Optional Research Prompt | Required | Required | Required | To invoking prompt action | Active permit/run only |
+| Guardian Permission | Required | Required | Required | To participation card | Signed receipt result announced |
+| Learner Assent | Required | Required | Required | To participation card | No cached assent may be inferred |
+| Invalid/Expired/Revoked Permit | Required | Required | Required | To Continue learning | Fail closed; product continues |
+| Withdrawal race | Required | Required | Required | To learning surface | No new opportunity/event/enqueue |
+
+Every required action must have unique role/name/state, no focus trap, no timed dismissal and a 48×48 logical-pixel target. Failure in any primary flow is blocking even when aggregate accessibility percentage passes.
 
 ## 12. Responsive Behavior
 
@@ -596,6 +641,10 @@ No lives, Adventure points or separate timer are present.
 └──────────────────────────────────────┘
 ```
 
+### 13.9 Research participation companion
+
+Detailed low-fidelity screens for guardian permission, learner assent, optional prompt, permit invalidation and post-withdrawal continuation are in [`05b-research-participation-wireframes.svg`](05b-research-participation-wireframes.svg). The companion is normative for action hierarchy, escape paths and focus-return annotations; final visual styling remains governed by Material 3 tokens in this document.
+
 ## 14. Prototype and Validation Plan
 
 ### 14.1 Prototype A — no persistence
@@ -643,8 +692,12 @@ Ask learners to demonstrate, not merely rate:
 | UX-AC-08 | Result comprehension distinguishes learning, effort and engagement for at least 4/5 participants |
 | UX-AC-09 | Research prompt Skip is discoverable and does not alter learning/reward state |
 | UX-AC-10 | Missing/corrupt asset always leaves a usable Standard action |
-| UX-AC-11 | No visible “เก่งศัพท์” label is introduced; brand remains LexiQuest |
-| UX-AC-12 | No prohibited pressure mechanic/copy is present in design or content catalog |
+| UX-AC-11 | Hidden/disabled/unknown/stale direct route returns Learn and creates no Host/snapshot/opportunity |
+| UX-AC-12 | Guardian 5/5 and learner 5/5 independently understand Skip/withdraw/no-learning-impact |
+| UX-AC-13 | Prompt/guardian/assent/invalid-permit flows pass TalkBack, Switch Access, text 200% and focus restoration |
+| UX-AC-14 | Permit expiry/withdrawal keeps product learning available and creates no new research operation |
+| UX-AC-15 | No visible “เก่งศัพท์” label is introduced; brand remains LexiQuest |
+| UX-AC-16 | No prohibited pressure mechanic/copy is present in design or content catalog |
 
 ## 16. Design Handoff Checklist
 
@@ -655,6 +708,7 @@ Ask learners to demonstrate, not merely rate:
 - Reduced-motion behavior for every animated element
 - Map/list parity matrix
 - Error/fallback and pending-evidence/reward states
+- Research participation companion wireframe with guardian/assent/permit states and focus annotations
 - Test keys based on stable identity, not display copy
 - Catalog/asset checksums and ownership
 - Signed UX, accessibility and content review

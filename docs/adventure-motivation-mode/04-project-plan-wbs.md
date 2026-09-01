@@ -1,10 +1,10 @@
 # Project Plan / Work Breakdown Structure — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-PP-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for Owner Review
-**Planning basis:** TOR/SRS/SDS v1.0 and `AMM-AUDIT-001 v1.0`
-**Decision basis:** `LQ-AMM-ADR-001 v1.0` and `LQ-AMM-MDS-001 v1.0`
+**Planning basis:** TOR/SRS/SDS v1.1 and `AMM-AUDIT-001 v1.0`
+**Decision basis:** `LQ-AMM-ADR-001 v1.1` and `LQ-AMM-MDS-001 v1.1`
 **Estimate class:** ROM ±30% until G1 architecture approval and closure of the Audit before-implementation gate
 
 ## 1. Delivery Strategy
@@ -23,31 +23,31 @@
 | Content/Localization | 0.5 FTE from Phase 1 |
 | Release/Operations | 0.25 FTE |
 
-With this team the planning range is 18–24 calendar weeks, excluding waiting time for ethics/protocol approval and participant recruitment. Person-day estimates are effort, not elapsed calendar commitments.
+With this team the planning range is 22–30 calendar weeks, excluding waiting time for ethics/protocol approval, participant recruitment and powered-efficacy observation. Person-day estimates are effort, not elapsed calendar commitments.
 
 ### 1.2 Effort summary
 
 | Phase | Focus | Estimate (person-days) | Gate |
 |---|---|---:|---|
-| P0 | Baseline remediation, contracts, catalog foundation | 42 | G0A/G0B/G1 |
-| P1 | Read-only shell and journey | 38 | G2-read-only |
+| P0 | Baseline remediation, contracts, catalog foundation | 46 | G0A/G0B/G1 |
+| P1 | Read-only shell, single-load Today view and journey | 44 | G2-read-only |
 | P2 | Learning bridge, repair, recovery | 48 | G2-learning |
 | P3 | Preference v2, motivation, companion | 48 | G3-core |
-| P4 | Research schema/events/lifecycle | 58 | G4-research |
-| P5 | Internal, hardening, Pilot UAT | 42 | G5-pilot |
-| P6 | Controlled enablement and closeout | 18 | G6 |
-| **Total** | | **294 person-days** | |
+| P4 | Research permits, schema/events/lifecycle and analysis contract | 82 | G4-research |
+| P5 | Internal hardening and MS-08A Feasibility UAT | 56 | G5-feasibility |
+| P6 | MS-08B Efficacy, class rollout and closeout | 30 | G6-efficacy |
+| **Total** | | **354 person-days** | |
 
-Contingency 15% is held at project level for migration/toolchain/accessibility findings, producing a management reserve of 45 person-days.
+Management reserve is **54 person-days** (approximately 15% of base effort) for migration/toolchain/accessibility/recruitment-interface findings. It is controlled by Sponsor/Product Owner and is not silently distributed into work packages. ROM remains ±30%.
 
 ### 1.3 Independently closable increments
 
 | Increment | Phases | Base effort | Schema consequence | Owner decision |
 |---|---|---:|---|---|
-| A Read-only Preview | P0–P1 | 80 pd | v22 unchanged | Accept preview / Revise / Stop |
+| A Read-only Preview | P0–P1 | 90 pd | v22 unchanged | Accept preview / Revise / Stop |
 | B Product Core MVP | P2 | 48 pd | v22 unchanged | **MS-04 Accept / Stop / Continue** |
 | C Product Extension | P3 | 48 pd | preference migration only if approved | Accept extension / keep session-local |
-| D Research Add-on + rollout | P4–P6 | 118 pd | research migration only if approved | Pilot / Revise / Stop research |
+| D Research, Minor Participation and Rollout | P4–P6 | 168 pd | research migration only if approved | Limited / Revise / Stop / class expansion |
 
 แต่ละ increment มี budget/change decision แยก การหยุดหลัง A หรือ B เมื่อ exit gate ผ่านเป็น successful bounded delivery ไม่บังคับใช้ reserve หรือ phase ที่เหลือ
 
@@ -62,10 +62,11 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | MS-03 Read-only preview | Map/list, catalog and journey deterministic; no writes |
 | MS-04 Product Core MVP decision | Standard/Adventure command/evidence equivalence + Accept/Stop/Continue record; v22 unchanged |
 | MS-05 Core motivation ready | planned v23 preference on actual reserved number, read-only canonical reward projection, scripted companion, recovery |
-| MS-06 Research ready | planned v24 on actual reserved number, consented events, sync/lifecycle/export/rules |
+| MS-06 Research ready | planned v24 on actual reserved number, permits/opportunities/neutral events, sync/lifecycle/export/rules |
 | MS-07 Internal accepted | Accessibility/offline/restart/emergency-off evidence |
-| MS-08 Pilot accepted | UAT + protocol/data quality/guardrail review |
-| MS-09 Controlled enablement | Rollout decision and monitoring baseline |
+| MS-08A Feasibility accepted | UAT + permit/data quality/comprehension/safety; maximum state Limited |
+| MS-08B Efficacy accepted per class | Powered adult/minor analysis + motivation/learning/safety/missingness gates |
+| MS-09 Controlled enablement | Class-specific rollout decision and monitoring baseline |
 | MS-10 Project close | Docs/evidence/decision log/remaining backlog archived |
 
 ## 3. WBS Dictionary
@@ -74,7 +75,7 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 
 | WBS | Work package | Output | Depends on | Effort | Owner | Exit test |
 |---|---|---|---|---:|---|---|
-| 0.1 | Planning approval | Approved document set v1.0 | None | 2 | PO/CTO | MS-00 |
+| 0.1 | Planning approval | Approved document set v1.1 | None | 2 | PO/CTO | MS-00 |
 | 0.2 | Reproducible worktree bootstrap | Offline package config/runbook without parent-checkout resolution | 0.1 | 1 | Tech Lead | feature-map check and analyze start locally |
 | 0.3 | Baseline issue register | BL-01–BL-08 mapped to owners, gates and evidence paths | 0.1 | 1 | QA Lead | Audit trace review |
 | 0.4 | Historical contract cleanup | Regenerate fingerprint; version schema audit; narrow `points`; use stable Thai navigation identity | 0.2,0.3 | 2 | QA/Engineer A | BL-01/05/06/08 targeted tests green |
@@ -83,7 +84,7 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 0.7 | Field-model certification preparation | Approved checksum-pinned fixture workflow and separate hardware gate | 0.3 | 2 | ML/Mobile Owner | BL-03/04 pass in declared gate |
 | 0.8 | Secret/dependency disposition | Gitleaks fixture remediation; LM/Voice/root policy decisions and expiry owners | 0.3 | 3 | QA/Backend Owners | release scans meet reviewed policy |
 | 0.9 | Fresh baseline run | Full default + serial suite, analyze, backend, emulators and scans archived | 0.4–0.8 | 2 | QA | 0 unclassified failures; MS-01B |
-| 0.10 | Current route/screen ledger + ADR-001 | 63 screens classified; orphan candidates dispositioned; `learn/today-experience` child route approved; no bottom-tab change | 0.1 | 2 | UX/Tech Lead | reachability/navigation decision signed |
+| 0.10 | Current route/screen ledger + ADR-001 | 63 screens classified; orphan candidates dispositioned; `home/learn/today-experience` child route approved; no bottom-tab change | 0.1 | 2 | UX/Tech Lead | reachability/navigation decision signed |
 | 0.11 | Schema ledger reservation | actual preference/research migration numbers reserved or rebase recorded | 0.1 | 1 | Tech Lead | ledger review |
 | 0.12 | Feature/entry contract tests | Failing tests for hidden/additive broad feature without f45, no Learn-layout drift and no bottom tab | 0.4,0.5,0.10 | 2 | Engineer A | Red test verified; MS-01A |
 | 0.13 | Add hidden feature mapping | Feature/registry/production contract | 0.12 | 2 | Engineer A | Contract tests green |
@@ -93,7 +94,8 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 0.17 | Catalog v1 fixtures | Thai/English/manifest sample | 0.16 | 3 | Content/UX | Locale parity review |
 | 0.18 | Catalog validator | ID/graph/locale/checksum/path validation | 0.17 | 4 | Engineer B | Negative matrix green |
 | 0.19 | Feature-off equivalence evidence | Standard navigation/read models and zero-write comparison | 0.13–0.18 | 2 | QA | baseline-equivalence suite green |
-| 0.20 | Phase review | Diff, tests, Audit closure links and feature-off evidence | 0.9,0.19 | 2 | CTO/QA | MS-02 |
+| 0.21 | Critic contract closure | Freeze route authorization, active permit projection, neutral events/opportunity, minor runtime evidence and MS-08A/B decisions across v1.1 docs | 0.1,0.10,0.11 | 4 | CTO/Research/QA | 196 requirements traced; authority review |
+| 0.20 | Phase review | Diff, tests, Audit closure links and feature-off evidence | 0.9,0.19,0.21 | 2 | CTO/QA | MS-02 |
 
 ### 3.2 P1 — Read-only shell and journey
 
@@ -111,7 +113,8 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 1.10 | Status/fallback states | Empty/stale/corrupt/offline/unavailable | 1.6 | 3 | Engineer B | State matrix |
 | 1.11 | Navigation preview and production entry seam | Internal guarded route + eligible additive Learn card/TodayExperienceHost; hidden path baseline-equivalent | 1.7–1.10 | 3 | Engineer A | ADR-001 navigation tests |
 | 1.12 | Accessibility review | Semantics, focus, 200%, reduced motion | 1.11 | 2 | UX/QA | Required checks |
-| 1.13 | Phase review | Zero writes/schema diff + deterministic recomposition | all P1 | 1 | CTO/QA | MS-03 |
+| 1.14 | Single-load Standard view seam | Refactor `TodayHubView(snapshot)` pure presentation; legacy `TodayHubScreen` loader wrapper; Host loads once and reuses UUID/snapshot | 1.5,1.6,1.11 | 2 | Engineers A/B | load-count, object-identity, stale-owner tests |
+| 1.13 | Phase review | Zero writes/schema diff + deterministic recomposition | all P1 including 1.14 | 1 | CTO/QA | MS-03 |
 
 ### 3.3 P2 — Learning bridge, repair and recovery
 
@@ -148,7 +151,8 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 3.10 | Companion/avatar panel | Existing equipped cosmetics + alternatives | 3.9,3.6 | 4 | Engineer A | Widget/accessibility |
 | 3.11 | Content review | Thai/English, shame/mastery claims | 3.10 | 2 | UX/Content | Signed review |
 | 3.12 | Full core scenario | Open→learn→repair→result→recompose | 3.3–3.11 | 4 | QA | Scenario green |
-| 3.13 | Phase review | No duplicate authority/reward | all P3 | 2 | CTO/QA | MS-05 |
+| 3.14 | Presentation precedence seam | Fake active-permit projection vs session choice/preference/Standard regression without research persistence | 3.3,1.14 | 2 | Engineer A/QA | precedence/isolation tests |
+| 3.13 | Phase review | No duplicate authority/reward | all P3 including 3.14 | 2 | CTO/QA | MS-05 |
 
 ### 3.5 P4 — Research instrumentation and lifecycle
 
@@ -160,14 +164,19 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 4.4 | Measurement repository | Owner/idempotency/state machine | 4.3 | 5 | Engineer A | Repository tests |
 | 4.5 | Measurement use cases | Consent/assignment/instrument enforcement | 4.4 | 4 | Engineer A | Isolation tests |
 | 4.6 | Research prompt UI | Natural breakpoint, Skip, consent details | 4.5 | 3 | Engineer B | Widget/UAT dry run |
-| 4.7 | Event payload/identity policy | Exact four event schemas v1; pre-session entryDecisionId vs mission learningSessionId | 4.1 | 3 | Engineer B | ADR-003 allowlist/idempotency tests |
+| 4.7 | Event payload/identity policy | Exact four neutral event schemas v1; opportunity aggregate vs mission learningSessionId | 4.1 | 3 | Engineer B | ADR-003 allowlist/idempotency tests |
 | 4.8 | Research capture gate + recorder | Separate consent/assignment/run decision + EventsV2; no presentation authority | 4.7 | 5 | Engineer B | Nonparticipant zero-row + entry isolation |
 | 4.9 | Sync entity and outbox | research rows/events sync/replay under actual schema/payload versions | 4.3,4.8 | 6 | Engineer B | Sync tests |
 | 4.10 | Firestore rules | Owner/version/consent constraints | 4.9 | 4 | Engineer B/QA | Emulator tests |
 | 4.11 | Lifecycle manifest/upgrade | guest upgrade/owner isolation | 4.3 | 4 | Engineer A | Scenario tests |
 | 4.12 | Export/withdraw/delete | Separate axes and lifecycle behavior | 4.5,4.11 | 4 | Engineer A | Complete lifecycle scenario |
 | 4.13 | Data validation | Assignment/version/crossover reconstruction | 4.8–4.12 | 3 | Research/QA | 100% metadata fixture |
-| 4.14 | Phase review | Consent-safe and reconstructible | all P4 | 3 | CTO/Privacy/QA | MS-06 |
+| 4.15 | Participation permit domain/schema | Signed adult/minor permit, age-band, opaque receipt refs, revisions/revocation and active projection | 4.1–4.3 | 8 | Engineer A/Privacy | Domain/migration/signature/negative matrix |
+| 4.16 | Opportunity repository and neutral events | Participant denominator, UUID reuse, transactional switch 1–10, symmetric Standard/Adventure events | 4.7,4.8,4.15 | 6 | Engineer B | concurrency/replay/equivalence tests |
+| 4.17 | Guardian and learner participation UX | Guardian permission, age-banded assent, invalid/expired/revoked permit and product continuation | 4.15 | 4 | UX/Engineer B | Widget/comprehension/accessibility dry run |
+| 4.18 | Primary endpoint and missingness pipeline | Baseline/post windows, class-stratified ANCOVA, MI and tipping-point fixtures | 4.1,4.4,4.16 | 4 | Research/Data/QA | Frozen analysis validation |
+| 4.19 | Class rollout isolation contract | Separate adult/minor eligibility, flag and signed decision projection | 4.15,4.18 | 2 | Release/Engineer A | Cross-class negative tests |
+| 4.14 | Phase review | Permit-safe, symmetric and reconstructible | all P4 including 4.15–4.19 | 3 | CTO/Privacy/QA | MS-06 |
 
 ### 3.6 P5 — Internal hardening and Pilot
 
@@ -185,21 +194,28 @@ Contingency 15% is held at project level for migration/toolchain/accessibility f
 | 5.10 | Pilot deployment | Small consented cohort | 5.8,5.9 | 2 | Release Owner | Assignment 100% |
 | 5.11 | Pilot monitoring | guardrails/data quality/defects | 5.10 | 5 | QA/Research | Pilot report |
 | 5.12 | Pilot UAT/interviews | usability/comprehension; ≥10 research comprehension participants with 10/10 consent understanding | 5.10 | 3 | UX/UAT | MDS thresholds dispositioned |
-| 5.13 | Pilot decision | Enable, revise, or hide | 5.11,5.12 | 1 | Product Owner | MS-08 |
+| 5.14 | Guardian/assent permit UAT | ≥5 dyads; guardian 5/5 and learner 5/5 comprehension; issue/invalid/withdraw flows | 4.17,5.2 | 5 | UAT/Privacy | UAT-033/034; signed denominators |
+| 5.15 | Research-flow accessibility | TalkBack, Switch Access, text 200%, focus restore, offline permit validation and withdrawal race | 4.17,5.4 | 4 | UX/QA | UAT-037 across required profiles |
+| 5.16 | Opportunity/data-quality audit | Symmetric Standard/Adventure opportunities, capture ≥99%, metadata/reconstruction 100% | 4.16,5.11 | 3 | Data/QA | UAT-036 and audit report |
+| 5.17 | Class feasibility packet | Adult/minor disposition, safety/comprehension evidence and explicit no-efficacy wording | 5.12,5.14–5.16 | 2 | Research/PO | Signed packet |
+| 5.13 | Feasibility decision | Limited, revise, or hide; never Enabled | 5.11,5.17 | 1 | Product Owner | MS-08A |
 
-### 3.7 P6 — Controlled enablement and closeout
+### 3.7 P6 — Efficacy, controlled enablement and closeout
 
 | WBS | Work package | Output | Depends on | Effort | Owner | Exit test |
 |---|---|---|---|---:|---|---|
-| 6.1 | Rollout segmentation | Approved exposure increments | 5.13 | 2 | PO/Release | Change record |
-| 6.2 | Production monitoring | Fallback/retry/asset/crossover dashboards | 6.1 | 3 | Release/Data | Alert rehearsal |
-| 6.3 | Increment 1 | Limited eligible users | 6.2 | 2 | Release | Guardrails stable |
-| 6.4 | Increment review | Compare thresholds and defects | 6.3 | 2 | PO/QA/Research | Continue/hold decision |
-| 6.5 | Additional increments | Controlled expansion only after review | 6.4 | 3 | Release | Each gate recorded |
-| 6.6 | Post-release UAT | Core/rollback/consent smoke | 6.3 | 2 | QA/UAT | Required cases pass |
-| 6.7 | Documentation finalization | As-built SDS/RTM/runbooks | 6.4 | 2 | Tech Lead | Version 1.x published |
-| 6.8 | Backlog separation | AI/camera/social/new worlds separate specs | 6.7 | 1 | Product Owner | Backlog approved |
-| 6.9 | Closeout | Lessons learned, metrics, ownership handoff | 6.5–6.8 | 1 | Project Manager | MS-10 |
+| 6.1 | Class-stratified efficacy plan | Powered adult/minor targets, allocation and approved observation window | 5.13 | 2 | Research Lead | Frozen class sample plan |
+| 6.2 | Limited-state monitoring | Permit/opportunity/fallback/retry/asset/crossover dashboards | 6.1 | 3 | Release/Data | Alert rehearsal |
+| 6.3 | Efficacy study operations | Maintain Limited exposure and collect powered sample without optional stopping | 6.1,6.2 | 3 | Research/Operations | Enrollment/accountability report |
+| 6.4 | Data freeze and missingness gate | Immutable input, disposition, >15%/5pp blockers per class | 6.3 | 3 | Data/QA | Signed data freeze |
+| 6.5 | Primary statistical analysis | Class ANCOVA, multiple imputation, Rubin pooling, complete-case and tipping-point | 6.4 | 5 | Statistician | Reproducible analysis package |
+| 6.6 | Learning/safety guardrail analysis | Recall/review non-inferiority, duplicate and critical counts | 6.4 | 3 | Research/QA | Guardrail report |
+| 6.7 | MS-08B class decisions | Expand/Remain Limited/Stop decision independently for adult and minor | 6.5,6.6 | 3 | PO/Research/Privacy/QA | Signed MS-08B records |
+| 6.8 | Rollout isolation configuration | Eligible class targeting and cross-class negative verification | 4.19,6.7 | 2 | Release/Engineer | Isolation tests/change record |
+| 6.9 | Controlled expansion | Bounded increment only for class that passed | 6.8 | 2 | Release | Monitoring guardrails stable |
+| 6.10 | Post-expansion UAT/emergency rehearsal | Core, withdrawal, rollback and class targeting smoke | 6.9 | 1 | QA/UAT | UAT-038 pass |
+| 6.11 | Documentation/backlog finalization | As-built SDS/RTM/runbooks; AI/camera/social/new worlds separate | 6.7,6.10 | 2 | Tech Lead/PO | Published artifacts |
+| 6.12 | Closeout | Lessons learned, metrics and ownership handoff | 6.11 | 1 | Project Manager | MS-10 |
 
 ## 4. Critical Path
 
@@ -215,10 +231,13 @@ Planning approval
 → reserved preference migration/lifecycle
 → Motivation idempotency
 → reserved research migration/lifecycle/rules
+→ signed participation permit + opportunity/neutral-event symmetry
 → Pilot-ready clean baseline
-→ Internal accessibility/offline/rehearsal
-→ Pilot
-→ Controlled enablement
+→ Internal research-flow accessibility/offline/rehearsal
+→ MS-08A Feasibility (Limited only)
+→ powered class sample + frozen ANCOVA/MI/tipping-point analysis
+→ MS-08B adult/minor decisions
+→ class-specific Controlled Expansion
 ```
 
 Research protocol work can begin in parallel with P3 after core flow is stable, but research persistence cannot merge before P3 exit gate. UI asset/content work can run beside domain work after catalog contracts freeze.
@@ -230,9 +249,9 @@ Research protocol work can begin in parallel with P3 after core flow is stable, 
 3. No learning bridge before canonical equivalence fixtures
 4. No preference migration before Phase 1 read-only gate and actual ledger reservation
 5. No research migration before MS-04 Continue, Phase 3 core gate, approved MDS/protocol and actual ledger reservation
-6. No event recording before consent/assignment/run gate tests
-7. No Pilot before all lifecycle, accessibility and emergency-off evidence
-8. No Enabled state before Pilot decision; platform/capability expansion requires its own gate
+6. No protocol treatment/opportunity/event recording before permit signature/owner/assignment/consent/guardian/assent/protocol/expiry/revocation tests
+7. No MS-08A before all lifecycle, research-flow accessibility and emergency-off evidence
+8. No Controlled Expansion/Enabled for a participant class before its MS-08B decision; platform/capability expansion requires its own gate
 
 ## 6. Definition of Ready
 
@@ -281,7 +300,7 @@ No Codex Security/Security Scan/Deep Scan workflow is part of this repository pl
 | Severity | Definition | Release rule |
 |---|---|---|
 | Blocker | Data loss, app cannot start, baseline unusable | Stop phase |
-| Critical | Owner leak, consent bypass, duplicate economy, evidence corruption, inaccessible primary flow | Stop phase/Pilot |
+| Critical | Owner leak, permit/consent/assent bypass, duplicate economy, evidence corruption, inaccessible primary flow | Stop phase/Pilot |
 | High | Major flow unavailable without safe workaround | Fix before next gate |
 | Medium | Partial degradation with safe workaround | Disposition before Pilot |
 | Low | Cosmetic/copy issue without meaning loss | Prioritize by UX owner |
@@ -303,9 +322,12 @@ No Codex Security/Security Scan/Deep Scan workflow is part of this repository pl
 | R11 | Assignment changes on switch | 2 | 5 | 10 | Cohort identity changes | Research Lead | Stable repository/invariant |
 | R12 | Asset bundle failure blocks learning | 3 | 4 | 12 | Checksum mismatch | Engineer/QA | Quarantine/repair/Standard |
 | R13 | Scope expands to AI/social | 4 | 4 | 16 | New capability requested mid-phase | Product Owner | Separate spec/backlog |
-| R14 | Pilot insufficient for conclusion | 3 | 4 | 12 | Power/data quality failure | Research Lead | Pre-register and hold Enabled |
+| R14 | Feasibility insufficient for efficacy conclusion | 3 | 4 | 12 | Power/data quality failure | Research Lead | Pre-register and remain Limited until MS-08B |
 | R15 | Today Hub remains hidden/unavailable under Adventure entry | 3 | 5 | 15 | dependency not composed or parent still hidden | Product/Tech Lead | Standard fallback and exact delivery contract |
 | R16 | Gitleaks/OSV/platform/model gates remain red | 3 | 5 | 15 | MS-01B evidence incomplete | QA/Platform/Backend | keep Pilot/release blocked |
+| R17 | Withdrawn/expired permit still controls presentation | 2 | 5 | 10 | Host/start after invalidation | Privacy/Tech Lead | projection invalidation + race tests |
+| R18 | Event-only denominator hides capture loss | 3 | 5 | 15 | event count differs from opportunity count | Data Lead | independent opportunity ledger and reconciliation |
+| R19 | Feasibility result is used to enable a class | 3 | 5 | 15 | rollout requested after MS-08A | Product Owner | Limited ceiling + signed MS-08B class gate |
 
 P/I use 1–5. Exposure ≥15 is reviewed weekly and at every gate.
 
@@ -317,7 +339,7 @@ P/I use 1–5. Exposure ≥15 is reviewed weekly and at every gate.
 | Twice weekly | Engineering/QA/UX | Dependency/defect board |
 | Weekly | PO/CTO/PM/Research | Milestone, risk and scope report |
 | Gate review | Accountable roles | Signed gate checklist/evidence links |
-| Pilot monitoring | PO/QA/Research/Privacy | Guardrail/data quality report |
+| Feasibility/efficacy monitoring | PO/QA/Research/Privacy | Opportunity, guardrail, missingness and class decision report |
 | Emergency | Release/CTO/PO | Incident record and feature-state decision |
 
 ## 11. Change and Scope Control
@@ -341,9 +363,12 @@ Minor copy/asset corrections within approved semantics use content review and ca
 |---|---|
 | Blocker/Critical open | Keep Hidden / emergency-off |
 | Learning guardrail worse beyond protocol threshold | Stop Pilot; investigate |
-| Motivation improves, learning stable, lifecycle clean | Eligible for controlled expansion |
+| MS-08A feasibility passes | Keep Limited; continue only under approved efficacy protocol |
+| Adult MS-08B passes; minor incomplete/fails | Adult eligible for controlled expansion; minor remains Limited |
+| Class motivation improves, learning stable, lifecycle/missingness clean and powered | That class is eligible for controlled expansion |
 | Engagement rises but motivation self-report/learning does not | Do not claim success; revise treatment |
-| Metadata/assignment completeness <100% | Data invalid for primary decision; hold rollout |
+| Metadata/permit/assignment/opportunity completeness <100% | Data invalid for primary decision; hold rollout |
+| Missing post >15% or arm difference >5pp | Class cannot pass MS-08B |
 | Accessibility required path fails | Hold rollout regardless of aggregate metrics |
 | Asset/offline failure has Standard fallback but high frequency | Hold expansion; repair operations/content |
 

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1260" viewBox="0 0 1600 1260" role="img" aria-labelledby="title desc">
+  <title id="title">Adventure Motivation Mode research participation wireframes</title>
+  <desc id="desc">Five Android low-fidelity wireframes for guardian permission, learner assent, optional research prompt, invalid permit, and post-withdrawal learning continuation.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f8fafc}.phone{fill:#fff;stroke:#334155;stroke-width:3}.bar{fill:#e8f1fb}.card{fill:#f8fafc;stroke:#94a3b8;stroke-width:2}.primary{fill:#1e88e5}.secondary{fill:#fff;stroke:#1e88e5;stroke-width:2}.warn{fill:#fff7ed;stroke:#f59e0b;stroke-width:2}.ok{fill:#ecfdf5;stroke:#10b981;stroke-width:2}.line{stroke:#cbd5e1;stroke-width:2}.flow{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#arrow)}
+      text{font-family:'Noto Sans Thai','Segoe UI',sans-serif;fill:#0f172a}.h1{font-size:30px;font-weight:700}.h2{font-size:22px;font-weight:700}.body{font-size:17px}.small{font-size:14px;fill:#475569}.button{font-size:17px;font-weight:700;fill:#fff}.buttonBlue{font-size:17px;font-weight:700;fill:#1e88e5}.tag{font-size:13px;font-weight:700;fill:#334155}.note{font-size:15px;fill:#334155}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker>
+  </defs>
+  <rect class="bg" width="1600" height="1260"/>
+  <text class="h1" x="60" y="58">Research Participation — Low-Fidelity UX Contract v1.1</text>
+  <text class="body" x="60" y="88">Android-only · product learning remains available · no full DOB or guardian PII · focus returns to invoking control</text>
+
+  <!-- Screen 1 -->
+  <g transform="translate(60 130)">
+    <rect class="phone" rx="24" width="430" height="500"/>
+    <rect class="bar" rx="21" width="430" height="64"/>
+    <text class="h2" x="24" y="41">1. Guardian permission</text>
+    <text class="tag" x="24" y="92">AGE BAND: minor-10-12</text>
+    <rect class="card" x="20" y="110" rx="14" width="390" height="210"/>
+    <text class="body" x="40" y="145">ขออนุญาตเข้าร่วมการศึกษาประสบการณ์</text>
+    <text class="small" x="40" y="178">• เก็บคะแนนแบบสอบถามและเหตุการณ์แบบจำกัด</text>
+    <text class="small" x="40" y="204">• ถอนหรือข้ามได้ทุกเมื่อ</text>
+    <text class="small" x="40" y="230">• ไม่กระทบสิทธิ์เรียน รางวัล หรือความก้าวหน้า</text>
+    <text class="small" x="40" y="270">ข้อมูลผู้ปกครองไม่ถูกเก็บในแอป</text>
+    <text class="small" x="40" y="296">ดูรายละเอียดและระยะเวลาการอนุญาต</text>
+    <rect class="primary" x="20" y="344" rx="12" width="390" height="56"/>
+    <text class="button" x="142" y="379">อนุญาตให้เข้าร่วม</text>
+    <rect class="secondary" x="20" y="414" rx="12" width="390" height="56"/>
+    <text class="buttonBlue" x="177" y="449">ไว้ภายหลัง</text>
+    <text class="small" x="20" y="488">Focus return: Research participation card</text>
+  </g>
+
+  <!-- Screen 2 -->
+  <g transform="translate(585 130)">
+    <rect class="phone" rx="24" width="430" height="500"/>
+    <rect class="bar" rx="21" width="430" height="64"/>
+    <text class="h2" x="24" y="41">2. Learner assent</text>
+    <rect class="ok" x="20" y="88" rx="12" width="390" height="58"/>
+    <text class="small" x="38" y="122">ผู้ปกครองอนุญาตแล้ว — คุณยังเลือกเองได้</text>
+    <text class="body" x="30" y="184">อยากช่วยเราศึกษาวิธีทำให้การเรียน</text>
+    <text class="body" x="30" y="211">น่าเริ่มและสบายใจขึ้นไหม?</text>
+    <text class="small" x="30" y="252">คุณข้ามคำถามหรือหยุดเข้าร่วมภายหลังได้</text>
+    <text class="small" x="30" y="278">ไม่ว่าจะเลือกอะไร คุณยังเรียนต่อได้เหมือนเดิม</text>
+    <rect class="primary" x="20" y="326" rx="12" width="390" height="56"/>
+    <text class="button" x="174" y="361">ฉันตกลง</text>
+    <rect class="secondary" x="20" y="396" rx="12" width="390" height="56"/>
+    <text class="buttonBlue" x="177" y="431">ไว้ภายหลัง</text>
+    <text class="small" x="20" y="480">TalkBack announces result once; no inferred assent</text>
+  </g>
+
+  <!-- Screen 3 -->
+  <g transform="translate(1110 130)">
+    <rect class="phone" rx="24" width="430" height="500"/>
+    <rect class="bar" rx="21" width="430" height="64"/>
+    <text class="h2" x="24" y="41">3. Optional research prompt</text>
+    <text class="body" x="28" y="112">ช่วยบอกความรู้สึกหลังเรียน</text>
+    <text class="small" x="28" y="140">ใช้เพื่อศึกษาประสบการณ์แรงจูงใจเท่านั้น</text>
+    <rect class="card" x="20" y="164" rx="14" width="390" height="160"/>
+    <text class="body" x="38" y="200">ตอนนี้อยากกลับมาเรียนต่อแค่ไหน?</text>
+    <text class="small" x="38" y="238">○ น้อย   ○ ค่อนข้างน้อย   ○ ปานกลาง</text>
+    <text class="small" x="38" y="270">○ ค่อนข้างมาก             ○ มาก</text>
+    <text class="small" x="38" y="304">ดูรายละเอียดการเข้าร่วม</text>
+    <rect class="primary" x="20" y="348" rx="12" width="250" height="56"/>
+    <text class="button" x="101" y="383">ส่งคำตอบ</text>
+    <rect class="secondary" x="286" y="348" rx="12" width="124" height="56"/>
+    <text class="buttonBlue" x="327" y="383">ข้าม</text>
+    <text class="small" x="20" y="454">Natural breakpoint after canonical completion</text>
+    <text class="small" x="20" y="478">Skip does not alter learning/reward state</text>
+  </g>
+
+  <!-- Screen 4 -->
+  <g transform="translate(315 720)">
+    <rect class="phone" rx="24" width="430" height="450"/>
+    <rect class="bar" rx="21" width="430" height="64"/>
+    <text class="h2" x="24" y="41">4. Permit unavailable</text>
+    <rect class="warn" x="20" y="94" rx="14" width="390" height="150"/>
+    <text class="body" x="42" y="135">โหมดการศึกษาหยุดแล้ว</text>
+    <text class="small" x="42" y="168">สิทธิ์หมดอายุ ถูกถอน หรือยืนยันออฟไลน์ไม่ได้</text>
+    <text class="small" x="42" y="198">การเรียนและประวัติเดิมยังอยู่ครบ</text>
+    <text class="small" x="42" y="224">จะไม่มีข้อมูลวิจัยรายการใหม่</text>
+    <rect class="primary" x="20" y="274" rx="12" width="390" height="56"/>
+    <text class="button" x="145" y="309">เรียนต่อแบบปกติ</text>
+    <rect class="secondary" x="20" y="344" rx="12" width="390" height="56"/>
+    <text class="buttonBlue" x="146" y="379">ดูรายละเอียดสิทธิ์</text>
+    <text class="small" x="20" y="428">Authorized Host → same snapshot; new route → Learn</text>
+  </g>
+
+  <!-- Screen 5 -->
+  <g transform="translate(855 720)">
+    <rect class="phone" rx="24" width="430" height="450"/>
+    <rect class="bar" rx="21" width="430" height="64"/>
+    <text class="h2" x="24" y="41">5. Withdrawal confirmed</text>
+    <rect class="ok" x="20" y="94" rx="14" width="390" height="150"/>
+    <text class="body" x="42" y="135">หยุดเข้าร่วมการศึกษาแล้ว</text>
+    <text class="small" x="42" y="168">ระบบจะไม่สร้างหรือส่งข้อมูลวิจัยรายการใหม่</text>
+    <text class="small" x="42" y="198">คุณยังเลือก Adventure หรือมุมมองมาตรฐาน</text>
+    <text class="small" x="42" y="224">ตามการตั้งค่าผลิตภัณฑ์ได้</text>
+    <rect class="primary" x="20" y="274" rx="12" width="390" height="56"/>
+    <text class="button" x="150" y="309">เรียนต่อวันนี้</text>
+    <rect class="secondary" x="20" y="344" rx="12" width="390" height="56"/>
+    <text class="buttonBlue" x="142" y="379">จัดการข้อมูลเดิม</text>
+    <text class="small" x="20" y="428">Focus return: Today/Learn primary action</text>
+  </g>
+
+  <path class="flow" d="M490 380 C535 380 540 380 585 380"/>
+  <path class="flow" d="M1015 380 C1060 380 1065 380 1110 380"/>
+  <path class="flow" d="M1325 630 C1325 670 1070 680 1070 720"/>
+  <path class="flow" d="M530 630 C530 670 530 680 530 720"/>
+
+  <g transform="translate(60 1215)">
+    <text class="note">Blocking accessibility contract: TalkBack + Switch Access/keyboard + 200% text + focus restoration + offline fail-closed verification.</text>
+  </g>
+</svg>

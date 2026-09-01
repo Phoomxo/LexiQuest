@@ -1,6 +1,7 @@
 # Adventure Motivation Mode — System Design and Delivery Blueprint
 
 **Date:** 2026-09-01
+**Version:** 1.1
 **Status:** PROPOSED FOR OWNER REVIEW
 **Baseline:** `99f7fb21` (`feature/alltcas-8-44-integration` remote baseline)
 **Audit:** `docs/adventure-motivation-mode/00a-current-system-audit.md` — planning GO, hidden implementation conditional, Pilot/production NO-GO until gates close
@@ -13,12 +14,12 @@ LexiQuest จะพัฒนา **Adventure Motivation Mode** เป็นมุ
 
 การตัดสินใจหลักมีดังนี้:
 
-1. Existing Learn navigation ยังคงเดิม; eligible additive `learn/today-experience` entry เปิด host ที่มี Standard Today เป็น fallback โดยไม่เพิ่ม bottom tab
+1. Existing Learn navigation ยังคงเดิม; eligible additive `home/learn/today-experience` entry เปิด authorized Host โดยไม่เพิ่ม bottom tab; hidden/disabled/unknown/stale direct route กลับ Learn
 2. Adventure ไม่มี authority ของ Vocabulary, SRS, Mastery, Assessment, Quest, Streak, Achievement, XP, Coins, Rewards, Recommendation, Today Hub หรือ History
 3. แผนที่และความก้าวหน้า Adventure ในรุ่นแรกเป็น rebuildable read model ไม่เพิ่ม `adventure_progress` table
 4. คำตอบทุกข้อยังผ่าน Unified Lesson Shell และ Evidence Gateway เดิม
-5. Feature delivery, experiment assignment, consent และ learner preference เป็น state คนละชุด ห้ามอนุมานแทนกัน
-6. Feature เริ่ม `hidden` และต้องผ่าน Internal และ Pilot ก่อน Enabled
+5. Feature delivery, experiment assignment, raw consent/guardian/assent, signed participation permit และ learner preference เป็น state คนละชุด ห้ามอนุมานแทนกัน
+6. Feature เริ่ม `hidden`; MS-08A ไปได้สูงสุด Limited และ MS-08B จึงเปิด Controlled Expansion/Enabled แยก adult/minor ได้
 7. ไม่มี hearts/lives, shame streak, forced timer, public leaderboard หรือการลด progress เมื่อผู้เรียนตอบผิด
 8. เฟสแรกไม่มี generative AI, camera quest, multiplayer หรือ social network
 
@@ -110,7 +111,9 @@ Baseline 8/44 มีข้อกำหนดที่ Adventure ต้องร�
 | Recommendation | Recommendation read model | Preserve reason and learner override |
 | Home presentation choice | Learner Preferences v2 | Read and request typed mutation only |
 | Experiment assignment | Experiment Registry | Read exact assignment only |
-| Consent | Consent Registry | Enforce upload/research eligibility |
+| Consent/guardian/assent | Existing authorities + approved enrollment | Validate signed permit; raw receipts never enter Product Entry |
+| Protocol presentation | Active Presentation Permit | Read-only minimal projection |
+| Measurement denominator | Measurement Opportunity | Participant-only owner-scoped ledger |
 | Adventure journey position | Derived Journey Projection | Rebuild from canonical readers; never write authority |
 | Motivation instrument responses | Research measurement authority (planned post-preference migration; provisionally schema v24) | Collect through consent-aware use case only |
 
@@ -129,11 +132,11 @@ Incorrect, hint-assisted, skipped, timed-out and technical-failure states are di
 ## 6. System Context
 
 ```text
-Learner ─► Existing Learn Surface ─► eligible `learn/today-experience`
+Learner ─► Existing Learn Surface ─► eligible `home/learn/today-experience`
                                           ▼
-FeatureRegistry ───────────────┐  Today Experience Host
-ExperimentRegistry ───────────┤           ▼
-LearnerPreferences ───────────┘  Product Entry Control (no consent)
+FeatureRegistry ───────────────┐  Today Experience Host (one snapshot)
+ActivePresentationPermit ─────┤           ▼
+LearnerPreferences/session ───┘  Product Entry Control (no raw receipts)
                               ▼
 World/Story Catalog ──► Adventure Experience Shell
                               ▲
@@ -151,7 +154,7 @@ Today Hub/History/Quest ─► Journey Projection
                               ▼
                  Result/Recovery/Companion
                               ▼
-ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Export
+Consent/Guardian/Assent + Assignment ─► Permit Validator ─► Research Measurement/Export
 ```
 
 ## 7. Module Map
@@ -161,22 +164,22 @@ ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Exp
 **Responsibility**
 
 - Resolve effective availability from `FeatureRegistry`;
-- apply hidden/internal/pilot/enabled/emergency-off states;
+- apply hidden/internal/limited/controlled/enabled/emergency-off states;
 - resolve Standard vs Adventure presentation without changing cohort;
 - expose one additive Learn entry only when eligible; never add a bottom tab;
 - expose typed unavailable/fallback states;
-- route to Standard Today Hub when any required dependency is unavailable
+- return unauthorized routes to Learn; use Standard fallback only inside an already authorized Host
 
 **Consumes**
 
 - `FeatureRegistry`;
-- `ExperimentRegistry` when a study protocol is active;
+- `ActivePresentationPermit` projection when a study protocol is active;
 - session-local presentation choice in Phase 1;
 - `LearnerPreferences` v2 home-experience authority from Phase 3 onward
 
 **Produces**
 
-- `AdventureProductEntryDecision` with deterministic entryDecisionId, Learn/Standard/Adventure destination, treatment identity, fallback reason and version pins; no consent input
+- `AdventureProductEntryDecision` with Host-created UUID v4 `entryAttemptId`, Learn/Standard/Adventure destination, treatment identity, fallback reason and version pins; no raw receipt input
 
 **Persistence**
 
@@ -187,8 +190,9 @@ ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Exp
 
 **Fail-safe**
 
-- Missing Adventure configuration resolves to Standard when Today is ready; missing Today dependency returns Learn with bounded reason;
-- emergency-off blocks new Adventure entry but lets an accepted lesson close safely
+- hidden/disabled/unknown/stale route and missing pre-authorization dependency return Learn without constructing Host/snapshot/opportunity;
+- permit invalidation uses session choice → preference → Standard inside an authorized Host;
+- emergency-off blocks new Host/start but lets an accepted lesson close safely
 
 ### M02 — Adventure Experience Shell
 
@@ -319,7 +323,7 @@ ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Exp
 - `EventEnvelopeV2` is not modified silently;
 - learning answer events retain their existing event types, payloads, `EvidenceContext` schema and semantics;
 - `AdventureOriginContextV1` is transient launch metadata from Session Composer to Learning Bridge and is never inserted into `EvidenceContext` or added as an `EventEnvelopeV2` field;
-- for an actively consented measurement run, pre-session events use `AdventurePresentation/entryDecisionId` with optional plan correlation while mission start/completion use `LearningSession/learningSessionId` with required `adventurePlanId`; non-participants receive no persisted origin row;
+- for an active permit/run, pre-session events use `MeasurementOpportunity/opportunityId`, mission start/completion use accepted `LearningSession/learningSessionId` plus the same opportunity, and nonparticipants receive no persisted origin/opportunity row;
 - Adventure does not supply correctness, mastery weight or reward eligibility;
 - assessment sessions cannot be wrapped as reward-granting Adventure missions
 
@@ -392,7 +396,8 @@ ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Exp
 **Responsibility**
 
 - Resolve stable Standard/Adventure assignment independently from delivery flags;
-- pin protocol, treatment, assignment, consent, instrument and app/build versions;
+- validate signed adult/minor participation permit and expose only an active presentation projection;
+- pin protocol, treatment, assignment, permit, instrument and app/build versions;
 - collect bounded self-report motivation measures;
 - collect behavior exposure/crossover events;
 - export separate Outcome, Learning, Effort and Engagement axes;
@@ -415,27 +420,53 @@ ConsentRegistry ─► Research Capture Decision ─► Research Measurement/Exp
 - no single combined score;
 - no raw unbounded free text in research response rows;
 - research prompts appear only at declared natural breakpoints, always offer Skip and never block ordinary learning completion;
-- a protocol involving minors requires the applicable ethics review, guardian permission and learner assent before research collection; Adventure product use itself remains available without research participation;
+- a minor protocol requires a runtime-validated guardian-led permit containing both guardian permission and learner assent receipt references; governance checklist alone is insufficient;
 - study protocol must pre-register instrument, scoring, sample-size method and statistical thresholds before Pilot;
-- product functionality remains locally usable without consenting to research upload
+- product functionality remains locally usable without a permit; protocol treatment falls back to session choice, preference, then Standard
 
 **Persistence after MVP shell**
 
-The baseline database is schema v22. After the actual reserved preference migration has introduced durable home-experience preference, the planned following research migration (provisionally schema v24) adds exactly two owner-scoped research tables:
+The baseline database is schema v22. After the actual reserved preference migration has introduced durable home-experience preference, the planned following research migration (provisionally schema v24) adds four owner-scoped research tables:
 
 - `motivation_measurement_runs`, represented by `MotivationMeasurementRun`, with owner ID, run ID, stable assignment ID, consent receipt ID, protocol/treatment/instrument/form versions, app/build version, started/completed timestamps and run status;
-- `motivation_responses`, represented by `MotivationResponse`, with owner ID, run ID, item catalog ID/version, bounded response code, ordinal value where defined and answered timestamp.
+- `motivation_responses`, represented by `MotivationResponse`, with owner ID, run ID, item catalog ID/version, bounded response code, ordinal value where defined and answered timestamp;
+- `research_participation_permits`, represented by `ResearchParticipationPermit`, with participant class, age-band code, assignment/treatment, receipt references, protocol, issuance/expiry/revocation, issuer key, payload hash/signature and revisions;
+- `measurement_opportunities`, represented by `MeasurementOpportunity`, with permit/run/entryAttempt IDs, assigned/effective presentation, event/session links, bounded switch/suppression counters and lifecycle timestamps.
 
-For an actively consented measurement run with a stable assignment, Adventure behavior exposure is recorded in existing `EventsV2` through registered versioned event types with bounded payload v1: `AdventurePresented`, `AdventureMissionStarted`, `AdventureSwitchedToStandard` and `AdventureMissionCompleted`. These events use the frozen `EventEnvelopeV2`, its existing experiment/consent contexts and the existing outbox; they add no envelope fields and never replace learning-answer events. Non-participants do not receive research exposure rows merely for using Adventure.
+For an active signed permit/run, Standard and Adventure record the same four neutral `EventsV2` types: `TodayExperiencePresented`, `TodayExperiencePresentationChanged`, `TodayExperienceMissionStarted` and `TodayExperienceMissionCompleted`. Every event pins assigned treatment and effective presentation; opportunity is the independent denominator. Switch ordinal is transactional 1–10 and excess attempts increment only a suppressed counter. Nonparticipants create zero permit/opportunity/event/outbox/upload rows.
 
 The actual reserved research migration and four event payload policies cannot ship until migration, identity, lifecycle, sync/rules, export, withdrawal, deletion, retention and replay-compatibility tests pass. If another change occupies provisional schema v23 or v24 before implementation, the migration numbers are rebased upward in order; an occupied version is never reused.
+
+**Binding v1.1 contracts**
+
+```text
+ResearchParticipationPermit
+  id, ownerId, participantClass, ageBandCode
+  assignmentId, assignedTreatment, consentReceiptId
+  guardianPermissionReceiptRef?, learnerAssentReceiptRef?
+  protocolId/version, issuedAtUtc, expiresAtUtc, revokedAtUtc?
+  issuerKeyId, payloadSha256, signature
+  local/cloud revisions, isDeleted
+
+ActivePresentationPermit
+  permitId, ownerId, assignedPresentation
+  protocolId/version, assignmentId, expiresAtUtc
+
+MeasurementOpportunity
+  id, ownerId, measurementRunId, permitId, entryAttemptId
+  assignedTreatment, effectivePresentation, presentedEventId?
+  learningSessionId?, startedEventId?, completedEventId?
+  lastSwitchOrdinal, suppressedSwitchCount, openedAtUtc, closedAtUtc?
+```
+
+Primary endpoint is post-session motivation within 30 minutes after the first accepted completed session, analyzed by class with ANCOVA adjusted for a baseline collected no more than 24 hours before first treatment exposure. ITT includes every randomized permit holder. Missing post uses pre-registered multiple imputation and tipping-point sensitivity; >15% total missing or >5 percentage-point arm imbalance blocks that class from MS-08B.
 
 ### M11 — Adventure Operations, Quality & Reliability
 
 **Responsibility**
 
 - validate catalogs, locale copy and asset manifests;
-- manage Internal/Pilot/Enabled promotion evidence;
+- manage Internal/Limited/MS-08A/MS-08B/class-specific promotion evidence;
 - expose bounded diagnostics without research payload leakage;
 - support offline bundle verify/repair/remove;
 - enforce guest upgrade, owner isolation, export and deletion;
@@ -456,10 +487,10 @@ The actual reserved research migration and four event payload policies cannot sh
 ### 8.1 Entry
 
 1. App resolves feature availability.
-2. Standard Today Hub composes normally regardless of Adventure.
-3. Adventure entry resolves assignment/preference without changing either.
-4. Journey Projection consumes the same Today Hub snapshot.
-5. If composition fails, the learner sees Standard Today Hub with no data loss.
+2. Unauthorized/hidden/stale entry returns Learn and does not load Today or research state.
+3. Authorized Host creates one UUID v4, loads Today snapshot exactly once and resolves active permit/session choice/preference.
+4. Pure Standard and Adventure presentations consume the same snapshot object.
+5. If composition fails after authorization, the learner sees Standard Today view with no data loss.
 
 ### 8.2 Starting a mission
 
@@ -505,6 +536,7 @@ Adventure cannot be promoted unless it supports:
 - Thai and English copy with stable glossary;
 - audio captions/transcripts and non-audio alternatives;
 - standard-view escape visible without scrolling
+- Research Prompt, guardian permission, learner assent, invalid-permit and withdrawal flows passing TalkBack, Switch Access, text 200%, focus restoration and offline fail-closed validation
 
 ## 10. Data and Lifecycle Design
 
@@ -520,18 +552,18 @@ This preference expresses the learner's product choice only. It does not grant f
 
 ### 10.3 Durable research data and behavior events
 
-The planned research migration, provisionally schema v24 but subject to ledger reservation after the preference migration, adds `motivation_measurement_runs` and `motivation_responses` only after the shell and learning bridge are proven. Every table must:
+The planned research migration, provisionally schema v24 but subject to ledger reservation after the preference migration, adds `motivation_measurement_runs`, `motivation_responses`, `research_participation_permits` and `measurement_opportunities` only after the shell and learning bridge are proven. Every table must:
 
 - reference an owner and stable assignment;
 - pin protocol/treatment/instrument/form/content/policy/app/build versions;
 - contain bounded values;
 - appear exactly once in the owner lifecycle manifest;
 - have deterministic guest-upgrade behavior;
-- define local export, consent withdrawal, deletion and retention;
+- define local export, permit/consent/assent withdrawal, deletion and retention;
 - use local-first outbox sync and exact Firestore rules/version policy;
 - reject incompatible replay instead of overwriting
 
-The four Adventure exposure events named in M10 use existing `EventsV2` storage and outbox contracts. Their payload v1 schemas are bounded and registered; no raw narrative copy, free text or duplicated learning answer is stored in them.
+The four neutral Today Experience events named in M10 use existing `EventsV2` storage and outbox contracts for both treatments. Their payload v1 schemas are bounded and registered; no raw narrative copy, free text or duplicated learning answer is stored in them.
 
 ### 10.4 Story choices
 
@@ -544,7 +576,7 @@ Branching durable story choices are outside Phase 1. If introduced later, they r
 - Asset download/removal uses Offline Content Manager; removing assets never removes learning evidence.
 - Learning evidence commits locally before sync.
 - Motivation side effects are derived/retried locally with stable idempotency keys.
-- Research upload stops immediately after consent withdrawal; allowed local participant export remains available.
+- Active permit projection and research upload stop before the next operation after consent/assent withdrawal, expiry or revocation; allowed participant export remains available.
 - Conflicting treatment/catalog/version metadata fails closed and does not merge.
 
 ## 12. Feature Delivery and Experiment Separation
@@ -713,18 +745,19 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 **Deliverables:**
 
 - versioned treatment catalog;
-- `motivation_measurement_runs` and `motivation_responses` on the actual reserved research migration (provisionally schema v24);
-- four registered Adventure exposure event payloads v1 in existing `EventsV2`;
+- four research tables including signed participation permits and opportunity ledger on the actual reserved research migration (provisionally schema v24);
+- four registered neutral Today Experience event payloads v1 in existing `EventsV2` for both treatments;
 - motivation instrument and bounded response model;
-- separate Research Capture decision using consent/assignment/run, with no presentation authority;
-- lifecycle-specific event identities from ADR-003;
+- active permit projection with no raw receipts at Product Entry and separate capture gate;
+- guardian permission/learner assent runtime flows and class strata;
+- opportunity/session event identities from ADR-003;
 - migration, lifecycle, sync/rules and export;
 - research-isolation tests;
 - pre-registered analysis protocol
 
 **Exit gate:** complete reconstructible metadata and withdrawal-safe behavior.
 
-### Phase 5 — Internal and Android Pilot rollout
+### Phase 5 — Internal and Android MS-08A Feasibility
 
 **Modules:** all
 **Deliverables:**
@@ -732,15 +765,17 @@ On 2026-09-01, the isolated worktree initially had no local `.dart_tool/package_
 - Internal dogfood with diagnostics;
 - accessibility and Thai-language review;
 - offline/content bundle repair;
-- Android-only consented pilot on the MDS device/sample matrix; iOS/desktop/AI Voice/field-model explicitly excluded;
+- Android-only permitted adult/minor feasibility cohort on the MDS matrix; iOS/desktop/AI Voice/field-model explicitly excluded;
 - guardrail and data-quality review;
 - emergency-off rehearsal
 
-**Exit gate:** promotion evidence approved; otherwise feature remains Limited/Hidden.
+**Exit gate:** MS-08A may result only in Limited/Revise/Hidden; no efficacy claim or Enabled state.
 
-### Phase 6 — Controlled enablement
+### Phase 6 — MS-08B Efficacy and controlled enablement
 
-- expand only after pilot evidence;
+- collect powered sample and run class-specific post-session ANCOVA adjusted for baseline with pre-registered multiple imputation/tipping-point analysis;
+- apply missing-post blockers (>15% total or >5 percentage-point arm difference);
+- expand only the adult/minor class that passes MS-08B motivation, learning, safety and comprehension thresholds;
 - maintain Standard Today Hub as permanent fallback;
 - treat new worlds, AI, camera and social features as separate design/spec cycles
 
@@ -773,8 +808,12 @@ lib/features/research/
   domain/
     motivation_instrument.dart
     motivation_measurement.dart
+    research_participation_permit.dart
+    measurement_opportunity.dart
   application/
     motivation_measurement_use_cases.dart
+    research_participation_permit_validator.dart
+    measurement_opportunity_use_cases.dart
   data/
     # Added only in Phase 4 after lifecycle/schema approval
 ```
@@ -807,14 +846,17 @@ No module may be implemented before its incoming contract is tested.
 | Map inaccessible | Excludes users | map-list parity, semantic order, reduced motion |
 | Asset bundle corrupt/offline | Entry failure | checksum, quarantine, repair and Standard fallback |
 | Retry grants twice | Economy corruption | source evidence ID and idempotent receipts |
-| Adventure metadata mutates learning evidence or frozen V2 fields | Contract break | transient launch context plus separate consented exposure events; unchanged-evidence contract tests |
+| Adventure metadata mutates learning evidence or frozen V2 fields | Contract break | transient launch context plus separate permit-gated neutral research events; unchanged-evidence contract tests |
 | Research data cannot be withdrawn | Ethics/lifecycle failure | consent registry, outbox blocking, export/delete/retention tests |
+| Minor research relies on paperwork only | Unauthorized treatment/collection | signed guardian-led permit with both permission and assent refs |
+| Event-only denominator hides missing capture | Invalid data-quality conclusion | independent opportunity ledger and reconciliation |
+| Feasibility is treated as efficacy | Premature expansion | MS-08A Limited ceiling and powered MS-08B per class |
 | Too many variables in first study | Uninterpretable result | one world, scripted companion, no AI/camera/social |
 | Completed 8/44 baseline is not reproducibly verified | Unknown regression source | repair SDK test crash and record clean baseline before production changes |
 
 ## 19. Acceptance Criteria
 
-Adventure Motivation Mode is ready for Pilot only when all conditions hold:
+Adventure Motivation Mode is ready for MS-08A Feasibility only when all conditions hold:
 
 1. Standard Today Hub remains fully usable with Adventure hidden or emergency-off.
 2. Adventure creates no Vocabulary, SRS, Mastery, Quest, Streak, XP, Coins, Reward, Recommendation, Today Hub or History authority.
@@ -822,12 +864,12 @@ Adventure Motivation Mode is ready for Pilot only when all conditions hold:
 4. No reward is granted before durable eligible evidence.
 5. Incorrect answers follow repair/review rules without progress loss.
 6. Learning, Effort, Engagement and Motivation are displayed/exported separately.
-7. Assignment, feature state, preference and consent cannot overwrite one another.
+7. Assignment, feature state, preference, raw receipts and participation permit cannot overwrite one another; Product Entry sees only active projection.
 8. Offline/restart/guest-upgrade/export/delete/withdrawal tests pass for every new persisted owner record.
 9. Map-list parity, reduced motion, text scaling and screen-reader semantics pass.
 10. Feature-off and emergency-off integration tests pass.
 11. All catalog/assets have stable IDs, versions, checksums and QA state.
-12. Research protocol and statistical decision rules are registered before Pilot.
+12. Research protocol, guardian/assent process and statistical decision rules are registered before enrollment.
 13. No unresolved critical evidence-integrity, privacy, accessibility or duplicate-reward defect remains.
 
 ## 20. Review Decision Requested
@@ -840,5 +882,6 @@ Owner review should confirm these decisions before the task-by-task implementati
 - session-local switch in Phase 1, followed by a durable preference on the actual reserved migration (provisionally schema v23) in Phase 3;
 - no AI/camera/multiplayer in first treatment;
 - Standard view always available;
-- research measurement on the actual reserved migration (provisionally schema v24) and registered Adventure exposure events added only after the learning bridge is proven;
-- rollout order Hidden → Internal → Pilot → Enabled
+- Standard fallback through Adventure only after Host authorization; hidden/stale route returns Learn;
+- research measurement on the actual reserved migration (provisionally schema v24), signed permits, opportunities and neutral events added only after the learning bridge is proven;
+- rollout order Hidden → Internal → Limited/MS-08A → class-specific MS-08B → Controlled Expansion → Enabled

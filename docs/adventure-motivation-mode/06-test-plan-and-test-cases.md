@@ -1,10 +1,10 @@
 # Test Plan and Test Cases — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-TP-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for QA/Owner Review
 **Date:** 2026-09-01
-**References:** `AMM-AUDIT-001`, TOR/SRS/SDS/UI/ADR/MDS/RTM v1.0
+**References:** `AMM-AUDIT-001 v1.0`; TOR/SRS/SDS/UI/ADR/MDS/RTM v1.1
 **Baseline:** commit `99f7fb21`, Drift schema v22
 **Current baseline evidence:** 3,202 Flutter tests pass / 15 fail; no Pilot or release pass claim is permitted
 
@@ -17,13 +17,14 @@ The test program proves that Adventure:
 3. reads Today/learning/reward authorities without creating parallel state;
 4. produces the same canonical learning evidence as Standard;
 5. handles wrong answers, retry, restart and failure without punishment or duplication;
-6. separates product preference, feature state, assignment and consent;
-7. creates research data only for eligible consented runs;
+6. separates product preference, feature state, assignment, raw receipts and participation permit;
+7. creates protocol treatment/research data only for valid signed permits/runs and exposes only active projection to Product Entry;
 8. supports owner isolation, guest upgrade, sync, export, withdrawal and deletion;
 9. remains usable offline and when Adventure assets/dependencies fail;
 10. meets accessibility, performance, privacy and rollout gates.
-11. adds only `learn/today-experience` within Learn, never a bottom tab, and leaves hidden Learn layout equivalent;
-12. keeps Product Entry independent from Research Capture and applies lifecycle-correct exposure IDs.
+11. adds only `home/learn/today-experience` within Learn, never a bottom tab, and leaves hidden Learn layout equivalent;
+12. loads one Today snapshot per authorized Host and uses symmetric opportunity/neutral event contracts;
+13. enforces minor guardian+assent runtime evidence and class-specific MS-08A/MS-08B rollout.
 
 ## 2. Scope
 
@@ -39,7 +40,7 @@ The test program proves that Adventure:
 - sync/rules/lifecycle/export/deletion;
 - Thai/English UI, map/list parity and accessibility;
 - offline/restart/emergency-off/platform/device behavior;
-- research exposure, prompt, crossover and measurement data quality;
+- signed permits, guardian/assent flows, opportunity/neutral events, prompt, crossover and measurement data quality;
 - regression against Standard and all 8/44 authorities.
 
 ### 2.2 Out of scope for v1
@@ -48,7 +49,7 @@ The test program proves that Adventure:
 - camera quest, multiplayer, leaderboard or social features;
 - hearts/lives/energy/new economy;
 - durable branching story;
-- proving effectiveness before a protocol-approved Pilot;
+- claiming effectiveness from UAT/MS-08A before a powered MS-08B analysis;
 - external provider E2E that requires credentials unless executed in its separately approved gate.
 - iOS/desktop/AI Voice/field-model certification in Pilot v1; each remains excluded, not passed, and requires its own gate before enablement.
 
@@ -63,7 +64,7 @@ The test program proves that Adventure:
 | Widget | rendering, semantics, focus, states | `testWidgets`, golden where stable |
 | Integration | existing ports and canonical equivalence | real repositories with isolated DB |
 | Scenario/restart | file reopen, offline, owner switch, kill switch | file-backed database, fake platform ports |
-| Cloud policy | owner/version/consent rules | Firestore/Auth emulators |
+| Cloud policy | owner/version/permit/consent/assent rules | Firestore/Auth emulators |
 | Backend | API/research processing regressions | backend pytest suites |
 | Security/dependency | secrets, vulnerable dependencies, diff | Gitleaks, OSV, dependency audits |
 | Manual/device | screen reader, hardware, rendering, platform lifecycle | certified device matrix |
@@ -79,8 +80,8 @@ The test program proves that Adventure:
 | E3 Local integration | Drift/outbox/restart | in-memory and temp file | hidden/internal |
 | E4 Emulator | Auth/Firestore rules/sync | local emulators | internal/research fixtures |
 | E5 Internal build | device/accessibility/offline | local plus controlled network | staff-only |
-| E6 Android Pilot v1 | approved participants on MDS Android matrix only | production-like approved services | Pilot assignment/consent |
-| E7 Android release candidate | signed/profile builds | production config, no test secrets | controlled enablement |
+| E6 Android Feasibility v1 | signed adult/minor permits on MDS matrix | production-like approved services | Limited/MS-08A |
+| E7 Android efficacy/release candidate | powered class fixtures and signed/profile builds | production config, no test secrets | MS-08B/controlled |
 
 ### 4.1 Reproducible worktree setup
 
@@ -100,7 +101,9 @@ The test program proves that Adventure:
 - O-GUEST-B: unrelated guest;
 - O-ACCOUNT-A: target account for upgrade;
 - O-ACCOUNT-B: foreign account;
-- O-PARTICIPANT: consented assigned owner;
+- O-ADULT-PARTICIPANT: signed adult permit and active run;
+- O-MINOR-PARTICIPANT: signed minor permit with guardian permission + assent refs;
+- O-MINOR-INCOMPLETE: missing one required receipt ref;
 - O-NONPARTICIPANT: product user without research eligibility;
 - O-WITHDRAWN: previously consented, now withdrawn.
 
@@ -123,11 +126,13 @@ The test program proves that Adventure:
 
 ### 5.4 Research data
 
-- matching/nonmatching assignment and protocol;
-- current/stale/withdrawn consent receipt;
+- matching/nonmatching assignment, protocol and permit signature/revision;
+- active/expired/revoked permit; current/withdrawn consent/assent;
 - started/completed/skipped/abandoned/withdrawn run;
 - supported/unknown instrument and response codes;
 - crossover from Adventure to Standard;
+- Standard/Adventure neutral events and opportunity failure/replay;
+- baseline ≤24h and post ≤30m boundary/missingness fixtures by adult/minor class;
 - v1/v2/incompatible sync payloads.
 
 ## 6. Entry and Exit Criteria
@@ -159,21 +164,24 @@ The test program proves that Adventure:
 - Product Owner records one explicit decision: `Accept`, `Stop` or `Continue`;
 - `Stop` is accepted as a complete bounded outcome: feature remains hidden, evidence is archived and no Increment C/D work is required.
 
-### 6.3 Exit for Pilot
+### 6.3 Exit for MS-08A Feasibility
 
 - all applicable automated cases below pass;
 - full logical/shared Flutter suite has fresh passing evidence and zero unclassified failure;
 - Android Pilot capability gates and affected backend/emulator/security/dependency scopes meet policy;
 - iOS/desktop/AI Voice/field-model exclusions are recorded as excluded, not passed;
-- lifecycle/export/delete/withdrawal matrix passes;
+- four-table lifecycle/export/delete/withdrawal/retention matrix passes;
 - accessibility manual certification passes;
 - emergency-off rehearsal passes;
-- UAT uses ≥12 learner representatives, ≥4 accessibility sessions and ≥10 research-comprehension participants with MDS numerator/denominator thresholds;
-- protocol/ethics/consent/MDS sample-size inputs, output and stopping rules approved.
+- UAT uses ≥12 learners with minors ≥4, ≥4 accessibility sessions, adult comprehension ≥10/10 and ≥5 guardian–learner dyads with 5/5 results for each role;
+- permit/opportunity metadata completeness 100%, capture ≥99%, zero-row/withdrawal cutoff 100%;
+- decision can be only Limited/Revise/Stop.
 
-### 6.4 Exit for production
+### 6.4 Exit for MS-08B and controlled production
 
-- Pilot decision approves controlled expansion;
+- participant class has powered sample and passes baseline-adjusted ANCOVA, MI/tipping-point, learning/safety and missingness gates;
+- missing post ≤15% and arm difference ≤5 percentage points;
+- signed MS-08B decision approves only that class for controlled expansion;
 - no open Blocker/Critical/High; Medium risks approved with owner/date;
 - Gitleaks and dependency policies pass;
 - platform signing/device evidence current;
@@ -199,7 +207,7 @@ The test program proves that Adventure:
 
 ## 8. Detailed Test Cases
 
-Controlled inventory รวม **114 test cases**: ENT/JRN อย่างละ 12 และ LRN/REC/DAT/RSH/UX/OPS อย่างละ 15 ทุกกรณียังมีสถานะ planned จนกว่าจะมี implementation และ fresh execution evidence
+Controlled inventory รวม **144 test cases**: ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20 และ OPS 18 ทุกกรณียังมีสถานะ planned จนกว่าจะมี implementation และ fresh execution evidence
 
 In every case, “no write” means no new/changed row in learning, SRS, progress, quest, streak, reward, achievement, research or preference authorities unless the case explicitly requires it.
 
@@ -208,17 +216,20 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | ID | Preconditions | Action | Expected result |
 |---|---|---|---|
 | TC-ENT-001 | Adventure absent/hidden | Open Learn | Learn layout/action set equals baseline; no card/bottom-tab/write |
-| TC-ENT-002 | Adventure visible but disabled; Today ready | Open direct/stale `learn/today-experience` | Host resolves Standard; bounded reason; Back returns Learn |
+| TC-ENT-002 | Adventure visible but disabled; Today ready | Open direct/stale `home/learn/today-experience` | Return Learn; Host/snapshot/opportunity count = 0; bounded reason |
 | TC-ENT-003 | Enabled, Today dependency missing | Open Learn/direct route | No card; stale route returns Learn; Adventure subtree not constructed |
 | TC-ENT-004 | Enabled, all dependencies ready, session-local choice Adventure | Open Learn card | Host loads one canonical Today snapshot and Adventure Home |
 | TC-ENT-005 | Same as 004, choice Standard | Open Learn card | Standard Today presentation loads; assignment unchanged |
-| TC-ENT-006 | Unknown/corrupt persisted feature state | Restart/open Learn/direct route | Fail closed to Standard if Today ready, else Learn; config preserved |
-| TC-ENT-007 | Existing emergency-off override | Open Adventure route | No new Adventure operation; Standard shown |
+| TC-ENT-006 | Unknown/corrupt persisted feature state | Restart/open Learn/direct route | Fail closed to Learn; no Host/snapshot/opportunity; config preserved |
+| TC-ENT-007 | Existing emergency-off override | Open Adventure route | No new Host or mission operation; return Learn |
 | TC-ENT-008 | Emergency-off toggled while Home open | Tap mission after toggle | Start rejected; safe Standard action |
 | TC-ENT-009 | Emergency-off toggled after accepted session | Continue/finish | Existing lifecycle safely closes; no evidence loss; new mission blocked |
-| TC-ENT-010 | Participant assigned Adventure, preference Standard | Open Learn card | Standard presentation; assignment remains Adventure; consented crossover only if Research Capture eligible |
+| TC-ENT-010 | Participant has active Adventure permit, preference Standard | Open Learn card | Adventure presentation from permit; assignment/preference unchanged; Standard escape remains |
 | TC-ENT-011 | Nonparticipant uses Adventure product mode | Open/complete mission | Product works; zero research rows/events |
 | TC-ENT-012 | Owner switches while entry resolution awaits | Complete stale async result | Stale owner result discarded; no mixed-owner UI/write |
+| TC-ENT-013 | Hidden/disabled/unknown stale direct route | Open route repeatedly | Always returns Learn; zero Host, loader, opportunity and research event |
+| TC-ENT-014 | Authorized Host rebuild/retry/switch | Trigger rebuild, loader retry and presentation switches | One UUID v4 and one Today loader call; same snapshot object/fingerprint reused |
+| TC-ENT-015 | Permit missing/expired/revoked after authorization | Resolve/re-resolve presentation | Session choice → preference → Standard; product usable; no new treatment start |
 
 ### 8.2 World catalog, assets and journey projection
 
@@ -229,7 +240,7 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-JRN-003 | Active accepted session exists | Compose | Resume node is primary; no new mission offered first |
 | TC-JRN-004 | Due review and new work exist | Compose | Existing policy priority preserved; Adventure does not override |
 | TC-JRN-005 | Completed canonical work | Recompose | Node derives completed; no Adventure progress write |
-| TC-JRN-006 | Stale source fingerprint | Tap current node | Start disabled; refresh/Standard available |
+| TC-JRN-006 | Stale source fingerprint in authorized Host | Tap current node | Start disabled; refresh or Standard from the same accepted snapshot is available; pre-authorization route returns Learn |
 | TC-JRN-007 | Duplicate node ID | Validate catalog | Whole bundle rejected/quarantined |
 | TC-JRN-008 | Cyclic/unreachable graph | Validate catalog | Rejected with bounded diagnostic; Standard available |
 | TC-JRN-009 | Thai or English key missing | Validate catalog | Bundle invalid before Pilot |
@@ -296,17 +307,24 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-DAT-013 | Export owner | Inspect archive | Preference and research axes complete, bounded and owner-only |
 | TC-DAT-014 | Sync lost acknowledgement | Restart/replay | Same operation identity; no duplicate research response |
 | TC-DAT-015 | Forward-only feature rollback | Disable Adventure after migration | App uses Standard; no destructive down migration |
+| TC-DAT-016 | Planned research migration | Inspect schema/ledger | Runs, responses, participation permits and opportunities appear exactly once on reserved version |
+| TC-DAT-017 | Valid minor permit | Read/validate | Guardian permission + learner assent refs required; active projection exposes neither ref |
+| TC-DAT-018 | Invalid signature, expired, revoked or stale revision permit | Validate online/offline | Fail closed; no active projection; compatible row preserved/quarantined per policy |
+| TC-DAT-019 | Owner export/delete/retention/guest upgrade | Execute lifecycle matrix | All four research entities handled once, owner-isolated and ordered; global content preserved |
+| TC-DAT-020 | Concurrent presentation switches | Submit 12 switch operations | Ordinals 1–10 unique/transactional; remaining two increment suppressed counter only |
+| TC-DAT-021 | Withdrawal races Host/start/enqueue | Interleave invalidation with each operation | Projection invalid before next operation; no post-cutoff opportunity/event/outbox/upload |
+| TC-DAT-022 | Nonparticipant rebuild/retry/session | Exercise full product flow | Transient UUID allowed in UI only; research tables/outbox/server rows remain zero |
 
 ### 8.6 Research, consent and data quality
 
 | ID | Preconditions | Action | Expected result |
 |---|---|---|---|
-| TC-RSH-001 | No research consent | Use Adventure | Zero measurement/exposure row/outbox |
+| TC-RSH-001 | No active permit | Use Standard and Adventure | Zero measurement/opportunity row/research outbox |
 | TC-RSH-002 | Consent granted but no assignment | Use Adventure | Zero research row; product continues |
 | TC-RSH-003 | Assignment exists but consent missing | Use Adventure | Zero research row; assignment unchanged |
-| TC-RSH-004 | Matching assignment/consent/active run | Open host before plan, then start mission | `AdventurePresented` uses entryDecisionId/optional correlation; `AdventureMissionStarted` uses learningSessionId/required planId |
-| TC-RSH-005 | Nonparticipant completes mission | Complete | No persisted origin/exposure row |
-| TC-RSH-006 | Participant switches Standard before or after plan | Switch | Assignment unchanged; presentation aggregate uses entryDecisionId and plan correlation only when available |
+| TC-RSH-004 | Matching signed permit/active run | Open host before plan, then start mission | Opportunity opens first; neutral Presented and Started link assigned/effective presentation and accepted session |
+| TC-RSH-005 | Nonparticipant completes mission | Complete | No persisted research origin/opportunity row |
+| TC-RSH-006 | Participant switches Standard before or after plan | Switch | Assignment unchanged; opportunity aggregate updates effective presentation and bounded ordinal; session link only after acceptance |
 | TC-RSH-007 | Participant switches repeatedly/replays | Switch/replay >10 attempts | Deterministic occurrence keys, bounded ordinal 1–10, no duplicate/cohort rewrite |
 | TC-RSH-008 | Consent withdrawn before enqueue | Trigger event | No new local row/outbox/upload |
 | TC-RSH-009 | Withdrawal while prompt open | Submit | Rejected safely; learning result unaffected |
@@ -316,6 +334,18 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-RSH-013 | Valid bounded response | Submit twice | One response per owner/run/item |
 | TC-RSH-014 | Export research data | Inspect | Outcome/Learning/Effort/Engagement/Motivation separated with version pins |
 | TC-RSH-015 | Analysis fixture with crossover | Reconstruct | ITT assignment preserved; adherence/crossover secondary metadata complete |
+| TC-RSH-016 | Valid adult permit | Validate and open Host | Active projection created; raw consent fields absent from Product Entry boundary |
+| TC-RSH-017 | Valid minor permit | Validate and open Host | Both guardian and assent refs verified; treatment/opportunity allowed |
+| TC-RSH-018 | Minor permit missing guardian ref | Validate | Projection denied; product fallback; zero research operation |
+| TC-RSH-019 | Minor permit missing assent ref | Validate | Projection denied even with guardian permission; product fallback; zero research operation |
+| TC-RSH-020 | Permit signature/owner/protocol/expiry/revocation mismatch | Validate matrix | Each fails closed with bounded reason; no treatment/research operation |
+| TC-RSH-021 | Standard assigned treatment | Open/complete Host | Same four neutral event types and opportunity fields as Adventure |
+| TC-RSH-022 | Adventure assigned treatment | Open/complete Host | Same four neutral event types and field allowlist as Standard |
+| TC-RSH-023 | Presented event persistence fails after opportunity opens | Retry/reconcile | Denominator remains discoverable; completeness reports missing event once; replay repairs idempotently |
+| TC-RSH-024 | Presentation switch/replay >10 | Switch concurrently and replay | Event ordinals 1–10 once; suppressed counter exact; assignment unchanged |
+| TC-RSH-025 | Baseline responses around 24-hour boundary | Evaluate eligibility | Only response after permit and ≤24h before first treatment qualifies |
+| TC-RSH-026 | Post responses around completion +30-minute boundary | Evaluate primary outcome | Only post after first accepted completion and ≤30m observed; others flagged missing/deviation; owner stays ITT |
+| TC-RSH-027 | Adult/minor analysis fixtures with missingness | Run frozen analysis/gate | ANCOVA adjusts baseline; MI/tipping reported; >15% or >5pp blocks only affected class; no pooled unlock |
 
 ### 8.7 UI, copy and accessibility
 
@@ -335,7 +365,12 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-UX-012 | Result | Comprehension/widget check | Three axes separate; canonical reward area labeled separately |
 | TC-UX-013 | Research prompt | Inspect/tap | Skip and consent details accessible; learning not blocked |
 | TC-UX-014 | Brand surfaces | Search/render | `LexiQuest` retained; removed “เก่งศัพท์” absent |
-| TC-UX-015 | Stable navigation tests | Change display copy | Tests use `learn/today-experience`/semantics; route remains green |
+| TC-UX-015 | Stable navigation tests | Change display copy | Tests use `home/learn/today-experience`/semantics; route remains green |
+| TC-UX-016 | Guardian permission | Read, allow and choose Not now | Purpose/data/withdraw/no-learning-impact clear; balanced actions; no guardian PII/full DOB stored |
+| TC-UX-017 | Learner assent | Agree/Not now after guardian permission | Age-banded independent choice; Not now keeps learning and zero protocol rows |
+| TC-UX-018 | Invalid/expired/revoked/withdrawn permit | Render state | Says research stopped, learning remains; Continue learning is primary; focus restored |
+| TC-UX-019 | Research/minor flows with TalkBack | Traverse prompt/guardian/assent/invalid/withdraw | Unique role/name/state, correct announcement, no trap, actions reachable |
+| TC-UX-020 | Research/minor flows with Switch Access and 200% text | Traverse/activate/close | No clipping/trap/timed dismissal; 48×48 targets; focus returns to invoker |
 
 ### 8.8 Reliability, performance and operations
 
@@ -356,6 +391,9 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-OPS-013 | Diagnostic events | Inspect payload | bounded codes/counters only; no answer/raw response/direct ID/story text |
 | TC-OPS-014 | Unsupported enum/schema/event | Replay | fail closed; compatible state not overwritten |
 | TC-OPS-015 | Android Pilot candidate | Execute scoped BG-01–BG-12 | Android/shared gates green; exclusions archived and never labelled pass |
+| TC-OPS-016 | MS-08A evidence package passes | Request release decision | Maximum result Limited; system rejects Controlled Expansion/Enabled |
+| TC-OPS-017 | Adult MS-08B passes; minor incomplete/fails | Apply rollout targeting | Adult eligible only; minor remains Limited; cross-class negative tests pass |
+| TC-OPS-018 | Permit withdrawal/revocation during rollout | Trigger race and emergency-off | New Host/start/capture blocked at cutoff; accepted session lifecycle safe; signed incident evidence |
 
 ## 9. Automation Mapping
 
@@ -375,7 +413,7 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | Severity | Examples | Rule |
 |---|---|---|
 | Blocker | data loss, app cannot start, no Standard fallback | stop work/gate |
-| Critical | owner leak, consent bypass, evidence corruption, duplicate economy, inaccessible primary path | no merge/Pilot |
+| Critical | owner leak, permit/consent/assent bypass, cross-class rollout, evidence corruption, duplicate economy, inaccessible primary path | no merge/Pilot |
 | High | mission/lesson/recovery unavailable without safe workaround | fix before next gate |
 | Medium | partial degradation with safe workaround | disposition before Pilot |
 | Low | cosmetic/copy issue without semantic harm | backlog with UX owner |

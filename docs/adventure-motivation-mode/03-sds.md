@@ -1,13 +1,13 @@
 # Software Design Specification (SDS) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-SDS-001
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Draft for Owner Review
 **Date:** 2026-09-01
-**SRS reference:** `LQ-AMM-SRS-001 v1.0`
+**SRS reference:** `LQ-AMM-SRS-001 v1.1`
 **Baseline:** commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; 15 baseline failures remain explicit gates
-**Decision references:** `LQ-AMM-ADR-001 v1.0`, `LQ-AMM-MDS-001 v1.0`
+**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
 
 ## 1. Design Decision Summary
 
@@ -15,15 +15,15 @@ Adventure เป็น bounded context ใหม่ที่ไม่มี writ
 
 การตัดสินใจที่ลดผลกระทบต่อ 8/44:
 
-1. Learn surface เดิมไม่เปลี่ยนเมื่อ hidden; eligible additive entry เปิด `TodayExperienceHost` ซึ่ง compose Standard Today ก่อน Adventure เสมอ
+1. Learn surface เดิมไม่เปลี่ยนเมื่อ hidden; authorized entry เปิด `TodayExperienceHost` ซึ่ง load canonical Today snapshot หนึ่งครั้งแล้วเลือก Standard/Adventure presentation
 2. Journey เป็น pure/rebuildable projection; ไม่มี Adventure progress table
 3. Phase 1 ไม่มี schema migration
 4. Preference v2 วางแผนเพิ่มใน schema v23 หลัง shell/learning bridge ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
 5. Research tables วางแผนเพิ่มใน schema v24 หลัง feature core ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
 6. `EvidenceContext` และ learning-answer event ไม่เพิ่ม Adventure field
 7. `AdventureOriginContextV1` เป็น transient launch context
-8. Consented pre-session exposure ใช้ entryDecisionId; mission exposure ใช้ learningSessionId ตาม ADR-003
-9. Runtime flag, preference, assignment และ consent แยก repositories/ports
+8. Participant ทุก treatment ใช้ neutral events และ `MeasurementOpportunity`; nonparticipant zero-row ตาม ADR-003
+9. Runtime flag, preference, assignment, participation permit และ raw consent records แยก repositories/ports
 10. Existing static `LearningWorldMapScreen` ไม่ถูก reuse เป็น implementation
 
 ## 2. Architecture Views
@@ -37,10 +37,10 @@ flowchart TD
   HOST --> ENTRY[M01 Product Entry Control]
   FLAGS[FeatureRegistry] --> ENTRY
   PREF[Learner Preferences] --> ENTRY
-  EXP[ExperimentRegistry] --> ENTRY
+  PERMIT[ActivePresentationPermit Reader] --> ENTRY
   CATALOG[M03 World Catalog] --> ENTRY
   ENTRY -->|Learn fallback| LEARN
-  ENTRY -->|Standard| TODAY[Standard Today Hub]
+  ENTRY -->|Standard| TODAY[Pure TodayHubView snapshot]
   ENTRY -->|Adventure| SHELL[M02 Adventure Shell]
   CATALOG --> PROJ[M04 Journey Projection]
   TODAYREAD[Today Hub + canonical readers] --> PROJ
@@ -56,8 +56,10 @@ flowchart TD
   CANON --> RESULT[M09 Result & Recovery]
   EXISTING --> REACT[M08 Companion Reaction]
   RESULT --> PROJ
-  CONSENT[ConsentRegistry] --> CAPTURE[M10 Research Capture Decision]
-  EXP --> CAPTURE
+  CONSENT[Consent/Guardian/Assent Authorities] --> VALIDATE[Participation Permit Validator]
+  EXP[ExperimentRegistry] --> VALIDATE
+  VALIDATE --> PERMIT
+  VALIDATE --> CAPTURE[M10 Research Capture Decision]
   CAPTURE -->|eligible only| RESEARCH[M10 Measurement]
   RESEARCH -.consented only.-> EVENTS[EventsV2 + planned Research v24]
   OPS[M11 Operations] -.gates.-> ENTRY
@@ -95,8 +97,10 @@ Forbidden dependencies:
 | XP/Coins/items | Reward | Typed idempotent command/read |
 | Today work | Today Hub | Read and represent |
 | Home presentation | LearnerPreferences v2 | Typed read/mutation |
-| Experiment cohort | Experiment Registry | Read exact assignment |
-| Consent | Consent Registry | Read processing eligibility |
+| Experiment cohort | Experiment Registry | Permit issuer/validator reads exact assignment; Product Entry sees assignment only through active projection |
+| Consent/guardian/assent | Existing authorities + approved enrollment | Validate signed participation permit; never exposed raw to Product Entry |
+| Protocol treatment presentation | Active Presentation Permit projection | Product Entry read-only |
+| Research opportunity denominator | Planned research v24 or reserved successor | Participant-only transactional lifecycle |
 | Journey position | Adventure Projection | Derived, never directly written |
 | Motivation responses | Planned research v24 or reserved successor | Consent-aware use case |
 
@@ -116,7 +120,7 @@ Forbidden dependencies:
 **Public domain contract**
 
 ```dart
-enum AdventurePresentation { standard, adventure }
+enum TodayExperiencePresentation { standard, adventure }
 
 enum AdventureEntryDestination { learn, standardToday, adventure }
 
@@ -142,36 +146,104 @@ enum AdventureFallbackReason {
   emergencyOff,
 }
 
+enum ResearchParticipantClass { adult, minor }
+
+final class ResearchParticipationPermit {
+  const ResearchParticipationPermit({
+    required this.id,
+    required this.ownerId,
+    required this.participantClass,
+    required this.ageBandCode,
+    required this.assignmentId,
+    required this.assignedTreatment,
+    required this.consentReceiptId,
+    required this.protocolId,
+    required this.protocolVersion,
+    required this.issuedAtUtc,
+    required this.expiresAtUtc,
+    required this.issuerKeyId,
+    required this.payloadSha256,
+    required this.signature,
+    required this.localRevision,
+    required this.cloudRevision,
+    required this.isDeleted,
+    this.guardianPermissionReceiptRef,
+    this.learnerAssentReceiptRef,
+    this.revokedAtUtc,
+  });
+  final String id;
+  final String ownerId;
+  final ResearchParticipantClass participantClass;
+  final String ageBandCode;
+  final String assignmentId;
+  final TodayExperiencePresentation assignedTreatment;
+  final String consentReceiptId;
+  final String? guardianPermissionReceiptRef;
+  final String? learnerAssentReceiptRef;
+  final String protocolId;
+  final String protocolVersion;
+  final DateTime issuedAtUtc;
+  final DateTime expiresAtUtc;
+  final DateTime? revokedAtUtc;
+  final String issuerKeyId;
+  final String payloadSha256;
+  final String signature;
+  final int localRevision;
+  final int cloudRevision;
+  final bool isDeleted;
+}
+
+final class ActivePresentationPermit {
+  const ActivePresentationPermit({
+    required this.permitId,
+    required this.ownerId,
+    required this.assignedPresentation,
+    required this.protocolId,
+    required this.protocolVersion,
+    required this.assignmentId,
+    required this.expiresAtUtc,
+  });
+  final String permitId;
+  final String ownerId;
+  final TodayExperiencePresentation assignedPresentation;
+  final String protocolId;
+  final String protocolVersion;
+  final String assignmentId;
+  final DateTime expiresAtUtc;
+}
+
 final class AdventureEntryRequest {
   const AdventureEntryRequest({
     required this.ownerId,
+    required this.entryAttemptId,
     required this.occurredAtUtc,
     this.sessionChoice,
+    this.activePresentationPermit,
   });
   final String ownerId;
+  final String entryAttemptId;
   final DateTime occurredAtUtc;
-  final AdventurePresentation? sessionChoice;
+  final TodayExperiencePresentation? sessionChoice;
+  final ActivePresentationPermit? activePresentationPermit;
 }
 
 final class AdventureProductEntryDecision {
   const AdventureProductEntryDecision({
-    required this.entryDecisionId,
+    required this.entryAttemptId,
     required this.availability,
     required this.destination,
     required this.fallbackReason,
     required this.catalogVersion,
-    this.experimentId,
-    this.experimentVersion,
+    this.permitId,
     this.assignmentId,
     this.treatment,
   });
-  final String entryDecisionId;
+  final String entryAttemptId;
   final AdventureAvailability availability;
   final AdventureEntryDestination destination;
   final AdventureFallbackReason fallbackReason;
   final String catalogVersion;
-  final String? experimentId;
-  final int? experimentVersion;
+  final String? permitId;
   final String? assignmentId;
   final String? treatment;
 }
@@ -183,18 +255,16 @@ abstract interface class AdventureProductEntryResolver {
 
 **Decision precedence**
 
-1. Noncanonical owner/time → reject input
-2. emergencyOff → Standard
-3. hidden on normal Learn render → no card; stale route uses Standard only when Today dependency is ready
-4. required Today dependency unavailable → Learn with bounded reason
-5. Adventure catalog/content unavailable while Today ready → Standard
-6. active protocol assignment conflict → Standard with conflict reason
-7. active protocol assignment → treatment presentation; Standard escape remains
-8. explicit session choice → choice
-9. persisted preference v2 → preference
-10. no choice/preference → Standard
+1. Noncanonical owner/time/UUID → reject input
+2. hidden, disabled, unknown, emergency-off-before-Host หรือ unauthorized direct route → Learn; do not construct Host/snapshot
+3. required Today dependency unavailable → Learn with bounded reason
+4. valid `ActivePresentationPermit` → assigned treatment presentation; Standard escape remains
+5. permit missing/invalid/expired/revoked → explicit session choice
+6. no session choice → persisted preference v2
+7. no choice/preference → Standard
+8. catalog/content failure after Host authorization → Standard using the same snapshot
 
-Product entry resolver is read-only. It cannot read/create consent, create assignment or mutate preference. `entryDecisionId` is deterministic for the owner-operation scope and is available only to UI/research correlation; it never enters learning evidence.
+Product entry resolver is read-only. It cannot read raw consent/guardian/assent receipts, create assignment/permit or mutate preference. Host creates `entryAttemptId` once with the repository UUID v4 generator and reuses it across rebuild/retry/switch; it never enters learning evidence.
 
 ### 3.2 M02 — Experience Shell
 
@@ -337,7 +407,7 @@ final class AdventureOriginContextV1 {
   final String nodeId;
   final String catalogId;
   final String catalogVersion;
-  final AdventurePresentation presentation;
+  final TodayExperiencePresentation presentation;
 }
 
 final class AdventureSessionPlanV1 {
@@ -456,7 +526,7 @@ abstract interface class AdventureMotivationProjectionReader {
 
 Eligibility, mutation and idempotency remain entirely inside the existing evidence policy and `LearningSideEffectReconciler`. Adventure reads committed receipts/projections after learning completion; it neither accepts an `EventEnvelopeV2` for mutation nor constructs a reward idempotency key. A missing projection is displayed as pending and left to the canonical reconciler/outbox.
 
-Assessment, exposure, recreational, map-open and behavior exposure events are not reward eligible.
+Assessment, research-presentation, recreational, map-open and other behavioral events are not reward eligible.
 
 ### 3.8 M08 — Companion, Avatar and Narrative Reaction
 
@@ -527,35 +597,81 @@ Recovery uses existing resumable session authority. A persisted Adventure prefer
 - `lib/features/events/domain/adventure_event_payload_policy.dart`
 
 ```dart
-enum AdventureResearchCaptureReason {
+abstract interface class ResearchParticipationPermitValidator {
+  Future<ActivePresentationPermit?> validate({
+    required String ownerId,
+    required DateTime occurredAtUtc,
+  });
+}
+
+final class MeasurementOpportunity {
+  const MeasurementOpportunity({
+    required this.id,
+    required this.ownerId,
+    required this.measurementRunId,
+    required this.permitId,
+    required this.entryAttemptId,
+    required this.assignedTreatment,
+    required this.effectivePresentation,
+    required this.lastSwitchOrdinal,
+    required this.suppressedSwitchCount,
+    required this.openedAtUtc,
+    this.presentedEventId,
+    this.learningSessionId,
+    this.startedEventId,
+    this.completedEventId,
+    this.closedAtUtc,
+  });
+  final String id;
+  final String ownerId;
+  final String measurementRunId;
+  final String permitId;
+  final String entryAttemptId;
+  final TodayExperiencePresentation assignedTreatment;
+  final TodayExperiencePresentation effectivePresentation;
+  final String? presentedEventId;
+  final String? learningSessionId;
+  final String? startedEventId;
+  final String? completedEventId;
+  final int lastSwitchOrdinal;
+  final int suppressedSwitchCount;
+  final DateTime openedAtUtc;
+  final DateTime? closedAtUtc;
+}
+
+enum ResearchCaptureReason {
   eligible,
-  noAssignment,
-  noConsent,
+  noPermit,
+  invalidPermit,
+  expiredPermit,
+  revokedPermit,
   noActiveRun,
   withdrawn,
   versionConflict,
   ownerConflict,
 }
 
-final class AdventureResearchCaptureDecision {
-  const AdventureResearchCaptureDecision({
+final class ResearchCaptureDecision {
+  const ResearchCaptureDecision({
     required this.isEligible,
     required this.reason,
     this.measurementRunId,
     this.assignmentId,
-    this.consentReceiptId,
+    this.permitId,
   });
   final bool isEligible;
-  final AdventureResearchCaptureReason reason;
+  final ResearchCaptureReason reason;
   final String? measurementRunId;
   final String? assignmentId;
-  final String? consentReceiptId;
+  final String? permitId;
 }
 
-abstract interface class AdventureResearchCaptureGate {
-  Future<AdventureResearchCaptureDecision> evaluate(
-    AdventureExposureCandidate candidate,
-  );
+abstract interface class ResearchCaptureGate {
+  Future<ResearchCaptureDecision> evaluate({
+    required ActivePresentationPermit permit,
+    required String measurementRunId,
+    required String entryAttemptId,
+  });
 }
 
 enum MotivationMeasurementRunState {
@@ -578,18 +694,32 @@ abstract interface class MotivationMeasurementRepository {
   );
   Future<MotivationMeasurementRun?> load(String ownerId, String runId);
 }
+
+abstract interface class MeasurementOpportunityRepository {
+  Future<MeasurementOpportunity> open(MeasurementOpportunity command);
+  Future<MeasurementOpportunity> recordPresented(String opportunityId);
+  Future<MeasurementOpportunity> changePresentation(
+    String opportunityId,
+    TodayExperiencePresentation presentation,
+  );
+  Future<MeasurementOpportunity> attachAcceptedSession(
+    String opportunityId,
+    String learningSessionId,
+  );
+  Future<MeasurementOpportunity> close(String opportunityId);
+}
 ```
 
 Behavior recorder creates only four event types, each eventVersion 1:
 
 | Event | Aggregate | Required bounded payload |
 |---|---|---|
-| `AdventurePresented` | `AdventurePresentation` / entryDecisionId | schemaVersion, planId?, catalogId/version, treatment, screenState |
-| `AdventureMissionStarted` | `LearningSession` / learningSessionId | schemaVersion, planId, nodeId, mode, contentCount |
-| `AdventureSwitchedToStandard` | `AdventurePresentation` / entryDecisionId | schemaVersion, planId?, fromState, switchReason, switchOrdinal 1–10 |
-| `AdventureMissionCompleted` | `LearningSession` / learningSessionId | schemaVersion, planId, terminalState, activeDurationBucket |
+| `TodayExperiencePresented` | `MeasurementOpportunity` / opportunityId | assignedTreatment, effectivePresentation, entryAttemptId, catalog/version |
+| `TodayExperienceMissionStarted` | `LearningSession` / learningSessionId | opportunityId, assignedTreatment, effectivePresentation, planId, mode |
+| `TodayExperiencePresentationChanged` | `MeasurementOpportunity` / opportunityId | assignedTreatment, effectivePresentation, fromPresentation, switchOrdinal 1–10 |
+| `TodayExperienceMissionCompleted` | `LearningSession` / learningSessionId | opportunityId, assignedTreatment, effectivePresentation, planId, terminalState |
 
-All payloads use catalog-owned codes and bounded integers. Pre-session events use `entryDecisionId` and optional `correlationId`; mission events require `learningSessionId` and `correlationId = adventurePlanId`. Deterministic occurrence keys follow ADR-003. `ConsentContext` and `ExperimentContext` come from existing registries. Recorder runs only after `AdventureResearchCaptureDecision.isEligible`; otherwise it produces zero row/outbox/upload and product presentation continues unchanged.
+All payloads use catalog-owned codes and bounded integers. Standard และ Adventure emit event types เดียวกัน. Opportunity opens before Presented and is the independent denominator. Presentation change updates `lastSwitchOrdinal` transactionally for 1–10; later attempts only increment `suppressedSwitchCount`. Mission events require accepted `learningSessionId` and the same opportunity ID. Recorder runs only when the signed permit and measurement run remain active; otherwise it produces zero new event/outbox/upload and product learning continues through session choice/preference/Standard.
 
 ### 3.11 M11 — Operations, Quality and Reliability
 
@@ -688,9 +818,59 @@ motivation_responses
   server_updated_at_utc_ms INTEGER NULL
   is_deleted INTEGER NOT NULL DEFAULT 0
   UNIQUE(owner_id, run_id, item_id)
+
+research_participation_permits
+  id TEXT PRIMARY KEY
+  owner_id TEXT NOT NULL REFERENCES local_owners(id) ON DELETE CASCADE
+  participant_class TEXT NOT NULL CHECK(participant_class IN ('adult','minor'))
+  age_band_code TEXT NOT NULL
+  assignment_id TEXT NOT NULL REFERENCES experiment_assignments(id)
+  assigned_treatment TEXT NOT NULL CHECK(assigned_treatment IN ('standard','adventure'))
+  consent_receipt_id TEXT NOT NULL
+  guardian_permission_receipt_ref TEXT NULL
+  learner_assent_receipt_ref TEXT NULL
+  protocol_id TEXT NOT NULL
+  protocol_version TEXT NOT NULL
+  issued_at_utc_ms INTEGER NOT NULL
+  expires_at_utc_ms INTEGER NOT NULL
+  revoked_at_utc_ms INTEGER NULL
+  issuer_key_id TEXT NOT NULL
+  payload_sha256 TEXT NOT NULL
+  signature TEXT NOT NULL
+  local_revision INTEGER NOT NULL DEFAULT 1
+  cloud_revision INTEGER NOT NULL DEFAULT 0
+  last_acknowledged_at_utc_ms INTEGER NULL
+  server_updated_at_utc_ms INTEGER NULL
+  is_deleted INTEGER NOT NULL DEFAULT 0
+  CHECK(participant_class = 'adult' OR
+        (guardian_permission_receipt_ref IS NOT NULL AND
+         learner_assent_receipt_ref IS NOT NULL))
+
+measurement_opportunities
+  id TEXT PRIMARY KEY
+  owner_id TEXT NOT NULL REFERENCES local_owners(id) ON DELETE CASCADE
+  measurement_run_id TEXT NOT NULL REFERENCES motivation_measurement_runs(id) ON DELETE CASCADE
+  permit_id TEXT NOT NULL REFERENCES research_participation_permits(id)
+  entry_attempt_id TEXT NOT NULL
+  assigned_treatment TEXT NOT NULL CHECK(assigned_treatment IN ('standard','adventure'))
+  effective_presentation TEXT NOT NULL CHECK(effective_presentation IN ('standard','adventure'))
+  presented_event_id TEXT NULL
+  learning_session_id TEXT NULL
+  started_event_id TEXT NULL
+  completed_event_id TEXT NULL
+  last_switch_ordinal INTEGER NOT NULL DEFAULT 0 CHECK(last_switch_ordinal BETWEEN 0 AND 10)
+  suppressed_switch_count INTEGER NOT NULL DEFAULT 0 CHECK(suppressed_switch_count >= 0)
+  opened_at_utc_ms INTEGER NOT NULL
+  closed_at_utc_ms INTEGER NULL
+  local_revision INTEGER NOT NULL DEFAULT 1
+  cloud_revision INTEGER NOT NULL DEFAULT 0
+  last_acknowledged_at_utc_ms INTEGER NULL
+  server_updated_at_utc_ms INTEGER NULL
+  is_deleted INTEGER NOT NULL DEFAULT 0
+  UNIQUE(owner_id, measurement_run_id, permit_id, entry_attempt_id)
 ```
 
-All identifiers use canonical length/pattern validation. Response code must be declared by the pinned item catalog. No text response column exists.
+All identifiers use canonical length/pattern validation. Response code must be declared by the pinned item catalog. No text response column exists. แอปไม่เก็บ full DOB หรือ guardian PII; permit เก็บเพียง age-band code และ opaque receipt references. Permit/opportunity tables ต้องเข้ากฎ owner lifecycle, sync, Firestore rules, export, withdrawal, deletion และ retention manifest ทุกจุด
 
 ### 4.3 No Adventure progress table
 
@@ -708,7 +888,7 @@ Update exactly these cross-cutting authorities for v23/v24:
 - `lib/features/export/application/owner_lifecycle_archive.dart`
 - Firestore rules and emulator tests
 
-Each new table appears exactly once in manifest. Preference is an extension of its existing entity, not a new lifecycle entity.
+Each of the four research tables appears exactly once in the lifecycle/retention manifest. Preference is an extension of its existing entity, not a new lifecycle entity. Withdrawal/revocation invalidates active projection before the next Host/start/capture operation; deletion order removes opportunities before permits/runs while preserving global content.
 
 ## 5. Sequence Designs
 
@@ -727,7 +907,7 @@ sequenceDiagram
   participant G as Evidence Gateway
   participant R as LearningSideEffectReconciler
   participant P as Adventure Projection Reader
-  L->>H: open learn/today-experience
+  L->>H: open home/learn/today-experience
   H->>T: load canonical snapshot once
   T-->>H: TodayHubSnapshot / typed unavailable
   H->>E: resolve product presentation(snapshot availability)
@@ -769,20 +949,22 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant UI as Adventure UI
+  participant UI as Today Experience Host
+  participant P as Participation Permit Validator
   participant R as Research Capture Gate/Recorder
-  participant X as ExperimentRegistry
-  participant C as ConsentRegistry
+  participant O as Opportunity Repository
   participant E as EventsV2 Store
-  UI->>R: exposure candidate(entryDecisionId or sessionId/planId)
-  R->>X: exact assignment
-  X-->>R: assignment
-  R->>C: consent snapshot
-  C-->>R: granted/not granted
-  alt granted and matching active run
+  UI->>P: validate(owner, time)
+  P-->>UI: ActivePresentationPermit or null
+  alt active permit and matching run
+    UI->>O: open once(permit, entryAttemptId, assigned/effective)
+    O-->>UI: MeasurementOpportunity
+    UI->>R: neutral candidate(opportunity/session)
     R->>E: idempotent EventEnvelopeV2 + payload v1
-  else absent/withdrawn/conflict
-    R-->>UI: ineligible(reason); zero row/outbox/upload; product continues
+    R->>O: attach event/session IDs transactionally
+  else nonparticipant or invalid/withdrawn permit
+    P-->>UI: no protocol treatment; zero opportunity/event/outbox/upload
+    UI-->>UI: session choice → preference → Standard; product learning continues
   end
 ```
 
@@ -790,15 +972,15 @@ sequenceDiagram
 
 | Failure | Detection | Persisted effect | UX | Recovery |
 |---|---|---|---|---|
-| Feature hidden/off | Registry | None | Standard | Operator changes flag after gate |
-| Missing dependency | Entry dependency check | Diagnostic counter only | Standard + brief reason | Retry on next entry/refresh |
+| Feature hidden/off or stale route | Registry/navigation gate | None | Return Learn | Operator changes flag after gate |
+| Missing dependency before authorization | Entry dependency check | Diagnostic counter only | Return Learn + brief reason | Retry on next authorized entry |
 | Invalid catalog | Validator/checksum | Quarantine state via Offline Manager | Standard + repair | Verify/repair/remove |
 | Stale journey | Source fingerprint | None | Stale label; unsafe CTA disabled | Recompose |
 | Plan owner/version mismatch | Composer/bridge | None | Refresh required | Reload Today snapshot |
 | Evidence write fails | Existing controller/store | Pending exact capture | Do not show reward completion | Exact retry |
 | Reward projection fails | Canonical reconciler/receipt | Evidence kept; projection pending | Learning success + reward pending | Existing reconciler/outbox retries idempotently; Adventure only refreshes read model |
-| Consent withdrawn | Consent gate | No new research row | Product continues | Export/delete per policy |
-| Assignment conflict | Registry | No event/reassignment | Protocol-safe Standard | Manual data resolution |
+| Permit invalid/expired/revoked or withdrawal | Permit validator | No new opportunity/event | Product continues via session choice/preference/Standard | Renew permit or export/delete per policy |
+| Assignment conflict | Permit validator | No event/reassignment | Product fallback; no protocol treatment | Approved enrollment resolution |
 | Kill switch mid-session | Registry listener | Accepted learning remains | Safe close, Standard | Re-enable only after review |
 
 No automatic retry loops are unbounded. UI retries are user-triggered or use existing bounded outbox/backoff policy.
@@ -815,6 +997,8 @@ No automatic retry loops are unbounded. UI retries are user-triggered or use exi
 - 200% text switches cards to vertical layout; CTA remains full width
 - audio is never the only carrier of story or feedback
 - no gesture-only actions; every swipe/drag alternative has button/action
+- Research Prompt, guardian permission, learner assent and invalid-permit dialog use logical heading/body/actions, announce status once and restore focus to the invoking control
+- TalkBack, Switch Access/keyboard and text 200% must reach Skip/Not now/withdraw and no-learning-impact copy without timeout or focus trap
 
 ## 8. Security, Privacy and Abuse Resistance
 
@@ -833,16 +1017,17 @@ This section uses bounded local controls; no repository-wide security worker is 
 
 - Firestore rules require authenticated owner match
 - experiment assignment cannot be client-mutated through Adventure
-- consent checked both at domain use case and cloud rules boundary
+- permit signature, owner, assignment, active consent, guardian/assent when minor, protocol, expiry, revocation and revision checked before projection/capture and again at cloud rules boundary
 - withdrawal blocks enqueue before transport
-- operator flags cannot grant research consent
+- operator flags cannot grant consent, assent, permission or active permit
 
 ### 8.3 Data minimization
 
-- no raw answer in Adventure exposure payload
+- no raw answer in neutral Today Experience event payload
 - no free-text motivation response
 - no raw story text in diagnostics
-- non-participant receives no research exposure event
+- non-participant receives no research opportunity row or neutral research event
+- no full DOB or guardian PII; only age-band code and opaque receipt references
 - version pins are IDs/hashes, not copied content
 
 ### 8.4 Economy abuse
@@ -881,11 +1066,12 @@ final AdventureMotivationProjectionReader? adventureMotivation;
 Navigation strategy:
 
 - Keep existing bottom navigation and Learn destination identity unchanged
-- Register stable child route `learn/today-experience`; no new bottom tab
+- Register stable child route `home/learn/today-experience`; no new bottom tab
 - Show one additive Learn card only when feature/dependencies are eligible; hidden path leaves Learn layout baseline-equivalent
-- `TodayExperienceHost` composes the canonical Today snapshot once, then resolves effective product presentation without consent
-- Render `TodayHubScreen` or `AdventureHubScreen` from the same `TodayHubSnapshotLoader`
-- Direct/stale route goes through `ProductionFeatureGate`; render Standard when Today is ready, otherwise return Learn with bounded reason
+- `TodayExperienceHost` authorizes entry, creates/reuses one UUID v4 `entryAttemptId`, calls `TodayHubSnapshotLoader.load()` exactly once, then resolves active permit/session choice/preference
+- Refactor Standard presentation into pure `TodayHubView(snapshot)`; keep `TodayHubScreen` as the legacy destination loader wrapper; Adventure uses `AdventureHubScreen(snapshot)`
+- Standard/Adventure switch and rebuild use the same snapshot object/fingerprint; only explicit refresh starts a new Host opening and ID
+- Hidden/disabled/unknown or stale direct route returns Learn without constructing Host/snapshot; Standard fallback is limited to an already authorized Host
 - Standard switch replaces presentation within Today destination rather than stacking duplicate home routes
 - System Back from the host returns to Learn
 - Accepted lesson is still pushed through existing `AppNavigator`/registered lesson routes
@@ -937,7 +1123,11 @@ lib/features/adventure/
 lib/features/research/domain/motivation_instrument.dart
 lib/features/research/domain/motivation_measurement.dart
 lib/features/research/domain/motivation_measurement_repository.dart
+lib/features/research/domain/research_participation_permit.dart
+lib/features/research/domain/measurement_opportunity.dart
 lib/features/research/application/motivation_measurement_use_cases.dart
+lib/features/research/application/research_participation_permit_validator.dart
+lib/features/research/application/measurement_opportunity_use_cases.dart
 lib/features/research/application/adventure_research_capture_gate.dart
 lib/features/research/application/adventure_behavior_event_recorder.dart
 lib/features/research/data/drift_motivation_measurement_repository.dart
@@ -953,6 +1143,8 @@ lib/runtime/production_feature_contract.dart
 lib/runtime/app_dependencies.dart
 lib/runtime/app_bootstrap.dart
 lib/screens/main_navigation_screen.dart
+lib/screens/today_hub_screen.dart
+lib/screens/today_hub_view.dart
 lib/features/preferences/domain/learner_preferences.dart
 lib/features/preferences/application/learner_preferences_use_cases.dart
 lib/features/preferences/data/drift_learner_preferences_repository.dart
@@ -1005,14 +1197,20 @@ Required test layers:
 
 ### Pilot
 
-- consented participants
-- stable assignment and version completeness 100%
+- MS-08A feasibility cohort with valid adult/minor permits
+- stable assignment, permit, opportunity and version completeness 100%
 - emergency-off verified
 - Standard escape always available
+- maximum state after gate is `Limited`; no efficacy claim
+
+### Controlled Expansion
+
+- requires class-specific MS-08B powered sample and all MDS thresholds
+- adult/minor eligibility is isolated; one class cannot unlock the other
 
 ### Enabled
 
-- controlled expansion, not forced migration
+- follows successful class-specific Controlled Expansion and signed release decision; never follows MS-08A alone
 - monitor fallback, evidence retry, duplicate receipt rejection, asset failure and crossover
 
 Rollback is feature-state based. Database remains forward-compatible; no destructive down migration. Emergency-off stops new Adventure operations, safely closes accepted learning lifecycle and returns Standard.
@@ -1023,10 +1221,13 @@ Rollback is feature-state based. Database remains forward-compatible; no destruc
 - No Adventure progress authority exists
 - No change to learning correctness/evidence payload is required
 - Schema changes occur only in the preference/research phases using ledger-reserved numbers (planned v23/v24)
-- Feature/preference/assignment/consent are separate
+- Feature/preference/assignment/raw consent/participation permit are separate; Product Entry sees only active projection
 - Offline and error cases preserve Standard
 - UI has map/list/reduced-motion parity
 - Research is optional, bounded and withdrawal-safe
+- Today snapshot is single-load per Host and Standard view is pure
+- Minor participation has runtime guardian+assent enforcement
+- MS-08A/MS-08B and adult/minor rollout isolation are explicit
 - File map follows existing repository patterns
 - Test architecture covers contracts, lifecycle and users
 - Audit findings are linked to owners and no Pilot/release gate is bypassed
