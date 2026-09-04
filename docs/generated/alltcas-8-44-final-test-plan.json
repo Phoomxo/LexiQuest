@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "1824752739a3835ed802e28bc30c942b4efbc86a",
-  "sourceFingerprint": "2b66cd1312067508d749eb481f9c6387e478ae97a749fc554acf71be9a9bb3fa",
+  "sourceCommit": "f04fe3c4b5a1eec14486be39f3bd7ae447250b50",
+  "sourceFingerprint": "9eb004607b09eeb6d73dca7a0dbc443288cb685ba75304d5b40b9e66a7d59d68",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -121,7 +121,7 @@
     },
     {
       "path": "test",
-      "sha256": "ee8095a3878b3bf7d0806eef08a39b7cef2aefd3d8eab7ac588f30b57597f49a"
+      "sha256": "10d74495da1a4993dfbc2755591d227047b34e7fb25ef604b9901eb103b9cc13"
     },
     {
       "path": "test/architecture",
@@ -361,7 +361,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "096bc49a30147eabfbb0035f18e9e0034aeadc4a1c64f1766ab2d00488bc31da"
+      "sha256": "bec73ff55eac0229489e1655ffae4065fad30883b7e9d9ac2bff74739e0c8014"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 1824752739a3835ed802e28bc30c942b4efbc86a",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit f04fe3c4b5a1eec14486be39f3bd7ae447250b50",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
