@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
@@ -6,11 +7,13 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/contrastive_explanation.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -465,6 +468,271 @@ void main() {
       }
     }
   });
+
+  test(
+    'freezeForRecovery resolves a strict deeply immutable snapshot without writing',
+    () async {
+      final owners = _CountingOwnerRepository();
+      final rollout = _CountingRolloutProvider();
+      final research = _CountingLegacyResearchStateProvider();
+      final repository = _RecordingRepository();
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: _learning(
+              owners: owners,
+              repository: repository,
+              generateId: () => 'freeze-1',
+              nowUtc: () => DateTime.utc(2026, 8, 14, 9, 30, 0, 123),
+              eventContextProvider: research,
+            ),
+            rolloutModeProvider: rollout,
+            researchStateProvider: research,
+          ).capture(
+            input: CurrentActivityInput.typedRecall,
+            sessionId: 'session-freeze',
+            wordId: 'word-freeze',
+            isCorrect: false,
+            responseTimeMs: 456,
+            attemptNumber: 3,
+            providerProvenance: 'keyboard|local|v1',
+            hintLevel: 2,
+          );
+
+      final frozen = await pending.freezeForRecovery();
+
+      expect(repository.commands, isEmpty);
+      expect(owners.calls, 1);
+      expect(rollout.calls, 1);
+      expect(research.activityCalls, 1);
+      expect(pending.status, PendingCurrentActivityEvidenceStatus.captured);
+      expect(frozen.schemaVersion, 1);
+      expect(frozen.ownerId, 'owner-1');
+      expect(frozen.actorIdentity, 'owner-1');
+      expect(frozen.sourceEvidenceId, 'attempt:freeze-1');
+      expect(frozen.input, CurrentActivityInput.typedRecall);
+      expect(frozen.declaredEvidenceClass, EvidenceClass.independentRecall);
+      expect(frozen.skillId, 'typed-recall');
+      expect(frozen.promptMode, 'typedRecall');
+      expect(frozen.hintLevel, 2);
+      expect(frozen.evidenceContext.hintLevel, 2);
+
+      final encoded = frozen.toJson();
+      expect(
+        () => encoded['ownerId'] = 'mutated',
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => (encoded['declaration']! as Map<String, Object?>)['skillId'] =
+            'mutated',
+        throwsA(isA<UnsupportedError>()),
+      );
+      expect(
+        () => (encoded['evidenceContext']! as Map<String, Object?>)['skillId'] =
+            'mutated',
+        throwsA(isA<UnsupportedError>()),
+      );
+
+      final mutable = (jsonDecode(jsonEncode(encoded)) as Map)
+          .cast<String, Object?>();
+      final decoded = FrozenPendingCurrentActivityEvidence.fromJson(mutable);
+      (mutable['declaration']! as Map<String, dynamic>)['skillId'] = 'mutated';
+      (mutable['evidenceContext']! as Map<String, dynamic>)['hintLevel'] = 0;
+      expect(decoded.skillId, 'typed-recall');
+      expect(decoded.evidenceContext.hintLevel, 2);
+      expect(decoded.toJson(), encoded);
+    },
+  );
+
+  test(
+    'frozen pending evidence rejects unknown, missing, and mistyped JSON',
+    () async {
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: _learning(repository: _RecordingRepository()),
+          ).capture(
+            input: CurrentActivityInput.readingExposure,
+            sessionId: 'session-schema',
+            wordId: 'word-schema',
+            isCorrect: true,
+            responseTimeMs: null,
+            attemptNumber: 1,
+          );
+      final base =
+          (jsonDecode(jsonEncode((await pending.freezeForRecovery()).toJson()))
+                  as Map)
+              .cast<String, Object?>();
+      Map<String, Object?> copy() =>
+          (jsonDecode(jsonEncode(base)) as Map).cast<String, Object?>();
+
+      final unknown = copy()..['unexpected'] = true;
+      final missing = copy()..remove('wordId');
+      final mistyped = copy()..['attemptNumber'] = '1';
+      final future = copy()..['schemaVersion'] = 2;
+      final conflictingInput = copy()..['input'] = 'speakToText';
+      final conflictingDeclaration = copy();
+      (conflictingDeclaration['declaration']!
+              as Map<String, dynamic>)['evidenceClass'] =
+          EvidenceClass.independentRecall.name;
+
+      for (final invalid in <Map<String, Object?>>[
+        unknown,
+        missing,
+        mistyped,
+        future,
+        conflictingInput,
+        conflictingDeclaration,
+      ]) {
+        expect(
+          () => FrozenPendingCurrentActivityEvidence.fromJson(invalid),
+          throwsA(isA<FormatException>()),
+        );
+      }
+    },
+  );
+
+  test(
+    'generic restore preserves historical actor and contexts across explicit retries',
+    () async {
+      final originalResearch = _CountingLegacyResearchStateProvider();
+      final original =
+          CurrentActivityEvidenceAdapter(
+            learning: _learning(
+              repository: _RecordingRepository(),
+              eventContextProvider: originalResearch,
+            ),
+            researchStateProvider: originalResearch,
+          ).capture(
+            ownerId: 'owner-1',
+            input: CurrentActivityInput.dictation,
+            sessionId: 'session-restore',
+            wordId: 'word-restore',
+            isCorrect: true,
+            responseTimeMs: 765,
+            attemptNumber: 4,
+            providerProvenance: 'keyboard|local|v1',
+          );
+      final encoded =
+          (jsonDecode(jsonEncode((await original.freezeForRecovery()).toJson()))
+                  as Map)
+              .cast<String, Object?>()
+            ..['actorIdentity'] = 'historical-owner';
+      final frozen = FrozenPendingCurrentActivityEvidence.fromJson(encoded);
+
+      final owners = _ChangingOwnerRepository()..activeOwnerId = 'owner-2';
+      final rollout = _CountingRolloutProvider();
+      final research = _CountingLegacyResearchStateProvider();
+      final repository = _RecordingRepository(failFirst: true);
+      final restored = CurrentActivityEvidenceAdapter(
+        learning: _learning(
+          owners: owners,
+          repository: repository,
+          eventContextProvider: research,
+        ),
+        rolloutModeProvider: rollout,
+        researchStateProvider: research,
+      ).restore(frozen);
+
+      expect(
+        restored.status,
+        PendingCurrentActivityEvidenceStatus.retryRequired,
+      );
+      expect(restored.actorIdentity, 'historical-owner');
+      await expectLater(restored.record(), throwsStateError);
+      expect(repository.commands, isEmpty);
+      await expectLater(restored.retry(), throwsStateError);
+      expect(restored.requiresRetry, isTrue);
+      final result = await restored.retry();
+
+      expect(result.inserted, isTrue);
+      expect(restored.isCommitted, isTrue);
+      expect(owners.calls, 0);
+      expect(rollout.calls, 0);
+      expect(research.activityCalls, 0);
+      expect(repository.replayCandidates, hasLength(2));
+      expect(
+        repository.replayCandidates.map((candidate) => candidate.actorIdentity),
+        everyElement('historical-owner'),
+      );
+      expect(repository.commands, hasLength(2));
+      final first = repository.commands.first;
+      final second = repository.commands.last;
+      expect(second.id, first.id);
+      expect(second.ownerId, first.ownerId);
+      expect(second.occurredAtUtc, first.occurredAtUtc);
+      expect(second.sessionId, first.sessionId);
+      expect(second.wordId, first.wordId);
+      expect(second.promptMode, first.promptMode);
+      expect(second.isCorrect, first.isCorrect);
+      expect(second.responseTimeMs, first.responseTimeMs);
+      expect(second.attemptNumber, first.attemptNumber);
+      expect(second.providerProvenance, first.providerProvenance);
+      expect(second.evidenceContext.toJson(), frozen.evidenceContext.toJson());
+      expect(
+        second.candidate.eventContext!.toJson(),
+        frozen.eventContext.toJson(),
+      );
+    },
+  );
+
+  test('frozen recovery retains exact optional contrastive context', () async {
+    const checksum =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const wordId = 'word-contrastive';
+    const revision = 7;
+    final contentRevision = contrastiveEvidenceContentRevision(
+      promptMode: 'meaningChoice',
+      wordId: wordId,
+      revision: revision,
+      checksumSha256: checksum,
+    );
+    final feedback = ContrastiveFeedbackContext(
+      manifestIdentity: const ContentIdentity(
+        type: ContentType.lexicalMetadata,
+        id: wordId,
+        revision: revision,
+      ),
+      manifestChecksumSha256: checksum,
+      promptMode: 'meaningChoice',
+      evidenceContentRevision: contentRevision,
+      correctOptionId: wordId,
+      selectedDistractorId: 'word-distractor',
+    );
+    final pending =
+        CurrentActivityEvidenceAdapter(
+          learning: _learning(repository: _RecordingRepository()),
+        ).capturePinnedMeaningRecognition(
+          ownerId: 'owner-1',
+          input: CurrentActivityInput.meaningMultipleChoice,
+          sessionId: 'session-contrastive',
+          wordId: wordId,
+          isCorrect: false,
+          responseTimeMs: 321,
+          attemptNumber: 1,
+          contentRevision: revision,
+          checksumSha256: checksum,
+          contrastiveFeedback: feedback,
+        );
+
+    final frozen = await pending.freezeForRecovery();
+    final decoded = FrozenPendingCurrentActivityEvidence.fromJson(
+      (jsonDecode(jsonEncode(frozen.toJson())) as Map).cast<String, Object?>(),
+    );
+
+    expect(decoded.contrastiveFeedback!.toJson(), feedback.freeze().toJson());
+    expect(
+      decoded.providerProvenance,
+      contrastiveFeedbackAttemptProvenance(feedback.freeze()),
+    );
+    final tampered = (jsonDecode(jsonEncode(frozen.toJson())) as Map)
+        .cast<String, Object?>();
+    (tampered['contrastiveFeedback']!
+            as Map<String, dynamic>)['correctOptionId'] =
+        'word-distractor';
+    expect(
+      () => FrozenPendingCurrentActivityEvidence.fromJson(tampered),
+      throwsA(isA<FormatException>()),
+    );
+  });
 }
 
 LearningUseCases _learning({
@@ -546,12 +814,23 @@ final class _ChangingOwnerRepository implements LocalOwnerRepository {
       throw UnimplementedError();
 }
 
-final class _RecordingRepository implements LearningRepository {
+final class _RecordingRepository
+    implements LearningRepository, LearningEvidenceReplayRepository {
   _RecordingRepository({this.failFirst = false});
 
   final bool failFirst;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+  final List<RecordAnswerCandidate> replayCandidates =
+      <RecordAnswerCandidate>[];
   bool _failed = false;
+
+  @override
+  Future<CommittedAnswerReplay?> replayCommittedAnswer(
+    RecordAnswerCandidate candidate,
+  ) async {
+    replayCandidates.add(candidate);
+    return null;
+  }
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {

@@ -4,6 +4,7 @@ import '../domain/evidence_context.dart';
 import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_policy_rollout.dart';
 import '../domain/hint_policy.dart';
+import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/lexical_prompt_artifact_identity.dart';
@@ -155,6 +156,513 @@ final class BaselineCurrentActivityResearchStateProvider
       occurredAtUtc: occurredAtUtc,
     );
   }
+}
+
+/// A complete pending-answer snapshot that can cross a process boundary
+/// without consulting mutable owner, rollout, or research state again.
+final class FrozenPendingCurrentActivityEvidence {
+  factory FrozenPendingCurrentActivityEvidence.fromJson(
+    Map<String, Object?> json,
+  ) {
+    if (json.length != _jsonKeys.length ||
+        !json.keys.every(_jsonKeys.contains) ||
+        json['schemaVersion'] != currentSchemaVersion) {
+      throw const FormatException('invalid frozen pending evidence schema');
+    }
+    try {
+      final declaration = _requiredJsonMap(json, 'declaration');
+      if (declaration.length != _declarationKeys.length ||
+          !declaration.keys.every(_declarationKeys.contains)) {
+        throw const FormatException(
+          'invalid frozen pending evidence declaration',
+        );
+      }
+      final occurredAtEncoded = _requiredString(json, 'occurredAtUtc');
+      final occurredAtUtc = occurredAtEncoded.endsWith('Z')
+          ? DateTime.tryParse(occurredAtEncoded)
+          : null;
+      if (occurredAtUtc == null ||
+          !occurredAtUtc.isUtc ||
+          occurredAtUtc.toIso8601String() != occurredAtEncoded) {
+        throw const FormatException(
+          'invalid frozen pending evidence occurrence',
+        );
+      }
+      final contrastiveJson = json['contrastiveFeedback'];
+      final contrastiveFeedback = contrastiveJson == null
+          ? null
+          : FrozenContrastiveFeedbackContext.fromJson(
+              _requiredJsonMap(json, 'contrastiveFeedback'),
+            );
+      return FrozenPendingCurrentActivityEvidence._validated(
+        ownerId: _requiredString(json, 'ownerId'),
+        sourceEvidenceId: _requiredString(json, 'sourceEvidenceId'),
+        occurredAtUtc: occurredAtUtc,
+        sessionId: _requiredString(json, 'sessionId'),
+        wordId: _requiredString(json, 'wordId'),
+        promptMode: _requiredString(json, 'promptMode'),
+        isCorrect: _requiredBool(json, 'isCorrect'),
+        responseTimeMs: _optionalInt(json, 'responseTimeMs'),
+        attemptNumber: _requiredInt(json, 'attemptNumber'),
+        providerProvenance: _optionalString(json, 'providerProvenance'),
+        actorIdentity: _requiredString(json, 'actorIdentity'),
+        input: _requiredEnum(json, 'input', CurrentActivityInput.values),
+        declaredEvidenceClass: _requiredEnum(
+          declaration,
+          'evidenceClass',
+          EvidenceClass.values,
+        ),
+        skillId: _requiredString(declaration, 'skillId'),
+        declarationPromptMode: _requiredString(declaration, 'promptMode'),
+        contentRevision: _requiredString(declaration, 'contentRevision'),
+        hintLevel: _requiredInt(json, 'hintLevel'),
+        contrastiveFeedback: contrastiveFeedback,
+        evidenceContext: EvidenceContext.fromJson(
+          _requiredJsonMap(json, 'evidenceContext'),
+        ),
+        eventContext: LearningEventContext.fromJson(
+          _requiredJsonMap(json, 'eventContext'),
+        ),
+      );
+    } on FormatException {
+      rethrow;
+    } on Object catch (error) {
+      throw FormatException('invalid frozen pending evidence: $error');
+    }
+  }
+
+  factory FrozenPendingCurrentActivityEvidence._validated({
+    required String ownerId,
+    required String sourceEvidenceId,
+    required DateTime occurredAtUtc,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required String? providerProvenance,
+    required String actorIdentity,
+    required CurrentActivityInput input,
+    required EvidenceClass declaredEvidenceClass,
+    required String skillId,
+    required String declarationPromptMode,
+    required String contentRevision,
+    required int hintLevel,
+    required FrozenContrastiveFeedbackContext? contrastiveFeedback,
+    required EvidenceContext evidenceContext,
+    required LearningEventContext eventContext,
+  }) {
+    _requireCanonicalIdentifier(ownerId, 'ownerId');
+    if (!LearningEvidenceContract.validSourceEvidenceId(sourceEvidenceId)) {
+      throw const FormatException('invalid frozen source evidence identity');
+    }
+    if (!occurredAtUtc.isUtc || occurredAtUtc.millisecondsSinceEpoch < 0) {
+      throw const FormatException('invalid frozen pending evidence occurrence');
+    }
+    _requireCanonicalIdentifier(sessionId, 'sessionId');
+    _requireCanonicalIdentifier(wordId, 'wordId');
+    _requirePromptMode(promptMode, 'promptMode');
+    _requireCanonicalIdentifier(actorIdentity, 'actorIdentity');
+    _requireCanonicalIdentifier(skillId, 'skillId');
+    _requirePromptMode(declarationPromptMode, 'declaration.promptMode');
+    _requireCanonicalIdentifier(contentRevision, 'contentRevision');
+    if (promptMode != declarationPromptMode ||
+        responseTimeMs != null &&
+            (responseTimeMs < 0 ||
+                responseTimeMs > LearningEvidenceContract.maxResponseTimeMs) ||
+        attemptNumber <= 0 ||
+        attemptNumber > LearningEvidenceContract.maxAttemptNumber ||
+        hintLevel < 0 ||
+        providerProvenance != null &&
+            providerProvenance.runes.length >
+                LearningEvidenceContract.maxProviderProvenanceLength) {
+      throw const FormatException('invalid frozen pending evidence values');
+    }
+    _validateDeclaration(
+      input: input,
+      evidenceClass: declaredEvidenceClass,
+      skillId: skillId,
+      promptMode: declarationPromptMode,
+    );
+    try {
+      evidenceContext.validate();
+      eventContext.validateAgainst(
+        evidenceContext: evidenceContext,
+        occurredAtUtc: occurredAtUtc,
+      );
+    } on Object catch (error) {
+      throw FormatException('invalid frozen pending contexts: $error');
+    }
+    if (evidenceContext.skillId != skillId ||
+        evidenceContext.hintLevel != hintLevel ||
+        evidenceContext.contentRevision != contentRevision) {
+      throw const FormatException(
+        'frozen pending declaration conflicts with resolved evidence',
+      );
+    }
+    final classified = HintPolicy.classifyEvidence(
+      declaredClass: declaredEvidenceClass,
+      hint: HintUsageSnapshot.fromRecordedLevel(hintLevel),
+    );
+    final validProtocolOverride =
+        input == CurrentActivityInput.ghostDuel &&
+        evidenceContext.rolloutMode != EvidencePolicyRolloutMode.legacy;
+    if (evidenceContext.evidenceClass != classified.evidenceClass &&
+        !validProtocolOverride) {
+      throw const FormatException(
+        'frozen pending class conflicts with its declaration',
+      );
+    }
+    if (contrastiveFeedback != null) {
+      if (isCorrect ||
+          contrastiveFeedback.manifestIdentity.id != wordId ||
+          contrastiveFeedback.promptMode != promptMode ||
+          contrastiveFeedback.evidenceContentRevision != contentRevision ||
+          providerProvenance !=
+              contrastiveFeedbackAttemptProvenance(contrastiveFeedback)) {
+        throw const FormatException(
+          'frozen pending contrastive evidence is inconsistent',
+        );
+      }
+    } else if (isContrastiveFeedbackAttemptProvenance(providerProvenance)) {
+      throw const FormatException(
+        'frozen pending contrastive provenance has no context',
+      );
+    }
+    return FrozenPendingCurrentActivityEvidence._(
+      ownerId: ownerId,
+      sourceEvidenceId: sourceEvidenceId,
+      occurredAtUtc: occurredAtUtc,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: providerProvenance,
+      actorIdentity: actorIdentity,
+      input: input,
+      declaredEvidenceClass: declaredEvidenceClass,
+      skillId: skillId,
+      contentRevision: contentRevision,
+      hintLevel: hintLevel,
+      contrastiveFeedback: contrastiveFeedback,
+      evidenceContext: evidenceContext,
+      eventContext: eventContext,
+    );
+  }
+
+  const FrozenPendingCurrentActivityEvidence._({
+    required this.ownerId,
+    required this.sourceEvidenceId,
+    required this.occurredAtUtc,
+    required this.sessionId,
+    required this.wordId,
+    required this.promptMode,
+    required this.isCorrect,
+    required this.responseTimeMs,
+    required this.attemptNumber,
+    required this.providerProvenance,
+    required this.actorIdentity,
+    required this.input,
+    required this.declaredEvidenceClass,
+    required this.skillId,
+    required this.contentRevision,
+    required this.hintLevel,
+    required this.contrastiveFeedback,
+    required this.evidenceContext,
+    required this.eventContext,
+  });
+
+  static const int currentSchemaVersion = 1;
+  static const Set<String> _jsonKeys = <String>{
+    'schemaVersion',
+    'ownerId',
+    'sourceEvidenceId',
+    'occurredAtUtc',
+    'sessionId',
+    'wordId',
+    'promptMode',
+    'isCorrect',
+    'responseTimeMs',
+    'attemptNumber',
+    'providerProvenance',
+    'actorIdentity',
+    'input',
+    'declaration',
+    'hintLevel',
+    'contrastiveFeedback',
+    'evidenceContext',
+    'eventContext',
+  };
+  static const Set<String> _declarationKeys = <String>{
+    'evidenceClass',
+    'skillId',
+    'promptMode',
+    'contentRevision',
+  };
+
+  int get schemaVersion => currentSchemaVersion;
+  final String ownerId;
+  final String sourceEvidenceId;
+  final DateTime occurredAtUtc;
+  final String sessionId;
+  final String wordId;
+  final String promptMode;
+  final bool isCorrect;
+  final int? responseTimeMs;
+  final int attemptNumber;
+  final String? providerProvenance;
+  final String actorIdentity;
+  final CurrentActivityInput input;
+  final EvidenceClass declaredEvidenceClass;
+  final String skillId;
+  final String contentRevision;
+  final int hintLevel;
+  final FrozenContrastiveFeedbackContext? contrastiveFeedback;
+  final EvidenceContext evidenceContext;
+  final LearningEventContext eventContext;
+
+  Map<String, Object?> toJson() => _deepFreezeJsonMap(<String, Object?>{
+    'schemaVersion': currentSchemaVersion,
+    'ownerId': ownerId,
+    'sourceEvidenceId': sourceEvidenceId,
+    'occurredAtUtc': occurredAtUtc.toIso8601String(),
+    'sessionId': sessionId,
+    'wordId': wordId,
+    'promptMode': promptMode,
+    'isCorrect': isCorrect,
+    'responseTimeMs': responseTimeMs,
+    'attemptNumber': attemptNumber,
+    'providerProvenance': providerProvenance,
+    'actorIdentity': actorIdentity,
+    'input': input.name,
+    'declaration': <String, Object?>{
+      'evidenceClass': declaredEvidenceClass.name,
+      'skillId': skillId,
+      'promptMode': promptMode,
+      'contentRevision': contentRevision,
+    },
+    'hintLevel': hintLevel,
+    'contrastiveFeedback': contrastiveFeedback?.toJson(),
+    'evidenceContext': evidenceContext.toJson(),
+    'eventContext': eventContext.toJson(),
+  });
+
+  static Map<String, Object?> _requiredJsonMap(
+    Map<String, Object?> json,
+    String field,
+  ) {
+    final value = json[field];
+    if (value is! Map) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    try {
+      return value.cast<String, Object?>();
+    } on Object {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+  }
+
+  static String _requiredString(Map<String, Object?> json, String field) {
+    final value = json[field];
+    if (value is! String) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    return value;
+  }
+
+  static String? _optionalString(Map<String, Object?> json, String field) {
+    final value = json[field];
+    if (value != null && value is! String) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    return value as String?;
+  }
+
+  static int _requiredInt(Map<String, Object?> json, String field) {
+    final value = json[field];
+    if (value is! int) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    return value;
+  }
+
+  static int? _optionalInt(Map<String, Object?> json, String field) {
+    final value = json[field];
+    if (value != null && value is! int) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    return value as int?;
+  }
+
+  static bool _requiredBool(Map<String, Object?> json, String field) {
+    final value = json[field];
+    if (value is! bool) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+    return value;
+  }
+
+  static T _requiredEnum<T extends Enum>(
+    Map<String, Object?> json,
+    String field,
+    List<T> values,
+  ) {
+    final encoded = _requiredString(json, field);
+    for (final value in values) {
+      if (value.name == encoded) return value;
+    }
+    throw FormatException('invalid frozen pending evidence $field');
+  }
+
+  static void _requireCanonicalIdentifier(String value, String field) {
+    if (value != value.trim() ||
+        !LearningEvidenceContract.validIdentifier(value)) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+  }
+
+  static void _requirePromptMode(String value, String field) {
+    if (value != value.trim() ||
+        !LearningEvidenceContract.validText(
+          value,
+          maxLength: LearningEvidenceContract.maxPromptModeLength,
+        )) {
+      throw FormatException('invalid frozen pending evidence $field');
+    }
+  }
+
+  static void _validateDeclaration({
+    required CurrentActivityInput input,
+    required EvidenceClass evidenceClass,
+    required String skillId,
+    required String promptMode,
+  }) {
+    bool oneOf(Set<EvidenceClass> values) => values.contains(evidenceClass);
+    final valid = switch (input) {
+      CurrentActivityInput.meaningMultipleChoice =>
+        skillId == 'meaning-recall' &&
+            promptMode == 'meaningChoice' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.recognition,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.meaningToWordMultipleChoice =>
+        skillId == 'meaning-recall' &&
+            promptMode == 'wordChoice' &&
+            evidenceClass == EvidenceClass.recognition,
+      CurrentActivityInput.definitionMultipleChoice =>
+        skillId == 'definition-recognition' &&
+            promptMode == 'definitionChoice' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.recognition,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.clozeSelected =>
+        skillId == 'cloze-context' &&
+            promptMode == 'clozeSelected' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.recognition,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.clozeTyped =>
+        skillId == 'cloze-context' &&
+            promptMode == 'clozeTyped' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.independentRecall,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.matchingPair =>
+        skillId == 'matching-recognition' &&
+            promptMode == 'matchingPair' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.recognition,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.srsRecall =>
+        skillId == 'srs-recall' &&
+            ((promptMode == 'srsRecall' &&
+                    evidenceClass == EvidenceClass.independentRecall) ||
+                (promptMode == 'flashcardExposure' &&
+                    evidenceClass == EvidenceClass.exposure)),
+      CurrentActivityInput.typedRecall =>
+        skillId == 'typed-recall' &&
+            promptMode == 'typedRecall' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.independentRecall,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.associativeRecall =>
+        skillId == 'associative-recall' &&
+            promptMode == 'associativeRecall' &&
+            oneOf(const <EvidenceClass>{
+              EvidenceClass.independentRecall,
+              EvidenceClass.guidedPractice,
+            }),
+      CurrentActivityInput.ghostDuel =>
+        skillId == 'ghost-duel' &&
+            promptMode == 'ghostSpelling' &&
+            evidenceClass == EvidenceClass.recreational,
+      CurrentActivityInput.speakToText =>
+        skillId == 'pronunciation-transcript' &&
+            promptMode == 'pronunciationTranscript' &&
+            evidenceClass == EvidenceClass.pronunciation,
+      CurrentActivityInput.shadowing =>
+        skillId == 'shadowing-pronunciation' &&
+            promptMode == 'shadowing' &&
+            evidenceClass == EvidenceClass.pronunciation,
+      CurrentActivityInput.readingExposure =>
+        skillId == 'reading-exposure' &&
+            promptMode == 'readingExposure' &&
+            evidenceClass == EvidenceClass.exposure,
+      CurrentActivityInput.dictation =>
+        skillId == 'dictation-spelling' &&
+            promptMode == 'dictation' &&
+            evidenceClass == EvidenceClass.independentRecall,
+      CurrentActivityInput.sentenceScramble =>
+        skillId == 'sentence-scramble' &&
+            promptMode == 'sentenceScramble' &&
+            evidenceClass == EvidenceClass.recreational,
+      CurrentActivityInput.wordScramble =>
+        skillId == 'word-scramble' &&
+            promptMode == 'wordScramble' &&
+            evidenceClass == EvidenceClass.recreational,
+    };
+    if (!valid) {
+      throw const FormatException('invalid frozen pending declaration');
+    }
+  }
+}
+
+Map<String, Object?> _deepFreezeJsonMap(Map<String, Object?> source) =>
+    Map<String, Object?>.unmodifiable(<String, Object?>{
+      for (final entry in source.entries)
+        entry.key: _deepFreezeJsonValue(entry.value),
+    });
+
+Object? _deepFreezeJsonValue(Object? value) {
+  if (value is Map) {
+    final result = <String, Object?>{};
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String) {
+        throw const FormatException('frozen pending JSON keys must be strings');
+      }
+      result[key] = _deepFreezeJsonValue(entry.value);
+    }
+    return Map<String, Object?>.unmodifiable(result);
+  }
+  if (value is List) {
+    return List<Object?>.unmodifiable(value.map(_deepFreezeJsonValue));
+  }
+  if (value == null || value is String || value is num || value is bool) {
+    return value;
+  }
+  throw FormatException(
+    'unsupported frozen pending JSON value ${value.runtimeType}',
+  );
 }
 
 final class CurrentActivityEvidenceAdapter {
@@ -591,6 +1099,44 @@ final class CurrentActivityEvidenceAdapter {
     );
   }
 
+  /// Reconstructs a fully resolved occurrence without consulting mutable
+  /// owner, rollout, or research providers. An explicit retry is mandatory.
+  PendingCurrentActivityEvidence restore(
+    FrozenPendingCurrentActivityEvidence frozen,
+  ) {
+    return PendingCurrentActivityEvidence._(
+      learning: learning,
+      ownerId: frozen.ownerId,
+      input: frozen.input,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: frozen.declaredEvidenceClass,
+        skillId: frozen.skillId,
+        promptMode: frozen.promptMode,
+        contentRevision: frozen.contentRevision,
+      ),
+      hintLevel: frozen.hintLevel,
+      rolloutModeProvider: rolloutModeProvider,
+      researchStateProvider: researchStateProvider,
+      contrastiveFeedback: frozen.contrastiveFeedback,
+      restoredContexts: ResolvedLearningEvidenceContexts(
+        evidenceContext: frozen.evidenceContext,
+        eventContext: frozen.eventContext,
+      ),
+      command: FrozenLearningEvidenceCommand(
+        sourceEvidenceId: frozen.sourceEvidenceId,
+        occurredAtUtc: frozen.occurredAtUtc,
+        sessionId: frozen.sessionId,
+        wordId: frozen.wordId,
+        promptMode: frozen.promptMode,
+        isCorrect: frozen.isCorrect,
+        responseTimeMs: frozen.responseTimeMs,
+        attemptNumber: frozen.attemptNumber,
+        providerProvenance: frozen.providerProvenance,
+        actorIdentity: frozen.actorIdentity,
+      ),
+    ).._status = PendingCurrentActivityEvidenceStatus.retryRequired;
+  }
+
   /// Reconstructs a previously checkpointed matching occurrence with its
   /// exact caller-owned identity. The returned command deliberately requires
   /// an explicit retry before any canonical write can occur.
@@ -658,22 +1204,13 @@ final class CurrentActivityEvidenceAdapter {
         'restored matching contexts conflict with their classification',
       );
     }
-    return PendingCurrentActivityEvidence._(
-      learning: learning,
-      ownerId: ownerId,
-      input: CurrentActivityInput.matchingPair,
-      declaration: _CurrentActivityDeclaration(
-        evidenceClass: classification.evidenceClass,
-        skillId: 'matching-recognition',
-        promptMode: 'matchingPair',
-        contentRevision: contentRevision,
-      ),
-      hintLevel: classification.hintLevel,
-      rolloutModeProvider: rolloutModeProvider,
-      researchStateProvider: researchStateProvider,
-      contrastiveFeedback: frozenContrastiveFeedback,
-      restoredContexts: contexts,
-      command: FrozenLearningEvidenceCommand(
+    final canonicalOwnerId = ownerId ?? actorIdentity;
+    if (canonicalOwnerId == null) {
+      throw StateError('restored matching owner identity is unavailable');
+    }
+    return restore(
+      FrozenPendingCurrentActivityEvidence._validated(
+        ownerId: canonicalOwnerId,
         sourceEvidenceId: sourceEvidenceId,
         occurredAtUtc: occurredAtUtc,
         sessionId: sessionId,
@@ -683,9 +1220,18 @@ final class CurrentActivityEvidenceAdapter {
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
         providerProvenance: providerProvenance,
-        actorIdentity: actorIdentity,
+        actorIdentity: actorIdentity ?? canonicalOwnerId,
+        input: CurrentActivityInput.matchingPair,
+        declaredEvidenceClass: classification.evidenceClass,
+        skillId: 'matching-recognition',
+        contentRevision: contentRevision,
+        declarationPromptMode: 'matchingPair',
+        hintLevel: classification.hintLevel,
+        contrastiveFeedback: frozenContrastiveFeedback,
+        evidenceContext: frozenEvidenceContext,
+        eventContext: contexts.eventContext,
       ),
-    ).._status = PendingCurrentActivityEvidenceStatus.retryRequired;
+    );
   }
 
   PendingCurrentActivityEvidence _capture({
@@ -807,6 +1353,52 @@ final class PendingCurrentActivityEvidence {
   /// underlying [LearningUseCases] instance is deliberately not exposed.
   bool belongsToLearningAuthority(LearningUseCases authority) =>
       identical(_learning, authority);
+
+  /// Freezes one owner-bound, fully resolved pending occurrence without
+  /// performing its canonical answer write.
+  Future<FrozenPendingCurrentActivityEvidence> freezeForRecovery() async {
+    if (_recordInFlight != null) {
+      throw StateError('pending evidence write is already in flight');
+    }
+    if (isCommitted) {
+      throw StateError('committed evidence cannot be frozen as pending');
+    }
+    final previousStatus = _status;
+    _status = PendingCurrentActivityEvidenceStatus.resolving;
+    try {
+      final resolved = await _resolveOnce();
+      final command = resolved.command;
+      return FrozenPendingCurrentActivityEvidence._validated(
+        ownerId: resolved.ownerId,
+        sourceEvidenceId: command.sourceEvidenceId,
+        occurredAtUtc: command.occurredAtUtc,
+        sessionId: command.sessionId,
+        wordId: command.wordId,
+        promptMode: command.promptMode,
+        isCorrect: command.isCorrect,
+        responseTimeMs: command.responseTimeMs,
+        attemptNumber: command.attemptNumber,
+        providerProvenance: command.providerProvenance,
+        actorIdentity: command.actorIdentity ?? resolved.ownerId,
+        input: _input,
+        declaredEvidenceClass: _declaration.evidenceClass,
+        skillId: _declaration.skillId,
+        declarationPromptMode: _declaration.promptMode,
+        contentRevision: _declaration.contentRevision,
+        hintLevel: _hintLevel,
+        contrastiveFeedback: _contrastiveFeedback,
+        evidenceContext: resolved.contexts.evidenceContext,
+        eventContext: resolved.contexts.eventContext,
+      );
+    } catch (_) {
+      _status = PendingCurrentActivityEvidenceStatus.retryRequired;
+      rethrow;
+    } finally {
+      if (_status == PendingCurrentActivityEvidenceStatus.resolving) {
+        _status = previousStatus;
+      }
+    }
+  }
 
   Future<ResolvedLearningEvidenceContexts> freezeContexts() async {
     final previousStatus = _status;

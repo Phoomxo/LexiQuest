@@ -1,0 +1,228 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
+
+void main() {
+  test(
+    'file-backed exact recovery restores one pending answer through two retries',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-learning-recovery-',
+      );
+      final file = File(
+        '${directory.path}${Platform.pathSeparator}learning.db',
+      );
+      AppDatabase? database;
+      try {
+        database = AppDatabase(NativeDatabase(file));
+        var firstId = 0;
+        final firstOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'recovery-owner',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 12),
+        );
+        final owner = await firstOwners.getOrCreateActiveOwner();
+        await database
+            .into(database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: 'category:recovery',
+                ownerId: owner.id,
+                name: 'Recovery',
+                normalizedName: 'recovery',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        for (final word in const <(String, String, String)>[
+          ('word:recover', 'recover', 'กู้คืน'),
+          ('word:resume', 'resume', 'ทำต่อ'),
+        ]) {
+          await database
+              .into(database.vocabularyWords)
+              .insert(
+                VocabularyWordsCompanion.insert(
+                  id: word.$1,
+                  ownerId: owner.id,
+                  categoryId: 'category:recovery',
+                  spelling: word.$2,
+                  normalizedSpelling: word.$2,
+                  meaning: word.$3,
+                  normalizedMeaning: word.$3,
+                  partOfSpeech: 'verb',
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+        }
+        final firstLearning = LearningUseCases(
+          owners: firstOwners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'first-${++firstId}',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 12, 0, firstId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'recovery-test',
+          ),
+        );
+        final session = await firstLearning.startCheckpointedQuiz(
+          activityType: 'adventureRepair',
+          pinnedWordIds: const <String>['word:recover'],
+          limit: 1,
+          initialState: (_) => const <String, Object?>{
+            'schemaVersion': 1,
+            'pendingEvidence': null,
+          },
+        );
+        final captured = CurrentActivityEvidenceAdapter(learning: firstLearning)
+            .capture(
+              ownerId: owner.id,
+              input: CurrentActivityInput.typedRecall,
+              sessionId: session.id,
+              wordId: 'word:recover',
+              isCorrect: true,
+              responseTimeMs: 842,
+              attemptNumber: 1,
+              providerProvenance: 'keyboard|local|v1',
+            );
+        final frozen = await captured.freezeForRecovery();
+        await firstLearning.appendActivityCheckpoint(
+          LearningActivityCheckpoint(
+            sessionId: session.id,
+            activityType: 'adventureRepair',
+            revision: 2,
+            occurredAtUtc: DateTime.utc(2026, 8, 30, 12, 1),
+            state: <String, Object?>{
+              'schemaVersion': 1,
+              'pendingEvidence': frozen.toJson(),
+            },
+          ),
+          ownerId: owner.id,
+        );
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        await database.close();
+        database = null;
+
+        database = AppDatabase(NativeDatabase(file));
+        var reopenedId = 0;
+        final reopenedOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 13),
+        );
+        final durableRepository = DriftLearningRepository(database);
+        final recoveryReader = LearningUseCases(
+          owners: reopenedOwners,
+          repository: durableRepository,
+          generateId: () => 'reader-${++reopenedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 13, 0, reopenedId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'recovery-test',
+          ),
+        );
+        final recovery = await recoveryReader.loadExactActivityRecovery(
+          ownerId: owner.id,
+          sessionId: session.id,
+          activityType: 'adventureRepair',
+        );
+        expect(recovery, isNotNull);
+        expect(recovery!.session.id, session.id);
+        expect(recovery.attempts, isEmpty);
+        final checkpointState = recovery.checkpoint!.state;
+        final frozenJson = (checkpointState['pendingEvidence']! as Map)
+            .cast<String, Object?>();
+        final decoded = FrozenPendingCurrentActivityEvidence.fromJson(
+          (jsonDecode(jsonEncode(frozenJson)) as Map).cast<String, Object?>(),
+        );
+        expect(decoded.toJson(), frozen.toJson());
+
+        final lostAcknowledgement = _LoseFirstRecordAcknowledgement(
+          durableRepository,
+        );
+        final reopenedLearning = LearningUseCases(
+          owners: reopenedOwners,
+          repository: lostAcknowledgement,
+          generateId: () => 'retry-${++reopenedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 13, 1, reopenedId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'recovery-test',
+          ),
+        );
+        final restored = CurrentActivityEvidenceAdapter(
+          learning: reopenedLearning,
+        ).restore(decoded);
+
+        await expectLater(restored.record(), throwsStateError);
+        await expectLater(restored.retry(), throwsStateError);
+        expect(restored.requiresRetry, isTrue);
+        final replay = await restored.retry();
+        expect(replay.isCorrect, isTrue);
+        expect(restored.isCommitted, isTrue);
+
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(1));
+        expect(attempts.single.id, frozen.sourceEvidenceId);
+        final expectedEventId = LearningEvidenceContract.learningEventId(
+          frozen.sourceEvidenceId,
+        );
+        final sourceEvents = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(expectedEventId))).get();
+        expect(sourceEvents, hasLength(1));
+        expect(sourceEvents.single.eventId, expectedEventId);
+        expect(
+          attempts.map((attempt) => attempt.id).toSet().length,
+          attempts.length,
+        );
+        expect(
+          sourceEvents.map((event) => event.eventId).toSet().length,
+          sourceEvents.length,
+        );
+      } finally {
+        await database?.close();
+        if (directory.existsSync()) {
+          await directory.delete(recursive: true);
+        }
+      }
+    },
+  );
+}
+
+final class _LoseFirstRecordAcknowledgement
+    implements LearningRepository, LearningEvidenceReplayRepository {
+  _LoseFirstRecordAcknowledgement(this.delegate);
+
+  final DriftLearningRepository delegate;
+  bool _loseAcknowledgement = true;
+
+  @override
+  Future<CommittedAnswerReplay?> replayCommittedAnswer(
+    RecordAnswerCandidate candidate,
+  ) => delegate.replayCommittedAnswer(candidate);
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    final result = await delegate.recordAnswer(command);
+    if (_loseAcknowledgement) {
+      _loseAcknowledgement = false;
+      throw StateError('simulated lost acknowledgement');
+    }
+    return result;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
