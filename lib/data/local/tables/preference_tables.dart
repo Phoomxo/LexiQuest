@@ -12,6 +12,9 @@ class LearnerPreferences extends Table {
     'available_minutes_per_day <= 240)',
   )();
   TextColumn get activityPreference => text()();
+  TextColumn get homeExperience => text().customConstraint(
+    "NOT NULL DEFAULT 'standard' CHECK (home_experience IN ('standard', 'adventure'))",
+  )();
   IntColumn get updatedAtUtcMs => integer()();
   TextColumn get themeMode => text().withDefault(const Constant('system'))();
   TextColumn get motionMode => text().withDefault(const Constant('system'))();

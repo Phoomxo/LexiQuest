@@ -3405,10 +3405,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           .insert(
             db.LearnerPreferencesCompanion.insert(
               ownerId: targetId,
-              preferenceVersion: source.preferenceVersion,
+              preferenceVersion: 2,
               goal: source.goal,
               availableMinutesPerDay: source.availableMinutesPerDay,
               activityPreference: source.activityPreference,
+              homeExperience: Value(source.homeExperience),
               updatedAtUtcMs: source.updatedAtUtcMs,
               themeMode: Value(source.themeMode),
               motionMode: Value(source.motionMode),
@@ -3448,10 +3449,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         .insertOnConflictUpdate(
           db.LearnerPreferencesCompanion.insert(
             ownerId: targetId,
-            preferenceVersion: source.preferenceVersion,
+            preferenceVersion: 2,
             goal: source.goal,
             availableMinutesPerDay: source.availableMinutesPerDay,
             activityPreference: source.activityPreference,
+            homeExperience: Value(source.homeExperience),
             updatedAtUtcMs: source.updatedAtUtcMs,
             themeMode: Value(display.themeMode),
             motionMode: Value(display.motionMode),
@@ -3555,7 +3557,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             entityType: 'learnerPreference',
             entityId: targetOwnerId,
             operationKind: 'upsert',
-            payloadVersion: const Value(1),
+            payloadVersion: const Value(2),
             baseRevision: Value(baseRevision),
             state: const Value('pending'),
             attemptCount: const Value(0),

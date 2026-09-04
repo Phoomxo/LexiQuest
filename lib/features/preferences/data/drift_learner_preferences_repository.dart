@@ -99,6 +99,9 @@ final class DriftLearnerPreferencesRepository
                 goal: preferences.goal.name,
                 availableMinutesPerDay: preferences.availableMinutesPerDay,
                 activityPreference: preferences.activityPreference.name,
+                homeExperience: Value(
+                  HomeExperienceCodec.encode(preferences.homeExperience),
+                ),
                 updatedAtUtcMs: updatedAtUtcMs,
                 localRevision: Value(revision),
                 isDeleted: const Value(false),
@@ -113,6 +116,9 @@ final class DriftLearnerPreferencesRepository
             goal: Value(preferences.goal.name),
             availableMinutesPerDay: Value(preferences.availableMinutesPerDay),
             activityPreference: Value(preferences.activityPreference.name),
+            homeExperience: Value(
+              HomeExperienceCodec.encode(preferences.homeExperience),
+            ),
             updatedAtUtcMs: Value(updatedAtUtcMs),
             localRevision: Value(revision),
             cloudRevision: Value(existing.cloudRevision),
@@ -132,7 +138,7 @@ final class DriftLearnerPreferencesRepository
               entityType: 'learnerPreference',
               entityId: preferences.ownerId,
               operationKind: 'upsert',
-              payloadVersion: const Value(1),
+              payloadVersion: Value(preferences.preferenceVersion),
               baseRevision: Value(baseRevision),
               createdAtUtcMs: updatedAtUtcMs,
             ),
@@ -178,11 +184,12 @@ final class DriftLearnerPreferencesRepository
             .insert(
               db.LearnerPreferencesCompanion.insert(
                 ownerId: ownerId,
-                preferenceVersion: 1,
+                preferenceVersion: 2,
                 goal: LearnerPreferenceGoal.balancedGrowth.name,
                 availableMinutesPerDay: 20,
                 activityPreference:
                     LearnerActivityPreference.mixedPractice.name,
+                homeExperience: const Value('standard'),
                 updatedAtUtcMs: 0,
                 themeMode: Value(display.themeMode.name),
                 motionMode: Value(display.motionMode.name),
@@ -211,7 +218,9 @@ final class DriftLearnerPreferencesRepository
       row.preferenceVersion == preferences.preferenceVersion &&
       row.goal == preferences.goal.name &&
       row.availableMinutesPerDay == preferences.availableMinutesPerDay &&
-      row.activityPreference == preferences.activityPreference.name;
+      row.activityPreference == preferences.activityPreference.name &&
+      row.homeExperience ==
+          HomeExperienceCodec.encode(preferences.homeExperience);
 
   LearnerPreferences _toDomain(db.LearnerPreferenceRow row) {
     LearnerDisplayPreferences display;
@@ -235,6 +244,7 @@ final class DriftLearnerPreferencesRepository
       activityPreference: LearnerActivityPreferenceCodec.parse(
         row.activityPreference,
       ),
+      homeExperience: HomeExperienceCodec.parse(row.homeExperience),
       updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
         row.updatedAtUtcMs,
         isUtc: true,

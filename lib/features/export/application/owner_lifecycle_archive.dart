@@ -686,6 +686,7 @@ final class OwnerLifecycleArchiveExporter {
           'goal': _safeLabel(row.goal),
           'availableMinutesPerDay': row.availableMinutesPerDay,
           'activityPreference': _safeLabel(row.activityPreference),
+          'homeExperience': _safeLabel(row.homeExperience),
           'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
           'themeMode': _safeLabel(row.themeMode),
           'motionMode': _safeLabel(row.motionMode),

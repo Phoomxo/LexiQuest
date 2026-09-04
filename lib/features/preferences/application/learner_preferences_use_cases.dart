@@ -24,18 +24,51 @@ final class LearnerPreferencesUseCases {
     required LearnerPreferenceGoal goal,
     required int availableMinutesPerDay,
     required LearnerActivityPreference activityPreference,
+    HomeExperience? homeExperience,
     LearnerPreferencesMutationGuard? mutationAllowed,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    final current = await repository.read(owner.id);
     final candidate = LearnerPreferences(
       ownerId: owner.id,
-      preferenceVersion: 1,
+      preferenceVersion: 2,
       goal: goal,
       availableMinutesPerDay: availableMinutesPerDay,
       activityPreference: activityPreference,
+      homeExperience: homeExperience ?? current.homeExperience,
       updatedAtUtc: nowUtc(),
     );
     await repository.save(candidate, mutationAllowed: mutationAllowed);
+    return repository.read(owner.id);
+  }
+
+  Future<LearnerPreferences> saveHomeExperience({
+    required String expectedOwnerId,
+    required HomeExperience homeExperience,
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    final current = await repository.read(owner.id);
+    if (current.homeExperience == homeExperience &&
+        current.preferenceVersion == 2) {
+      return current;
+    }
+    await repository.save(
+      LearnerPreferences(
+        ownerId: owner.id,
+        preferenceVersion: 2,
+        goal: current.goal,
+        availableMinutesPerDay: current.availableMinutesPerDay,
+        activityPreference: current.activityPreference,
+        homeExperience: homeExperience,
+        updatedAtUtc: nowUtc(),
+        display: current.display,
+      ),
+      mutationAllowed: mutationAllowed,
+    );
     return repository.read(owner.id);
   }
 

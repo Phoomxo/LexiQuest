@@ -7,14 +7,14 @@ import 'migration_v20_to_v21_test.dart' as fixture;
 
 void main() {
   test(
-    'f39 frozen v21 adds display columns only and preserves all rows',
+    'f39 frozen v21 upgrades through display and home preference revisions',
     () async {
       final database = AppDatabase(
         NativeDatabase.memory(setup: createSchemaTwentyOneFixture),
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 22);
+      expect(AppDatabase.currentSchemaVersion, 23);
       expect(currentDatabaseTableInventory, hasLength(44));
       await expectCurrentDatabaseContract(database);
       expect(await _tableNames(database), currentDatabaseTableInventory);
@@ -24,6 +24,7 @@ void main() {
         'goal',
         'available_minutes_per_day',
         'activity_preference',
+        'home_experience',
         'updated_at_utc_ms',
         'theme_mode',
         'motion_mode',
@@ -38,7 +39,8 @@ void main() {
       final row = await database
           .customSelect(
             'SELECT owner_id, goal, available_minutes_per_day, '
-            'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+            'activity_preference, home_experience, updated_at_utc_ms, '
+            'theme_mode, motion_mode, '
             'display_updated_at_utc_ms FROM learner_preferences',
           )
           .getSingle();
@@ -47,6 +49,7 @@ void main() {
         'goal': 'examPreparation',
         'available_minutes_per_day': 45,
         'activity_preference': 'quiz',
+        'home_experience': 'standard',
         'updated_at_utc_ms': 1788048000000,
         'theme_mode': 'system',
         'motion_mode': 'system',

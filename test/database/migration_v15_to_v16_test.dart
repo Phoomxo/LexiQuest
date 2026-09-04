@@ -7,13 +7,13 @@ import 'migration_v13_to_v14_test.dart' as inventory_fixture;
 import 'migration_v14_to_v15_test.dart' as fixture;
 
 void main() {
-  test('frozen v15 upgrades through the named current v22 inventory', () async {
+  test('frozen v15 upgrades through the named current v23 inventory', () async {
     final database = AppDatabase(
       NativeDatabase.memory(setup: fixture.createSchemaFifteenFixture),
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 22);
+    expect(AppDatabase.currentSchemaVersion, 23);
     final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
       15,
     );

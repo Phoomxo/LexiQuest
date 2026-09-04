@@ -12,7 +12,7 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 22);
+    expect(AppDatabase.currentSchemaVersion, 23);
     expect(currentDatabaseTableInventory, hasLength(44));
     expect(currentDatabaseTableInventory.difference(schemaEighteenInventory), {
       'learning_goals',

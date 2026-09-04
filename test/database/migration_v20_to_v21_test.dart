@@ -14,7 +14,7 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 22);
+      expect(AppDatabase.currentSchemaVersion, 23);
       expect(currentDatabaseTableInventory, hasLength(44));
       expect(currentDatabaseTableInventory.difference(schemaTwentyInventory), {
         'learner_preferences',
@@ -57,6 +57,7 @@ void main() {
         'goal',
         'available_minutes_per_day',
         'activity_preference',
+        'home_experience',
         'updated_at_utc_ms',
         'theme_mode',
         'motion_mode',

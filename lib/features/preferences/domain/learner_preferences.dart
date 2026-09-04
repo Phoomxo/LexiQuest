@@ -40,6 +40,31 @@ abstract final class LearnerThemePreferenceCodec {
 
 enum LearnerMotionPreference { system, reduced }
 
+enum HomeExperience { standard, adventure }
+
+abstract final class HomeExperienceCodec {
+  static HomeExperience decode(
+    Object? value, {
+    void Function(String code)? onFallback,
+  }) {
+    final parsed = switch (value) {
+      'standard' => HomeExperience.standard,
+      'adventure' => HomeExperience.adventure,
+      _ => null,
+    };
+    if (parsed != null) return parsed;
+    onFallback?.call('unknown_home_experience');
+    return HomeExperience.standard;
+  }
+
+  static HomeExperience parse(
+    Object? value, {
+    void Function(String code)? onFallback,
+  }) => decode(value, onFallback: onFallback);
+
+  static String encode(HomeExperience value) => value.name;
+}
+
 abstract final class LearnerMotionPreferenceCodec {
   static LearnerMotionPreference parse(String value) => switch (value) {
     'system' => LearnerMotionPreference.system,
@@ -132,16 +157,24 @@ final class LearnerPreferences {
     required int availableMinutesPerDay,
     required LearnerActivityPreference activityPreference,
     required DateTime updatedAtUtc,
+    HomeExperience homeExperience = HomeExperience.standard,
     LearnerDisplayPreferences? display,
   }) {
     if (ownerId.isEmpty || ownerId != ownerId.trim()) {
       throw ArgumentError.value(ownerId, 'ownerId', 'must be canonical');
     }
-    if (preferenceVersion != 1) {
+    if (preferenceVersion != 1 && preferenceVersion != 2) {
       throw ArgumentError.value(
         preferenceVersion,
         'preferenceVersion',
-        'only version 1 is supported',
+        'only versions 1 and 2 are supported',
+      );
+    }
+    if (preferenceVersion == 1 && homeExperience != HomeExperience.standard) {
+      throw ArgumentError.value(
+        homeExperience,
+        'homeExperience',
+        'version 1 can only represent the standard experience',
       );
     }
     if (availableMinutesPerDay < 1 || availableMinutesPerDay > 240) {
@@ -164,6 +197,7 @@ final class LearnerPreferences {
       goal: goal,
       availableMinutesPerDay: availableMinutesPerDay,
       activityPreference: activityPreference,
+      homeExperience: homeExperience,
       updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
         updatedAtUtc.millisecondsSinceEpoch,
         isUtc: true,
@@ -177,7 +211,7 @@ final class LearnerPreferences {
     required DateTime updatedAtUtc,
   }) => LearnerPreferences(
     ownerId: ownerId,
-    preferenceVersion: 1,
+    preferenceVersion: 2,
     goal: LearnerPreferenceGoal.balancedGrowth,
     availableMinutesPerDay: 20,
     activityPreference: LearnerActivityPreference.mixedPractice,
@@ -190,6 +224,7 @@ final class LearnerPreferences {
     required this.goal,
     required this.availableMinutesPerDay,
     required this.activityPreference,
+    required this.homeExperience,
     required this.updatedAtUtc,
     required this.display,
   });
@@ -199,6 +234,7 @@ final class LearnerPreferences {
   final LearnerPreferenceGoal goal;
   final int availableMinutesPerDay;
   final LearnerActivityPreference activityPreference;
+  final HomeExperience homeExperience;
   final DateTime updatedAtUtc;
   final LearnerDisplayPreferences display;
 
@@ -207,6 +243,7 @@ final class LearnerPreferences {
     'goal': goal.name,
     'availableMinutesPerDay': availableMinutesPerDay,
     'activityPreference': activityPreference.name,
+    'homeExperience': HomeExperienceCodec.encode(homeExperience),
     'updatedAtUtcMs': updatedAtUtc.millisecondsSinceEpoch,
   };
 
@@ -218,6 +255,7 @@ final class LearnerPreferences {
       other.goal == goal &&
       other.availableMinutesPerDay == availableMinutesPerDay &&
       other.activityPreference == activityPreference &&
+      other.homeExperience == homeExperience &&
       other.updatedAtUtc == updatedAtUtc &&
       other.display == display;
 
@@ -228,6 +266,7 @@ final class LearnerPreferences {
     goal,
     availableMinutesPerDay,
     activityPreference,
+    homeExperience,
     updatedAtUtc,
     display,
   );

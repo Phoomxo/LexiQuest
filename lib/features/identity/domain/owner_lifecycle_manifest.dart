@@ -436,6 +436,7 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
       'goal',
       'availableMinutesPerDay',
       'activityPreference',
+      'homeExperience',
       'updatedAtUtc',
       'themeMode',
       'motionMode',

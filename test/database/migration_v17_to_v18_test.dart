@@ -12,7 +12,7 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 22);
+    expect(AppDatabase.currentSchemaVersion, 23);
     expect(schemaEighteenInventory, hasLength(40));
     expect(schemaEighteenInventory.difference(schemaSeventeenInventory), const {
       'learning_time_segments',

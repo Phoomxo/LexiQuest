@@ -73,7 +73,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 22;
+  static const int currentSchemaVersion = 23;
 
   AppDatabase(super.executor);
 
@@ -311,6 +311,19 @@ final class AppDatabase extends _$AppDatabase {
           learnerPreferences,
           learnerPreferences.displayUpdatedAtUtcMs,
         );
+      }
+      if (from < 23) {
+        await _addColumnIfMissing(
+          migrator,
+          'learner_preferences',
+          learnerPreferences,
+          learnerPreferences.homeExperience,
+        );
+        await customStatement('''
+          UPDATE learner_preferences
+          SET preference_version = 2
+          WHERE preference_version = 1
+        ''');
       }
     },
     beforeOpen: (details) async {

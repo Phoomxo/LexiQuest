@@ -20,7 +20,8 @@ void main() {
 
         final preferences = await useCases.read();
 
-        expect(preferences.preferenceVersion, 1);
+        expect(preferences.preferenceVersion, 2);
+        expect(preferences.homeExperience, HomeExperience.standard);
         expect(preferences.goal, LearnerPreferenceGoal.balancedGrowth);
         expect(preferences.availableMinutesPerDay, 20);
         expect(
@@ -35,6 +36,7 @@ void main() {
             'goal',
             'availableMinutesPerDay',
             'activityPreference',
+            'homeExperience',
             'updatedAtUtcMs',
           }),
         );
@@ -43,6 +45,54 @@ void main() {
         expect(await _count(database, 'learner_preferences'), 0);
       },
     );
+
+    test('home experience has two values and unknown storage fails closed', () {
+      expect(HomeExperience.values, <HomeExperience>[
+        HomeExperience.standard,
+        HomeExperience.adventure,
+      ]);
+      expect(HomeExperienceCodec.decode('standard'), HomeExperience.standard);
+      expect(HomeExperienceCodec.decode('adventure'), HomeExperience.adventure);
+      var fallbackCode = '';
+      expect(
+        HomeExperienceCodec.decode(
+          'future-mode',
+          onFallback: (code) => fallbackCode = code,
+        ),
+        HomeExperience.standard,
+      );
+      expect(fallbackCode, 'unknown_home_experience');
+    });
+
+    test('owner-gated home experience save preserves every v1 field', () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final useCases = _useCases(database);
+      final baseline = await useCases.save(
+        goal: LearnerPreferenceGoal.examPreparation,
+        availableMinutesPerDay: 45,
+        activityPreference: LearnerActivityPreference.quiz,
+      );
+
+      final updated = await useCases.saveHomeExperience(
+        expectedOwnerId: baseline.ownerId,
+        homeExperience: HomeExperience.adventure,
+      );
+
+      expect(updated.preferenceVersion, 2);
+      expect(updated.homeExperience, HomeExperience.adventure);
+      expect(updated.goal, baseline.goal);
+      expect(updated.availableMinutesPerDay, baseline.availableMinutesPerDay);
+      expect(updated.activityPreference, baseline.activityPreference);
+      expect(updated.display, baseline.display);
+      await expectLater(
+        useCases.saveHomeExperience(
+          expectedOwnerId: 'owner:other',
+          homeExperience: HomeExperience.standard,
+        ),
+        throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+      );
+    });
 
     test(
       'validates bounded editable values and rejects unknown storage',

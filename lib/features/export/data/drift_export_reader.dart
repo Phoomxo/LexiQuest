@@ -151,6 +151,7 @@ final class ExportLearnerPreferenceRow {
     required this.goal,
     required this.availableMinutesPerDay,
     required this.activityPreference,
+    required this.homeExperience,
     required this.updatedAtUtc,
     required this.themeMode,
     required this.motionMode,
@@ -161,6 +162,7 @@ final class ExportLearnerPreferenceRow {
   final String goal;
   final int availableMinutesPerDay;
   final String activityPreference;
+  final String homeExperience;
   final DateTime updatedAtUtc;
   final String themeMode;
   final String motionMode;
@@ -300,6 +302,7 @@ final class DriftExportReader {
           goal: row.goal,
           availableMinutesPerDay: row.availableMinutesPerDay,
           activityPreference: row.activityPreference,
+          homeExperience: row.homeExperience,
           updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
             row.updatedAtUtcMs,
             isUtc: true,

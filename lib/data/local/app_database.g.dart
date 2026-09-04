@@ -28695,6 +28695,20 @@ class $LearnerPreferencesTable extends LearnerPreferences
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _homeExperienceMeta = const VerificationMeta(
+    'homeExperience',
+  );
+  @override
+  late final GeneratedColumn<String> homeExperience = GeneratedColumn<String>(
+    'home_experience',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'NOT NULL DEFAULT \'standard\' CHECK (home_experience IN (\'standard\', \'adventure\'))',
+    defaultValue: const CustomExpression('\'standard\''),
+  );
   static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
     'updatedAtUtcMs',
   );
@@ -28808,6 +28822,7 @@ class $LearnerPreferencesTable extends LearnerPreferences
     goal,
     availableMinutesPerDay,
     activityPreference,
+    homeExperience,
     updatedAtUtcMs,
     themeMode,
     motionMode,
@@ -28878,6 +28893,15 @@ class $LearnerPreferencesTable extends LearnerPreferences
       );
     } else if (isInserting) {
       context.missing(_activityPreferenceMeta);
+    }
+    if (data.containsKey('home_experience')) {
+      context.handle(
+        _homeExperienceMeta,
+        homeExperience.isAcceptableOrUnknown(
+          data['home_experience']!,
+          _homeExperienceMeta,
+        ),
+      );
     }
     if (data.containsKey('updated_at_utc_ms')) {
       context.handle(
@@ -28982,6 +29006,10 @@ class $LearnerPreferencesTable extends LearnerPreferences
         DriftSqlType.string,
         data['${effectivePrefix}activity_preference'],
       )!,
+      homeExperience: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_experience'],
+      )!,
       updatedAtUtcMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}updated_at_utc_ms'],
@@ -29034,6 +29062,7 @@ class LearnerPreferenceRow extends DataClass
   final String goal;
   final int availableMinutesPerDay;
   final String activityPreference;
+  final String homeExperience;
   final int updatedAtUtcMs;
   final String themeMode;
   final String motionMode;
@@ -29049,6 +29078,7 @@ class LearnerPreferenceRow extends DataClass
     required this.goal,
     required this.availableMinutesPerDay,
     required this.activityPreference,
+    required this.homeExperience,
     required this.updatedAtUtcMs,
     required this.themeMode,
     required this.motionMode,
@@ -29067,6 +29097,7 @@ class LearnerPreferenceRow extends DataClass
     map['goal'] = Variable<String>(goal);
     map['available_minutes_per_day'] = Variable<int>(availableMinutesPerDay);
     map['activity_preference'] = Variable<String>(activityPreference);
+    map['home_experience'] = Variable<String>(homeExperience);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
     map['theme_mode'] = Variable<String>(themeMode);
     map['motion_mode'] = Variable<String>(motionMode);
@@ -29092,6 +29123,7 @@ class LearnerPreferenceRow extends DataClass
       goal: Value(goal),
       availableMinutesPerDay: Value(availableMinutesPerDay),
       activityPreference: Value(activityPreference),
+      homeExperience: Value(homeExperience),
       updatedAtUtcMs: Value(updatedAtUtcMs),
       themeMode: Value(themeMode),
       motionMode: Value(motionMode),
@@ -29123,6 +29155,7 @@ class LearnerPreferenceRow extends DataClass
       activityPreference: serializer.fromJson<String>(
         json['activityPreference'],
       ),
+      homeExperience: serializer.fromJson<String>(json['homeExperience']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
       themeMode: serializer.fromJson<String>(json['themeMode']),
       motionMode: serializer.fromJson<String>(json['motionMode']),
@@ -29149,6 +29182,7 @@ class LearnerPreferenceRow extends DataClass
       'goal': serializer.toJson<String>(goal),
       'availableMinutesPerDay': serializer.toJson<int>(availableMinutesPerDay),
       'activityPreference': serializer.toJson<String>(activityPreference),
+      'homeExperience': serializer.toJson<String>(homeExperience),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
       'themeMode': serializer.toJson<String>(themeMode),
       'motionMode': serializer.toJson<String>(motionMode),
@@ -29169,6 +29203,7 @@ class LearnerPreferenceRow extends DataClass
     String? goal,
     int? availableMinutesPerDay,
     String? activityPreference,
+    String? homeExperience,
     int? updatedAtUtcMs,
     String? themeMode,
     String? motionMode,
@@ -29185,6 +29220,7 @@ class LearnerPreferenceRow extends DataClass
     availableMinutesPerDay:
         availableMinutesPerDay ?? this.availableMinutesPerDay,
     activityPreference: activityPreference ?? this.activityPreference,
+    homeExperience: homeExperience ?? this.homeExperience,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
     themeMode: themeMode ?? this.themeMode,
     motionMode: motionMode ?? this.motionMode,
@@ -29212,6 +29248,9 @@ class LearnerPreferenceRow extends DataClass
       activityPreference: data.activityPreference.present
           ? data.activityPreference.value
           : this.activityPreference,
+      homeExperience: data.homeExperience.present
+          ? data.homeExperience.value
+          : this.homeExperience,
       updatedAtUtcMs: data.updatedAtUtcMs.present
           ? data.updatedAtUtcMs.value
           : this.updatedAtUtcMs,
@@ -29246,6 +29285,7 @@ class LearnerPreferenceRow extends DataClass
           ..write('goal: $goal, ')
           ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
           ..write('activityPreference: $activityPreference, ')
+          ..write('homeExperience: $homeExperience, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
           ..write('themeMode: $themeMode, ')
           ..write('motionMode: $motionMode, ')
@@ -29266,6 +29306,7 @@ class LearnerPreferenceRow extends DataClass
     goal,
     availableMinutesPerDay,
     activityPreference,
+    homeExperience,
     updatedAtUtcMs,
     themeMode,
     motionMode,
@@ -29285,6 +29326,7 @@ class LearnerPreferenceRow extends DataClass
           other.goal == this.goal &&
           other.availableMinutesPerDay == this.availableMinutesPerDay &&
           other.activityPreference == this.activityPreference &&
+          other.homeExperience == this.homeExperience &&
           other.updatedAtUtcMs == this.updatedAtUtcMs &&
           other.themeMode == this.themeMode &&
           other.motionMode == this.motionMode &&
@@ -29303,6 +29345,7 @@ class LearnerPreferencesCompanion
   final Value<String> goal;
   final Value<int> availableMinutesPerDay;
   final Value<String> activityPreference;
+  final Value<String> homeExperience;
   final Value<int> updatedAtUtcMs;
   final Value<String> themeMode;
   final Value<String> motionMode;
@@ -29319,6 +29362,7 @@ class LearnerPreferencesCompanion
     this.goal = const Value.absent(),
     this.availableMinutesPerDay = const Value.absent(),
     this.activityPreference = const Value.absent(),
+    this.homeExperience = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.motionMode = const Value.absent(),
@@ -29336,6 +29380,7 @@ class LearnerPreferencesCompanion
     required String goal,
     required int availableMinutesPerDay,
     required String activityPreference,
+    this.homeExperience = const Value.absent(),
     required int updatedAtUtcMs,
     this.themeMode = const Value.absent(),
     this.motionMode = const Value.absent(),
@@ -29358,6 +29403,7 @@ class LearnerPreferencesCompanion
     Expression<String>? goal,
     Expression<int>? availableMinutesPerDay,
     Expression<String>? activityPreference,
+    Expression<String>? homeExperience,
     Expression<int>? updatedAtUtcMs,
     Expression<String>? themeMode,
     Expression<String>? motionMode,
@@ -29376,6 +29422,7 @@ class LearnerPreferencesCompanion
       if (availableMinutesPerDay != null)
         'available_minutes_per_day': availableMinutesPerDay,
       if (activityPreference != null) 'activity_preference': activityPreference,
+      if (homeExperience != null) 'home_experience': homeExperience,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
       if (themeMode != null) 'theme_mode': themeMode,
       if (motionMode != null) 'motion_mode': motionMode,
@@ -29398,6 +29445,7 @@ class LearnerPreferencesCompanion
     Value<String>? goal,
     Value<int>? availableMinutesPerDay,
     Value<String>? activityPreference,
+    Value<String>? homeExperience,
     Value<int>? updatedAtUtcMs,
     Value<String>? themeMode,
     Value<String>? motionMode,
@@ -29416,6 +29464,7 @@ class LearnerPreferencesCompanion
       availableMinutesPerDay:
           availableMinutesPerDay ?? this.availableMinutesPerDay,
       activityPreference: activityPreference ?? this.activityPreference,
+      homeExperience: homeExperience ?? this.homeExperience,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
       themeMode: themeMode ?? this.themeMode,
       motionMode: motionMode ?? this.motionMode,
@@ -29450,6 +29499,9 @@ class LearnerPreferencesCompanion
     }
     if (activityPreference.present) {
       map['activity_preference'] = Variable<String>(activityPreference.value);
+    }
+    if (homeExperience.present) {
+      map['home_experience'] = Variable<String>(homeExperience.value);
     }
     if (updatedAtUtcMs.present) {
       map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
@@ -29498,6 +29550,7 @@ class LearnerPreferencesCompanion
           ..write('goal: $goal, ')
           ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
           ..write('activityPreference: $activityPreference, ')
+          ..write('homeExperience: $homeExperience, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
           ..write('themeMode: $themeMode, ')
           ..write('motionMode: $motionMode, ')
@@ -54381,6 +54434,7 @@ typedef $$LearnerPreferencesTableCreateCompanionBuilder =
       required String goal,
       required int availableMinutesPerDay,
       required String activityPreference,
+      Value<String> homeExperience,
       required int updatedAtUtcMs,
       Value<String> themeMode,
       Value<String> motionMode,
@@ -54399,6 +54453,7 @@ typedef $$LearnerPreferencesTableUpdateCompanionBuilder =
       Value<String> goal,
       Value<int> availableMinutesPerDay,
       Value<String> activityPreference,
+      Value<String> homeExperience,
       Value<int> updatedAtUtcMs,
       Value<String> themeMode,
       Value<String> motionMode,
@@ -54468,6 +54523,11 @@ class $$LearnerPreferencesTableFilterComposer
 
   ColumnFilters<String> get activityPreference => $composableBuilder(
     column: $table.activityPreference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeExperience => $composableBuilder(
+    column: $table.homeExperience,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -54569,6 +54629,11 @@ class $$LearnerPreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get homeExperience => $composableBuilder(
+    column: $table.homeExperience,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
     builder: (column) => ColumnOrderings(column),
@@ -54662,6 +54727,11 @@ class $$LearnerPreferencesTableAnnotationComposer
 
   GeneratedColumn<String> get activityPreference => $composableBuilder(
     column: $table.activityPreference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get homeExperience => $composableBuilder(
+    column: $table.homeExperience,
     builder: (column) => column,
   );
 
@@ -54768,6 +54838,7 @@ class $$LearnerPreferencesTableTableManager
                 Value<String> goal = const Value.absent(),
                 Value<int> availableMinutesPerDay = const Value.absent(),
                 Value<String> activityPreference = const Value.absent(),
+                Value<String> homeExperience = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
                 Value<String> themeMode = const Value.absent(),
                 Value<String> motionMode = const Value.absent(),
@@ -54784,6 +54855,7 @@ class $$LearnerPreferencesTableTableManager
                 goal: goal,
                 availableMinutesPerDay: availableMinutesPerDay,
                 activityPreference: activityPreference,
+                homeExperience: homeExperience,
                 updatedAtUtcMs: updatedAtUtcMs,
                 themeMode: themeMode,
                 motionMode: motionMode,
@@ -54802,6 +54874,7 @@ class $$LearnerPreferencesTableTableManager
                 required String goal,
                 required int availableMinutesPerDay,
                 required String activityPreference,
+                Value<String> homeExperience = const Value.absent(),
                 required int updatedAtUtcMs,
                 Value<String> themeMode = const Value.absent(),
                 Value<String> motionMode = const Value.absent(),
@@ -54818,6 +54891,7 @@ class $$LearnerPreferencesTableTableManager
                 goal: goal,
                 availableMinutesPerDay: availableMinutesPerDay,
                 activityPreference: activityPreference,
+                homeExperience: homeExperience,
                 updatedAtUtcMs: updatedAtUtcMs,
                 themeMode: themeMode,
                 motionMode: motionMode,
