@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' show InsertMode, Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
@@ -1211,6 +1212,97 @@ void main() {
         rewardResults.single.read<String>('event_type'),
         'LearningProjectionSkipped',
       );
+    },
+  );
+
+  test(
+    'Adventure refresh observes receipts only after reconciler commits them',
+    () async {
+      final context = EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'meaning',
+        hintLevel: 0,
+        contentRevision: 'content-v1',
+        engagementAllowed: true,
+      );
+      final at = DateTime.utc(2026, 8, 20, 6);
+      await database
+          .into(database.answerAttempts)
+          .insert(
+            AnswerAttemptsCompanion.insert(
+              id: 'adventure-refresh',
+              ownerId: 'owner-reconcile',
+              sessionId: 'session-1',
+              wordId: 'word-1',
+              promptMode: 'meaningChoice',
+              isCorrect: true,
+              attemptNumber: 20,
+              occurredAtUtcMs: at.millisecondsSinceEpoch,
+              evidenceClass: Value(context.evidenceClass.name),
+              evidenceContextJson: Value(jsonEncode(context.toJson())),
+            ),
+          );
+      final source = EventEnvelopeV2(
+        eventId: 'learning-event:adventure-refresh',
+        eventType: 'QuizCompleted',
+        eventVersion: 2,
+        occurredAtUtc: at,
+        recordedAtUtc: at,
+        actorIdentity: 'owner-reconcile',
+        ownerIdentity: 'owner-reconcile',
+        aggregateType: 'LearningSession',
+        aggregateId: 'session-1',
+        idempotencyKey: 'learning-attempt:adventure-refresh:v2',
+        consentContext: const ConsentContext.none(),
+        contentRevision: context.contentRevision,
+        policyVersion: context.policyVersion,
+        appVersion: '1.0.0',
+        buildId: 'test-build',
+        privacyClassification: PrivacyClassification.anonymized,
+        payload: <String, Object?>{
+          'attemptId': 'adventure-refresh',
+          'wordId': 'word-1',
+          'promptMode': 'meaningChoice',
+          'correct': true,
+          'score': 100,
+          'attemptNumber': 20,
+          'evidenceContext': context.toJson(),
+        },
+      );
+      await DriftLearningEventStore(database).append(source);
+      final reader = DriftAdventureMotivationProjectionReader(database);
+
+      final pending = await reader.readForEvidence('adventure-refresh');
+      expect(pending.pendingProjection, isTrue);
+
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (_) async => const LearningProjectionResult.applied(
+          payload: <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[],
+          },
+        ),
+        streakSink: (_) async => const LearningProjectionResult.applied(),
+        rewardSink: (_, _) async => const LearningProjectionResult.applied(),
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      final committed = await reader.readForEvidence('adventure-refresh');
+      expect(committed.pendingProjection, isFalse);
+      expect(
+        committed.questOutcome.state,
+        AdventureProjectionReceiptState.committed,
+      );
+      expect(
+        committed.streakOutcome.state,
+        AdventureProjectionReceiptState.committed,
+      );
+      expect(
+        committed.rewardOutcome.state,
+        AdventureProjectionReceiptState.committed,
+      );
+      expect(committed.sourceEvidenceId, 'adventure-refresh');
     },
   );
 
