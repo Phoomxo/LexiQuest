@@ -116,7 +116,7 @@ void main() {
     expect(builds, 1, reason: 'disabled rebuild must stay lazy');
   });
 
-  testWidgets('enabled Adventure remains lazy until its rollout is durable', (
+  testWidgets('enabled Adventure stays lazy without composed dependencies', (
     tester,
   ) async {
     final database = AppDatabase(NativeDatabase.memory());
@@ -150,7 +150,7 @@ void main() {
             find.byType(ProductionFeatureUnavailable),
           )
           .reason,
-      ProductionFeatureUnavailableReason.incompatibleRollout,
+      ProductionFeatureUnavailableReason.missingDependency,
     );
   });
 }

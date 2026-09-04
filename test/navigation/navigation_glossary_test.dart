@@ -79,6 +79,14 @@ const _expectedEntries = <String, _ExpectedEntry>{
     Icons.school_outlined,
     Icons.school,
   ),
+  'home/learn/today-experience': _ExpectedEntry(
+    'ภารกิจวันนี้',
+    'ภารกิจวันนี้',
+    'เปิดภารกิจการเรียนรู้วันนี้',
+    'เปิดภารกิจการเรียนรู้วันนี้',
+    Icons.explore_outlined,
+    Icons.explore,
+  ),
   'home/today': _ExpectedEntry(
     'วันนี้',
     'วันนี้',

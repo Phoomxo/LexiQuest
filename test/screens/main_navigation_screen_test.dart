@@ -7,6 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
+import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/adventure_today_entry_card.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
 import 'package:vocab_learning_app/features/history/domain/learning_history_models.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
@@ -25,6 +31,7 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
+import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
 import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
@@ -53,6 +60,66 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets(
+    'Adventure adds one Learn card, stable child route, and no bottom destination',
+    (tester) async {
+      final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+      final enabled = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(enabled.dispose);
+      await tester.pumpWidget(
+        _mainNavigationApp(enabled, todayHub: loader, includeAdventure: true),
+      );
+      await tester.pumpAndSettle();
+      final bottomCount = find.byType(NavigationDestination).evaluate().length;
+
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AdventureTodayEntryCard), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('home/learn/today-experience')),
+        findsOneWidget,
+      );
+      expect(find.byType(NavigationDestination), findsNWidgets(bottomCount));
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/today-experience')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayExperienceHost), findsOneWidget);
+      expect(loader.calls, 1);
+
+      enabled.emergencyOff(Feature.adventureMotivation);
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayExperienceHost), findsNothing);
+      expect(loader.calls, 1);
+    },
+  );
+
+  testWidgets('hidden Adventure leaves the Learn surface unchanged', (
+    tester,
+  ) async {
+    final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+    await tester.pumpWidget(
+      _mainNavigationApp(
+        const BuildFeatureRegistry.fieldDefaults(),
+        todayHub: loader,
+        includeAdventure: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AdventureTodayEntryCard), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('home/learn/today-experience')),
+      findsNothing,
+    );
+    expect(loader.calls, 0);
+  });
+
   testWidgets(
     'f42 Today delivery fails closed for default-off or missing dependency',
     (tester) async {
@@ -717,6 +784,7 @@ Widget _mainNavigationApp(
   bool includeCreateLessonController = true,
   bool mismatchReviewSessionAuthority = false,
   bool mismatchHistorySessionAuthority = false,
+  bool includeAdventure = false,
   ValueSetter<AppDependencies>? onDependencies,
 }) {
   final database = AppDatabase(NativeDatabase.memory());
@@ -743,6 +811,17 @@ Widget _mainNavigationApp(
     generateId: () => 'navigation-other-learning',
     nowUtc: () => DateTime.utc(2026, 8, 24),
     buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+  );
+  final adventureCatalog = PackagedAdventureWorldCatalog.forLocale('th');
+  final adventureEntry = AdventureEntryUseCases(
+    rollout: AdventureRolloutGate(
+      features: registry,
+      requiredDependenciesReady: () => true,
+      catalogReadiness: () => AdventureCatalogReadiness.ready,
+    ),
+    catalog: adventureCatalog,
+    todayHubIdentity: todayHub ?? Object(),
+    learningIdentity: learning,
   );
   final dependencies = AppDependencies(
     initialRoute: AppRoute.home,
@@ -803,6 +882,12 @@ Widget _mainNavigationApp(
       progress: progress,
     ),
     aiTutor: _NavigationAiTutor(),
+    adventureEntry: includeAdventure ? adventureEntry : null,
+    adventureCatalog: includeAdventure ? adventureCatalog : null,
+    adventurePresentationPermits: includeAdventure
+        ? const NoActivePresentationPermitReader()
+        : null,
+    adventureJourney: includeAdventure ? AdventureJourneyUseCases() : null,
   );
   onDependencies?.call(dependencies);
   return AppDependenciesScope(

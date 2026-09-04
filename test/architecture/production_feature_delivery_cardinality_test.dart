@@ -59,6 +59,10 @@ const _broadDeliveries =
         productionEntryId: 'settings/offline-content',
         screenClassName: 'OfflineContentManagerScreen',
       ),
+      Feature.adventureMotivation: (
+        productionEntryId: 'home/learn/today-experience',
+        screenClassName: 'TodayExperienceHost',
+      ),
     };
 
 const _productContractsByBroadFeature = <String, Set<FeatureContractId>>{

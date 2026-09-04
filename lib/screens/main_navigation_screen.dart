@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:uuid/uuid.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
+import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/domain/adventure_journey.dart';
+import '../features/adventure/presentation/adventure_today_entry_card.dart';
+import '../features/adventure/presentation/today_experience_host.dart';
 import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
@@ -148,7 +153,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         visibilityFeatures: const [Feature.quiz, Feature.srs, Feature.reading],
         screen: KeyedSubtree(
           key: const ValueKey<String>('production-feature-view-learning'),
-          child: ChooseModeScreen(featureRegistry: widget.featureRegistry),
+          child: _buildLearningSurface(),
         ),
         glossary: NavigationGlossary.require('home/learn'),
       ),
@@ -215,6 +220,73 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
   }
 
+  Widget _buildLearningSurface() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final features = _features(context);
+    final eligible =
+        features?.isVisible(Feature.adventureMotivation) == true &&
+        dependencies?.hasComposedDependencyFor(Feature.adventureMotivation) ==
+            true;
+    return ChooseModeScreen(
+      featureRegistry: widget.featureRegistry,
+      leadingCards: eligible
+          ? <Widget>[AdventureTodayEntryCard(onOpen: _openTodayExperience)]
+          : const <Widget>[],
+    );
+  }
+
+  Future<void> _openTodayExperience() async {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final identities = dependencies?.activeOwnerIdentities;
+    final features = widget.featureRegistry ?? dependencies?.features;
+    if (dependencies == null ||
+        identities == null ||
+        features?.isEnabled(Feature.adventureMotivation) != true ||
+        !dependencies.hasComposedDependencyFor(Feature.adventureMotivation)) {
+      throw StateError('Adventure Today entry is unavailable.');
+    }
+    final ownerId = await identities.requireSingleActiveOwnerId();
+    if (!mounted) return;
+    _pushDestination(
+      'home/learn/today-experience',
+      (_) => ProductionFeatureGate(
+        feature: Feature.adventureMotivation,
+        registry: widget.featureRegistry ?? dependencies.features,
+        builder: (_) => TodayExperienceHost(
+          ownerId: ownerId,
+          entry: dependencies.adventureEntry! as AdventureEntryUseCases,
+          activePermits: dependencies.adventurePresentationPermits!,
+          todayHub: dependencies.todayHub!,
+          catalog: dependencies.adventureCatalog!,
+          journey: dependencies.adventureJourney!,
+          createEntryAttemptId: const Uuid().v4,
+          nowUtc: () => DateTime.now().toUtc(),
+          actions: _todayActions(),
+          features: widget.featureRegistry ?? dependencies.features,
+          assessmentAvailable: dependencies.assessment != null,
+          onStartMission: _startAdventureMission,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startAdventureMission(AdventureMissionRef mission) async {
+    if (!await _todayOwnerMatches(mission.ownerId) || !mounted) {
+      throw StateError('Adventure mission no longer belongs to this owner.');
+    }
+    _selectLearningFromToday();
+    Navigator.of(context).maybePop();
+  }
+
+  _MainNavigationTodayHubActions _todayActions() =>
+      _MainNavigationTodayHubActions(
+        resume: _resumeFromToday,
+        startRecommendation: _startTodayRecommendation,
+        openReview: _openTodayReview,
+        openHistory: _openTodayHistory,
+        startAssessment: _openTodayAssessment,
+      );
+
   Widget _gate(String id, Feature feature, WidgetBuilder builder) {
     return ProductionFeatureGate(
       key: ValueKey<String>('production-feature-view-$id'),
@@ -237,13 +309,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
     return TodayHubScreen(
       useCases: todayHub,
-      actions: _MainNavigationTodayHubActions(
-        resume: _resumeFromToday,
-        startRecommendation: _startTodayRecommendation,
-        openReview: _openTodayReview,
-        openHistory: _openTodayHistory,
-        startAssessment: _openTodayAssessment,
-      ),
+      actions: _todayActions(),
       features: widget.featureRegistry ?? dependencies.features,
       assessmentAvailable: dependencies.assessment != null,
     );

@@ -5,6 +5,7 @@ import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_entry.dart';
 import '../features/adventure/domain/adventure_world_catalog.dart';
 import '../features/assessment/application/assessment_use_cases.dart';
@@ -135,6 +136,7 @@ final class AppDependencies {
     this.adventureEntry,
     this.adventureCatalog,
     this.adventurePresentationPermits,
+    this.adventureJourney,
     this.disposeResources,
   });
 
@@ -213,6 +215,7 @@ final class AppDependencies {
   final AdventureProductEntryResolver? adventureEntry;
   final AdventureWorldCatalog? adventureCatalog;
   final ActivePresentationPermitReader? adventurePresentationPermits;
+  final AdventureJourneyReader? adventureJourney;
 
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
@@ -256,6 +259,7 @@ final class AppDependencies {
       adventureEntry is AdventureEntryUseCases &&
           adventureCatalog != null &&
           adventurePresentationPermits != null &&
+          adventureJourney != null &&
           todayHub != null &&
           learning != null &&
           identical(

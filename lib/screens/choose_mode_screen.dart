@@ -42,11 +42,13 @@ class ChooseModeScreen extends StatefulWidget {
     this.featureRegistry,
     this.lessonModes,
     this.sessionConfigurationPolicy = const SessionConfigurationPolicy(),
+    this.leadingCards = const <Widget>[],
   });
 
   final FeatureRegistry? featureRegistry;
   final LessonModeRegistry? lessonModes;
   final SessionConfigurationPolicy sessionConfigurationPolicy;
+  final List<Widget> leadingCards;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
@@ -73,6 +75,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          ...widget.leadingCards,
           if (features?.isVisible(Feature.reading) == true)
             _LearningTile(
               key: const ValueKey<String>('home/learn/associative-reading'),

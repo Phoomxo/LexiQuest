@@ -137,8 +137,10 @@ const productionFeatureContract = <Feature, ProductionFeatureDelivery>{
   ),
   Feature.adventureMotivation: ProductionFeatureDelivery(
     feature: Feature.adventureMotivation,
-    productionEntryId: '',
-    dependencyId: '',
-    durable: false,
+    productionEntryId: 'home/learn/today-experience',
+    dependencyId:
+        'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases',
+    durable: true,
+    screenClassName: 'TodayExperienceHost',
   ),
 };

@@ -37,7 +37,7 @@ void main() {
     },
   );
 
-  test('Adventure is a hidden non-delivery parent by default', () {
+  test('Adventure is a hidden durable delivery parent by default', () {
     const defaults = BuildFeatureRegistry.fieldDefaults();
     final delivery = productionFeatureContract[Feature.adventureMotivation];
 
@@ -46,9 +46,13 @@ void main() {
     expect(defaults.isVisible(Feature.adventureMotivation), isFalse);
     expect(defaults.isEnabled(Feature.adventureMotivation), isFalse);
     expect(delivery, isNotNull);
-    expect(delivery!.productionEntryId, isEmpty);
-    expect(delivery.dependencyId, isEmpty);
-    expect(delivery.durable, isFalse);
+    expect(delivery!.productionEntryId, 'home/learn/today-experience');
+    expect(
+      delivery.dependencyId,
+      'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases',
+    );
+    expect(delivery.durable, isTrue);
+    expect(delivery.screenClassName, 'TodayExperienceHost');
   });
 
   test('Adventure is not a forty-fifth 8/44 product capability', () {

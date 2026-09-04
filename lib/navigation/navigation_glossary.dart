@@ -51,6 +51,7 @@ abstract final class NavigationGlossary {
   };
 
   static const Set<String> learningModeIds = <String>{
+    'home/learn/today-experience',
     'home/learn/associative-reading',
     'home/learn/quiz',
     'home/learn/quiz/typed-recall',
@@ -132,6 +133,15 @@ abstract final class NavigationGlossary {
       tooltip: 'เปิดกิจกรรมการเรียนรู้',
       icon: Icons.school_outlined,
       selectedIcon: Icons.school,
+    ),
+    'home/learn/today-experience': NavigationGlossaryEntry(
+      id: 'home/learn/today-experience',
+      fullThaiLabel: 'ภารกิจวันนี้',
+      shortThaiLabel: 'ภารกิจวันนี้',
+      semanticsLabel: 'เปิดภารกิจการเรียนรู้วันนี้',
+      tooltip: 'เปิดภารกิจการเรียนรู้วันนี้',
+      icon: Icons.explore_outlined,
+      selectedIcon: Icons.explore,
     ),
     'home/today': NavigationGlossaryEntry(
       id: 'home/today',

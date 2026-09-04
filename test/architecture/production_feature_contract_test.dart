@@ -109,9 +109,10 @@ void main() {
             durable: true,
           ),
           Feature.adventureMotivation: (
-            productionEntryId: '',
-            dependencyId: '',
-            durable: false,
+            productionEntryId: 'home/learn/today-experience',
+            dependencyId:
+                'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases',
+            durable: true,
           ),
         };
 
