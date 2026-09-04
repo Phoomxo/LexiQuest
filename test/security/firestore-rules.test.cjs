@@ -2321,7 +2321,7 @@ describe('assessment_runs revisioned research contract', () => {
     }
   });
 
-  it('accepts assessment evidence pinned to supported database schemas through v22', async () => {
+  it('accepts assessment evidence pinned to supported database schemas through v23', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-schema';
     await assertSucceeds(
@@ -2334,7 +2334,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [19, 20, 21, 22]) {
+    for (const databaseSchemaVersion of [19, 20, 21, 22, 23]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -2348,7 +2348,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 23]) {
+    for (const databaseSchemaVersion of [14, 24]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

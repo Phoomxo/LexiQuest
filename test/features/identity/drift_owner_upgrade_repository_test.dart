@@ -369,8 +369,8 @@ void main() {
       );
       final store = DriftSyncStore(
         database,
-        learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v1(
-          deployedRulesRevision: learnerPreferenceV1RulesRevision,
+        learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v2(
+          deployedRulesRevision: learnerPreferenceV2RulesRevision,
         ),
       );
       final first = await store.claimPending(
