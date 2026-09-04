@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -20,7 +19,14 @@ import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.d
 import 'package:vocab_learning_app/features/adventure/domain/adventure_reaction.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_hub_screen.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
@@ -29,6 +35,7 @@ import 'package:vocab_learning_app/features/recommendation/application/recommend
 import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 const _profileId = 'adventure-performance-v1';
@@ -41,6 +48,8 @@ const _sessionOverheadBudgetUs = 150 * Duration.microsecondsPerMillisecond;
 const _frameBudgetUs = 16700;
 const _longFrameOrTaskBudgetUs = 100 * Duration.microsecondsPerMillisecond;
 const _learnerPauseBoundaryMargin = Duration(seconds: 1);
+const _untimedIdleCutoff = Duration(minutes: 5);
+const _performanceTimeoutPolicy = Timeout.none;
 const _frameReportKey = 'adventureMapListFrameTiming';
 const _timelineTaskName = 'LexiQuestAdventureMapListTransition';
 const _timelineTaskFilterKey = 'lexiquest.adventure.map-list-transition';
@@ -200,14 +209,14 @@ void main() {
 
       final actualSessionConfiguration =
           sessionPreparationRun.lastAdventure.plan.configuration;
-      final maximumActiveEffort =
-          actualSessionConfiguration.timing.maximumActiveEffort;
-      if (!actualSessionConfiguration.timing.isUntimedAlternative ||
-          maximumActiveEffort == null) {
-        fail('The canonical Adventure launch did not retain untimed timing.');
+      final timeoutPolicy = _performanceTimeoutPolicy.toString();
+      if (timeoutPolicy != 'none') {
+        fail('The performance test no longer has an unbounded timeout policy.');
       }
-      final fakeClockAdvance =
-          maximumActiveEffort + _learnerPauseBoundaryMargin;
+      final pauseRun = await _verifyUntimedSessionAfterInjectedClock(
+        launch: sessionPreparationRun.lastAdventure,
+        bridge: bridge,
+      );
       var missionStarts = 0;
       await tester.pumpWidget(
         _adventureApp(
@@ -218,16 +227,14 @@ void main() {
         ),
       );
       await tester.pump();
-      await _pumpWithFakeClock(tester, fakeClockAdvance);
       final missionButton = find.byKey(
         const ValueKey('adventure-start-mission'),
       );
-      final pauseBoundaryExceeded = fakeClockAdvance > maximumActiveEffort;
       final missionAvailableAfterPause =
           missionButton.evaluate().length == 1 &&
           tester.widget<ButtonStyleButton>(missionButton).onPressed != null &&
           missionStarts == 0 &&
-          pauseBoundaryExceeded;
+          pauseRun.sessionAvailableAfterClockAdvance;
 
       await tester.ensureVisible(
         find.byKey(const ValueKey('adventure-map-list-switch')),
@@ -235,31 +242,20 @@ void main() {
       await tester.pumpAndSettle();
       await _selectJourneyPresentation(tester, showList: true);
       await _selectJourneyPresentation(tester, showList: false);
-      await binding.watchPerformance(() async {
-        for (var index = 0; index < _sampleCount; index++) {
-          final showList = index.isEven;
-          await _selectJourneyPresentation(tester, showList: showList);
-        }
-      }, reportKey: _frameReportKey);
-      final frameSummary = Map<String, dynamic>.from(
-        binding.reportData![_frameReportKey]! as Map,
+      final transitionFrames = await _measureSettledTransitionFrames(
+        binding: binding,
+        tester: tester,
+        transitions: _sampleCount,
       );
-      final buildTimes = _integerList(frameSummary['frame_build_times']);
-      final rasterTimes = _integerList(frameSummary['frame_rasterizer_times']);
-      if (buildTimes.isEmpty || buildTimes.length != rasterTimes.length) {
-        fail('Flutter returned inconsistent map/list frame timing data.');
-      }
-      final frameTimes = <int>[
-        for (var index = 0; index < buildTimes.length; index++)
-          buildTimes[index] >= rasterTimes[index]
-              ? buildTimes[index]
-              : rasterTimes[index],
-      ];
+      final frameTimes = transitionFrames.frameTimesUs;
       final frameP95Us = _p95(frameTimes);
       final frameMaxUs = frameTimes.reduce(
         (left, right) => left >= right ? left : right,
       );
-      final frameCoveragePassed = frameTimes.length >= _sampleCount;
+      final frameCoveragePassed =
+          transitionFrames.transitionsWithFrames == _sampleCount &&
+          transitionFrames.minimumFramesPerTransition >= 1 &&
+          frameTimes.length >= _sampleCount;
 
       final timeline = await binding.traceTimeline(() async {
         for (var index = 0; index < _sampleCount; index++) {
@@ -357,6 +353,10 @@ void main() {
           'pairedSessionStartOverhead':
               sessionPreparationRun.overheadSamples.length,
           'mapListTransitions': _sampleCount,
+          'mapListTransitionsWithFrames':
+              transitionFrames.transitionsWithFrames,
+          'mapListMinimumFramesPerTransition':
+              transitionFrames.minimumFramesPerTransition,
           'mapListFrames': frameTimes.length,
           'timelineTransitionMarkers':
               timelineTaskSummary.transitionMarkerCount,
@@ -425,19 +425,37 @@ void main() {
               'the unchanged shared controller start is excluded',
           'mapListFrame':
               'maximum of Flutter build and raster duration for every frame '
-              'captured across 20 fully settled map/list transitions',
+              'captured in 20 isolated fully settled map/list transition '
+              'groups, each required to contain a real transition frame',
           'mapListTask':
               '20 Dart TimelineTask markers bound the tap-through-settle '
               'trace; long tasks are complete or paired synchronous Dart '
               'events within that trace, and only aggregate '
               'p95/max/count values are retained, never the raw timeline',
+          'learnerPause':
+              'the canonical Adventure launch is started through the '
+              'production UnifiedLessonController with its injected '
+              'configuration monotonic clock advanced beyond maximum active '
+              'effort; the controller must observe the jump, exclude idle '
+              'time, and remain active and operation-available',
         },
         'learnerPause': <String, Object?>{
-          'timeoutPolicy': 'none',
+          'timeoutPolicy': timeoutPolicy,
           'sessionTiming': actualSessionConfiguration.timing.kind.name,
-          'maximumActiveEffortMs': maximumActiveEffort.inMilliseconds,
-          'fakeClockAdvanceMs': fakeClockAdvance.inMilliseconds,
-          'boundaryExceeded': pauseBoundaryExceeded,
+          'maximumActiveEffortMs': pauseRun.maximumActiveEffort.inMilliseconds,
+          'fakeClockAdvanceMs': pauseRun.injectedClockAdvance.inMilliseconds,
+          'clockSource': pauseRun.clockSource,
+          'appObservedMonotonicMs':
+              pauseRun.appObservedMonotonic.inMilliseconds,
+          'configurationActiveEffortMs':
+              pauseRun.configurationActiveEffort.inMilliseconds,
+          'excludedIdleMs': pauseRun.excludedIdle.inMilliseconds,
+          'idleTimeExcluded': pauseRun.idleTimeExcluded,
+          'configurationIdle': pauseRun.configurationIdle,
+          'sessionStatus': pauseRun.sessionStatus,
+          'configurationAcceptsOperations':
+              pauseRun.configurationAcceptsOperations,
+          'boundaryExceeded': pauseRun.boundaryExceeded,
           'missionAvailableAfterPause': missionAvailableAfterPause,
         },
         'allBudgetsPassed': allBudgetsPassed,
@@ -501,6 +519,7 @@ void main() {
         reason: 'Learner pause disabled or started the mission.',
       );
     },
+    timeout: _performanceTimeoutPolicy,
   );
 }
 
@@ -554,7 +573,6 @@ Future<void> _selectJourneyPresentation(
 }) async {
   await tester.tap(find.text(showList ? 'รายการ' : 'แผนที่'));
   await tester.pumpAndSettle();
-  await tester.pump(const Duration(milliseconds: 16));
   final target = find.byKey(
     ValueKey(showList ? 'adventure-map-list' : 'adventure-map'),
   );
@@ -563,53 +581,260 @@ Future<void> _selectJourneyPresentation(
   }
 }
 
-Future<void> _pumpWithFakeClock(WidgetTester tester, Duration duration) {
-  _ManualOneShotTimer? pumpTimer;
-  final frame = runZoned<Future<void>>(
-    () => tester.pump(duration),
-    zoneSpecification: ZoneSpecification(
-      createTimer: (self, parent, zone, timerDuration, callback) {
-        if (pumpTimer == null && timerDuration == duration) {
-          pumpTimer = _ManualOneShotTimer(zone, callback);
-          return pumpTimer!;
-        }
-        return parent.createTimer(zone, timerDuration, callback);
-      },
-    ),
-  );
-  final timer = pumpTimer;
-  if (timer == null) {
-    throw StateError('The live widget pump did not schedule its clock timer.');
+Future<
+  ({
+    List<int> frameTimesUs,
+    int transitionsWithFrames,
+    int minimumFramesPerTransition,
+  })
+>
+_measureSettledTransitionFrames({
+  required IntegrationTestWidgetsFlutterBinding binding,
+  required WidgetTester tester,
+  required int transitions,
+}) async {
+  final frameTimesUs = <int>[];
+  var transitionsWithFrames = 0;
+  int? minimumFramesPerTransition;
+
+  for (var transition = 0; transition < transitions; transition++) {
+    final reportKey = '$_frameReportKey:$transition';
+    await binding.watchPerformance(
+      () => _selectJourneyPresentation(tester, showList: transition.isEven),
+      reportKey: reportKey,
+    );
+    final rawSummary = binding.reportData?.remove(reportKey);
+    if (rawSummary is! Map) {
+      fail('Flutter did not return frame timing for transition $transition.');
+    }
+    final frameSummary = Map<String, dynamic>.from(rawSummary);
+    final buildTimes = _integerList(frameSummary['frame_build_times']);
+    final rasterTimes = _integerList(frameSummary['frame_rasterizer_times']);
+    if (buildTimes.isEmpty || buildTimes.length != rasterTimes.length) {
+      fail(
+        'Flutter returned inconsistent frame timing for transition '
+        '$transition.',
+      );
+    }
+    final transitionFrameTimes = <int>[
+      for (var frame = 0; frame < buildTimes.length; frame++)
+        buildTimes[frame] >= rasterTimes[frame]
+            ? buildTimes[frame]
+            : rasterTimes[frame],
+    ];
+    transitionsWithFrames += 1;
+    minimumFramesPerTransition = switch (minimumFramesPerTransition) {
+      null => transitionFrameTimes.length,
+      final current when transitionFrameTimes.length < current =>
+        transitionFrameTimes.length,
+      final current => current,
+    };
+    frameTimesUs.addAll(transitionFrameTimes);
   }
-  timer.fire();
-  return frame;
+
+  return (
+    frameTimesUs: List<int>.unmodifiable(frameTimesUs),
+    transitionsWithFrames: transitionsWithFrames,
+    minimumFramesPerTransition: minimumFramesPerTransition ?? 0,
+  );
 }
 
-final class _ManualOneShotTimer implements Timer {
-  _ManualOneShotTimer(this._zone, this._callback);
+Future<
+  ({
+    Duration maximumActiveEffort,
+    Duration injectedClockAdvance,
+    String clockSource,
+    Duration appObservedMonotonic,
+    Duration configurationActiveEffort,
+    Duration excludedIdle,
+    bool idleTimeExcluded,
+    bool configurationIdle,
+    String sessionStatus,
+    bool configurationAcceptsOperations,
+    bool boundaryExceeded,
+    bool sessionAvailableAfterClockAdvance,
+  })
+>
+_verifyUntimedSessionAfterInjectedClock({
+  required AdventureLearningLaunch launch,
+  required AdventureLearningBridge bridge,
+}) async {
+  final configuration = launch.plan.configuration;
+  if (!configuration.timing.isUntimedAlternative) {
+    fail(
+      'The canonical Adventure launch did not retain 10-minute untimed timing.',
+    );
+  }
+  final maximumActiveEffort =
+      configuration.timing.maximumActiveEffort ??
+      fail('The canonical Adventure launch lost its active-effort boundary.');
+  if (maximumActiveEffort != const Duration(minutes: 10)) {
+    fail(
+      'The canonical Adventure launch did not retain 10-minute untimed timing.',
+    );
+  }
 
-  final Zone _zone;
-  final void Function() _callback;
-  var _active = true;
-  var _tick = 0;
+  final repository = _PerformanceSessionRepository(launch);
+  var nextId = 0;
+  final learning = LearningUseCases(
+    owners: const _PerformanceOwnerRepository(),
+    repository: repository,
+    generateId: () => 'performance-controller-${++nextId}',
+    nowUtc: () => _now,
+    buildInfo: const AppBuildInfo(
+      version: 'adventure-performance',
+      buildId: 'adventure-performance',
+    ),
+  );
+  final clock = _InjectedConfigurationClock();
+  final controller = UnifiedLessonController(
+    learning: learning,
+    adapter: const TypedRecallModeAdapter(),
+    configurationMonotonicMicros: clock.read,
+  );
+  try {
+    await bridge.start(
+      launch: launch,
+      controller: controller,
+      revalidateConfiguration: (candidate) async {
+        if (!identical(candidate, configuration)) {
+          throw StateError(
+            'Adventure session configuration authority drifted.',
+          );
+        }
+        return candidate;
+      },
+    );
+    final injectedClockAdvance =
+        maximumActiveEffort + _learnerPauseBoundaryMargin;
+    clock.advance(injectedClockAdvance);
+    await controller.recordActiveLearningInteraction(
+      launch.command.startedAtUtc.add(injectedClockAdvance),
+    );
 
-  void fire() {
-    if (!_active) return;
-    _active = false;
-    _tick = 1;
-    _zone.runGuarded(_callback);
+    final appObservedMonotonic = clock.lastObserved;
+    final configurationActiveEffort = controller.configurationActiveEffort;
+    final excludedIdle = appObservedMonotonic - configurationActiveEffort;
+    final boundaryExceeded = appObservedMonotonic > maximumActiveEffort;
+    final idleTimeExcluded =
+        configurationActiveEffort == _untimedIdleCutoff &&
+        excludedIdle == injectedClockAdvance - _untimedIdleCutoff;
+    final sessionStatus = controller.state.status.name;
+    final configurationAcceptsOperations =
+        controller.configurationAcceptsOperations;
+    final sessionAvailableAfterClockAdvance =
+        boundaryExceeded &&
+        idleTimeExcluded &&
+        !controller.configurationLimitReached &&
+        configurationAcceptsOperations &&
+        sessionStatus == LessonSessionStatus.active.name &&
+        repository.configurationActiveEffort == configurationActiveEffort;
+
+    return (
+      maximumActiveEffort: maximumActiveEffort,
+      injectedClockAdvance: injectedClockAdvance,
+      clockSource: 'configurationMonotonicMicros',
+      appObservedMonotonic: appObservedMonotonic,
+      configurationActiveEffort: configurationActiveEffort,
+      excludedIdle: excludedIdle,
+      idleTimeExcluded: idleTimeExcluded,
+      configurationIdle: controller.configurationIsIdle,
+      sessionStatus: sessionStatus,
+      configurationAcceptsOperations: configurationAcceptsOperations,
+      boundaryExceeded: boundaryExceeded,
+      sessionAvailableAfterClockAdvance: sessionAvailableAfterClockAdvance,
+    );
+  } finally {
+    controller.dispose();
+  }
+}
+
+final class _InjectedConfigurationClock {
+  Duration _elapsed = Duration.zero;
+  Duration _lastObserved = Duration.zero;
+
+  Duration get lastObserved => _lastObserved;
+
+  int read() {
+    _lastObserved = _elapsed;
+    return _elapsed.inMicroseconds;
+  }
+
+  void advance(Duration delta) {
+    if (delta <= Duration.zero) {
+      throw ArgumentError.value(delta, 'delta', 'must be positive');
+    }
+    _elapsed += delta;
+  }
+}
+
+final class _PerformanceOwnerRepository implements LocalOwnerRepository {
+  const _PerformanceOwnerRepository();
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async =>
+      LocalOwner(id: _ownerId, createdAtUtc: _now);
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      Future<LocalOwner>.error(
+        UnsupportedError('Performance profile never binds Firebase identity.'),
+      );
+}
+
+final class _PerformanceSessionRepository
+    implements LearningRepository, SessionConfiguredLearningRepository {
+  _PerformanceSessionRepository(this._launch);
+
+  final AdventureLearningLaunch _launch;
+  Duration _configurationActiveEffort = Duration.zero;
+
+  Duration get configurationActiveEffort => _configurationActiveEffort;
+
+  @override
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    if (ownerId != _launch.command.ownerId ||
+        sessionId != _launch.command.sessionId) {
+      return null;
+    }
+    return LearningSessionSummary(
+      id: sessionId,
+      ownerId: ownerId,
+      activityType: _launch.command.mode.name,
+      state: 'active',
+      startedAtUtc: _launch.command.startedAtUtc,
+      correctCount: 0,
+      wrongCount: 0,
+      score: 0,
+      appVersion: 'adventure-performance',
+      buildId: 'adventure-performance',
+      sessionConfiguration: _launch.plan.configuration,
+      configurationActiveEffort: _configurationActiveEffort,
+    );
   }
 
   @override
-  bool get isActive => _active;
-
-  @override
-  int get tick => _tick;
-
-  @override
-  void cancel() {
-    _active = false;
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    if (ownerId != _launch.command.ownerId ||
+        sessionId != _launch.command.sessionId ||
+        configurationIdentity != _launch.plan.configuration.contentIdentity ||
+        delta <= Duration.zero) {
+      throw StateError('Performance session effort authority drifted.');
+    }
+    _configurationActiveEffort += delta;
+    return _configurationActiveEffort;
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Future<({List<int> samples, T last})> _measureAsync<T>({

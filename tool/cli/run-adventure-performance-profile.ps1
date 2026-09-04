@@ -75,6 +75,97 @@ function Write-RunnerError {
     [Console]::Error.WriteLine($Message)
 }
 
+function Get-CommittedSourceState {
+    $state = [ordered]@{
+        inspectionSucceeded = $false
+        inspectionError = $null
+        commitSha = $null
+        stagedContentDiff = $null
+        unstagedContentDiff = $null
+        nonIgnoredUntrackedCount = $null
+        statusOnlyTrackedPathCount = $null
+        statusOnlyTrackedPaths = @()
+        contentClean = $false
+    }
+
+    $commitOutput = @(& git rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0 -or $commitOutput.Count -ne 1) {
+        $state.inspectionError = 'Unable to resolve the build commit identity.'
+        return [pscustomobject]$state
+    }
+    $commitSha = ([string]$commitOutput[0]).Trim().ToLowerInvariant()
+    if ($commitSha -notmatch '^[0-9a-f]{40}$') {
+        $state.inspectionError = 'Git returned a non-canonical commit identity.'
+        return [pscustomobject]$state
+    }
+    $state.commitSha = $commitSha
+
+    & git diff --cached --quiet --exit-code
+    $stagedDiffExitCode = $LASTEXITCODE
+    if ($stagedDiffExitCode -notin @(0, 1)) {
+        $state.inspectionError = 'Unable to inspect staged source content.'
+        return [pscustomobject]$state
+    }
+    $state.stagedContentDiff = $stagedDiffExitCode -eq 1
+
+    & git diff --quiet --exit-code
+    $unstagedDiffExitCode = $LASTEXITCODE
+    if ($unstagedDiffExitCode -notin @(0, 1)) {
+        $state.inspectionError = 'Unable to inspect unstaged source content.'
+        return [pscustomobject]$state
+    }
+    $state.unstagedContentDiff = $unstagedDiffExitCode -eq 1
+
+    $untrackedOutput = @(& git ls-files --others --exclude-standard)
+    if ($LASTEXITCODE -ne 0) {
+        $state.inspectionError = `
+            'Unable to inspect non-ignored untracked files.'
+        return [pscustomobject]$state
+    }
+    $nonIgnoredUntrackedPaths = @(
+        $untrackedOutput | ForEach-Object { ([string]$_).Trim() } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+    $state.nonIgnoredUntrackedCount = $nonIgnoredUntrackedPaths.Count
+
+    $trackedStatus = @(& git status --porcelain --untracked-files=no)
+    if ($LASTEXITCODE -ne 0) {
+        $state.inspectionError = 'Unable to inspect tracked worktree status.'
+        return [pscustomobject]$state
+    }
+    $statusOnlyTrackedPaths = @(
+        $trackedStatus | ForEach-Object {
+            $line = [string]$_
+            if ($line.Length -ge 4) {
+                $line.Substring(3).Trim()
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($line)) {
+                $line.Trim()
+            }
+        }
+    )
+    $state.statusOnlyTrackedPathCount = $statusOnlyTrackedPaths.Count
+    $state.statusOnlyTrackedPaths = $statusOnlyTrackedPaths
+    $state.contentClean =
+        -not $state.stagedContentDiff -and
+        -not $state.unstagedContentDiff -and
+        $state.nonIgnoredUntrackedCount -eq 0
+    $state.inspectionSucceeded = $true
+    return [pscustomobject]$state
+}
+
+function Format-DirtySourceMessage {
+    param([Parameter(Mandatory = $true)]$State)
+
+    return ((
+        'Committed source is not reproducible: staged content diff={0}; ' +
+        'unstaged content diff={1}; non-ignored untracked files={2}.'
+    ) -f
+        $State.stagedContentDiff,
+        $State.unstagedContentDiff,
+        $State.nonIgnoredUntrackedCount)
+}
+
 function Test-IntegerValue {
     param([AllowNull()]$Value)
 
@@ -133,7 +224,7 @@ function Get-RequiredProfileProperty {
         Add-ProfileValidationError $Errors "$Path.$Name is missing."
         return $null
     }
-    return $property.Value
+    return ,$property.Value
 }
 
 function Get-RequiredProfileBoolean {
@@ -148,6 +239,23 @@ function Get-RequiredProfileBoolean {
     $value = Get-RequiredProfileProperty $InputObject $Name $Path $Errors
     if ($null -ne $value -and $value -isnot [bool]) {
         Add-ProfileValidationError $Errors "$Path.$Name must be boolean."
+        return $null
+    }
+    return $value
+}
+
+function Get-RequiredProfileString {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    $value = Get-RequiredProfileProperty $InputObject $Name $Path $Errors
+    if ($null -ne $value -and $value -isnot [string]) {
+        Add-ProfileValidationError $Errors "$Path.$Name must be a string."
         return $null
     }
     return $value
@@ -206,17 +314,23 @@ function Test-AdventurePerformanceProfile {
         Add-ProfileValidationError $errors `
             'adventurePerformance.schemaVersion must equal 1.'
     }
-    $profileId = Get-RequiredProfileProperty `
+    $profileId = Get-RequiredProfileString `
         $Profile 'profileId' 'adventurePerformance' $errors
     if ($null -ne $profileId -and $profileId -cne 'adventure-performance-v1') {
         Add-ProfileValidationError $errors `
             'adventurePerformance.profileId is not the required profile.'
     }
-    $buildMode = Get-RequiredProfileProperty `
+    $buildMode = Get-RequiredProfileString `
         $Profile 'buildMode' 'adventurePerformance' $errors
     if ($null -ne $buildMode -and $buildMode -cne 'profile') {
         Add-ProfileValidationError $errors `
             'adventurePerformance.buildMode must equal profile.'
+    }
+    $percentileMethod = Get-RequiredProfileString `
+        $Profile 'percentileMethod' 'adventurePerformance' $errors
+    if ($null -ne $percentileMethod -and $percentileMethod -cne 'nearest-rank') {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.percentileMethod must equal nearest-rank.'
     }
 
     $sampleCounts = Get-RequiredProfileProperty `
@@ -249,6 +363,27 @@ function Test-AdventurePerformanceProfile {
     if ($null -ne $frameCount -and $frameCount -lt 20) {
         Add-ProfileValidationError $errors `
             'adventurePerformance.sampleCounts.mapListFrames must be at least 20.'
+    }
+    $transitionsWithFrames = Get-RequiredProfileInteger `
+        $sampleCounts `
+        'mapListTransitionsWithFrames' `
+        'adventurePerformance.sampleCounts' `
+        $errors
+    if ($null -ne $transitionsWithFrames -and $transitionsWithFrames -ne 20) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.sampleCounts.mapListTransitionsWithFrames must equal 20.'
+    }
+    $minimumFramesPerTransition = Get-RequiredProfileInteger `
+        $sampleCounts `
+        'mapListMinimumFramesPerTransition' `
+        'adventurePerformance.sampleCounts' `
+        $errors
+    if (
+        $null -ne $minimumFramesPerTransition -and
+        $minimumFramesPerTransition -lt 1
+    ) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.sampleCounts.mapListMinimumFramesPerTransition must be positive.'
     }
 
     $budgets = Get-RequiredProfileProperty `
@@ -451,9 +586,9 @@ function Test-AdventurePerformanceProfile {
 
     $pause = Get-RequiredProfileProperty `
         $Profile 'learnerPause' 'adventurePerformance' $errors
-    $timeoutPolicy = Get-RequiredProfileProperty `
+    $timeoutPolicy = Get-RequiredProfileString `
         $pause 'timeoutPolicy' 'adventurePerformance.learnerPause' $errors
-    $sessionTiming = Get-RequiredProfileProperty `
+    $sessionTiming = Get-RequiredProfileString `
         $pause 'sessionTiming' 'adventurePerformance.learnerPause' $errors
     $maximumActiveEffortMs = Get-RequiredProfileInteger `
         $pause `
@@ -463,6 +598,46 @@ function Test-AdventurePerformanceProfile {
     $fakeClockAdvanceMs = Get-RequiredProfileInteger `
         $pause `
         'fakeClockAdvanceMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $clockSource = Get-RequiredProfileString `
+        $pause `
+        'clockSource' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $appObservedMonotonicMs = Get-RequiredProfileInteger `
+        $pause `
+        'appObservedMonotonicMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $configurationActiveEffortMs = Get-RequiredProfileInteger `
+        $pause `
+        'configurationActiveEffortMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $excludedIdleMs = Get-RequiredProfileInteger `
+        $pause `
+        'excludedIdleMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $idleTimeExcluded = Get-RequiredProfileBoolean `
+        $pause `
+        'idleTimeExcluded' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $configurationIdle = Get-RequiredProfileBoolean `
+        $pause `
+        'configurationIdle' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $sessionStatus = Get-RequiredProfileString `
+        $pause `
+        'sessionStatus' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $configurationAcceptsOperations = Get-RequiredProfileBoolean `
+        $pause `
+        'configurationAcceptsOperations' `
         'adventurePerformance.learnerPause' `
         $errors
     $boundaryExceeded = Get-RequiredProfileBoolean `
@@ -481,6 +656,17 @@ function Test-AdventurePerformanceProfile {
         $maximumActiveEffortMs -eq 600000 -and
         $null -ne $fakeClockAdvanceMs -and
         $fakeClockAdvanceMs -gt $maximumActiveEffortMs -and
+        $clockSource -ceq 'configurationMonotonicMicros' -and
+        $appObservedMonotonicMs -eq $fakeClockAdvanceMs -and
+        $configurationActiveEffortMs -eq 300000 -and
+        $excludedIdleMs -eq (
+            $appObservedMonotonicMs - $configurationActiveEffortMs
+        ) -and
+        $excludedIdleMs -eq 301000 -and
+        $idleTimeExcluded -eq $true -and
+        $configurationIdle -eq $false -and
+        $sessionStatus -ceq 'active' -and
+        $configurationAcceptsOperations -eq $true -and
         $boundaryExceeded -eq $true -and
         $missionAvailableAfterPause -eq $true
 
@@ -523,7 +709,9 @@ function Test-AdventurePerformanceProfile {
         $null -ne $timelineLongTaskCount -and
         $null -ne $timelineSynchronousTaskCount -and
         $null -ne $timelineSourceEventCount -and
-        $null -ne $frameCount
+        $null -ne $frameCount -and
+        $null -ne $transitionsWithFrames -and
+        $null -ne $minimumFramesPerTransition
     $expectedPasses = @{}
     if ($canCompute) {
         $expectedPasses.profileMode = $buildMode -ceq 'profile'
@@ -545,7 +733,10 @@ function Test-AdventurePerformanceProfile {
             $invariantValues.canonicalSnapshotPinned -eq $true -and
             $invariantValues.evidenceAuthorityUnchanged -eq $true -and
             $invariantValues.pairedSessionStartInputsEquivalent -eq $true
-        $expectedPasses.mapListFrameCoverage = $frameCount -ge 20
+        $expectedPasses.mapListFrameCoverage =
+            $frameCount -ge 20 -and
+            $transitionsWithFrames -eq 20 -and
+            $minimumFramesPerTransition -ge 1
         $expectedPasses.mapListTransitions =
             $expectedPasses.mapListFrameCoverage -and
             [double]$metricValues.mapListFrameP95Ms -le
@@ -626,72 +817,17 @@ if (-not (Test-PathWithinRoot `
 
 Push-Location $repositoryRoot
 try {
-    $commitOutput = @(& git rev-parse HEAD)
-    if ($LASTEXITCODE -ne 0 -or $commitOutput.Count -ne 1) {
-        Write-RunnerError 'Unable to resolve the build commit identity.'
+    $preRunSource = Get-CommittedSourceState
+    if (-not $preRunSource.inspectionSucceeded) {
+        Write-RunnerError $preRunSource.inspectionError
         exit 68
     }
-    $commitSha = ([string]$commitOutput[0]).Trim().ToLowerInvariant()
-    if ($commitSha -notmatch '^[0-9a-f]{40}$') {
-        Write-RunnerError 'Git returned a non-canonical commit identity.'
-        exit 68
-    }
-    $shortCommit = $commitSha.Substring(0, 12)
-
-    & git diff --cached --quiet --exit-code
-    $stagedDiffExitCode = $LASTEXITCODE
-    if ($stagedDiffExitCode -notin @(0, 1)) {
-        Write-RunnerError 'Unable to inspect staged source content.'
-        exit 68
-    }
-    & git diff --quiet --exit-code
-    $unstagedDiffExitCode = $LASTEXITCODE
-    if ($unstagedDiffExitCode -notin @(0, 1)) {
-        Write-RunnerError 'Unable to inspect unstaged source content.'
-        exit 68
-    }
-    $untrackedOutput = @(& git ls-files --others --exclude-standard)
-    if ($LASTEXITCODE -ne 0) {
-        Write-RunnerError 'Unable to inspect non-ignored untracked files.'
-        exit 68
-    }
-    $nonIgnoredUntrackedPaths = @(
-        $untrackedOutput | ForEach-Object { ([string]$_).Trim() } |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    )
-    $trackedStatus = @(& git status --porcelain --untracked-files=no)
-    if ($LASTEXITCODE -ne 0) {
-        Write-RunnerError 'Unable to inspect tracked worktree status.'
-        exit 68
-    }
-    $statusOnlyTrackedPaths = @(
-        $trackedStatus | ForEach-Object {
-            $line = [string]$_
-            if ($line.Length -ge 4) {
-                $line.Substring(3).Trim()
-            }
-            elseif (-not [string]::IsNullOrWhiteSpace($line)) {
-                $line.Trim()
-            }
-        }
-    )
-    $hasStagedContentDiff = $stagedDiffExitCode -eq 1
-    $hasUnstagedContentDiff = $unstagedDiffExitCode -eq 1
-    $sourceReproducible =
-        -not $hasStagedContentDiff -and
-        -not $hasUnstagedContentDiff -and
-        $nonIgnoredUntrackedPaths.Count -eq 0
-    if (-not $sourceReproducible) {
-        $sourceError = ((
-            'Committed source is not reproducible: staged content diff={0}; ' +
-            'unstaged content diff={1}; non-ignored untracked files={2}.'
-        ) -f
-            $hasStagedContentDiff,
-            $hasUnstagedContentDiff,
-            $nonIgnoredUntrackedPaths.Count)
-        Write-RunnerError $sourceError
+    if (-not $preRunSource.contentClean) {
+        Write-RunnerError (Format-DirtySourceMessage $preRunSource)
         exit 71
     }
+    $commitSha = $preRunSource.commitSha
+    $shortCommit = $commitSha.Substring(0, 12)
 
     $devicesOutput = @(& flutter devices --machine)
     if ($LASTEXITCODE -ne 0) {
@@ -870,14 +1006,17 @@ try {
         $integrationOutputError = 'Integration response file was not written.'
     }
 
-    $resultStatus = if ($driveExitCode -ne 0) {
-        'test_failed'
-    }
-    elseif ($null -ne $integrationOutputError -or $null -eq $profile) {
+    $profileResultStatus = if (
+        $null -ne $integrationOutputError -or
+        $null -eq $profile
+    ) {
         'invalid_output'
     }
     elseif ($allBudgetsPassed -ne $true) {
         'budget_failed'
+    }
+    elseif ($driveExitCode -ne 0) {
+        'test_failed'
     }
     else {
         'passed'
@@ -904,6 +1043,26 @@ try {
         $deviceOs = 'unknown'
     }
 
+    $postRunSource = Get-CommittedSourceState
+    $headUnchanged =
+        $postRunSource.inspectionSucceeded -and
+        $postRunSource.commitSha -ceq $commitSha
+    $sourceReproducible =
+        $preRunSource.inspectionSucceeded -and
+        $preRunSource.contentClean -and
+        $postRunSource.inspectionSucceeded -and
+        $postRunSource.contentClean -and
+        $headUnchanged
+    $resultStatus = if (-not $postRunSource.inspectionSucceeded) {
+        'source_inspection_failed'
+    }
+    elseif (-not $sourceReproducible) {
+        'source_changed'
+    }
+    else {
+        $profileResultStatus
+    }
+
     $evidence = [ordered]@{
         schemaVersion = 1
         recordedAtUtc = [DateTime]::UtcNow.ToString('o')
@@ -912,13 +1071,19 @@ try {
         eligibleForPhysicalCertification = $eligibleForPhysicalCertification
         source = [ordered]@{
             commitSha = $commitSha
+            postRunCommitSha = $postRunSource.commitSha
             applicationVersion = $applicationVersion
+            headUnchanged = $headUnchanged
             reproducible = $sourceReproducible
-            stagedContentDiff = $hasStagedContentDiff
-            unstagedContentDiff = $hasUnstagedContentDiff
-            nonIgnoredUntrackedCount = $nonIgnoredUntrackedPaths.Count
-            statusOnlyTrackedPathCount = $statusOnlyTrackedPaths.Count
-            statusOnlyTrackedPaths = $statusOnlyTrackedPaths
+            stagedContentDiff = $postRunSource.stagedContentDiff
+            unstagedContentDiff = $postRunSource.unstagedContentDiff
+            nonIgnoredUntrackedCount = `
+                $postRunSource.nonIgnoredUntrackedCount
+            statusOnlyTrackedPathCount = `
+                $postRunSource.statusOnlyTrackedPathCount
+            statusOnlyTrackedPaths = $postRunSource.statusOnlyTrackedPaths
+            preRun = $preRunSource
+            postRun = $postRunSource
         }
         device = [ordered]@{
             id = $DeviceId
@@ -976,14 +1141,22 @@ try {
     }
     Write-Output "Adventure performance evidence: $evidencePath"
 
-    if ($driveExitCode -ne 0) {
-        exit $driveExitCode
+    if ($resultStatus -eq 'source_inspection_failed') {
+        Write-RunnerError $postRunSource.inspectionError
+        exit 68
+    }
+    if ($resultStatus -eq 'source_changed') {
+        Write-RunnerError (Format-DirtySourceMessage $postRunSource)
+        exit 71
     }
     if ($resultStatus -eq 'invalid_output') {
         exit 69
     }
     if ($resultStatus -eq 'budget_failed') {
         exit 70
+    }
+    if ($resultStatus -eq 'test_failed') {
+        exit $driveExitCode
     }
     exit 0
 }

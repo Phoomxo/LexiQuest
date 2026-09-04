@@ -135,6 +135,14 @@ $originalGitUnstagedDiffExitCode = `
     $env:LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE
 $originalGitUntracked = $env:LEXIQUEST_STUB_GIT_UNTRACKED
 $originalGitTrackedStatus = $env:LEXIQUEST_STUB_GIT_TRACKED_STATUS
+$originalGitPostMarker = $env:LEXIQUEST_STUB_GIT_POST_MARKER
+$originalGitPostCommitSha = $env:LEXIQUEST_STUB_GIT_POST_COMMIT_SHA
+$originalGitPostStagedDiffExitCode = `
+    $env:LEXIQUEST_STUB_GIT_POST_STAGED_DIFF_EXIT_CODE
+$originalGitPostUnstagedDiffExitCode = `
+    $env:LEXIQUEST_STUB_GIT_POST_UNSTAGED_DIFF_EXIT_CODE
+$originalGitPostUntracked = $env:LEXIQUEST_STUB_GIT_POST_UNTRACKED
+$originalGitPostTrackedStatus = $env:LEXIQUEST_STUB_GIT_POST_TRACKED_STATUS
 $originalDriverOutput = $env:LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT
 $createdEvidenceDirectories = [System.Collections.Generic.List[string]]::new()
 $failure = $null
@@ -156,6 +164,7 @@ if /I "%~1"=="drive" (
   >>"%LEXIQUEST_STUB_LOG%" echo %*
   powershell -NoProfile -Command "if (-not [string]::IsNullOrWhiteSpace($env:LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT)) { [IO.File]::WriteAllText($env:LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT, $env:LEXIQUEST_STUB_DRIVER_RESPONSE) }"
   powershell -NoProfile -Command "if (-not [string]::IsNullOrWhiteSpace($env:LEXIQUEST_STUB_STDERR)) { [Console]::Error.WriteLine($env:LEXIQUEST_STUB_STDERR) }"
+  if not "%LEXIQUEST_STUB_GIT_POST_MARKER%"=="" type nul > "%LEXIQUEST_STUB_GIT_POST_MARKER%"
   echo Stub Flutter Drive output.
   exit /b %LEXIQUEST_STUB_DRIVE_EXIT_CODE%
 )
@@ -166,17 +175,31 @@ exit /b 90
     @'
 @echo off
 if /I "%~1"=="rev-parse" (
-  echo 0123456789abcdef0123456789abcdef01234567
+  if exist "%LEXIQUEST_STUB_GIT_POST_MARKER%" (
+    powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_POST_COMMIT_SHA)"
+  ) else (
+    echo 0123456789abcdef0123456789abcdef01234567
+  )
   exit /b 0
 )
+if /I "%~1"=="diff" if /I "%~2"=="--cached" if exist "%LEXIQUEST_STUB_GIT_POST_MARKER%" exit /b %LEXIQUEST_STUB_GIT_POST_STAGED_DIFF_EXIT_CODE%
 if /I "%~1"=="diff" if /I "%~2"=="--cached" exit /b %LEXIQUEST_STUB_GIT_STAGED_DIFF_EXIT_CODE%
+if /I "%~1"=="diff" if exist "%LEXIQUEST_STUB_GIT_POST_MARKER%" exit /b %LEXIQUEST_STUB_GIT_POST_UNSTAGED_DIFF_EXIT_CODE%
 if /I "%~1"=="diff" exit /b %LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE%
 if /I "%~1"=="ls-files" (
-  powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_UNTRACKED)"
+  if exist "%LEXIQUEST_STUB_GIT_POST_MARKER%" (
+    powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_POST_UNTRACKED)"
+  ) else (
+    powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_UNTRACKED)"
+  )
   exit /b 0
 )
 if /I "%~1"=="status" (
-  powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_TRACKED_STATUS)"
+  if exist "%LEXIQUEST_STUB_GIT_POST_MARKER%" (
+    powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_POST_TRACKED_STATUS)"
+  ) else (
+    powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_TRACKED_STATUS)"
+  )
   exit /b 0
 )
 exit /b 90
@@ -205,6 +228,8 @@ exit /b 90
             adventureSessionStart = 20
             pairedSessionStartOverhead = 20
             mapListTransitions = 20
+            mapListTransitionsWithFrames = 20
+            mapListMinimumFramesPerTransition = 1
             mapListFrames = 24
             timelineTransitionMarkers = 20
         }
@@ -257,6 +282,14 @@ exit /b 90
             sessionTiming = 'untimedAlternative'
             maximumActiveEffortMs = 600000
             fakeClockAdvanceMs = 601000
+            clockSource = 'configurationMonotonicMicros'
+            appObservedMonotonicMs = 601000
+            configurationActiveEffortMs = 300000
+            configurationIdle = $false
+            excludedIdleMs = 301000
+            idleTimeExcluded = $true
+            sessionStatus = 'active'
+            configurationAcceptsOperations = $true
             boundaryExceeded = $true
             missionAvailableAfterPause = $true
         }
@@ -295,6 +328,16 @@ exit /b 90
                 " M lib/features/sync/domain/sync_entity.dart`n" +
                 ' M lib/learning/storage/learning_database.g.dart'
             ),
+            [string]$PostCommitSha = (
+                '0123456789abcdef0123456789abcdef01234567'
+            ),
+            [int]$PostStagedDiffExitCode = 0,
+            [int]$PostUnstagedDiffExitCode = 0,
+            [AllowEmptyString()][string]$PostNonIgnoredUntracked = '',
+            [AllowEmptyString()][string]$PostTrackedStatus = (
+                " M lib/features/sync/domain/sync_entity.dart`n" +
+                ' M lib/learning/storage/learning_database.g.dart'
+            ),
             [string]$OutputDirectory
         )
 
@@ -322,6 +365,16 @@ exit /b 90
             [string]$UnstagedDiffExitCode
         $env:LEXIQUEST_STUB_GIT_UNTRACKED = $NonIgnoredUntracked
         $env:LEXIQUEST_STUB_GIT_TRACKED_STATUS = $TrackedStatus
+        $postMarker = Join-Path $temporaryRoot "$CaseName-post-run.marker"
+        Remove-Item -LiteralPath $postMarker -ErrorAction SilentlyContinue
+        $env:LEXIQUEST_STUB_GIT_POST_MARKER = $postMarker
+        $env:LEXIQUEST_STUB_GIT_POST_COMMIT_SHA = $PostCommitSha
+        $env:LEXIQUEST_STUB_GIT_POST_STAGED_DIFF_EXIT_CODE = `
+            [string]$PostStagedDiffExitCode
+        $env:LEXIQUEST_STUB_GIT_POST_UNSTAGED_DIFF_EXIT_CODE = `
+            [string]$PostUnstagedDiffExitCode
+        $env:LEXIQUEST_STUB_GIT_POST_UNTRACKED = $PostNonIgnoredUntracked
+        $env:LEXIQUEST_STUB_GIT_POST_TRACKED_STATUS = $PostTrackedStatus
         Remove-Item -LiteralPath $stubLog -ErrorAction SilentlyContinue
 
         if ([string]::IsNullOrEmpty($DeviceId)) {
@@ -401,6 +454,30 @@ exit /b 90
         'Evidence must record a full commit SHA.'
     Assert-Equal $true (Get-PropertyValue $emulatorEvidence.source 'reproducible') `
         'Successful evidence must record reproducible committed source.'
+    Assert-Equal $true (Get-PropertyValue $emulatorEvidence.source 'headUnchanged') `
+        'Successful evidence must record an unchanged post-run HEAD.'
+    Assert-Equal `
+        $emulatorEvidence.source.commitSha `
+        (Get-PropertyValue $emulatorEvidence.source 'postRunCommitSha') `
+        'Successful evidence must bind its post-run HEAD to the build commit.'
+    $preRunSource = Get-PropertyValue $emulatorEvidence.source 'preRun'
+    $postRunSource = Get-PropertyValue $emulatorEvidence.source 'postRun'
+    Assert-Equal `
+        $false `
+        (Get-PropertyValue $preRunSource 'stagedContentDiff') `
+        'Pre-run source evidence must record no staged content diff.'
+    Assert-Equal `
+        $false `
+        (Get-PropertyValue $postRunSource 'stagedContentDiff') `
+        'Post-run source evidence must record no staged content diff.'
+    Assert-Equal `
+        $false `
+        (Get-PropertyValue $postRunSource 'unstagedContentDiff') `
+        'Post-run stat-only paths must remain content-equal.'
+    Assert-Equal `
+        0 `
+        (Get-PropertyValue $postRunSource 'nonIgnoredUntrackedCount') `
+        'Post-run source evidence must record no non-ignored untracked files.'
     Assert-Equal `
         $false `
         (Get-PropertyValue $emulatorEvidence.source 'stagedContentDiff') `
@@ -444,6 +521,23 @@ exit /b 90
         'Evidence must bind the captured integration JSON by SHA-256.'
     Assert-True ($emulatorOutputFile.Length -gt 0) `
         'Captured integration output must be non-empty.'
+
+    $appObservedClockProfile = Copy-Profile $passingProfile
+    $appObservedClockProfile.learnerPause.configurationIdle = $false
+    $appObservedClock = Invoke-RunnerCase `
+        -CaseName 'app-observed-untimed-clock' `
+        -DeviceId 'emulator-5554' `
+        -DriverResponse (ConvertTo-DriverResponse $appObservedClockProfile) `
+        -Devices @(
+            @{
+                id = 'emulator-5554'
+                targetPlatform = 'android-x64'
+                platformType = 'android'
+                emulator = $true
+            }
+        )
+    Assert-Equal 0 $appObservedClock.ExitCode `
+        'An observed idle jump must resume an available untimed session.'
 
     foreach ($dirtySource in @(
         @{
@@ -497,6 +591,87 @@ exit /b 90
         'A failed Git source inspection must fail closed.'
     Assert-Equal 0 @($sourceInspectionError.Calls).Count `
         'A failed Git source inspection must fail before Flutter Drive.'
+
+    foreach ($postRunChange in @(
+        @{
+            Name = 'post-run-head-change'
+            Parameters = @{
+                PostCommitSha = 'fedcba9876543210fedcba9876543210fedcba98'
+            }
+        },
+        @{
+            Name = 'post-run-staged-content'
+            Parameters = @{ PostStagedDiffExitCode = 1 }
+        },
+        @{
+            Name = 'post-run-unstaged-content'
+            Parameters = @{ PostUnstagedDiffExitCode = 1 }
+        },
+        @{
+            Name = 'post-run-untracked-content'
+            Parameters = @{ PostNonIgnoredUntracked = 'concurrent.txt' }
+        }
+    )) {
+        $postRunParameters = @{
+            CaseName = $postRunChange.Name
+            DeviceId = 'emulator-5554'
+            Devices = @(
+                @{
+                    id = 'emulator-5554'
+                    targetPlatform = 'android-x64'
+                    platformType = 'android'
+                    emulator = $true
+                }
+            )
+        }
+        foreach ($entry in $postRunChange.Parameters.GetEnumerator()) {
+            $postRunParameters[$entry.Key] = $entry.Value
+        }
+        $postRunResult = Invoke-RunnerCase @postRunParameters
+        Assert-Equal 71 $postRunResult.ExitCode `
+            "$($postRunChange.Name) must fail the post-run source gate."
+        Assert-Equal 1 @($postRunResult.Calls).Count `
+            "$($postRunChange.Name) must be detected after Flutter Drive."
+        $postRunEvidenceFile = Get-OnlyFile `
+            -Directory $postRunResult.OutputDirectory `
+            -Filter '*.evidence.json'
+        $postRunEvidence = Get-Content -Raw -LiteralPath (
+            $postRunEvidenceFile.FullName
+        ) | ConvertFrom-Json
+        Assert-Equal $false $postRunEvidence.source.reproducible `
+            "$($postRunChange.Name) must never claim reproducibility."
+        Assert-Equal 'source_changed' $postRunEvidence.result.status `
+            "$($postRunChange.Name) must be explicit in evidence."
+    }
+
+    $postRunInspectionError = Invoke-RunnerCase `
+        -CaseName 'post-run-source-inspection-error' `
+        -DeviceId 'emulator-5554' `
+        -PostUnstagedDiffExitCode 2 `
+        -Devices @(
+            @{
+                id = 'emulator-5554'
+                targetPlatform = 'android-x64'
+                platformType = 'android'
+                emulator = $true
+            }
+        )
+    Assert-Equal 68 $postRunInspectionError.ExitCode `
+        'A failed post-run Git inspection must fail closed.'
+    Assert-Equal 1 @($postRunInspectionError.Calls).Count `
+        'Post-run Git inspection must occur after Flutter Drive.'
+    $postRunInspectionEvidenceFile = Get-OnlyFile `
+        -Directory $postRunInspectionError.OutputDirectory `
+        -Filter '*.evidence.json'
+    $postRunInspectionEvidence = Get-Content -Raw -LiteralPath (
+        $postRunInspectionEvidenceFile.FullName
+    ) | ConvertFrom-Json
+    Assert-Equal $false $postRunInspectionEvidence.source.reproducible `
+        'An indeterminate post-run source state must not claim reproducibility.'
+    Assert-Equal `
+        'source_inspection_failed' `
+        $postRunInspectionEvidence.result.status `
+        'Post-run inspection failure must be explicit in evidence.'
 
     $stderrWarning = Invoke-RunnerCase `
         -CaseName 'stderr-warning' `
@@ -585,6 +760,7 @@ exit /b 90
         -CaseName 'budget-failure' `
         -DeviceId 'emulator-5554' `
         -DriverResponse $budgetFailureResponse `
+        -DriveExitCode 1 `
         -Devices @(
             @{
                 id = 'emulator-5554'
@@ -594,7 +770,7 @@ exit /b 90
             }
         )
     Assert-Equal 70 $budgetFailure.ExitCode `
-        'Runner must fail when a reported budget fails despite process success.'
+        'A profile assertion failure must retain the canonical budget exit code.'
     $budgetEvidenceFile = Get-OnlyFile `
         -Directory $budgetFailure.OutputDirectory `
         -Filter '*.evidence.json'
@@ -637,6 +813,28 @@ exit /b 90
             Mutate = { param($profile) $profile.buildMode = 'debug' }
         },
         @{
+            Name = 'wrong-percentile-method'
+            Mutate = { param($profile) $profile.percentileMethod = 'linear' }
+        },
+        @{
+            Name = 'profile-id-array'
+            Mutate = {
+                param($profile)
+                $profile.profileId = @('adventure-performance-v1')
+            }
+        },
+        @{
+            Name = 'build-mode-array'
+            Mutate = { param($profile) $profile.buildMode = @('profile') }
+        },
+        @{
+            Name = 'percentile-method-array'
+            Mutate = {
+                param($profile)
+                $profile.percentileMethod = @('nearest-rank')
+            }
+        },
+        @{
             Name = 'missing-pass-flag'
             Mutate = {
                 param($profile)
@@ -646,6 +844,20 @@ exit /b 90
         @{
             Name = 'insufficient-frame-coverage'
             Mutate = { param($profile) $profile.sampleCounts.mapListFrames = 19 }
+        },
+        @{
+            Name = 'missing-transition-frame-group'
+            Mutate = {
+                param($profile)
+                $profile.sampleCounts.mapListTransitionsWithFrames = 19
+            }
+        },
+        @{
+            Name = 'zero-frames-for-a-transition'
+            Mutate = {
+                param($profile)
+                $profile.sampleCounts.mapListMinimumFramesPerTransition = 0
+            }
         },
         @{
             Name = 'insufficient-timeline-markers'
@@ -694,7 +906,45 @@ exit /b 90
             Mutate = {
                 param($profile)
                 $profile.learnerPause.fakeClockAdvanceMs = 600000
+                $profile.learnerPause.appObservedMonotonicMs = 600000
                 $profile.learnerPause.boundaryExceeded = $false
+            }
+        },
+        @{
+            Name = 'timeout-policy-array'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.timeoutPolicy = @('none')
+            }
+        },
+        @{
+            Name = 'session-timing-array'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.sessionTiming = @('untimedAlternative')
+            }
+        },
+        @{
+            Name = 'clock-source-array'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.clockSource = @(
+                    'configurationMonotonicMicros'
+                )
+            }
+        },
+        @{
+            Name = 'session-status-array'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.sessionStatus = @('active')
+            }
+        },
+        @{
+            Name = 'clock-not-observed'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.appObservedMonotonicMs = 0
             }
         }
     )
@@ -846,6 +1096,24 @@ finally {
     Restore-EnvironmentValue `
         -Name 'LEXIQUEST_STUB_GIT_TRACKED_STATUS' `
         -Value $originalGitTrackedStatus
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_MARKER' `
+        -Value $originalGitPostMarker
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_COMMIT_SHA' `
+        -Value $originalGitPostCommitSha
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_STAGED_DIFF_EXIT_CODE' `
+        -Value $originalGitPostStagedDiffExitCode
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_UNSTAGED_DIFF_EXIT_CODE' `
+        -Value $originalGitPostUnstagedDiffExitCode
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_UNTRACKED' `
+        -Value $originalGitPostUntracked
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_POST_TRACKED_STATUS' `
+        -Value $originalGitPostTrackedStatus
     Restore-EnvironmentValue `
         -Name 'LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT' `
         -Value $originalDriverOutput
