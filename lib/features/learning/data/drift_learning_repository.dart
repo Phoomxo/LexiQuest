@@ -375,28 +375,32 @@ final class DriftLearningRepository
     final sessionId = _required(session.id, 'session.id');
     final ownerId = _required(session.ownerId, 'session.ownerId');
     return database.transaction(() async {
-      final activeSessions =
-          await (database.select(database.learningSessions)
-                ..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) & row.state.equals('active'),
-                )
-                ..orderBy([(row) => OrderingTerm.asc(row.id)])
-                ..limit(2))
-              .get();
-      for (final active in activeSessions) {
-        if (active.id != sessionId) {
+      var stored = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
+      if (stored == null) {
+        final active =
+            await (database.select(database.learningSessions)
+                  ..where(
+                    (row) =>
+                        row.ownerId.equals(ownerId) &
+                        row.state.equals('active'),
+                  )
+                  ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                  ..limit(1))
+                .getSingleOrNull();
+        if (active != null) {
           throw ActiveLearningSessionConflict(
             ownerId: ownerId,
             activeSessionId: active.id,
             requestedSessionId: sessionId,
           );
         }
+        await startSession(session);
+        stored = await (database.select(
+          database.learningSessions,
+        )..where((row) => row.id.equals(sessionId))).getSingle();
       }
-      await startSession(session);
-      final stored = await (database.select(
-        database.learningSessions,
-      )..where((row) => row.id.equals(sessionId))).getSingle();
       if (stored.ownerId != ownerId ||
           stored.activityType != session.activityType ||
           stored.state != 'active' ||
@@ -663,19 +667,25 @@ final class DriftLearningRepository
     return _loadActivityRecoveryForSession(
       ownerId: requiredOwnerId,
       session: session,
+      strictExactIdentity: true,
     );
   }
 
   Future<LearningActivityRecovery?> _loadActivityRecoveryForSession({
     required String ownerId,
     required db.LearningSession session,
+    bool strictExactIdentity = false,
   }) async {
     final recoverySession = session;
     final checkpoint = await _latestActivityCheckpoint(
       ownerId: ownerId,
       session: recoverySession,
+      strictExactIdentity: strictExactIdentity,
     );
     if (checkpoint == null) {
+      if (strictExactIdentity) {
+        throw StateError('exact activity checkpoint is missing or corrupt');
+      }
       if (recoverySession.state == 'completed') return null;
       return LearningActivityRecovery(
         session: _rowToSummary(recoverySession),
@@ -685,22 +695,25 @@ final class DriftLearningRepository
     }
     if (recoverySession.state == 'completed' &&
         checkpoint.terminalAtUtc != _fromEpoch(recoverySession.endedAtUtcMs)) {
+      if (strictExactIdentity) {
+        throw StateError('exact activity terminal identity is corrupt');
+      }
       return null;
     }
-    final attempts =
-        await (database.select(database.answerAttempts)
-              ..where(
-                (row) =>
-                    row.ownerId.equals(ownerId) &
-                    row.sessionId.equals(recoverySession.id),
-              )
-              ..orderBy([
-                (row) => OrderingTerm.asc(row.attemptNumber),
-                (row) => OrderingTerm.asc(row.occurredAtUtcMs),
-                (row) => OrderingTerm.asc(row.id),
-              ])
-              ..limit(maxActivityRecoveryAttempts + 1))
-            .get();
+    final attemptQuery = database.select(database.answerAttempts)
+      ..where(
+        (row) => strictExactIdentity
+            ? row.sessionId.equals(recoverySession.id)
+            : row.ownerId.equals(ownerId) &
+                  row.sessionId.equals(recoverySession.id),
+      )
+      ..orderBy([
+        (row) => OrderingTerm.asc(row.attemptNumber),
+        (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+        (row) => OrderingTerm.asc(row.id),
+      ])
+      ..limit(maxActivityRecoveryAttempts + 1);
+    final attempts = await attemptQuery.get();
     if (attempts.length > maxActivityRecoveryAttempts) {
       throw StateError('activity attempt recovery bound exceeded');
     }
@@ -709,6 +722,9 @@ final class DriftLearningRepository
     );
     final candidates = <RecordAnswerCandidate>[];
     for (final attempt in attempts) {
+      if (strictExactIdentity && attempt.ownerId != ownerId) {
+        throw StateError('exact activity attempt owner is corrupt');
+      }
       final source = sources[attempt.id];
       if (source == null ||
           await events.validateSourceForAttempt(
@@ -754,19 +770,42 @@ final class DriftLearningRepository
   Future<LearningActivityCheckpoint?> _latestActivityCheckpoint({
     required String ownerId,
     required db.LearningSession session,
+    bool strictExactIdentity = false,
   }) async {
-    final rows =
-        await (database.select(database.eventsV2)
-              ..where(
-                (row) =>
-                    row.eventId.like('learning-activity-checkpoint:%') &
-                    row.ownerId.equals(ownerId) &
-                    row.eventType.equals('LearningActivityCheckpoint') &
-                    row.aggregateType.equals('LearningSession') &
-                    row.aggregateId.equals(session.id),
-              )
-              ..limit(maxActivityRecoveryCheckpoints + 1))
-            .get();
+    final query = database.select(database.eventsV2);
+    if (strictExactIdentity) {
+      final expectedKeys = <String>[
+        for (
+          var revision = 1;
+          revision <= maxActivityRecoveryCheckpoints;
+          revision += 1
+        )
+          _activityCheckpointKey(
+            ownerId: ownerId,
+            sessionId: session.id,
+            activityType: session.activityType,
+            revision: revision,
+          ),
+      ];
+      query.where(
+        (row) =>
+            row.eventId.isIn(expectedKeys) |
+            (row.aggregateId.equals(session.id) &
+                (row.eventId.like('learning-activity-checkpoint:%') |
+                    row.eventType.equals('LearningActivityCheckpoint'))),
+      );
+    } else {
+      query.where(
+        (row) =>
+            row.eventId.like('learning-activity-checkpoint:%') &
+            row.ownerId.equals(ownerId) &
+            row.eventType.equals('LearningActivityCheckpoint') &
+            row.aggregateType.equals('LearningSession') &
+            row.aggregateId.equals(session.id),
+      );
+    }
+    query.limit(maxActivityRecoveryCheckpoints + 1);
+    final rows = await query.get();
     if (rows.length > maxActivityRecoveryCheckpoints) {
       throw StateError('activity checkpoint recovery bound exceeded');
     }
@@ -777,19 +816,21 @@ final class DriftLearningRepository
       try {
         decodedValue = jsonDecode(row.payloadJson);
       } on Object {
-        if (row.aggregateId == session.id) {
+        if (strictExactIdentity || row.aggregateId == session.id) {
           throw StateError('activity checkpoint is corrupt');
         }
         continue;
       }
       if (decodedValue is! Map<String, dynamic>) {
-        if (row.aggregateId == session.id) {
+        if (strictExactIdentity || row.aggregateId == session.id) {
           throw StateError('activity checkpoint is corrupt');
         }
         continue;
       }
       final decoded = decodedValue;
-      if (decoded['sessionId'] != session.id && row.aggregateId != session.id) {
+      if (!strictExactIdentity &&
+          decoded['sessionId'] != session.id &&
+          row.aggregateId != session.id) {
         continue;
       }
       final actorIsAuthorized = await _isAuthorizedCheckpointActor(

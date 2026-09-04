@@ -4685,11 +4685,18 @@ final class _RestartRecoveryRepository
     required String ownerId,
     required String sessionId,
     required String activityType,
-  }) => delegate.loadExactActivityRecovery(
-    ownerId: ownerId,
-    sessionId: sessionId,
-    activityType: activityType,
-  );
+  }) async {
+    final recovery = await delegate.loadExactActivityRecovery(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      activityType: activityType,
+    );
+    final after = afterRecoveryLoad;
+    afterRecoveryLoad = null;
+    await after?.call(recovery);
+    if (recovery == null) return null;
+    return recoveryTransform?.call(recovery) ?? recovery;
+  }
 
   @override
   Future<void> appendActivityCheckpoint({

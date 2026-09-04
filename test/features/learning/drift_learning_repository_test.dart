@@ -153,9 +153,24 @@ void main() {
         ),
       );
 
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session:legacy-peer',
+          ownerId: first.ownerId,
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 8, 30, 9, 2),
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await repository.startSessionWithCheckpoint(
+        session: first,
+        checkpoint: firstCheckpoint,
+      );
+
       expect(
         await database.select(database.learningSessions).get(),
-        hasLength(1),
+        hasLength(2),
       );
       expect(
         await (database.select(database.eventsV2)..where(
@@ -331,6 +346,40 @@ void main() {
     )..where((row) => row.eventId.equals(checkpoint.eventId))).write(
       const EventsV2Companion(payloadJson: Value('{"schemaVersion":1}')),
     );
+
+    await expectLater(
+      repository.loadExactActivityRecovery(
+        ownerId: draft.ownerId,
+        sessionId: draft.id,
+        activityType: draft.activityType,
+      ),
+      throwsStateError,
+    );
+  });
+
+  test('exact recovery does not hide corrupt checkpoint envelopes', () async {
+    final draft = LearningSessionDraft(
+      id: 'session:corrupt-envelope',
+      ownerId: 'owner-1',
+      activityType: 'adventureQuiz',
+      startedAtUtc: DateTime.utc(2026, 8, 30, 11, 45),
+      appVersion: 'test',
+      buildId: 'test',
+    );
+    await repository.startSessionWithCheckpoint(
+      session: draft,
+      checkpoint: LearningActivityCheckpoint(
+        sessionId: draft.id,
+        activityType: draft.activityType,
+        revision: 1,
+        occurredAtUtc: draft.startedAtUtc!,
+        state: const <String, Object?>{'schemaVersion': 1},
+      ),
+    );
+    final checkpoint = await database.select(database.eventsV2).getSingle();
+    await (database.update(database.eventsV2)
+          ..where((row) => row.eventId.equals(checkpoint.eventId)))
+        .write(const EventsV2Companion(eventType: Value('CorruptCheckpoint')));
 
     await expectLater(
       repository.loadExactActivityRecovery(

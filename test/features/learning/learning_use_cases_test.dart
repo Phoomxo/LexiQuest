@@ -17,6 +17,8 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
@@ -190,6 +192,46 @@ void main() {
     );
     expect(await database.select(database.learningSessions).get(), isEmpty);
   });
+
+  test(
+    'checkpointed pinned content fails closed when short missing or reordered',
+    () async {
+      final short = await useCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        pinnedWordIds: const <String>['word-1'],
+        limit: 2,
+        initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+      );
+      final missing = await useCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        pinnedWordIds: const <String>['word-1', 'word-missing'],
+        limit: 2,
+        initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+      );
+      final reorderedRepository = _ReorderedPinnedRecoveryRepository(
+        DriftLearningRepository(database),
+      );
+      final reordered =
+          await LearningUseCases(
+            owners: owners,
+            repository: reorderedRepository,
+            generateId: () => 'reordered',
+            nowUtc: () => now,
+            buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+          ).startCheckpointedQuiz(
+            activityType: 'adventureQuiz',
+            pinnedWordIds: const <String>['word-1', 'word-2'],
+            limit: 2,
+            initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+          );
+
+      expect(short.questions, isEmpty);
+      expect(missing.questions, isEmpty);
+      expect(reordered.questions, isEmpty);
+      expect(reorderedRepository.startCalls, 0);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+    },
+  );
 
   test(
     'records answers and finishes a session from durable evidence',
@@ -1419,4 +1461,42 @@ final class _CountingLocalOwnerRepository implements LocalOwnerRepository {
     String ownerId,
     String firebaseUid,
   ) => delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
+final class _ReorderedPinnedRecoveryRepository
+    implements
+        LearningRepository,
+        PinnedLearningContentRepository,
+        LearningActivityRecoveryRepository {
+  _ReorderedPinnedRecoveryRepository(this.delegate);
+
+  final DriftLearningRepository delegate;
+  int startCalls = 0;
+
+  @override
+  Future<List<QuizWord>> listPinnedQuizWords({
+    required String ownerId,
+    required List<String> wordIds,
+  }) async {
+    final words = await delegate.listPinnedQuizWords(
+      ownerId: ownerId,
+      wordIds: wordIds,
+    );
+    return words.reversed.toList(growable: false);
+  }
+
+  @override
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  }) {
+    startCalls += 1;
+    return delegate.startSessionWithCheckpoint(
+      session: session,
+      checkpoint: checkpoint,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
