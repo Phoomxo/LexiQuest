@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/adventure/application/adventure_diag
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_presentation_preferences.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_result_next_action_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
@@ -169,6 +170,7 @@ void main() {
         'rewardReader',
         'sessionComposer',
         'motivationReader',
+        'resultNextActionReader',
         'receiptRefresher',
       ]) {
         AppDependencies? composed;
@@ -184,6 +186,8 @@ void main() {
             includeRewardAccounts: missing != 'rewardReader',
             includeAdventureSessionComposer: missing != 'sessionComposer',
             includeAdventureMotivation: missing != 'motivationReader',
+            includeAdventureResultNextAction:
+                missing != 'resultNextActionReader',
             includeAdventureReceiptRefresher: missing != 'receiptRefresher',
             onDependencies: (value) => composed = value,
           ),
@@ -200,6 +204,38 @@ void main() {
           find.byType(AdventureTodayEntryCard),
           findsNothing,
           reason: missing,
+        );
+      }
+    },
+  );
+
+  testWidgets(
+    'Adventure entry fails closed when result next-action authority identities drift',
+    (tester) async {
+      for (final mismatch in <String>['reviewReader', 'ownerIdentities']) {
+        AppDependencies? composed;
+        await tester.pumpWidget(
+          _mainNavigationApp(
+            const BuildFeatureRegistry.allEnabled(),
+            todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+            includeAdventure: true,
+            mismatchAdventureResultReviewIdentity: mismatch == 'reviewReader',
+            mismatchAdventureResultOwnerIdentity: mismatch == 'ownerIdentities',
+            onDependencies: (value) => composed = value,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          composed!.hasComposedDependencyFor(Feature.adventureMotivation),
+          isFalse,
+          reason: mismatch,
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(AdventureTodayEntryCard),
+          findsNothing,
+          reason: mismatch,
         );
       }
     },
@@ -871,10 +907,13 @@ Widget _mainNavigationApp(
   bool includeCurrentActivityEvidence = true,
   bool includeRewardAccounts = true,
   bool includeAdventureMotivation = true,
+  bool includeAdventureResultNextAction = true,
   bool includeAdventureReceiptRefresher = true,
   bool includeAdventureSessionComposer = true,
   bool mismatchReviewSessionAuthority = false,
   bool mismatchHistorySessionAuthority = false,
+  bool mismatchAdventureResultReviewIdentity = false,
+  bool mismatchAdventureResultOwnerIdentity = false,
   bool includeAdventure = false,
   AdventureDiagnostics? adventureDiagnosticsOverride,
   ValueSetter<AppDependencies>? onDependencies,
@@ -885,6 +924,7 @@ Widget _mainNavigationApp(
   final owner = localOwners ?? _NavigationOwner();
   final ownerIdentities =
       activeOwnerIdentities ?? const _NavigationReviewOwnerIdentities();
+  final reviewReader = const _NavigationReviewReader();
   final progress = ProgressUseCases(
     owners: owner,
     queries: DriftProgressQueries(database),
@@ -974,7 +1014,7 @@ Widget _mainNavigationApp(
     activeOwnerIdentities: ownerIdentities,
     reviewCenter: includeReviewCenter
         ? ReviewCenterUseCases(
-            reader: const _NavigationReviewReader(),
+            reader: reviewReader,
             ownerIdentities: ownerIdentities,
             sessionLauncher: _NavigationReviewSessionLauncher(
               mismatchReviewSessionAuthority ? otherLearning : learning,
@@ -1009,6 +1049,19 @@ Widget _mainNavigationApp(
         : null,
     adventureMotivation: includeAdventure && includeAdventureMotivation
         ? const _NavigationAdventureMotivation()
+        : null,
+    adventureResultNextAction:
+        includeAdventure && includeAdventureResultNextAction
+        ? ReviewCenterAdventureResultNextActionReader(
+            reader: mismatchAdventureResultReviewIdentity
+                ? _NavigationReviewReader()
+                : reviewReader,
+            ownerIdentities: mismatchAdventureResultOwnerIdentity
+                ? _NavigationReviewOwnerIdentities()
+                : ownerIdentities,
+            nowUtc: () => DateTime.utc(2026, 8, 24),
+            timezoneId: 'Asia/Bangkok',
+          )
         : null,
     adventureReceiptBarrier:
         includeAdventure && includeAdventureReceiptRefresher

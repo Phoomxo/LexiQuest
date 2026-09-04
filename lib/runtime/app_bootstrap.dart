@@ -30,6 +30,7 @@ import '../features/adventure/application/adventure_motivation_projection_reader
 import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_journey_fact_readers.dart';
 import '../features/adventure/application/adventure_journey_reader.dart';
+import '../features/adventure/application/adventure_result_next_action_reader.dart';
 import '../features/adventure/application/adventure_rollout_gate.dart';
 import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/data/adventure_world_catalog_validator.dart';
@@ -1223,6 +1224,13 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: resolvedLearningTimezoneId,
     );
+    final adventureResultNextAction =
+        ReviewCenterAdventureResultNextActionReader(
+          reader: reviewReader,
+          ownerIdentities: activeOwnerIdentities,
+          nowUtc: () => DateTime.now().toUtc(),
+          timezoneId: resolvedLearningTimezoneId,
+        );
     final learningHistoryReader = DriftLearningHistoryReader(
       database,
       learningTime: learningTime,
@@ -1699,6 +1707,7 @@ final class AppBootstrap {
       adventureJourney: adventureJourney,
       adventureSessionComposer: adventureSessionComposer,
       adventureMotivation: adventureMotivation,
+      adventureResultNextAction: adventureResultNextAction,
       adventureReceiptBarrier: adventureReceiptBarrier,
       adventureDiagnostics: adventureDiagnostics,
       adventureCatalogRecovery: adventureCatalogRecovery,

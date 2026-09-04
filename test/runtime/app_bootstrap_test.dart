@@ -19,6 +19,7 @@ import 'package:vocab_learning_app/features/adventure/application/adventure_entr
 import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_result_next_action_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
@@ -4830,6 +4831,21 @@ void main() {
           expect(
             dependencies.adventureSessionComposer,
             isA<CanonicalAdventureSessionComposer>(),
+          );
+          expect(
+            dependencies.adventureResultNextAction,
+            isA<ReviewCenterAdventureResultNextActionReader>(),
+          );
+          final adventureResultNextAction =
+              dependencies.adventureResultNextAction!
+                  as ReviewCenterAdventureResultNextActionReader;
+          expect(
+            adventureResultNextAction.readerIdentity,
+            same(dependencies.reviewCenter!.reader),
+          );
+          expect(
+            adventureResultNextAction.ownerIdentity,
+            same(dependencies.activeOwnerIdentities),
           );
           expect(
             dependencies.adventureMotivation,

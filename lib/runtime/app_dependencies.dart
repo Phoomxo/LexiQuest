@@ -8,6 +8,7 @@ import '../features/adventure/application/adventure_entry_use_cases.dart';
 import '../features/adventure/application/adventure_diagnostics.dart';
 import '../features/adventure/application/adventure_motivation_projection_reader.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
+import '../features/adventure/application/adventure_result_next_action_reader.dart';
 import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_entry.dart';
@@ -145,6 +146,7 @@ final class AppDependencies {
     this.adventureJourney,
     this.adventureSessionComposer,
     this.adventureMotivation,
+    this.adventureResultNextAction,
     this.adventureReceiptBarrier,
     this.adventureDiagnostics,
     this.adventureCatalogRecovery,
@@ -230,6 +232,7 @@ final class AppDependencies {
   final AdventureJourneyReader? adventureJourney;
   final AdventureSessionComposer? adventureSessionComposer;
   final AdventureMotivationProjectionReader? adventureMotivation;
+  final AdventureResultNextActionReader? adventureResultNextAction;
   final AdventureProjectionReceiptBarrier? adventureReceiptBarrier;
   final AdventureDiagnostics? adventureDiagnostics;
   final AdventureCatalogRecoveryOperations? adventureCatalogRecovery;
@@ -279,6 +282,7 @@ final class AppDependencies {
           adventureJourney != null &&
           adventureSessionComposer is CanonicalAdventureSessionComposer &&
           adventureMotivation != null &&
+          _hasCanonicalAdventureResultNextActionAuthority &&
           adventureReceiptBarrier != null &&
           adventureDiagnostics != null &&
           adventureCatalogRecovery != null &&
@@ -325,6 +329,18 @@ final class AppDependencies {
             learnerPreferences,
           ),
   };
+
+  bool get _hasCanonicalAdventureResultNextActionAuthority {
+    final nextAction = adventureResultNextAction;
+    if (nextAction == null) {
+      return false;
+    }
+    if (nextAction is! ReviewCenterAdventureResultNextActionReader) {
+      return true;
+    }
+    return identical(nextAction.readerIdentity, reviewCenter?.reader) &&
+        identical(nextAction.ownerIdentity, activeOwnerIdentities);
+  }
 
   Future<void> dispose() {
     return _disposeFuture ??= disposeResources?.call() ?? Future<void>.value();

@@ -448,6 +448,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ) => AdventureResultLifecycleScreen(
       summary: summary,
       motivation: dependencies.adventureMotivation!,
+      nextActionReader: dependencies.adventureResultNextAction!,
       receiptBarrier: dependencies.adventureReceiptBarrier!,
       rewardOwnership: rewardOwnership,
       catalogVersion: plan.origin.catalogVersion,
