@@ -72,26 +72,29 @@ final class _AdventureHubScreenState extends State<AdventureHubScreen> {
             language: widget.reactionLanguage,
           ),
           if (widget.reaction != null) const SizedBox(height: 12),
-          SegmentedButton<bool>(
-            key: const ValueKey('adventure-map-list-switch'),
-            segments: const <ButtonSegment<bool>>[
-              ButtonSegment<bool>(
-                value: false,
-                icon: Icon(Icons.route_outlined),
-                label: Text('แผนที่'),
-              ),
-              ButtonSegment<bool>(
-                value: true,
-                icon: Icon(Icons.list_alt_outlined),
-                label: Text('รายการ'),
-              ),
-            ],
-            selected: <bool>{_showList},
-            onSelectionChanged: (selection) {
-              if (selection.isNotEmpty) {
-                setState(() => _showList = selection.single);
-              }
-            },
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SegmentedButton<bool>(
+              key: const ValueKey('adventure-map-list-switch'),
+              segments: const <ButtonSegment<bool>>[
+                ButtonSegment<bool>(
+                  value: false,
+                  icon: Icon(Icons.route_outlined),
+                  label: Text('แผนที่'),
+                ),
+                ButtonSegment<bool>(
+                  value: true,
+                  icon: Icon(Icons.list_alt_outlined),
+                  label: Text('รายการ'),
+                ),
+              ],
+              selected: <bool>{_showList},
+              onSelectionChanged: (selection) {
+                if (selection.isNotEmpty) {
+                  setState(() => _showList = selection.single);
+                }
+              },
+            ),
           ),
           const SizedBox(height: 12),
           if (_showList)

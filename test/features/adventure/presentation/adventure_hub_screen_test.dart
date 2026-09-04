@@ -88,6 +88,10 @@ void main() {
   testWidgets(
     'supports dark, high contrast, reduced motion and 200 percent text',
     (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         MediaQuery(
           data: const MediaQueryData(
@@ -115,7 +119,21 @@ void main() {
         find.byKey(const ValueKey('adventure-standard-switch')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('adventure-map')), findsOneWidget);
+      final map = find.byKey(const ValueKey('adventure-map'));
+      await tester.scrollUntilVisible(
+        map,
+        120,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(map, findsOneWidget);
+      final layoutException = tester.takeException();
+      expect(
+        layoutException,
+        isNull,
+        reason: layoutException is FlutterError
+            ? layoutException.toStringDeep()
+            : '$layoutException',
+      );
     },
   );
 }

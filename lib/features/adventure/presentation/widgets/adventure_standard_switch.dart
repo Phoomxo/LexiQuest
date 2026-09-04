@@ -16,27 +16,30 @@ final class AdventureStandardSwitch extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     container: true,
     label: 'เลือกรูปแบบกิจกรรมวันนี้',
-    child: SegmentedButton<TodayExperiencePresentation>(
-      key: const ValueKey('adventure-standard-switch'),
-      showSelectedIcon: true,
-      segments: const <ButtonSegment<TodayExperiencePresentation>>[
-        ButtonSegment<TodayExperiencePresentation>(
-          value: TodayExperiencePresentation.standard,
-          icon: Icon(Icons.view_agenda_outlined),
-          label: Text('มาตรฐาน'),
-        ),
-        ButtonSegment<TodayExperiencePresentation>(
-          value: TodayExperiencePresentation.adventure,
-          icon: Icon(Icons.explore_outlined),
-          label: Text('ผจญภัย'),
-        ),
-      ],
-      selected: <TodayExperiencePresentation>{value},
-      onSelectionChanged: onChanged == null
-          ? null
-          : (selection) {
-              if (selection.isNotEmpty) onChanged!(selection.single);
-            },
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<TodayExperiencePresentation>(
+        key: const ValueKey('adventure-standard-switch'),
+        showSelectedIcon: true,
+        segments: const <ButtonSegment<TodayExperiencePresentation>>[
+          ButtonSegment<TodayExperiencePresentation>(
+            value: TodayExperiencePresentation.standard,
+            icon: Icon(Icons.view_agenda_outlined),
+            label: Text('มาตรฐาน'),
+          ),
+          ButtonSegment<TodayExperiencePresentation>(
+            value: TodayExperiencePresentation.adventure,
+            icon: Icon(Icons.explore_outlined),
+            label: Text('ผจญภัย'),
+          ),
+        ],
+        selected: <TodayExperiencePresentation>{value},
+        onSelectionChanged: onChanged == null
+            ? null
+            : (selection) {
+                if (selection.isNotEmpty) onChanged!(selection.single);
+              },
+      ),
     ),
   );
 }

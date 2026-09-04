@@ -70,6 +70,48 @@ void main() {
       expect(calls, 1);
     },
   );
+
+  testWidgets(
+    'narrow 200 percent text keeps every truthful result section reachable',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            textScaler: TextScaler.linear(2),
+            highContrast: true,
+            disableAnimations: true,
+          ),
+          child: MaterialApp(
+            theme: ThemeData(colorScheme: const ColorScheme.dark()),
+            home: AdventureResultScreen(result: _result(), onNextAction: () {}),
+          ),
+        ),
+      );
+
+      for (final key in <String>[
+        'adventure-result-learning',
+        'adventure-result-effort',
+        'adventure-result-engagement',
+        'adventure-result-motivation',
+        'adventure-result-reward',
+        'adventure-result-next-action',
+      ]) {
+        final finder = find.byKey(ValueKey<String>(key));
+        await tester.scrollUntilVisible(
+          finder,
+          120,
+          scrollable: find.byType(Scrollable),
+        );
+        expect(finder, findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 AdventureResult _result({String? technicalMessage}) => AdventureResult(

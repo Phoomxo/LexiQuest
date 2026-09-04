@@ -45,8 +45,16 @@ final class _MapNode extends StatelessWidget {
               children: <Widget>[
                 Icon(icon),
                 const SizedBox(width: 12),
-                Expanded(child: Text(node.label)),
-                Text(stateLabel),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(node.label),
+                      const SizedBox(height: 4),
+                      Text(stateLabel),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
