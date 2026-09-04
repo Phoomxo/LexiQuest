@@ -91,8 +91,9 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   TodayExperiencePresentation? _sessionChoice;
   late DateTime _occurredAtUtc;
   var _refreshGeneration = 0;
+  var _presentationGeneration = 0;
   var _preferenceGeneration = 0;
-  var _permitControlsPresentation = false;
+  bool? _permitControlsPresentation;
   _PresentationSaveRun? _activePresentationSave;
   TodayExperiencePresentation? _queuedPresentationSave;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
@@ -130,7 +131,10 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   }
 
   void _startNewOpening() {
+    _sessionChoice = null;
+    _permitControlsPresentation = null;
     _refreshGeneration += 1;
+    _presentationGeneration += 1;
     _occurredAtUtc = widget.nowUtc();
     _entryHost = AdventureEntryHost(
       entry: widget.entry,
@@ -138,22 +142,38 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       todayHub: widget.todayHub,
       createEntryAttemptId: widget.createEntryAttemptId,
     );
-    _loadFuture = _load(_refreshGeneration, _entryHost);
+    _loadFuture = _load(
+      _refreshGeneration,
+      _presentationGeneration,
+      _entryHost,
+      _sessionChoice,
+    );
   }
 
   Future<_TodayExperienceModel> _load(
-    int generation,
+    int refreshGeneration,
+    int presentationGeneration,
     AdventureEntryHost host,
+    TodayExperiencePresentation? sessionChoice,
   ) async {
     final result = await host.open(
       ownerId: widget.ownerId,
       occurredAtUtc: _occurredAtUtc,
-      sessionChoice: _sessionChoice,
+      sessionChoice: sessionChoice,
     );
-    if (generation != _refreshGeneration || result?.today == null) {
+    if (refreshGeneration != _refreshGeneration || result?.today == null) {
       return _TodayExperienceModel(result: result);
     }
+    if (presentationGeneration != _presentationGeneration) {
+      return _TodayExperienceModel(result: result);
+    }
+    final permitWasUnresolved = _permitControlsPresentation == null;
     _permitControlsPresentation = result!.decision.permitId != null;
+    if (permitWasUnresolved &&
+        _permitControlsPresentation == false &&
+        sessionChoice != null) {
+      _queuePresentationSave(sessionChoice);
+    }
     final decision = result.decision;
     if (decision.destination != AdventureEntryDestination.adventure) {
       return _TodayExperienceModel(result: result);
@@ -173,7 +193,8 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     final rewardOwnership = await widget.rewardAccounts.loadForOwner(
       widget.ownerId,
     );
-    if (generation != _refreshGeneration) {
+    if (refreshGeneration != _refreshGeneration ||
+        presentationGeneration != _presentationGeneration) {
       return const _TodayExperienceModel(result: null);
     }
     return _TodayExperienceModel(
@@ -185,18 +206,25 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
 
   void _switch(TodayExperiencePresentation choice) {
     if (_sessionChoice == choice) return;
+    final presentationGeneration = _presentationGeneration + 1;
     setState(() {
       _sessionChoice = choice;
-      _loadFuture = _load(_refreshGeneration, _entryHost);
+      _presentationGeneration = presentationGeneration;
+      _loadFuture = _load(
+        _refreshGeneration,
+        presentationGeneration,
+        _entryHost,
+        choice,
+      );
     });
-    if (!_permitControlsPresentation) {
+    if (_permitControlsPresentation == false) {
       _queuePresentationSave(choice);
     }
   }
 
   void _queuePresentationSave(TodayExperiencePresentation choice) {
     final saver = widget.presentationPreferences;
-    if (saver == null || _permitControlsPresentation) return;
+    if (saver == null || _permitControlsPresentation != false) return;
     _queuedPresentationSave = choice;
     final current = _activePresentationSave;
     if (current != null && current.generation == _preferenceGeneration) return;
@@ -283,13 +311,13 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       if (state.connectionState != ConnectionState.done) {
         return Scaffold(
           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
-          body: const TodayHubLoading(),
+          body: _standardEscapeBody(const TodayHubLoading()),
         );
       }
       if (state.hasError) {
         return Scaffold(
           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
-          body: TodayHubLoadFailure(onRetry: _refresh),
+          body: _standardEscapeBody(TodayHubLoadFailure(onRetry: _refresh)),
         );
       }
       final model = state.data;
@@ -298,7 +326,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       if (result == null || today == null) {
         return Scaffold(
           appBar: AppBar(title: const Text('กิจกรรมวันนี้')),
-          body: _UnavailableState(onRefresh: _refresh),
+          body: _standardEscapeBody(_UnavailableState(onRefresh: _refresh)),
         );
       }
       final journey = model?.journey;
@@ -344,30 +372,39 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
             ),
           ],
         ),
-        body: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: AdventureStandardSwitch(
-                  value: TodayExperiencePresentation.standard,
-                  onChanged: _switch,
-                ),
-              ),
-            ),
-            Expanded(
-              child: TodayHubView(
-                snapshot: today,
-                actions: widget.actions,
-                features: widget.features,
-                assessmentAvailable: widget.assessmentAvailable,
-              ),
-            ),
-          ],
+        body: _standardEscapeBody(
+          TodayHubView(
+            snapshot: today,
+            actions: widget.actions,
+            features: widget.features,
+            assessmentAvailable: widget.assessmentAvailable,
+          ),
+          presentation: TodayExperiencePresentation.standard,
         ),
       );
     },
+  );
+
+  Widget _standardEscapeBody(
+    Widget child, {
+    TodayExperiencePresentation? presentation,
+  }) => Column(
+    children: <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: AdventureStandardSwitch(
+            value:
+                presentation ??
+                _sessionChoice ??
+                TodayExperiencePresentation.adventure,
+            onChanged: _switch,
+          ),
+        ),
+      ),
+      Expanded(child: child),
+    ],
   );
 }
 

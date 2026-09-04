@@ -19,6 +19,206 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/today_hub_view.dart';
 
 void main() {
+  testWidgets('Standard escape is visible and usable while Today is loading', (
+    tester,
+  ) async {
+    final pending = Completer<TodayHubSnapshot>();
+    final loader = _PendingLoader(pending.future);
+    await tester.pumpWidget(
+      _app(
+        loader: loader,
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(TodayHubLoading), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('adventure-standard-switch')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<SegmentedButton<TodayExperiencePresentation>>(
+            find.byKey(const ValueKey('adventure-standard-switch')),
+          )
+          .onSelectionChanged,
+      isNotNull,
+    );
+
+    await tester.tap(find.text('มาตรฐาน'));
+    await tester.pump();
+    expect(
+      tester
+          .widget<SegmentedButton<TodayExperiencePresentation>>(
+            find.byKey(const ValueKey('adventure-standard-switch')),
+          )
+          .selected,
+      <TodayExperiencePresentation>{TodayExperiencePresentation.standard},
+    );
+
+    pending.complete(_today());
+    await tester.pumpAndSettle();
+    expect(find.byType(TodayHubView), findsOneWidget);
+    expect(loader.calls, 1);
+  });
+
+  testWidgets('Standard escape recovers from Adventure load failure', (
+    tester,
+  ) async {
+    final loader = _Loader(_today());
+    final savedChoices = <TodayExperiencePresentation>[];
+    await tester.pumpWidget(
+      _app(
+        loader: loader,
+        journey: _FailingJourney(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        activePermits: _Permits(_permit()),
+        presentationPreferences: _CallbackPreferenceWriter(
+          (_, choice) async => savedChoices.add(choice),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TodayHubLoadFailure), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('adventure-standard-switch')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('มาตรฐาน'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TodayHubView), findsOneWidget);
+    expect(loader.calls, 1);
+    expect(savedChoices, isEmpty);
+  });
+
+  testWidgets('Standard escape stays usable in the unavailable state', (
+    tester,
+  ) async {
+    final loader = _Loader(_today(ownerId: 'owner:other'));
+    await tester.pumpWidget(
+      _app(
+        loader: loader,
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'กิจกรรมแบบผจญภัยยังไม่พร้อม รายการเรียนเดิมของคุณไม่เปลี่ยนแปลง',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('adventure-standard-switch')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('มาตรฐาน'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<SegmentedButton<TodayExperiencePresentation>>(
+            find.byKey(const ValueKey('adventure-standard-switch')),
+          )
+          .selected,
+      <TodayExperiencePresentation>{TodayExperiencePresentation.standard},
+    );
+    expect(loader.calls, 1);
+  });
+
+  testWidgets(
+    'active Adventure permit escapes to Standard without reopening or saving',
+    (tester) async {
+      final today = _today();
+      final loader = _Loader(today);
+      final journey = _Journey();
+      final ids = <String>[];
+      final savedChoices = <TodayExperiencePresentation>[];
+      final app = _app(
+        loader: loader,
+        journey: journey,
+        createId: () {
+          const id = '11111111-1111-4111-8111-111111111111';
+          ids.add(id);
+          return id;
+        },
+        activePermits: _Permits(_permit()),
+        presentationPreferences: _CallbackPreferenceWriter(
+          (_, choice) async => savedChoices.add(choice),
+        ),
+      );
+
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('adventure-hub')), findsOneWidget);
+
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(
+        tester.widget<TodayHubView>(find.byType(TodayHubView)).snapshot,
+        same(today),
+      );
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      expect(loader.calls, 1);
+      expect(ids, hasLength(1));
+      expect(journey.today, same(today));
+      expect(savedChoices, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'Standard escape during unresolved permit read never saves protocol preference',
+    (tester) async {
+      final permits = _PendingPermits();
+      final loader = _Loader(_today());
+      final ids = <String>[];
+      final savedChoices = <TodayExperiencePresentation>[];
+      await tester.pumpWidget(
+        _app(
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            const id = '11111111-1111-4111-8111-111111111111';
+            ids.add(id);
+            return id;
+          },
+          activePermits: permits,
+          presentationPreferences: _CallbackPreferenceWriter(
+            (_, choice) async => savedChoices.add(choice),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(TodayHubLoading), findsOneWidget);
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pump();
+      expect(savedChoices, isEmpty);
+
+      permits.complete(_permit());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(savedChoices, isEmpty);
+      expect(loader.calls, 1);
+      expect(ids, hasLength(1));
+    },
+  );
+
   testWidgets(
     'loads Today once and reuses the exact snapshot and UUID across switches',
     (tester) async {
@@ -313,6 +513,8 @@ Widget _app({
   Future<void> Function(AdventureMissionLaunchContext)? onStartMission,
   AdventurePresentationPreferenceWriter? presentationPreferences,
   RewardAccountReader? rewardAccounts,
+  ActivePresentationPermitReader activePermits =
+      const NoActivePresentationPermitReader(),
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -329,7 +531,7 @@ Widget _app({
     home: TodayExperienceHost(
       ownerId: ownerId,
       entry: entry,
-      activePermits: const NoActivePresentationPermitReader(),
+      activePermits: activePermits,
       todayHub: loader,
       catalog: catalog,
       journey: journey,
@@ -414,9 +616,38 @@ final class _Loader implements TodayHubSnapshotLoader {
 final class _PendingLoader implements TodayHubSnapshotLoader {
   _PendingLoader(this.pending);
   final Future<TodayHubSnapshot> pending;
+  int calls = 0;
 
   @override
-  Future<TodayHubSnapshot> load() => pending;
+  Future<TodayHubSnapshot> load() {
+    calls += 1;
+    return pending;
+  }
+}
+
+final class _Permits implements ActivePresentationPermitReader {
+  _Permits(this.permit);
+
+  final ActivePresentationPermit? permit;
+
+  @override
+  Future<ActivePresentationPermit?> readActivePermit({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) async => permit;
+}
+
+final class _PendingPermits implements ActivePresentationPermitReader {
+  final Completer<ActivePresentationPermit?> _pending =
+      Completer<ActivePresentationPermit?>();
+
+  @override
+  Future<ActivePresentationPermit?> readActivePermit({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) => _pending.future;
+
+  void complete(ActivePresentationPermit? permit) => _pending.complete(permit);
 }
 
 final class _ControlledPreferenceSaver
@@ -489,6 +720,23 @@ final class _Journey implements AdventureJourneyReader {
     );
   }
 }
+
+final class _FailingJourney implements AdventureJourneyReader {
+  @override
+  Future<AdventureJourneySnapshot> compose(
+    AdventureJourneyRequest request,
+  ) async => throw StateError('Adventure projection unavailable');
+}
+
+ActivePresentationPermit _permit() => ActivePresentationPermit(
+  permitId: 'permit:one',
+  ownerId: 'owner:one',
+  assignedPresentation: TodayExperiencePresentation.adventure,
+  protocolId: 'protocol:one',
+  protocolVersion: '1.0.0',
+  assignmentId: 'assignment:one',
+  expiresAtUtc: _now.add(const Duration(days: 1)),
+);
 
 final class _Actions implements TodayHubActionDelegate {
   @override

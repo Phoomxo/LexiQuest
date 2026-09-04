@@ -158,20 +158,49 @@ void main() {
   );
 
   test(
-    'ENT-010 active permit takes precedence without mutating preference',
+    'ENT-010 active permit starts assigned and Standard escape keeps assignment',
     () async {
       final preferences = _Preferences(TodayExperiencePresentation.standard);
       final permit = _permit(now);
-      final result =
-          await _host(_useCases(preferences: preferences), permit: permit).open(
-            ownerId: 'owner-001',
-            occurredAtUtc: now,
-            sessionChoice: TodayExperiencePresentation.standard,
-          );
+      final today = _TodayLoader(_snapshot('owner-001', now));
+      final host = _host(
+        _useCases(preferences: preferences),
+        permit: permit,
+        today: today,
+      );
 
-      expect(result?.decision.destination, AdventureEntryDestination.adventure);
-      expect(result?.decision.permitId, permit.permitId);
-      expect(result?.decision.assignmentId, permit.assignmentId);
+      final assigned = await host.open(
+        ownerId: 'owner-001',
+        occurredAtUtc: now,
+      );
+      final escaped = await host.open(
+        ownerId: 'owner-001',
+        occurredAtUtc: now,
+        sessionChoice: TodayExperiencePresentation.standard,
+      );
+
+      expect(
+        assigned?.decision.destination,
+        AdventureEntryDestination.adventure,
+      );
+      expect(assigned?.decision.treatment, 'adventure');
+      expect(
+        escaped?.decision.destination,
+        AdventureEntryDestination.standardToday,
+      );
+      expect(
+        escaped?.decision.fallbackReason,
+        AdventureFallbackReason.learnerChoseStandard,
+      );
+      expect(escaped?.decision.permitId, permit.permitId);
+      expect(escaped?.decision.assignmentId, permit.assignmentId);
+      expect(escaped?.decision.treatment, 'adventure');
+      expect(
+        escaped?.decision.entryAttemptId,
+        assigned?.decision.entryAttemptId,
+      );
+      expect(escaped?.today, same(assigned?.today));
+      expect(today.calls, 1);
       expect(preferences.calls, 0);
     },
   );

@@ -52,6 +52,11 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
     AdventureFallbackReason fallback = AdventureFallbackReason.none;
     if (permitIsActive) {
       presentation = permit!.assignedPresentation;
+      if (presentation == TodayExperiencePresentation.adventure &&
+          request.sessionChoice == TodayExperiencePresentation.standard) {
+        presentation = TodayExperiencePresentation.standard;
+        fallback = AdventureFallbackReason.learnerChoseStandard;
+      }
     } else if (request.sessionChoice case final choice?) {
       presentation = choice;
       if (choice == TodayExperiencePresentation.standard) {
@@ -91,7 +96,9 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
         catalogSchemaVersion: catalog.schemaVersion,
         permitId: permitIsActive ? permit!.permitId : null,
         assignmentId: permitIsActive ? permit!.assignmentId : null,
-        treatment: presentation.wireName,
+        treatment: permitIsActive
+            ? permit!.assignedPresentation.wireName
+            : presentation.wireName,
       ),
     );
   }
