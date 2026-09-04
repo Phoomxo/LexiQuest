@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "fdeca388bf4101bdf4a888cc3d739a8898069d96",
-  "sourceFingerprint": "659f05a2c5d5f9f9f7e5505464665353f8a82bc53f60be483b27b73d2ebd1500",
+  "sourceCommit": "c8784d0398ac762db6e1d322ffac2b2bed210b8f",
+  "sourceFingerprint": "ec068b590b05103e2c33f2dbcd51bd570e37262b15cf175f7a6826d3e19b9b81",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -121,11 +121,11 @@
     },
     {
       "path": "test",
-      "sha256": "e0ec4a595f8e7b732abcf15874293cf71baf636f9deca087091278ea5a5b7cc7"
+      "sha256": "a6f8961857f3803bfa4484d710cc415f1c56f5db62630c2e5376924f67fdccaf"
     },
     {
       "path": "test/architecture",
-      "sha256": "04d0fff1d29f97e1dece4250ac6a434eeb817545bc22b0ca916dfb8907e8a4a3"
+      "sha256": "8c755d70323efac483cdfb017262be029800d3fd85e6af42e8ffd4011de58203"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
@@ -237,7 +237,7 @@
     },
     {
       "path": "test/features/device_model",
-      "sha256": "3d11ab99d00635f79feca55d4f69d4931ab1f9099452de30d7b9842fb40afb5b"
+      "sha256": "719768b9cee4d770881cd471676e3f2f4f637f713a3ac2e196f52a29646ebac7"
     },
     {
       "path": "test/features/events",
@@ -365,7 +365,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "0e27c2f06f8fe5ec9956a6ab1fa108b35c515c98515472e22cbfb60083a7b488"
+      "sha256": "35e79aa59cb02d49aa47c29c4e26d3e09343e4ab8a9aafd1b93aed9217a5c13d"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -585,7 +585,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit fdeca388bf4101bdf4a888cc3d739a8898069d96",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit c8784d0398ac762db6e1d322ffac2b2bed210b8f",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
