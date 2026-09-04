@@ -3,7 +3,7 @@
 **Document ID:** LQ-AMM-RTM-001
 **Version:** 1.3
 **Status:** As-built engineering overlay recorded; external acceptance pending
-**Date:** 2026-09-04
+**Date:** 2026-09-04; evidence update 2026-09-05
 **Requirements source:** `02-srs.md` v1.2
 **Design source:** `03-sds.md` v1.3
 **Delivery source:** `04-project-plan-wbs.md` v1.2
@@ -373,7 +373,7 @@ authoritative สำหรับ implementation รอบปัจจุบั�
 | Functional | 130 | 130 | 130 | 130 | Adventure product FR-001–075, FR-089–093, FR-095–096 and FR-101–102 are I/V-AUTO; research/rollout and Pair ranges remain Planned/BLOCKED |
 | Data | 21 | 21 | 21 | 21 | DATA-002–006 are I/V-AUTO on schema v23; research DATA-007–015 and Pair DATA-016–021 remain BLOCKED |
 | UI/UX | 27 | 27 | 27 | 27 | UI-001–013 have automated implementation evidence; physical assistive-tech/UAT remains pending; research and Pair UI remain BLOCKED |
-| Non-functional | 46 | 46 | 46 | 46 | Product invariants have local evidence; device performance/manual accessibility, research efficacy and Pair gates remain pending/BLOCKED |
+| Non-functional | 46 | 46 | 46 | 46 | Product invariants and source-gated host-GPU emulator performance have local evidence; certified physical-device performance/manual accessibility, research efficacy and Pair gates remain pending/BLOCKED |
 | Business rules | 34 | 34 | 34 | 34 | Product authority/repair/reward rules have local evidence; research decisions and Pair rules remain Planned/BLOCKED |
 | **Total** | **258** | **258** | **258** | **258** | **No requirement is marked A; local verification cannot substitute for owner/UAT acceptance** |
 
@@ -384,7 +384,8 @@ authoritative สำหรับ implementation รอบปัจจุบั�
 | G0A, MS-02, MS-03, MS-04, MS-05 product implementation | I/V-AUTO | Checkpoint records `docs/development/2026-09-04-adventure-motivation-checkpoint-0.md`, `-2.md`, `-3.md`, `-4.md`; source through `be2ef6db` |
 | Task 6.1 diagnostics/catalog recovery | I/V-AUTO | Adventure diagnostics, download adapter and recovery suites are included in the 391-test focused product result |
 | Task 6.2 automated responsive/accessibility/media scope | V-AUTO | 34 dedicated tests; 320px/text 200%/dark/high-contrast/reduced-motion/no-audio coverage; packaged visual/audio bytes = 0 |
-| Task 6.2 physical accessibility/performance | Pending external | TalkBack, Switch Access, keyboard traversal, certified device profiles and p95/frame evidence are not yet signed |
+| Task 6.2 Android performance rehearsal | V-AUTO | Source `85b17755`; 187/187 runner contracts; pre/post source clean; Android 15 Pixel 6 host-GPU emulator passed all budgets with 20/20 real-frame transitions, frame p95 4.290 ms and maximum 7.031 ms; evidence remains `emulator_rehearsal` / `not_certified` |
+| Task 6.2 physical accessibility/performance | Pending external | TalkBack, Switch Access, keyboard traversal and approved physical-device profiles are not yet signed; emulator evidence cannot satisfy this gate |
 | Task 6.3 BG-01–BG-12 Android/shared scope | V-AUTO | `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`; 3,403 full Flutter tests pass default and serial with four explicit release exclusions |
 | Task 6.4 UAT/MS-08A/MS-08B | BLOCKED/Not Run | `07-uat-script.md` v1.3 records required cohorts, denominators, signatures and the missing research/device prerequisites; no UAT result is fabricated |
 | M10 research implementation | BLOCKED | No approved MDS/protocol/instrument/form/response-code/power/analysis/privacy-ethics package; schema/capture intentionally absent |

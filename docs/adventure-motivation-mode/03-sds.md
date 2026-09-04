@@ -3,9 +3,9 @@
 **Document ID:** LQ-AMM-SDS-001
 **Version:** 1.3
 **Status:** Product as-built overlay complete; owner review and external gates pending
-**Date:** 2026-09-04
+**Date:** 2026-09-04; evidence update 2026-09-05
 **SRS reference:** `LQ-AMM-SRS-001 v1.2`
-**As-built baseline:** product source `be2ef6db`, local evidence `bc546f09`, schema v23
+**As-built baseline:** product source `be2ef6db`, performance source `85b17755`, local evidence `bc546f09`, schema v23
 **Audit reference:** `AMM-AUDIT-001 v1.0`; local BG-01–BG-12 evidence has zero unclassified failure and retains explicit excluded/pending gates
 **Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 
@@ -32,9 +32,10 @@ and
 M10 research storage/capture and planned schema v24 are not implemented
 because their protocol, measurement, privacy and ethics prerequisites are not
 approved. M12 Pair Matching remains design-only and PM0–PM8 are not
-authorized. Automated accessibility/responsive scope is green; physical
-assistive-technology, performance, UAT and rollout evidence remain external
-acceptance gates.
+authorized. Automated accessibility/responsive scope and the source-gated
+Android host-GPU emulator performance rehearsal are green. Physical
+assistive-technology and certified-device performance, UAT and rollout
+evidence remain external acceptance gates.
 
 ## 1. Design Decision Summary
 
@@ -1209,6 +1210,26 @@ Required test layers:
 8. Export/delete/guest-upgrade lifecycle scenarios
 9. Manual accessibility/device certification
 10. UAT
+
+### 12.1 Performance rehearsal implementation
+
+`integration_test/adventure_performance_profile_test.dart` measures the
+approved local entry, journey projection, first meaningful render, paired
+Adventure-minus-Standard start overhead, and Map/List budgets in profile mode.
+Every one of 20 settled Map/List transitions must contribute a real Flutter
+build/raster frame; bounded Dart timeline aggregates are retained without raw
+event payloads. The untimed check uses the production
+`UnifiedLessonController` with its injected monotonic clock and the same
+`Timeout.none` value declared on the test.
+
+`tool/cli/run-adventure-performance-profile.ps1` validates the complete profile
+schema and takes content-clean Git snapshots before and after Flutter Drive.
+Changed HEAD, staged/unstaged content, non-ignored untracked files, malformed
+metrics, scalar arrays or inconsistent pass flags fail closed. At source
+`85b17755`, the Android 15 Pixel 6 host-GPU emulator rehearsal passed all
+budgets, including Map/List frame p95 4.290 ms and maximum 7.031 ms. Its
+evidence class is explicitly `emulator_rehearsal` / `not_certified`; physical
+device certification remains Test Architecture layer 9.
 
 ## 13. Deployment and Rollback
 

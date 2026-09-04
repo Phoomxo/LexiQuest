@@ -1,6 +1,6 @@
 # Adventure Motivation — Checkpoint 6 Local Verification Evidence
 
-Date: 2026-09-04 (Asia/Bangkok)
+Date: 2026-09-04; performance rehearsal addendum 2026-09-05 (Asia/Bangkok)
 
 Scope: Task 6.3 local engineering verification for the approved Android/shared
 Adventure Motivation delivery. This record is **local engineering evidence
@@ -46,6 +46,36 @@ authorization.
 | BG-11 | `dart run build_runner build --delete-conflicting-outputs`, blob comparison and `git diff --check` | PASS — generator completed; tracked generated database blobs equal the index; no generated/native drift or whitespace error. The current build_runner reports that `--delete-conflicting-outputs` is obsolete and ignores it without affecting the successful generation. |
 | BG-12 | Standard/Adventure command equivalence, feature-off, emergency-off and exact product-cardinality contracts | PASS in the focused and complete Flutter suites; Adventure remains presentation-only and Standard output/evidence authority is unchanged. |
 
+## Task 6.2 Android performance rehearsal addendum — 2026-09-05
+
+The source-gated profile runner is implemented at
+`tool/cli/run-adventure-performance-profile.ps1`, with the production profile
+at `integration_test/adventure_performance_profile_test.dart` and 187 runner
+contract assertions. Fresh verification from committed source
+`85b17755a81592ed276aa4c9e1a04d456f6fc8fd` produced
+`emulator_rehearsal` / `not_certified` evidence on an Android 15 Pixel 6 AVD
+at 1080 x 2400 px, 420 dpi, and 60 Hz using the NVIDIA RTX 3050 host renderer.
+
+| Rehearsal check | Result |
+| --- | --- |
+| Runner contracts | PASS — 187/187; malformed schema, scalar arrays, incomplete frame coverage, dirty source and pre/post-run commit drift all fail closed. |
+| Focused analyzer | PASS — zero issues in the integration profile and driver. |
+| Source binding | PASS — pre/post HEAD both `85b17755a81592ed276aa4c9e1a04d456f6fc8fd`; no staged, unstaged-content or untracked drift. |
+| Entry / projection / first render p95 | PASS — 0.017 ms / 0.710 ms / 57.064 ms against 50 ms / 100 ms / 1,500 ms. |
+| Paired Adventure-minus-Standard start overhead p95 | PASS — 0.181 ms against 150 ms; paired authority invariants are true. |
+| Map/List frames | PASS — 20/20 transitions contributed real frames, minimum 6 each, 120 total; p95 4.290 ms, maximum 7.031 ms, zero frame over 100 ms. |
+| Bounded timeline tasks | PASS — p95 0.701 ms, maximum 4.545 ms, zero task over 100 ms; 5,733 source events remain below the 100,000-event bound. |
+| Untimed behavior | PASS — the production controller observed an injected monotonic advance of 601,000 ms, counted only 300,000 ms active effort, excluded 301,000 ms idle and remained active/operation-capable under the same `Timeout.none` policy used by the test. |
+| Evidence integrity | PASS — integration JSON SHA-256 `fcf0df09c83abb1dae82bf21b042631caaa8bcf7752524f3499fdc4f121bb032`; no raw frame/timeline arrays are retained. |
+
+The definitive ignored artifacts are
+`build/adventure-performance/adventure-performance-20260904T183551631Z-85b17755a815-emulator-5556.evidence.json`
+and its paired `.integration.json`. An earlier Android 15 SwiftShader rehearsal
+missed the frame budget at 44.434 ms p95; it remains a recorded failure and is
+not represented as passing. The host-GPU result closes local rehearsal only;
+it does not replace the approved physical-device or assistive-technology
+matrix.
+
 The generated Final 8/44 Test Plan also passes its exact check at schema v23:
 fingerprint
 `ec068b590b05103e2c33f2dbcd51bd570e37262b15cf175f7a6826d3e19b9b81`,
@@ -73,7 +103,7 @@ The two accepted full runs exclude only tests carrying the executable
 | Desktop | EXCLUDED/BLOCKED. | Define and pass a separate desktop platform gate. | Mobile Platform Lead |
 | LiteRT field model | EXCLUDED/BLOCKED; approved model fixture and physical-device evidence are absent. | Supply checksum-pinned approved fixture and complete model/device certification before reachability. | ML/Field Lead |
 | Remote AI Voice / OmniVoice GPU | EXCLUDED/BLOCKED; only the CPU service suite is counted. | Resolve or renew the optional GPU dependency disposition, then certify the compatible Torch/Torchaudio/OmniVoice/CUDA stack on physical GPU before separate enablement. | Voice/ML Lead |
-| TalkBack, Switch Access, keyboard traversal and certified-device performance | PENDING EXTERNAL CERTIFICATION; automated responsive/accessibility coverage is green but is not a device sign-off. | Run the approved device/profile matrix, archive p95/frame measurements and obtain Accessibility QA approval. | Accessibility QA Lead |
+| TalkBack, Switch Access, keyboard traversal and certified-device performance | PENDING EXTERNAL CERTIFICATION; automated responsive/accessibility coverage and a source-gated host-GPU emulator performance rehearsal are green, but neither is a physical-device sign-off. | Run the approved physical device/profile matrix, archive p95/frame and assistive-technology measurements, and obtain Accessibility QA approval. | Accessibility QA Lead |
 | Research instrumentation / MDS | GOVERNANCE-BLOCKED; no research entities or capture were added. | Approve the protocol, instruments, response-code catalog, class-specific power calculations, analysis policy and privacy/ethics package. | Research / Privacy / Ethics owners |
 | UAT and rollout | PENDING EXTERNAL EXECUTION. | Complete the approved adult/minor, accessibility and guardian–learner cohorts and record signed MS-08A/MS-08B decisions. | UAT and Release owners |
 | Pair prototype PM0–PM8 | NOT AUTHORIZED. | Approve Pair ADR/SRS/SDS/RTM v1.2 and authorize its separate delivery flag. | Product / Architecture owners |
@@ -108,6 +138,6 @@ the separately downloadable-audio policy.
 
 **PASS for local Android/shared engineering scope.** BG-01–BG-12 have fresh,
 classified evidence with zero unclassified failure. Checkpoint 6 is not yet
-accepted: formal Task 6.2 device accessibility/performance certification and
+accepted: formal Task 6.2 physical-device accessibility/performance certification and
 Task 6.4 UAT/rollout execution remain pending, while Task 5 research and the
 Pair prototype remain blocked by their independent approvals.

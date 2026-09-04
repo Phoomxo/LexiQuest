@@ -3,10 +3,10 @@
 **Document ID:** LQ-AMM-UAT-001
 **Version:** 1.3
 **Status:** Execution-ready; external sessions and owner sign-off pending
-**Date:** 2026-09-04
+**Date:** 2026-09-04; evidence update 2026-09-05
 **References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
-**Build baseline:** Adventure product source `be2ef6db`; local verification evidence `bc546f09`; Drift schema v23; Pair Matching source closure `f56e2eb`
-**Release warning:** Android/shared local BG-01–BG-12 ผ่านโดยไม่มี unclassified failure ตาม evidence ข้างต้น แต่ยังห้าม sign-off Pilot/Production จนกว่าจะมี device accessibility/performance certification, participant UAT, approved research package และ signed MS-08A/MS-08B decision ตาม applicability
+**Build baseline:** Adventure product source `be2ef6db`; performance rehearsal source `85b17755`; local verification evidence `bc546f09`; Drift schema v23; Pair Matching source closure `f56e2eb`
+**Release warning:** Android/shared local BG-01–BG-12 ผ่านโดยไม่มี unclassified failure และ source-gated Android host-GPU emulator performance rehearsal ผ่านทุก budget แต่ยังเป็น `not_certified`; ห้าม sign-off Pilot/Production จนกว่าจะมี physical-device accessibility/performance certification, participant UAT, approved research package และ signed MS-08A/MS-08B decision ตาม applicability
 
 ## 1. วัตถุประสงค์
 
@@ -34,7 +34,7 @@ Blocked เพราะ Pair prototype ยังไม่ได้รับอ�
 
 | Scope | Current status | Evidence/blocker |
 |---|---|---|
-| Android/shared engineering preflight | Ready | BG-01–BG-12 local scope ผ่าน; 3,403 Flutter tests ผ่านทั้ง default/serial; APK SHA-256 `5F4C48537C3F06FD33E219764C2A2E1A7C90A273D8DB0AAC877CE6898967D928`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
+| Android/shared engineering preflight | Ready | BG-01–BG-12 local scope ผ่าน; 3,403 Flutter tests ผ่านทั้ง default/serial; source-gated host-GPU emulator rehearsal ผ่าน 20/20 transitions ที่มีเฟรมจริง (p95 4.290 ms, max 7.031 ms) แต่ไม่ใช่ physical certification; APK SHA-256 `5F4C48537C3F06FD33E219764C2A2E1A7C90A273D8DB0AAC877CE6898967D928`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
 | Internal UAT UAT-001–024, 030–032 | Not Run | ต้องใช้ learner representatives ≥12, accessibility moderated sessions ≥4, certified profiles และผู้ sign-off ที่เป็นอิสระจากผู้พัฒนา |
 | Research/permit UAT-025–037 | Blocked | ยังไม่มี approved protocol/instruments/response-code catalog/power plan/privacy-ethics package หรือ signed runtime permit fixtures; ระบบจงใจไม่มี research schema/capture |
 | MS-08B UAT-038 | Blocked | ต้องรอ MS-08A, powered adult/minor samples, frozen windows และ approved ANCOVA/MI/tipping-point evidence |
@@ -527,6 +527,12 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 | 2 | สลับ Map/List ต่อเนื่อง | interaction ลื่น ไม่มี long task ที่มองเห็นได้ |
 | 3 | Start เทียบ Standard fixture | ไม่มี waiting step เพิ่มที่ทำให้ flow สะดุด; budget ผ่าน |
 | 4 | หยุดอ่านหน้าจอนานตามต้องการ | ไม่มี forced timeout/heart/life loss |
+
+Automated precondition only: source `85b17755` ผ่าน host-GPU emulator rehearsal
+ครบทุก budget รวม Map/List frame p95 4.290 ms และ production-controller
+untimed probe ที่ app-observed clock 601,000 ms โดย session ยัง active. ผลนี้ไม่
+ทำให้ UAT-030 เป็น Pass; tester perception, physical profile และ sign-off ยัง
+ต้องบันทึกจาก external session ตามตารางด้านบน.
 
 ### UAT-031 — Diagnostic privacy และ unknown payload
 
