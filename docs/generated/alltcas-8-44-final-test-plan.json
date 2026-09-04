@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "f04fe3c4b5a1eec14486be39f3bd7ae447250b50",
-  "sourceFingerprint": "9eb004607b09eeb6d73dca7a0dbc443288cb685ba75304d5b40b9e66a7d59d68",
+  "sourceCommit": "ae321f622448004faac6626ca30afc1b0722fd60",
+  "sourceFingerprint": "27124f157c0d3f8e0000900afca86af7cd45440cfbeae38ee69249dc431ce3e5",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -61,7 +61,7 @@
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
-      "sha256": "04081ef62085748b83728deb8f0b4f9f961ec78ee9d3214a60c2a5e0b63856cb"
+      "sha256": "75b8557d52ee253049163e1e6a6c65e82278351823376b3d564170af3e48342a"
     },
     {
       "path": "integration_test/field_trial_feature_controls_test.dart",
@@ -579,7 +579,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit f04fe3c4b5a1eec14486be39f3bd7ae447250b50",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit ae321f622448004faac6626ca30afc1b0722fd60",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
