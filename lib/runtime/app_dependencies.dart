@@ -332,14 +332,25 @@ final class AppDependencies {
 
   bool get _hasCanonicalAdventureResultNextActionAuthority {
     final nextAction = adventureResultNextAction;
-    if (nextAction == null) {
+    final canonicalReviewCenter = reviewCenter;
+    final canonicalOwnerIdentities = activeOwnerIdentities;
+    final canonicalLearning = learning;
+    if (nextAction is! ReviewCenterAdventureResultNextActionReader ||
+        canonicalReviewCenter == null ||
+        canonicalOwnerIdentities == null ||
+        canonicalLearning == null) {
       return false;
     }
-    if (nextAction is! ReviewCenterAdventureResultNextActionReader) {
-      return true;
-    }
-    return identical(nextAction.readerIdentity, reviewCenter?.reader) &&
-        identical(nextAction.ownerIdentity, activeOwnerIdentities);
+    return identical(nextAction.readerIdentity, canonicalReviewCenter.reader) &&
+        identical(nextAction.ownerIdentity, canonicalOwnerIdentities) &&
+        identical(
+          canonicalReviewCenter.ownerIdentities,
+          canonicalOwnerIdentities,
+        ) &&
+        identical(
+          canonicalReviewCenter.sessionAuthorityIdentity,
+          canonicalLearning,
+        );
   }
 
   Future<void> dispose() {

@@ -16,6 +16,7 @@ import 'package:vocab_learning_app/features/adventure/application/adventure_resu
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_result.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_today_entry_card.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
@@ -171,6 +172,8 @@ void main() {
         'sessionComposer',
         'motivationReader',
         'resultNextActionReader',
+        'reviewCenter',
+        'activeOwnerIdentities',
         'receiptRefresher',
       ]) {
         AppDependencies? composed;
@@ -188,6 +191,8 @@ void main() {
             includeAdventureMotivation: missing != 'motivationReader',
             includeAdventureResultNextAction:
                 missing != 'resultNextActionReader',
+            includeReviewCenter: missing != 'reviewCenter',
+            includeActiveOwnerIdentities: missing != 'activeOwnerIdentities',
             includeAdventureReceiptRefresher: missing != 'receiptRefresher',
             onDependencies: (value) => composed = value,
           ),
@@ -212,15 +217,27 @@ void main() {
   testWidgets(
     'Adventure entry fails closed when result next-action authority identities drift',
     (tester) async {
-      for (final mismatch in <String>['reviewReader', 'ownerIdentities']) {
+      for (final mismatch in <String>[
+        'implementation',
+        'reviewReader',
+        'ownerIdentities',
+        'reviewCenterOwnerIdentities',
+        'reviewSessionAuthority',
+      ]) {
         AppDependencies? composed;
         await tester.pumpWidget(
           _mainNavigationApp(
             const BuildFeatureRegistry.allEnabled(),
             todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
             includeAdventure: true,
+            useNonCanonicalAdventureResultNextAction:
+                mismatch == 'implementation',
             mismatchAdventureResultReviewIdentity: mismatch == 'reviewReader',
             mismatchAdventureResultOwnerIdentity: mismatch == 'ownerIdentities',
+            mismatchReviewCenterOwnerIdentity:
+                mismatch == 'reviewCenterOwnerIdentities',
+            mismatchReviewSessionAuthority:
+                mismatch == 'reviewSessionAuthority',
             onDependencies: (value) => composed = value,
           ),
         );
@@ -910,10 +927,13 @@ Widget _mainNavigationApp(
   bool includeAdventureResultNextAction = true,
   bool includeAdventureReceiptRefresher = true,
   bool includeAdventureSessionComposer = true,
+  bool includeActiveOwnerIdentities = true,
+  bool useNonCanonicalAdventureResultNextAction = false,
   bool mismatchReviewSessionAuthority = false,
   bool mismatchHistorySessionAuthority = false,
   bool mismatchAdventureResultReviewIdentity = false,
   bool mismatchAdventureResultOwnerIdentity = false,
+  bool mismatchReviewCenterOwnerIdentity = false,
   bool includeAdventure = false,
   AdventureDiagnostics? adventureDiagnosticsOverride,
   ValueSetter<AppDependencies>? onDependencies,
@@ -1011,11 +1031,15 @@ Widget _mainNavigationApp(
         ? const _NavigationRewardAccounts()
         : null,
     todayHub: todayHub,
-    activeOwnerIdentities: ownerIdentities,
+    activeOwnerIdentities: includeActiveOwnerIdentities
+        ? ownerIdentities
+        : null,
     reviewCenter: includeReviewCenter
         ? ReviewCenterUseCases(
             reader: reviewReader,
-            ownerIdentities: ownerIdentities,
+            ownerIdentities: mismatchReviewCenterOwnerIdentity
+                ? _NavigationReviewOwnerIdentities()
+                : ownerIdentities,
             sessionLauncher: _NavigationReviewSessionLauncher(
               mismatchReviewSessionAuthority ? otherLearning : learning,
             ),
@@ -1052,16 +1076,18 @@ Widget _mainNavigationApp(
         : null,
     adventureResultNextAction:
         includeAdventure && includeAdventureResultNextAction
-        ? ReviewCenterAdventureResultNextActionReader(
-            reader: mismatchAdventureResultReviewIdentity
-                ? _NavigationReviewReader()
-                : reviewReader,
-            ownerIdentities: mismatchAdventureResultOwnerIdentity
-                ? _NavigationReviewOwnerIdentities()
-                : ownerIdentities,
-            nowUtc: () => DateTime.utc(2026, 8, 24),
-            timezoneId: 'Asia/Bangkok',
-          )
+        ? useNonCanonicalAdventureResultNextAction
+              ? const _NavigationAdventureResultNextActionReader()
+              : ReviewCenterAdventureResultNextActionReader(
+                  reader: mismatchAdventureResultReviewIdentity
+                      ? _NavigationReviewReader()
+                      : reviewReader,
+                  ownerIdentities: mismatchAdventureResultOwnerIdentity
+                      ? _NavigationReviewOwnerIdentities()
+                      : ownerIdentities,
+                  nowUtc: () => DateTime.utc(2026, 8, 24),
+                  timezoneId: 'Asia/Bangkok',
+                )
         : null,
     adventureReceiptBarrier:
         includeAdventure && includeAdventureReceiptRefresher
@@ -1260,6 +1286,15 @@ final class _NavigationReviewReader implements ReviewCenterReader {
   @override
   Future<List<ReviewQueueItem>> compose(ReviewQueueFilter filter) async =>
       const <ReviewQueueItem>[];
+}
+
+final class _NavigationAdventureResultNextActionReader
+    implements AdventureResultNextActionReader {
+  const _NavigationAdventureResultNextActionReader();
+
+  @override
+  Future<AdventureNextAction> read({required String ownerId}) async =>
+      AdventureNextAction.none;
 }
 
 final class _NavigationReviewOwnerIdentities
