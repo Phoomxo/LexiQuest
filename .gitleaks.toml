@@ -40,3 +40,10 @@ condition = "AND"
 regexTarget = "match"
 paths = ['''(?:^|/)backend/ai_api/tests/test_models\.py$''']
 regexes = ['''hunter2-leak-canary-9f3c''']
+
+[[allowlists]]
+description = "Learner-preference sync lease is a fixed non-secret test fixture."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)test/features/sync/learner_preferences_sync_test\.dart$''']
+regexes = ['''v2-v1-replacement-lease''']
