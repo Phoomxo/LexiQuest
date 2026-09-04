@@ -3294,8 +3294,15 @@ final class DriftSyncStore implements SyncStore {
     final cloudUpdatedAtUtcMs = cloudEntity.payload['updatedAtUtcMs']! as int;
     final preserveNewerLocalIntent =
         current.updatedAtUtcMs > cloudUpdatedAtUtcMs;
+    final rebaseV2HomeAfterV1CloudWin =
+        !preserveNewerLocalIntent &&
+        cloudEntity.payloadVersion == 1 &&
+        current.preferenceVersion == 2 &&
+        learnerPreferenceSyncRollout.writePayloadVersion == 2;
     final outcome = preserveNewerLocalIntent
         ? 'newerLocalIntentRebased'
+        : rebaseV2HomeAfterV1CloudWin
+        ? 'cloudFieldsWonV2HomeRebased'
         : 'cloudWins';
     final localSnapshot = <String, Object?>{
       'entityId': current.ownerId,
@@ -3343,6 +3350,20 @@ final class DriftSyncStore implements SyncStore {
         cloudEntity,
         handlePendingConflict: false,
       );
+      if (rebaseV2HomeAfterV1CloudWin) {
+        final merged = await (database.select(
+          database.learnerPreferences,
+        )..where((row) => row.ownerId.equals(operation.ownerId))).getSingle();
+        await _replaceLearnerPreferenceDeliveryAfterCloudAdvance(
+          operation: operation,
+          current: merged,
+          firebaseUid: cloudEntity.payload['ownerId']! as String,
+          cloudEntity: cloudEntity,
+          replacementState: 'pending',
+          nextAttemptAtUtcMs: null,
+        );
+        return;
+      }
       await (database.update(
         database.outboxOperations,
       )..where((row) => row.operationId.equals(operation.operationId))).write(

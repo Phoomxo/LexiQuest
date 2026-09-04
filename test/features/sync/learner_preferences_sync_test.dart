@@ -915,6 +915,180 @@ void main() {
       expect(row.read<int>('available_minutes_per_day'), 30);
       expect(row.read<String>('activity_preference'), 'speaking');
     });
+
+    test(
+      'newer v1 cloud conflict rebases preserved Adventure as one v2 intent',
+      () async {
+        await database.customUpdate(
+          "UPDATE learner_preferences SET preference_version = 2, "
+          "home_experience = 'adventure', local_revision = 1, "
+          'cloud_revision = 0, updated_at_utc_ms = 1000',
+        );
+        final store = _v2EnabledStore(database);
+        final claim = (await store.claimPending(
+          ownerId: 'local:preferences',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'v2-v1-conflict-lease',
+          ownerGateToken: ownerGateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        )).single;
+        final attempted = (await store.beginAttempt(
+          claim: claim,
+          ownerGateToken: ownerGateToken,
+          nowUtc: nowUtc,
+        ))!;
+        final serverTime = nowUtc.add(const Duration(seconds: 1));
+
+        expect(
+          await store.resolvePushConflict(
+            claim: attempted,
+            ownerGateToken: ownerGateToken,
+            cloudEntity: SyncEntity(
+              collection: SyncCollection.learnerPreferences,
+              entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: serverTime,
+              payload: _payload(
+                goal: 'conversationConfidence',
+                minutes: 30,
+                activity: 'speaking',
+                updatedAtUtcMs: 2000,
+              ),
+            ),
+            resolvedAtUtc: serverTime,
+          ),
+          isTrue,
+        );
+
+        final local = await database
+            .customSelect(
+              'SELECT preference_version, home_experience, goal, '
+              'available_minutes_per_day, activity_preference, '
+              'updated_at_utc_ms, local_revision, cloud_revision '
+              "FROM learner_preferences WHERE owner_id = 'local:preferences'",
+            )
+            .getSingle();
+        expect(local.data, <String, Object?>{
+          'preference_version': 2,
+          'home_experience': 'adventure',
+          'goal': 'conversationConfidence',
+          'available_minutes_per_day': 30,
+          'activity_preference': 'speaking',
+          'updated_at_utc_ms': 2000,
+          'local_revision': 2,
+          'cloud_revision': 1,
+        });
+        final replacement = (await _v2EnabledStore(database).claimPending(
+          ownerId: 'local:preferences',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'v2-v1-replacement-lease',
+          ownerGateToken: ownerGateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: serverTime.add(const Duration(seconds: 1)),
+        )).single;
+        expect(replacement.mutation.payloadVersion, 2);
+        expect(replacement.mutation.baseRevision, 1);
+        expect(replacement.mutation.localRevision, 2);
+        expect(
+          replacement.mutation.payload,
+          _v2Payload(
+            goal: 'conversationConfidence',
+            minutes: 30,
+            activity: 'speaking',
+            homeExperience: 'adventure',
+            updatedAtUtcMs: 2000,
+          ),
+        );
+        final operations = await database
+            .customSelect(
+              "SELECT state FROM outbox_operations WHERE entity_type = "
+              "'learnerPreference' ORDER BY created_at_utc_ms, operation_id",
+            )
+            .get();
+        expect(
+          operations.where((row) => row.read<String>('state') == 'inFlight'),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'older v1 cloud conflict rebases the complete newer v2 intent',
+      () async {
+        await database.customUpdate(
+          "UPDATE learner_preferences SET preference_version = 2, "
+          "home_experience = 'adventure', local_revision = 1, "
+          'cloud_revision = 0, updated_at_utc_ms = 3000',
+        );
+        final store = _v2EnabledStore(database);
+        final claim = (await store.claimPending(
+          ownerId: 'local:preferences',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'v2-newer-local-lease',
+          ownerGateToken: ownerGateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        )).single;
+        final attempted = (await store.beginAttempt(
+          claim: claim,
+          ownerGateToken: ownerGateToken,
+          nowUtc: nowUtc,
+        ))!;
+
+        expect(
+          await store.resolvePushConflict(
+            claim: attempted,
+            ownerGateToken: ownerGateToken,
+            cloudEntity: SyncEntity(
+              collection: SyncCollection.learnerPreferences,
+              entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+              payload: _payload(
+                goal: 'conversationConfidence',
+                minutes: 30,
+                activity: 'speaking',
+                updatedAtUtcMs: 2000,
+              ),
+            ),
+            resolvedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+          ),
+          isTrue,
+        );
+
+        final replacement = (await _v2EnabledStore(database).claimPending(
+          ownerId: 'local:preferences',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'v2-newer-local-restart-lease',
+          ownerGateToken: ownerGateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc.add(const Duration(seconds: 2)),
+        )).single;
+        expect(replacement.mutation.baseRevision, 1);
+        expect(replacement.mutation.localRevision, 2);
+        expect(
+          replacement.mutation.payload,
+          _v2Payload(homeExperience: 'adventure', updatedAtUtcMs: 3000),
+        );
+      },
+    );
   });
 }
 

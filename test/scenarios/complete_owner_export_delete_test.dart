@@ -27,7 +27,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v22 lifecycle classifies owner and non-owner tables exactly once',
+    'current v23 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
