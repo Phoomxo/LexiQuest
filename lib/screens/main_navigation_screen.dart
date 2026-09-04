@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_learning_bridge.dart';
 import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/domain/adventure_journey.dart';
@@ -271,6 +272,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           actions: _todayActions(),
           features: widget.featureRegistry ?? dependencies.features,
           assessmentAvailable: dependencies.assessment != null,
+          onPresentationPreferenceChanged: (presentation) =>
+              LearnerAdventurePresentationPreferences(
+                dependencies.learnerPreferences!,
+              ).saveForOwner(ownerId, presentation),
           onStartMission: _startAdventureMission,
         ),
       ),

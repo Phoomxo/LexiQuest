@@ -13,6 +13,8 @@ import 'adventure_hub_screen.dart';
 import 'widgets/adventure_standard_switch.dart';
 
 typedef AdventureUtcNow = DateTime Function();
+typedef AdventurePresentationPreferenceSaver =
+    Future<void> Function(TodayExperiencePresentation presentation);
 
 final class AdventureMissionLaunchContext {
   const AdventureMissionLaunchContext({
@@ -41,6 +43,7 @@ final class TodayExperienceHost extends StatefulWidget {
     required this.features,
     required this.assessmentAvailable,
     required this.onStartMission,
+    this.onPresentationPreferenceChanged,
   });
 
   final String ownerId;
@@ -56,6 +59,7 @@ final class TodayExperienceHost extends StatefulWidget {
   final bool assessmentAvailable;
   final Future<void> Function(AdventureMissionLaunchContext launch)
   onStartMission;
+  final AdventurePresentationPreferenceSaver? onPresentationPreferenceChanged;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
@@ -74,6 +78,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   TodayExperiencePresentation? _sessionChoice;
   late DateTime _occurredAtUtc;
   var _refreshGeneration = 0;
+  var _permitControlsPresentation = false;
 
   @override
   void initState() {
@@ -119,7 +124,8 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     if (generation != _refreshGeneration || result?.today == null) {
       return _TodayExperienceModel(result: result);
     }
-    final decision = result!.decision;
+    _permitControlsPresentation = result!.decision.permitId != null;
+    final decision = result.decision;
     if (decision.destination != AdventureEntryDestination.adventure) {
       return _TodayExperienceModel(result: result);
     }
@@ -147,6 +153,9 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       _sessionChoice = choice;
       _loadFuture = _load(_refreshGeneration, _entryHost);
     });
+    if (!_permitControlsPresentation) {
+      widget.onPresentationPreferenceChanged?.call(choice).catchError((_) {});
+    }
   }
 
   void _refresh() {

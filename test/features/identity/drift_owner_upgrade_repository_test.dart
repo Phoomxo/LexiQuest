@@ -150,7 +150,8 @@ void main() {
           .customSelect(
             'SELECT owner_id, preference_version, goal, '
             'available_minutes_per_day, activity_preference, updated_at_utc_ms, '
-            'theme_mode, motion_mode, display_updated_at_utc_ms, '
+            'home_experience, theme_mode, motion_mode, '
+            'display_updated_at_utc_ms, '
             'local_revision, cloud_revision, last_acknowledged_at_utc_ms, '
             'server_updated_at_utc_ms '
             'FROM learner_preferences',
@@ -158,10 +159,11 @@ void main() {
           .getSingle();
       expect(preference.data, {
         'owner_id': 'account-owner',
-        'preference_version': 1,
+        'preference_version': 2,
         'goal': 'examPreparation',
         'available_minutes_per_day': 45,
         'activity_preference': 'quiz',
+        'home_experience': 'standard',
         'updated_at_utc_ms': 30,
         'theme_mode': 'dark',
         'motion_mode': 'reduced',

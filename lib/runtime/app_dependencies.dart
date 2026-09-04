@@ -5,6 +5,7 @@ import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_entry.dart';
 import '../features/adventure/domain/adventure_world_catalog.dart';
@@ -265,6 +266,7 @@ final class AppDependencies {
           lessonModes != null &&
           createLessonController != null &&
           sessionConfigurations != null &&
+          learnerPreferences != null &&
           currentActivityEvidence != null &&
           identical(currentActivityEvidence?.learning, learning) &&
           identical(
@@ -278,6 +280,14 @@ final class AppDependencies {
           identical(
             (adventureEntry! as AdventureEntryUseCases).catalog,
             adventureCatalog,
+          ) &&
+          (adventureEntry! as AdventureEntryUseCases).preferences
+              is LearnerAdventurePresentationPreferences &&
+          identical(
+            ((adventureEntry! as AdventureEntryUseCases).preferences!
+                    as LearnerAdventurePresentationPreferences)
+                .preferences,
+            learnerPreferences,
           ),
   };
 

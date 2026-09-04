@@ -171,6 +171,7 @@ void main() {
           'goal': 'examPreparation',
           'availableMinutesPerDay': 45,
           'activityPreference': 'quiz',
+          'homeExperience': 'standard',
           'updatedAtUtc': '1970-01-01T00:00:00.020Z',
           'themeMode': 'dark',
           'motionMode': 'reduced',

@@ -24,6 +24,7 @@ void main() {
       final loader = _Loader(today);
       final journey = _Journey();
       final ids = <String>[];
+      final savedChoices = <TodayExperiencePresentation>[];
       await tester.pumpWidget(
         _app(
           loader: loader,
@@ -33,12 +34,14 @@ void main() {
             ids.add(id);
             return id;
           },
+          onPresentationPreferenceChanged: (choice) async {
+            savedChoices.add(choice);
+          },
         ),
       );
       await tester.pumpAndSettle();
       expect(loader.calls, 1);
       expect(find.byType(TodayHubView), findsOneWidget);
-
       await tester.tap(find.text('ผจญภัย'));
       await tester.pumpAndSettle();
       expect(loader.calls, 1);
@@ -50,6 +53,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(loader.calls, 1);
       expect(find.byType(TodayHubView), findsOneWidget);
+      expect(savedChoices, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+        TodayExperiencePresentation.standard,
+      ]);
     },
   );
 
@@ -148,6 +155,7 @@ Widget _app({
   required AdventureJourneyReader journey,
   required String Function() createId,
   Future<void> Function(AdventureMissionLaunchContext)? onStartMission,
+  AdventurePresentationPreferenceSaver? onPresentationPreferenceChanged,
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -173,6 +181,7 @@ Widget _app({
       actions: _Actions(),
       features: const BuildFeatureRegistry.allEnabled(),
       assessmentAvailable: false,
+      onPresentationPreferenceChanged: onPresentationPreferenceChanged,
       onStartMission: onStartMission ?? (_) async {},
     ),
   );

@@ -25,6 +25,7 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_journey_reader.dart';
 import '../features/adventure/application/adventure_rollout_gate.dart';
 import '../features/adventure/data/adventure_world_catalog_validator.dart';
@@ -1276,6 +1277,7 @@ final class AppBootstrap {
       catalog: adventureCatalog,
       todayHubIdentity: todayHub,
       learningIdentity: learning,
+      preferences: LearnerAdventurePresentationPreferences(learnerPreferences),
     );
     const adventurePresentationPermits = NoActivePresentationPermitReader();
     final adventureJourney = AdventureJourneyUseCases();
