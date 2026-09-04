@@ -1232,6 +1232,16 @@ void main() {
           );
         }
         expect(afterReplay['activeOwnerId'], 'guest-owner');
+        final adventurePreference = await database
+            .customSelect(
+              'SELECT preference_version, home_experience '
+              "FROM learner_preferences WHERE owner_id = 'guest-owner'",
+            )
+            .getSingle();
+        expect(adventurePreference.data, <String, Object?>{
+          'preference_version': 2,
+          'home_experience': 'adventure',
+        });
         expect(afterReplay['inventoryIdentity'], boundInventory);
         expect(afterReplay['inventoryCounts'], boundCounts);
         expect(afterReplay['operationTypes'], expectedOperationEntityTypes);
@@ -2692,8 +2702,9 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO learner_preferences '
     '(owner_id, preference_version, goal, available_minutes_per_day, '
-    'activity_preference, updated_at_utc_ms) VALUES '
-    "('guest-owner', 1, 'balancedGrowth', 20, 'mixedPractice', 10)",
+    'activity_preference, home_experience, updated_at_utc_ms) VALUES '
+    "('guest-owner', 2, 'balancedGrowth', 20, 'mixedPractice', "
+    "'adventure', 10)",
   );
   await _seedCompleteInventoryAssessmentRun(
     database,

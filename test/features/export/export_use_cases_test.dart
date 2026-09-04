@@ -141,10 +141,10 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
-        'display_updated_at_utc_ms) VALUES '
-        "('local:owner', 1, 'examPreparation', 45, 'quiz', 20, 'dark', "
-        "'reduced', 21)",
+        'activity_preference, home_experience, updated_at_utc_ms, theme_mode, '
+        'motion_mode, display_updated_at_utc_ms) VALUES '
+        "('local:owner', 2, 'examPreparation', 45, 'quiz', 'adventure', 20, "
+        "'dark', 'reduced', 21)",
       );
       await consent.withdraw();
 
@@ -167,11 +167,11 @@ void main() {
       expect(preferenceTable['records'], [
         {'recordCount': 1},
         {
-          'preferenceVersion': 1,
+          'preferenceVersion': 2,
           'goal': 'examPreparation',
           'availableMinutesPerDay': 45,
           'activityPreference': 'quiz',
-          'homeExperience': 'standard',
+          'homeExperience': 'adventure',
           'updatedAtUtc': '1970-01-01T00:00:00.020Z',
           'themeMode': 'dark',
           'motionMode': 'reduced',

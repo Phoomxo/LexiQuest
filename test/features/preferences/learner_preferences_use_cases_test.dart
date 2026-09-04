@@ -340,6 +340,7 @@ void main() {
           goal: LearnerPreferenceGoal.vocabularyGrowth,
           availableMinutesPerDay: 25,
           activityPreference: LearnerActivityPreference.vocabulary,
+          homeExperience: HomeExperience.adventure,
         );
 
         await expectLater(
@@ -352,7 +353,18 @@ void main() {
           throwsA(isA<LearnerPreferencesMutationUnavailable>()),
         );
         expect(await useCases.read(), saved);
+        expect(
+          (await useCases.read()).homeExperience,
+          HomeExperience.adventure,
+        );
         expect(await _count(database, 'learner_preferences'), 1);
+        expect(await _outboxCount(database), 1);
+
+        final afterReEnable = await useCases.saveHomeExperience(
+          expectedOwnerId: saved.ownerId,
+          homeExperience: HomeExperience.adventure,
+        );
+        expect(afterReEnable.homeExperience, HomeExperience.adventure);
         expect(await _outboxCount(database), 1);
       },
     );

@@ -21,10 +21,28 @@ void main() {
       expect(columns, contains('home_experience'));
       expect(columns, hasLength(15));
 
-      final row = await database
-          .customSelect('SELECT * FROM learner_preferences')
-          .getSingle();
-      expect(row.data, <String, Object?>{
+      final rows = await database
+          .customSelect('SELECT * FROM learner_preferences ORDER BY owner_id')
+          .get();
+      expect(rows, hasLength(2));
+      expect(rows.first.data, <String, Object?>{
+        'owner_id': 'owner:tombstone',
+        'preference_version': 2,
+        'goal': 'vocabularyGrowth',
+        'available_minutes_per_day': 25,
+        'activity_preference': 'vocabulary',
+        'updated_at_utc_ms': 1788048000800,
+        'theme_mode': 'light',
+        'motion_mode': 'system',
+        'display_updated_at_utc_ms': 1788048000810,
+        'home_experience': 'standard',
+        'local_revision': 9,
+        'cloud_revision': 8,
+        'last_acknowledged_at_utc_ms': 1788048000820,
+        'server_updated_at_utc_ms': 1788048000830,
+        'is_deleted': 1,
+      });
+      expect(rows.last.data, <String, Object?>{
         'owner_id': 'owner:v19',
         'preference_version': 2,
         'goal': 'examPreparation',
@@ -84,6 +102,21 @@ void createSchemaTwentyTwoFixture(dynamic sqlite) {
     'local_revision = 7, cloud_revision = 5, '
     'last_acknowledged_at_utc_ms = 1788048000600, '
     'server_updated_at_utc_ms = 1788048000700',
+  );
+  sqlite.execute(
+    'INSERT INTO local_owners '
+    '(id, account_state, created_at_utc_ms, is_active) '
+    "VALUES ('owner:tombstone', 'localGuest', 1788048000000, 0)",
+  );
+  sqlite.execute(
+    'INSERT INTO learner_preferences '
+    '(owner_id, preference_version, goal, available_minutes_per_day, '
+    'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+    'display_updated_at_utc_ms, local_revision, cloud_revision, '
+    'last_acknowledged_at_utc_ms, server_updated_at_utc_ms, is_deleted) '
+    "VALUES ('owner:tombstone', 1, 'vocabularyGrowth', 25, 'vocabulary', "
+    "1788048000800, 'light', 'system', 1788048000810, 9, 8, "
+    '1788048000820, 1788048000830, 1)',
   );
   sqlite.execute('PRAGMA user_version = 22');
 }

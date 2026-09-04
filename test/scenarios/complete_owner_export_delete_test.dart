@@ -824,6 +824,10 @@ void main() {
       await _seedCompleteOwnerA(database);
       await _cloneOwnerAAsB(database);
       await database.customUpdate(
+        "UPDATE learner_preferences SET home_experience = 'standard' "
+        "WHERE owner_id = 'owner-b'",
+      );
+      await database.customUpdate(
         "UPDATE research_consents SET consent_state = 'withdrawn', "
         'withdrawn_at_utc_ms = 1723377600000 WHERE owner_id = \'owner-a\'',
       );
@@ -1015,11 +1019,11 @@ void main() {
       expect(learnerPreferenceArchive['records'], [
         {'recordCount': 1},
         {
-          'preferenceVersion': 1,
+          'preferenceVersion': 2,
           'goal': 'examPreparation',
           'availableMinutesPerDay': 45,
           'activityPreference': 'quiz',
-          'homeExperience': 'standard',
+          'homeExperience': 'adventure',
           'updatedAtUtc': '1970-01-01T00:00:00.020Z',
           'themeMode': 'system',
           'motionMode': 'system',
@@ -1245,7 +1249,7 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      // v22 also deletes the owner's durable learner/display preference.
+      // v23 also deletes the owner's durable learner/display preference.
       expect(deleted, 37);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
       // v22 retains exactly one row for every direct-owner lifecycle entry,
@@ -1270,6 +1274,19 @@ void main() {
             .map((row) => row.read<int>('count'))
             .getSingle(),
         1,
+      );
+      expect(
+        await database
+            .customSelect(
+              'SELECT preference_version, home_experience '
+              "FROM learner_preferences WHERE owner_id = 'owner-b'",
+            )
+            .map((row) => row.data)
+            .getSingle(),
+        <String, Object?>{
+          'preference_version': 2,
+          'home_experience': 'standard',
+        },
       );
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
@@ -1463,8 +1480,8 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO learner_preferences '
     '(owner_id, preference_version, goal, available_minutes_per_day, '
-    'activity_preference, updated_at_utc_ms) VALUES '
-    "('owner-a', 1, 'examPreparation', 45, 'quiz', 20)",
+    'activity_preference, home_experience, updated_at_utc_ms) VALUES '
+    "('owner-a', 2, 'examPreparation', 45, 'quiz', 'adventure', 20)",
   );
   await database.customInsert(
     'INSERT INTO assessment_runs '

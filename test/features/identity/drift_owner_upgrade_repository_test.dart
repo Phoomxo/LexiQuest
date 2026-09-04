@@ -123,12 +123,12 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
-        'display_updated_at_utc_ms, local_revision, '
+        'activity_preference, home_experience, updated_at_utc_ms, theme_mode, '
+        'motion_mode, display_updated_at_utc_ms, local_revision, '
         'cloud_revision, last_acknowledged_at_utc_ms, '
         'server_updated_at_utc_ms) VALUES '
-        "('guest-owner', 1, 'examPreparation', 45, 'quiz', 30, 'dark', "
-        "'reduced', 29, 2, 2, 25, 25)",
+        "('guest-owner', 2, 'examPreparation', 45, 'quiz', 'adventure', 30, "
+        "'dark', 'reduced', 29, 2, 2, 25, 25)",
       );
       await database.customInsert(
         'INSERT INTO outbox_operations '
@@ -136,7 +136,7 @@ void main() {
         'payload_version, base_revision, state, attempt_count, '
         'created_at_utc_ms) VALUES '
         "('learnerPreference:guest-owner:1', 'guest-owner', "
-        "'learnerPreference', 'guest-owner', 'upsert', 1, 0, "
+        "'learnerPreference', 'guest-owner', 'upsert', 2, 0, "
         "'pending', 0, 30)",
       );
 
@@ -163,7 +163,7 @@ void main() {
         'goal': 'examPreparation',
         'available_minutes_per_day': 45,
         'activity_preference': 'quiz',
-        'home_experience': 'standard',
+        'home_experience': 'adventure',
         'updated_at_utc_ms': 30,
         'theme_mode': 'dark',
         'motion_mode': 'reduced',
@@ -416,9 +416,10 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms) VALUES '
-        "('guest-owner', 1, 'vocabularyGrowth', 25, 'vocabulary', 30), "
-        "('account-owner', 1, 'examPreparation', 45, 'quiz', 40)",
+        'activity_preference, home_experience, updated_at_utc_ms) VALUES '
+        "('guest-owner', 2, 'vocabularyGrowth', 25, 'vocabulary', "
+        "'adventure', 30), "
+        "('account-owner', 2, 'examPreparation', 45, 'quiz', 'standard', 40)",
       );
       await database.customInsert(
         'INSERT INTO outbox_operations '
@@ -426,9 +427,9 @@ void main() {
         'payload_version, base_revision, state, attempt_count, '
         'created_at_utc_ms) VALUES '
         "('learnerPreference:guest-owner:1', 'guest-owner', "
-        "'learnerPreference', 'guest-owner', 'upsert', 1, 0, 'pending', 0, 30), "
+        "'learnerPreference', 'guest-owner', 'upsert', 2, 0, 'pending', 0, 30), "
         "('learnerPreference:account-owner:1', 'account-owner', "
-        "'learnerPreference', 'account-owner', 'upsert', 1, 0, 'pending', 0, 40)",
+        "'learnerPreference', 'account-owner', 'upsert', 2, 0, 'pending', 0, 40)",
       );
 
       await repository.upgrade(
@@ -439,7 +440,8 @@ void main() {
       final preference = await database
           .customSelect(
             'SELECT owner_id, goal, available_minutes_per_day, '
-            'activity_preference, updated_at_utc_ms FROM learner_preferences',
+            'activity_preference, home_experience, updated_at_utc_ms '
+            'FROM learner_preferences',
           )
           .getSingle();
       expect(preference.data, {
@@ -447,6 +449,7 @@ void main() {
         'goal': 'examPreparation',
         'available_minutes_per_day': 45,
         'activity_preference': 'quiz',
+        'home_experience': 'standard',
         'updated_at_utc_ms': 40,
       });
       final operations = await database
