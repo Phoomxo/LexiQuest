@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -20,6 +21,26 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  test(
+    'Adventure kill switch blocks new missions but preserves safe close',
+    () {
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+      final gate = AdventureRolloutGate(
+        features: registry,
+        requiredDependenciesReady: () => true,
+        catalogReadiness: () => AdventureCatalogReadiness.ready,
+      );
+
+      expect(gate.canStartNewMission, isTrue);
+      registry.emergencyOff(Feature.adventureMotivation);
+      expect(gate.canStartNewMission, isFalse);
+      expect(gate.canCloseAcceptedSession, isTrue);
+    },
+  );
+
   test(
     'file-backed permanent clear and TTL controls converge across restart',
     () async {
