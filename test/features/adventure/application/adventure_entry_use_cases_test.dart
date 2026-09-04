@@ -308,6 +308,45 @@ void main() {
     expect(permits.calls, 2);
   });
 
+  test('Today resolution error stays pinned until a new Host', () async {
+    final failure = StateError('Today unavailable');
+    final today = _ThrowingThenToday(failure, _snapshot('owner-001', now));
+    final firstHost = AdventureEntryHost(
+      entry: _useCases(),
+      activePermits: _Permits(null),
+      todayHub: today,
+      createEntryAttemptId: () => _uuid,
+    );
+
+    await expectLater(
+      firstHost.open(ownerId: 'owner-001', occurredAtUtc: now),
+      throwsA(same(failure)),
+    );
+    await expectLater(
+      firstHost.open(
+        ownerId: 'owner-001',
+        occurredAtUtc: now,
+        sessionChoice: TodayExperiencePresentation.adventure,
+      ),
+      throwsA(same(failure)),
+    );
+    expect(today.calls, 1);
+
+    final refreshedHost = AdventureEntryHost(
+      entry: _useCases(),
+      activePermits: _Permits(null),
+      todayHub: today,
+      createEntryAttemptId: () => _uuid,
+    );
+    final refreshed = await refreshedHost.open(
+      ownerId: 'owner-001',
+      occurredAtUtc: now,
+    );
+
+    expect(refreshed?.today, same(today.snapshot));
+    expect(today.calls, 2);
+  });
+
   test(
     'ENT-011 nonparticipant product mode has no research write boundary',
     () async {
@@ -584,6 +623,21 @@ final class _TodayLoader implements TodayHubSnapshotLoader {
   Future<TodayHubSnapshot> load() async {
     calls += 1;
     return snapshot;
+  }
+}
+
+final class _ThrowingThenToday implements TodayHubSnapshotLoader {
+  _ThrowingThenToday(this.failure, this.snapshot);
+
+  final Object failure;
+  final TodayHubSnapshot snapshot;
+  int calls = 0;
+
+  @override
+  Future<TodayHubSnapshot> load() {
+    calls += 1;
+    if (calls == 1) throw failure;
+    return Future<TodayHubSnapshot>.value(snapshot);
   }
 }
 

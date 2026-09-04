@@ -470,6 +470,37 @@ void main() {
     );
   });
 
+  testWidgets('explicit refresh clears a stale presentation-save failure', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        loader: _Loader(_today()),
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        presentationPreferences: _CallbackPreferenceWriter((_, _) async {
+          throw StateError('disk unavailable');
+        }),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('today-presentation-save-failure')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('adventure-refresh')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('today-presentation-save-failure')),
+      findsNothing,
+    );
+  });
+
   testWidgets('owner change fences an old pending presentation save', (
     tester,
   ) async {

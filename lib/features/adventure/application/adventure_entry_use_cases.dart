@@ -196,7 +196,9 @@ final class AdventureEntryHost {
       return AdventureEntryHostResult(decision: decision);
     }
 
-    final snapshot = await (_todayFuture ??= todayHub.load());
+    final snapshot = await (_todayFuture ??= Future<TodayHubSnapshot>.sync(
+      todayHub.load,
+    ));
     if (!_isCurrent(ownerId, generation) || snapshot.ownerId != ownerId) {
       return null;
     }

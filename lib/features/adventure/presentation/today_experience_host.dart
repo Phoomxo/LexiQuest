@@ -134,6 +134,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     _sessionChoice = null;
     _permitControlsPresentation = null;
     _queuedPresentationSave = null;
+    _clearPresentationSaveFailure();
     _refreshGeneration += 1;
     _presentationGeneration += 1;
     _occurredAtUtc = widget.nowUtc();
