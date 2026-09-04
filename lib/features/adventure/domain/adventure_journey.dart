@@ -1,4 +1,5 @@
 import '../../learning_packs/domain/content_manifest.dart';
+import '../../learning/domain/lesson_mode.dart';
 import '../../today_hub/domain/today_hub_models.dart';
 import 'adventure_world_catalog.dart';
 
@@ -42,6 +43,9 @@ final class AdventureMissionRef {
     required this.sourceId,
     required List<ContentIdentity> content,
     required this.reasonCode,
+    required this.sourceEvaluatedAtUtc,
+    this.suggestedMode,
+    this.learnerOverrideApplied = false,
   }) : content = List<ContentIdentity>.unmodifiable(content);
 
   final String missionId;
@@ -51,6 +55,29 @@ final class AdventureMissionRef {
   final String sourceId;
   final List<ContentIdentity> content;
   final String reasonCode;
+  final DateTime sourceEvaluatedAtUtc;
+  final LessonMode? suggestedMode;
+  final bool learnerOverrideApplied;
+
+  AdventureMissionRef copyWith({
+    String? ownerId,
+    List<ContentIdentity>? content,
+    String? reasonCode,
+    DateTime? sourceEvaluatedAtUtc,
+    bool? learnerOverrideApplied,
+  }) => AdventureMissionRef(
+    missionId: missionId,
+    ownerId: ownerId ?? this.ownerId,
+    nodeId: nodeId,
+    kind: kind,
+    sourceId: sourceId,
+    content: content ?? this.content,
+    reasonCode: reasonCode ?? this.reasonCode,
+    sourceEvaluatedAtUtc: sourceEvaluatedAtUtc ?? this.sourceEvaluatedAtUtc,
+    suggestedMode: suggestedMode,
+    learnerOverrideApplied:
+        learnerOverrideApplied ?? this.learnerOverrideApplied,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
     'missionId': missionId,
@@ -68,6 +95,9 @@ final class AdventureMissionRef {
         )
         .toList(growable: false),
     'reasonCode': reasonCode,
+    'sourceEvaluatedAtUtc': sourceEvaluatedAtUtc.toIso8601String(),
+    'suggestedMode': suggestedMode?.name,
+    'learnerOverrideApplied': learnerOverrideApplied,
   };
 }
 

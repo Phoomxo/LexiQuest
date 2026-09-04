@@ -214,6 +214,7 @@ AdventureMissionRef? _primaryMission(TodayHubSnapshot today) {
       sourceId: resumable.id,
       content: const <ContentIdentity>[],
       reasonCode: 'resume_active_session',
+      sourceEvaluatedAtUtc: today.evaluatedAtUtc,
     );
   }
   if (today.reviewWork.isNotEmpty) {
@@ -240,6 +241,7 @@ AdventureMissionRef? _primaryMission(TodayHubSnapshot today) {
       sourceId: content.first.id,
       content: content,
       reasonCode: 'due_review',
+      sourceEvaluatedAtUtc: today.evaluatedAtUtc,
     );
   }
   final recommendation = today.authoritativeRecommendation;
@@ -253,6 +255,9 @@ AdventureMissionRef? _primaryMission(TodayHubSnapshot today) {
       sourceId: identity.id,
       content: <ContentIdentity>[identity],
       reasonCode: recommendation.result.reason.name,
+      sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+      suggestedMode: recommendation.result.recommendedMode,
+      learnerOverrideApplied: recommendation.result.learnerOverrideApplied,
     );
   }
   return null;
