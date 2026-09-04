@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/learning/presentation/session_config
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
@@ -394,11 +395,14 @@ void main() {
           of: profileSettings,
           matching: find.byType(Scrollable),
         );
+        final engagementLabel = NavigationGlossary.require(
+          'profile/engagement',
+        ).fullThaiLabel;
         expect(profileScrollable, findsOneWidget);
         await tester.scrollUntilVisible(
           find.descendant(
             of: profileSettings,
-            matching: find.text('Engagement'),
+            matching: find.text(engagementLabel),
           ),
           240,
           scrollable: profileScrollable,
@@ -407,7 +411,7 @@ void main() {
         expect(
           find.descendant(
             of: profileSettings,
-            matching: find.text('Engagement'),
+            matching: find.text(engagementLabel),
           ),
           findsOneWidget,
         );
@@ -416,7 +420,7 @@ void main() {
             of: profileSettings,
             matching: find.text(
               '${beforeRestart.totalXp} XP · '
-              'Streak ${beforeRestart.streakDays} วัน',
+              'ต่อเนื่อง ${beforeRestart.streakDays} วัน',
             ),
           ),
           findsOneWidget,
@@ -527,6 +531,7 @@ void main() {
         await _pumpUntilFound(tester, find.text('station'));
         await tester.pageBack();
         await _pumpUntilFound(tester, find.byType(CategoriesPage));
+        await tester.pumpAndSettle();
         phaseTrace.complete('21-reopen-ui');
 
         phaseTrace.begin('22-export');
