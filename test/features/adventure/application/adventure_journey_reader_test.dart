@@ -100,21 +100,34 @@ void main() {
     },
   );
 
-  test('JRN-005 completed canonical history derives completed node', () async {
-    final result = await AdventureJourneyUseCases(
-      factReaders: <AdventureJourneyFactReader>[
-        _Facts(
-          AdventureJourneyAuthority.history,
-          completedNodeIds: const <String>{'resume-review'},
-        ),
-      ],
-    ).compose(_request(today: _today()));
+  test(
+    'JRN-005 generic history facts cannot assert Adventure node completion',
+    () async {
+      final result = await AdventureJourneyUseCases(
+        factReaders: <AdventureJourneyFactReader>[
+          _Facts(
+            AdventureJourneyAuthority.history,
+            completedNodeIds: const <String>{'resume-review'},
+          ),
+        ],
+      ).compose(_request(today: _today()));
 
-    expect(
-      result.nodes.singleWhere((node) => node.nodeId == 'resume-review').state,
-      AdventureNodeState.completed,
-    );
-  });
+      expect(
+        result.dependencyStates[AdventureJourneyAuthority.history],
+        AdventureJourneyDependencyState.corrupt,
+      );
+      expect(
+        result.nodes
+            .singleWhere((node) => node.nodeId == 'resume-review')
+            .state,
+        AdventureNodeState.available,
+      );
+      expect(
+        result.nodes.singleWhere((node) => node.nodeId == 'next-preview').state,
+        AdventureNodeState.unavailable,
+      );
+    },
+  );
 
   test(
     'JRN-006 stale source disables start and keeps bounded reason',

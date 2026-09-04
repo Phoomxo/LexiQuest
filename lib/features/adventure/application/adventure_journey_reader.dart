@@ -40,7 +40,8 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
             ownerId: request.ownerId,
             evaluatedAtUtc: request.evaluatedAtUtc,
           );
-          facts[authority] = value.authority == authority
+          facts[authority] =
+              value.authority == authority && value.completedNodeIds.isEmpty
               ? value
               : _containedFact(
                   authority,
