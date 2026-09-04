@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_reaction_selector.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_reaction.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/widgets/adventure_companion_panel.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
@@ -70,6 +71,46 @@ void main() {
     );
   });
 
+  for (final trigger in <AdventureReactionTrigger>[
+    AdventureReactionTrigger.guidedCorrect,
+    AdventureReactionTrigger.skipped,
+    AdventureReactionTrigger.resumed,
+    AdventureReactionTrigger.completed,
+  ]) {
+    testWidgets(
+      '${trigger.name} keeps semantics and copy with reduced motion and no audio',
+      (tester) async {
+        final reviewed = selector.select(
+          catalogVersion: AdventureReactionCatalog.v1Version,
+          trigger: trigger,
+          variantSeed: 0,
+        )!;
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: MaterialApp(
+              home: Scaffold(
+                body: AdventureCompanionPanel(
+                  reaction: reviewed,
+                  rewardOwnership: _rewardAccount(const <String, String>{}),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text(reviewed.copy.en), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(reviewed.accessibilityText.en),
+          findsOneWidget,
+        );
+        expect(find.byType(AnimatedSwitcher), findsNothing);
+        expect(find.byType(IconButton), findsNothing);
+        expect(reviewed.audioAssetId, isNull);
+      },
+    );
+  }
+
   testWidgets(
     'reduced motion keeps the same text and semantics without animation',
     (tester) async {
@@ -122,6 +163,10 @@ void main() {
     );
 
     expect(find.byType(AnimatedSwitcher), findsOneWidget);
+    expect(
+      tester.widget<AnimatedSwitcher>(find.byType(AnimatedSwitcher)).duration,
+      Durations.short2,
+    );
     expect(find.byType(IconButton), findsNothing);
     expect(find.text(reaction.copy.en), findsOneWidget);
     await tester.tap(find.text('Continue learning'));
@@ -145,6 +190,110 @@ void main() {
       find.bySemanticsLabel(RegExp('Companion|เพื่อนร่วมทาง')),
       findsNothing,
     );
+  });
+
+  group('canonical lesson lifecycle mapping', () {
+    test('canonical non-learning skip selects reviewed supportive copy', () {
+      expect(
+        resolveAdventureLessonReactionTrigger(
+          status: LessonSessionStatus.active,
+          previousStatus: LessonSessionStatus.active,
+          committedAnswerCorrect: null,
+          revealedHintLevel: 0,
+          skippedItem: true,
+        ),
+        AdventureReactionTrigger.skipped,
+      );
+    });
+
+    final cases =
+        <
+          ({
+            LessonSessionStatus status,
+            LessonSessionStatus? previousStatus,
+            bool? answerCorrect,
+            int hintLevel,
+            AdventureReactionTrigger? expected,
+          })
+        >[
+          (
+            status: LessonSessionStatus.planned,
+            previousStatus: null,
+            answerCorrect: null,
+            hintLevel: 0,
+            expected: AdventureReactionTrigger.missionReady,
+          ),
+          (
+            status: LessonSessionStatus.active,
+            previousStatus: LessonSessionStatus.planned,
+            answerCorrect: true,
+            hintLevel: 0,
+            expected: AdventureReactionTrigger.independentCorrect,
+          ),
+          (
+            status: LessonSessionStatus.active,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: true,
+            hintLevel: 1,
+            expected: AdventureReactionTrigger.guidedCorrect,
+          ),
+          (
+            status: LessonSessionStatus.active,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: false,
+            hintLevel: 0,
+            expected: AdventureReactionTrigger.incorrect,
+          ),
+          (
+            status: LessonSessionStatus.active,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: false,
+            hintLevel: 1,
+            expected: AdventureReactionTrigger.incorrect,
+          ),
+          (
+            status: LessonSessionStatus.active,
+            previousStatus: LessonSessionStatus.paused,
+            answerCorrect: null,
+            hintLevel: 0,
+            expected: AdventureReactionTrigger.resumed,
+          ),
+          (
+            status: LessonSessionStatus.completed,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: true,
+            hintLevel: 0,
+            expected: AdventureReactionTrigger.completed,
+          ),
+          (
+            status: LessonSessionStatus.paused,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: null,
+            hintLevel: 0,
+            expected: null,
+          ),
+          (
+            status: LessonSessionStatus.abandoned,
+            previousStatus: LessonSessionStatus.active,
+            answerCorrect: null,
+            hintLevel: 0,
+            expected: null,
+          ),
+        ];
+
+    for (final value in cases) {
+      test('${value.status.name} resolves ${value.expected?.name}', () {
+        expect(
+          resolveAdventureLessonReactionTrigger(
+            status: value.status,
+            previousStatus: value.previousStatus,
+            committedAnswerCorrect: value.answerCorrect,
+            revealedHintLevel: value.hintLevel,
+          ),
+          value.expected,
+        );
+      });
+    }
   });
 }
 

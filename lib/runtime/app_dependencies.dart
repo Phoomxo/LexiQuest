@@ -5,7 +5,10 @@ import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_diagnostics.dart';
+import '../features/adventure/application/adventure_motivation_projection_reader.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
+import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_entry.dart';
 import '../features/adventure/domain/adventure_world_catalog.dart';
@@ -37,6 +40,7 @@ import '../features/preferences/application/learner_preferences_use_cases.dart';
 import '../features/preferences/application/display_preferences_controller.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
+import '../features/rewards/domain/reward_models.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
 import '../features/research/domain/research_participation_permit.dart';
@@ -117,6 +121,7 @@ final class AppDependencies {
     this.studyReminders,
     this.progress,
     this.rewards,
+    RewardAccountReader? rewardAccounts,
     this.learnerIntents,
     this.bookmarkLearningItem,
     this.contentQualityReports,
@@ -138,8 +143,13 @@ final class AppDependencies {
     this.adventureCatalog,
     this.adventurePresentationPermits,
     this.adventureJourney,
+    this.adventureSessionComposer,
+    this.adventureMotivation,
+    this.adventureReceiptBarrier,
+    this.adventureDiagnostics,
+    this.adventureCatalogRecovery,
     this.disposeResources,
-  });
+  }) : rewardAccounts = rewardAccounts ?? rewards;
 
   final AppRoute initialRoute;
   final AppRuntimeStatus runtimeStatus;
@@ -186,6 +196,7 @@ final class AppDependencies {
   final StudyReminderUseCases? studyReminders;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
+  final RewardAccountReader? rewardAccounts;
   final LearnerIntentRepository? learnerIntents;
   final BookmarkLearningItemAction? bookmarkLearningItem;
   final ContentQualityReportRepository? contentQualityReports;
@@ -217,6 +228,11 @@ final class AppDependencies {
   final AdventureWorldCatalog? adventureCatalog;
   final ActivePresentationPermitReader? adventurePresentationPermits;
   final AdventureJourneyReader? adventureJourney;
+  final AdventureSessionComposer? adventureSessionComposer;
+  final AdventureMotivationProjectionReader? adventureMotivation;
+  final AdventureProjectionReceiptBarrier? adventureReceiptBarrier;
+  final AdventureDiagnostics? adventureDiagnostics;
+  final AdventureCatalogRecoveryOperations? adventureCatalogRecovery;
 
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
@@ -261,12 +277,18 @@ final class AppDependencies {
           adventureCatalog != null &&
           adventurePresentationPermits != null &&
           adventureJourney != null &&
+          adventureSessionComposer is CanonicalAdventureSessionComposer &&
+          adventureMotivation != null &&
+          adventureReceiptBarrier != null &&
+          adventureDiagnostics != null &&
+          adventureCatalogRecovery != null &&
           todayHub != null &&
           learning != null &&
           lessonModes != null &&
           createLessonController != null &&
           sessionConfigurations != null &&
           learnerPreferences != null &&
+          rewardAccounts != null &&
           currentActivityEvidence != null &&
           identical(currentActivityEvidence?.learning, learning) &&
           identical(
@@ -280,6 +302,19 @@ final class AppDependencies {
           identical(
             (adventureEntry! as AdventureEntryUseCases).catalog,
             adventureCatalog,
+          ) &&
+          identical(
+            (adventureEntry! as AdventureEntryUseCases).diagnostics,
+            adventureDiagnostics,
+          ) &&
+          identical(
+            (adventureSessionComposer! as CanonicalAdventureSessionComposer)
+                .diagnostics,
+            adventureDiagnostics,
+          ) &&
+          identical(
+            adventureCatalogRecovery!.diagnostics,
+            adventureDiagnostics,
           ) &&
           (adventureEntry! as AdventureEntryUseCases).preferences
               is LearnerAdventurePresentationPreferences &&

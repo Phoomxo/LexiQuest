@@ -32,6 +32,8 @@ typedef UnifiedLessonControllerStarter =
       UnifiedLessonController controller,
       LessonStartCommand command,
     );
+typedef UnifiedLessonCompanionBuilder =
+    Widget Function(BuildContext context, UnifiedLessonController controller);
 
 /// Local-only child state that must be purged whenever a lesson crosses a
 /// privacy, terminal, or route-retirement boundary.
@@ -82,6 +84,8 @@ final class UnifiedLessonSessionLifecycle {
 
   void resetHintsAfterCommittedEvidence() =>
       _controller.resetHintsAfterAcceptedEvidence();
+
+  void noteSkippedItem() => _controller.noteSkippedItem();
 
   Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
     final routeLifecycle = _routeLifecycle;
@@ -831,6 +835,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
     this.revalidateConfiguration,
     this.contrastiveFeedback,
     this.controllerStarter,
+    this.companionBuilder,
   });
 
   final LessonModeAdapter adapter;
@@ -844,6 +849,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
   final SessionConfigurationRevalidator? revalidateConfiguration;
   final ContrastiveFeedbackUseCases? contrastiveFeedback;
   final UnifiedLessonControllerStarter? controllerStarter;
+  final UnifiedLessonCompanionBuilder? companionBuilder;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
@@ -966,6 +972,7 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
       routeLifecycle: _routeLifecycle,
       configuration: widget.configuration,
       contrastiveFeedback: widget.contrastiveFeedback,
+      companionBuilder: widget.companionBuilder,
       builder: widget.builder,
     );
     final features = _features;
@@ -1007,6 +1014,7 @@ final class UnifiedLessonShell extends StatefulWidget {
     this.routeLifecycle,
     this.configuration,
     this.contrastiveFeedback,
+    this.companionBuilder,
   });
 
   final WidgetBuilder builder;
@@ -1016,6 +1024,7 @@ final class UnifiedLessonShell extends StatefulWidget {
   final UnifiedLessonRouteLifecycle? routeLifecycle;
   final SessionConfiguration? configuration;
   final ContrastiveFeedbackUseCases? contrastiveFeedback;
+  final UnifiedLessonCompanionBuilder? companionBuilder;
 
   @override
   State<UnifiedLessonShell> createState() => _UnifiedLessonShellState();
@@ -1337,7 +1346,10 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                     onResume: controller.resumeFocusTimer,
                     onFinish: controller.finishFocusTimer,
                   ),
-            ContextualCompanionWidget(reaction: controller.companionReaction),
+            if (widget.companionBuilder case final companionBuilder?)
+              companionBuilder(context, controller)
+            else
+              ContextualCompanionWidget(reaction: controller.companionReaction),
             Expanded(
               child: Listener(
                 behavior: HitTestBehavior.translucent,

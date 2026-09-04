@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_presentation_preferences.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
@@ -10,6 +11,7 @@ import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.d
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
@@ -34,9 +36,9 @@ void main() {
             ids.add(id);
             return id;
           },
-          onPresentationPreferenceChanged: (choice) async {
-            savedChoices.add(choice);
-          },
+          presentationPreferences: _CallbackPreferenceWriter(
+            (_, choice) async => savedChoices.add(choice),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -84,6 +86,119 @@ void main() {
     expect(loader.calls, 2);
   });
 
+  testWidgets('rapid switches serialize saves and persist the last selection', (
+    tester,
+  ) async {
+    final saver = _ControlledPreferenceSaver();
+    await tester.pumpWidget(
+      _app(
+        loader: _Loader(_today()),
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        presentationPreferences: saver,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('มาตรฐาน'));
+    await tester.pump();
+
+    expect(saver.started, <TodayExperiencePresentation>[
+      TodayExperiencePresentation.adventure,
+    ]);
+    saver.completeNext();
+    await tester.pump();
+    expect(saver.started, <TodayExperiencePresentation>[
+      TodayExperiencePresentation.adventure,
+      TodayExperiencePresentation.standard,
+    ]);
+    saver.completeNext();
+    await tester.pumpAndSettle();
+
+    expect(saver.completed.last, TodayExperiencePresentation.standard);
+    expect(find.byType(TodayHubView), findsOneWidget);
+  });
+
+  testWidgets('save failure is visible and retry recovers it', (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      _app(
+        loader: _Loader(_today()),
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        presentationPreferences: _CallbackPreferenceWriter((_, _) async {
+          calls += 1;
+          if (calls == 1) throw StateError('disk unavailable');
+        }),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('today-presentation-save-failure')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('ลองอีกครั้ง'));
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(
+      find.byKey(const ValueKey('today-presentation-save-failure')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('owner change fences an old pending presentation save', (
+    tester,
+  ) async {
+    final oldSave = Completer<void>();
+    final calls = <String>[];
+    final writer = _CallbackPreferenceWriter((ownerId, presentation) {
+      calls.add('$ownerId/${presentation.name}');
+      return ownerId == 'owner:one' ? oldSave.future : Future<void>.value();
+    });
+    var owner = 'owner:one';
+
+    await tester.pumpWidget(
+      _app(
+        ownerId: owner,
+        loader: _Loader(_today(ownerId: owner)),
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        presentationPreferences: writer,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pump();
+
+    owner = 'owner:two';
+    await tester.pumpWidget(
+      _app(
+        ownerId: owner,
+        loader: _Loader(_today(ownerId: owner)),
+        journey: _Journey(),
+        createId: () => '22222222-2222-4222-8222-222222222222',
+        presentationPreferences: writer,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pumpAndSettle();
+
+    expect(calls, <String>['owner:one/adventure', 'owner:two/adventure']);
+    oldSave.completeError(StateError('stale owner failure'));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('today-presentation-save-failure')),
+      findsNothing,
+    );
+  });
+
   testWidgets('stale owner result is discarded without rendering a snapshot', (
     tester,
   ) async {
@@ -126,11 +241,13 @@ void main() {
       sourceEvaluatedAtUtc: today.evaluatedAtUtc,
     );
     AdventureMissionLaunchContext? captured;
+    final account = _rewardAccount();
     await tester.pumpWidget(
       _app(
         loader: _Loader(today),
         journey: _Journey(mission: mission),
         createId: () => '11111111-1111-4111-8111-111111111111',
+        rewardAccounts: _RewardAccounts(account),
         onStartMission: (launch) async => captured = launch,
       ),
     );
@@ -142,11 +259,50 @@ void main() {
 
     expect(captured?.mission, same(mission));
     expect(captured?.today, same(today));
+    expect(captured?.rewardOwnership, same(account));
     expect(
       captured?.entryDecision.destination,
       AdventureEntryDestination.adventure,
     );
   });
+
+  testWidgets(
+    'Adventure hub reads ownership and renders mission-ready reaction',
+    (tester) async {
+      final today = _today();
+      final mission = AdventureMissionRef(
+        missionId: 'mission:ready',
+        ownerId: today.ownerId,
+        nodeId: 'today-mission',
+        kind: AdventureMissionKind.recommendation,
+        sourceId: 'word:one',
+        content: const [],
+        reasonCode: 'due',
+        sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+      );
+      final rewards = _RewardAccounts(
+        _rewardAccount(
+          equippedBySlot: const <String, String>{'headgear': 'headgear_ipa'},
+        ),
+      );
+      await tester.pumpWidget(
+        _app(
+          loader: _Loader(today),
+          journey: _Journey(mission: mission),
+          createId: () => '11111111-1111-4111-8111-111111111111',
+          rewardAccounts: rewards,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ผจญภัย'));
+      await tester.pumpAndSettle();
+
+      expect(rewards.calls, 1);
+      expect(rewards.ownerIds, <String>[today.ownerId]);
+      expect(find.text('ภารกิจพร้อมแล้ว เริ่มเมื่อคุณพร้อมนะ'), findsOneWidget);
+      expect(find.text('หมวก IPA'), findsOneWidget);
+    },
+  );
 }
 
 Widget _app({
@@ -155,7 +311,8 @@ Widget _app({
   required AdventureJourneyReader journey,
   required String Function() createId,
   Future<void> Function(AdventureMissionLaunchContext)? onStartMission,
-  AdventurePresentationPreferenceSaver? onPresentationPreferenceChanged,
+  AdventurePresentationPreferenceWriter? presentationPreferences,
+  RewardAccountReader? rewardAccounts,
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -176,16 +333,42 @@ Widget _app({
       todayHub: loader,
       catalog: catalog,
       journey: journey,
+      rewardAccounts: rewardAccounts ?? _RewardAccounts(_rewardAccount()),
       createEntryAttemptId: createId,
       nowUtc: () => _now,
       actions: _Actions(),
       features: const BuildFeatureRegistry.allEnabled(),
       assessmentAvailable: false,
-      onPresentationPreferenceChanged: onPresentationPreferenceChanged,
+      presentationPreferences: presentationPreferences,
       onStartMission: onStartMission ?? (_) async {},
     ),
   );
 }
+
+final class _RewardAccounts implements RewardAccountReader {
+  _RewardAccounts(this.account);
+
+  final RewardAccount account;
+  int calls = 0;
+  final List<String> ownerIds = <String>[];
+
+  @override
+  Future<RewardAccount> loadForOwner(String ownerId) async {
+    calls += 1;
+    ownerIds.add(ownerId);
+    return account;
+  }
+}
+
+RewardAccount _rewardAccount({
+  Map<String, String> equippedBySlot = const <String, String>{},
+}) => RewardAccount(
+  coinBalance: 0,
+  catalogVersion: RewardCatalog.version,
+  ownedItemIds: equippedBySlot.values.toSet(),
+  equippedBySlot: equippedBySlot,
+  transactionCount: 0,
+);
 
 final _now = DateTime.utc(2026, 9, 4, 8);
 
@@ -234,6 +417,46 @@ final class _PendingLoader implements TodayHubSnapshotLoader {
 
   @override
   Future<TodayHubSnapshot> load() => pending;
+}
+
+final class _ControlledPreferenceSaver
+    implements AdventurePresentationPreferenceWriter {
+  final List<TodayExperiencePresentation> started =
+      <TodayExperiencePresentation>[];
+  final List<TodayExperiencePresentation> completed =
+      <TodayExperiencePresentation>[];
+  final List<Completer<void>> _pending = <Completer<void>>[];
+
+  @override
+  Future<void> saveForOwner(
+    String ownerId,
+    TodayExperiencePresentation presentation,
+  ) async {
+    started.add(presentation);
+    final gate = Completer<void>();
+    _pending.add(gate);
+    await gate.future;
+    completed.add(presentation);
+  }
+
+  void completeNext() => _pending.removeAt(0).complete();
+}
+
+final class _CallbackPreferenceWriter
+    implements AdventurePresentationPreferenceWriter {
+  const _CallbackPreferenceWriter(this.callback);
+
+  final Future<void> Function(
+    String ownerId,
+    TodayExperiencePresentation presentation,
+  )
+  callback;
+
+  @override
+  Future<void> saveForOwner(
+    String ownerId,
+    TodayExperiencePresentation presentation,
+  ) => callback(ownerId, presentation);
 }
 
 final class _Journey implements AdventureJourneyReader {

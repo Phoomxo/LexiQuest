@@ -1,5 +1,12 @@
 enum AdventureCanonicalRewardState { accepted, pending, unavailable }
 
+enum AdventureCanonicalReceiptState {
+  committed,
+  pending,
+  notEligible,
+  unavailable,
+}
+
 enum AdventureNextAction { reviewCenter, spacedRepetition, none }
 
 final class AdventureLearningResult {
@@ -58,8 +65,7 @@ final class AdventureRewardReceiptView {
     this.receiptId,
     this.canonicalAmount,
   }) : assert(
-         state != AdventureCanonicalRewardState.accepted ||
-             (receiptId != null && canonicalAmount != null),
+         state != AdventureCanonicalRewardState.accepted || receiptId != null,
        ),
        assert(canonicalAmount == null || canonicalAmount >= 0),
        assert(
@@ -77,6 +83,35 @@ final class AdventureRewardReceiptView {
   };
 }
 
+final class AdventureMotivationReceiptView {
+  AdventureMotivationReceiptView({
+    required this.questState,
+    required this.streakState,
+    required this.achievementState,
+    Iterable<String> questCodes = const <String>[],
+    Iterable<String> streakCodes = const <String>[],
+    Iterable<String> achievementCodes = const <String>[],
+  }) : questCodes = List<String>.unmodifiable(questCodes),
+       streakCodes = List<String>.unmodifiable(streakCodes),
+       achievementCodes = List<String>.unmodifiable(achievementCodes);
+
+  final AdventureCanonicalReceiptState questState;
+  final AdventureCanonicalReceiptState streakState;
+  final AdventureCanonicalReceiptState achievementState;
+  final List<String> questCodes;
+  final List<String> streakCodes;
+  final List<String> achievementCodes;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'questState': questState.name,
+    'streakState': streakState.name,
+    'achievementState': achievementState.name,
+    'questCodes': questCodes,
+    'streakCodes': streakCodes,
+    'achievementCodes': achievementCodes,
+  };
+}
+
 final class AdventureResult {
   const AdventureResult({
     required this.ownerId,
@@ -84,6 +119,7 @@ final class AdventureResult {
     required this.learning,
     required this.effort,
     required this.engagement,
+    required this.motivation,
     required this.reward,
     required this.nextAction,
     this.technicalMessage,
@@ -94,6 +130,7 @@ final class AdventureResult {
   final AdventureLearningResult learning;
   final AdventureEffortResult effort;
   final AdventureEngagementResult engagement;
+  final AdventureMotivationReceiptView motivation;
   final AdventureRewardReceiptView reward;
   final AdventureNextAction nextAction;
   final String? technicalMessage;
@@ -104,6 +141,7 @@ final class AdventureResult {
     'learning': learning.toJson(),
     'effort': effort.toJson(),
     'engagement': engagement.toJson(),
+    'motivation': motivation.toJson(),
     'reward': reward.toJson(),
     'nextAction': nextAction.name,
     'technicalMessage': technicalMessage,

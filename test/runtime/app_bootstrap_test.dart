@@ -16,6 +16,10 @@ import 'package:vocab_learning_app/features/account/application/local_data_delet
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
+import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
@@ -847,7 +851,7 @@ void main() {
         expect(adapter.supports(manifest), isTrue);
         expect(
           await database.select(database.contentManifests).get(),
-          hasLength(1),
+          hasLength(2),
         );
         expect(supportDirectoryCalls, 1);
         await dependencies.dispose();
@@ -4796,6 +4800,36 @@ void main() {
           expect(adventureEntry.catalog, same(dependencies.adventureCatalog));
           expect(dependencies.adventurePresentationPermits, isNotNull);
           expect(
+            dependencies.adventureSessionComposer,
+            isA<CanonicalAdventureSessionComposer>(),
+          );
+          expect(
+            dependencies.adventureMotivation,
+            isA<DriftAdventureMotivationProjectionReader>(),
+          );
+          expect(dependencies.adventureReceiptBarrier, isNotNull);
+          expect(dependencies.adventureDiagnostics, isNotNull);
+          expect(dependencies.adventureCatalogRecovery, isNotNull);
+          expect(
+            (await dependencies.adventureCatalogRecovery!.verify()).status,
+            AdventureCatalogRecoveryStatus.verified,
+          );
+          expect(
+            adventureEntry.diagnostics,
+            same(dependencies.adventureDiagnostics),
+          );
+          expect(
+            (dependencies.adventureSessionComposer!
+                    as CanonicalAdventureSessionComposer)
+                .diagnostics,
+            same(dependencies.adventureDiagnostics),
+          );
+          expect(
+            dependencies.adventureCatalogRecovery!.diagnostics,
+            same(dependencies.adventureDiagnostics),
+          );
+          expect(dependencies.rewardAccounts, isNotNull);
+          expect(
             dependencies.hasComposedDependencyFor(Feature.adventureMotivation),
             isTrue,
           );
@@ -5033,7 +5067,11 @@ void main() {
             'word:station',
           ]);
 
-          expect(requested, <ContentIdentity>[voiceIdentity, _lexicalIdentity]);
+          expect(requested, <ContentIdentity>[
+            PackagedAdventureWorldCatalog.contentIdentity,
+            voiceIdentity,
+            _lexicalIdentity,
+          ]);
           expect(words.single.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
           expect(words.single.richMetadata!.audio!.assetId, 'audio:station:en');
         } finally {

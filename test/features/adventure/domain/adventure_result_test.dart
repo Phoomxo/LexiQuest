@@ -13,6 +13,7 @@ void main() {
       'learning',
       'effort',
       'engagement',
+      'motivation',
       'reward',
       'nextAction',
       'technicalMessage',
@@ -28,23 +29,30 @@ void main() {
   });
 }
 
-AdventureResult _result() => const AdventureResult(
+AdventureResult _result() => AdventureResult(
   ownerId: 'owner:one',
   sessionId: 'session:one',
-  learning: AdventureLearningResult(
+  learning: const AdventureLearningResult(
     correctCount: 3,
     incorrectCount: 1,
     reviewDueCount: 1,
   ),
-  effort: AdventureEffortResult(
+  effort: const AdventureEffortResult(
     activeDuration: Duration(minutes: 5),
     completedItems: 4,
   ),
-  engagement: AdventureEngagementResult(
+  engagement: const AdventureEngagementResult(
     completedMission: true,
     returnedAfterBreak: false,
   ),
-  reward: AdventureRewardReceiptView(
+  motivation: AdventureMotivationReceiptView(
+    questState: AdventureCanonicalReceiptState.committed,
+    streakState: AdventureCanonicalReceiptState.committed,
+    achievementState: AdventureCanonicalReceiptState.notEligible,
+    questCodes: <String>['daily-quest'],
+    streakCodes: <String>['daily-streak'],
+  ),
+  reward: const AdventureRewardReceiptView(
     state: AdventureCanonicalRewardState.pending,
   ),
   nextAction: AdventureNextAction.reviewCenter,

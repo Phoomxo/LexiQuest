@@ -3,6 +3,7 @@ import '../../today_hub/application/today_hub_use_cases.dart';
 import '../../today_hub/domain/today_hub_models.dart';
 import '../domain/adventure_entry.dart';
 import '../domain/adventure_world_catalog.dart';
+import 'adventure_diagnostics.dart';
 import 'adventure_rollout_gate.dart';
 
 abstract interface class AdventurePresentationPreferenceReader {
@@ -18,6 +19,7 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
     required this.todayHubIdentity,
     required this.learningIdentity,
     this.preferences,
+    this.diagnostics,
   });
 
   final AdventureRolloutGate rollout;
@@ -25,12 +27,13 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
   final Object todayHubIdentity;
   final Object learningIdentity;
   final AdventurePresentationPreferenceReader? preferences;
+  final AdventureDiagnostics? diagnostics;
 
   AdventureProductEntryDecision? preflight(AdventureEntryRequest request) {
     _validateRequest(request);
     final availability = rollout.availability;
     if (rollout.isHostAuthorized) return null;
-    return _blockedDecision(request, availability);
+    return _record(_blockedDecision(request, availability));
   }
 
   @override
@@ -75,20 +78,29 @@ final class AdventureEntryUseCases implements AdventureProductEntryResolver {
       fallback = AdventureFallbackReason.contentUnavailable;
     }
 
-    return AdventureProductEntryDecision(
-      entryAttemptId: request.entryAttemptId,
-      availability: availability,
-      destination: presentation == TodayExperiencePresentation.adventure
-          ? AdventureEntryDestination.adventure
-          : AdventureEntryDestination.standardToday,
-      fallbackReason: fallback,
-      catalogId: catalog.catalogId,
-      catalogVersion: catalog.catalogVersion,
-      catalogSchemaVersion: catalog.schemaVersion,
-      permitId: permitIsActive ? permit!.permitId : null,
-      assignmentId: permitIsActive ? permit!.assignmentId : null,
-      treatment: presentation.wireName,
+    return _record(
+      AdventureProductEntryDecision(
+        entryAttemptId: request.entryAttemptId,
+        availability: availability,
+        destination: presentation == TodayExperiencePresentation.adventure
+            ? AdventureEntryDestination.adventure
+            : AdventureEntryDestination.standardToday,
+        fallbackReason: fallback,
+        catalogId: catalog.catalogId,
+        catalogVersion: catalog.catalogVersion,
+        catalogSchemaVersion: catalog.schemaVersion,
+        permitId: permitIsActive ? permit!.permitId : null,
+        assignmentId: permitIsActive ? permit!.assignmentId : null,
+        treatment: presentation.wireName,
+      ),
     );
+  }
+
+  AdventureProductEntryDecision _record(AdventureProductEntryDecision value) {
+    diagnostics
+      ?..recordEntry(value.destination)
+      ..recordEntryFallback(value.fallbackReason);
+    return value;
   }
 
   AdventureProductEntryDecision _blockedDecision(

@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -1150,6 +1151,44 @@ void main() {
     expect(session.state, 'completed');
   });
 
+  testWidgets('optional completion page receives committed session summary', (
+    tester,
+  ) async {
+    LearningSessionSummary? captured;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(
+          categoryId: 'category-1',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          completionPageBuilder: (context, summary) {
+            captured = summary;
+            return const Scaffold(
+              body: Text(
+                'Adventure result',
+                key: ValueKey('custom-quiz-completion'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('station'));
+
+    await tester.tap(find.text('สถานี'));
+    await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+    await tester.tap(find.text('ดูผลการเรียน'));
+    await _pumpUntilFound(
+      tester,
+      find.byKey(const ValueKey('custom-quiz-completion')),
+    );
+
+    expect(find.byType(ScoreScreen), findsNothing);
+    expect(captured?.state, 'completed');
+    expect(captured?.correctCount, 1);
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+  });
+
   testWidgets(
     'post-commit haptic failure keeps answer locked and navigation available',
     (tester) async {
@@ -1231,6 +1270,7 @@ void main() {
   });
 
   testWidgets('retry reuses pending evidence identity', (tester) async {
+    final diagnostics = AdventureDiagnostics();
     final repository = _FailFirstLearningRepository(
       DriftLearningRepository(database),
     );
@@ -1251,6 +1291,7 @@ void main() {
           evidenceAdapter: CurrentActivityEvidenceAdapter(
             learning: retryLearning,
           ),
+          adventureDiagnostics: diagnostics,
         ),
       ),
     );
@@ -1289,6 +1330,12 @@ void main() {
     expect(
       retry.evidenceContext.classificationSource,
       EvidenceClassificationSource.legacyInferred,
+    );
+    expect(
+      diagnostics.snapshot().counters,
+      <AdventureDiagnosticReasonCode, int>{
+        AdventureDiagnosticReasonCode.evidenceRetry: 1,
+      },
     );
   });
 

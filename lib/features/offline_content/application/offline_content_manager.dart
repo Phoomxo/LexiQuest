@@ -60,7 +60,16 @@ abstract interface class OfflineContentManager {
   Future<void> dispose();
 }
 
-final class VerifiedOfflineContentManager implements OfflineContentManager {
+/// Optional, mutation-free state read for a single offline content identity.
+///
+/// Callers use this instead of enumerating [OfflineContentManager.catalog],
+/// whose integrity checks may quarantine other verified catalog entries.
+abstract interface class OfflineContentStateInspector {
+  Future<OfflineContentState> inspect(ContentIdentity identity);
+}
+
+final class VerifiedOfflineContentManager
+    implements OfflineContentManager, OfflineContentStateInspector {
   VerifiedOfflineContentManager({
     required this.repository,
     required List<OfflineContentDownloadAdapter> adapters,
@@ -114,6 +123,16 @@ final class VerifiedOfflineContentManager implements OfflineContentManager {
       identity,
       _OfflineOperation.download,
       () => _download(identity),
+    );
+  }
+
+  @override
+  Future<OfflineContentState> inspect(ContentIdentity identity) {
+    _requireOpen();
+    return _operations.run(
+      identity,
+      _OfflineOperation.inspect,
+      () => repository.state(identity),
     );
   }
 
@@ -565,7 +584,15 @@ final class VerifiedOfflineContentManager implements OfflineContentManager {
   }
 }
 
-enum _OfflineOperation { catalog, download, verify, repair, remove, reconcile }
+enum _OfflineOperation {
+  catalog,
+  inspect,
+  download,
+  verify,
+  repair,
+  remove,
+  reconcile,
+}
 
 final class _OfflineContentOperationQueue {
   final Map<ContentIdentity, _QueuedOfflineOperation> _tails = {};

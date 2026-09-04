@@ -193,6 +193,11 @@ final class RewardAccount {
   final int transactionCount;
 }
 
+/// Read-only view of canonical reward ownership and equipped cosmetics.
+abstract interface class RewardAccountReader {
+  Future<RewardAccount> loadForOwner(String ownerId);
+}
+
 enum PurchaseStatus { purchased, alreadyOwned, replayed }
 
 enum EquipStatus { equipped, replayed }

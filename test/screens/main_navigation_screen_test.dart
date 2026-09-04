@@ -8,8 +8,12 @@ import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_presentation_preferences.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_today_entry_card.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
@@ -30,9 +34,15 @@ import 'package:vocab_learning_app/features/learning_packs/application/learning_
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
+import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
+import 'package:vocab_learning_app/features/offline_content/domain/offline_content_state.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/preferences/application/learner_preferences_use_cases.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
 import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
@@ -66,15 +76,24 @@ void main() {
     'Adventure adds one Learn card, stable child route, and no bottom destination',
     (tester) async {
       final loader = _NavigationTodayHubLoader(_emptyTodayHubSnapshot());
+      final diagnostics = AdventureDiagnostics();
+      AppDependencies? composed;
       final enabled = RuntimeFeatureRegistry(
         const BuildFeatureRegistry.allEnabled(),
       );
       addTearDown(enabled.dispose);
       await tester.pumpWidget(
-        _mainNavigationApp(enabled, todayHub: loader, includeAdventure: true),
+        _mainNavigationApp(
+          enabled,
+          todayHub: loader,
+          includeAdventure: true,
+          adventureDiagnosticsOverride: diagnostics,
+          onDependencies: (value) => composed = value,
+        ),
       );
       await tester.pumpAndSettle();
       final bottomCount = find.byType(NavigationDestination).evaluate().length;
+      expect(loader.calls, 1);
 
       await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
       await tester.pumpAndSettle();
@@ -84,18 +103,35 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(NavigationDestination), findsNWidgets(bottomCount));
+      final callsBeforeAdventureEntry = loader.calls;
 
       await tester.tap(
         find.byKey(const ValueKey<String>('home/learn/today-experience')),
       );
       await tester.pumpAndSettle();
+      for (
+        var attempt = 0;
+        attempt < 10 && loader.calls == callsBeforeAdventureEntry;
+        attempt += 1
+      ) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
       expect(find.byType(TodayExperienceHost), findsOneWidget);
-      expect(loader.calls, 1);
+      expect(loader.calls, callsBeforeAdventureEntry + 1);
+      final host = tester.widget<TodayExperienceHost>(
+        find.byType(TodayExperienceHost),
+      );
+      expect(composed!.adventureDiagnostics, same(diagnostics));
+      expect(host.entry.diagnostics, same(diagnostics));
+      expect(
+        diagnostics.snapshot().counters,
+        containsPair(AdventureDiagnosticReasonCode.entryStandard, 1),
+      );
 
       enabled.emergencyOff(Feature.adventureMotivation);
       await tester.pumpAndSettle();
       expect(find.byType(TodayExperienceHost), findsNothing);
-      expect(loader.calls, 1);
+      expect(loader.calls, callsBeforeAdventureEntry + 1);
     },
   );
 
@@ -130,6 +166,10 @@ void main() {
         'controller',
         'configurationStore',
         'evidence',
+        'rewardReader',
+        'sessionComposer',
+        'motivationReader',
+        'receiptRefresher',
       ]) {
         AppDependencies? composed;
         await tester.pumpWidget(
@@ -141,6 +181,10 @@ void main() {
             includeCreateLessonController: missing != 'controller',
             includeSessionConfigurations: missing != 'configurationStore',
             includeCurrentActivityEvidence: missing != 'evidence',
+            includeRewardAccounts: missing != 'rewardReader',
+            includeAdventureSessionComposer: missing != 'sessionComposer',
+            includeAdventureMotivation: missing != 'motivationReader',
+            includeAdventureReceiptRefresher: missing != 'receiptRefresher',
             onDependencies: (value) => composed = value,
           ),
         );
@@ -825,9 +869,14 @@ Widget _mainNavigationApp(
   bool includeCreateLessonController = true,
   bool includeSessionConfigurations = true,
   bool includeCurrentActivityEvidence = true,
+  bool includeRewardAccounts = true,
+  bool includeAdventureMotivation = true,
+  bool includeAdventureReceiptRefresher = true,
+  bool includeAdventureSessionComposer = true,
   bool mismatchReviewSessionAuthority = false,
   bool mismatchHistorySessionAuthority = false,
   bool includeAdventure = false,
+  AdventureDiagnostics? adventureDiagnosticsOverride,
   ValueSetter<AppDependencies>? onDependencies,
 }) {
   final database = AppDatabase(NativeDatabase.memory());
@@ -848,6 +897,11 @@ Widget _mainNavigationApp(
     nowUtc: () => DateTime.utc(2026, 8, 24),
     buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
   );
+  final learnerPreferences = LearnerPreferencesUseCases(
+    repository: _NavigationPreferences(),
+    owners: owner,
+    nowUtc: () => DateTime.utc(2026, 8, 30),
+  );
   final otherLearning = LearningUseCases(
     owners: owner,
     repository: _NavigationLearningRepository(),
@@ -856,6 +910,12 @@ Widget _mainNavigationApp(
     buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
   );
   final adventureCatalog = PackagedAdventureWorldCatalog.forLocale('th');
+  final adventureDiagnostics =
+      adventureDiagnosticsOverride ?? AdventureDiagnostics();
+  final adventureCatalogRecovery = AdventureCatalogRecoveryOperations(
+    manager: const _NavigationOfflineContentManager(),
+    diagnostics: adventureDiagnostics,
+  );
   final adventureEntry = AdventureEntryUseCases(
     rollout: AdventureRolloutGate(
       features: registry,
@@ -865,6 +925,8 @@ Widget _mainNavigationApp(
     catalog: adventureCatalog,
     todayHubIdentity: todayHub ?? Object(),
     learningIdentity: learning,
+    preferences: LearnerAdventurePresentationPreferences(learnerPreferences),
+    diagnostics: adventureDiagnostics,
   );
   final dependencies = AppDependencies(
     initialRoute: AppRoute.home,
@@ -904,6 +966,10 @@ Widget _mainNavigationApp(
         ? DriftSessionConfigurationStore(database)
         : null,
     progress: progress,
+    learnerPreferences: learnerPreferences,
+    rewardAccounts: includeAdventure && includeRewardAccounts
+        ? const _NavigationRewardAccounts()
+        : null,
     todayHub: todayHub,
     activeOwnerIdentities: ownerIdentities,
     reviewCenter: includeReviewCenter
@@ -937,12 +1003,160 @@ Widget _mainNavigationApp(
         ? const NoActivePresentationPermitReader()
         : null,
     adventureJourney: includeAdventure ? AdventureJourneyUseCases() : null,
+    adventureSessionComposer:
+        includeAdventure && includeAdventureSessionComposer
+        ? CanonicalAdventureSessionComposer(diagnostics: adventureDiagnostics)
+        : null,
+    adventureMotivation: includeAdventure && includeAdventureMotivation
+        ? const _NavigationAdventureMotivation()
+        : null,
+    adventureReceiptBarrier:
+        includeAdventure && includeAdventureReceiptRefresher
+        ? const _NavigationAdventureReceiptRefresher()
+        : null,
+    adventureDiagnostics: includeAdventure ? adventureDiagnostics : null,
+    adventureCatalogRecovery: includeAdventure
+        ? adventureCatalogRecovery
+        : null,
   );
   onDependencies?.call(dependencies);
   return AppDependenciesScope(
     dependencies: dependencies,
     child: MaterialApp(home: MainNavigationScreen(featureRegistry: registry)),
   );
+}
+
+final class _NavigationOfflineContentManager implements OfflineContentManager {
+  const _NavigationOfflineContentManager();
+
+  @override
+  Future<List<OfflineContentState>> catalog() async => const [];
+
+  @override
+  Future<OfflineContentState> download(ContentIdentity identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<OfflineContentState> verify(ContentIdentity identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<OfflineContentState> repair(ContentIdentity identity) =>
+      throw UnimplementedError();
+
+  @override
+  Future<bool> canRemove(ContentIdentity identity) async => false;
+
+  @override
+  Future<int> removeBytes(ContentIdentity identity) async => 0;
+
+  @override
+  Future<int> cleanupForDiskPressure({required int bytesToFree}) async => 0;
+
+  @override
+  Future<void> reconcile() async {}
+
+  @override
+  Future<void> dispose() async {}
+}
+
+final class _NavigationRewardAccounts implements RewardAccountReader {
+  const _NavigationRewardAccounts();
+
+  @override
+  Future<RewardAccount> loadForOwner(String ownerId) async =>
+      const RewardAccount(
+        coinBalance: 0,
+        catalogVersion: RewardCatalog.version,
+        ownedItemIds: <String>{},
+        equippedBySlot: <String, String>{},
+        transactionCount: 0,
+      );
+}
+
+final class _NavigationAdventureReceiptRefresher
+    implements AdventureProjectionReceiptBarrier {
+  const _NavigationAdventureReceiptRefresher();
+
+  @override
+  Future<void> waitForCanonicalProjection(String ownerId) async {}
+}
+
+final class _NavigationAdventureMotivation
+    implements AdventureMotivationProjectionReader {
+  const _NavigationAdventureMotivation();
+
+  static const AdventureProjectionOutcome _notEligible =
+      AdventureProjectionOutcome(
+        state: AdventureProjectionReceiptState.notEligible,
+      );
+
+  @override
+  Future<AdventureMotivationSnapshot> read(
+    AdventureMotivationProjectionRequest request,
+  ) async => _snapshot(null);
+
+  @override
+  Future<AdventureMotivationSnapshot> readForEvidence(
+    String evidenceId,
+  ) async => _snapshot(evidenceId);
+
+  @override
+  Future<List<AdventureMotivationSnapshot>> readForSession({
+    required String ownerId,
+    required String sessionId,
+  }) async => const <AdventureMotivationSnapshot>[];
+
+  AdventureMotivationSnapshot _snapshot(String? evidenceId) =>
+      AdventureMotivationSnapshot(
+        sourceEvidenceId: evidenceId,
+        questOutcome: _notEligible,
+        streakOutcome: _notEligible,
+        rewardOutcome: _notEligible,
+        pendingProjection: false,
+      );
+}
+
+final class _NavigationPreferences implements LearnerPreferencesRepository {
+  LearnerPreferences current = LearnerPreferences.defaults(
+    ownerId: 'owner:main-navigation',
+    updatedAtUtc: DateTime.utc(2026, 8, 30),
+  );
+
+  @override
+  Future<LearnerPreferences> read(String ownerId) async => current;
+
+  @override
+  Future<void> save(
+    LearnerPreferences preferences, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    current = preferences;
+  }
+
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    current = LearnerPreferences(
+      ownerId: current.ownerId,
+      preferenceVersion: current.preferenceVersion,
+      goal: current.goal,
+      availableMinutesPerDay: current.availableMinutesPerDay,
+      activityPreference: current.activityPreference,
+      homeExperience: current.homeExperience,
+      updatedAtUtc: current.updatedAtUtc,
+      display: display,
+    );
+  }
 }
 
 TodayHubSnapshot _emptyTodayHubSnapshot({

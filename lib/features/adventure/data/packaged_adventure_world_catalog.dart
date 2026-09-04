@@ -1,10 +1,46 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+
+import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/adventure_world_catalog.dart';
 
 abstract final class PackagedAdventureWorldCatalog {
   static const String catalogId = 'lexiquest.adventure.world-v1';
   static const String catalogVersion = '1.0.0';
+  static const ContentIdentity contentIdentity = ContentIdentity(
+    type: ContentType.offlineArtifact,
+    id: catalogId,
+    revision: 1,
+  );
+
+  static final Uint8List bundleBytes = Uint8List.fromList(
+    utf8.encode(
+      jsonEncode(<String, Object?>{
+        'th': forLocale('th').toJson(),
+        'en': forLocale('en').toJson(),
+      }),
+    ),
+  );
+
+  static final VerifiedContentManifest contentArtifact =
+      VerifiedContentManifest(
+        manifest: ContentManifest(
+          storageId: 'manifest:$catalogId',
+          identity: contentIdentity,
+          checksumSha256: sha256.convert(bundleBytes).toString(),
+          byteLength: bundleBytes.length,
+          provenance: ContentProvenance.packaged,
+          sourceUri: 'asset://adventure/world-v1/catalog-bundle.json',
+          reviewState: ContentReviewState.approved,
+          publicationState: ContentPublicationState.published,
+          createdAtUtc: DateTime.utc(2026, 9, 1),
+          reviewedAtUtc: DateTime.utc(2026, 9, 2),
+          publishedAtUtc: DateTime.utc(2026, 9, 3),
+        ),
+        bytes: bundleBytes,
+      );
 
   static final Map<String, List<int>>
   assetBytes = Map<String, List<int>>.unmodifiable(<String, List<int>>{

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
@@ -314,6 +315,36 @@ void main() {
     },
   );
 
+  test(
+    'production entry resolver records destination and fallback codes',
+    () async {
+      final diagnostics = AdventureDiagnostics();
+      final result =
+          await _host(
+            _useCases(
+              catalogReadiness: AdventureCatalogReadiness.contentUnavailable,
+              diagnostics: diagnostics,
+            ),
+          ).open(
+            ownerId: 'owner-001',
+            occurredAtUtc: now,
+            sessionChoice: TodayExperiencePresentation.adventure,
+          );
+
+      expect(
+        result?.decision.destination,
+        AdventureEntryDestination.standardToday,
+      );
+      expect(
+        diagnostics.snapshot().counters,
+        <AdventureDiagnosticReasonCode, int>{
+          AdventureDiagnosticReasonCode.entryStandard: 1,
+          AdventureDiagnosticReasonCode.entryFallbackContentUnavailable: 1,
+        },
+      );
+    },
+  );
+
   test('Product Entry source has no raw consent or measurement dependency', () {
     final source = File(
       'lib/features/adventure/application/adventure_entry_use_cases.dart',
@@ -335,6 +366,7 @@ AdventureEntryUseCases _useCases({
   AdventureCatalogReadiness catalogReadiness = AdventureCatalogReadiness.ready,
   ActivePresentationPermitReader? permits,
   AdventurePresentationPreferenceReader? preferences,
+  AdventureDiagnostics? diagnostics,
 }) {
   final registry = BuildFeatureRegistry(<Feature, FeatureState>{
     Feature.adventureMotivation: state,
@@ -349,6 +381,7 @@ AdventureEntryUseCases _useCases({
     todayHubIdentity: _identityToday,
     learningIdentity: _identityLearning,
     preferences: preferences,
+    diagnostics: diagnostics,
   );
 }
 

@@ -16,6 +16,9 @@ final class AdventureReactionSelector {
         .where((reaction) => reaction.trigger == trigger)
         .toList(growable: false);
     if (candidates.isEmpty) return null;
-    return candidates[variantSeed % candidates.length];
+    final selected = candidates[variantSeed % candidates.length];
+    return AdventureReactionContentReview.isApprovedReaction(selected)
+        ? selected
+        : null;
   }
 }

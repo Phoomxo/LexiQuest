@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/data/drift_adventure_achievement_receipt_reader.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -17,7 +18,10 @@ void main() {
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
-    reader = DriftAdventureMotivationProjectionReader(database);
+    reader = DriftAdventureMotivationProjectionReader(
+      learningReceipts: DriftLearningProjectionReceiptReader(database),
+      achievements: DriftAdventureAchievementReceiptReader(database),
+    );
     await database
         .into(database.localOwners)
         .insert(
@@ -174,23 +178,29 @@ void main() {
       expect(snapshot.pendingProjection, isFalse);
       expect(snapshot.questOutcome.toJson(), <String, Object?>{
         'state': 'committed',
-        'receiptId':
-            'learning-projection:quest:'
-            'learning-event:evidence-committed:v2',
+        'receiptId': LearningEvidenceContract.learningProjectionReceiptId(
+          projection: 'quest',
+          sourceEventId: source.eventId,
+          appliedVersion: DriftLearningEventStore.appliedProjectionVersion,
+        ),
         'displayCode': null,
       });
       expect(snapshot.streakOutcome.toJson(), <String, Object?>{
         'state': 'committed',
-        'receiptId':
-            'learning-projection:streak:'
-            'learning-event:evidence-committed:v2',
+        'receiptId': LearningEvidenceContract.learningProjectionReceiptId(
+          projection: 'streak',
+          sourceEventId: source.eventId,
+          appliedVersion: DriftLearningEventStore.appliedProjectionVersion,
+        ),
         'displayCode': null,
       });
       expect(snapshot.rewardOutcome.toJson(), <String, Object?>{
         'state': 'committed',
-        'receiptId':
-            'learning-projection:reward:'
-            'learning-event:evidence-committed:v2',
+        'receiptId': LearningEvidenceContract.learningProjectionReceiptId(
+          projection: 'reward',
+          sourceEventId: source.eventId,
+          appliedVersion: DriftLearningEventStore.appliedProjectionVersion,
+        ),
         'displayCode': null,
       });
       expect(
@@ -204,6 +214,16 @@ void main() {
           },
         ],
         reason: 'session-sourced unlocks are not evidence-sourced receipts',
+      );
+      final sessionSnapshots = await reader.readForSession(
+        ownerId: 'owner-adventure-projection',
+        sessionId: 'session-adventure-projection',
+      );
+      expect(
+        sessionSnapshots
+            .expand((item) => item.achievementOutcomes)
+            .map((outcome) => outcome.displayCode),
+        <String>['first_correct', 'first_session'],
       );
       expect(await _authorityCounts(database), before);
     },
@@ -235,24 +255,19 @@ void main() {
   });
 
   test(
-    'REC-009 replay returns the same receipts and creates no duplicate',
+    'REC-009 practice replay is recreational and creates no projection work',
     () async {
-      final source = await _addEvidence(database, id: 'evidence-replay');
-      final store = DriftLearningEventStore(database);
-      for (final projection in <String>['quest', 'streak', 'reward']) {
-        await store.markProjectionOutcome(
-          source: source,
-          projection: projection,
-          appliedVersion: DriftLearningEventStore.appliedProjectionVersion,
-          outcome: LearningProjectionOutcome.notApplicable,
-          result: projection == 'quest'
-              ? const <String, dynamic>{
-                  'eligible': false,
-                  'rewardGrants': <Object>[],
-                }
-              : const <String, dynamic>{'reasonCode': 'notEarned'},
-        );
-      }
+      await _addEvidence(
+        database,
+        id: 'evidence-replay',
+        context: EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.recreational,
+          skillId: 'practice-replay',
+          hintLevel: 0,
+          contentRevision: 'content-v1',
+          engagementAllowed: false,
+        ),
+      );
       final before = await _authorityCounts(database);
 
       final first = await reader.readForEvidence('evidence-replay');
@@ -268,39 +283,77 @@ void main() {
     },
   );
 
-  test(
-    'REC-010 map and story reads are no-ops over canonical authority',
-    () async {
-      final before = await _authorityCounts(database);
+  test('REC-010 typed map and story routes are authority no-ops', () async {
+    final before = await _authorityCounts(database);
 
-      final map = await reader.readForEvidence('map-open');
-      final story = await reader.readForEvidence('story-open');
+    final map = await reader.read(
+      const AdventureMotivationProjectionRequest.map(nodeId: 'map:today'),
+    );
+    final story = await reader.read(
+      const AdventureMotivationProjectionRequest.story(
+        storyBeatId: 'story:mission-ready',
+      ),
+    );
 
-      for (final snapshot in <AdventureMotivationSnapshot>[map, story]) {
-        expect(snapshot.pendingProjection, isFalse);
-        expect(
-          snapshot.questOutcome.state,
-          AdventureProjectionReceiptState.notEligible,
+    for (final snapshot in <AdventureMotivationSnapshot>[map, story]) {
+      expect(snapshot.sourceEvidenceId, isNull);
+      expect(snapshot.pendingProjection, isFalse);
+      expect(
+        snapshot.questOutcome.state,
+        AdventureProjectionReceiptState.notEligible,
+      );
+      expect(
+        snapshot.streakOutcome.state,
+        AdventureProjectionReceiptState.notEligible,
+      );
+      expect(
+        snapshot.rewardOutcome.state,
+        AdventureProjectionReceiptState.notEligible,
+      );
+      expect(snapshot.achievementOutcomes, isEmpty);
+    }
+    expect(await _authorityCounts(database), before);
+  });
+
+  test('session reads return only its canonical evidence in order', () async {
+    await _addEvidence(database, id: 'evidence-session-first');
+    await _addEvidence(database, id: 'evidence-session-second');
+    await database
+        .into(database.learningSessions)
+        .insert(
+          LearningSessionsCompanion.insert(
+            id: 'session-other',
+            ownerId: 'owner-adventure-projection',
+            activityType: 'quiz',
+            state: 'active',
+            startedAtUtcMs: 2,
+            appVersion: '1.0.0',
+            buildId: 'test-build',
+          ),
         );
-        expect(
-          snapshot.streakOutcome.state,
-          AdventureProjectionReceiptState.notEligible,
-        );
-        expect(
-          snapshot.rewardOutcome.state,
-          AdventureProjectionReceiptState.notEligible,
-        );
-        expect(snapshot.achievementOutcomes, isEmpty);
-      }
-      expect(await _authorityCounts(database), before);
-    },
-  );
+    await _addEvidence(
+      database,
+      id: 'evidence-other-session',
+      sessionId: 'session-other',
+    );
+
+    final snapshots = await reader.readForSession(
+      ownerId: 'owner-adventure-projection',
+      sessionId: 'session-adventure-projection',
+    );
+
+    expect(snapshots.map((snapshot) => snapshot.sourceEvidenceId), <String>[
+      'evidence-session-first',
+      'evidence-session-second',
+    ]);
+  });
 }
 
 Future<EventEnvelopeV2> _addEvidence(
   AppDatabase database, {
   required String id,
   EvidenceContext? context,
+  String sessionId = 'session-adventure-projection',
 }) async {
   final evidenceContext =
       context ??
@@ -318,7 +371,7 @@ Future<EventEnvelopeV2> _addEvidence(
         AnswerAttemptsCompanion.insert(
           id: id,
           ownerId: 'owner-adventure-projection',
-          sessionId: 'session-adventure-projection',
+          sessionId: sessionId,
           wordId: 'word-adventure-projection',
           promptMode: evidenceContext.evidenceClass == EvidenceClass.assessment
               ? 'assessmentResponse'
@@ -339,7 +392,7 @@ Future<EventEnvelopeV2> _addEvidence(
     actorIdentity: 'owner-adventure-projection',
     ownerIdentity: 'owner-adventure-projection',
     aggregateType: 'LearningSession',
-    aggregateId: 'session-adventure-projection',
+    aggregateId: sessionId,
     idempotencyKey: LearningEvidenceContract.learningAttemptIdempotencyKey(id),
     consentContext: evidenceContext.evidenceClass == EvidenceClass.assessment
         ? const ConsentContext(

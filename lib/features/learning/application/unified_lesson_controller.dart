@@ -180,6 +180,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   int _configurationLimitTimerGeneration = 0;
   int _configurationEffortGeneration = 0;
   int _configurationConsumedMicros = 0;
+  int _skippedItemCount = 0;
   int? _configurationActiveAnchorMicros;
   Future<void>? _configurationTerminalClose;
   bool _configurationLimitReached = false;
@@ -211,11 +212,20 @@ final class UnifiedLessonController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// Records a presentation-only skip without creating learning evidence.
+  void noteSkippedItem() {
+    _requireNotDisposed();
+    _requireStatus(LessonSessionStatus.active, 'note a skipped item');
+    _skippedItemCount += 1;
+    notifyListeners();
+  }
+
   ActiveLearningTimeController? get activeLearningTime => _activeLearningTime;
   FocusTimerController? get focusTimer => _focusTimer;
   Feature? get focusTimerFeature => _focusTimerFeature;
   Object? get lastActiveLearningTimeFailure => _lastActiveLearningTimeFailure;
   bool get sessionCompletionRetryRequired => _terminalClosePending != null;
+  int get skippedItemCount => _skippedItemCount;
   bool usesLearningAuthority(LearningUseCases learning) =>
       identical(_learning, learning);
   bool get terminalMutationInFlight =>

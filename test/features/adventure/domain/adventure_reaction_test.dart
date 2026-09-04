@@ -113,57 +113,116 @@ void main() {
     }
   });
 
-  test('content review rejects shame coercion and false mastery claims', () {
+  test('content review approves only the exact closed reviewed catalog', () {
+    final approved = AdventureReactionCatalog.v1.reactions.first;
+
     expect(
-      AdventureReactionContentReview.reviewCopy(
-        th: 'ถ้าหยุดจะถูกลงโทษ',
-        en: 'You failed. Continue or lose your reward.',
+      AdventureReactionContentReview.isApprovedScript(
+        catalogVersion: approved.catalogVersion,
+        reactionId: approved.reactionId,
+        th: approved.copy.th,
+        en: approved.copy.en,
+        accessibilityTh: approved.accessibilityText.th,
+        accessibilityEn: approved.accessibilityText.en,
       ),
-      containsAll(<AdventureReactionContentViolation>{
-        AdventureReactionContentViolation.shame,
-        AdventureReactionContentViolation.coercion,
-      }),
+      isTrue,
     );
     expect(
-      AdventureReactionContentReview.reviewCopy(
-        th: 'คุณเชี่ยวชาญภาษาอังกฤษแล้ว',
-        en: 'You have mastered English.',
+      AdventureReactionContentReview.isApprovedScript(
+        catalogVersion: approved.catalogVersion,
+        reactionId: approved.reactionId,
+        th: approved.copy.th,
+        en: 'A new but harmless sentence.',
+        accessibilityTh: approved.accessibilityText.th,
+        accessibilityEn: approved.accessibilityText.en,
       ),
-      contains(AdventureReactionContentViolation.falseMastery),
+      isFalse,
+    );
+    expect(
+      AdventureReactionContentReview.isApprovedScript(
+        catalogVersion: '99.0.0',
+        reactionId: approved.reactionId,
+        th: approved.copy.th,
+        en: approved.copy.en,
+        accessibilityTh: approved.accessibilityText.th,
+        accessibilityEn: approved.accessibilityText.en,
+      ),
+      isFalse,
     );
   });
 
-  test(
-    'architecture exposes no AI free-text relationship or punishment state',
-    () {
-      final sources = <String>[
-        'lib/features/adventure/domain/adventure_reaction.dart',
-        'lib/features/adventure/application/adventure_reaction_selector.dart',
-        'lib/features/adventure/presentation/widgets/adventure_companion_panel.dart',
-      ].map((path) => File(path).readAsStringSync()).join('\n');
+  test('entire Adventure tree enforces the scripted read-only boundary', () {
+    final files = Directory('lib/features/adventure')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .toList(growable: false);
+    expect(files.length, greaterThan(20));
 
-      for (final forbiddenImport in <String>[
-        'features/ai_tutor',
-        'features/gemini',
-        'openai_',
-        'anthropic_',
-      ]) {
-        expect(sources, isNot(contains(forbiddenImport)));
+    final forbidden = <RegExp>[
+      RegExp(
+        r'(?:features/(?:ai_tutor|gemini)/|openai|anthropic|generative[_-]?ai)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\b(?:free[_-]?text|(?:ai[_-]?)?generated[_-]?(?:copy|text|reaction))\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\b(?:(?:system|user)[_-]?)?prompt(?:[_-]?(?:template|config(?:uration)?))?\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\b(?:relationship|affinity)[_-]?(?:score|level|state)\b',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\b(?:punishment|penalty)[_-]?(?:score|level|state|config(?:uration)?)\b',
+        caseSensitive: false,
+      ),
+      RegExp(r'\b(?:RewardUseCases|RewardRepository|RewardAccountWriter)\b'),
+      RegExp(
+        r'\.(?:purchase|equip|unequip|grantCoins|spendCoins|creditCoins|debitCoins)\s*\(',
+      ),
+      RegExp(r'features/rewards/(?:application|data)/'),
+    ];
+    for (final file in files) {
+      final source = file.readAsStringSync().replaceAll('\\', '/');
+      for (final pattern in forbidden) {
+        expect(
+          pattern.hasMatch(source),
+          isFalse,
+          reason: '${file.path} matched ${pattern.pattern}',
+        );
       }
-      for (final forbiddenField in <String>[
-        'freeText',
-        'free_text',
-        'relationshipScore',
-        'relationship_score',
-        'punishmentState',
-        'punishment_state',
-      ]) {
-        expect(sources, isNot(contains(forbiddenField)));
-      }
-      expect(sources, isNot(contains('factory AdventureReaction.fromJson')));
-      expect(sources, isNot(contains('.purchase(')));
-      expect(sources, isNot(contains('.equip(')));
-      expect(sources, isNot(contains('.grantCoins(')));
-    },
-  );
+    }
+
+    final host = File(
+      'lib/features/adventure/presentation/today_experience_host.dart',
+    ).readAsStringSync();
+    final hub = File(
+      'lib/features/adventure/presentation/adventure_hub_screen.dart',
+    ).readAsStringSync();
+    final navigation = File(
+      'lib/screens/main_navigation_screen.dart',
+    ).readAsStringSync();
+    expect(host, contains('AdventureReactionSelector'));
+    expect(host, contains('RewardAccountReader'));
+    expect(hub, contains('AdventureCompanionPanel'));
+    expect(
+      navigation,
+      contains('rewardAccounts: dependencies.rewardAccounts!'),
+    );
+    expect(navigation, contains('AdventureLessonCompanionPanel'));
+  });
+
+  test('companion motion uses the M3 motion duration contract', () {
+    final source = File(
+      'lib/features/adventure/presentation/widgets/adventure_companion_panel.dart',
+    ).readAsStringSync();
+
+    expect(source, contains('M3Theme.motionDuration'));
+    expect(source, contains('Durations.short2'));
+    expect(source, isNot(contains('Duration(milliseconds: 180)')));
+  });
 }

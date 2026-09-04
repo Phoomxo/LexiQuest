@@ -22,7 +22,7 @@ enum AdventureReactionClaimClassification {
   missionCompletion,
 }
 
-enum AdventureReactionContentViolation { shame, coercion, falseMastery }
+enum AdventureReactionContentViolation { unapprovedScript }
 
 final class AdventureLocalizedReactionText {
   const AdventureLocalizedReactionText({required this.th, required this.en});
@@ -261,59 +261,46 @@ final class AdventureReactionCatalog {
       version == v1Version ? v1 : null;
 }
 
-/// Automated guard for reviewed copy. Human bilingual approval remains the
-/// release authority; this catches known unsafe wording before review.
+/// Closed approval gate for the exact bilingual scripts reviewed for release.
+///
+/// Text that is merely absent from a denylist is not accepted. Every field
+/// must exactly match an immutable entry in an approved catalog version.
 abstract final class AdventureReactionContentReview {
   static Set<AdventureReactionContentViolation> findViolations(
     AdventureReaction reaction,
-  ) => <AdventureReactionContentViolation>{
-    ...reviewCopy(th: reaction.copy.th, en: reaction.copy.en),
-    ...reviewCopy(
-      th: reaction.accessibilityText.th,
-      en: reaction.accessibilityText.en,
-    ),
-  };
+  ) => isApprovedReaction(reaction)
+      ? const <AdventureReactionContentViolation>{}
+      : const <AdventureReactionContentViolation>{
+          AdventureReactionContentViolation.unapprovedScript,
+        };
 
-  static Set<AdventureReactionContentViolation> reviewCopy({
+  static bool isApprovedReaction(AdventureReaction reaction) =>
+      isApprovedScript(
+        catalogVersion: reaction.catalogVersion,
+        reactionId: reaction.reactionId,
+        th: reaction.copy.th,
+        en: reaction.copy.en,
+        accessibilityTh: reaction.accessibilityText.th,
+        accessibilityEn: reaction.accessibilityText.en,
+      );
+
+  static bool isApprovedScript({
+    required String catalogVersion,
+    required String reactionId,
     required String th,
     required String en,
+    required String accessibilityTh,
+    required String accessibilityEn,
   }) {
-    final text = '$th\n$en'.toLowerCase();
-    final violations = <AdventureReactionContentViolation>{};
-    if (_containsAny(text, const <String>[
-      'you failed',
-      'you are lazy',
-      'disappointing',
-      'น่าผิดหวัง',
-      'ขี้เกียจ',
-      'ล้มเหลว',
-    ])) {
-      violations.add(AdventureReactionContentViolation.shame);
+    final catalog = AdventureReactionCatalog.forVersion(catalogVersion);
+    if (!identical(catalog, AdventureReactionCatalog.v1)) return false;
+    for (final approved in catalog!.reactions) {
+      if (approved.reactionId != reactionId) continue;
+      return approved.copy.th == th &&
+          approved.copy.en == en &&
+          approved.accessibilityText.th == accessibilityTh &&
+          approved.accessibilityText.en == accessibilityEn;
     }
-    if (_containsAny(text, const <String>[
-      'continue or lose',
-      'lose your reward',
-      'must continue',
-      'ห้ามหยุด',
-      'ต้องเรียนต่อ',
-      'ถูกลงโทษ',
-    ])) {
-      violations.add(AdventureReactionContentViolation.coercion);
-    }
-    if (_containsAny(text, const <String>[
-      'mastered',
-      'now fluent',
-      'you are an expert',
-      'perfect english',
-      'เชี่ยวชาญภาษาอังกฤษแล้ว',
-      'คล่องแล้ว',
-      'สมบูรณ์แบบ',
-    ])) {
-      violations.add(AdventureReactionContentViolation.falseMastery);
-    }
-    return violations;
+    return false;
   }
-
-  static bool _containsAny(String text, List<String> phrases) =>
-      phrases.any(text.contains);
 }

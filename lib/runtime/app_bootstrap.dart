@@ -25,10 +25,15 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_diagnostics.dart';
+import '../features/adventure/application/adventure_motivation_projection_reader.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_journey_reader.dart';
 import '../features/adventure/application/adventure_rollout_gate.dart';
+import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/data/adventure_world_catalog_validator.dart';
+import '../features/adventure/data/adventure_catalog_download_adapter.dart';
+import '../features/adventure/data/drift_adventure_achievement_receipt_reader.dart';
 import '../features/adventure/data/packaged_adventure_world_catalog.dart';
 import '../features/ai_tutor/application/ai_tutor_use_cases.dart';
 import '../features/ai_tutor/application/owner_operation_coordinator.dart';
@@ -68,6 +73,7 @@ import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/data/drift_learning_event_store.dart';
 import '../features/learning/data/drift_session_configuration_store.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
@@ -1266,21 +1272,42 @@ final class AppBootstrap {
           adventureCatalog,
           packagedBytes: PackagedAdventureWorldCatalog.assetBytes,
         );
+    await contentManifests.provisionPackagedArtifact(
+      PackagedAdventureWorldCatalog.contentArtifact,
+    );
+    var adventureCatalogReadiness = adventureCatalogValidation.isValid
+        ? AdventureCatalogReadiness.contentUnavailable
+        : AdventureCatalogReadiness.invalid;
+    final adventureDiagnostics = AdventureDiagnostics();
+    final adventureSessionComposer = CanonicalAdventureSessionComposer(
+      diagnostics: adventureDiagnostics,
+    );
     final adventureEntry = AdventureEntryUseCases(
       rollout: AdventureRolloutGate(
         features: runtimeFeatures,
         requiredDependenciesReady: () => true,
-        catalogReadiness: () => adventureCatalogValidation.isValid
-            ? AdventureCatalogReadiness.ready
-            : AdventureCatalogReadiness.invalid,
+        catalogReadiness: () => adventureCatalogReadiness,
       ),
       catalog: adventureCatalog,
       todayHubIdentity: todayHub,
       learningIdentity: learning,
       preferences: LearnerAdventurePresentationPreferences(learnerPreferences),
+      diagnostics: adventureDiagnostics,
     );
     const adventurePresentationPermits = NoActivePresentationPermitReader();
     final adventureJourney = AdventureJourneyUseCases();
+    final adventureMotivation = DriftAdventureMotivationProjectionReader(
+      learningReceipts: DriftLearningProjectionReceiptReader(database),
+      achievements: DriftAdventureAchievementReceiptReader(database),
+    );
+    final adventureReceiptBarrier = CallbackAdventureProjectionReceiptBarrier((
+      ownerId,
+    ) async {
+      // Canonical learning completion already schedules projection work.
+      // Adventure only waits at this passive barrier and never requests a
+      // reward/quest/streak mutation of its own.
+      await learningReconciliation.drain();
+    });
     ActiveLearningTimeController createActiveLearningTimeController() {
       final timezoneId = resolvedLearningTimezoneId;
       final location = timezone.getLocation(timezoneId);
@@ -1368,6 +1395,7 @@ final class AppBootstrap {
         VerifiedOfflineContentManager(
           repository: offlineContentRepository,
           adapters: <OfflineContentDownloadAdapter>[
+            const AdventureCatalogDownloadAdapter(),
             LearningPackDownloadAdapter(contentManifests),
             ModelDownloadAdapter(
               manager: modelDownloadManager,
@@ -1398,6 +1426,26 @@ final class AppBootstrap {
           nowUtc: () => DateTime.now().toUtc(),
         );
     await offlineContent.reconcile();
+    final adventureCatalogRecovery = AdventureCatalogRecoveryOperations(
+      manager: offlineContent,
+      diagnostics: adventureDiagnostics,
+      catalogIdentity: PackagedAdventureWorldCatalog.contentIdentity,
+      onResult: (result) {
+        adventureCatalogReadiness = switch (result.status) {
+          AdventureCatalogRecoveryStatus.verified ||
+          AdventureCatalogRecoveryStatus.repaired =>
+            AdventureCatalogReadiness.ready,
+          AdventureCatalogRecoveryStatus.quarantined =>
+            AdventureCatalogReadiness.invalid,
+          AdventureCatalogRecoveryStatus.removed ||
+          AdventureCatalogRecoveryStatus.unavailable =>
+            AdventureCatalogReadiness.contentUnavailable,
+        };
+      },
+    );
+    if (offlineContentOverride == null && adventureCatalogValidation.isValid) {
+      await adventureCatalogRecovery.repair();
+    }
     final deviceModels = DeviceModelUseCases(
       manifest: ModelManifest.fieldImageClassifier,
       repository: modelRepository,
@@ -1411,6 +1459,7 @@ final class AppBootstrap {
     );
     resources.own(deviceModels.dispose);
     resources.own(offlineContent.dispose);
+    resources.own(adventureCatalogRecovery.dispose);
     // Reverse-order disposal must cancel the adapter authority before the
     // offline manager drains its operation queue.
     resources.own(voicePackDownloadManager.dispose);
@@ -1616,6 +1665,7 @@ final class AppBootstrap {
       studyReminders: studyReminders,
       progress: progress,
       rewards: rewards,
+      rewardAccounts: rewards,
       learnerIntents: learnerIntents,
       bookmarkLearningItem: bookmarkLearningItem,
       contentQualityReports: contentQualityReports,
@@ -1638,6 +1688,11 @@ final class AppBootstrap {
       adventureCatalog: adventureCatalog,
       adventurePresentationPermits: adventurePresentationPermits,
       adventureJourney: adventureJourney,
+      adventureSessionComposer: adventureSessionComposer,
+      adventureMotivation: adventureMotivation,
+      adventureReceiptBarrier: adventureReceiptBarrier,
+      adventureDiagnostics: adventureDiagnostics,
+      adventureCatalogRecovery: adventureCatalogRecovery,
       disposeResources: resources.dispose,
     );
   }

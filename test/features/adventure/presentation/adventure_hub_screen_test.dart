@@ -3,9 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_reaction_selector.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_reaction.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_hub_screen.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/widgets/adventure_companion_panel.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
   testWidgets(
@@ -23,6 +27,11 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey('adventure-start-mission')),
+        findsOneWidget,
+      );
+      expect(find.byType(AdventureCompanionPanel), findsOneWidget);
+      expect(
+        find.text('Your mission is ready. Start when you are ready.'),
         findsOneWidget,
       );
     },
@@ -92,6 +101,8 @@ void main() {
             themeMode: ThemeMode.dark,
             home: AdventureHubScreen(
               snapshot: _snapshot(),
+              reaction: _missionReady,
+              rewardOwnership: _rewardAccount,
               onStartMission: (_) async {},
               onPresentationChanged: (_) {},
               onRefresh: () {},
@@ -116,10 +127,26 @@ Widget _app(
   theme: M3Theme.lightTheme,
   home: AdventureHubScreen(
     snapshot: snapshot,
+    reaction: snapshot.primaryMission == null ? null : _missionReady,
+    rewardOwnership: _rewardAccount,
     onStartMission: onStart ?? (_) async {},
     onPresentationChanged: (_) {},
     onRefresh: () {},
   ),
+);
+
+final _missionReady = const AdventureReactionSelector().select(
+  catalogVersion: AdventureReactionCatalog.v1Version,
+  trigger: AdventureReactionTrigger.missionReady,
+  variantSeed: 0,
+);
+
+const _rewardAccount = RewardAccount(
+  coinBalance: 0,
+  catalogVersion: RewardCatalog.version,
+  ownedItemIds: <String>{},
+  equippedBySlot: <String, String>{},
+  transactionCount: 0,
 );
 
 final _now = DateTime.utc(2026, 9, 4, 8);

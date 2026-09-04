@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:uuid/uuid.dart';
@@ -6,11 +8,12 @@ import '../features/assessment/domain/assessment_models.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
 import '../features/adventure/application/adventure_learning_bridge.dart';
-import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_session_plan.dart';
 import '../features/adventure/presentation/adventure_today_entry_card.dart';
+import '../features/adventure/presentation/adventure_result_lifecycle_screen.dart';
 import '../features/adventure/presentation/today_experience_host.dart';
+import '../features/adventure/presentation/widgets/adventure_companion_panel.dart';
 import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/session_configuration_policy.dart';
@@ -24,6 +27,7 @@ import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/review/domain/review_queue_item.dart';
+import '../features/rewards/domain/reward_models.dart';
 import '../features/today_hub/domain/today_hub_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
@@ -267,15 +271,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           todayHub: dependencies.todayHub!,
           catalog: dependencies.adventureCatalog!,
           journey: dependencies.adventureJourney!,
+          rewardAccounts: dependencies.rewardAccounts!,
           createEntryAttemptId: const Uuid().v4,
-          nowUtc: () => DateTime.now().toUtc(),
+          nowUtc: _adventureNowUtc,
           actions: _todayActions(),
           features: widget.featureRegistry ?? dependencies.features,
           assessmentAvailable: dependencies.assessment != null,
-          onPresentationPreferenceChanged: (presentation) =>
-              LearnerAdventurePresentationPreferences(
-                dependencies.learnerPreferences!,
-              ).saveForOwner(ownerId, presentation),
+          presentationPreferences:
+              (dependencies.adventureEntry! as AdventureEntryUseCases)
+                      .preferences
+                  as LearnerAdventurePresentationPreferences,
           onStartMission: _startAdventureMission,
         ),
       ),
@@ -397,7 +402,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final validated = await revalidate(configuration);
-    final plan = await const CanonicalAdventureSessionComposer().compose(
+    final plan = await dependencies.adventureSessionComposer!.compose(
       mission: mission,
       today: launch.today,
       requestedConfiguration: validated,
@@ -421,6 +426,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           registrationFeature: registration.feature,
           adapter: lessonAdapter,
           plan: plan,
+          rewardOwnership: launch.rewardOwnership,
           revalidateConfiguration: revalidate,
         ),
       ),
@@ -432,21 +438,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required Feature registrationFeature,
     required LessonModeAdapter adapter,
     required AdventureSessionPlanV1 plan,
+    required RewardAccount rewardOwnership,
     required SessionConfigurationRevalidator revalidateConfiguration,
   }) {
     final createController = dependencies.createLessonController!;
+    Widget completionPage(
+      BuildContext resultContext,
+      LearningSessionSummary summary,
+    ) => AdventureResultLifecycleScreen(
+      summary: summary,
+      motivation: dependencies.adventureMotivation!,
+      receiptBarrier: dependencies.adventureReceiptBarrier!,
+      rewardOwnership: rewardOwnership,
+      catalogVersion: plan.origin.catalogVersion,
+      diagnostics: dependencies.adventureDiagnostics,
+      onNextAction: () {
+        Navigator.of(resultContext).pop();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            unawaited(_openTodayReview(const <TodayHubReviewWorkItem>[]));
+          }
+        });
+      },
+    );
     final lesson = adapter is TypedRecallModeAdapter
         ? QuizScreen.typedRecall(
             modeAdapter: adapter,
             sessionConfiguration: plan.configuration,
             pinnedContent: plan.content,
             pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
+            completionPageBuilder: completionPage,
+            adventureDiagnostics: dependencies.adventureDiagnostics,
           )
         : QuizScreen(
             modeAdapter: adapter as MeaningQuizModeAdapter,
             sessionConfiguration: plan.configuration,
             pinnedContent: plan.content,
             pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
+            completionPageBuilder: completionPage,
+            adventureDiagnostics: dependencies.adventureDiagnostics,
           );
     return UnifiedLessonModeHost(
       adapter: adapter,
@@ -457,6 +487,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       configuration: plan.configuration,
       revalidateConfiguration: revalidateConfiguration,
       contrastiveFeedback: dependencies.contrastiveFeedback,
+      companionBuilder: (_, controller) => AdventureLessonCompanionPanel(
+        controller: controller,
+        rewardOwnership: rewardOwnership,
+        catalogVersion: plan.origin.catalogVersion,
+      ),
       controllerStarter: (controller, command) {
         final launch = const AdventureLearningBridge().prepare(
           plan: plan,
@@ -1240,6 +1275,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
     );
   }
+}
+
+DateTime _adventureNowUtc() {
+  final now = DateTime.now().toUtc();
+  return DateTime.fromMillisecondsSinceEpoch(
+    now.millisecondsSinceEpoch,
+    isUtc: true,
+  );
 }
 
 final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {

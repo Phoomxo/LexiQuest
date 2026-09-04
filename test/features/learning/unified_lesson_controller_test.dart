@@ -74,6 +74,23 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  test('presentation-only skip notifies without creating evidence', () async {
+    final fixture = await _fixture();
+    await fixture.controller.start(fixture.startCommand);
+    var notifications = 0;
+    fixture.controller.addListener(() => notifications += 1);
+
+    fixture.controller.noteSkippedItem();
+
+    expect(fixture.controller.skippedItemCount, 1);
+    expect(notifications, 1);
+    expect(fixture.repository.recordCalls, 0);
+    expect(
+      await fixture.database.select(fixture.database.answerAttempts).get(),
+      isEmpty,
+    );
+  });
+
   test(
     'f16 start revalidates one bound immutable configuration and retry preserves it',
     () async {

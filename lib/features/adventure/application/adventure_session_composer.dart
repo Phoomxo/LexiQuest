@@ -9,6 +9,7 @@ import '../../today_hub/domain/today_hub_models.dart';
 import '../domain/adventure_entry.dart';
 import '../domain/adventure_journey.dart';
 import '../domain/adventure_session_plan.dart';
+import 'adventure_diagnostics.dart';
 
 abstract interface class AdventureSessionComposer {
   Future<AdventureSessionPlanV1> compose({
@@ -21,7 +22,9 @@ abstract interface class AdventureSessionComposer {
 
 final class CanonicalAdventureSessionComposer
     implements AdventureSessionComposer {
-  const CanonicalAdventureSessionComposer();
+  const CanonicalAdventureSessionComposer({this.diagnostics});
+
+  final AdventureDiagnostics? diagnostics;
 
   @override
   Future<AdventureSessionPlanV1> compose({
@@ -32,28 +35,20 @@ final class CanonicalAdventureSessionComposer
   }) async {
     if (mission.ownerId != today.ownerId ||
         requestedConfiguration.ownerId != today.ownerId) {
-      throw const AdventureSessionPlanException(
-        AdventureSessionPlanFailure.ownerMismatch,
-      );
+      _reject(AdventureSessionPlanFailure.ownerMismatch);
     }
     if (mission.sourceEvaluatedAtUtc != today.evaluatedAtUtc) {
-      throw const AdventureSessionPlanException(
-        AdventureSessionPlanFailure.staleSource,
-      );
+      _reject(AdventureSessionPlanFailure.staleSource);
     }
     if (entry.destination != AdventureEntryDestination.adventure ||
         entry.availability != AdventureAvailability.available) {
-      throw const AdventureSessionPlanException(
-        AdventureSessionPlanFailure.unavailableEntry,
-      );
+      _reject(AdventureSessionPlanFailure.unavailableEntry);
     }
     if (requestedConfiguration.mode !=
             (mission.suggestedMode ?? requestedConfiguration.mode) ||
         requestedConfiguration.itemCount <= 0 ||
         requestedConfiguration.itemCount > mission.content.length) {
-      throw const AdventureSessionPlanException(
-        AdventureSessionPlanFailure.incompatibleConfiguration,
-      );
+      _reject(AdventureSessionPlanFailure.incompatibleConfiguration);
     }
 
     final resolved = <ContentIdentity>[];
@@ -63,17 +58,11 @@ final class CanonicalAdventureSessionComposer
           .where((work) => work.identity == identity)
           .toList(growable: false);
       if (matches.length != 1) {
-        throw AdventureSessionPlanException(
-          AdventureSessionPlanFailure.unresolvedContent,
-          identity.id,
-        );
+        _reject(AdventureSessionPlanFailure.unresolvedContent, identity.id);
       }
       final checksum = matches.single.snapshot.coreChecksumSha256;
       if (!_sha256.hasMatch(checksum) || checksums.containsKey(identity.id)) {
-        throw AdventureSessionPlanException(
-          AdventureSessionPlanFailure.unresolvedContent,
-          identity.id,
-        );
+        _reject(AdventureSessionPlanFailure.unresolvedContent, identity.id);
       }
       resolved.add(identity);
       checksums[identity.id] = checksum;
@@ -139,6 +128,11 @@ final class CanonicalAdventureSessionComposer
       assignmentId: entry.assignmentId,
       treatment: entry.treatment,
     );
+  }
+
+  Never _reject(AdventureSessionPlanFailure reason, [String? detail]) {
+    diagnostics?.recordCompositionFailure(reason);
+    throw AdventureSessionPlanException(reason, detail);
   }
 }
 

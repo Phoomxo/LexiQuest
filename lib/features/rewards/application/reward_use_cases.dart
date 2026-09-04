@@ -7,7 +7,7 @@ import '../domain/reward_models.dart';
 typedef RewardIdGenerator = String Function();
 typedef RewardUtcNow = DateTime Function();
 
-final class RewardUseCases {
+final class RewardUseCases implements RewardAccountReader {
   const RewardUseCases({
     required this.owners,
     required this.repository,
@@ -28,7 +28,16 @@ final class RewardUseCases {
 
   Future<RewardAccount> load() async {
     final owner = await owners.getOrCreateActiveOwner();
-    return _avatarOperation(owner.id, () => repository.load(owner.id));
+    return loadForOwner(owner.id);
+  }
+
+  @override
+  Future<RewardAccount> loadForOwner(String ownerId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != ownerId) {
+      throw const RewardException(RewardFailureCode.evidenceUnavailable);
+    }
+    return _avatarOperation(ownerId, () => repository.load(ownerId));
   }
 
   Future<AvatarRewardState> loadAvatar() async {

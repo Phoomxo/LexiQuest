@@ -124,6 +124,109 @@ final class PendingLearningProjectionEvent {
   final bool prerequisiteInvalid;
 }
 
+/// Drift-backed read adapter for feature code that may observe canonical
+/// learning projection receipts but must never mutate or reconcile them.
+final class DriftLearningProjectionReceiptReader
+    implements LearningProjectionReceiptReader {
+  DriftLearningProjectionReceiptReader(db.AppDatabase database)
+    : _database = database,
+      _events = DriftLearningEventStore(database);
+
+  final db.AppDatabase _database;
+  final DriftLearningEventStore _events;
+
+  @override
+  Future<CanonicalLearningEvidenceSource?> readValidatedSourceForEvidence(
+    String sourceEvidenceId,
+  ) async {
+    if (!LearningEvidenceContract.validSourceEvidenceId(sourceEvidenceId)) {
+      throw ArgumentError.value(sourceEvidenceId, 'sourceEvidenceId');
+    }
+    final attempt = await (_database.select(
+      _database.answerAttempts,
+    )..where((row) => row.id.equals(sourceEvidenceId))).getSingleOrNull();
+    if (attempt == null) return null;
+    final source = await _events.readValidatedSourceForAttempt(
+      attempt: attempt,
+    );
+    if (source == null) return null;
+    return CanonicalLearningEvidenceSource(
+      sourceEvidenceId: sourceEvidenceId,
+      sourceEventId: source.eventId,
+      ownerId: source.ownerIdentity,
+      evidenceClass: EvidenceClass.values.byName(attempt.evidenceClass),
+    );
+  }
+
+  @override
+  Future<CanonicalLearningProjectionReceipt?> readProjectionReceipt({
+    required CanonicalLearningEvidenceSource source,
+    required String projection,
+    required int appliedVersion,
+  }) async {
+    final validated = await readValidatedSourceForEvidence(
+      source.sourceEvidenceId,
+    );
+    if (validated == null ||
+        validated.sourceEventId != source.sourceEventId ||
+        validated.ownerId != source.ownerId ||
+        validated.evidenceClass != source.evidenceClass) {
+      throw StateError('canonical learning source changed during receipt read');
+    }
+    final event = await _events.readBySourceEvidenceId(source.sourceEvidenceId);
+    if (event == null) return null;
+    final receipt = await _events.readProjectionReceipt(
+      source: event,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    if (receipt == null) return null;
+    return CanonicalLearningProjectionReceipt(
+      receiptId: LearningEvidenceContract.learningProjectionReceiptId(
+        projection: projection,
+        sourceEventId: source.sourceEventId,
+        appliedVersion: appliedVersion,
+      ),
+      outcome: switch (receipt.outcome) {
+        LearningProjectionOutcome.applied =>
+          CanonicalLearningProjectionReceiptOutcome.applied,
+        LearningProjectionOutcome.notApplicable =>
+          CanonicalLearningProjectionReceiptOutcome.notApplicable,
+        LearningProjectionOutcome.blocked =>
+          CanonicalLearningProjectionReceiptOutcome.blocked,
+      },
+      result: Map<String, Object?>.unmodifiable(receipt.result),
+      reasonCode: receipt.reasonCode,
+    );
+  }
+
+  @override
+  Future<List<String>> listSessionEvidenceIds({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    if (!LearningEvidenceContract.validIdentifier(ownerId)) {
+      throw ArgumentError.value(ownerId, 'ownerId');
+    }
+    if (!LearningEvidenceContract.validIdentifier(sessionId)) {
+      throw ArgumentError.value(sessionId, 'sessionId');
+    }
+    final attempts =
+        await (_database.select(_database.answerAttempts)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.sessionId.equals(sessionId),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
+            .get();
+    return List<String>.unmodifiable(attempts.map((attempt) => attempt.id));
+  }
+}
+
 final class DriftLearningEventStore {
   const DriftLearningEventStore(
     this.database, {
@@ -132,7 +235,8 @@ final class DriftLearningEventStore {
         const FixedEvidencePolicyRolloutModeProvider.legacy(),
   });
 
-  static const int appliedProjectionVersion = 2;
+  static const int appliedProjectionVersion =
+      LearningEvidenceContract.currentProjectionAppliedVersion;
   static const String _projectionCursorAppVersion =
       'learning-projection-cursor-v1';
   static const String _projectionCursorBuildId =

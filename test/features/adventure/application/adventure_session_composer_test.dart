@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
@@ -185,6 +186,30 @@ void main() {
         ),
       );
     });
+  });
+
+  test('production composer records the closed failure reason', () async {
+    final fixture = await _fixture();
+    final diagnostics = AdventureDiagnostics();
+    final composer = CanonicalAdventureSessionComposer(
+      diagnostics: diagnostics,
+    );
+
+    await expectLater(
+      composer.compose(
+        mission: fixture.mission.copyWith(ownerId: 'owner-002'),
+        today: fixture.today,
+        requestedConfiguration: fixture.configuration,
+        entry: _entry(),
+      ),
+      throwsA(isA<AdventureSessionPlanException>()),
+    );
+    expect(
+      diagnostics.snapshot().counters,
+      <AdventureDiagnosticReasonCode, int>{
+        AdventureDiagnosticReasonCode.compositionOwnerMismatch: 1,
+      },
+    );
   });
 
   test(

@@ -373,6 +373,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     final review = _review;
     if (review == null || _actionLocked) return;
     try {
+      if (review.isSkipped) _lifecycle?.noteSkippedItem();
       final summary = await review.advance();
       if (summary != null) {
         await _showScore(summary);

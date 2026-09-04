@@ -428,9 +428,10 @@ older binaries must not open a v22 database.
 ---
 
 ### v23 — Adventure Home Experience Preference v2
-**Reserved:** 2026-09-04  
-**Branch:** `feature/adventure-motivation-plan`  
-**Status:** RESERVED — implementation and release evidence pending
+**Reserved:** 2026-09-04
+**Implemented:** 2026-09-04
+**Branch:** `feature/adventure-motivation-plan`
+**Status:** IMPLEMENTED — migration, lifecycle, sync, rules and export evidence passed; release evidence pending
 
 Reserved for the forward-only extension of the existing
 `learner_preferences` authority with
@@ -474,7 +475,7 @@ must not open a v23 database.
 | 2026-08-26 | Recorded released v20 session configuration authority and session audit pins. | LexiQuest integration |
 | 2026-08-30 | Recorded forward-only v21 learner preferences, raising the named inventory to 44 tables. | LexiQuest integration |
 | 2026-08-30 | Extended the v21 learner preference row with local-only display controls in v22; named inventory remains 44 tables. | LexiQuest integration |
-| 2026-09-04 | Reserved v23 for Adventure `home_experience` and Learner Preferences v2; planned v23 was free, so no rebase was required. | LexiQuest integration |
+| 2026-09-04 | Reserved and implemented v23 for Adventure `home_experience` and Learner Preferences v2; migration, lifecycle, sync, rules and export gates passed. | LexiQuest integration |
 
 ---
 

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../rewards/domain/reward_models.dart';
 import '../domain/adventure_entry.dart';
 import '../domain/adventure_journey.dart';
+import '../domain/adventure_reaction.dart';
 import 'adventure_mission_sheet.dart';
+import 'widgets/adventure_companion_panel.dart';
 import 'widgets/adventure_map.dart';
 import 'widgets/adventure_map_list.dart';
 import 'widgets/adventure_status_panel.dart';
@@ -12,15 +15,21 @@ final class AdventureHubScreen extends StatefulWidget {
   const AdventureHubScreen({
     super.key,
     required this.snapshot,
+    required this.reaction,
+    required this.rewardOwnership,
     required this.onStartMission,
     required this.onPresentationChanged,
     required this.onRefresh,
+    this.reactionLanguage,
   });
 
   final AdventureJourneySnapshot snapshot;
+  final AdventureReaction? reaction;
+  final RewardAccount rewardOwnership;
   final Future<void> Function(AdventureMissionRef mission) onStartMission;
   final ValueChanged<TodayExperiencePresentation> onPresentationChanged;
   final VoidCallback onRefresh;
+  final AdventureReactionLanguage? reactionLanguage;
 
   @override
   State<AdventureHubScreen> createState() => _AdventureHubScreenState();
@@ -57,6 +66,12 @@ final class _AdventureHubScreenState extends State<AdventureHubScreen> {
           const SizedBox(height: 12),
           AdventureStatusPanel(freshness: widget.snapshot.freshness),
           const SizedBox(height: 12),
+          AdventureCompanionPanel(
+            reaction: widget.reaction,
+            rewardOwnership: widget.rewardOwnership,
+            language: widget.reactionLanguage,
+          ),
+          if (widget.reaction != null) const SizedBox(height: 12),
           SegmentedButton<bool>(
             key: const ValueKey('adventure-map-list-switch'),
             segments: const <ButtonSegment<bool>>[

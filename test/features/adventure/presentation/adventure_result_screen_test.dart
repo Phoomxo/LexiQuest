@@ -17,6 +17,7 @@ void main() {
         'adventure-result-learning',
         'adventure-result-effort',
         'adventure-result-engagement',
+        'adventure-result-motivation',
         'adventure-result-reward',
       ]) {
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
@@ -25,6 +26,9 @@ void main() {
         find.text('การเรียนบันทึกแล้ว รางวัลหลักกำลังยืนยัน'),
         findsOneWidget,
       );
+      expect(find.text('Quest: ยืนยันแล้ว · daily-quest'), findsOneWidget);
+      expect(find.text('Streak: ยืนยันแล้ว · daily-streak'), findsOneWidget);
+      expect(find.text('Achievement: ไม่มีรายการใหม่'), findsOneWidget);
       expect(
         find.textContaining(
           RegExp(
@@ -51,13 +55,17 @@ void main() {
           ),
         ),
       );
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-technical')),
+        160,
+        scrollable: find.byType(Scrollable),
+      );
       expect(
         find.byKey(const ValueKey('adventure-result-technical')),
         findsOneWidget,
       );
       final action = find.byKey(const ValueKey('adventure-result-next-action'));
-      await tester.drag(find.byType(ListView), const Offset(0, -180));
-      await tester.pump();
+      await tester.ensureVisible(action);
       await tester.tap(action);
       expect(calls, 1);
     },
@@ -79,6 +87,13 @@ AdventureResult _result({String? technicalMessage}) => AdventureResult(
   engagement: const AdventureEngagementResult(
     completedMission: true,
     returnedAfterBreak: false,
+  ),
+  motivation: AdventureMotivationReceiptView(
+    questState: AdventureCanonicalReceiptState.committed,
+    streakState: AdventureCanonicalReceiptState.committed,
+    achievementState: AdventureCanonicalReceiptState.notEligible,
+    questCodes: const <String>['daily-quest'],
+    streakCodes: const <String>['daily-streak'],
   ),
   reward: const AdventureRewardReceiptView(
     state: AdventureCanonicalRewardState.pending,

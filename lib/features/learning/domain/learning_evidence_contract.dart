@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'evidence_context.dart';
 
 abstract final class LearningEvidenceContract {
+  /// Current immutable receipt schema written by the canonical learning
+  /// reconciler. Read-only consumers use this value to address receipts; they
+  /// never choose or advance the projection version themselves.
+  static const int currentProjectionAppliedVersion = 2;
   static const int maxIdentifierLength = 256;
   static const int maxSourceEvidenceIdLength = 197;
   static const int maxLearningProjectionNameLength = 20;
@@ -198,4 +202,59 @@ abstract final class LearningEvidenceContract {
     }
     return value;
   }
+}
+
+enum CanonicalLearningProjectionReceiptOutcome {
+  applied,
+  notApplicable,
+  blocked,
+}
+
+/// Minimal validated learning source exposed to read-only projection clients.
+final class CanonicalLearningEvidenceSource {
+  const CanonicalLearningEvidenceSource({
+    required this.sourceEvidenceId,
+    required this.sourceEventId,
+    required this.ownerId,
+    required this.evidenceClass,
+  });
+
+  final String sourceEvidenceId;
+  final String sourceEventId;
+  final String ownerId;
+  final EvidenceClass evidenceClass;
+}
+
+/// Immutable projection receipt view. Its identity is supplied by the
+/// canonical learning authority rather than reconstructed by feature code.
+final class CanonicalLearningProjectionReceipt {
+  const CanonicalLearningProjectionReceipt({
+    required this.receiptId,
+    required this.outcome,
+    required this.result,
+    this.reasonCode,
+  });
+
+  final String receiptId;
+  final CanonicalLearningProjectionReceiptOutcome outcome;
+  final Map<String, Object?> result;
+  final String? reasonCode;
+}
+
+/// Narrow read-only boundary for consumers of canonical learning receipts.
+abstract interface class LearningProjectionReceiptReader {
+  Future<CanonicalLearningEvidenceSource?> readValidatedSourceForEvidence(
+    String sourceEvidenceId,
+  );
+
+  Future<CanonicalLearningProjectionReceipt?> readProjectionReceipt({
+    required CanonicalLearningEvidenceSource source,
+    required String projection,
+    required int appliedVersion,
+  });
+
+  Future<List<String>> listSessionEvidenceIds({
+    required String ownerId,
+    required String sessionId,
+  });
 }

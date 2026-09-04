@@ -1,31 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../today_hub/application/today_hub_use_cases.dart';
 import '../../today_hub/domain/today_hub_models.dart';
+import '../../rewards/domain/reward_models.dart';
 import '../../research/domain/research_participation_permit.dart';
 import '../../../screens/today_hub_view.dart';
 import '../../../runtime/registries/feature_registry.dart';
 import '../application/adventure_entry_use_cases.dart';
+import '../application/adventure_presentation_preferences.dart';
+import '../application/adventure_reaction_selector.dart';
 import '../domain/adventure_entry.dart';
 import '../domain/adventure_journey.dart';
+import '../domain/adventure_reaction.dart';
 import '../domain/adventure_world_catalog.dart';
 import 'adventure_hub_screen.dart';
 import 'widgets/adventure_standard_switch.dart';
 
 typedef AdventureUtcNow = DateTime Function();
-typedef AdventurePresentationPreferenceSaver =
-    Future<void> Function(TodayExperiencePresentation presentation);
 
 final class AdventureMissionLaunchContext {
   const AdventureMissionLaunchContext({
     required this.mission,
     required this.today,
     required this.entryDecision,
+    required this.rewardOwnership,
   });
 
   final AdventureMissionRef mission;
   final TodayHubSnapshot today;
   final AdventureProductEntryDecision entryDecision;
+  final RewardAccount rewardOwnership;
 }
 
 final class TodayExperienceHost extends StatefulWidget {
@@ -37,13 +43,14 @@ final class TodayExperienceHost extends StatefulWidget {
     required this.todayHub,
     required this.catalog,
     required this.journey,
+    required this.rewardAccounts,
     required this.createEntryAttemptId,
     required this.nowUtc,
     required this.actions,
     required this.features,
     required this.assessmentAvailable,
     required this.onStartMission,
-    this.onPresentationPreferenceChanged,
+    this.presentationPreferences,
   });
 
   final String ownerId;
@@ -52,6 +59,7 @@ final class TodayExperienceHost extends StatefulWidget {
   final TodayHubSnapshotLoader todayHub;
   final AdventureWorldCatalog catalog;
   final AdventureJourneyReader journey;
+  final RewardAccountReader rewardAccounts;
   final AdventureEntryAttemptIdFactory createEntryAttemptId;
   final AdventureUtcNow nowUtc;
   final TodayHubActionDelegate actions;
@@ -59,17 +67,22 @@ final class TodayExperienceHost extends StatefulWidget {
   final bool assessmentAvailable;
   final Future<void> Function(AdventureMissionLaunchContext launch)
   onStartMission;
-  final AdventurePresentationPreferenceSaver? onPresentationPreferenceChanged;
+  final AdventurePresentationPreferenceWriter? presentationPreferences;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
 }
 
 final class _TodayExperienceModel {
-  const _TodayExperienceModel({required this.result, this.journey});
+  const _TodayExperienceModel({
+    required this.result,
+    this.journey,
+    this.rewardOwnership,
+  });
 
   final AdventureEntryHostResult? result;
   final AdventureJourneySnapshot? journey;
+  final RewardAccount? rewardOwnership;
 }
 
 final class _TodayExperienceHostState extends State<TodayExperienceHost> {
@@ -78,7 +91,12 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   TodayExperiencePresentation? _sessionChoice;
   late DateTime _occurredAtUtc;
   var _refreshGeneration = 0;
+  var _preferenceGeneration = 0;
   var _permitControlsPresentation = false;
+  _PresentationSaveRun? _activePresentationSave;
+  TodayExperiencePresentation? _queuedPresentationSave;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
+  _presentationSaveFailure;
 
   @override
   void initState() {
@@ -90,11 +108,22 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   void didUpdateWidget(TodayExperienceHost oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ownerId != widget.ownerId ||
+        !identical(
+          oldWidget.presentationPreferences,
+          widget.presentationPreferences,
+        )) {
+      _preferenceGeneration += 1;
+      _activePresentationSave = null;
+      _queuedPresentationSave = null;
+      _clearPresentationSaveFailure();
+    }
+    if (oldWidget.ownerId != widget.ownerId ||
         !identical(oldWidget.entry, widget.entry) ||
         !identical(oldWidget.todayHub, widget.todayHub) ||
         !identical(oldWidget.activePermits, widget.activePermits) ||
         !identical(oldWidget.catalog, widget.catalog) ||
-        !identical(oldWidget.journey, widget.journey)) {
+        !identical(oldWidget.journey, widget.journey) ||
+        !identical(oldWidget.rewardAccounts, widget.rewardAccounts)) {
       _sessionChoice = null;
       _startNewOpening();
     }
@@ -141,10 +170,17 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
         today: result.today!,
       ),
     );
+    final rewardOwnership = await widget.rewardAccounts.loadForOwner(
+      widget.ownerId,
+    );
     if (generation != _refreshGeneration) {
       return const _TodayExperienceModel(result: null);
     }
-    return _TodayExperienceModel(result: result, journey: projected);
+    return _TodayExperienceModel(
+      result: result,
+      journey: projected,
+      rewardOwnership: rewardOwnership,
+    );
   }
 
   void _switch(TodayExperiencePresentation choice) {
@@ -154,12 +190,90 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       _loadFuture = _load(_refreshGeneration, _entryHost);
     });
     if (!_permitControlsPresentation) {
-      widget.onPresentationPreferenceChanged?.call(choice).catchError((_) {});
+      _queuePresentationSave(choice);
     }
+  }
+
+  void _queuePresentationSave(TodayExperiencePresentation choice) {
+    final saver = widget.presentationPreferences;
+    if (saver == null || _permitControlsPresentation) return;
+    _queuedPresentationSave = choice;
+    final current = _activePresentationSave;
+    if (current != null && current.generation == _preferenceGeneration) return;
+    final run = _PresentationSaveRun(
+      generation: _preferenceGeneration,
+      ownerId: widget.ownerId,
+      saver: saver,
+    );
+    _activePresentationSave = run;
+    unawaited(_drainPresentationSaves(run));
+  }
+
+  Future<void> _drainPresentationSaves(_PresentationSaveRun run) async {
+    try {
+      while (_isCurrentSaveRun(run)) {
+        final choice = _queuedPresentationSave;
+        if (choice == null) return;
+        _queuedPresentationSave = null;
+        try {
+          await run.saver.saveForOwner(run.ownerId, choice);
+          if (!_isCurrentSaveRun(run)) return;
+          if (_queuedPresentationSave == null && _sessionChoice == choice) {
+            _clearPresentationSaveFailure();
+          }
+        } catch (_) {
+          if (!_isCurrentSaveRun(run)) return;
+          if (_queuedPresentationSave == null && _sessionChoice == choice) {
+            _showPresentationSaveFailure(choice);
+          }
+        }
+      }
+    } finally {
+      if (identical(_activePresentationSave, run)) {
+        _activePresentationSave = null;
+      }
+    }
+  }
+
+  bool _isCurrentSaveRun(_PresentationSaveRun run) =>
+      mounted &&
+      identical(_activePresentationSave, run) &&
+      run.generation == _preferenceGeneration &&
+      run.ownerId == widget.ownerId;
+
+  void _showPresentationSaveFailure(TodayExperiencePresentation choice) {
+    final messenger = ScaffoldMessenger.of(context);
+    _clearPresentationSaveFailure();
+    _presentationSaveFailure = messenger.showSnackBar(
+      SnackBar(
+        key: const ValueKey('today-presentation-save-failure'),
+        content: const Text('บันทึกรูปแบบหน้าวันนี้ไม่สำเร็จ'),
+        action: SnackBarAction(
+          label: 'ลองอีกครั้ง',
+          onPressed: () {
+            if (_sessionChoice == choice) _queuePresentationSave(choice);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _clearPresentationSaveFailure() {
+    _presentationSaveFailure?.close();
+    _presentationSaveFailure = null;
   }
 
   void _refresh() {
     setState(_startNewOpening);
+  }
+
+  @override
+  void dispose() {
+    _preferenceGeneration += 1;
+    _activePresentationSave = null;
+    _queuedPresentationSave = null;
+    _clearPresentationSaveFailure();
+    super.dispose();
   }
 
   @override
@@ -188,15 +302,30 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
         );
       }
       final journey = model?.journey;
+      final rewardOwnership = model?.rewardOwnership;
       if (result.decision.destination == AdventureEntryDestination.adventure &&
-          journey != null) {
+          journey != null &&
+          rewardOwnership != null) {
+        final reaction = journey.primaryMission == null
+            ? null
+            : const AdventureReactionSelector().select(
+                catalogVersion: journey.catalogVersion,
+                trigger: AdventureReactionTrigger.missionReady,
+                variantSeed: 0,
+              );
         return AdventureHubScreen(
           snapshot: journey,
+          reaction: reaction,
+          rewardOwnership: rewardOwnership,
+          reactionLanguage: widget.catalog.locale == 'th'
+              ? AdventureReactionLanguage.th
+              : AdventureReactionLanguage.en,
           onStartMission: (mission) => widget.onStartMission(
             AdventureMissionLaunchContext(
               mission: mission,
               today: today,
               entryDecision: result.decision,
+              rewardOwnership: rewardOwnership,
             ),
           ),
           onPresentationChanged: _switch,
@@ -240,6 +369,18 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       );
     },
   );
+}
+
+final class _PresentationSaveRun {
+  const _PresentationSaveRun({
+    required this.generation,
+    required this.ownerId,
+    required this.saver,
+  });
+
+  final int generation;
+  final String ownerId;
+  final AdventurePresentationPreferenceWriter saver;
 }
 
 final class _UnavailableState extends StatelessWidget {

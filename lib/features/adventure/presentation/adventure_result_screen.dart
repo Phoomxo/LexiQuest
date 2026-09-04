@@ -7,10 +7,12 @@ final class AdventureResultScreen extends StatelessWidget {
     super.key,
     required this.result,
     required this.onNextAction,
+    this.header,
   });
 
   final AdventureResult result;
   final VoidCallback? onNextAction;
+  final Widget? header;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -18,6 +20,10 @@ final class AdventureResultScreen extends StatelessWidget {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: <Widget>[
+        if (header case final header?) ...<Widget>[
+          header,
+          const SizedBox(height: 8),
+        ],
         _Section(
           key: const ValueKey('adventure-result-learning'),
           icon: Icons.school_outlined,
@@ -46,6 +52,7 @@ final class AdventureResultScreen extends StatelessWidget {
                 : 'หยุดพักได้ แล้วค่อยกลับมาเมื่อพร้อม',
           ],
         ),
+        _motivationCard(result.motivation),
         _rewardCard(result.reward),
         if (result.technicalMessage case final message?)
           _Section(
@@ -88,6 +95,37 @@ final class AdventureResultScreen extends StatelessWidget {
       title: 'รางวัล · Reward',
       lines: <String>[message],
     );
+  }
+
+  Widget _motivationCard(AdventureMotivationReceiptView motivation) => _Section(
+    key: const ValueKey('adventure-result-motivation'),
+    icon: Icons.flag_outlined,
+    title: 'ความคืบหน้าหลัก · Canonical progress',
+    lines: <String>[
+      _receiptLine('Quest', motivation.questState, motivation.questCodes),
+      _receiptLine('Streak', motivation.streakState, motivation.streakCodes),
+      _receiptLine(
+        'Achievement',
+        motivation.achievementState,
+        motivation.achievementCodes,
+      ),
+    ],
+  );
+
+  String _receiptLine(
+    String label,
+    AdventureCanonicalReceiptState state,
+    List<String> codes,
+  ) {
+    final status = switch (state) {
+      AdventureCanonicalReceiptState.committed => 'ยืนยันแล้ว',
+      AdventureCanonicalReceiptState.pending => 'กำลังยืนยัน',
+      AdventureCanonicalReceiptState.notEligible => 'ไม่มีรายการใหม่',
+      AdventureCanonicalReceiptState.unavailable => 'ยังไม่พร้อมแสดง',
+    };
+    return codes.isEmpty
+        ? '$label: $status'
+        : '$label: $status · ${codes.join(', ')}';
   }
 }
 

@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/data/drift_adventure_achievement_receipt_reader.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
@@ -1270,7 +1271,10 @@ void main() {
         },
       );
       await DriftLearningEventStore(database).append(source);
-      final reader = DriftAdventureMotivationProjectionReader(database);
+      final reader = DriftAdventureMotivationProjectionReader(
+        learningReceipts: DriftLearningProjectionReceiptReader(database),
+        achievements: DriftAdventureAchievementReceiptReader(database),
+      );
 
       final pending = await reader.readForEvidence('adventure-refresh');
       expect(pending.pendingProjection, isTrue);

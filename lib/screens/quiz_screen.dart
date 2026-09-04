@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../features/accessibility/domain/accessibility_policy.dart';
 import '../features/accessibility/presentation/accessibility_scope.dart';
+import '../features/adventure/application/adventure_diagnostics.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -23,6 +24,9 @@ import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
 
+typedef QuizCompletionPageBuilder =
+    Widget Function(BuildContext context, LearningSessionSummary summary);
+
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
     super.key,
@@ -33,6 +37,8 @@ class QuizScreen extends StatefulWidget {
     this.sessionConfiguration,
     this.pinnedContent = const <ContentIdentity>[],
     this.pinnedContentChecksumsSha256 = const <String, String>{},
+    this.completionPageBuilder,
+    this.adventureDiagnostics,
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -45,6 +51,8 @@ class QuizScreen extends StatefulWidget {
     this.sessionConfiguration,
     this.pinnedContent = const <ContentIdentity>[],
     this.pinnedContentChecksumsSha256 = const <String, String>{},
+    this.completionPageBuilder,
+    this.adventureDiagnostics,
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
        typedRecall = true;
@@ -58,6 +66,8 @@ class QuizScreen extends StatefulWidget {
   final SessionConfiguration? sessionConfiguration;
   final List<ContentIdentity> pinnedContent;
   final Map<String, String> pinnedContentChecksumsSha256;
+  final QuizCompletionPageBuilder? completionPageBuilder;
+  final AdventureDiagnostics? adventureDiagnostics;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -599,12 +609,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _retryEvidence() async {
     if (!_requiresRetry || _isSaving) return;
+    widget.adventureDiagnostics?.recordEvidenceRetry();
     try {
       final result = _typedReview != null
           ? await _typedReview!.retryEvidence()
           : await _meaningReview!.retryEvidence();
       await _haptic(result);
     } catch (_) {
+      widget.adventureDiagnostics?.recordEvidenceRetry(exhausted: true);
       _showSaveFailure();
     }
   }
@@ -644,12 +656,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _retrySessionClose() async {
     if (_isSaving) return;
+    widget.adventureDiagnostics?.recordEvidenceRetry();
     try {
       final summary = _typedReview != null
           ? await _typedReview!.retryCompletion()
           : await _meaningReview!.retryCompletion();
       await _showScore(summary);
     } catch (_) {
+      widget.adventureDiagnostics?.recordEvidenceRetry(exhausted: true);
       _showSessionCloseFailure();
     }
   }
@@ -663,11 +677,13 @@ class _QuizScreenState extends State<QuizScreen> {
       context,
       AppPage<void>(
         name: 'learning/score',
-        builder: (_) => ScoreScreen(
-          correctAnswers: summary.correctCount,
-          wrongAnswers: summary.wrongCount,
-          score: summary.score,
-        ),
+        builder: (context) =>
+            widget.completionPageBuilder?.call(context, summary) ??
+            ScoreScreen(
+              correctAnswers: summary.correctCount,
+              wrongAnswers: summary.wrongCount,
+              score: summary.score,
+            ),
       ),
       replace: true,
     );
