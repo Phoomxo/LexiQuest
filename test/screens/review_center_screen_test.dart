@@ -568,8 +568,8 @@ void main() {
     final mainNavigation = File(
       'lib/screens/main_navigation_screen.dart',
     ).readAsStringSync();
-    final todayHub = File(
-      'lib/screens/today_hub_screen.dart',
+    final todayHubView = File(
+      'lib/screens/today_hub_view.dart',
     ).readAsStringSync();
     final productionEntryIds = RegExp(r"productionEntryId: '([^']+)'")
         .allMatches(mainNavigation)
@@ -595,6 +595,19 @@ void main() {
       todayHubBuilderStart,
       todayHubBuilderEnd,
     );
+    final todayActionsStart = mainNavigation.indexOf(
+      '_MainNavigationTodayHubActions _todayActions()',
+    );
+    expect(todayActionsStart, greaterThanOrEqualTo(0));
+    final todayActionsEnd = mainNavigation.indexOf(
+      'Widget _gate(',
+      todayActionsStart,
+    );
+    expect(todayActionsEnd, greaterThan(todayActionsStart));
+    final todayActions = mainNavigation.substring(
+      todayActionsStart,
+      todayActionsEnd,
+    );
 
     expect(record.dependencies, contains(FeatureContractId.f20));
     expect(record.dependencies, contains(FeatureContractId.f21));
@@ -603,12 +616,16 @@ void main() {
     expect(productionEntryIds, isNot(contains('home/today/review')));
     expect(productionEntryIds, isNot(contains('home/review')));
     expect(drawerKeys, isNot(contains('drawer/review/center')));
-    expect(todayHub, contains("key: const ValueKey('today-hub-open-review')"));
     expect(
-      todayHub,
+      todayHubView,
+      contains("key: const ValueKey('today-hub-open-review')"),
+    );
+    expect(
+      todayHubView,
       contains('widget.actions.openReview(snapshot.reviewWork)'),
     );
-    expect(todayHubBuilder, contains('openReview: _openTodayReview'));
+    expect(todayHubBuilder, contains('actions: _todayActions()'));
+    expect(todayActions, contains('openReview: _openTodayReview'));
     expect(
       todayHubBuilder,
       contains('hasComposedDependencyFor(Feature.dailyContinuity)'),

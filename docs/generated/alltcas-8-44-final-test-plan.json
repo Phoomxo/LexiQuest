@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "151cc2d16ed6791eea877096245fcc8249d53783",
-  "sourceFingerprint": "a9dec0a8d1ed46578df061036ebbb2c55797f61987bb71fa99f14784b0d127fb",
+  "sourceCommit": "fdeca388bf4101bdf4a888cc3d739a8898069d96",
+  "sourceFingerprint": "659f05a2c5d5f9f9f7e5505464665353f8a82bc53f60be483b27b73d2ebd1500",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -25,7 +25,7 @@
     },
     {
       "path": "docs/database/schema_ledger.md",
-      "sha256": "6dca82be72b4a66ed370006fbc4cc965f510d5c1c4e9f6205468953064dd4107"
+      "sha256": "1210f11e4ab33ef4a14e4703704b0b64fbdc53dd2f4a81850a906b40dd47de32"
     },
     {
       "path": "docs/field/2026-08-09-runtime-feature-ledger.md",
@@ -57,7 +57,7 @@
     },
     {
       "path": "firestore.rules",
-      "sha256": "46bb79aba47e89cf204feae85b7aaa1954daef59057392479d6e34b67cc992cb"
+      "sha256": "121693c28ef7a58d6c2da9ee5032d9fea3cf4acfb664a32c2cb5807b3caa185d"
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
@@ -73,11 +73,11 @@
     },
     {
       "path": "lib",
-      "sha256": "2c9b2ec56f2364f32192c0af960c6f961f65eef13400b3d9b38658a49938638e"
+      "sha256": "8f3cec6c6afee239ccbe60e67b8ddc677a1e3d597f21e6d4e24442911606f81a"
     },
     {
       "path": "lib/data/local/app_database.dart",
-      "sha256": "423ebf5357b2f4dc1131ea3b6b0a0d793fc79e0f883b5f96a03bdca8d952baac"
+      "sha256": "cb6984bbeabf94edf8bb2821511ecd7343f432fe50bc2c9443bd87da9f22b6b2"
     },
     {
       "path": "lib/features/assessment/domain/assessment_instrument_catalog.dart",
@@ -93,7 +93,7 @@
     },
     {
       "path": "lib/features/sync/domain/sync_entity.dart",
-      "sha256": "4b68e3aeb7733e1bba00e868200ce7cec080dec457d0996c8ebe9271208a57d9"
+      "sha256": "fa01a63e9f98b4dc173948007e864bda2d0c16f1370afd8d8906d6c7810dd05f"
     },
     {
       "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
@@ -121,11 +121,11 @@
     },
     {
       "path": "test",
-      "sha256": "f330b44faf9130153461a4eb9d6955d698a172617314627eeb9d13e99563022e"
+      "sha256": "e0ec4a595f8e7b732abcf15874293cf71baf636f9deca087091278ea5a5b7cc7"
     },
     {
       "path": "test/architecture",
-      "sha256": "fee066f1b8311b24a2f3e948d150f4946443bd84d5c31c48ea2190e8bc4de6e8"
+      "sha256": "04d0fff1d29f97e1dece4250ac6a434eeb817545bc22b0ca916dfb8907e8a4a3"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
@@ -157,19 +157,19 @@
     },
     {
       "path": "test/database/migration_v15_to_v16_test.dart",
-      "sha256": "3dd7db3ca229309bb50f3622affca0d4db36e965db0052a04ba08224f3710106"
+      "sha256": "fed74ec2b296c9aee3c5c4664fa77e15d94f3652bf2fac8a042ab58da2b7a4bb"
     },
     {
       "path": "test/database/migration_v16_to_v17_test.dart",
-      "sha256": "078c024c37de5a1ba751dcd718c664e0beb89e7319c74c10e23344aa619e7f61"
+      "sha256": "c7ff09e9e884c5e60882300329ff85821271b10f9995936a9a10fd1ac998adbd"
     },
     {
       "path": "test/database/migration_v17_to_v18_test.dart",
-      "sha256": "ff79993df11aaf4368b83ce91caaf6110ea744fe703479b3ebe9a0533f154883"
+      "sha256": "f46c2803eaf39a72de65f90bfa139a58c1e24da962a00fc78ea88d7f90d32570"
     },
     {
       "path": "test/database/migration_v18_to_v19_test.dart",
-      "sha256": "7325e97cbcff56d088858223db01cd6162dfcb5a90880db1598a04320de880ac"
+      "sha256": "6d937e8c649ce2d784dc0a097d785c0180e33ba5289a26b87b33cacd9494deec"
     },
     {
       "path": "test/database/migration_v19_to_v20_test.dart",
@@ -181,11 +181,15 @@
     },
     {
       "path": "test/database/migration_v20_to_v21_test.dart",
-      "sha256": "e06614d62d3bc0ec4601f5eddf5fd92b186bc88ef491dc1184eee0909c374e40"
+      "sha256": "9708ab0e4672ba478570cbcdfa7d4c5989bc9842b102de716602a1c957fa1af2"
     },
     {
       "path": "test/database/migration_v21_to_v22_test.dart",
-      "sha256": "43939493de4c21aabff3196f061b368d587defc6ed02da3b49118cf72e25233a"
+      "sha256": "b8426dc54400f728467c79c48d89fa0cd4f0b62ba7a77a9299f83faef7c5c750"
+    },
+    {
+      "path": "test/database/migration_v22_to_v23_test.dart",
+      "sha256": "0af475782eec1b45f1e4e07937307cee0b69248dd3a88e371507de8b500873c8"
     },
     {
       "path": "test/database/migration_v6_to_v7_test.dart",
@@ -241,7 +245,7 @@
     },
     {
       "path": "test/features/export",
-      "sha256": "52c11e0582909730d4706e43a7de55abe268fa74821b55066740e7609d5a6678"
+      "sha256": "baf444e025cdb6ac2bd25f47fa957147b3b0d7f9242ca4f9ec7b44e6e9760d6c"
     },
     {
       "path": "test/features/gemini",
@@ -257,11 +261,11 @@
     },
     {
       "path": "test/features/identity",
-      "sha256": "4c34428f1d3c73219767dc082e7d28aabc95efb83583ba4e150447ffdfd87ffa"
+      "sha256": "9f0496d993e2a446f673c75149f2e6d4071312819207224ef9bc67366ba944f4"
     },
     {
       "path": "test/features/learning",
-      "sha256": "5997ccb07bc6becdfdb419adde237e74f97d95cb1e19361f95d6d3a5edfdd755"
+      "sha256": "a6bd1af6f0bb1e581616a980c2e745959d5975ff292ad237974d04a34b32fa4d"
     },
     {
       "path": "test/features/learning_packs",
@@ -281,7 +285,7 @@
     },
     {
       "path": "test/features/preferences",
-      "sha256": "d94cdd01c9ab796ab4f891a5cb1720db3e868bfd908d168a1104d8007ca202d8"
+      "sha256": "84f4483b9057fec6eb15788d5bf1507a9ac912a3f7c8355c828fd1ccac6126ca"
     },
     {
       "path": "test/features/progress",
@@ -317,7 +321,7 @@
     },
     {
       "path": "test/features/sync",
-      "sha256": "4e9c937600631a31ffa334f10545f39dd283b1b27e7df761d48da75e5525f3d7"
+      "sha256": "a07b16c9c7a8811d9ec0609d2c9f287265d414e13c17a1b40e045e394ca7b402"
     },
     {
       "path": "test/features/time_tracking",
@@ -341,7 +345,7 @@
     },
     {
       "path": "test/scenarios/complete_owner_export_delete_test.dart",
-      "sha256": "1c8cebcff530d40842b48f9df0a3a30196206b8c2f8246ae1180b2071310d195"
+      "sha256": "c4ece96ffafcf14a602ccf22ef29d52f74bc429d3cd117cc9e83d21780310aa0"
     },
     {
       "path": "test/scenarios/file_backed_sync_recovery_test.dart",
@@ -349,7 +353,7 @@
     },
     {
       "path": "test/scenarios/guest_upgrade_restart_test.dart",
-      "sha256": "03be712f3f52cfa7a57cff7ecd9c86fb9f53e87a4d428f18b373f1c643589aa4"
+      "sha256": "54dbd37b2c2b19d1897a6bbaebabd2afa07dadae55cba05012ab1ed1e15c2bdb"
     },
     {
       "path": "test/scenarios/production_learning_restart_test.dart",
@@ -361,7 +365,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "81f8762c774868ff5c5ded46df11eeb50f68d33354d9fb2298d4a6b2a0580bdb"
+      "sha256": "0e27c2f06f8fe5ec9956a6ab1fa108b35c515c98515472e22cbfb60083a7b488"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -369,7 +373,7 @@
     },
     {
       "path": "test/security/firestore-rules.test.cjs",
-      "sha256": "e2729c9e62d917789554b0ea2d3ed6bb2c6c9acf40212e11463cfd633d1fb83f"
+      "sha256": "b3278bdbb69e5ce24f9cb02cc214028318012d2b4c8a6afe7f8d35cb7428b2ea"
     },
     {
       "path": "test/support/current_database_contract.dart",
@@ -415,7 +419,7 @@
     "completionContractCount": 8
   },
   "database": {
-    "schemaVersion": 22,
+    "schemaVersion": 23,
     "tableCount": 44,
     "tables": [
       "achievement_unlocks",
@@ -484,7 +488,8 @@
       "v18-to-v19",
       "v19-to-v20",
       "v20-to-v21",
-      "v21-to-v22"
+      "v21-to-v22",
+      "v22-to-v23"
     ]
   },
   "runtime": {
@@ -580,7 +585,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 151cc2d16ed6791eea877096245fcc8249d53783",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit fdeca388bf4101bdf4a888cc3d739a8898069d96",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
@@ -922,6 +927,18 @@
         "docs/database/schema_ledger.md"
       ],
       "transition": "v21-to-v22",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v22-to-v23",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v22_to_v23_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v22_to_v23_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v22-to-v23",
       "coverage": "dedicatedTransitionTest"
     },
     {
