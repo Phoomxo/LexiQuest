@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -317,11 +319,11 @@ void main() {
 
         for (var index = 0; index < entryIds.length; index++) {
           final entry = NavigationGlossary.require(entryIds[index]);
-          final data = _bottomDestinationSemantics(tester, entry);
+          final data = _bottomDestinationSemantics(entry);
           expect(data.hasAction(SemanticsAction.tap), isTrue, reason: entry.id);
           expect(data.role, SemanticsRole.tab, reason: entry.id);
           expect(
-            data.hasFlag(SemanticsFlag.isSelected),
+            data.flagsCollection.isSelected == Tristate.isTrue,
             index == 0,
             reason: entry.id,
           );
@@ -340,8 +342,8 @@ void main() {
 
         for (var index = 1; index < entryIds.length; index++) {
           final entry = NavigationGlossary.require(entryIds[index]);
-          tester.binding.pipelineOwner.semanticsOwner!.performAction(
-            _bottomDestinationNode(tester, entry).id,
+          tester.semantics.performAction(
+            _bottomDestinationFinder(entry),
             SemanticsAction.tap,
           );
           await tester.pump();
@@ -360,9 +362,9 @@ void main() {
             );
             expect(
               _bottomDestinationSemantics(
-                tester,
-                candidate,
-              ).hasFlag(SemanticsFlag.isSelected),
+                    candidate,
+                  ).flagsCollection.isSelected ==
+                  Tristate.isTrue,
               candidateIndex == index,
               reason: candidate.id,
             );
@@ -660,26 +662,19 @@ void main() {
   });
 }
 
-SemanticsNode _bottomDestinationNode(
-  WidgetTester tester,
-  NavigationGlossaryEntry entry,
-) {
-  final matchingNodes = find
-      .bySemanticsLabel(RegExp(RegExp.escape(entry.semanticsLabel)))
-      .evaluate()
-      .toList(growable: false);
+SemanticsNode _bottomDestinationNode(NavigationGlossaryEntry entry) {
+  final matchingNodes = _bottomDestinationFinder(
+    entry,
+  ).evaluate().toList(growable: false);
   expect(matchingNodes, hasLength(1), reason: entry.id);
-  return tester.getSemantics(
-    find.byElementPredicate(
-      (element) => identical(element, matchingNodes.single),
-    ),
-  );
+  return matchingNodes.single;
 }
 
-SemanticsData _bottomDestinationSemantics(
-  WidgetTester tester,
-  NavigationGlossaryEntry entry,
-) => _bottomDestinationNode(tester, entry).getSemanticsData();
+SemanticsFinder _bottomDestinationFinder(NavigationGlossaryEntry entry) =>
+    find.semantics.byLabel(RegExp(RegExp.escape(entry.semanticsLabel)));
+
+SemanticsData _bottomDestinationSemantics(NavigationGlossaryEntry entry) =>
+    _bottomDestinationNode(entry).getSemanticsData();
 
 void _expectSingleThaiDrawerAction(
   WidgetTester tester, {
