@@ -13,6 +13,25 @@ c75b0187d765211a666084e3f099c984b4a148b8:lib/main.dart:jwt:20
 90ea99799a08670ab197096da3c0762c0a46ff13:test/features/ai_tutor/openai_compatible_gateway_test.dart:generic-api-key:25
 a9dede84b799df68c9bdbfd7bc99b98742223cba:test/features/gemini/gemini_rest_gateway_test.dart:generic-api-key:10
 
+# Deterministic non-secret transaction, idempotency, and owner-gate tokens from
+# immutable historical tests. The allowlist is fingerprint-exact so any new
+# value, line, file, commit, or detector rule still fails the scan.
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:407
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:1868
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:1887
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:1899
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:2022
+109c121da511ac8be31b5e105953ec6a5ccbe989:test/features/sync/reward_transaction_sync_test.dart:generic-api-key:2085
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1235
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1247
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1264
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1693
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1710
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1711
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1727
+b7f1d1ba84765e88372341c50b04cb577a21b3f7:test/features/sync/firestore_sync_gateway_test.dart:generic-api-key:1734
+02b3fcb0c44db21391351e5dad81320bd7f64d55:test/features/learning/drift_learning_event_store_test.dart:generic-api-key:359
+
 # Former public Supabase anon mobile-client configuration. The current tree
 # injects its publishable client key from the environment; server secrets are
 # not classified or suppressed here. Only these historical findings are ignored.
