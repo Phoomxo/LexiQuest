@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../learning/domain/learning_models.dart';
 import '../../rewards/domain/reward_models.dart';
-import '../application/adventure_motivation_projection_reader.dart';
 import '../application/adventure_diagnostics.dart';
+import '../application/adventure_motivation_projection_reader.dart';
 import '../application/adventure_reaction_selector.dart';
+import '../application/adventure_result_next_action_reader.dart';
 import '../domain/adventure_reaction.dart';
 import '../domain/adventure_result.dart';
 import 'adventure_result_screen.dart';
@@ -21,6 +22,7 @@ final class AdventureResultLifecycleScreen extends StatefulWidget {
     required this.summary,
     required this.motivation,
     required this.receiptBarrier,
+    required this.nextActionReader,
     required this.rewardOwnership,
     required this.onNextAction,
     this.catalogVersion = AdventureReactionCatalog.v1Version,
@@ -30,6 +32,7 @@ final class AdventureResultLifecycleScreen extends StatefulWidget {
   final LearningSessionSummary summary;
   final AdventureMotivationProjectionReader motivation;
   final AdventureProjectionReceiptBarrier receiptBarrier;
+  final AdventureResultNextActionReader nextActionReader;
   final RewardAccount rewardOwnership;
   final VoidCallback? onNextAction;
   final String catalogVersion;
@@ -47,7 +50,8 @@ final class _AdventureResultLifecycleScreenState
 
   late AdventureResult _result;
   late AdventureReaction? _reaction;
-  var _refreshGeneration = 0;
+  var _receiptGeneration = 0;
+  var _nextActionGeneration = 0;
 
   @override
   void initState() {
@@ -58,51 +62,109 @@ final class _AdventureResultLifecycleScreenState
       reward: const AdventureRewardReceiptView(
         state: AdventureCanonicalRewardState.pending,
       ),
+      nextAction: AdventureNextAction.none,
     );
     _reaction = _select(AdventureReactionTrigger.rewardPending);
-    unawaited(_refreshReceipts());
+    _startReceiptRefresh();
+    _startNextActionRefresh();
   }
 
   @override
   void didUpdateWidget(AdventureResultLifecycleScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.summary.id != widget.summary.id ||
-        oldWidget.summary.ownerId != widget.summary.ownerId ||
+    final summaryChanged =
+        oldWidget.summary.id != widget.summary.id ||
+        oldWidget.summary.ownerId != widget.summary.ownerId;
+    final receiptSourceChanged =
+        summaryChanged ||
         !identical(oldWidget.motivation, widget.motivation) ||
-        !identical(oldWidget.receiptBarrier, widget.receiptBarrier)) {
-      _refreshGeneration += 1;
+        !identical(oldWidget.receiptBarrier, widget.receiptBarrier);
+    final nextActionSourceChanged =
+        summaryChanged ||
+        !identical(oldWidget.nextActionReader, widget.nextActionReader);
+    if (summaryChanged) {
       _result = _fromSummary(
         widget.summary,
         motivation: _pendingMotivation,
         reward: const AdventureRewardReceiptView(
           state: AdventureCanonicalRewardState.pending,
         ),
+        nextAction: AdventureNextAction.none,
       );
       _reaction = _select(AdventureReactionTrigger.rewardPending);
-      unawaited(_refreshReceipts());
+    } else {
+      if (receiptSourceChanged) {
+        _result = _copyResult(
+          _result,
+          motivation: _pendingMotivation,
+          reward: const AdventureRewardReceiptView(
+            state: AdventureCanonicalRewardState.pending,
+          ),
+          technicalMessage: null,
+        );
+        _reaction = _select(AdventureReactionTrigger.rewardPending);
+      }
+      if (nextActionSourceChanged) {
+        _result = _copyResult(_result, nextAction: AdventureNextAction.none);
+      }
     }
+    if (receiptSourceChanged) _startReceiptRefresh();
+    if (nextActionSourceChanged) _startNextActionRefresh();
   }
 
-  Future<void> _refreshReceipts() async {
-    final generation = ++_refreshGeneration;
+  void _startReceiptRefresh() {
+    final generation = ++_receiptGeneration;
     final summary = widget.summary;
+    final motivation = widget.motivation;
+    final receiptBarrier = widget.receiptBarrier;
+    unawaited(
+      _refreshReceipts(
+        generation: generation,
+        summary: summary,
+        motivation: motivation,
+        receiptBarrier: receiptBarrier,
+      ),
+    );
+  }
+
+  Future<void> _refreshReceipts({
+    required int generation,
+    required LearningSessionSummary summary,
+    required AdventureMotivationProjectionReader motivation,
+    required AdventureProjectionReceiptBarrier receiptBarrier,
+  }) async {
     var recovered = false;
     for (var attempt = 1; attempt <= 2; attempt += 1) {
       try {
-        await widget.receiptBarrier.waitForCanonicalProjection(summary.ownerId);
-        if (!_isCurrent(generation, summary)) return;
-        final snapshots = await widget.motivation.readForSession(
+        await receiptBarrier.waitForCanonicalProjection(summary.ownerId);
+        if (!_isReceiptCurrent(
+          generation,
+          summary,
+          motivation,
+          receiptBarrier,
+        )) {
+          return;
+        }
+        final snapshots = await motivation.readForSession(
           ownerId: summary.ownerId,
           sessionId: summary.id,
         );
-        if (!_isCurrent(generation, summary)) return;
+        if (!_isReceiptCurrent(
+          generation,
+          summary,
+          motivation,
+          receiptBarrier,
+        )) {
+          return;
+        }
         final reward = _canonicalReward(snapshots);
-        final motivation = _canonicalMotivation(snapshots);
+        final motivationView = _canonicalMotivation(snapshots);
         setState(() {
-          _result = _fromSummary(
-            summary,
-            motivation: motivation,
+          _result = _copyResult(
+            _result,
+            motivation: motivationView,
             reward: reward,
+            technicalMessage: null,
           );
           _reaction = _select(
             recovered
@@ -112,7 +174,14 @@ final class _AdventureResultLifecycleScreenState
         });
         return;
       } catch (_) {
-        if (!_isCurrent(generation, summary)) return;
+        if (!_isReceiptCurrent(
+          generation,
+          summary,
+          motivation,
+          receiptBarrier,
+        )) {
+          return;
+        }
         if (attempt == 1) {
           recovered = true;
           widget.diagnostics?.recordProjectionRetry();
@@ -121,8 +190,8 @@ final class _AdventureResultLifecycleScreenState
         }
         widget.diagnostics?.recordProjectionRetry(exhausted: true);
         setState(() {
-          _result = _fromSummary(
-            summary,
+          _result = _copyResult(
+            _result,
             motivation: _pendingMotivation,
             reward: const AdventureRewardReceiptView(
               state: AdventureCanonicalRewardState.pending,
@@ -136,9 +205,61 @@ final class _AdventureResultLifecycleScreenState
     }
   }
 
-  bool _isCurrent(int generation, LearningSessionSummary summary) =>
+  void _startNextActionRefresh() {
+    final generation = ++_nextActionGeneration;
+    final summary = widget.summary;
+    final reader = widget.nextActionReader;
+    unawaited(
+      _refreshNextAction(
+        generation: generation,
+        summary: summary,
+        reader: reader,
+      ),
+    );
+  }
+
+  Future<void> _refreshNextAction({
+    required int generation,
+    required LearningSessionSummary summary,
+    required AdventureResultNextActionReader reader,
+  }) async {
+    try {
+      final nextAction = await reader.read(ownerId: summary.ownerId);
+      if (!_isNextActionCurrent(generation, summary, reader)) return;
+      setState(() {
+        _result = _copyResult(_result, nextAction: nextAction);
+      });
+    } catch (_) {
+      if (!_isNextActionCurrent(generation, summary, reader)) return;
+      setState(() {
+        _result = _copyResult(_result, nextAction: AdventureNextAction.none);
+      });
+    }
+  }
+
+  bool _isReceiptCurrent(
+    int generation,
+    LearningSessionSummary summary,
+    AdventureMotivationProjectionReader motivation,
+    AdventureProjectionReceiptBarrier receiptBarrier,
+  ) =>
       mounted &&
-      generation == _refreshGeneration &&
+      generation == _receiptGeneration &&
+      _isCurrentSummary(summary) &&
+      identical(widget.motivation, motivation) &&
+      identical(widget.receiptBarrier, receiptBarrier);
+
+  bool _isNextActionCurrent(
+    int generation,
+    LearningSessionSummary summary,
+    AdventureResultNextActionReader reader,
+  ) =>
+      mounted &&
+      generation == _nextActionGeneration &&
+      _isCurrentSummary(summary) &&
+      identical(widget.nextActionReader, reader);
+
+  bool _isCurrentSummary(LearningSessionSummary summary) =>
       widget.summary.id == summary.id &&
       widget.summary.ownerId == summary.ownerId;
 
@@ -270,6 +391,7 @@ AdventureResult _fromSummary(
   LearningSessionSummary summary, {
   required AdventureMotivationReceiptView motivation,
   required AdventureRewardReceiptView reward,
+  required AdventureNextAction nextAction,
   String? technicalMessage,
 }) => AdventureResult(
   ownerId: summary.ownerId,
@@ -289,9 +411,31 @@ AdventureResult _fromSummary(
   ),
   motivation: motivation,
   reward: reward,
-  nextAction: AdventureNextAction.reviewCenter,
+  nextAction: nextAction,
   technicalMessage: technicalMessage,
 );
+
+AdventureResult _copyResult(
+  AdventureResult result, {
+  AdventureMotivationReceiptView? motivation,
+  AdventureRewardReceiptView? reward,
+  AdventureNextAction? nextAction,
+  Object? technicalMessage = _preserveTechnicalMessage,
+}) => AdventureResult(
+  ownerId: result.ownerId,
+  sessionId: result.sessionId,
+  learning: result.learning,
+  effort: result.effort,
+  engagement: result.engagement,
+  motivation: motivation ?? result.motivation,
+  reward: reward ?? result.reward,
+  nextAction: nextAction ?? result.nextAction,
+  technicalMessage: identical(technicalMessage, _preserveTechnicalMessage)
+      ? result.technicalMessage
+      : technicalMessage as String?,
+);
+
+const Object _preserveTechnicalMessage = Object();
 
 final AdventureMotivationReceiptView _pendingMotivation =
     AdventureMotivationReceiptView(

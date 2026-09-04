@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_result_next_action_reader.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_result.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_result_lifecycle_screen.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/adventure_result_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
@@ -31,6 +34,7 @@ void main() {
             summary: _summary(),
             motivation: reader,
             receiptBarrier: refresher,
+            nextActionReader: _NextActionReader.value(AdventureNextAction.none),
             diagnostics: diagnostics,
             rewardOwnership: _rewardAccount,
             onNextAction: () {},
@@ -78,6 +82,7 @@ void main() {
           summary: _summary(),
           motivation: reader,
           receiptBarrier: refresher,
+          nextActionReader: _NextActionReader.value(AdventureNextAction.none),
           diagnostics: diagnostics,
           rewardOwnership: _rewardAccount,
           onNextAction: () {},
@@ -124,6 +129,7 @@ void main() {
             ),
           ]),
           receiptBarrier: barrier,
+          nextActionReader: _NextActionReader.value(AdventureNextAction.none),
           diagnostics: diagnostics,
           rewardOwnership: _rewardAccount,
           onNextAction: () {},
@@ -151,6 +157,7 @@ void main() {
           summary: _summary(),
           motivation: _Reader(const <AdventureMotivationSnapshot>[]),
           receiptBarrier: _Refresher(Future<void>.value()),
+          nextActionReader: _NextActionReader.value(AdventureNextAction.none),
           rewardOwnership: _rewardAccount,
           onNextAction: () {},
         ),
@@ -185,6 +192,7 @@ void main() {
           summary: _summary(),
           motivation: reader,
           receiptBarrier: _Refresher(Future<void>.value()),
+          nextActionReader: _NextActionReader.value(AdventureNextAction.none),
           rewardOwnership: _rewardAccount,
           onNextAction: () {},
         ),
@@ -194,6 +202,227 @@ void main() {
 
     expect(find.textContaining('รางวัลหลักกำลังยืนยัน'), findsOneWidget);
     expect(find.text('รางวัลหลักได้รับการยืนยันแล้ว'), findsNothing);
+  });
+
+  testWidgets('SRS action survives exhausted reward projection retries', (
+    tester,
+  ) async {
+    final diagnostics = AdventureDiagnostics();
+    final actionReader = _NextActionReader.value(
+      AdventureNextAction.spacedRepetition,
+    );
+    final refresher = _Refresher(
+      Future<void>.delayed(Duration.zero, () => throw StateError('offline')),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AdventureResultLifecycleScreen(
+          summary: _summary(),
+          motivation: _Reader(const <AdventureMotivationSnapshot>[]),
+          receiptBarrier: refresher,
+          nextActionReader: actionReader,
+          diagnostics: diagnostics,
+          rewardOwnership: _rewardAccount,
+          onNextAction: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(actionReader.ownerIds, <String>['owner:one']);
+    expect(find.textContaining('รางวัลหลักกำลังยืนยัน'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('adventure-result-next-action')),
+      160,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(
+      find.text('ซิงก์รางวัลยังไม่สำเร็จ ลองใหม่ภายหลังได้'),
+      findsOneWidget,
+    );
+    expect(find.text('ไปทบทวนแบบเว้นระยะ'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('adventure-result-next-action')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets(
+    'next-action failure preserves a committed reward and disables action',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AdventureResultLifecycleScreen(
+            summary: _summary(),
+            motivation: _Reader(<AdventureMotivationSnapshot>[
+              _snapshot(
+                const AdventureProjectionOutcome(
+                  state: AdventureProjectionReceiptState.committed,
+                  receiptId: 'learning-projection:reward:event:one:v2',
+                ),
+              ),
+            ]),
+            receiptBarrier: _Refresher(Future<void>.value()),
+            nextActionReader: _NextActionReader.error(
+              StateError('review unavailable'),
+            ),
+            rewardOwnership: _rewardAccount,
+            onNextAction: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('รางวัลหลักได้รับการยืนยันแล้ว'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-next-action')),
+        160,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(find.text('เสร็จแล้ว'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('adventure-result-next-action')),
+            )
+            .onPressed,
+        isNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'late results are fenced by owner session and reader identity updates',
+    (tester) async {
+      final oldResult = Completer<AdventureNextAction>();
+      final replacedReaderResult = Completer<AdventureNextAction>();
+      final oldReader = _NextActionReader.future(oldResult.future);
+      final replacedReader = _NextActionReader.future(
+        replacedReaderResult.future,
+      );
+      final currentReader = _NextActionReader.value(
+        AdventureNextAction.reviewCenter,
+      );
+      final motivation = _Reader(<AdventureMotivationSnapshot>[
+        _snapshot(
+          const AdventureProjectionOutcome(
+            state: AdventureProjectionReceiptState.committed,
+            receiptId: 'learning-projection:reward:event:one:v2',
+          ),
+        ),
+      ]);
+      final barrier = _Refresher(Future<void>.value());
+      Widget app(
+        LearningSessionSummary summary,
+        AdventureResultNextActionReader nextActionReader,
+      ) => MaterialApp(
+        home: AdventureResultLifecycleScreen(
+          key: const ValueKey('result-lifecycle'),
+          summary: summary,
+          motivation: motivation,
+          receiptBarrier: barrier,
+          nextActionReader: nextActionReader,
+          rewardOwnership: _rewardAccount,
+          onNextAction: () {},
+        ),
+      );
+
+      await tester.pumpWidget(app(_summary(), oldReader));
+      await tester.pump();
+      expect(oldReader.ownerIds, <String>['owner:one']);
+      expect(
+        tester
+            .widget<AdventureResultScreen>(find.byType(AdventureResultScreen))
+            .result
+            .nextAction,
+        AdventureNextAction.none,
+      );
+
+      final replacementSummary = _summary(
+        ownerId: 'owner:two',
+        sessionId: 'session:two',
+      );
+      await tester.pumpWidget(app(replacementSummary, replacedReader));
+      await tester.pump();
+      expect(replacedReader.ownerIds, <String>['owner:two']);
+      expect(
+        tester
+            .widget<AdventureResultScreen>(find.byType(AdventureResultScreen))
+            .result
+            .nextAction,
+        AdventureNextAction.none,
+      );
+
+      await tester.pumpWidget(app(replacementSummary, currentReader));
+      await tester.pumpAndSettle();
+      expect(currentReader.ownerIds, <String>['owner:two']);
+      expect(
+        tester
+            .widget<AdventureResultScreen>(find.byType(AdventureResultScreen))
+            .result
+            .nextAction,
+        AdventureNextAction.reviewCenter,
+      );
+
+      oldResult.complete(AdventureNextAction.spacedRepetition);
+      replacedReaderResult.complete(AdventureNextAction.spacedRepetition);
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        tester
+            .widget<AdventureResultScreen>(find.byType(AdventureResultScreen))
+            .result
+            .nextAction,
+        AdventureNextAction.reviewCenter,
+      );
+    },
+  );
+
+  testWidgets('none action cannot invoke its navigation callback', (
+    tester,
+  ) async {
+    var callbacks = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => AdventureResultLifecycleScreen(
+            summary: _summary(),
+            motivation: _Reader(const <AdventureMotivationSnapshot>[]),
+            receiptBarrier: _Refresher(Future<void>.value()),
+            nextActionReader: _NextActionReader.value(AdventureNextAction.none),
+            rewardOwnership: _rewardAccount,
+            onNextAction: () {
+              callbacks += 1;
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const Text('review destination'),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final action = find.byKey(const ValueKey('adventure-result-next-action'));
+    await tester.scrollUntilVisible(
+      action,
+      160,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(tester.widget<FilledButton>(action).onPressed, isNull);
+    await tester.tap(action);
+    await tester.pumpAndSettle();
+
+    expect(callbacks, 0);
+    expect(find.text('review destination'), findsNothing);
   });
 }
 
@@ -245,6 +474,26 @@ final class _Reader implements AdventureMotivationProjectionReader {
   }
 }
 
+final class _NextActionReader implements AdventureResultNextActionReader {
+  _NextActionReader.value(AdventureNextAction value)
+    : _read = (() async => value);
+
+  _NextActionReader.error(Object error)
+    : _read = (() => Future<AdventureNextAction>.error(error));
+
+  _NextActionReader.future(Future<AdventureNextAction> future)
+    : _read = (() => future);
+
+  final Future<AdventureNextAction> Function() _read;
+  final List<String> ownerIds = <String>[];
+
+  @override
+  Future<AdventureNextAction> read({required String ownerId}) {
+    ownerIds.add(ownerId);
+    return _read();
+  }
+}
+
 AdventureMotivationSnapshot _snapshot(AdventureProjectionOutcome reward) =>
     AdventureMotivationSnapshot(
       sourceEvidenceId: 'evidence:1',
@@ -267,9 +516,12 @@ AdventureMotivationSnapshot _snapshot(AdventureProjectionOutcome reward) =>
       pendingProjection: false,
     );
 
-LearningSessionSummary _summary() => LearningSessionSummary(
-  id: 'session:one',
-  ownerId: 'owner:one',
+LearningSessionSummary _summary({
+  String ownerId = 'owner:one',
+  String sessionId = 'session:one',
+}) => LearningSessionSummary(
+  id: sessionId,
+  ownerId: ownerId,
   activityType: 'quiz',
   state: 'completed',
   startedAtUtc: DateTime.utc(2026, 9, 4, 10),
