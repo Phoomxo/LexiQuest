@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "e707cd7a792425afd356f90fcd23aac26c11bad3",
-  "sourceFingerprint": "9aad2113837cca07a2424c6851b784154284577a0770155a2078954bc51b6bf3",
+  "sourceCommit": "e47d8864dd83c29e958423580a3d6f5a0f35b41b",
+  "sourceFingerprint": "4f2a2d22b152558f176c63125f4ec5b77229b1306c61167a3d87ad827fcd59c9",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -33,11 +33,11 @@
     },
     {
       "path": "docs/generated/alltcas-idea-integration-feature-map.json",
-      "sha256": "193366e347ee3719c3cc88cb727d21845caa0c2335c5cd373793c8ebd8ccda55"
+      "sha256": "f6f623bef0fbd3e2fdde6dbb34863282aeeb03ad8c8927ccc7a5a5ec349eae53"
     },
     {
       "path": "docs/generated/alltcas-idea-integration-feature-map.md",
-      "sha256": "a4eedbcb0f1f78957243d6c75d21b47705b37637f26cbcc0ba6b2de4fd330d28"
+      "sha256": "7b7d4ee9098512748d9dee5b94768df860a78dcd74c0fd1303cbc2822c3d798f"
     },
     {
       "path": "docs/superpowers/plans/2026-08-14-alltcas-8-44-capability-implementation-master-plan.md",
@@ -73,7 +73,7 @@
     },
     {
       "path": "lib",
-      "sha256": "4665531dd6a35f3c91db5bfd756184893001140ee3760965e2ab208530e2dc90"
+      "sha256": "0b10de73e4d79e048bae4363b17f6994ed592c2399bc35a1e4d5fb6e0122a4cb"
     },
     {
       "path": "lib/data/local/app_database.dart",
@@ -121,11 +121,11 @@
     },
     {
       "path": "test",
-      "sha256": "f51c4b2b78c295c86b61a2c36cc52752f73b1d6cd703d610e3c23763e74490b9"
+      "sha256": "6325cf1c90943868070a0c29f69eccd11ba7396c5f2f6cb2dda70118821da6c1"
     },
     {
       "path": "test/architecture",
-      "sha256": "851c1e640b7fc809fbfba69863856e1ae6819dad4ec4a1c00557fe750a6b82c7"
+      "sha256": "5502e3c3c7579f4d1dcd8b3dec9b76d17659f2eb985771280b40b3f3fa83e0b4"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
@@ -361,7 +361,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "bec73ff55eac0229489e1655ffae4065fad30883b7e9d9ac2bff74739e0c8014"
+      "sha256": "3ff5bbd48fa5a316e30a2956e488854962dae8d2bb818251914d97978e09abf4"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -580,7 +580,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit e707cd7a792425afd356f90fcd23aac26c11bad3",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit e47d8864dd83c29e958423580a3d6f5a0f35b41b",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
