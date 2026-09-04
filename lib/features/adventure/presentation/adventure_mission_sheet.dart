@@ -25,6 +25,14 @@ final class _AdventureMissionSheetState extends State<AdventureMissionSheet> {
     setState(() => _starting = true);
     try {
       await widget.onStart(mission);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เปิดภารกิจไม่สำเร็จ ลองใหม่ได้เมื่อพร้อม'),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _starting = false);
     }

@@ -4,18 +4,24 @@ import 'package:uuid/uuid.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_learning_bridge.dart';
+import '../features/adventure/application/adventure_session_composer.dart';
 import '../features/adventure/domain/adventure_journey.dart';
+import '../features/adventure/domain/adventure_session_plan.dart';
 import '../features/adventure/presentation/adventure_today_entry_card.dart';
 import '../features/adventure/presentation/today_experience_host.dart';
 import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
+import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
+import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/review/domain/review_queue_item.dart';
 import '../features/today_hub/domain/today_hub_models.dart';
 import '../runtime/app_dependencies.dart';
@@ -35,6 +41,7 @@ import 'export_center_screen.dart';
 import 'learning_history_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
+import 'quiz_screen.dart';
 import 'pre_post_assessment_screen.dart';
 import 'quest_status_screen.dart';
 import 'review_center_screen.dart';
@@ -270,12 +277,196 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Future<void> _startAdventureMission(AdventureMissionRef mission) async {
+  Future<void> _startAdventureMission(
+    AdventureMissionLaunchContext launch,
+  ) async {
+    final mission = launch.mission;
     if (!await _todayOwnerMatches(mission.ownerId) || !mounted) {
       throw StateError('Adventure mission no longer belongs to this owner.');
     }
-    _selectLearningFromToday();
-    Navigator.of(context).maybePop();
+    if (mission.kind == AdventureMissionKind.resume) {
+      final resumable = launch.today.resumableSession;
+      if (resumable == null || resumable.id != mission.sourceId) {
+        throw StateError('The accepted learning session is no longer active.');
+      }
+      await _resumeFromToday(resumable);
+      if (mounted) Navigator.of(context).maybePop();
+      return;
+    }
+
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final mode = mission.suggestedMode ?? LessonMode.meaningQuiz;
+    final registration = dependencies?.lessonModes?.resolve(mode);
+    final adapter = registration?.adapter;
+    if (dependencies == null ||
+        dependencies.learning == null ||
+        dependencies.createLessonController == null ||
+        dependencies.currentActivityEvidence == null ||
+        registration == null ||
+        (adapter is! MeaningQuizModeAdapter &&
+            adapter is! TypedRecallModeAdapter) ||
+        dependencies.features.isEnabled(registration.feature) != true ||
+        mission.content.isEmpty) {
+      throw StateError('The canonical Adventure lesson is unavailable.');
+    }
+    final LessonModeAdapter lessonAdapter = adapter!;
+
+    final initialContext = await _loadSessionConfigurationContext(
+      dependencies,
+      mode,
+    );
+    if (!mounted || initialContext.ownerId != mission.ownerId) {
+      throw StateError('Adventure mission owner changed before configuration.');
+    }
+    final maximumItems =
+        mission.content.length < initialContext.limits.maximumItemCount
+        ? mission.content.length
+        : initialContext.limits.maximumItemCount;
+    if (maximumItems < initialContext.limits.minimumItemCount) {
+      throw StateError('Adventure mission has too little canonical content.');
+    }
+    final limits = initialContext.limits.copyWith(
+      maximumItemCount: maximumItems,
+    );
+    final initial = initialContext.initialConfiguration;
+    final usableInitial =
+        initial != null &&
+            initial.mode == mode &&
+            initial.itemCount <= maximumItems &&
+            initial.packIdentity == null
+        ? initial
+        : null;
+    final configuration = await showSessionConfigurationSheet(
+      context: context,
+      registration: registration,
+      policy: const SessionConfigurationPolicy(),
+      limits: limits,
+      ownerId: initialContext.ownerId,
+      packs: const <SessionConfigurationPackOption>[],
+      initialConfiguration: usableInitial,
+      initialResetRequired: initial == null
+          ? initialContext.initialResetRequired
+          : null,
+      initialResetCanUseDefaults: initialContext.protocolResetRequired == null,
+    );
+    if (configuration == null || !mounted) return;
+
+    Future<SessionConfiguration> revalidate(
+      SessionConfiguration candidate,
+    ) async {
+      final current = AppDependenciesScope.maybeOf(context);
+      final currentRegistration = current?.lessonModes?.resolve(mode);
+      if (current == null ||
+          currentRegistration == null ||
+          !identical(currentRegistration.adapter, lessonAdapter) ||
+          current.features.isEnabled(registration.feature) != true ||
+          !current.features.isEnabled(Feature.adventureMotivation)) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.modeUnavailable,
+        );
+      }
+      final currentContext = await _loadSessionConfigurationContext(
+        current,
+        mode,
+      );
+      if (currentContext.ownerId != mission.ownerId) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.ownerDrift,
+        );
+      }
+      final reset = currentContext.protocolResetRequired;
+      if (reset != null) throw reset;
+      final currentMaximum =
+          mission.content.length < currentContext.limits.maximumItemCount
+          ? mission.content.length
+          : currentContext.limits.maximumItemCount;
+      return const SessionConfigurationPolicy().revalidate(
+        configuration: candidate,
+        registration: currentRegistration,
+        limits: currentContext.limits.copyWith(
+          maximumItemCount: currentMaximum,
+        ),
+        ownerId: currentContext.ownerId,
+        availablePackIdentities: const <ContentIdentity>[],
+      );
+    }
+
+    final validated = await revalidate(configuration);
+    final plan = await const CanonicalAdventureSessionComposer().compose(
+      mission: mission,
+      today: launch.today,
+      requestedConfiguration: validated,
+      entry: launch.entryDecision,
+    );
+    final store = dependencies.sessionConfigurations;
+    if (store == null) {
+      throw StateError('Session configuration authority is unavailable.');
+    }
+    await store.save(validated, updatedAtUtc: DateTime.now().toUtc());
+    if (!mounted || !await _todayOwnerMatches(plan.ownerId)) {
+      throw StateError('Adventure mission owner changed before launch.');
+    }
+    _pushDestination(
+      registration.routeName,
+      (_) => ProductionFeatureGate(
+        feature: registration.feature,
+        registry: widget.featureRegistry ?? dependencies.features,
+        builder: (_) => _buildAdventureQuiz(
+          dependencies: dependencies,
+          registrationFeature: registration.feature,
+          adapter: lessonAdapter,
+          plan: plan,
+          revalidateConfiguration: revalidate,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdventureQuiz({
+    required AppDependencies dependencies,
+    required Feature registrationFeature,
+    required LessonModeAdapter adapter,
+    required AdventureSessionPlanV1 plan,
+    required SessionConfigurationRevalidator revalidateConfiguration,
+  }) {
+    final createController = dependencies.createLessonController!;
+    final lesson = adapter is TypedRecallModeAdapter
+        ? QuizScreen.typedRecall(
+            modeAdapter: adapter,
+            sessionConfiguration: plan.configuration,
+            pinnedContent: plan.content,
+            pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
+          )
+        : QuizScreen(
+            modeAdapter: adapter as MeaningQuizModeAdapter,
+            sessionConfiguration: plan.configuration,
+            pinnedContent: plan.content,
+            pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
+          );
+    return UnifiedLessonModeHost(
+      adapter: adapter,
+      createController: createController,
+      feature: registrationFeature,
+      featureRegistry: widget.featureRegistry ?? dependencies.features,
+      learning: dependencies.learning,
+      configuration: plan.configuration,
+      revalidateConfiguration: revalidateConfiguration,
+      contrastiveFeedback: dependencies.contrastiveFeedback,
+      controllerStarter: (controller, command) {
+        final launch = const AdventureLearningBridge().prepare(
+          plan: plan,
+          activeOwnerId: command.ownerId ?? '',
+          sessionId: command.sessionId,
+          startedAtUtc: command.startedAtUtc,
+        );
+        return const AdventureLearningBridge().start(
+          launch: launch,
+          controller: controller,
+          revalidateConfiguration: revalidateConfiguration,
+        );
+      },
+      builder: (_) => lesson,
+    );
   }
 
   _MainNavigationTodayHubActions _todayActions() =>

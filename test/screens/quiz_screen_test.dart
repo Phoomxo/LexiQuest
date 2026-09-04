@@ -18,6 +18,9 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
@@ -273,6 +276,116 @@ void main() {
 
     expect(session.questions.single.word.normalizedSpelling, 'station');
     expect(session.questions.single.word.normalizedMeaning, 'สถานี');
+  });
+
+  testWidgets('pinned launch uses exact ordered identity and checksum', (
+    tester,
+  ) async {
+    late String ownerId;
+    await tester.runAsync(() async {
+      ownerId = (await owners.getOrCreateActiveOwner()).id;
+    });
+    final checksum = _canonicalCoreChecksum(
+      spelling: 'station',
+      meaning: 'สถานี',
+    );
+    final configuration = SessionConfiguration.validated(
+      schemaVersion: sessionConfigurationSchemaVersion,
+      policyVersion: sessionConfigurationPolicyVersion,
+      ownerId: ownerId,
+      mode: LessonMode.meaningQuiz,
+      itemCount: 1,
+      direction: SessionDirection.forward,
+      difficulty: SessionDifficulty.standard,
+      hintBudget: 0,
+      timing: const SessionTiming.timed(Duration(minutes: 5)),
+      packIdentity: null,
+      protocolId: 'protocol:test',
+      protocolVersion: '1',
+      protocolLimitsIdentity: 'limits:test',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const MeaningQuizModeAdapter(),
+          sessionConfiguration: configuration,
+          pinnedContent: const <ContentIdentity>[
+            ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: 'word-1',
+              revision: 1,
+            ),
+          ],
+          pinnedContentChecksumsSha256: <String, String>{'word-1': checksum},
+        ),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('station'));
+
+    late LearningSession session;
+    await tester.runAsync(() async {
+      session = await database.select(database.learningSessions).getSingle();
+    });
+    expect(session.ownerId, ownerId);
+    expect(session.sessionConfigurationJson, isNotNull);
+  });
+
+  testWidgets('pinned checksum drift abandons the created session', (
+    tester,
+  ) async {
+    late String ownerId;
+    await tester.runAsync(() async {
+      ownerId = (await owners.getOrCreateActiveOwner()).id;
+    });
+    final configuration = SessionConfiguration.validated(
+      schemaVersion: sessionConfigurationSchemaVersion,
+      policyVersion: sessionConfigurationPolicyVersion,
+      ownerId: ownerId,
+      mode: LessonMode.meaningQuiz,
+      itemCount: 1,
+      direction: SessionDirection.forward,
+      difficulty: SessionDifficulty.standard,
+      hintBudget: 0,
+      timing: const SessionTiming.timed(Duration(minutes: 5)),
+      packIdentity: null,
+      protocolId: 'protocol:test',
+      protocolVersion: '1',
+      protocolLimitsIdentity: 'limits:test',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const MeaningQuizModeAdapter(),
+          sessionConfiguration: configuration,
+          pinnedContent: const <ContentIdentity>[
+            ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: 'word-1',
+              revision: 1,
+            ),
+          ],
+          pinnedContentChecksumsSha256: const <String, String>{
+            'word-1': _checksumB,
+          },
+        ),
+      ),
+    );
+    await _pumpUntilFound(
+      tester,
+      find.byKey(const ValueKey('session-configuration-reset-prompt')),
+    );
+
+    late LearningSession session;
+    await tester.runAsync(() async {
+      session = await database.select(database.learningSessions).getSingle();
+    });
+    expect(session.state, 'abandoned');
   });
 
   testWidgets(

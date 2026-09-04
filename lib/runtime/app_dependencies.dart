@@ -262,6 +262,11 @@ final class AppDependencies {
           adventureJourney != null &&
           todayHub != null &&
           learning != null &&
+          lessonModes != null &&
+          createLessonController != null &&
+          sessionConfigurations != null &&
+          currentActivityEvidence != null &&
+          identical(currentActivityEvidence?.learning, learning) &&
           identical(
             (adventureEntry! as AdventureEntryUseCases).todayHubIdentity,
             todayHub,

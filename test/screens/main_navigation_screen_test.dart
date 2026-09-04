@@ -19,8 +19,10 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_session_configuration_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
@@ -119,6 +121,45 @@ void main() {
     );
     expect(loader.calls, 0);
   });
+
+  testWidgets(
+    'Adventure entry fails closed when a launch authority is absent',
+    (tester) async {
+      for (final missing in <String>[
+        'lessonModes',
+        'controller',
+        'configurationStore',
+        'evidence',
+      ]) {
+        AppDependencies? composed;
+        await tester.pumpWidget(
+          _mainNavigationApp(
+            const BuildFeatureRegistry.allEnabled(),
+            todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
+            includeAdventure: true,
+            includeLessonModes: missing != 'lessonModes',
+            includeCreateLessonController: missing != 'controller',
+            includeSessionConfigurations: missing != 'configurationStore',
+            includeCurrentActivityEvidence: missing != 'evidence',
+            onDependencies: (value) => composed = value,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          composed!.hasComposedDependencyFor(Feature.adventureMotivation),
+          isFalse,
+          reason: missing,
+        );
+        await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(AdventureTodayEntryCard),
+          findsNothing,
+          reason: missing,
+        );
+      }
+    },
+  );
 
   testWidgets(
     'f42 Today delivery fails closed for default-off or missing dependency',
@@ -782,6 +823,8 @@ Widget _mainNavigationApp(
   bool includeLearning = true,
   bool includeLessonModes = true,
   bool includeCreateLessonController = true,
+  bool includeSessionConfigurations = true,
+  bool includeCurrentActivityEvidence = true,
   bool mismatchReviewSessionAuthority = false,
   bool mismatchHistorySessionAuthority = false,
   bool includeAdventure = false,
@@ -853,6 +896,12 @@ Widget _mainNavigationApp(
     createLessonController: includeCreateLessonController
         ? (adapter) =>
               UnifiedLessonController(learning: learning, adapter: adapter)
+        : null,
+    currentActivityEvidence: includeLearning && includeCurrentActivityEvidence
+        ? CurrentActivityEvidenceAdapter(learning: learning)
+        : null,
+    sessionConfigurations: includeSessionConfigurations
+        ? DriftSessionConfigurationStore(database)
         : null,
     progress: progress,
     todayHub: todayHub,

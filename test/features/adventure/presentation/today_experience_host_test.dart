@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -102,6 +103,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(TodayHubView), findsNothing);
   });
+
+  testWidgets('mission launch keeps the exact Today and entry decision', (
+    tester,
+  ) async {
+    final today = _today();
+    final mission = AdventureMissionRef(
+      missionId: 'mission:one',
+      ownerId: today.ownerId,
+      nodeId: 'today-mission',
+      kind: AdventureMissionKind.recommendation,
+      sourceId: 'word:one',
+      content: const [],
+      reasonCode: 'due',
+      sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+    );
+    AdventureMissionLaunchContext? captured;
+    await tester.pumpWidget(
+      _app(
+        loader: _Loader(today),
+        journey: _Journey(mission: mission),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        onStartMission: (launch) async => captured = launch,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ผจญภัย'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('adventure-start-mission')));
+    await tester.pumpAndSettle();
+
+    expect(captured?.mission, same(mission));
+    expect(captured?.today, same(today));
+    expect(
+      captured?.entryDecision.destination,
+      AdventureEntryDestination.adventure,
+    );
+  });
 }
 
 Widget _app({
@@ -109,6 +147,7 @@ Widget _app({
   required TodayHubSnapshotLoader loader,
   required AdventureJourneyReader journey,
   required String Function() createId,
+  Future<void> Function(AdventureMissionLaunchContext)? onStartMission,
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -134,7 +173,7 @@ Widget _app({
       actions: _Actions(),
       features: const BuildFeatureRegistry.allEnabled(),
       assessmentAvailable: false,
-      onStartMission: (_) async {},
+      onStartMission: onStartMission ?? (_) async {},
     ),
   );
 }
@@ -189,6 +228,9 @@ final class _PendingLoader implements TodayHubSnapshotLoader {
 }
 
 final class _Journey implements AdventureJourneyReader {
+  _Journey({this.mission});
+
+  final AdventureMissionRef? mission;
   TodayHubSnapshot? today;
 
   @override
@@ -210,7 +252,7 @@ final class _Journey implements AdventureJourneyReader {
               authority: AdventureJourneyDependencyState.ready,
           },
       nodes: const [],
-      primaryMission: null,
+      primaryMission: mission,
       inputFingerprintSha256: 'a' * 64,
     );
   }

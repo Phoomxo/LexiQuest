@@ -111,7 +111,7 @@ void main() {
           Feature.adventureMotivation: (
             productionEntryId: 'home/learn/today-experience',
             dependencyId:
-                'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases',
+                'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases+LearningUseCases+UnifiedLessonControllerFactory+SessionConfigurationStore+CurrentActivityEvidenceAdapter',
             durable: true,
           ),
         };

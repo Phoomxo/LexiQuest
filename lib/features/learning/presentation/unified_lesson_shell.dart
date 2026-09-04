@@ -27,6 +27,11 @@ import 'session_configuration_sheet.dart';
 typedef LessonUtcNow = DateTime Function();
 typedef LessonLifecycleStateReader = AppLifecycleState? Function();
 typedef RecoveredLessonCloseReader = PendingLearningSessionClose? Function();
+typedef UnifiedLessonControllerStarter =
+    Future<void> Function(
+      UnifiedLessonController controller,
+      LessonStartCommand command,
+    );
 
 /// Local-only child state that must be purged whenever a lesson crosses a
 /// privacy, terminal, or route-retirement boundary.
@@ -236,11 +241,17 @@ final class UnifiedLessonSessionLifecycleScope extends InheritedWidget {
 final class UnifiedLessonRouteLifecycle {
   static final Object _acceptedLeaseZoneKey = Object();
 
-  UnifiedLessonRouteLifecycle(this._controller, this._learning, this._nowUtc);
+  UnifiedLessonRouteLifecycle(
+    this._controller,
+    this._learning,
+    this._nowUtc, {
+    this.controllerStarter,
+  });
 
   final UnifiedLessonController _controller;
   final LearningUseCases? _learning;
   final LessonUtcNow _nowUtc;
+  final UnifiedLessonControllerStarter? controllerStarter;
   final Map<String, Future<void>> _unattachedCompensations =
       <String, Future<void>>{};
 
@@ -397,7 +408,9 @@ final class UnifiedLessonRouteLifecycle {
   }
 
   Future<void> _startController(LessonStartCommand command) {
-    final operation = _controller.start(command);
+    final operation =
+        controllerStarter?.call(_controller, command) ??
+        _controller.start(command);
     _startInFlight = operation;
     unawaited(
       operation.then<void>(
@@ -817,6 +830,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
     this.configuration,
     this.revalidateConfiguration,
     this.contrastiveFeedback,
+    this.controllerStarter,
   });
 
   final LessonModeAdapter adapter;
@@ -829,6 +843,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
   final SessionConfiguration? configuration;
   final SessionConfigurationRevalidator? revalidateConfiguration;
   final ContrastiveFeedbackUseCases? contrastiveFeedback;
+  final UnifiedLessonControllerStarter? controllerStarter;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
@@ -869,6 +884,7 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
       _controller,
       widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning,
       widget.nowUtc ?? _systemUtcNow,
+      controllerStarter: widget.controllerStarter,
     );
     _observeFeatures(
       widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features,

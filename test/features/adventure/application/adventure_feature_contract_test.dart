@@ -49,7 +49,7 @@ void main() {
     expect(delivery!.productionEntryId, 'home/learn/today-experience');
     expect(
       delivery.dependencyId,
-      'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases',
+      'AdventureEntryUseCases+AdventureJourneyReader+TodayHubUseCases+LearningUseCases+UnifiedLessonControllerFactory+SessionConfigurationStore+CurrentActivityEvidenceAdapter',
     );
     expect(delivery.durable, isTrue);
     expect(delivery.screenClassName, 'TodayExperienceHost');

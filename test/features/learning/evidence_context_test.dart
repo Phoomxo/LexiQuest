@@ -65,6 +65,16 @@ void main() {
         'scoringRuleVersion',
         'engagementAllowed',
       ]);
+      expect(
+        json.keys.where(
+          (key) => RegExp(
+            r'adventure|mission|node|presentation|plan',
+            caseSensitive: false,
+          ).hasMatch(key),
+        ),
+        isEmpty,
+        reason: 'Adventure origin must remain transient and outside evidence',
+      );
       expect(() => json['skillId'] = 'changed', throwsUnsupportedError);
       expect(EvidenceContext.fromJson(json).toJson(), json);
     });

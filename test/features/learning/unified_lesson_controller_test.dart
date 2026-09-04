@@ -180,6 +180,31 @@ void main() {
     expect(fixture.controller.state.status, LessonSessionStatus.planned);
   });
 
+  test(
+    'route can delegate the exact start command through a typed bridge',
+    () async {
+      final fixture = await _fixture();
+      addTearDown(fixture.controller.dispose);
+      var calls = 0;
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now,
+        controllerStarter: (controller, command) {
+          calls += 1;
+          expect(controller, same(fixture.controller));
+          expect(command, same(fixture.startCommand));
+          return controller.start(command);
+        },
+      );
+
+      await route.start(fixture.startCommand);
+
+      expect(calls, 1);
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+    },
+  );
+
   testWidgets('f16 finite timing stops accepting active lesson operations', (
     tester,
   ) async {

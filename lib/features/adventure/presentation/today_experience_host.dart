@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../today_hub/application/today_hub_use_cases.dart';
+import '../../today_hub/domain/today_hub_models.dart';
 import '../../research/domain/research_participation_permit.dart';
 import '../../../screens/today_hub_view.dart';
 import '../../../runtime/registries/feature_registry.dart';
@@ -12,6 +13,18 @@ import 'adventure_hub_screen.dart';
 import 'widgets/adventure_standard_switch.dart';
 
 typedef AdventureUtcNow = DateTime Function();
+
+final class AdventureMissionLaunchContext {
+  const AdventureMissionLaunchContext({
+    required this.mission,
+    required this.today,
+    required this.entryDecision,
+  });
+
+  final AdventureMissionRef mission;
+  final TodayHubSnapshot today;
+  final AdventureProductEntryDecision entryDecision;
+}
 
 final class TodayExperienceHost extends StatefulWidget {
   const TodayExperienceHost({
@@ -41,7 +54,8 @@ final class TodayExperienceHost extends StatefulWidget {
   final TodayHubActionDelegate actions;
   final FeatureRegistry features;
   final bool assessmentAvailable;
-  final Future<void> Function(AdventureMissionRef mission) onStartMission;
+  final Future<void> Function(AdventureMissionLaunchContext launch)
+  onStartMission;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
@@ -169,7 +183,13 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
           journey != null) {
         return AdventureHubScreen(
           snapshot: journey,
-          onStartMission: widget.onStartMission,
+          onStartMission: (mission) => widget.onStartMission(
+            AdventureMissionLaunchContext(
+              mission: mission,
+              today: today,
+              entryDecision: result.decision,
+            ),
+          ),
           onPresentationChanged: _switch,
           onRefresh: _refresh,
         );

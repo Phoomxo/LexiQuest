@@ -14,6 +14,7 @@ import '../features/learning/domain/hint_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
+import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
@@ -30,6 +31,8 @@ class QuizScreen extends StatefulWidget {
     this.evidenceAdapter,
     this.modeAdapter,
     this.sessionConfiguration,
+    this.pinnedContent = const <ContentIdentity>[],
+    this.pinnedContentChecksumsSha256 = const <String, String>{},
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -40,6 +43,8 @@ class QuizScreen extends StatefulWidget {
     this.evidenceAdapter,
     TypedRecallModeAdapter? modeAdapter,
     this.sessionConfiguration,
+    this.pinnedContent = const <ContentIdentity>[],
+    this.pinnedContentChecksumsSha256 = const <String, String>{},
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
        typedRecall = true;
@@ -51,6 +56,8 @@ class QuizScreen extends StatefulWidget {
   final TypedRecallModeAdapter? typedRecallModeAdapter;
   final bool typedRecall;
   final SessionConfiguration? sessionConfiguration;
+  final List<ContentIdentity> pinnedContent;
+  final Map<String, String> pinnedContentChecksumsSha256;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -177,6 +184,41 @@ class _QuizScreenState extends State<QuizScreen> {
         SessionConfigurationResetReason.unsupportedOption,
       );
     }
+    if (widget.pinnedContent.isNotEmpty) {
+      if (widget.categoryId != null ||
+          configuration.packIdentity != null ||
+          widget.pinnedContent.length != configuration.itemCount ||
+          widget.pinnedContent.any(
+            (identity) =>
+                identity.type != ContentType.lexicalMetadata ||
+                widget.pinnedContentChecksumsSha256[identity.id] == null,
+          )) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      final session = await learning.startQuiz(
+        limit: configuration.itemCount,
+        pinnedWordIds: widget.pinnedContent
+            .map((identity) => identity.id)
+            .toList(growable: false),
+        sessionConfiguration: configuration,
+      );
+      if (!_matchesPinnedContent(session)) {
+        if (!session.isEmpty && session.ownerId != null) {
+          await learning.abandonSession(
+            ownerId: session.ownerId!,
+            sessionId: session.id,
+            abandonedAtUtc: learning.nowUtc(),
+          );
+        }
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.packDrift,
+          'Pinned content changed before the lesson started.',
+        );
+      }
+      return session;
+    }
     final pack = configuration.packIdentity;
     if (pack == null) {
       return learning.startQuiz(
@@ -221,6 +263,21 @@ class _QuizScreenState extends State<QuizScreen> {
         SessionConfigurationResetReason.packDrift,
       );
     }
+  }
+
+  bool _matchesPinnedContent(QuizSession session) {
+    if (session.questions.length != widget.pinnedContent.length) return false;
+    for (var index = 0; index < widget.pinnedContent.length; index += 1) {
+      final expected = widget.pinnedContent[index];
+      final actual = session.questions[index].word;
+      if (actual.id != expected.id ||
+          actual.contentRevision != expected.revision ||
+          actual.contentChecksumSha256 !=
+              widget.pinnedContentChecksumsSha256[expected.id]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<QuizSession> _prepareSession(
