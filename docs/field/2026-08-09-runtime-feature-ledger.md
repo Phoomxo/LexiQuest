@@ -7,8 +7,9 @@ runtime, and test implementation continues through
 `d6be10d2ac6206fb018730449483c33cc4ed04b2` and is not covered by that signed
 artifact.
 
-This ledger is an inventory, not a release claim. It contains all 19 members of
-`Feature.values` (the original 15 plus the four broad 8/44 delivery flags) and
+This ledger is an inventory, not a release claim. It contains all 20 members of
+`Feature.values` (the original 15, the four broad 8/44 delivery flags, and the
+hidden additive Adventure presentation parent) and
 all screen rows returned by `rg --files lib/screens`. Production reachability
 was traced from `lib/main.dart` through Dart
 imports and then checked against the actual navigation callbacks. Dependency
@@ -25,7 +26,7 @@ user-visible surfaces that the current production path still uses but that
 retain static/demo or screen-owned service behavior. `orphan` means no caller
 is reachable from `lib/main.dart`.
 
-For the 15 `Feature` rows, the first value in **Composed dependency** is the
+For the 20 `Feature` rows, the first value in **Composed dependency** is the
 exact frozen `dependencyId` from `productionFeatureContract`; any additional
 values are supporting composition and do not alter that contract. `Durable`
 means participant state or an output artifact is backed by a durable subsystem.
@@ -55,6 +56,7 @@ states route-specific gaps rather than inventing field proof.
 | Feature: research assessment | `Feature.researchAssessment` (`hidden`) | `research/assessment` → `PrePostAssessmentScreen` | Nullable `AssessmentUseCases`; invocation additionally requires exact consent, assignment, protocol, catalog, and rollout authority | Drift `assessment_runs`, canonical AnswerAttempts, LearningSessions, consent, and experiment assignments | Assessment isolation, sync, bootstrap-off, lifecycle, export, withdrawal, and restart tests | None; implemented code is not participant assignment or rollout evidence | hidden |
 | Feature: daily continuity | `Feature.dailyContinuity` (`hidden`) | `home/today` → `TodayHubScreen` | `TodayHubUseCases`; child Review, History, Recommendation, Quest, and Streak actions retain their canonical authorities | Read-only joins over sessions, SRS, review, history, recommendation, goals, quest, and streak | Focused Today Hub read-only, navigation, emergency-off, owner lifecycle, and restart tests | None; implemented code is not rollout evidence | hidden |
 | Feature: offline content | `Feature.offlineContent` (`hidden`) | `settings/offline-content` → `OfflineContentManagerScreen` | `OfflineContentManager`; invocation fails closed when dependency or runtime delivery is unavailable | Drift `content_download_states` plus verified manifest/artifact storage; no evidence ownership | Checksum quarantine, interrupted recovery, repair, removal, bootstrap, restart, and lifecycle tests | None; implemented code is not rollout evidence | hidden |
+| Feature: Adventure motivation | `Feature.adventureMotivation` (`hidden`) | Empty frozen `productionEntryId`; no presentation route in Checkpoint 1 | Empty frozen `dependencyId`; bootstrap composes an identity-consistent read-only `AdventureProductEntryResolver`, packaged catalog, canonical Today/Learning identities, and `ActivePresentationPermitReader` projection only | No Adventure-owned durable store or schema row; canonical learning, assignment, permit, and preference authorities remain unchanged | Entry decision table, permit validation matrix, catalog validation, bootstrap identity, lazy rollout, and feature-off tests | None; implemented domain/entry code is not presentation or rollout evidence | hidden |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
 | Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope`; production route passes no dependency | Drift vocabulary import and word tables | Production Home shell opens the scoped bulk-add route; import behavior is not executed | None; host test only | wired |
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
