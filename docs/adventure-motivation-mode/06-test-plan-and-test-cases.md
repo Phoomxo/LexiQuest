@@ -1,10 +1,10 @@
 # Test Plan and Test Cases — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-TP-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for QA/Owner Review
-**Date:** 2026-09-01
-**References:** `AMM-AUDIT-001 v1.0`; TOR/SRS/SDS/UI/ADR/MDS/RTM v1.1
+**Date:** 2026-09-04
+**References:** `AMM-AUDIT-001 v1.0`; TOR/SRS/SDS/UI/ADR/MDS/RTM v1.2
 **Baseline:** commit `99f7fb21`, Drift schema v22
 **Current baseline evidence:** 3,202 Flutter tests pass / 15 fail; no Pilot or release pass claim is permitted
 
@@ -25,12 +25,14 @@ The test program proves that Adventure:
 11. adds only `home/learn/today-experience` within Learn, never a bottom tab, and leaves hidden Learn layout equivalent;
 12. loads one Today snapshot per authorized Host and uses symmetric opportunity/neutral event contracts;
 13. enforces minor guardian+assent runtime evidence and class-specific MS-08A/MS-08B rollout.
+14. refines `f10` Pair Matching without a new capability/menu/authority and preserves recognition/guided safety floor;
+15. proves exact 4/6 bilingual plans, delayed repair, optional active-time timer, derived stars and Practice Replay isolation.
 
 ## 2. Scope
 
 ### 2.1 In scope
 
-- M01–M11;
+- M01–M12; M12 is an `f10` planning module, not `f45`;
 - new runtime feature and exact production contract;
 - world/story/asset catalog and journey projection;
 - session composer and Unified Lesson bridge;
@@ -42,6 +44,7 @@ The test program proves that Adventure:
 - offline/restart/emergency-off/platform/device behavior;
 - signed permits, guardian/assent flows, opportunity/neutral events, prompt, crossover and measurement data quality;
 - regression against Standard and all 8/44 authorities.
+- Pair Matching source/plan/checkpoint/reducer, repair/timer/restart, stars/replay/history, adaptive UI and Standard/Adventure parity.
 
 ### 2.2 Out of scope for v1
 
@@ -207,7 +210,7 @@ The test program proves that Adventure:
 
 ## 8. Detailed Test Cases
 
-Controlled inventory รวม **144 test cases**: ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20 และ OPS 18 ทุกกรณียังมีสถานะ planned จนกว่าจะมี implementation และ fresh execution evidence
+Controlled inventory รวม **188 test cases**: เดิม 144 cases (ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20, OPS 18) และ Pair Matching Prototype PMT 44 cases ทุกกรณียังมีสถานะ planned จนกว่าจะมี implementation และ fresh execution evidence
 
 In every case, “no write” means no new/changed row in learning, SRS, progress, quest, streak, reward, achievement, research or preference authorities unless the case explicitly requires it.
 
@@ -395,6 +398,55 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | TC-OPS-017 | Adult MS-08B passes; minor incomplete/fails | Apply rollout targeting | Adult eligible only; minor remains Limited; cross-class negative tests pass |
 | TC-OPS-018 | Permit withdrawal/revocation during rollout | Trigger race and emergency-off | New Host/start/capture blocked at cutoff; accepted session lifecycle safe; signed incident evidence |
 
+### 8.9 Pair Matching Prototype (`PMT-001–044`)
+
+| ID | Preconditions | Action | Expected result |
+|---|---|---|---|
+| TC-PMT-001 | Registry/route baseline | Inspect Pair registration/navigation | Uses f10/matching/`learning/matching`; no f45/main destination/star table |
+| TC-PMT-002 | Fixed Today snapshot with review work | Launch Pair from Today | Exact snapshot items/reasons used; Today loader/query count unchanged |
+| TC-PMT-003 | Selected Review items | Launch Pair from Review | Exact IDs/revisions/reasons preserved before board shuffle |
+| TC-PMT-004 | Learn with due/incorrect/weakness/new overlap | Compose | One candidate per lexical identity; all reasons merged and priority deterministic |
+| TC-PMT-005 | Same candidates in different DB order | Compose twice | Same selected set/order/fingerprint |
+| TC-PMT-006 | Explicit compact4/standard6 preference | Resolve/start | Exact 4/6 safe pairs; active plan pinned despite preference change |
+| TC-PMT-007 | Requested 6; exactly 4 safe | Resolve | Typed 4-pair confirmation; no session until explicit accept |
+| TC-PMT-008 | Fewer than 4 safe pairs | Resolve/start | Typed unavailable; zero session/evidence/filler |
+| TC-PMT-009 | Curated EN–TH and unverified/missing locale rows | Compose | Only allowlisted locale-valid content eligible |
+| TC-PMT-010 | Same safe set | Start EN→TH then TH→EN | Prompt/target locales/order correct; one direction per session |
+| TC-PMT-011 | TH→EN mismatch, target tapped first | Submit | Incorrect evidence attaches once to canonical Thai prompt item, not distractor |
+| TC-PMT-012 | Homograph, duplicate Thai meaning, Unicode/combining variants | Compose | Multiple-correct/display collision rejected before plan |
+| TC-PMT-013 | No current selection | Select/deselect/reselect same side | No AnswerAttempt; final selected state deterministic |
+| TC-PMT-014 | Same tile/submit/action tapped repeatedly | Exercise duplicate/lost-ack paths | One logical state transition/evidence per operation ID |
+| TC-PMT-015 | Correct cross-side pair | Submit | Matched progress +1 exactly once; correct recognition committed |
+| TC-PMT-016 | Incorrect cross-side pair | Submit | Matched progress unchanged; one incorrect recognition; supportive state |
+| TC-PMT-017 | compact4, wrong with sufficient remaining pairs | Resolve other pairs | Target reappears after exactly 2 distinct correct other pairs |
+| TC-PMT-018 | standard6, wrong with sufficient remaining pairs | Resolve other pairs | Target reappears after exactly 3 distinct correct other pairs |
+| TC-PMT-019 | Multiple repair tickets due same ordinal | Advance | Stable order by due/original ordinal/word ID; none lost/duplicated |
+| TC-PMT-020 | Wrong near tail with insufficient spacing | Continue | Guided completion; Review deferral; no padding/bridge/loop |
+| TC-PMT-021 | Repair answer wrong again | Continue | At most one scheduled repair; guided completion; one unresolved Review need |
+| TC-PMT-022 | Pronunciation/TalkBack reads visible prompt | Complete correctly | Remains recognition; stars/evidence not downgraded |
+| TC-PMT-023 | Answer-revealing hint/corrective mapping used | Complete | GuidedPractice recorded; independent count excludes supported pair |
+| TC-PMT-024 | Audio missing/offline/private remote disallowed | Request audio and continue | Text/IPA alternative; board works; no raw text remote/diagnostic leak |
+| TC-PMT-025 | Fresh/previously timed user | Open setup | Timer OFF; only OFF/60/90/120; duration may be remembered but timer not auto-enabled |
+| TC-PMT-026 | Timed board | Background/modal/persistence wait/accessibility narration | Active remaining time pauses and resumes without drift |
+| TC-PMT-027 | Timer reaches zero with unmatched items | Expire | Durable timeoutDecision; no incorrect/completion/evidence created |
+| TC-PMT-028 | timeoutDecision | Continue untimed and finish | Same session/evidence; timer off; normal reward/mastery eligibility |
+| TC-PMT-029 | timeoutDecision | Double-tap +30; kill/reopen | Exactly one extension of 30 active seconds; entitlement remains used |
+| TC-PMT-030 | timeoutDecision after some attempts | Restart | Same Learning Session, new round/seed, same set/revisions/direction; old evidence/extension retained |
+| TC-PMT-031 | Answer and timeout/+30/restart race at boundary | Interleave operations | Serialized deterministic outcome; no lost/duplicate answer/round/extension |
+| TC-PMT-032 | 4/6 all first-attempt correct, no semantic hint | Close | 3 stars with version 1; no star/economy write |
+| TC-PMT-033 | compact4 independent count 3 | Close | 2 stars; self-correction before reveal counts independent but not first-attempt |
+| TC-PMT-034 | standard6 independent count 5 | Close | 2 stars; 4/6 remains 1 star under 75% v1 rule |
+| TC-PMT-035 | Complete below 75% or guided tail | Close | 1 star; Review needs visible; no mastery claim |
+| TC-PMT-036 | Abandoned/partial timeout/recovery corruption | Project result | No stars; generic score 100 cannot imply completion |
+| TC-PMT-037 | Same attempts via untimed/timed/extended/continued and both layouts | Project | Same stars/evidence/reward/mastery; timely status only differs |
+| TC-PMT-038 | Completed normal session | Practice Replay repeatedly/offline/retry | New sessions/history; SRS/Mastery/Weakness/accuracy/XP/reward/quest/streak/achievement/Today/research-primary deltas zero |
+| TC-PMT-039 | Normal + replay histories | Render History/Mission | Latest/best normal result clear; replay grouped/labeled and does not overwrite mission best |
+| TC-PMT-040 | Checkpoints v1–v5 and next version fixtures | Read/resume/rollback | Legacy resumes legacy behavior; new reader accepts both; no backward inference/overwrite |
+| TC-PMT-041 | Worst allowed wrong/repair/timer/restart sequence | Persist/recover | Revision count/payload below ceilings with terminal reserve; no per-tick write |
+| TC-PMT-042 | Same owner/plan/policy in Standard/Adventure | Run normalized parity fixture | Plan/commands/attempt roles/evidence/outcome equivalent after removing IDs/timestamps |
+| TC-PMT-043 | Regular/focused, TalkBack, Switch, keyboard, text 200%, reduced motion, no audio | Complete all states | Full action parity, no trap/clipping, stable focus/status announcements |
+| TC-PMT-044 | Pair/Adventure gate changes before/after accepted start | Start/resume/finish | New start blocked appropriately; Adventure off falls to Standard; accepted session safe; Quiz unrelated modes remain available |
+
 ## 9. Automation Mapping
 
 | Case family | Target location |
@@ -407,6 +459,7 @@ In every case, “no write” means no new/changed row in learning, SRS, progres
 | RSH | research domain/repository/rules/emulator tests |
 | UX | widget/semantics/golden tests and manual certification |
 | OPS | performance profile, platform/scenario/runbook evidence |
+| PMT | `test/features/learning/pair_matching/`, Pair widget/golden tests, cross-projection and Standard/Adventure parity scenarios |
 
 ## 10. Defect Management
 

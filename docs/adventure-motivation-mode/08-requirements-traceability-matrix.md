@@ -1,14 +1,14 @@
 # Requirements Traceability Matrix — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-RTM-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for BA/QA/Tech Review
-**Date:** 2026-09-01
-**Requirements source:** `02-srs.md` v1.1
-**Design source:** `03-sds.md` v1.1
-**Delivery source:** `04-project-plan-wbs.md` v1.1
-**Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.1
-**Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.1
+**Date:** 2026-09-04
+**Requirements source:** `02-srs.md` v1.2
+**Design source:** `03-sds.md` v1.2
+**Delivery source:** `04-project-plan-wbs.md` v1.2
+**Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.2
+**Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.2
 
 ## 1. วิธีใช้ Matrix
 
@@ -272,18 +272,107 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | AMM-BR-022 | MS-08A ceiling is Limited | M11 / ADR-008 | 5.13/5.17 | OPS-016 | 038 | P/GOV |
 | AMM-BR-023 | MS-08B powered decision separate per class | M11 / MDS | 6.4–6.9 | RSH-027, OPS-017 | 038 | P/GOV |
 
-## 11. Coverage Summary
+## 11. Pair Matching Prototype Requirements
+
+### 11.1 Functional requirements
+
+| Requirement | Short intent | SDS/Module | WBS | Verification | UAT | Status |
+|---|---|---|---|---|---|---|
+| AMM-FR-105 | reuse f10/matching route/shell/gateway; no f45 | ADR-009 / M12 / §15 | PM0, PM8 | PMT-001/044 | 039,050 | P |
+| AMM-FR-106 | contextual Learn/Today/Review/Adventure entry; no main menu | M12 / §15.1 | PM1, PM6 | PMT-001–004/043 | 039,049 | P |
+| AMM-FR-107 | immutable pinned PairMatchingPlanV1 | ADR-010 / M12 / §15.2 | PM1, PM2 | PMT-002–012/040 | 039–041,050 | P |
+| AMM-FR-108 | entry-owned canonical source; Adventure does not recompose | ADR-010 / M12 / §15.3 | PM1, PM7 | PMT-002–004/042 | 039,050 | P |
+| AMM-FR-109 | merge provenance before rank/deduplicate | M12 / §15.3 | PM1 | PMT-004/005 | 039 | P |
+| AMM-FR-110 | reject unsafe/colliding content; exact 4/6 | ADR-010 / M12 / §15.3 | PM1 | PMT-007–009/012 | 039–041 | P |
+| AMM-FR-111 | one EN→TH or TH→EN direction per session | M12 / §15.2 | PM1, PM2 | PMT-010/011 | 041 | P |
+| AMM-FR-112 | explicit compact4/standard6 product preference | M12 / §15.2 | PM1, PM6 | PMT-006–008 | 040 | P |
+| AMM-FR-113 | selection reducer creates no answer evidence before submit | M12 / §15.4 | PM2 | PMT-013/014 | 041,042 | P |
+| AMM-FR-114 | mismatch evidence attaches once to prompt word only | M12 / §15.4 | PM2, PM3 | PMT-011/016 | 042 | P |
+| AMM-FR-115 | matched progress monotonic on success only | ADR-011 / M12 / §15.4 | PM2, PM3 | PMT-015/016 | 042 | P |
+| AMM-FR-116 | supportive wrong state plus repair ticket; no penalty | ADR-011 / M12 / §15.4 | PM3, PM6 | PMT-016–021 | 042 | P |
+| AMM-FR-117 | delayed repair after 2/3 distinct correct pairs | ADR-011 / M12 / §15.4 | PM3 | PMT-017–019 | 042 | P |
+| AMM-FR-118 | tail guided completion and canonical Review deferral | ADR-011 / M12 / §15.4 | PM3 | PMT-020/021 | 042 | P |
+| AMM-FR-119 | visible pronunciation neutral; revealing support guided | ADR-011 / M12 / §15.5 | PM3, PM6 | PMT-022–024 | 043 | P |
+| AMM-FR-120 | timer default off; explicit 60/90/120 | ADR-012 / M12 / §15.6 | PM4 | PMT-025 | 044 | P |
+| AMM-FR-121 | active-interaction timer with bounded pause reasons | ADR-012 / M12 / §15.6 | PM4 | PMT-026 | 044 | P |
+| AMM-FR-122 | durable timeoutDecision; no false answer/completion | ADR-012 / M12 / §15.6 | PM4 | PMT-027/028 | 045 | P |
+| AMM-FR-123 | +30 seconds once, idempotent and durable | ADR-012 / M12 / §15.6 | PM4 | PMT-029/031 | 046 | P |
+| AMM-FR-124 | timeout restart is same session/new round/exact set | ADR-012 / M12 / §15.6 | PM4 | PMT-030/031 | 045,046 | P |
+| AMM-FR-125 | stars derived from committed terminal ledger | ADR-012 / M12 / §15.7 | PM5 | PMT-032–037 | 047 | P |
+| AMM-FR-126 | versioned 3/2/1 star thresholds | ADR-012 / M12 / §15.7 | PM5 | PMT-032–036 | 047 | P |
+| AMM-FR-127 | time/timely status presentation-only | ADR-012 / M12 / §15.6–15.7 | PM4, PM5 | PMT-028/037 | 044,045,047 | P |
+| AMM-FR-128 | Practice Replay is new linked practice session | ADR-012 / M12 / §15.7 | PM5 | PMT-038–040 | 048 | P |
+| AMM-FR-129 | Practice Replay has zero authority/reward/research-primary delta | ADR-012 / M12 / §15.7 | PM5, PM7 | PMT-038/039/042 | 048,050 | P |
+| AMM-FR-130 | Standard/Adventure share normalized contracts | ADR-009/013 / M12 / §15.8 | PM7, PM8 | PMT-042–044 | 039,047,050 | P |
+
+### 11.2 Data requirements
+
+| Requirement | Short intent | SDS/Module | WBS | Verification | UAT | Status |
+|---|---|---|---|---|---|---|
+| AMM-DATA-016 | plan/checkpoint pins exact lexical and policy inputs | M12 / §15.2 | PM1, PM2 | PMT-002–012/040 | 039–041,050 | P |
+| AMM-DATA-017 | checkpoint carries selection/progress/repair/timer/extension state | M12 / §15.2/15.4/15.6 | PM2–PM4 | PMT-013–031/040/041 | 042,044–046 | P |
+| AMM-DATA-018 | learning/replay purpose and round lineage are distinct | M12 / §15.2/15.7 | PM4, PM5 | PMT-030/038–040 | 045,046,048 | P |
+| AMM-DATA-019 | owner-scoped density preference separate from research | M12 / §15.2 | PM1 | PMT-006–008/040 | 040 | P |
+| AMM-DATA-020 | star read model is rebuildable; never a balance | M12 / §15.5/15.7 | PM5 | PMT-032–039 | 047,048 | P |
+| AMM-DATA-021 | bounded pair telemetry and lifecycle | M12 / §15.5 | PM5, PM7 | PMT-024/038/042 | 043,048,050 | P |
+
+### 11.3 UI/UX requirements
+
+| Requirement | Short intent | SDS/Module | WBS | Verification | UAT | Status |
+|---|---|---|---|---|---|---|
+| AMM-UI-018 | contextual source/count/timer setup; one CTA | UI §17.1–17.2 / M12 | PM1, PM6 | PMT-001–008/025 | 039,040,044 | P |
+| AMM-UI-019 | balanced constrained two-column regular layout | UI §17.3 / M12 | PM6 | PMT-010/043 | 041,049 | P |
+| AMM-UI-020 | focused equivalent layout at narrow/200%/assistive | UI §17.3/17.9 / M12 | PM6 | PMT-037/043 | 049 | P |
+| AMM-UI-021 | 56/64px tiles, 48px actions, multimodal state | UI §17.4/17.9 / M12 | PM6 | PMT-043 | 042,049 | P |
+| AMM-UI-022 | supportive wrong/repair explanation | UI §17.5 / M12 | PM3, PM6 | PMT-016–021/043 | 042 | P |
+| AMM-UI-023 | neutral timeout sheet and action hierarchy | UI §17.6 / M12 | PM4, PM6 | PMT-027–031/043 | 045,046,049 | P |
+| AMM-UI-024 | result separates evidence, stars and elapsed time | UI §17.7 / M12 | PM5, PM6 | PMT-032–039/043 | 047–049 | P |
+| AMM-UI-025 | history separates normal and Practice Replay | UI §17.7 / M12 | PM5, PM6 | PMT-038/039/043 | 048,049 | P |
+| AMM-UI-026 | Thai-first/localized/TTS-safe copy; brand protected | UI §17.9 / M12 | PM6 | PMT-009/024/043 | 041,043,049 | P |
+| AMM-UI-027 | Adventure changes theme only; hierarchy parity | UI §17.10 / M12 | PM7 | PMT-037/042–044 | 039,047,050 | P |
+
+### 11.4 Non-functional requirements
+
+| Requirement | Short intent | SDS/Module | WBS | Verification | UAT | Status |
+|---|---|---|---|---|---|---|
+| AMM-NFR-038 | deterministic plan/shuffle/repair/restart/stars | M12 / §15.2–15.7 | PM1–PM5 | PMT-005/017–021/030–037 | 040,042,046,047 | P |
+| AMM-NFR-039 | start session/checkpoint atomically after revalidation | M12 / §15.3 | PM1, PM2 | PMT-008/009/031/040 | 039–041,046 | P |
+| AMM-NFR-040 | reader-first checkpoint evolution and no retroactive inference | ADR-013 / M12 / §15.9 | PM0, PM8 | PMT-040/044 | 050 | P |
+| AMM-NFR-041 | coalesced bounded persistence with terminal reserve | M12 / §15.5/15.6 | PM2–PM5 | PMT-026/031/041 | 044–047 | P |
+| AMM-NFR-042 | responsive local board; audio/network nonblocking | UI §17.3 / M12 | PM6 | PMT-024/026/043 | 043,044,049 | P |
+| AMM-NFR-043 | accessibility across all pair states/layouts | UI §17.9 / M12 | PM6 | PMT-022/024/043 | 043–049 | P |
+| AMM-NFR-044 | owner/callback/TTS privacy fences | M12 / §15.3/15.5 | PM1–PM3, PM7 | PMT-008/014/024/040 | 039,043,050 | P |
+| AMM-NFR-045 | normalized cross-renderer parity | ADR-013 / M12 / §15.8 | PM7 | PMT-037/042 | 039,047,050 | P |
+| AMM-NFR-046 | hidden delivery control and safe accepted-session lifecycle | ADR-009/013 / M12 / §15.9 | PM7, PM8 | PMT-001/044 | 039,050 | P |
+
+### 11.5 Business rules
+
+| Requirement | Short intent | SDS/Module | WBS | Verification | UAT | Status |
+|---|---|---|---|---|---|---|
+| AMM-BR-024 | Pair prototype is f10 semantic revision, not f45 | ADR-009 / M12 | PM0, PM8 | PMT-001/044 | 039,050 | P |
+| AMM-BR-025 | entry source owns plan; provenance merges before rank | ADR-010 / M12 | PM1 | PMT-002–005 | 039 | P |
+| AMM-BR-026 | exact 4/6; explicit downgrade; <4 unavailable | ADR-010 / M12 | PM1 | PMT-006–008 | 039,040 | P |
+| AMM-BR-027 | explicit density/guardian precedence; no inference | M12 / §15.2 | PM1 | PMT-006–008 | 040 | P |
+| AMM-BR-028 | wrong records truth without progress/reward penalty | ADR-011 / M12 | PM2, PM3 | PMT-015/016 | 042 | P |
+| AMM-BR-029 | repair counts distinct successes; tail to Review | ADR-011 / M12 | PM3 | PMT-017–021 | 042 | P |
+| AMM-BR-030 | visible speech neutral; revealing mapping is support | ADR-011 / M12 | PM3 | PMT-022–024 | 043 | P |
+| AMM-BR-031 | timer neutral; Continue untimed always available | ADR-012 / M12 | PM4 | PMT-025–031/037 | 044–047 | P |
+| AMM-BR-032 | stars are descriptive projection only | ADR-012 / M12 | PM5 | PMT-032–039 | 047,048 | P |
+| AMM-BR-033 | timeout restart/replay/technical retry stay distinct | ADR-012 / M12 | PM4, PM5 | PMT-029–031/038–041 | 046,048 | P |
+| AMM-BR-034 | presentation-only renderer difference and layered flags | ADR-013 / M12 | PM7, PM8 | PMT-042–044 | 039,050 | P |
+
+## 12. Coverage Summary
 
 | Requirement family | Count | Design mapped | WBS mapped | Verification mapped | Current verified |
 |---|---:|---:|---:|---:|---:|
-| Functional | 104 | 104 | 104 | 104 | 0 — implementation not started |
-| Data | 15 | 15 | 15 | 15 | 0 — planned migrations not created |
-| UI/UX | 17 | 17 | 17 | 17 | 0 — wireframe/spec only |
-| Non-functional | 37 | 37 | 37 | 37 | 0 Adventure; baseline evidence recorded separately |
-| Business rules | 23 | 23 | 23 | 23 | 0 Adventure; authority behavior characterized in Audit |
-| **Total** | **196** | **196** | **196** | **196** | **0 Adventure verified** |
+| Functional | 130 | 130 | 130 | 130 | 0 — implementation not started |
+| Data | 21 | 21 | 21 | 21 | 0 — planned contract/checkpoint changes not created |
+| UI/UX | 27 | 27 | 27 | 27 | 0 — wireframe/spec only |
+| Non-functional | 46 | 46 | 46 | 46 | 0 Adventure/Pair; baseline evidence recorded separately |
+| Business rules | 34 | 34 | 34 | 34 | 0 Adventure/Pair; authority behavior characterized in Audit |
+| **Total** | **258** | **258** | **258** | **258** | **0 Adventure/Pair verified** |
 
-## 12. Gate Traceability
+## 13. Gate Traceability
 
 | Gate | Requirements chiefly protected | Required evidence |
 |---|---|---|
@@ -297,8 +386,12 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | MS-07 Internal accepted | UI-001–017, NFR-008–035 | product + research-flow accessibility/offline/performance/UAT |
 | MS-08A Feasibility | FR-088/094/095/097–103, NFR-020–025/032–035, BR-021/022 | protocol, permit, data quality, comprehension, safety; Limited ceiling |
 | MS-08B Efficacy per class | FR-104, NFR-036/037, BR-023 | powered ANCOVA/MI/tipping, learning/safety/missingness, UAT-038 |
+| G4P Pair Prototype contract | FR-105–130, DATA-016–021, UI-018–027, NFR-038–046, BR-024–034 | PMT-001–044 + UAT-039–050 + no-new-menu/f45/star-ledger proof |
+| PM-A Contract/engine proof | FR-105–119, DATA-016–019, BR-024–030 | exact-plan/reducer/repair/property tests; no production rollout |
+| PM-B Interaction prototype | FR-120–127, UI-018–027, NFR-041–045 | timer/stars/accessibility/parity prototype evidence |
+| PM-C Replay/integration readiness | FR-128–130, DATA-018/020/021, NFR-040/046 | replay zero-delta, reader-first compatibility and rollback evidence |
 
-## 12.1 Decision and Measurement Traceability
+## 13.1 Decision and Measurement Traceability
 
 | Decision/measurement | Requirements protected | WBS | Test/UAT evidence |
 |---|---|---|---|
@@ -310,12 +403,18 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | ADR-006 Single-load Today snapshot | FR-101/102, NFR-034 | 1.14 | ENT-014, UAT-035/036 |
 | ADR-007 Runtime minor participation | FR-088/103, DATA-014, UI-015/016, BR-021 | 4.15/4.17/5.14 | DAT-017–019, RSH-017–020, UX-016/017, UAT-033/034 |
 | ADR-008 Feasibility/Efficacy split | FR-094/104, NFR-036/037, BR-022/023 | 5.13/5.17/6.4–6.9 | RSH-027, OPS-016/017, UAT-038 |
+| ADR-009 Reuse f10/M12 boundary | FR-105/106/130, NFR-046, BR-024/034 | PM0/PM7/PM8 | PMT-001/042–044, UAT-039/050 |
+| ADR-010 Immutable entry-aware exact plan | FR-107–112, DATA-016/019, NFR-038/039, BR-025–027 | PM1 | PMT-002–012, UAT-039–041 |
+| ADR-011 Progress/evidence/repair semantics | FR-113–119, DATA-017, BR-028–030 | PM2/PM3 | PMT-013–024, UAT-042/043 |
+| ADR-012 Timer/stars/restart/replay semantics | FR-120–129, DATA-018/020, BR-031–033 | PM4/PM5 | PMT-025–041, UAT-044–048 |
+| ADR-013 Adaptive renderer and rollback | FR-130, UI-019/020/027, NFR-040/043/045/046, BR-034 | PM6–PM8 | PMT-040/042–044, UAT-049/050 |
 | MDS primary motivation/guardrails | FR-078–088/104, NFR-020–025/036/037 | 4.1/4.13/4.18/6.4–6.7 | RSH-001–027, UAT-025–038 |
+| MDS Pair process/learning guardrails | FR-113–129, DATA-020/021, NFR-045, BR-028–033 | PM3–PM7 | PMT-013–043, UAT-042–049; replay excluded from primary denominator |
 | MDS UAT sample | UI-001–017, NFR-015–019/025/035 | 5.4/5.8/5.12/5.14/5.15 | UX-001–020, UAT denominators/sign-off |
 
-## 13. RTM Change Control Checklist
+## 14. RTM Change Control Checklist
 
-- [ ] SRS requirement count/IDs ยังเป็น FR 104, DATA 15, UI 17, NFR 37, BR 23 รวม 196
+- [ ] SRS requirement count/IDs ยังเป็น FR 130, DATA 21, UI 27, NFR 46, BR 34 รวม 258
 - [ ] ไม่มี requirement ถูกลบหรือเปลี่ยนความหมายโดยไม่มี approved change request
 - [ ] SDS interface/module รองรับทุก requirement ที่เปลี่ยน
 - [ ] WBS dependency/effort/owner ถูกปรับตามผลกระทบ
@@ -324,11 +423,13 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 - [ ] Requirement ที่กระทบผู้เยาว์/วิจัยมี Privacy/Research review
 - [ ] Actual evidence อ้าง commit/build/environment เดียวกัน
 - [ ] Feature-off/Standard fallback coverage ยังครบ
-- [ ] Automated test inventory 144 และ UAT inventory 38; ทุก RTM reference resolve ได้
+- [ ] Automated test inventory 188 และ UAT inventory 50; ทุก RTM reference resolve ได้
 - [ ] MS-08A ไม่ชี้ Enabled และ MS-08B แยก adult/minor
+- [ ] Pair Matching ยัง map กลับ `f10`; ไม่มี `f45`, main menu, star currency/ledger หรือ replay side effect
+- [ ] PMT-001–044 และ UAT-039–050 resolve ได้; reader-first/Standard fallback/Adventure parity ครบ
 - [ ] Product Owner, QA Lead และ Tech Lead อนุมัติ matrix revision
 
-## 14. Approval
+## 15. Approval
 
 | Role | Decision | Name | Date | Notes |
 |---|---|---|---|---|

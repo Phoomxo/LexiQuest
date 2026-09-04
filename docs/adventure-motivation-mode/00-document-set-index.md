@@ -1,10 +1,10 @@
 # Adventure Motivation Mode — Document Set Index
 
-**Document set version:** 1.1
+**Document set version:** 1.2
 **Status:** Draft for Owner Review
-**Date:** 2026-09-01
+**Date:** 2026-09-04
 **Product:** LexiQuest
-**Baseline:** commit `99f7fb21`, database schema v22
+**Baseline:** Adventure planning commit `99f7fb21`; 8/44 Matching source-closure commit `f56e2eb`; database schema v22
 **Planning branch:** `feature/adventure-motivation-plan`
 **Scope:** planning and acceptance artifacts only; no production implementation is authorized by this document set
 
@@ -26,6 +26,7 @@
 | 05 | [UI/UX Design Spec & Wireframes](05-ui-ux-design-spec-wireframes.md) | Information architecture, screen states, copy, accessibility และ wireframes | Product/UX Owner |
 | 05A | [Wireframe Overview](05a-wireframe-overview.svg) | ภาพรวมหน้าจอหลักแบบ low fidelity | Product/UX Owner |
 | 05B | [Research Participation Wireframes](05b-research-participation-wireframes.svg) | Guardian permission, learner assent, prompt, invalid permit และ withdrawal continuation | Product/UX/Privacy Owner |
+| 05C | [Pair Matching Prototype Wireframes](05c-pair-matching-prototype-wireframes.svg) | Setup, board, repair, timeout, result, adaptive accessibility และ Practice Replay | Product/UX/Accessibility Owner |
 | 06 | [Test Plan & Test Cases](06-test-plan-and-test-cases.md) | กลยุทธ์ทดสอบ ชุดข้อมูล test case และ exit criteria | QA Lead + CTO |
 | 07 | [UAT Script](07-uat-script.md) | ขั้นตอนตรวจรับโดยผู้ใช้ หลักฐาน และ sign-off | Product Owner/UAT Lead |
 | 08 | [Requirements Traceability Matrix](08-requirements-traceability-matrix.md) | เชื่อม requirement → design → WBS → test → UAT | BA/QA Lead |
@@ -69,6 +70,10 @@
 | Limited | สถานะสูงสุดหลัง MS-08A Feasibility; ยังห้าม claim efficacy/ขยายทั่วไป |
 | Controlled Expansion | เปิดเฉพาะ participant class ที่ผ่าน MS-08B |
 | Enabled | เปิดใช้งานหลัง class-specific efficacy และ controlled rollout ผ่าน |
+| Pair Matching Experience | Major semantic revision ของ `f10 Matching Mode`; ไม่ใช่ `f45` และไม่ใช่ authority ใหม่ |
+| Pair Matching Plan | Immutable learning plan ที่ pin exact lexical identity/revision/checksum, direction, pair count, source reasons, timing และ policy versions |
+| Practice Replay | Learning Session ใหม่เพื่อฝึกซ้ำ; บันทึกประวัติได้แต่ไม่เปลี่ยน SRS/Mastery/Weakness ranking/reward/quest/streak/research primary outcome |
+| Timeout Restart | Round ใหม่ภายใน Learning Session เดิม; คำและ revision เดิม, deterministic reshuffle, evidence และ extension entitlement เดิมไม่ถูกลบ |
 
 ## 5. Invariants Across All Documents
 
@@ -92,6 +97,11 @@
 18. Today Experience Host load snapshot ครั้งเดียวและส่ง object เดียวให้ pure `TodayHubView(snapshot)`/`AdventureHubScreen(snapshot)`
 19. Minor treatment/research ต้องมี guardian-led signed permit ที่อ้าง guardian permission + learner assent; ไม่เก็บ full DOB/guardian PII
 20. MS-08A ให้ได้สูงสุด Limited; MS-08B ตัดสิน adult/minor แยกกัน
+21. Pair Matching เป็น major revision ของ `f10`; ห้ามสร้าง `f45`, route หลัก, learning authority, star currency หรือ pair-specific reward authority
+22. Pair Matching ใช้ exact 4/6 คู่ตาม product preference; timer default OFF และตัวเลือก 60/90/120 ไม่มีผลต่อดาว, evidence eligibility, reward หรือ mastery
+23. Standard/Adventure Pair ใช้ plan, engine, repair, timer, evidence และ outcome policy เดียวกัน; presentation metadata ห้ามเข้า learning fingerprint
+24. Wrong answer ไม่ลดและไม่เพิ่ม matched progress; normal repair เว้น distinct correct pairs 2/3 และ tail ใช้ guided completion พร้อม canonical Review deferral โดยไม่ padding
+25. Practice Replay และ Timeout Restart เป็นคนละ contract; technical evidence retry ต้อง reuse identity เดิมและไม่ถือเป็นทั้งสองอย่าง
 
 ## 6. Review and Approval Workflow
 
@@ -109,12 +119,12 @@
 
 | Artifact | Controlled count | หมายเหตุ |
 |---|---:|---|
-| SRS requirements | 196 | FR 104 + DATA 15 + UI 17 + NFR 37 + BR 23 |
-| Planned detailed test cases | 144 | ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20, OPS 18 |
-| UAT scripts | 38 | product, accessibility, lifecycle, participation, research และ release gates |
-| Adventure modules | 11 | M01–M11; M07 เป็น read-only projection reader |
+| SRS requirements | 258 | FR 130 + DATA 21 + UI 27 + NFR 46 + BR 34 |
+| Planned detailed test cases | 188 | เดิม 144 + Pair Matching Prototype `PMT-001–044` |
+| UAT scripts | 50 | เดิม 38 + Pair Matching Prototype `UAT-039–050` |
+| Logical planning modules | 12 | M01–M11 เดิม + M12 Pair Matching Prototype Integration; M12 ยังคงเป็น `f10` |
 | Current Drift tables | 44 | schema v22 baseline; Phase 1 ต้องไม่เพิ่มตาราง |
-| Architecture decisions | 8 | Entry, permit, neutral events, increments, Pilot scope, snapshot, minors, MS-08A/B |
+| Architecture decisions | 13 | ADR-001–008 เดิม + ADR-009–013 สำหรับ Pair Matching Prototype |
 | Measurement axes | 5 + reliability/safety | Motivation primary; Engagement/Effort/Learning แยกกัน |
 
 ตัวเลขนี้เป็น coverage inventory ไม่ใช่ผลผ่านการทดสอบ

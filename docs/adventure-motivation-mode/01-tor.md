@@ -1,12 +1,12 @@
 # Terms of Reference (TOR) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-TOR-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for Owner Review
-**Date:** 2026-09-01
+**Date:** 2026-09-04
 **Project baseline:** LexiQuest 8/44 at commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0` — 3,202 Flutter tests pass / 15 fail; Pilot and production remain blocked
-**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
+**Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 **Document type:** Internal product-engineering TOR; procurement price and commercial payment terms are outside scope
 
 ## 1. Background
@@ -76,6 +76,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | TOR-S15 | Guardian permission, learner assent, invalid/expired/revoked permit UX และ adult/minor class-specific rollout |
 | TOR-S13 | Accessibility, localization, offline asset verify/repair/remove และ reduced motion |
 | TOR-S14 | Diagnostics, test automation, UAT, rollout gates และ emergency-off rehearsal |
+| TOR-S16 | Pair Matching Prototype เป็น major revision ของ `f10`: exact 4/6 EN↔TH, entry-aware Today/Review/Learn composition, delayed repair, optional timer, derived stars, Practice Replay isolation และ Standard/Adventure renderer parity โดยไม่เพิ่ม main menu |
 
 ### 4.2 Out of scope
 
@@ -138,6 +139,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | M09 | Result, Recovery & Review Continuity | Result axes, repair, resume and fallback |
 | M10 | Research & Experiment Measurement | Signed permit, adult/minor strata, opportunity denominator, neutral events, instruments and withdrawal |
 | M11 | Operations, Quality & Reliability | Validation, diagnostics, lifecycle and rollout gates |
+| M12 | Pair Matching Prototype Integration (`f10`) | Pair plan/composer/engine/coordinator, adaptive UI, repair/timer/stars/replay และ parity; ไม่ใช่ `f45` |
 
 ## 7. Deliverables and Acceptance
 
@@ -158,6 +160,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 | D13 | Test report | Required suites run in approved Flutter environment; no unresolved blocker/critical defect |
 | D14 | UAT report | Required UAT scenarios pass with denominator/numerator and minimum sample from MDS; deviations dispositioned; sign-off recorded |
 | D15 | Rollout package | Android matrix, explicit exclusions, MS-08A Limited decision, MS-08B adult/minor decisions, monitoring, emergency-off rehearsal and rollback record |
+| D16 | Pair Matching Prototype Standard | ADR/SRS/SDS/WBS/UI/Wireframe/Test/UAT/RTM v1.2 สอดคล้อง; PMT-001–044 และ UAT-039–050 มีปลายทาง; prototype ผ่าน exact 4/6, timer, repair, stars, replay isolation และ accessibility review |
 
 ## 8. Technical Constraints
 
@@ -176,6 +179,10 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 13. Side effects ใช้ deterministic idempotency key และ replay-safe receipt
 14. Assets ต้องมี stable ID, version, SHA-256 checksum, locale และ QA state
 15. Remote content เป็น data only; ห้าม executable behavior
+16. Pair Matching ใช้ `f10`/Unified Lesson Shell/Evidence Gateway เดิม; UI ห้ามเขียน SRS, Weakness, reward, quest, streak หรือ stars โดยตรง
+17. Pair plan ต้อง pin exact lexical revision/checksum และเริ่มพร้อม initial checkpoint แบบ atomic; presentation metadata ไม่อยู่ใน learning fingerprint
+18. Pair timer มีค่าเฉพาะ OFF/60/90/120 และนับ active interactive time; ห้าม checkpoint ทุกวินาที
+19. Practice Replay ต้องมี durable session purpose และ projection policy กลาง; route/copy/session-ID prefix ไม่ใช่ authority
 
 ## 9. User Experience Constraints
 
@@ -184,8 +191,10 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 - Primary CTA ต่อหน้าจอไม่เกินหนึ่ง action ที่เด่นที่สุด
 - Assessment ต้องไม่ถูกแต่งเป็น reward mission
 - ตอบผิดต้องได้ feedback ที่บอกความแตกต่างและทางช่วย
-- Repair ใน session เกิดหลัง 3–5 intervening items; ถ้าเหลือไม่พอให้ส่งไป Review/SRS
+- Adventure lesson ทั่วไปคง bounded repair เดิม; สำหรับ Pair Matching ใช้ policy เฉพาะ: compact4 เว้น distinct correct pairs 2 คู่, standard6 เว้น 3 คู่ และ tail ใช้ guided completion พร้อมส่ง independent retry ไป Review โดยไม่ padding
 - ไม่มี progress loss เมื่อ pause, timeout, app crash หรือ technical failure
+- Pair timer ต้องปิดเป็นค่าเริ่มต้น; timeout copy คือ “ยังไม่ทันเป้าหมาย แต่ทำต่อได้” และมี Continue untimed / +30 once / Restart same set shuffled
+- Pair stars เป็นคำอธิบายผลหลังจบ ไม่ใช่ mastery, reward, currency, unlock หรือ leaderboard
 - Questionnaire ต้อง Skip ได้และอยู่ที่ natural breakpoint
 - Map state ต้องใช้ shape/icon/text ไม่พึ่งสีอย่างเดียว
 - Touch target ขั้นต่ำ 48×48 logical pixels
@@ -243,6 +252,16 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 
 - screen reader, map-list parity, 200% text, reduced motion, offline, corrupt bundle, restart และ emergency-off ผ่าน
 
+### G4P — Pair Matching Prototype acceptance
+
+- `f10` inventory/route/activity type คงเดิม; no `f45`/main destination/star ledger
+- exact 4/6 pair plan, EN→TH/TH→EN, merged provenance และ visible-collision validation ผ่าน
+- wrong ไม่เพิ่ม/ลด matched progress; delayed repair/tail guided completion ไม่มี loop/padding
+- timer OFF/60/90/120, active pause, timeout 3 ทาง, +30 once และ same-session restart recover ผ่าน
+- stars `3/4` และ `5/6`, History best/latest และ Practice Replay no-op projection ผ่าน
+- two-column/focused layout ผ่าน TalkBack, Switch Access, text 200%, Thai wrapping และ focus restoration
+- Standard/Adventure normalized plan/command/evidence/outcome parity ผ่าน
+
 ### G5 — MS-08A Feasibility readiness
 
 - stable assignment/permit/opportunity metadata 100%
@@ -262,7 +281,7 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 
 ## 12. Project Approach
 
-ทำงาน 7 ระยะภายใต้ 4 independently closable increments ตาม ADR-004:
+ทำงาน 7 ระยะของ Adventure และ 9 Pair Matching work packages ภายใต้ 5 independently closable increments ตาม ADR-004/009–013:
 
 1. Phase 0 Baseline and contracts
 2. Phase 1 Read-only shell
@@ -272,11 +291,13 @@ LexiQuest มีระบบเรียนหลักที่รวม Today 
 6. Phase 5 Internal and MS-08A Feasibility
 7. Phase 6 MS-08B Efficacy, class-specific controlled enablement and closeout
 
+Pair Matching PM0–PM8 ดำเนินแบบ Standard-first: contract + characterization → plan/composer → pure reducer/evidence → repair/support/Review → timer/recovery → stars/replay/history → adaptive Standard UI → Today/Review/Adventure integration → compatibility/UAT/rollback. Adventure renderer เริ่มได้หลัง hidden Standard Pair ผ่าน PM4–PM6 และผ่าน parity gate ก่อน G4P เท่านั้น
+
 แต่ละ phase ต้องส่งมอบ software ที่ทดสอบได้เอง มี reviewer gate และ commit แยก ห้าม merge phase ถัดไปเมื่อ exit gate ก่อนหน้ายังไม่ผ่าน งาน protocol ที่ไม่เขียน production state ทำคู่ขนานได้ตาม WBS
 
 หลัง Phase 2 ต้องมี **MS-04 Product MVP decision**: Accept/Stop/Continue การหยุดหลัง Phase 1 หรือ Phase 2 เมื่อ gate ผ่านเป็น bounded successful outcome และไม่บังคับให้ทำ preference/research migration
 
-ROM rebaseline คือ 354 person-days ±30% พร้อม management reserve 54 person-days และช่วงปฏิทิน 22–30 สัปดาห์ โดยไม่รวมเวลารอ ethics, recruitment หรือ powered-efficacy observation
+ROM rebaseline รวม Pair Matching คือ 452 person-days ±30% พร้อม management reserve 83 person-days และช่วงปฏิทิน 28–40 สัปดาห์ โดยไม่รวมเวลารอ ethics, recruitment หรือ powered-efficacy observation Pair Matching increment มี base effort 98 person-days และหยุดแยกได้โดยไม่บังคับ research migration
 
 ## 13. Governance and RACI Summary
 
@@ -331,18 +352,25 @@ ROM rebaseline คือ 354 person-days ±30% พร้อม management reserv
 | Today Hub มี implementation แต่ hidden ทำให้ entry source ใช้งานไม่ได้ | High | ADR-001 กำหนด internal route และ additive card ใน Learn; ห้ามเพิ่ม bottom tabหรือเปิด production card ก่อน canonical Today path พร้อม |
 | Preference v2 local/cloud version ไม่ตรงกัน | Critical | staged local→migration→rules/sync rollout และ fail closed |
 | Baseline 15 failures หรือ Gitleaks/OSV debt ถูกมองข้าม | Critical | Audit gate และ fresh evidence ก่อน Pilot/release |
+| Pair ถูกสร้างเป็น f45/engine/authority ใหม่ | Critical | ADR-009, architecture guard และ exact 8/44 inventory test |
+| Pair plan จาก Today/Review/Learn ได้คำซ้ำ/กำกวม/คนละ revision | Critical | Entry-aware composer, atomic revalidation และ exact 4/6 contract |
+| Timer/restart race ทำ evidence หรือ +30 ซ้ำ | Critical | Durable transition, operation ID, active-time checkpoint และ crash matrix |
+| Practice Replay เปลี่ยน SRS/Weakness/reward/research | Critical | Durable purpose + downstream projection no-op tests |
+| ดาวกลายเป็น mastery/pressure economy | High | Derived versioned read model, no ledger/unlock/rank และ comprehension UAT |
+| Pair two-column ใช้ไม่ได้เมื่อ 200%/TalkBack/Switch | Critical | Focused-layout parity, semantics/focus gate และ manual certification |
 
 ## 17. Completion Definition
 
 Full program ถือว่าเสร็จเมื่อ:
 
-1. Deliverables D01–D15 ผ่าน acceptance;
+1. Deliverables D01–D16 ผ่าน acceptance;
 2. Requirement ทุกข้อใน RTM มี design owner และ test evidence;
 3. UAT required cases ผ่าน 100%;
 4. ไม่มี unresolved blocker/critical defect;
 5. Standard fallback และ emergency-off rehearsal ผ่าน;
 6. Research lifecycle ผ่าน permit, consent/assent, Skip, crossover, opportunity, withdrawal, export และ deletion;
 7. MS-08A มี Limited/Stop decision และแต่ละ participant class มี MS-08B Expand/Remain Limited/Stop decision อย่างเป็นทางการ
+8. Pair Matching PM0–PM8 ผ่าน G4P/PMT/UAT ที่เกี่ยวข้อง โดย Standard-first, Practice Replay isolation และ rollback evidence ครบ
 
 การเขียนโค้ดครบแต่ gate เหล่านี้ไม่ผ่าน ไม่ถือว่าโครงการเสร็จ
 
@@ -350,4 +378,4 @@ Product Core MVP ถือว่าส่งมอบสำเร็จแยก
 
 ## 18. Approval Record
 
-การอนุมัติ TOR ต้องบันทึกใน review/commit record ด้วยข้อความที่ระบุ `LQ-AMM-TOR-001 v1.1` พร้อมชื่อบทบาท วันที่ และ decision อย่างใดอย่างหนึ่ง: `Approved`, `Approved with recorded conditions`, `Revise`, `Rejected` การอนุมัติด้วยเงื่อนไขต้องเชื่อม issue IDs ที่ปิดได้ก่อน G3
+การอนุมัติ TOR ต้องบันทึกใน review/commit record ด้วยข้อความที่ระบุ `LQ-AMM-TOR-001 v1.2` พร้อมชื่อบทบาท วันที่ และ decision อย่างใดอย่างหนึ่ง: `Approved`, `Approved with recorded conditions`, `Revise`, `Rejected` การอนุมัติด้วยเงื่อนไขต้องเชื่อม issue IDs ที่ปิดได้ก่อน G3/G4P

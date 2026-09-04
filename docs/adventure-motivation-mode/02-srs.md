@@ -1,12 +1,12 @@
 # Software Requirements Specification (SRS) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-SRS-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for Owner Review
-**Date:** 2026-09-01
+**Date:** 2026-09-04
 **Baseline:** LexiQuest 8/44, commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; current baseline is suitable for planning but not Pilot/release clean
-**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
+**Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 
 ## 1. Purpose and Scope
 
@@ -561,4 +561,110 @@ Adventure พร้อมเข้าสู่ MS-08A Feasibility (สถาน�
 11. `AMM-AUDIT-001` findings ที่จัดเป็น before-Pilot ของ Android path ปิดครบ; full inventory run มี fresh evidence, logical/shared/touched set ผ่าน และ finding ที่เหลือ map ไป explicit exclusion โดยไม่มี unclassified failure
 12. Gitleaks gate สะอาดตาม reviewed policy และ dependency/platform exceptions ที่กระทบ release มี approved disposition
 
-Controlled Expansion/Enabled ต้องผ่าน MS-08B เพิ่มเติมตาม MDS v1.1: powered sample ต่อ participant class, baseline-adjusted post-session ANCOVA, pre-registered multiple imputation/tipping-point, learning/safety thresholds, missing post ≤15%, arm difference ≤5 percentage points และ class-specific signed decision
+Controlled Expansion/Enabled ต้องผ่าน MS-08B เพิ่มเติมตาม MDS v1.2: powered sample ต่อ participant class, baseline-adjusted post-session ANCOVA, pre-registered multiple imputation/tipping-point, learning/safety thresholds, missing post ≤15%, arm difference ≤5 percentage points และ class-specific signed decision
+
+## 15. M12 Pair Matching Prototype Normative Requirements
+
+ส่วนนี้เป็น normative delta ของ v1.2 และใช้กับ Standard/Adventure Pair Matching เหมือนกัน M12 เป็น planning module ที่ refine `f10 Matching Mode`; ไม่เพิ่ม feature contract ลำดับใหม่
+
+### 15.1 Functional requirements
+
+| ID | Requirement | Verification |
+|---|---|---|
+| AMM-FR-105 | ระบบต้องใช้ `f10`, `LessonMode.matching`, `activityType=matching`, route `learning/matching`, Unified Lesson Shell และ Evidence Gateway เดิม โดยไม่สร้าง `f45` | Architecture/contract test |
+| AMM-FR-106 | Pair Matching ต้องเข้าได้จาก Learn เดิม, Today Mission, Review และ Adventure ผ่าน typed launch intent โดยไม่เพิ่ม main/bottom navigation | Navigation/widget test |
+| AMM-FR-107 | ทุก start ต้องสร้าง immutable `PairMatchingPlanV1` ที่ pin owner, lexical revisions/checksums, direction, count, source reasons, orders, seed, timer และ policy versions | Domain/repository test |
+| AMM-FR-108 | Today ต้อง reuse snapshot เดิม, Review ต้อง reuse exact selection, Learn จึงใช้ canonical composer และ Adventure ห้าม recompose | Source/parity test |
+| AMM-FR-109 | Composer ต้อง merge multi-provenance และ deduplicate ก่อน rank/select | Property/fixture test |
+| AMM-FR-110 | Composer ต้อง reject reported/deleted/stale/ambiguous/visible-collision content และคืน exact 4 หรือ 6 เท่านั้น | Domain/integration test |
+| AMM-FR-111 | ระบบต้องรองรับ `enToTh` และ `thToEn` หนึ่ง direction ต่อ session; mixed direction ไม่อยู่ใน prototype | Domain/widget test |
+| AMM-FR-112 | Pair count ต้อง resolve เป็น `compact4` หรือ `standard6` จาก product preference โดยไม่ใช้ research permit/DOB/XP/CEFR/error-rate inference | Preference/architecture test |
+| AMM-FR-113 | ผู้ใช้ต้องแตะฝั่งใดก่อนก็ได้; same-side reselection/deselect/duplicate tap ต้องไม่สร้าง answer evidence | Reducer/idempotency test |
+| AMM-FR-114 | Cross-side mismatch ต้องสร้าง incorrect recognition ให้ prompt-side canonical word หนึ่งครั้ง; distractor ไม่รับ incorrect evidence | Evidence contract test |
+| AMM-FR-115 | User-visible matched progress ต้องเพิ่มเฉพาะ successful pair และไม่ลด; wrong ห้ามเพิ่มหรือลด progress | State/widget test |
+| AMM-FR-116 | Wrong ต้อง unselect อย่างปลอดภัย, แสดง supportive feedback และสร้าง repair ticket โดยไม่หัก access/reward/progress | Reducer/widget test |
+| AMM-FR-117 | compact4 ต้อง re-present หลัง distinct correct pairs 2 คู่ และ standard6 หลัง 3 คู่; non-answer interaction ไม่นับ interval | Repair policy test |
+| AMM-FR-118 | หาก repair interval ช่วงท้ายทำไม่ได้ ระบบต้อง guided-complete pair และ defer independent retry ไป canonical Review โดยไม่ padding/recursive repair | Tail fixture test |
+| AMM-FR-119 | Pronunciation/TalkBack ของ visible text ต้องไม่ลด evidence; corrective mapping หรือ answer-revealing semantic support ต้องเปลี่ยน repair เป็น guidedPractice | Evidence/accessibility test |
+| AMM-FR-120 | Timer ต้อง default OFF และให้ opt-in เฉพาะ 60/90/120 วินาที โดยไม่ auto-enable จากค่ารอบก่อน | Configuration/widget test |
+| AMM-FR-121 | Timer ต้องนับ active interactive time และ pause เมื่อ board unavailable/background/modal/persistence wait/required accessibility narration | Clock/lifecycle test |
+| AMM-FR-122 | เมื่อเวลาหมดต้องเข้าสู่ durable `timeoutDecision` โดยไม่สร้าง incorrect/completion และเสนอ Continue untimed, +30 once, Restart | State/recovery test |
+| AMM-FR-123 | Add 30 seconds ต้อง idempotent ใช้ได้ครั้งเดียวต่อ Learning Session และ survive restart/lost acknowledgement | Race/recovery test |
+| AMM-FR-124 | Timeout Restart ต้องสร้าง round ใหม่ใน Learning Session เดิม ใช้ exact set/revisions/direction เดิม, deterministic reshuffle และคง evidence/extension entitlement | Checkpoint/restart test |
+| AMM-FR-125 | Stars ต้อง derive จาก terminal aggregate และ committed attempt-role ledger พร้อม `starPolicyVersion`; ห้ามใช้ generic score เป็น authority | Projector test |
+| AMM-FR-126 | Star v1: 3 ดาว = first-attempt correct ทุกคู่โดยไม่มี answer-revealing hint; 2 ดาว = independent ≥75% (`3/4`,`5/6`) รวม self-correction ก่อน reveal; 1 ดาว = complete ที่เหลือ | Projector fixture test |
+| AMM-FR-127 | “ทันเป้าหมาย”/elapsed time ต้องเป็น presentation-only และ timed/untimed/extended/continued paths ให้ eligibility/reward/mastery เท่ากัน | Parity/projection test |
+| AMM-FR-128 | Practice Replay ต้องเป็น Learning Session ใหม่ purpose=`practiceReplay`, exact valid content, new deterministic shuffle และ immutable link ไป source session | History/replay test |
+| AMM-FR-129 | Practice Replay ต้องไม่เปลี่ยน SRS, Mastery, Weakness ranking, global proficiency/accuracy, XP/reward, quest/streak/achievement, Today due-resolution หรือ research primary outcome | Cross-projection test |
+| AMM-FR-130 | Standard และ Adventure ต้องใช้ plan/engine/timer/repair/evidence/star policy เดียวกัน; renderer/presentation/return target เท่านั้นที่ต่าง | Normalized parity test |
+
+### 15.2 Data requirements
+
+| ID | Requirement | Verification |
+|---|---|---|
+| AMM-DATA-016 | `PairMatchingPlanV1`/checkpoint ต้อง pin exact lexical snapshots, merged reasons, direction, pair count, both orders, seed, timer, policy versions และ fingerprint | Codec round-trip test |
+| AMM-DATA-017 | Checkpoint ต้องเก็บ round lineage, selected tile, matched IDs, first-opportunity ledger, repair tickets/due ordinal, support state, remaining active time, timeout state และ `extensionUsed` | Recovery test |
+| AMM-DATA-018 | Session purpose ต้องแยก `learning` กับ `practiceReplay`; Timeout Restart เป็น round lineage ภายใน learning session ไม่ใช่ Practice Replay | Domain invariant test |
+| AMM-DATA-019 | Pair-size preference เก็บเฉพาะ `compact4|standard6`, provenance และ version แบบ owner-scoped; guardian product authority ต้องแยกจาก research permit | Migration/sync/owner test |
+| AMM-DATA-020 | Star inputs และ policy version ต้อง rebuild ได้จาก committed ledger; cached rating ถ้ามีเป็น read model เท่านั้นและห้ามเป็น balance/ledger | Projection rebuild test |
+| AMM-DATA-021 | Pair diagnostics/telemetry ต้องเป็น bounded pseudonymous IDs/reasons/timing categories ไม่มี raw word/meaning, full DOB หรือ guardian free text และเข้า lifecycle/retention ที่อนุมัติ | Payload/lifecycle test |
+
+### 15.3 UI requirements
+
+| ID | Requirement | Verification |
+|---|---|---|
+| AMM-UI-018 | Contextual entry ต้องบอก source reason, pair count, timer OFF และ CTA เดียวโดยไม่เพิ่ม main destination | Widget/UAT |
+| AMM-UI-019 | Effective-width regular layout ต้องแสดง English/Thai เป็นสองคอลัมน์สมดุลและจำกัด content width บนจอกว้าง | Responsive golden |
+| AMM-UI-020 | Narrow/text 200%/assistive layout ต้องใช้ focused source-to-target list โดย command/evidence เท่ากับ two-column | Semantics/parity test |
+| AMM-UI-021 | Pair tile ขั้นต่ำ 56px, compact/young 64px, action อื่น 48×48; state ใช้ text+icon+border และไม่พึ่งสี/เสียง/motion | Golden/manual audit |
+| AMM-UI-022 | Wrong/repair feedback ต้องไม่ shame/shake/แสดง loss และต้องอธิบายว่าคำจะกลับมาหรือถูกเก็บไป Review | Copy/widget test |
+| AMM-UI-023 | Timeout sheet ต้องใช้ “ยังไม่ทันเป้าหมาย แต่ทำต่อได้”; Continue untimed เป็น primary, +30 secondary, Restart tertiary | Widget/UAT |
+| AMM-UI-024 | Result ต้องแยก matched, independent, assisted, stars, timer status, active elapsed time และ next Review; ไม่มี combined mastery score | Widget/comprehension UAT |
+| AMM-UI-025 | History/Mission ต้องแสดง latest และ best แยก normal session กับ Practice Replay พร้อมข้อความ no reward/no SRS | Widget/UAT |
+| AMM-UI-026 | Thai-first copy, English locale, language-aware TTS label และ Thai wrapping/combining marks ต้องครบ; ห้ามใช้ “เก่งศัพท์” | Localization test |
+| AMM-UI-027 | Adventure renderer เพิ่มได้เฉพาะ theme/companion/narrative; timer, stars, hint, repair และ action hierarchy ต้องเท่ากับ Standard | Golden/parity/UAT |
+
+### 15.4 Non-functional requirements
+
+| ID | Requirement | Verification |
+|---|---|---|
+| AMM-NFR-038 | Plan composition, shuffle, repair ordering, restart และ star projection ต้อง deterministic จาก pinned input/policy version | Repeat/property test |
+| AMM-NFR-039 | Session + initial checkpoint ต้อง start แบบ atomic หลัง revalidate owner/content/revision/checksum | Crash-injection repository test |
+| AMM-NFR-040 | Checkpoint reader รุ่นใหม่ต้อง deploy ก่อน writer, อ่าน v1–v5 ได้ และ legacy session ห้าม infer v1.2 stars/repair/replay | Compatibility/rollback test |
+| AMM-NFR-041 | Durable writes ต้อง coalesce และพิสูจน์ worst case ต่ำกว่า repository revision/payload ceilings พร้อม terminal reserve | Budget proof/test |
+| AMM-NFR-042 | Pair board first meaningful render และ input response ต้องอยู่ใน approved device budget; audio/network ห้าม block local board | Performance profile |
+| AMM-NFR-043 | TalkBack, Switch Access, keyboard, 200% text, reduced motion, no-audio และ focus restoration ต้องผ่านทั้ง two-column/focused/timeout/result/replay | Automated + manual certification |
+| AMM-NFR-044 | Owner ต้องถูก revalidate ก่อน start/resume/retry; stale async/audio callback ถูก fence; private vocabulary ห้ามส่ง remote TTS โดยไม่มี approved policy | Privacy/owner test |
+| AMM-NFR-045 | Standard/Adventure normalized plan, commands, attempts, evidence classification และ terminal outcome ต้องเท่ากันเมื่อ input/policy เท่ากัน | Cross-renderer parity suite |
+| AMM-NFR-046 | Pair delivery control ต้อง default hidden, map กลับ f10, block new starts on emergency-off และให้ accepted session resume/retire โดยไม่ปิด Quiz ทั้งหมด | Feature/operations test |
+
+### 15.5 Business rules
+
+| ID | Rule |
+|---|---|
+| AMM-BR-024 | Pair Matching Prototype คือ semantic revision ของ `f10`; M12 ไม่ใช่ `f45` |
+| AMM-BR-025 | Entry surface เป็นผู้กำหนด source snapshot; Adventure ห้าม recompose และทุก provenance ต้อง merge ก่อน ranking |
+| AMM-BR-026 | Board มี exact 4 หรือ 6 คู่เท่านั้น; 6→4 ต้องยืนยันและต่ำกว่า 4 ไม่เริ่ม |
+| AMM-BR-027 | Pair density เป็น explicit product preference; guardian override มาก่อน learner preference และไม่มี age/ability/research inference |
+| AMM-BR-028 | Wrong สร้าง evidence ตามจริงแต่ไม่เพิ่ม/ลด matched progress, reward, access หรือ SRS/Mastery |
+| AMM-BR-029 | Repair interval นับเฉพาะ distinct correct other pairs; tail guided-completes และ Review owns future independent recall โดยไม่ padding |
+| AMM-BR-030 | Visible-text speech/accessibility ไม่ใช่ hint; information gain ที่เปิดเผย mapping เป็น semantic support |
+| AMM-BR-031 | Timer outcome เป็นกลางต่อ stars/evidence/reward/mastery/SRS; Continue untimed ต้องพร้อมเสมอ |
+| AMM-BR-032 | Stars เป็น versioned descriptive projection ไม่ใช่ mastery, currency, reward, unlock หรือ leaderboard |
+| AMM-BR-033 | Timeout Restart, Practice Replay และ technical retry เป็นสาม contract คนละชนิดและห้ามใช้แทนกัน |
+| AMM-BR-034 | Standard/Adventure ต่างเฉพาะ presentation; Pair gate off ปิด Pair start ส่วน Adventure gate off fallback Standard Pair |
+
+### 15.6 Pair-specific error catalogue
+
+| Code | Condition | User behavior | System behavior |
+|---|---|---|---|
+| AMM-E015 | Safe content ไม่ครบ requested 6 แต่ครบ 4 | เสนอ “ฝึก 4 คู่ตอนนี้” หรือกลับ | สร้าง plan 4 เฉพาะหลังยืนยัน |
+| AMM-E016 | Safe content ต่ำกว่า 4/ambiguous | แนะนำกิจกรรมอื่น | No session/write/generic filler |
+| AMM-E017 | Timer state/clock invalid | เล่นต่อแบบไม่จับเวลาได้ | Freeze timer; preserve evidence; bounded diagnostic |
+| AMM-E018 | Checkpoint version unsupported | Safe unavailable/resume on compatible build | No overwrite/down-convert |
+| AMM-E019 | Replay content deleted/reported/revision changed | แจ้งว่าเล่นชุดเดิมไม่ได้; เสนอชุดใหม่ | Fail closed; original history preserved |
+| AMM-E020 | Audio unavailable/private remote route denied | Text/IPA path remains | No blocked board/raw text telemetry |
+
+### 15.7 Pair prototype acceptance
+
+Pair Matching Prototype ผ่านเมื่อ AMM-FR-105–130, DATA-016–021, UI-018–027, NFR-038–046 และ BR-024–034 มี design/WBS/test trace ครบ; PMT-001–044 ผ่าน; UAT-039–050 ผ่านตาม applicability; no `f45`/main menu/star ledger; Practice Replay projection delta เป็นศูนย์; Standard/Adventure parity และ reader-first rollback ผ่าน โดยสถานะยัง Hidden/Internal จน Android/base gates ของ Adventure อนุญาต

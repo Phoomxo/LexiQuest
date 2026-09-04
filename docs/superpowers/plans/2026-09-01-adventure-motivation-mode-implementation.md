@@ -1,6 +1,6 @@
 # Adventure Motivation Mode — Implementation Plan
 
-**Version:** 1.1
+**Version:** 1.2
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `subagent-driven-development` (recommended) or `executing-plans` to implement this plan task-by-task. This planning task does not authorize production implementation.
 
@@ -24,9 +24,9 @@
 - `docs/adventure-motivation-mode/08-requirements-traceability-matrix.md`
 - `docs/adventure-motivation-mode/09-measurement-decision-spec.md`
 
-**Pinned baseline:** `99f7fb21`, feature catalog revision 1.3.0/hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`, Drift schema v22, EventEnvelopeV2 unchanged
+**Pinned baseline:** Adventure planning `99f7fb21`; Pair Matching source closure `f56e2eb`; feature catalog revision 1.3.0/hash `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`; Drift schema v22; EventEnvelopeV2 unchanged
 
-**ROM baseline:** 354 person-days ±30%, management reserve 54 person-days, 22–30 calendar weeks excluding ethics/recruitment/efficacy waiting time. Increments A/B/C/D are 90/48/48/168 person-days.
+**ROM baseline:** 452 person-days ±30%, management reserve 83 person-days, 28–40 calendar weeks excluding ethics/recruitment/efficacy waiting time. Increments A/B/C/D/E are 90/48/48/168/98 person-days; Increment E คือ Pair Matching Prototype และหยุดได้โดยไม่เปิด research/Adventure rollout.
 
 **Binding interface fields:**
 
@@ -48,6 +48,21 @@ MeasurementOpportunity
   assignedTreatment, effectivePresentation, presentedEventId?
   learningSessionId?, startedEventId?, completedEventId?
   lastSwitchOrdinal, suppressedSwitchCount, openedAtUtc, closedAtUtc?
+
+PairMatchingPlanV1
+  planId, ownerId, learningSessionId, entryKind, sourceSnapshotId?
+  pairCount(compact4|standard6), direction(enToTh|thToEn)
+  lexicalSnapshots[], mergedSourceReasons[], promptOrder[], targetOrder[]
+  shuffleSeed, timerChoice(off|60|90|120)
+  repairPolicyVersion, starPolicyVersion, checkpointPolicyVersion
+  contentFingerprint, createdAtUtc
+
+PairMatchingCheckpointNext
+  planFingerprint, roundId, roundOrdinal, operationRevision
+  selectedTileId?, matchedPairIds[], firstOpportunityLedger[]
+  repairTickets[], dueRepairOrdinal?, supportState
+  activeElapsedMs, remainingActiveMs?, timeoutState, extensionUsed
+  sessionPurpose(learning|practiceReplay), sourceSessionId?
 ```
 
 ---
@@ -73,6 +88,10 @@ MeasurementOpportunity
 17. Pilot v1 เป็น Android-only; excluded capability/platform ห้ามรายงานว่า passed
 18. Minor permit ต้องมี guardian permission + learner assent runtime evidence; แอปไม่เก็บ full DOB/guardian PII
 19. MS-08A ไปได้สูงสุด Limited; Controlled Expansion/Enabled ต้องผ่าน MS-08B แยก adult/minor
+20. Pair Matching เป็น semantic revision ของ `f10`; ห้ามสร้าง `f45`, main menu, star currency/ledger หรือ learning authority ใหม่
+21. Pair plan ต้อง exact 4/6, entry-aware, deterministic และ atomic; no silent filler/downgrade
+22. Pair checkpoint ใช้ reader-first/writer-later, reserve next available version ตอน implement และห้าม write ต่อ timer tick
+23. Practice Replay ต้องพิสูจน์ zero delta ต่อ SRS/Mastery/Weakness/accuracy/reward/quest/streak/achievement/Today/research-primary ก่อนเปิด UI
 
 ## 1. Checkpoint 0 — Reproduce and Remediate the Baseline
 
@@ -224,7 +243,7 @@ MeasurementOpportunity
 
 1. Write ENT-001–015 and RSH-016–020 decision tables as parameterized failing tests.
 2. Host creates UUID v4 `entryAttemptId` once; resolver receives it and returns availability, destination, effective presentation, fallback reason and version pins.
-3. Define the full `ResearchParticipationPermit` and minimal `ActivePresentationPermit` contracts from SDS v1.1; validator checks owner/assignment/consent/guardian+assent for minor/protocol/expiry/revocation/signature/revisions.
+3. Define the full `ResearchParticipationPermit` and minimal `ActivePresentationPermit` contracts from SDS v1.2; validator checks owner/assignment/consent/guardian+assent for minor/protocol/expiry/revocation/signature/revisions.
 4. Add architecture tests proving Product Entry can depend only on `ActivePresentationPermitReader`, not `ConsentRegistry`, receipt fields or measurement responses.
 5. Require identity-consistent Today/Learning/catalog dependencies; unauthorized hidden/disabled/unknown/stale/missing paths return Learn without Host/snapshot; post-authorization asset failure may render Standard.
 6. Fence asynchronous resolution by owner/session generation.
@@ -471,7 +490,7 @@ MeasurementOpportunity
 1. Require approved MDS/protocol/instrument/form/response-code catalog, class-specific power calculation, baseline ≤24h, post ≤30m after first accepted completion, ANCOVA/MI/tipping-point and missingness gates before implementation.
 2. Read schema ledger and reserve the next actual number after preference migration; do not assume v24.
 3. Write red migration tests for exactly four tables: `motivation_measurement_runs`, `motivation_responses`, `research_participation_permits`, `measurement_opportunities`; cover v1→current fixtures, owner IDs, minor receipt constraints, signature/revision fields, unique/idempotent constraints and unknown-code rejection.
-4. Implement the SDS v1.1 public field contracts exactly; no full DOB, guardian PII, free text or duplicated learning answer.
+4. Implement the SDS v1.2 public field contracts exactly; no full DOB, guardian PII, free text or duplicated learning answer.
 5. Add forward-only tables/migration and regenerate Drift code; opportunity switch ordinal is constrained 0–10 and suppression counter nonnegative.
 6. Run current/full migration matrix and exact table inventory.
 
@@ -615,7 +634,244 @@ MeasurementOpportunity
 6. Rehearse emergency-off before MS-08A and again before class expansion; accepted session closes through canonical lifecycle.
 7. Update RTM statuses only from current evidence; archive MS-08A/MS-08B decision logs and unresolved backlog separately.
 
-## 8. Pull Request and Commit Boundaries
+## 8. Checkpoint 7 — Pair Matching Prototype (M12 / Increment E)
+
+Checkpoint นี้เริ่มได้หลัง Pair contracts/ADR/SRS/SDS/RTM v1.2 ได้รับอนุมัติ และแยก delivery flag จาก Adventure rollout งานทุก Task ใช้ TDD, commit ขนาดเล็กและ exact requirement IDs; ห้ามเปิด renderer ก่อน engine/evidence parity ผ่าน
+
+### Task PM0 — Baseline characterization and f10 boundary lock (6 pd)
+
+**Requirements:** FR-105/106/130, NFR-040/046, BR-024/034
+
+**Inspect first:**
+
+- `lib/screens/matching_mode_screen.dart`
+- `lib/features/learning/application/matching_mode_adapter.dart`
+- `lib/features/learning/application/lesson_mode_registry.dart`
+- `lib/features/learning/domain/lesson_mode.dart`
+- `lib/navigation/app_routes.dart`
+- `lib/runtime/registries/feature_registry.dart`
+
+**Tests to add/update:**
+
+- `test/architecture/pair_matching_f10_boundary_test.dart`
+- `test/screens/matching_mode_screen_test.dart`
+- `test/features/learning/matching_mode_adapter_test.dart`
+- `test/scenarios/production_feature_navigation_test.dart`
+
+**Steps:**
+
+1. บันทึก current f10 route, adapter, session/evidence path, restart/checkpoint behavior และ current screen output เป็น characterization fixtures;
+2. เขียน failing architecture test ว่าไม่มี f45/new main destination/new star table และ Pair launch resolve กลับ f10;
+3. เพิ่ม hidden delivery contract เฉพาะเมื่อ test ต้องการ โดยยังไม่เปลี่ยน behavior ผู้ใช้;
+4. รัน `TC-PMT-001`, existing 8/44 exact-map tests และ feature-off navigation regression;
+5. ตรวจ diff ให้ไม่มี schema/event/evidence payload change
+
+**Exit:** baseline behavior reproducible, f10 identity locked, rollback target identified; no prototype UI visible
+
+### Task PM1 — Entry-aware immutable plan and safe source composer (8 pd)
+
+**Requirements:** FR-106–112, DATA-016/019, UI-018, NFR-038/039/044, BR-025–027
+
+**Files:**
+
+- Create `lib/features/learning/pair_matching/domain/pair_matching_launch.dart`
+- Create `lib/features/learning/pair_matching/domain/pair_matching_plan.dart`
+- Create `lib/features/learning/pair_matching/application/pair_matching_source_composer.dart`
+- Modify only through typed adapters: Today/Review/Learn launch owners identified in PM0
+- Add `test/features/learning/pair_matching/pair_matching_plan_test.dart`
+- Add `test/features/learning/pair_matching/pair_matching_source_composer_test.dart`
+- Add `test/features/learning/pair_matching/pair_matching_source_property_test.dart`
+
+**Steps:**
+
+1. เขียน failing fixtures สำหรับ Learn overlap, fixed Today snapshot, selected Review list และ Adventure pass-through;
+2. นิยาม closed enums สำหรับ entry, direction, density, timer และ typed unavailable/confirm outcomes;
+3. compose โดย merge provenance → deduplicate canonical identity → revalidate locale/revision/checksum/report/delete/collision → rank → exact select;
+4. ใช้ curated EN–TH allowlist; ห้ามเพิ่ม sense table หรือ remote lookup เพื่อเติม plan;
+5. resolve density จาก guardian product policy ก่อน learner preference; unknown prompt ครั้งเดียว/fallback 4; 6→4 ต้อง explicit accept; <4 ไม่ start;
+6. สร้าง Learning Session + initial checkpoint แบบ atomic หลัง owner/source revalidation และ pin fingerprint/order/seed/version;
+7. รัน `TC-PMT-002–012`, owner-switch/crash-injection และ Today single-load regressions
+
+**Exit:** same pinned inputs ให้ plan/fingerprint เดิม; exact 4/6; zero session/evidence on unavailable/cancel; Adventure cannot recompose
+
+### Task PM2 — Pure reducer, selection and evidence roles (10 pd)
+
+**Requirements:** FR-107/113–115, DATA-016/017, NFR-038/039/041, BR-028
+
+**Files:**
+
+- Create `lib/features/learning/pair_matching/domain/pair_matching_engine.dart`
+- Create `lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart`
+- Extend the existing matching adapter only behind typed M12 interfaces
+- Add `test/features/learning/pair_matching/pair_matching_engine_test.dart`
+- Add `test/features/learning/pair_matching/pair_matching_idempotency_test.dart`
+- Add `test/features/learning/pair_matching/pair_matching_evidence_contract_test.dart`
+
+**Steps:**
+
+1. เขียน transition table tests สำหรับ select/deselect/reselect ทั้งสองฝั่งและ duplicate operation ID;
+2. ทำ reducer ให้ pure: state + command → state + effects; UI ห้ามเขียน repository ตรง;
+3. correct เพิ่ม matched pair ครั้งเดียว; mismatch ไม่เพิ่ม/ลด matched progress;
+4. attach incorrect recognition ครั้งเดียวกับ prompt-side canonical word; distractor ไม่รับ incorrect evidence;
+5. persist first-opportunity/attempt-role ledger ด้วย operation identity และ coalesced checkpoint boundary;
+6. fence stale callback/owner change/rebuild และ reserve terminal revision;
+7. รัน `TC-PMT-013–016` พร้อม Unified Lesson/Evidence Gateway regressions
+
+**Exit:** deterministic reducer, monotonic matched progress, no duplicate/lost attempt and no presentation write path
+
+### Task PM3 — Delayed repair, semantic support and Review handoff (13 pd)
+
+**Requirements:** FR-116–119, DATA-017/021, UI-022, NFR-038/041/043/044, BR-028–030
+
+**Files:**
+
+- Create `lib/features/learning/pair_matching/domain/pair_repair_policy.dart`
+- Extend `pair_matching_engine.dart` and coordinator
+- Add typed Review deferral adapter near existing Review/SRS application boundary
+- Add `test/features/learning/pair_matching/pair_repair_policy_test.dart`
+- Add `test/features/learning/pair_matching/pair_support_classification_test.dart`
+- Add `test/features/learning/pair_matching/pair_review_deferral_test.dart`
+
+**Steps:**
+
+1. เขียน failing schedule fixtures: compact after 2 distinct correct other pairs, standard after 3, same-pair/non-answer not counted;
+2. stable-order concurrent repair tickets by due ordinal/original ordinal/canonical ID;
+3. wrong repair ซ้ำไม่สร้าง recursive queue; one unresolved canonical Review need ต่อ word/source evidence;
+4. เมื่อ spacing ไม่พอ ให้ guided-complete อย่างโปร่งใสและ defer independent retry ไป Review โดยไม่ padding;
+5. classify pronunciation/visible TalkBack as neutral; classify semantic reveal/corrective mapping as guided;
+6. เมื่อ audio missing/offline/private remote disallowed ให้ text/IPA fallback และ board ทำงานต่อ;
+7. รัน `TC-PMT-017–024`, SRS/Weakness/Review ownership regressions และ payload redaction tests
+
+**Exit:** repair spacing exact, tail finite, no penalty/padding, Review receives one valid need, hint classification audit-ready
+
+### Task PM4 — Active timer, timeout recovery and restart (16 pd)
+
+**Requirements:** FR-120–124/127, DATA-017/018, UI-023, NFR-038/041/043, BR-031/033
+
+**Files:**
+
+- Extend Pair domain with injected monotonic active clock interface
+- Create/update checkpoint codec under `lib/features/learning/pair_matching/data/`
+- Add timeout presentation state to shared experience host; no renderer-specific timer logic
+- Add `test/features/learning/pair_matching/pair_active_timer_test.dart`
+- Add `test/features/learning/pair_matching/pair_timeout_recovery_test.dart`
+- Add `test/features/learning/pair_matching/pair_timeout_race_test.dart`
+
+**Steps:**
+
+1. เขียน fake-clock tests สำหรับ off/60/90/120 และยืนยัน timer ไม่ auto-enable จากรอบก่อน;
+2. นับ active interaction เท่านั้น; pause/resume ด้วย reason set ที่อ้างอิงได้สำหรับ background/modal/persistence/accessibility narration;
+3. timeout สร้าง durable decision state โดยไม่สร้าง incorrect/completion;
+4. Continue untimed ใช้ state/evidence เดิม; +30 idempotent หนึ่งครั้งต่อ Learning Session; Restart สร้าง round/seed ใหม่แต่ exact content/revisions/direction เดิม;
+5. serialize answer-timeout-extension-restart race และ persist entitlement/evidence ก่อน acknowledgement;
+6. kill/relaunch/lost-ack tests ต้อง restore exact decision โดยไม่ reset clock/evidence;
+7. รัน `TC-PMT-025–031` และ checkpoint write-budget proof
+
+**Exit:** timer neutral and recoverable; no per-tick durable write; timeout never forces failure or reward/mastery change
+
+### Task PM5 — Stars, results, history and Practice Replay isolation (14 pd)
+
+**Requirements:** FR-125–129, DATA-018/020/021, UI-024/025, NFR-038/041, BR-032/033
+
+**Files:**
+
+- Create `lib/features/learning/pair_matching/domain/pair_star_policy.dart`
+- Create `lib/features/learning/pair_matching/presentation/pair_matching_result_view.dart`
+- Extend existing history read model through a typed Pair projection
+- Add `test/features/learning/pair_matching/pair_star_policy_test.dart`
+- Add `test/features/learning/pair_matching/pair_practice_replay_test.dart`
+- Extend `test/features/history/learning_history_replay_test.dart`
+
+**Steps:**
+
+1. เขียน table-driven boundary tests สำหรับ 3 ดาว, 3/4, 5/6, 4/6, guided tail และ incomplete;
+2. derive จาก committed immutable ledger + `starPolicyVersion`; cached valueเป็น rebuildable read modelเท่านั้น;
+3. แสดง matched/independent/assisted/stars/timer/elapsed/Review next แยกแกน ไม่มี combined score;
+4. Practice Replay สร้าง session purpose ใหม่, exact valid content, shuffle ใหม่และ immutable source link;
+5. เขียน before/after projection harness ครบ SRS/Mastery/Weakness/global accuracy/XP/reward/quest/streak/achievement/Today/research-primary และบังคับ delta=0;
+6. History group/label replay; latest/best normal ไม่ถูก overwrite;
+7. รัน `TC-PMT-032–041` และ reward/history/Today regressions
+
+**Exit:** stars reproducible/non-economic, incomplete unscored, replay visible but zero-authority/reward effect
+
+### Task PM6 — Adaptive Standard UI, copy and accessibility (11 pd)
+
+**Requirements:** UI-018–026, NFR-042/043, FR-106/112/116/119–127
+
+**Files:**
+
+- Create `lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart`
+- Create `lib/features/learning/pair_matching/presentation/pair_board_view.dart`
+- Update `lib/screens/matching_mode_screen.dart` as compatibility wrapper only
+- Add `test/features/learning/pair_matching/pair_board_view_test.dart`
+- Add `test/features/learning/pair_matching/pair_board_accessibility_test.dart`
+- Add responsive/localization goldens under existing approved golden structure
+
+**Steps:**
+
+1. implement setup card with source reason, 4/6, direction, timer default off and one primary CTA;
+2. regular effective width renders bounded balanced columns; narrow/200%/assistive policy renders focused prompt-to-target list;
+3. preserve command/evidence semantics across layouts; tiles 56px/compact 64px and actions 48×48 minimum;
+4. wrong/repair state uses text+icon+border and supportive copy; no shake/loss/shame;
+5. timeout primary action Continue untimed with approved Thai copy; result/history axes remain separate;
+6. add TalkBack/Switch/keyboard/focus restoration/status announcement/reduced-motion/no-audio coverage;
+7. validate Thai wrapping/combining marks, English locale and language-aware pronunciation labels;
+8. รัน `TC-PMT-043`, golden matrix และ UAT-039–049 dry run on prototype fixtures
+
+**Exit:** all Pair paths operable without sight/audio/precision gesture/forced timer and no semantic divergence by layout
+
+### Task PM7 — Adventure renderer parity and bounded measurement (8 pd)
+
+**Requirements:** FR-108/129/130, DATA-021, UI-027, NFR-044/045/046, BR-034
+
+**Files:**
+
+- Create `lib/features/adventure/presentation/adventure_pair_renderer.dart`
+- Add `test/features/adventure/adventure_pair_renderer_parity_test.dart`
+- Add/update research event projection tests only if Pair is inside an approved participant opportunity
+- Add `test/features/learning/pair_matching/pair_measurement_boundary_test.dart`
+
+**Steps:**
+
+1. render the same immutable plan/ViewModel; permit only theme, companion, narrative and return-target differences;
+2. normalize IDs/timestamps then compare commands, attempts, repair, timer, stars, evidence and terminal outcome against Standard;
+3. participant uses neutral existing mission events/opportunity; restart/rebuild does not add denominator;
+4. Practice Replay excluded from primary outcome and nonparticipant research row/outbox/upload stays zero;
+5. bounded diagnostics omit raw word/meaning/DOB/guardian text and obey owner/retention policy;
+6. simulate renderer failure/Adventure-off and continue through Standard with same checkpoint;
+7. รัน `TC-PMT-038/042–044` และ UAT-050 rehearsal
+
+**Exit:** normalized parity 100%, zero nonparticipant research rows, zero replay primary delta, safe Standard fallback
+
+### Task PM8 — Compatibility rollout, G4P evidence and prototype sign-off (12 pd)
+
+**Requirements:** all FR-105–130, DATA-016–021, UI-018–027, NFR-038–046, BR-024–034
+
+**Files/evidence:**
+
+- Update as-built SDS, RTM, Test Plan and UAT evidence links
+- Add checkpoint v1–v5 plus next-version fixtures in the repository's existing codec test location
+- Add feature/emergency-off integration fixtures without enabling production
+- Archive G4P evidence under the approved build-evidence location; do not place private/raw vocabulary in docs
+
+**Steps:**
+
+1. reserve the actual next checkpoint version; Release A reads old+new and writes old;
+2. run recovery/rollback matrix and set minimum compatible build; only then Release B may write new checkpoint under hidden f10 flag;
+3. run PMT-001–044, UAT-039–050, 8/44 registry/navigation, learning/SRS/mastery/weakness/reward/history/Today and Adventure fallback regressions;
+4. run `flutter analyze --no-pub lib test`, focused dependency/privacy checks and bounded manual diff review;
+5. verify feature off, Pair emergency-off, Adventure-off, accepted-session close and unrelated Quiz modes;
+6. reconcile RTM exactly 258/258 and record current build/commit/config/device evidence;
+7. Product, Learning/Data, UX/Accessibility, QA and Tech choose Accept/Revise/Reject;
+8. keep status Hidden/Internal; G4P does not authorize MS-08A/MS-08B or production enablement
+
+**Exit:** signed G4P package, reproducible rollback and zero open S0/S1; otherwise Revise/Reject with owner/date
+
+### Checkpoint 7 stop rule
+
+PM0–PM5 เป็น contract/engine core และหยุดได้ก่อน Adventure renderer PM7 หาก parity/replay zero-delta/checkpoint budget ยังไม่ผ่าน PM6 prototype ห้ามเชื่อม production navigation ก่อน PM8 sign-off งาน Pair ห้ามเพิ่ม research migration และห้ามใช้ Pair result เป็น motivation efficacy evidenceโดยไม่มี protocol amendment
+
+## 9. Pull Request and Commit Boundaries
 
 Recommended PR sequence:
 
@@ -628,7 +884,13 @@ Recommended PR sequence:
 7. research migration/domain/use cases;
 8. participation permits/opportunities/neutral events/sync/rules/lifecycle;
 9. offline/diagnostics/accessibility/performance;
-10. Pilot evidence/as-built documentation
+10. Pilot evidence/as-built documentation;
+11. Pair f10 characterization + immutable plan;
+12. Pair reducer/repair/timer;
+13. Pair stars/result/replay isolation;
+14. Pair adaptive Standard UI;
+15. Pair Adventure renderer/parity;
+16. Pair checkpoint writer + G4P evidence/as-built docs
 
 Each PR must include:
 
@@ -641,7 +903,7 @@ Each PR must include:
 - focused diff with unrelated user changes excluded;
 - rollback/emergency-off effect
 
-## 9. Final Definition of Done
+## 10. Final Definition of Done
 
 - [ ] 8/44 catalog exact; Adventure is not f45
 - [ ] feature hidden/default-off and Standard behavior equivalent
@@ -663,5 +925,14 @@ Each PR must include:
 - [ ] MDS baseline/post timepoints, ANCOVA, MI/tipping, learning margins, missingness and powered class rules are applied without post-hoc relaxation
 - [ ] MS-08A remains Limited and MS-08B decision/targeting is isolated per adult/minor class
 - [ ] UAT ≥12 learners (minors ≥4), ≥4 accessibility sessions, adult comprehension 10/10 and ≥5 dyads with guardian/learner 5/5 meet exact thresholds
-- [ ] RTM 196/196 requirements, 144 test cases and 38 UAT scripts have current evidence and sign-off
+- [ ] Pair Matching remains f10 with contextual Learn/Today/Review/Adventure entry; no f45/main menu
+- [ ] immutable exact 4/6 EN↔TH plan, no silent filler/downgrade and curated collision validation proven
+- [ ] wrong/repair/tail-guided/Review handoff and pronunciation-versus-semantic-support roles proven
+- [ ] timer default-off, active pause, +30 once, Continue untimed and same-session Restart survive recovery/races
+- [ ] stars rebuild from terminal ledger and never act as currency/reward/mastery; incomplete is not zero-star
+- [ ] Practice Replay zero delta across every prohibited authority/reward/research-primary projection
+- [ ] regular/focused/accessibility/localization layouts have command/evidence parity
+- [ ] Standard/Adventure normalized plan/engine/timer/repair/evidence/stars parity and safe fallback proven
+- [ ] checkpoint reader-first/writer-later, actual version reservation and rollback matrix pass
+- [ ] RTM 258/258 requirements, 188 test cases and 50 UAT scripts have current evidence and sign-off
 - [ ] Product, QA, Tech, Accessibility, Research/Privacy and Release decisions recorded

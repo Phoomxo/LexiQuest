@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1100" viewBox="0 0 2000 1100" role="img" aria-labelledby="title desc">
   <title id="title">LexiQuest Adventure Motivation Mode low fidelity wireframe overview</title>
-  <desc id="desc">Version 1.1. Five phone wireframes show the additive Learn entry, Adventure Home, Mission Details, Incorrect Feedback, and Result. No new bottom tab is added; Product Entry sees no raw research receipts and Standard fallback is available after Host authorization.</desc>
+  <desc id="desc">Version 1.2. Five phone wireframes show the additive Learn entry, Adventure Home, Mission Details, Incorrect Feedback, and Result. No new bottom tab is added; Product Entry sees no raw research receipts and Standard fallback is available after Host authorization.</desc>
   <defs>
     <style>
       .bg{fill:#f8fafc}.phone{fill:#fff;stroke:#334155;stroke-width:3}.bar{fill:#e2e8f0;stroke:#64748b;stroke-width:1.5}.card{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.primary{fill:#1e88e5;stroke:#1565c0;stroke-width:1.5}.soft{fill:#e3f2fd;stroke:#1e88e5;stroke-width:1.5}.line{stroke:#64748b;stroke-width:2;fill:none}.dashed{stroke:#94a3b8;stroke-width:2;stroke-dasharray:7 6;fill:none}.txt{font-family:'Noto Sans Thai','Segoe UI',sans-serif;fill:#0f172a}.small{font-size:14px}.body{font-size:17px}.title{font-size:23px;font-weight:700}.label{font-size:16px;font-weight:700}.white{fill:#fff}.muted{fill:#475569}.caption{font-size:13px;fill:#475569}
@@ -8,7 +8,7 @@
   </defs>
   <rect class="bg" width="2000" height="1100"/>
   <text class="txt title" x="60" y="50">LexiQuest — Adventure Motivation Mode / Low-fidelity overview</text>
-  <text class="txt body muted" x="60" y="82">v1.1 · Additive Learn entry · no new bottom tab · no raw receipts · authorized-Host Standard fallback</text>
+  <text class="txt body muted" x="60" y="82">v1.2 · Additive Learn entry · no new bottom tab · no raw receipts · authorized-Host Standard fallback</text>
 
   <!-- Learn Entry -->
   <g transform="translate(55,120)">

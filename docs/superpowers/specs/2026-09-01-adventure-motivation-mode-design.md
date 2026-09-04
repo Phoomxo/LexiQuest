@@ -1,16 +1,16 @@
 # Adventure Motivation Mode — System Design and Delivery Blueprint
 
-**Date:** 2026-09-01
-**Version:** 1.1
+**Date:** 2026-09-04
+**Version:** 1.2
 **Status:** PROPOSED FOR OWNER REVIEW
-**Baseline:** `99f7fb21` (`feature/alltcas-8-44-integration` remote baseline)
+**Baseline:** Adventure planning `99f7fb21`; Pair Matching source closure `f56e2eb`
 **Audit:** `docs/adventure-motivation-mode/00a-current-system-audit.md` — planning GO, hidden implementation conditional, Pilot/production NO-GO until gates close
 **Decisions:** `docs/adventure-motivation-mode/00b-architecture-decision-records.md`, `docs/adventure-motivation-mode/09-measurement-decision-spec.md`
 **Scope:** ออกแบบระบบและลำดับการพัฒนาเท่านั้น ยังไม่เปิดใช้ใน production
 
 ## 1. Decision
 
-LexiQuest จะพัฒนา **Adventure Motivation Mode** เป็นมุมมองทางเลือกเหนือวงจรการเรียนเดิม ไม่ใช่เกมหรือระบบการเรียนอีกชุดหนึ่ง ระบบแบ่งเป็น **11 logical modules** ใน bounded context เดียวชื่อ `adventure` และเชื่อมกับ authority ที่มีอยู่ผ่าน typed application interfaces เท่านั้น
+LexiQuest จะพัฒนา **Adventure Motivation Mode** เป็นมุมมองทางเลือกเหนือวงจรการเรียนเดิม ไม่ใช่เกมหรือระบบการเรียนอีกชุดหนึ่ง ระบบแบ่งเป็น **12 logical modules**: M01–M11 ใน bounded context `adventure` และ M12 เป็น Pair Matching integration boundary ที่ยกระดับกิจกรรม `f10` เดิมโดยไม่สร้าง feature ใหม่ เชื่อมกับ authority ที่มีอยู่ผ่าน typed application interfaces เท่านั้น
 
 การตัดสินใจหลักมีดังนี้:
 
@@ -437,7 +437,7 @@ For an active signed permit/run, Standard and Adventure record the same four neu
 
 The actual reserved research migration and four event payload policies cannot ship until migration, identity, lifecycle, sync/rules, export, withdrawal, deletion, retention and replay-compatibility tests pass. If another change occupies provisional schema v23 or v24 before implementation, the migration numbers are rebased upward in order; an occupied version is never reused.
 
-**Binding v1.1 contracts**
+**Binding v1.2 contracts**
 
 ```text
 ResearchParticipationPermit
@@ -481,6 +481,33 @@ Primary endpoint is post-session motivation within 30 minutes after the first ac
 - session resume/abandon rates;
 - experiment assignment mismatch count, which must remain zero;
 - duplicate reward/unlock rejection count
+
+### M12 — Pair Matching Prototype Integration
+
+**Responsibility**
+
+- refine existing `f10` matching semantics without creating a feature/menu/route authority;
+- compose immutable entry-aware exact 4/6 EN↔TH plans from Learn/Today/Review/Adventure;
+- own pure selection/match/repair/timer/restart state and versioned terminal star projection;
+- classify independent/guided/incorrect evidence before forwarding to the existing Evidence Gateway;
+- provide shared ViewModel/commands to Standard and Adventure renderers;
+- isolate Practice Replay from SRS/Mastery/Weakness/reward/Today/research-primary writes
+
+**Consumes**
+
+- typed launch intent and canonical source snapshot/selection;
+- owner-scoped product density preference and guardian override;
+- curated EN–TH lexical snapshots and content-quality status;
+- existing Learning Session, Evidence Gateway, Review and History ports;
+- presentation choice and delivery state from M01/M02
+
+**Produces**
+
+- `PairMatchingPlanV1`, next-version checkpoint and deterministic round lineage;
+- answer-role/repair evidence commands through the existing learning boundary;
+- rebuildable stars/time/history result projection;
+- bounded Pair diagnostics and participant-only neutral mission summaries when protocol-authorized;
+- typed unavailable, downgrade-confirmation, timeout and safe-fallback outcomes
 
 ## 8. User Experience Flow
 
@@ -831,6 +858,8 @@ M04 ─► M05 ─► M06 ─► M09
 M06 ─► M07 ─► M08
 M06/M07/M09 ─► M10
 M11 supports and gates M01–M10
+M05/M06 ─► M12 Pair plan/engine ─► M09 evidence/recovery
+M02/M08 provide Standard/Adventure presentation shells to M12
 ```
 
 No module may be implemented before its incoming contract is tested.
@@ -853,6 +882,11 @@ No module may be implemented before its incoming contract is tested.
 | Feasibility is treated as efficacy | Premature expansion | MS-08A Limited ceiling and powered MS-08B per class |
 | Too many variables in first study | Uninterpretable result | one world, scripted companion, no AI/camera/social |
 | Completed 8/44 baseline is not reproducibly verified | Unknown regression source | repair SDK test crash and record clean baseline before production changes |
+| Pair Matching แตกเป็น feature/menu ใหม่ | flow และ 8/44 identity เสีย | semantic revision ของ f10, contextual entries เท่านั้น, registry/navigation tests |
+| คำไม่ครบหรือชนกันแล้วเติมเงียบ | ความหมายผิดและแผนไม่ reproducible | curated EN–TH allowlist, collision validation, exact 4/6, typed unavailable/confirmation |
+| timer/stars กลายเป็นแรงกดดันหรือ mastery | fairness และ learning claim ผิด | timer opt-in/default off, active time, descriptive stars, no currency/leaderboard |
+| replay เร่ง SRS หรือ reward farming | learning/reward authority เสีย | purpose=`practiceReplay`, exact zero-delta cross-projection tests |
+| renderer ต่างกันจนผลการเรียนต่าง | research confound และ defect ซ่อน | normalized plan/command/evidence parity suite; presentation-only Adventure delta |
 
 ## 19. Acceptance Criteria
 
@@ -872,11 +906,26 @@ Adventure Motivation Mode is ready for MS-08A Feasibility only when all conditio
 12. Research protocol, guardian/assent process and statistical decision rules are registered before enrollment.
 13. No unresolved critical evidence-integrity, privacy, accessibility or duplicate-reward defect remains.
 
+### 19.1 Pair Matching Prototype acceptance
+
+Pair Matching ผ่านเป็นต้นแบบมาตรฐานได้แยกจาก MS-08A เมื่อ:
+
+1. ยังเป็น `f10`/`LessonMode.matching`/`learning/matching` และไม่มี main navigation หรือ `f45`;
+2. Learn/Today/Review/Adventure สร้าง immutable entry-aware plan เดียวกัน และ Standard/Adventure ต่างเฉพาะ renderer;
+3. รอบมี exact 4/6 คู่, EN→TH หรือ TH→EN หนึ่งทิศ, ไม่มี silent filler/downgrade และ collision ถูก reject ก่อน start;
+4. wrong ไม่ลด progress, repair กลับหลัง 2/3 distinct correct pairs และ tail ใช้ guided completion + canonical Review;
+5. timer default off, pause ตาม active interaction, +30 ได้ครั้งเดียว และ timeout ยัง Continue untimed/Restart ได้;
+6. ดาวเป็น terminal projection 1–3 ไม่ใช่ currency/reward/mastery และ incomplete ไม่มี 0 ดาว;
+7. Practice Replay เป็น session ใหม่ที่ไม่เปลี่ยน SRS/Mastery/Weakness/accuracy/reward/quest/streak/achievement/Today/research primary outcome;
+8. two-column/focused layouts, TalkBack, Switch Access, keyboard, text 200%, reduced motion และ focus restoration ผ่าน;
+9. checkpoint reader-first, coalesced persistence, owner/callback fences, feature-off และ fallback ผ่าน;
+10. PMT-001–044, UAT-039–050, RTM 258/258 และ `G4P` evidence package ผ่านและลงนาม
+
 ## 20. Review Decision Requested
 
 Owner review should confirm these decisions before the task-by-task implementation plan is executed:
 
-- 11-module architecture;
+- 12-module architecture โดย M12 ยกระดับ Pair Matching f10 เดิม ไม่ใช่ f45;
 - Adventure as optional Today Hub presentation;
 - no Adventure progress table in MVP;
 - session-local switch in Phase 1, followed by a durable preference on the actual reserved migration (provisionally schema v23) in Phase 3;
@@ -884,4 +933,83 @@ Owner review should confirm these decisions before the task-by-task implementati
 - Standard view always available;
 - Standard fallback through Adventure only after Host authorization; hidden/stale route returns Learn;
 - research measurement on the actual reserved migration (provisionally schema v24), signed permits, opportunities and neutral events added only after the learning bridge is proven;
-- rollout order Hidden → Internal → Limited/MS-08A → class-specific MS-08B → Controlled Expansion → Enabled
+- rollout order Hidden → Internal → Limited/MS-08A → class-specific MS-08B → Controlled Expansion → Enabled;
+- Pair Matching prototype gate `G4P` แยกจาก efficacy gate และไม่เปิด Adventure อัตโนมัติ;
+- Pair plan, repair, timer, stars, replay และ adaptive-layout contracts ตาม ADR-009–013
+
+## 21. Pair Matching Prototype Design Addendum
+
+### 21.1 Product role and boundaries
+
+Pair Matching เป็นกิจกรรมฝึก recognition แบบสั้นใน Today Mission, Review, Learn และ Adventure ไม่ใช่ destination ใหม่ เป้าหมายคือทำให้วงจรเดิมน่าเล่นขึ้นโดยยังรักษา source priority, Evidence Gateway, SRS/Weakness และ Learning Session authority เดิม
+
+```text
+Learn / Today Snapshot / Review Selection / Adventure Mission
+                         │ typed PairLaunchIntent
+                         ▼
+               Pair Plan Composer (M12)
+                         │ immutable PairMatchingPlanV1
+              ┌──────────┴──────────┐
+              ▼                     ▼
+       Standard renderer     Adventure renderer
+              └──────────┬──────────┘
+                         ▼
+        Shared reducer / timer / repair / checkpoint
+                         ▼
+          Existing Evidence Gateway + projections
+```
+
+### 21.2 Canonical plan
+
+หนึ่ง start สร้าง plan หลัง revalidate owner, source identity, lexical revision/checksum และ curated EN–TH eligibility แล้วจึงเปิด Learning Session + initial checkpoint แบบ atomic แผน pin:
+
+- exact 4 หรือ 6 lexical pairs;
+- one direction: `enToTh` หรือ `thToEn`;
+- merged source reasons และ entry identity;
+- prompt/target order, deterministic seed และ content fingerprint;
+- timer choice, repair/star/checkpoint policy versions;
+- return target และ renderer presentation metadataที่ไม่เปลี่ยน semantics
+
+Today ใช้ snapshot เดิม, Review ใช้ exact selection, Learn ใช้ canonical composer และ Adventure ห้าม recompose ถ้า 6 คู่ไม่พร้อม ระบบต้องขอยืนยัน 4 คู่; ต่ำกว่า 4 แสดง unavailable โดยไม่เติมคำเงียบ
+
+### 21.3 Interaction state machine
+
+```text
+ready → selectedOne → evaluating
+  correct  → matched → advance
+  mismatch → supportiveRepair → wait 2/3 distinct successes → re-present
+  tail     → guidedComplete → defer independent recall to Review
+
+timer expiry → timeoutDecision
+  ├─ Continue untimed
+  ├─ Add 30 seconds (once/session)
+  └─ Restart exact set (new round, same Learning Session)
+```
+
+Matched progress เพิ่มเมื่อ success เท่านั้นและไม่ลด Cross-side mismatch เขียน incorrect recognition หนึ่งครั้งให้ prompt word ไม่ใช่ distractor; visible pronunciation และ accessibility narration ไม่ใช่ hint แต่ answer-revealing mapping ทำให้ terminal role เป็น guided
+
+### 21.4 Result and replay
+
+Star projector v1 ใช้ committed terminal ledger:
+
+- 3 ดาว: ทุกคู่ถูก first attempt และไม่มี answer-revealing hint;
+- 2 ดาว: independent อย่างน้อย 3/4 หรือ 5/6 รวม self-correction ก่อน reveal;
+- 1 ดาว: complete กรณีอื่น;
+- incomplete: แสดงสถานะ incomplete ไม่สร้าง 0 ดาว
+
+Timer status และ active elapsed แสดงแยกจากดาว ไม่มีผลต่อ reward/mastery `Practice Replay` ใช้ exact content + shuffle ใหม่ใน Learning Session ใหม่ purpose ชัด แสดง history ได้ แต่ write allowlist ต้องเป็นศูนย์ต่อ authority/reward/research-primary projections
+
+### 21.5 Responsive and accessible presentation
+
+- regular effective width: balanced two columns, content width bounded;
+- narrow, text 200% หรือ assistive profile: focused prompt-to-target list;
+- tile ≥56px และ compact/young ≥64px; actions ≥48×48;
+- state ใช้ text/icon/border ไม่พึ่งสี เสียง หรือ motion;
+- timeout primary action คือ Continue untimed พร้อม copy “ยังไม่ทันเป้าหมาย แต่ทำต่อได้”;
+- focus restore และ semantic announcements ต้องไม่สร้าง duplicate submit หรือกิน active timer
+
+### 21.6 Delivery and rollback
+
+ใช้ checkpoint evolution แบบ reader-first/writer-later โดย reserve schema/checkpoint version จริงตอนเริ่ม implement ไม่ hard-code v6 หากถูกใช้ไปแล้ว Durable writes coalesce ตาม answer/decision/terminal boundary ห้าม write ต่อ timer tick
+
+Pair delivery flag default hidden และ map กลับ f10; Adventure flag off ระหว่าง accepted pair session ให้เปลี่ยน presentation เป็น Standard โดยใช้ plan/checkpoint เดิม Pair flag emergency-off บล็อก start ใหม่แต่ session ที่รับแล้วจบตาม lifecycle ที่กำหนด การผ่าน `G4P` เป็นเพียงสิทธิ์ internal prototype validation ไม่ใช่ research efficacy หรือ production enablement

@@ -1,17 +1,17 @@
 # Software Design Specification (SDS) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-SDS-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for Owner Review
-**Date:** 2026-09-01
-**SRS reference:** `LQ-AMM-SRS-001 v1.1`
+**Date:** 2026-09-04
+**SRS reference:** `LQ-AMM-SRS-001 v1.2`
 **Baseline:** commit `99f7fb21`, schema v22
 **Audit reference:** `AMM-AUDIT-001 v1.0`; 15 baseline failures remain explicit gates
-**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
+**Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 
 ## 1. Design Decision Summary
 
-Adventure เป็น bounded context ใหม่ที่ไม่มี write authority ต่อ learning/progress เดิม ประกอบด้วย 11 logical modules แต่จัดอยู่ใน package `lib/features/adventure/` เดียว การเชื่อมระบบเดิมทำผ่าน application ports และ canonical use cases เท่านั้น
+Adventure เป็น bounded context ใหม่ที่ไม่มี write authority ต่อ learning/progress เดิม ประกอบด้วย M01–M11 และเพิ่ม M12 Pair Matching Prototype Integration ซึ่งเป็น planning module ของ `f10` เดิม ไม่ใช่ capability ใหม่ การเชื่อมระบบเดิมทำผ่าน application ports และ canonical use cases เท่านั้น
 
 การตัดสินใจที่ลดผลกระทบต่อ 8/44:
 
@@ -1231,3 +1231,248 @@ Rollback is feature-state based. Database remains forward-compatible; no destruc
 - File map follows existing repository patterns
 - Test architecture covers contracts, lifecycle and users
 - Audit findings are linked to owners and no Pilot/release gate is bypassed
+
+## 15. M12 Pair Matching Prototype Integration Design
+
+### 15.1 Boundary and dependency rule
+
+```text
+Learn / Today / Review / Adventure / History
+                    │ typed launch intent
+                    ▼
+        PairMatchingLaunchResolver
+                    ▼
+        PairMatchingSourceComposer
+                    ▼
+           PairMatchingPlanV1
+                    ▼
+     PairMatchingSessionCoordinator
+          ┌─────────┴──────────┐
+          ▼                    ▼
+ PairMatchingEngine     Canonical Evidence Gateway
+          │                    │
+          ▼                    ▼
+   PairBoardViewModel   Learning/Review projections
+      ┌────────┴────────┐
+      ▼                 ▼
+ Standard renderer  Adventure renderer
+```
+
+`PairMatchingEngine` เป็น pure reducer ไม่มี repository, clock, Flutter widget หรือ Adventure dependency `PairMatchingSessionCoordinator` เป็นเจ้าของ serialized mutation, checkpoint, clock transition, evidence retry และ close แต่ไม่เป็น authority ของ SRS/reward UI renderer ห้าม import data layer
+
+### 15.2 Public contracts
+
+```text
+enum PairDirection { enToTh, thToEn }
+enum PairDensity { compact4, standard6 }
+enum PairSessionPurpose { learning, practiceReplay }
+enum PairTimerPreset { off, seconds60, seconds90, seconds120 }
+enum PairTimerState { off, running, timeoutDecision, extendedRunning, continuedUntimed }
+enum PairAttemptRole { firstOpportunity, selfCorrection, repair, guidedCompletion }
+
+PairMatchingLaunchIntent
+  ownerId
+  sourceSurface: learn | today | review | adventure | history
+  sourceSnapshotRef
+  requestedDirection
+  requestedDensity?
+  timerPreset
+  sessionPurpose
+  sourceSessionId?
+  operationId
+
+PairMatchingPlanV1
+  ownerId
+  orderedLexicalItems[]:
+    wordId, contentRevision, checksum, spelling, meaning,
+    sourceLocale, targetLocale, sourceReasons[]
+  direction
+  density
+  sourceOrder[]
+  targetOrder[]
+  shuffleSeed
+  timerPreset
+  repairPolicyVersion = 1
+  starPolicyVersion = 1
+  sessionPurpose
+  sourceSessionId?
+  planFingerprint
+
+PairRepairTicket
+  promptWordId
+  distractorWordId
+  repairOfAttemptId
+  dueAfterDistinctCorrectCount
+  supportClass
+  state: waiting | available | completed | guidedCompleted | deferred
+
+PairRoundState
+  roundOrdinal
+  roundSeed
+  selectedSourceId?
+  selectedTargetId?
+  matchedWordIds[]
+  firstOpportunityLedger[]
+  repairTickets[]
+  timerState
+  remainingActiveMs?
+  extensionUsed
+  pendingOperation?
+
+PairMatchingOutcome
+  completedPairCount
+  firstAttemptCorrectCount
+  independentPairCount
+  assistedPairCount
+  deferredReviewWordIds[]
+  activeElapsedMs
+  timerOutcome
+  stars
+  starPolicyVersion
+```
+
+Stable serialization ต้องใช้ exact key allowlist, canonical order และ UTC สำหรับ persisted wall timestamps แต่ timer ใช้ accumulated active duration ไม่พึ่ง wall-clock อย่างเดียว
+
+### 15.3 Source composition and atomic start
+
+| Origin | Authoritative input | Rule |
+|---|---|---|
+| Today | object จาก single-loaded `TodayHubSnapshot` | ห้าม query Today ใหม่ใน Pair flow |
+| Review | exact selected `ReviewQueueItem` snapshots | preserve reason/order ก่อน deterministic board shuffle |
+| Learn | canonical Review/recommendation readers | merge due/incorrect/weakness/new reasons ต่อ lexical identity |
+| Adventure | `PairMatchingPlanV1` จาก same Standard resolver | no recompose; presentation envelope แยก |
+| History | terminal source plan | revalidate deleted/reported/revision/checksum ก่อน Practice Replay |
+
+Composer สร้าง candidate map ก่อน rank กรองทั้ง prompt และ target visible collision ด้วย locale-aware normalizationที่ไม่ลบเครื่องหมายภาษาไทย หาก requested 6 เหลือ safe 4 ให้คืน `PairPlanNeedsDensityConfirmation(compact4)` ไม่สร้าง plan จนผู้ใช้ยืนยัน ต่ำกว่า 4 คืน `PairPlanUnavailable` ไม่มี write
+
+Repository ต้องมี atomic operation เทียบเท่า:
+
+```text
+startPinnedCheckpointedPairSession(
+  ownerId,
+  launchOperationId,
+  PairMatchingPlanV1 plan,
+  InitialPairCheckpoint checkpoint
+) -> AcceptedPairSession
+```
+
+transaction ต้อง revalidate owner, content status, revision, checksum, feature state และ active-session conflict แล้วสร้าง Learning Session + initial checkpoint แบบ all-or-nothing
+
+### 15.4 Reducer and progress semantics
+
+```text
+ready
+ → oneSelected
+ → resolving
+ → matched | wrongFeedback
+ → repairWaiting | repairAvailable
+ → guidedCompletion
+ → readyToClose
+```
+
+- same-side selection เปลี่ยน/deselect UI state เท่านั้น
+- cross-side submission สร้างหนึ่ง attempt หลัง coordinator reserve immutable identity
+- wrong ไม่แก้ `matchedWordIds`; correct/guided-completed pair เพิ่มได้ครั้งเดียว
+- prompt identity มาจาก pinned direction ไม่ขึ้นกับด้านที่ผู้ใช้แตะก่อน
+- repair due counter เพิ่มเมื่อ distinct other pair สำเร็จเท่านั้น
+- compact4 delay=2; standard6 delay=3; collision sort ด้วย due ordinal → original attempt ordinal → word ID
+- repair หนึ่งรอบต่อ prompt word; wrong อีกครั้งเข้าสู่ guided completion และ Review deferral
+- late tail ไม่มี padding/bridge; guided completion ปิด pair และ future independent recall อยู่กับ Review
+
+### 15.5 Evidence and downstream projection
+
+| Interaction | Canonical treatment |
+|---|---|
+| same-side tap/deselect/duplicate | no AnswerAttempt |
+| first cross-side wrong | incorrect `recognition` ของ prompt word |
+| correct before semantic reveal | correct `recognition` |
+| pronunciation/visible-text TalkBack | modality only; no downgrade |
+| corrective mapping/answer-revealing hint | support marker; subsequent answer `guidedPractice` |
+| timeout/action/restart/praise/star | no learning evidence |
+| Practice Replay answer | raw/history evidence under purpose; automatic projections no-op |
+
+Matching ไม่ปิด due-SRS interval ให้ตรงกับ safety floor เดิม “ส่งเข้า SRS/Weakness รอบถัดไป” หมายถึง derive unresolved support need จาก incorrect/guided evidence ให้ canonical Review แสดง ไม่ใช่เขียน/เลื่อน `srs_states` โดยตรง MVP ต้องพยายามใช้ existing attempt/checkpoint projection ก่อนเพิ่ม event type ใหม่
+
+### 15.6 Timer and round recovery
+
+Timer state เป็น orthogonal ต่อ reducer:
+
+```text
+off
+running → timeoutDecision
+timeoutDecision → continuedUntimed
+timeoutDecision → extendedRunning  // once
+timeoutDecision → running(new round, same session)
+```
+
+Active segment ใช้ monotonic clock; coordinator persist `remainingActiveMs` เมื่อ lifecycle pause/timeout/decision/extension/restart ไม่เขียนทุก tick `+30` ใช้ operation ID และปลดล็อก UI หลัง checkpoint ack เท่านั้น Clock fault/rollback ทำให้ timer pause และเสนอ Continue untimed โดยห้าม abandon evidence
+
+Restart เพิ่ม `roundOrdinal`, derive/pin seed ใหม่, reset visual board ของ round แต่ไม่ลบ committed attempts, repair/star inputs หรือ `extensionUsed` Technical retry reuse operation/evidence ID เดิมและไม่เพิ่ม round
+
+### 15.7 Stars, result and history
+
+`PairMatchingOutcomeProjector` ทำงานหลัง terminal receipt และตรวจ exact planned completion ไม่อ่าน generic percentage score:
+
+```text
+if !complete: no stars
+else if firstAttemptCorrect == pairCount && no answer-revealing hint: 3
+else if independentPairCount >= ceil(pairCount * 0.75): 2
+else: 1
+```
+
+สำหรับ v1 threshold คือ 3/4 และ 5/6 self-correction ก่อน semantic reveal นับใน `independentPairCount` แต่ไม่ทำให้ `firstAttemptCorrectCount` เพิ่ม Timer/presentation/layout/accessibility modality ไม่เป็น input Normal History แสดง latest/best; Practice Replay ถูก group ใต้ source และมี descriptive result แยกโดยไม่ overwrite mission-earned best
+
+### 15.8 Adaptive presentation
+
+| Effective condition | Renderer |
+|---|---|
+| width 360–599 และ text fits | symmetric two-column board |
+| width <360 หรือ text 200% ไม่ fit | focused source + vertical target list |
+| width 600–839 | board + status/support pane |
+| width ≥840 | centered content max 720–840; ไม่ stretch tile |
+| TalkBack/Switch requires simpler traversal | focused semantic variant โดย engine เดิม |
+
+Tile 56px minimum, compact/young 64px; source/target language semantics ระบุแยก Matched visual placeholder ป้องกัน layout jump แต่ matched node ออกจาก focus traversalหลัง live-region announcement Focus กลับ action/target ถัดไปอย่าง deterministic Reduced motion ทำ transition duration เป็นศูนย์
+
+### 15.9 Checkpoint evolution and rollback
+
+Checkpoint codec ใช้ next available version ณ implementation time (คาดว่า v6 จาก audited v1–v5) โดยทำ expand/contract:
+
+1. Release A อ่าน legacy และ new version แต่ยังเขียน legacy
+2. characterization/recovery/rollback matrix ผ่านและ minimum compatible build ถูกกำหนด
+3. Release B จึงเปิด new writer ภายใต้ hidden `f10` delivery state
+4. durable writes coalesce และมี terminal revision reserve; timer frame/tick ไม่เขียน checkpoint
+5. old session resume ด้วย legacy Standard behavior; ห้าม infer stars, repair ticket หรือ replay readiness
+6. emergency-off block new starts แต่ accepted session resume/retire ได้
+
+### 15.10 Planned file map
+
+| Responsibility | Planned path |
+|---|---|
+| launch contracts | `lib/features/learning/pair_matching/domain/pair_matching_launch.dart` |
+| immutable plan | `lib/features/learning/pair_matching/domain/pair_matching_plan.dart` |
+| pure engine/state | `lib/features/learning/pair_matching/domain/pair_matching_engine.dart` |
+| repair policy | `lib/features/learning/pair_matching/domain/pair_repair_policy.dart` |
+| star projector | `lib/features/learning/pair_matching/domain/pair_star_policy.dart` |
+| source composer | `lib/features/learning/pair_matching/application/pair_matching_source_composer.dart` |
+| coordinator | `lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart` |
+| checkpoint codec | `lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart` |
+| shared ViewModel/host | `lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart` |
+| adaptive board | `lib/features/learning/pair_matching/presentation/pair_board_view.dart` |
+| result/history projection UI | `lib/features/learning/pair_matching/presentation/pair_matching_result_view.dart` |
+| Standard entry bridge | existing `lib/screens/matching_mode_screen.dart` and Learn/Review/Today routes |
+| Adventure renderer | `lib/features/adventure/presentation/adventure_pair_renderer.dart` |
+
+Actual paths must be revalidated against implementation base before code; existing large adapter is split only after characterization tests and behavior-preserving review
+
+### 15.11 Pair design acceptance
+
+- AMM-FR-105–130/Data/UI/NFR/BR addenda each map to an owner above
+- `PairMatchingPlanV1` excludes presentation metadata from learning fingerprint
+- source start is atomic and exact 4/6; no silent fallback/filler
+- progress, attempt, repair and star axes remain separate
+- timer/restart/replay identities survive crash/lost acknowledgement
+- downstream replay deltas prohibited by ADR-012 equal zero
+- normalized Standard/Adventure plan/command/evidence/outcome parity passes
+- reader-first rollback, checkpoint budget and legacy recovery are evidenced
+- PMT-001–044 and UAT-039–050 are linked before prototype acceptance

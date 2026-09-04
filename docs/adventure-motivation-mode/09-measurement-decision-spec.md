@@ -1,10 +1,10 @@
 # Measurement Decision Spec — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-MDS-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Planning thresholds; protocol approval required before enrollment
-**Date:** 2026-09-01
-**Applies to:** Android-only Pilot v1, adult and minor strata, under ADR-002/003/005/007/008
+**Date:** 2026-09-04
+**Applies to:** Android-only Pilot v1, adult and minor strata, under ADR-002/003/005/007/008 และ Pair Matching Prototype measurement guardrails under ADR-009–013
 
 ## 1. Purpose
 
@@ -207,6 +207,7 @@ Research Prompt, guardian permission, learner assent, Standard escape, permit in
 | Switch Access/keyboard | prompt, guardian, assent, withdrawal | focus order, no trap, restored focus |
 | Offline | signed permit validation, expiry/revocation-known state, learning continuation | fail-closed permit; product remains usable |
 | Corrupt asset/config | authorized-Host Standard fallback; unauthorized route returns Learn | no loop, bounded reason |
+| Pair Matching prototype | UAT-039–050 across regular/focused and timer choices | G4P learning/usability evidence only; not efficacy |
 
 iOS, desktop, AI Voice และ field model เป็น excluded from Pilot v1 และห้ามนับเป็น pass
 
@@ -237,11 +238,111 @@ iOS, desktop, AI Voice และ field model เป็น excluded from Pilot v1
 - Android device/build matrix and explicit exclusions
 - MS-08A and MS-08B signed decisions per participant class
 
-## 16. Change control
+## 16. Pair Matching Prototype measurement annex
+
+### 16.1 Measurement position
+
+Pair Matching เป็น learning activity ภายใต้ f10 ไม่ใช่แรงจูงใจโดยตัวมันเอง จึงห้ามใช้ดาว เวลา ความเร็ว จำนวน replay, tap, animation หรือ completion เพียงลำพังเป็นหลักฐานว่า Adventure “เพิ่มแรงจูงใจ” หรือ “เพิ่ม mastery” การประเมินแรงจูงใจระดับระบบยังใช้ primary endpoint และ gate ใน §5–§11 เท่านั้น
+
+ต้นแบบต้องแยกสามชั้น:
+
+| ชั้น | แหล่งข้อมูล | ใช้ตัดสิน | ห้ามตีความเป็น |
+|---|---|---|---|
+| Learning evidence | committed answer-role ledger และ canonical SRS/Review evidence | independent/guided/incorrect และ delayed recall | reward, motivation หรือความเร็ว |
+| Session projection | matched count, stars, active elapsed, timely status, repair count | อธิบายรอบที่เพิ่งเล่นและ usability | mastery score, currency หรือ efficacy |
+| Product/research measurement | neutral events + participant-only opportunity + approved instrument | feasibility/efficacy ตาม protocol | telemetry ของ nonparticipant หรือ replay reward |
+
+### 16.2 Pair outcome and guardrail definitions
+
+| Axis | Metric | Exact definition | Role |
+|---|---|---|---|
+| Learning | `pairFirstOpportunityAccuracy` | คู่ที่ตอบถูกแบบ independent ใน first answer opportunity ÷ คู่ที่มี first opportunity ใน normal learning sessions | Learning process |
+| Learning | `pairIndependentCompletionRate` | คู่ที่ complete แบบ independent ก่อน answer reveal ÷ exact plan pair count | Learning process |
+| Support | `pairGuidedCompletionRate` | คู่ที่ terminal role เป็น guided ÷ exact plan pair count | Support/usability |
+| Repair | `pairRepairDueResolutionRate` | repair tickets ที่กลับมาตาม 2/3 distinct-success policy และ resolved ÷ tickets ที่มี spacing เพียงพอ | Contract guardrail |
+| Review | `pairDeferredRecallResolutionRate` | tail-guided words ที่มี independent canonical Review result ใน approved follow-up window ÷ tail-guided words due in that window | Learning guardrail |
+| Reliability | `pairDuplicateOrLostEvidenceCount` | logical attempt/repair/round/extension ที่สร้าง duplicate หรือหายจาก one-operation contract | Stop guardrail |
+| Equity | `pairLayoutOutcomeGap` | independent-completion difference ระหว่าง regular กับ focused layout หลังแบ่งตาม density/direction และ accessibility profile | Diagnostic guardrail |
+| Usability | `pairVoluntaryContinuationRate` | timeout decisions ที่เลือก Continue untimed ÷ timeout decisions ที่แสดง choice ครบ | Descriptive only |
+
+ดาว 1–3 ดวงคำนวณตาม `starPolicyVersion` จาก terminal ledger เท่านั้นและรายงานเป็น distribution ห้ามเฉลี่ยรวมกับ mastery; session ไม่ complete ต้องเป็น `incomplete` ไม่ใช่ 0 ดาว
+
+### 16.3 Timer interpretation
+
+- timer default OFF และการเลือก 60/90/120 เป็น self-selection จึง **ห้าม** เปรียบเทียบ timer groups เป็น causal effect โดยตรง;
+- `activeElapsedMs` ตัด background, modal, persistence wait และ required accessibility narration ตาม policy; wall-clock ไม่ใช้ตัดสินผู้เรียน;
+- timely status, +30, Continue untimed และ Restart ห้ามเปลี่ยน stars, learning evidence, SRS, Mastery หรือ reward เมื่อ answer ledger เท่ากัน;
+- เวลาแสดงเพื่อ feedback ส่วนบุคคลเท่านั้นใน prototype; ห้าม leaderboard, percentile หรือ pressure copy;
+- หากต้องการทดลอง timer ในอนาคต ต้องมี protocol/randomization/consent/permit/analysis amendment แยกก่อน exposure
+
+### 16.4 Practice Replay exclusion
+
+Session `purpose=practiceReplay`:
+
+1. ไม่อยู่ใน denominator/numerator ของ primary motivation, voluntary mission start, canonical completion, independent recall, review resolution หรือ Today due-resolution;
+2. ไม่สร้าง reward/mastery/SRS/Weakness/global accuracy/quest/streak/achievement delta;
+3. เก็บได้เฉพาะ bounded reliability/usability diagnostic และ history ที่ label ชัด ภายใต้ policy ที่อนุมัติ;
+4. ต้อง link source session แบบ immutable เพื่อ audit แต่ห้าม overwrite latest/best normal outcome;
+5. การเล่นซ้ำจำนวนมากห้ามถูกแปลว่า motivation สูงโดยไม่มี approved instrument
+
+### 16.5 Required stratification and denominator rules
+
+รายงาน Pair metrics ต้องแบ่งอย่างน้อยตาม:
+
+- `pairCount`: compact4 / standard6;
+- `direction`: enToTh / thToEn;
+- `source`: Learn / Today / Review / Adventure พร้อม merged provenance category;
+- `timerChoice`: off / 60 / 90 / 120 และ path: timely / extended / continuedUntimed / restarted;
+- `presentation`: Standard / Adventure;
+- `layout`: regular / focused;
+- accessibility profile, offline state และ approved device class เมื่อ sample disclosure-safe
+
+ห้ามรวมกลุ่มจนซ่อน critical failure, ห้ามรายงาน cell ที่ต่ำกว่า approved disclosure threshold และห้ามใช้ pair-size preference, assistive technology หรือ guardian setting เป็นตัวแทนอายุ/ความสามารถ
+
+### 16.6 Event and privacy contract
+
+- participant ใช้ neutral events เดิม `TodayExperienceMissionStarted` และ `TodayExperienceMissionCompleted` พร้อม pinned `assignedTreatment`, `effectivePresentation`, plan/policy fingerprints และ bounded Pair summary; Standard/Adventure ห้ามใช้ชื่อ event คนละชุด;
+- `MeasurementOpportunity` ยังคงเป็น denominator ของ research exposure; Pair activity/restart/rebuild ห้ามสร้าง opportunity ใหม่;
+- Timeout Restart เป็น round เดิมใน Learning Session เดิม; Practice Replay เป็น session ใหม่แต่ excluded ตาม §16.4;
+- nonparticipant สร้าง research row/event/outbox/upload เท่ากับศูนย์; operational diagnostics ต้อง bounded/local-or-approved และไม่มี raw word/meaning;
+- ห้ามส่ง private vocabulary ไป remote TTS/analytics โดยไม่มี policy และ consent ที่อนุมัติ;
+- payload ต้องมี schema/policy version และผ่าน export/withdrawal/deletion/retention lifecycle เมื่ออยู่ใน research scope
+
+### 16.7 Pair prototype decision gate
+
+Pair Matching Prototype ผ่าน `G4P` ได้เมื่อ:
+
+1. PMT-001–044 และ UAT-039–050 ผ่านตาม applicability;
+2. duplicate/lost evidence, replay authority delta, star currency/ledger และ silent filler/downgrade = 0;
+3. repair spacing, timeout restore, one-extension entitlement, checkpoint compatibility และ Standard/Adventure parity ผ่าน 100% ของ deterministic fixtures;
+4. accessibility required path ผ่านทุก moderated session และไม่มี critical clipping/trap/focus loss;
+5. ผู้แทนอย่างน้อย 11/12 อธิบายได้ว่าดาว/เวลาไม่ใช่ mastery/reward และ Practice Replay ไม่เร่ง SRS;
+6. outcome report แยก density/direction/source/timer/layout และไม่ทำ causal claim จาก self-selected timer;
+7. Product, Learning/Data, UX/Accessibility, QA และ Tech ลงนาม Accept
+
+การผ่าน `G4P` อนุญาตให้ใช้ต้นแบบเพื่อ internal validation เท่านั้น ไม่ทำให้ Adventure ผ่าน MS-08A/MS-08B และไม่อนุญาต Controlled Expansion/Enabled โดยอัตโนมัติ
+
+## 17. Pair Matching required evidence package
+
+- normalized `PairMatchingPlanV1` fixtures และ fingerprints สำหรับทุก entry/density/direction;
+- curated EN–TH eligibility/collision validation report โดยไม่เผย private vocabulary;
+- reducer/property/idempotency/race/recovery test report;
+- repair timeline และ tail-deferral audit;
+- timer active-time/pause/restore/extension/restart evidence;
+- star rebuild fixtures และ proof ว่าไม่มี currency/reward/mastery write;
+- Practice Replay cross-projection before/after diff;
+- Standard/Adventure normalized parity diff;
+- reader-first checkpoint compatibility/rollback matrix;
+- accessibility/device/localization evidence และ UAT comprehension numerator/denominator;
+- signed `G4P` decision พร้อม build/commit/config fingerprints
+
+## 18. Change control
 
 ก่อน enrollment การเปลี่ยน endpoint/timepoint/threshold/instrument/sample/imputation/strata ต้องผ่าน Product + Research + Privacy approval และ protocol version bump หลัง enrollmentต้องเก็บ analysis เดิม รายงาน amendment และถือผลใหม่เป็น secondary/exploratory เว้นแต่ ethics/statistical governance อนุมัติเป็นอย่างอื่น
 
-## 17. Approval
+Pair Matching หลัง prototype หากเปลี่ยน star threshold, repair spacing, timer choice, density inference, replay eligibility, telemetry field หรือ causal claim ต้องแก้ ADR/SRS/SDS/MDS/RTM และ test fixtures ใน revision เดียวกัน การเปลี่ยนที่กระทบ research endpoint/denominator ต้องผ่าน protocol amendment ก่อน exposure
+
+## 19. Approval
 
 | Role | Decision | Name | Date | Evidence reference |
 |---|---|---|---|---|

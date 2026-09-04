@@ -1,10 +1,11 @@
 # Project Plan / Work Breakdown Structure — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-PP-001
-**Version:** 1.1
+**Version:** 1.2
+**Date:** 2026-09-04
 **Status:** Draft for Owner Review
-**Planning basis:** TOR/SRS/SDS v1.1 and `AMM-AUDIT-001 v1.0`
-**Decision basis:** `LQ-AMM-ADR-001 v1.1` and `LQ-AMM-MDS-001 v1.1`
+**Planning basis:** TOR/SRS/SDS v1.2 and `AMM-AUDIT-001 v1.0`
+**Decision basis:** `LQ-AMM-ADR-001 v1.2` and `LQ-AMM-MDS-001 v1.2`
 **Estimate class:** ROM ±30% until G1 architecture approval and closure of the Audit before-implementation gate
 
 ## 1. Delivery Strategy
@@ -23,7 +24,7 @@
 | Content/Localization | 0.5 FTE from Phase 1 |
 | Release/Operations | 0.25 FTE |
 
-With this team the planning range is 22–30 calendar weeks, excluding waiting time for ethics/protocol approval, participant recruitment and powered-efficacy observation. Person-day estimates are effort, not elapsed calendar commitments.
+With this team the planning range is 28–40 calendar weeks including Pair Matching Prototype, excluding waiting time for ethics/protocol approval, participant recruitment and powered-efficacy observation. Person-day estimates are effort, not elapsed calendar commitments.
 
 ### 1.2 Effort summary
 
@@ -36,9 +37,10 @@ With this team the planning range is 22–30 calendar weeks, excluding waiting t
 | P4 | Research permits, schema/events/lifecycle and analysis contract | 82 | G4-research |
 | P5 | Internal hardening and MS-08A Feasibility UAT | 56 | G5-feasibility |
 | P6 | MS-08B Efficacy, class rollout and closeout | 30 | G6-efficacy |
-| **Total** | | **354 person-days** | |
+| PM | Pair Matching Prototype Standard (`f10` refinement, PM0–PM8) | 98 | G4P |
+| **Total** | | **452 person-days** | |
 
-Management reserve is **54 person-days** (approximately 15% of base effort) for migration/toolchain/accessibility/recruitment-interface findings. It is controlled by Sponsor/Product Owner and is not silently distributed into work packages. ROM remains ±30%.
+Management reserve is **83 person-days**: เดิม 54 วัน + Pair Matching reserve 29 วัน (30% ของ PM base) สำหรับ checkpoint compatibility, content-language quality, accessibility และ replay projection findings. It is controlled by Sponsor/Product Owner and is not silently distributed into work packages. ROM remains ±30%.
 
 ### 1.3 Independently closable increments
 
@@ -48,6 +50,7 @@ Management reserve is **54 person-days** (approximately 15% of base effort) for 
 | B Product Core MVP | P2 | 48 pd | v22 unchanged | **MS-04 Accept / Stop / Continue** |
 | C Product Extension | P3 | 48 pd | preference migration only if approved | Accept extension / keep session-local |
 | D Research, Minor Participation and Rollout | P4–P6 | 168 pd | research migration only if approved | Limited / Revise / Stop / class expansion |
+| E Pair Matching Prototype | PM0–PM8 | 98 pd | no star table; preference/checkpoint change only after gate | Accept prototype / Revise / keep Hidden / Stop |
 
 แต่ละ increment มี budget/change decision แยก การหยุดหลัง A หรือ B เมื่อ exit gate ผ่านเป็น successful bounded delivery ไม่บังคับใช้ reserve หรือ phase ที่เหลือ
 
@@ -68,6 +71,12 @@ Management reserve is **54 person-days** (approximately 15% of base effort) for 
 | MS-08B Efficacy accepted per class | Powered adult/minor analysis + motivation/learning/safety/missingness gates |
 | MS-09 Controlled enablement | Class-specific rollout decision and monitoring baseline |
 | MS-10 Project close | Docs/evidence/decision log/remaining backlog archived |
+| PM-00 Pair contract approved | ADR-009–013, SRS addendum, UI/Test/UAT/RTM v1.2 approved |
+| PM-01 Legacy behavior characterized | Matching checkpoint v1–v5, evidence/idempotency and feature-off fixtures green |
+| PM-02 Adaptive interaction prototype | 4/6, two-column/focused, timer/repair/result flows pass formative UX |
+| PM-03 Hidden Standard Pair | atomic plan/start, repair/timer/recovery/stars/replay isolation green |
+| PM-04 Context integration | Learn/Review/Today typed launches and Adventure renderer parity green |
+| PM-05 Pair prototype accepted | PMT-001–044 + UAT-039–050 + rollback evidence signed; still Hidden/Internal unless higher gate permits |
 
 ## 3. WBS Dictionary
 
@@ -75,7 +84,7 @@ Management reserve is **54 person-days** (approximately 15% of base effort) for 
 
 | WBS | Work package | Output | Depends on | Effort | Owner | Exit test |
 |---|---|---|---|---:|---|---|
-| 0.1 | Planning approval | Approved document set v1.1 | None | 2 | PO/CTO | MS-00 |
+| 0.1 | Planning approval | Approved document set v1.2 | None | 2 | PO/CTO | MS-00 |
 | 0.2 | Reproducible worktree bootstrap | Offline package config/runbook without parent-checkout resolution | 0.1 | 1 | Tech Lead | feature-map check and analyze start locally |
 | 0.3 | Baseline issue register | BL-01–BL-08 mapped to owners, gates and evidence paths | 0.1 | 1 | QA Lead | Audit trace review |
 | 0.4 | Historical contract cleanup | Regenerate fingerprint; version schema audit; narrow `points`; use stable Thai navigation identity | 0.2,0.3 | 2 | QA/Engineer A | BL-01/05/06/08 targeted tests green |
@@ -94,7 +103,7 @@ Management reserve is **54 person-days** (approximately 15% of base effort) for 
 | 0.17 | Catalog v1 fixtures | Thai/English/manifest sample | 0.16 | 3 | Content/UX | Locale parity review |
 | 0.18 | Catalog validator | ID/graph/locale/checksum/path validation | 0.17 | 4 | Engineer B | Negative matrix green |
 | 0.19 | Feature-off equivalence evidence | Standard navigation/read models and zero-write comparison | 0.13–0.18 | 2 | QA | baseline-equivalence suite green |
-| 0.21 | Critic contract closure | Freeze route authorization, active permit projection, neutral events/opportunity, minor runtime evidence and MS-08A/B decisions across v1.1 docs | 0.1,0.10,0.11 | 4 | CTO/Research/QA | 196 requirements traced; authority review |
+| 0.21 | Critic contract closure | Freeze route authorization, active permit projection, neutral events/opportunity, minor runtime evidence and MS-08A/B decisions across v1.2 docs | 0.1,0.10,0.11 | 4 | CTO/Research/QA | core Adventure 258 requirements traced; authority review |
 | 0.20 | Phase review | Diff, tests, Audit closure links and feature-off evidence | 0.9,0.19,0.21 | 2 | CTO/QA | MS-02 |
 
 ### 3.2 P1 — Read-only shell and journey
@@ -217,6 +226,33 @@ Management reserve is **54 person-days** (approximately 15% of base effort) for 
 | 6.11 | Documentation/backlog finalization | As-built SDS/RTM/runbooks; AI/camera/social/new worlds separate | 6.7,6.10 | 2 | Tech Lead/PO | Published artifacts |
 | 6.12 | Closeout | Lessons learned, metrics and ownership handoff | 6.11 | 1 | Project Manager | MS-10 |
 
+### 3.8 PM — Pair Matching Prototype Standard (98 pd)
+
+PM work ใช้ Standard-first และแยก reviewer gate ต่อ package Adventure renderer ห้ามเริ่มก่อน PM6 hidden Standard ผ่าน
+
+| WBS | Work package | Output | Depends on | Effort | Responsible | Exit evidence |
+|---|---|---|---|---:|---|---|
+| PM0 | Contract, baseline characterization and f10 boundary lock | ADR-009–013, controlled IDs/counts, current matching/checkpoint/navigation fixtures, no f45/menu/table proof | MS-00 source audit | 6 | Product/Tech/QA/UX | PM-00/PM-01; docs consistent and rollback target frozen |
+| PM1 | Entry-aware plan and safe source composer | `PairMatchingPlanV1`, exact 4/6, product density, direction, locale/collision validation and atomic start | PM0 | 8 | Engineer/Content/QA | source/density/direction fixtures green |
+| PM2 | Pure reducer and evidence roles | engine/coordinator seam, selection/match/mismatch state, idempotent evidence and coalesced checkpoint | PM1 | 10 | Engineer/Reviewer/QA | deterministic reducer and no duplicate/lost evidence |
+| PM3 | Delayed repair, support and Review handoff | 2/3 distinct-success repair, tail guided completion, semantic support classification and canonical Review deferral | PM2 | 13 | Engineer/Learning/QA | finite repair and one valid Review need |
+| PM4 | Active timer, timeout and restart recovery | timer off/60/90/120, pause reasons, timeout 3 actions, +30 once and same-session restart | PM2, PM3 | 16 | Engineer/QA | crash/race/idempotency/write-budget matrix green |
+| PM5 | Stars, results, Practice Replay and History | star projector v1, separated result, latest/best, replay purpose/lineage and no-op projections | PM3, PM4 | 14 | Engineer/Data/QA/UX | projection deltas zero; history semantics green |
+| PM6 | Adaptive Standard UI and accessibility | Thai-first setup/board/timeout/result, two-column/focused layouts, audio/focus semantics | PM1–PM5 contracts | 11 | UX/Flutter/Accessibility | PM-02/PM-03; golden/widget/manual access evidence |
+| PM7 | Context and Adventure integration | Learn/Review/Today typed launches; Standard/Adventure renderer parity; bounded measurement/delivery gates | PM5, PM6, Today gate | 8 | Flutter/Adventure/QA | PM-04 normalized parity and fallback |
+| PM8 | Hardening, UAT and rollout rehearsal | reader-first compatibility, checkpoint budget, performance, offline, PMT/UAT, rollback/emergency-off | PM1–PM7 | 12 | QA/Release/UX | PM-05 signed evidence |
+| **PM total** | | | | **98 pd** | | |
+
+### 3.9 Pair prototype deliverable slices
+
+| Slice | Included work | Persistent writer | Decision |
+|---|---|---|---|
+| PM-A Contract Prototype | PM0–PM3 using fixtures/pure contracts | No new writer | Approve architecture/learning semantics / Revise |
+| PM-B Interaction Prototype | PM4–PM6 on hidden fixture/reader path | Hidden reader; legacy writer | Approve UX/accessibility/recovery / Revise |
+| PM-C Integrated Prototype | PM7–PM8 | Hidden new writer only after reader gate | Accept / keep Hidden / Stop |
+
+การหยุดที่ PM-A หรือ PM-B หลัง gate ผ่านถือเป็น bounded successful prototype ไม่บังคับ preference migration, Adventure presentation หรือ research instrumentation
+
 ## 4. Critical Path
 
 ```text
@@ -240,6 +276,20 @@ Planning approval
 → class-specific Controlled Expansion
 ```
 
+Pair Matching critical path:
+
+```text
+PM0 Contract + characterization
+→ PM1 Exact plan/composer + atomic start
+→ PM2 Pure reducer/evidence
+→ PM3 Repair/support/Review
+→ PM4 Timer/recovery
+→ PM5 Stars/replay/history
+→ PM6 Adaptive Standard UI
+→ PM7 Today/Review/Adventure parity
+→ PM8 Compatibility/UAT/rollback
+```
+
 Research protocol work can begin in parallel with P3 after core flow is stable, but research persistence cannot merge before P3 exit gate. UI asset/content work can run beside domain work after catalog contracts freeze.
 
 ## 5. Dependency Rules
@@ -252,6 +302,10 @@ Research protocol work can begin in parallel with P3 after core flow is stable, 
 6. No protocol treatment/opportunity/event recording before permit signature/owner/assignment/consent/guardian/assent/protocol/expiry/revocation tests
 7. No MS-08A before all lifecycle, research-flow accessibility and emergency-off evidence
 8. No Controlled Expansion/Enabled for a participant class before its MS-08B decision; platform/capability expansion requires its own gate
+9. No new Pair checkpoint writer rollout before PM0–PM3 contracts/pure engine/atomic-start tests pass; PM1–PM3 use fixtures/in-memory or legacy-compatible writes until that gate
+10. No Adventure Pair renderer before hidden Standard Pair passes PM4–PM6; renderer may not fork engine/evidence
+11. No Pair preference sync writer before actual schema/payload version reservation and complete rules/export/owner lifecycle plan
+12. No Pair Limited rollout before PMT-001–044, UAT-039–050, reader-first rollback and replay-projection isolation pass
 
 ## 6. Definition of Ready
 
@@ -328,6 +382,14 @@ No Codex Security/Security Scan/Deep Scan workflow is part of this repository pl
 | R17 | Withdrawn/expired permit still controls presentation | 2 | 5 | 10 | Host/start after invalidation | Privacy/Tech Lead | projection invalidation + race tests |
 | R18 | Event-only denominator hides capture loss | 3 | 5 | 15 | event count differs from opportunity count | Data Lead | independent opportunity ledger and reconciliation |
 | R19 | Feasibility result is used to enable a class | 3 | 5 | 15 | rollout requested after MS-08A | Product Owner | Limited ceiling + signed MS-08B class gate |
+| R20 | Pair implementation duplicates f10 or creates new authority | 2 | 5 | 10 | new feature ID/table/controller proposed | CTO | ADR-009 + architecture import/inventory guard |
+| R21 | Entry composer duplicates Today/SRS/Weakness content | 3 | 5 | 15 | same word/reason selected twice | Data/Engineer | entry-aware snapshot + provenance union before ranking |
+| R22 | Bilingual label/sense ambiguity creates multiple correct answers | 4 | 5 | 20 | duplicate normalized target/homograph fixture | Content/QA | curated allowlist, locale/collision validator, typed unavailable |
+| R23 | Repair/timer checkpoint exceeds limit or strands rollback | 3 | 5 | 15 | revision budget/old-reader failure | Tech Lead | coalesced writes, terminal reserve, reader-first rollout |
+| R24 | Timeout/restart/+30 race duplicates state/evidence | 3 | 5 | 15 | concurrent action/lost acknowledgement | Engineer/QA | operation IDs + serialized coordinator + crash matrix |
+| R25 | Practice Replay contaminates projections | 3 | 5 | 15 | SRS/Weakness/reward/research delta after replay | Data/QA | durable purpose and downstream no-op contract tests |
+| R26 | Stars create pressure or imply mastery | 3 | 4 | 12 | comprehension/abandonment feedback | UX/Product | descriptive post-result only, no economy/rank, UAT |
+| R27 | Pair layout inaccessible in Thai/large text | 3 | 5 | 15 | clipping/focus trap/semantic mismatch | UX/Accessibility | adaptive focused renderer and blocking access gate |
 
 P/I use 1–5. Exposure ≥15 is reviewed weekly and at every gate.
 

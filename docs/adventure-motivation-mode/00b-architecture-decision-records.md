@@ -1,15 +1,15 @@
 # Architecture Decision Records — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-ADR-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Accepted for planning
-**Date:** 2026-09-01
+**Date:** 2026-09-04
 **Baseline:** LexiQuest `99f7fb21`, Drift schema v22
 **Authority:** TOR/SRS/SDS/WBS/UI/Test/UAT/RTM และ implementation plan ต้องสอดคล้องกับ ADR ชุดนี้
 
 ## 1. Purpose and precedence
 
-เอกสารนี้ปิดประเด็นจาก Critic รอบที่ 2 แบบ contract-first โดยไม่แก้ย้อนหลัง Current System Audit v1.0 หากเอกสารระดับล่างขัดกับ ADR นี้ ให้ใช้ ADR นี้และ Measurement Decision Spec v1.1 เป็นข้อกำหนดอ้างอิง แล้วแก้เอกสารระดับล่างใน change set เดียวกัน
+เอกสารนี้ปิดประเด็นจาก Critic รอบที่ 2 และ multi-agent debate ของ Pair Matching Prototype แบบ contract-first โดยไม่แก้ย้อนหลัง Current System Audit v1.0 หากเอกสารระดับล่างขัดกับ ADR นี้ ให้ใช้ ADR นี้และ Measurement Decision Spec v1.2 เป็นข้อกำหนดอ้างอิง แล้วแก้เอกสารระดับล่างใน change set เดียวกัน
 
 ## ADR-001 — Production entry uses the existing Learn surface
 
@@ -176,6 +176,72 @@ TodayHubView(snapshot)
 3. Controlled Expansion และ Enabled เริ่มได้เฉพาะ class ที่ MS-08B ผ่านและมี signed release decision
 4. emergency/critical guardrail มีอำนาจย้อนกลับเป็น Limited/Hidden แยกตาม class หรือทั้งหมด
 
+## ADR-009 — Pair Matching is a major revision of existing f10
+
+### Decision
+
+1. Pair Matching Experience ใช้ `FeatureContractId.f10`, `LessonMode.matching`, `activityType=matching`, route `learning/matching`, Unified Lesson Shell และ Evidence Gateway เดิม
+2. M12 ในเอกสารชุดนี้เป็น logical planning module สำหรับ prototype integration เท่านั้น ไม่ใช่ capability `f45`
+3. Learn tile เดิมคงเป็น secondary/free-practice entry เพื่อไม่ทำ regression ขณะ Today ยัง hidden; Today, Review และ Adventure เพิ่ม contextual launch โดยไม่เพิ่ม main/bottom navigation
+4. Matching ยังคงเป็น `recognition` หรือ `guidedPractice`; source ที่มาจาก Due SRS/Weakness ไม่ยกระดับให้เป็น independent recall และไม่ปิด/เร่ง SRS interval
+5. Pair-specific delivery state ต้อง map กลับ `f10`, default hidden และ compose กับ parent Quiz gate ที่ composition root; ห้ามใช้ broad Quiz flag เป็น emergency control เพียงตัวเดียว
+6. Adventure presentation gate คงแยกจาก Pair delivery gate; Adventure unavailable ต้อง fallback Standard Pair เมื่อ `f10` ยัง authorized
+
+### Consequences
+
+- ไม่มี pair database, star wallet, reward authority หรือ engine แยกตาม Standard/Adventure
+- change นี้ต้อง bump semantic contract, checkpoint codec และ test fixtures แต่ไม่เปลี่ยน serialized feature inventory 8/44
+
+## ADR-010 — Pair plan is immutable, entry-aware and exact-sized
+
+### Decision
+
+1. ทุก launch resolve เป็น `PairMatchingPlanV1` ซึ่ง pin owner, exact `wordId/contentRevision/checksum`, merged source reasons, direction, pair count, source/target orders, shuffle seed, timer preset, policy versions และ session purpose
+2. Today launch reuse Today snapshot เดิม; Review launch reuse exact selected Review items; Learn launch ใช้ composer กลาง; Adventure รับ exact plan จาก Standard path และห้าม recompose
+3. Candidate ต้อง merge provenance และ deduplicate ตาม lexical identity ก่อน rank/filter; reported, deleted, stale revision, duplicate visible label และ ambiguous many-to-one pair ต้องถูก reject
+4. Prototype รองรับหนึ่ง direction ต่อ session: `enToTh` หรือ `thToEn`; mixed direction ยัง out of scope
+5. Board ต้องมี exact 4 หรือ 6 คู่ตาม resolved product preference เท่านั้น ผู้ขอ 6 แต่ safe content เหลือ 4 ต้องยืนยัน launch ใหม่เป็น 4; ต่ำกว่า 4 เป็น typed unavailable
+6. Product preference precedence คือ guardian override → explicit learner/accessibility preference → one-time choice; หากไม่สามารถถามได้ให้ safe fallback 4 โดยห้ามอนุมานวัยจาก DOB, CEFR, XP, speed, error rate หรือ research permit
+7. MVP ใช้ curated EN–TH allowlist และ locale-aware visible-collision validation; ไม่เพิ่ม `senseId` หรือ vocabulary authority ใหม่เพียงเพื่อ prototype
+
+## ADR-011 — Progress, evidence and delayed repair remain separate
+
+### Decision
+
+1. User-visible `matchedProgress` เพิ่มเฉพาะเมื่อ canonical pair สำเร็จและไม่ลด; wrong answer ไม่เพิ่มและไม่ลดค่า
+2. first opportunity, attempt ordinal, support use และ repair state เป็นแกนแยก ห้ามนำ generic `session.score` มาแทน completion หรือ stars
+3. mismatch สร้าง incorrect recognition หนึ่งรายการให้ prompt-side canonical word ตาม pinned direction; distractor ไม่ได้รับ incorrect evidence
+4. Normal repair กลับหลัง distinct other correctly resolved pairs: 2 สำหรับ board 4 คู่ และ 3 สำหรับ board 6 คู่; tap, deselect, hint, audio, animation, technical retry และเวลาไม่นับ interval
+5. หลัง corrective mapping หรือ answer-revealing semantic support การตอบซ่อมเป็น `guidedPractice`; pronunciation/screen-reader speech ของข้อความที่มองเห็นอยู่ไม่ใช่ semantic hint
+6. หนึ่ง scheduled repair ต่อ content ต่อ Learning Session เพื่อ bound loop/checkpoint; หากผิดซ้ำให้ guided completion และ canonical Review owns future independent recall
+7. หากผิดช่วงท้ายและ distinct pairs ไม่พอ ให้ guided completion และ defer independent retry ไป Review โดยไม่สร้าง filler, bridge, progress ปลอม หรือ recursive repair
+
+## ADR-012 — Timer, stars, restart and Practice Replay are orthogonal
+
+### Decision
+
+1. Timer default OFF; user opt-in เลือกได้เฉพาะ 60/90/120 วินาที และ timer outcome ไม่เปลี่ยน evidence eligibility, stars, reward, mastery หรือ SRS
+2. Timer นับ accumulated active interactive time; pause เมื่อ board ใช้งานไม่ได้, app background, modal/system interruption, persistence retry และ required accessibility narration
+3. Timeout เข้าสู่ durable decision stateโดยไม่สร้าง answer/incorrect/completion ผู้ใช้เลือก Continue untimed, Add 30 seconds ครั้งเดียว หรือ Restart same set
+4. Add 30 seconds ใช้ idempotent operation และให้ 30 active seconds หลัง decision persist สำเร็จ; entitlement ต้อง survive recovery
+5. Timeout Restart เป็น round ใหม่ใน Learning Session เดิม ใช้ lexical identities/revisions/direction เดิม, deterministic reshuffle ใหม่ และไม่ลบ evidence, round lineage หรือ extension entitlement เดิม
+6. Practice Replay เป็น Learning Session ใหม่ `purpose=practiceReplay` ที่ revalidate exact content และสร้าง evidence IDs ใหม่; ต่างจาก technical retry ซึ่ง reuse identity เดิม
+7. Practice Replay บันทึกประวัติ/diagnostic ของรอบเองได้ แต่ SRS, Mastery, Weakness ranking, global proficiency/accuracy, XP, reward, quest, streak, achievement, Today due-resolution และ research primary outcome ต้อง no-op
+8. Stars เป็น rebuildable read model จาก terminal session aggregate + committed attempt-role ledger: 3 ดาว = first-attempt correct ทุกคู่โดยไม่มี answer-revealing hint; 2 ดาว = independent completion อย่างน้อย 75% (`3/4`, `5/6`) โดย self-correction ก่อน reveal นับ; 1 ดาว = complete ที่เหลือ; incomplete ไม่มี 0 ดาว
+9. Accessibility modality, timer, extension, continue untimed, layout และ presentation ไม่เป็น star input; History แสดง latest และ best แบบแยก normal learning จาก Practice Replay
+
+## ADR-013 — Pair UI is adaptive, Thai-first and rollback-safe
+
+### Decision
+
+1. Effective width ที่รองรับใช้ two-column English↔Thai; narrow/text 200%/assistive mode ใช้ focused source-to-target list โดย engine/evidence เดียวกัน
+2. Pair tile ขั้นต่ำ 56 logical px และ compact/young profile 64; action อื่นขั้นต่ำ 48×48; state ใช้ข้อความ+ไอคอน+เส้นขอบ ไม่พึ่งสี เสียง หรือ motion เพียงอย่างเดียว
+3. Matched visual position คง placeholder เมื่อจำเป็นเพื่อลด layout jump แต่ semantic node ออกจาก traversal หลัง announce/focus restoration
+4. Timeout sheet primary action คือ Continue untimed; Add 30 เป็น secondary; Restart เป็น tertiary และอธิบายว่าคำชุดเดิมจะถูกสลับใหม่
+5. Result แยก matched/independent/assisted, stars, timer status, active elapsed time และ next Review; “ทันเป้าหมาย” เป็น praise เท่านั้น
+6. Checkpoint รุ่นถัดไป deploy reader-first/writer-later; legacy v1–v5 resume ด้วย legacy behavior และห้าม infer stars/repair/replay readiness ย้อนหลัง
+7. New starts ถูกบล็อกเมื่อ Pair gate/emergency-off ปิด แต่ accepted session ต้อง resume/retire ตาม canonical lifecycle; rollback ห้าม destructive down migration
+
 ## 2. Decision compliance checklist
 
 - [ ] route ledger ใช้ `home/learn/today-experience`; hidden/disabled/unknown direct route กลับ Learn
@@ -188,6 +254,13 @@ TodayHubView(snapshot)
 - [ ] MS-08A จำกัดสถานะสูงสุดที่ Limited; MS-08B ตัดสินแยก adult/minor
 - [ ] Product Core MVP ปิดได้โดยไม่มี research migration
 - [ ] Android-only exclusions ถูกระบุโดยไม่อ้างว่า pass
+- [ ] Pair Matching map กลับ `f10`; ไม่มี `f45`, main navigation, pair authority หรือ star currency
+- [ ] `PairMatchingPlanV1` exact 4/6, entry-aware, ambiguity-safe และ Standard/Adventure ใช้ plan เดียวกัน
+- [ ] Wrong ไม่เพิ่ม/ลด matched progress; repair interval 2/3 และ tail guided completion/no-padding ถูกใช้ตรงกัน
+- [ ] Timer OFF/60/90/120, active-time, +30 once และ same-session restart recover ได้
+- [ ] Stars 1–3 derive จาก committed ledger; 2 ดาวใช้ `3/4` และ `5/6`; timer/accessibility ไม่เป็น input
+- [ ] Practice Replay ถูกตัดออกจากทุก canonical learning/motivation/research primary projection ตาม ADR-012
+- [ ] Pair UI ผ่าน two-column/focused parity, TalkBack, Switch Access, 200% text และ focus restoration
 
 ## 3. Approval
 

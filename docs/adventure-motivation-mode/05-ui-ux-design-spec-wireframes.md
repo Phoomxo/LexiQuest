@@ -1,14 +1,14 @@
 # UI/UX Design Specification and Wireframes — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-UX-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for Owner and Learner Review
-**Date:** 2026-09-01
+**Date:** 2026-09-04
 **Baseline:** LexiQuest 8/44 at `99f7fb21`
-**References:** `AMM-AUDIT-001 v1.0`, `LQ-AMM-SRS-001 v1.1`, `LQ-AMM-SDS-001 v1.1`
-**Decision references:** `LQ-AMM-ADR-001 v1.1`, `LQ-AMM-MDS-001 v1.1`
+**References:** `AMM-AUDIT-001 v1.0`, `LQ-AMM-SRS-001 v1.2`, `LQ-AMM-SDS-001 v1.2`
+**Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 **Brand naming rule:** Show `LexiQuest`; do not add the removed “เก่งศัพท์” label
-**Visual companions:** [`05a-wireframe-overview.svg`](05a-wireframe-overview.svg) and [`05b-research-participation-wireframes.svg`](05b-research-participation-wireframes.svg)
+**Visual companions:** [`05a-wireframe-overview.svg`](05a-wireframe-overview.svg), [`05b-research-participation-wireframes.svg`](05b-research-participation-wireframes.svg) and [`05c-pair-matching-prototype-wireframes.svg`](05c-pair-matching-prototype-wireframes.svg)
 
 ## 1. Experience Intent
 
@@ -713,3 +713,197 @@ Ask learners to demonstrate, not merely rate:
 - Catalog/asset checksums and ownership
 - Signed UX, accessibility and content review
 - Findings transferred to RTM, Test Plan and UAT
+
+## 17. Pair Matching Prototype UI Standard
+
+### 17.1 Experience model
+
+Pair Matching เป็นกิจกรรมสั้นใน Learn, Today Mission, Review และ Adventure ไม่ใช่ destination ใหม่ รูปแบบที่ผู้ใช้คุ้นเคยคือ tap-to-match สองคอลัมน์ แต่เอกลักษณ์ LexiQuest คือคำถูกเลือกจาก canonical work, wrong ได้รับการช่วยอย่างไม่ลงโทษ, timer เป็นทางเลือก และผลกลับไป Review อย่างโปร่งใส
+
+```text
+Context card
+ → Setup (density + timer)
+ → Pair board
+    ├─ correct → matched progress
+    ├─ wrong → feedback → delayed repair/guided completion
+    └─ timeout → continue untimed | +30 once | restart round
+ → Result (stars + learning axes + time)
+ → source return | Review | Practice Replay
+```
+
+### 17.2 Pair screen inventory
+
+| UX ID | Screen/state | Primary purpose | Primary action |
+|---|---|---|---|
+| UX-P01 | Contextual entry card | อธิบายว่าทำไมได้ชุดนี้และเริ่มโดยไม่เพิ่ม menu | เริ่มจับคู่ |
+| UX-P02 | Setup | แสดง 4/6 จาก preference และ timer OFF/60/90/120 | เริ่ม |
+| UX-P03 | Regular pair board | Tap English↔Thai ด้วย two-column layout | เลือก tile |
+| UX-P04 | Focused accessible board | Source หนึ่งคำ + target list สำหรับ narrow/200%/assistive flow | เลือกความหมาย |
+| UX-P05 | Wrong/repair state | Feedback, audio/hint และบอก delayed return | ทำต่อ |
+| UX-P06 | Timeout decision sheet | ให้ผู้ใช้ควบคุมหลังหมดเวลา | ทำต่อโดยไม่จับเวลา |
+| UX-P07 | Result | แยก stars, independence, assistance, timer และ next Review | กลับจุดเดิม/ไปต่อ |
+| UX-P08 | History/replay state | latest/best และ Practice Replay ที่ไม่ให้ผลซ้ำ | ฝึกชุดนี้ซ้ำ |
+| UX-P09 | Insufficient/replay unavailable | ป้องกัน filler/stale content | ฝึกกิจกรรมอื่น/สร้างชุดใหม่ |
+
+### 17.3 Setup specification
+
+Order:
+
+1. activity title “จับคู่คำ–ความหมาย”;
+2. bounded source reason เช่น “6 คำที่ถึงเวลาทบทวน”;
+3. pair density ที่ resolve แล้ว—4 หรือ 6; guardian override แสดงเป็นข้อมูล ไม่ใช่ disabled punishment;
+4. timer segmented control โดย “ไม่จับเวลา” selected ทุก session;
+5. เมื่อเปิด timer แสดง 60/90/120 โดย suggestion 60 สำหรับ compact4, 90 สำหรับ standard6, 120 สำหรับ accessibility preference แต่ผู้ใช้เปลี่ยนได้;
+6. filled CTA “เริ่มจับคู่”; secondary “ไว้ภายหลัง” คืน source surface.
+
+ห้ามแสดงดาว, leaderboard, reward multiplier หรือข้อความว่าจับเวลาเรียนได้ดีกว่า
+
+### 17.4 Regular board layout
+
+```text
+┌────────────────────────────────────────┐
+│ ← จับคู่คำ–ความหมาย       2/6   01:12 │
+│ แตะคำอังกฤษและความหมายไทยที่ตรงกัน     │
+├──────────────────┬─────────────────────┤
+│ apple            │ บ้าน                │
+│ house  [selected]│ แอปเปิล             │
+│ water            │ น้ำ                 │
+│ cat              │ แมว                 │
+│ mountain         │ ภูเขา               │
+│ book             │ หนังสือ             │
+├──────────────────┴─────────────────────┤
+│ 🔊 ฟังคำที่เลือก          คำใบ้          │
+└────────────────────────────────────────┘
+```
+
+- Grid ใช้สองคอลัมน์เท่ากันเมื่อ effective width รองรับ; ไม่ branch จาก device name
+- source/target order แยกและ deterministic; visual position ไม่เป็น correctness authority
+- tile text wrap สองบรรทัดเป็นอย่างน้อย; essential label ห้าม ellipsis
+- matched stateใช้ ✓ + “จับคู่แล้ว” + border/fill semantic; placeholder คง geometry ระหว่าง focus transition
+- same-side selection เปลี่ยน selected tile ไม่แสดงผิด
+- timer chipหายเมื่อ OFF; warningไม่กระพริบและไม่ใช้สีแดงอย่างเดียว
+
+### 17.5 Adaptive/focused layout
+
+เมื่อ width <360, text 200% ไม่ fit, TalkBack/Switch profile ต้องการ linear flow หรือ localization ทำ tile ต่ำกว่าค่าขั้นต่ำ ให้ใช้:
+
+```text
+คำที่เลือก
+┌──────────────────────────────────────┐
+│ house                         🔊     │
+└──────────────────────────────────────┘
+เลือกความหมาย
+┌──────────────────────────────────────┐
+│ บ้าน                                 │
+├──────────────────────────────────────┤
+│ หนังสือ                              │
+├──────────────────────────────────────┤
+│ น้ำ                                  │
+└──────────────────────────────────────┘
+```
+
+Focused layout ต้อง dispatch command เดียวกับ two-column, ไม่มีคะแนน/เวลา/ดาวแตกต่าง และให้ย้อนกลับเลือก source ได้โดยไม่สร้าง answer
+
+### 17.6 Component tokens and states
+
+| Token | Value | Rule |
+|---|---:|---|
+| `pair.tile.minHeight` | 56 | regular minimum |
+| `pair.tile.compactYoungMinHeight` | 64 | compact/young profile |
+| `pair.tile.radius` | 16 | align M3Theme cards |
+| `pair.tile.gap` | 12 | vertical gap |
+| `pair.columnGap` | 12 phone / 16 wide | board separation |
+| `pair.contentMax` | 720–840 | tablet/wide center column |
+| `pair.border.default/state` | 1 / 2 | non-color state distinction |
+| `pair.motion.select/resolve/requeue` | 100/160/200ms | all zero under reduced motion |
+
+`PairTile` states: idle, selected, resolving, matched, incorrect, cooldown, requeued, guided, disabled, persistenceError `Timer` states: off, running, warning, timeoutDecision, extended, continuedUntimed `Result` states: complete, sideEffectPending, practiceReplay, incomplete
+
+### 17.7 Wrong, support and repair copy
+
+| Situation | Thai copy | Behavior |
+|---|---|---|
+| first mismatch | “ยังไม่ใช่ ลองเก็บคำนี้ไว้แล้วกลับมาอีกครั้งนะ” | unselect; no shake/loss |
+| repair queued | “คำนี้จะกลับมาหลังฝึกคำอื่นอีกสักครู่” | progress unchanged |
+| semantic help | “ลองดูความหมายและฟังเสียง แล้วจับคู่อีกครั้ง” | subsequent response guided |
+| late tail | “ช่วยกันจับคู่คำนี้ให้ครบ แล้วระบบจะเก็บไว้ทบทวนอีกครั้ง” | guided completion + Review deferral |
+| technical failure | “ยังบันทึกไม่ได้ คำตอบของคุณยังอยู่” | freeze selection; retry exact operation |
+
+Pronunciation button ต้อง user-initiated Accessibility/TTS ที่อ่าน visible prompt ไม่แสดงเป็น “ใช้คำใบ้” และไม่ลดดาว Answer-revealing hint ต้องติด semantic support stateชัดเจน
+
+### 17.8 Timeout decision
+
+```text
+┌──────────────────────────────────────┐
+│ ยังไม่ทันเป้าหมาย แต่ทำต่อได้        │
+│ จับคู่สำเร็จแล้ว 4 จาก 6 คู่          │
+│                                      │
+│ [ ทำต่อโดยไม่จับเวลา ]               │
+│ [ เพิ่ม 30 วินาที ]  ใช้ได้ 1 ครั้ง   │
+│ เริ่มรอบใหม่ด้วยคำชุดเดิม             │
+└──────────────────────────────────────┘
+```
+
+Sheet ไม่มี auto-dismiss/secondary countdown Focus เข้า heading แล้ว primary action; ปิด sheetไม่ได้ทำให้ evidence หาย Restart copy อธิบายว่า “สลับตำแหน่งใหม่ แต่ประวัติรอบนี้ยังอยู่” เมื่อ extension ใช้แล้วปุ่มยังคง disabled พร้อมเหตุผลหลัง recovery
+
+### 17.9 Result and stars
+
+```text
+┌──────────────────────────────────────┐
+│ จับคู่ครบแล้ว                        │
+│              ★ ★ ☆                   │
+│ ทำได้ด้วยตนเอง 5/6 · มีตัวช่วย 1     │
+│ ทันเป้าหมาย 90 วินาที                │
+│ คำที่ระบบเก็บไว้ทบทวน 1 คำ           │
+│                                      │
+│ [ ทำภารกิจต่อ ]                      │
+│ ไปหน้าทบทวน     ฝึกชุดนี้ซ้ำ          │
+│                 ไม่เพิ่มรางวัล/SRS    │
+└──────────────────────────────────────┘
+```
+
+Stars แสดงหลัง complete เท่านั้นและมี accessible text “ได้สองดาวจากสามดาว—เป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง” Timely copy แยกจากดาว Untimed ใช้ “จับคู่ครบแล้ว · ใช้เวลาเรียนจริง …” Practice Replay result ติด badge และไม่ overwrite mission best
+
+### 17.10 Semantics and focus contract
+
+- Tile label: language + visible value + state เช่น “คำอังกฤษ house, เลือกแล้ว”
+- Timer ไม่ announce ทุกวินาที; polite threshold ที่ 30/10 วินาทีและผู้ใช้ focus เพื่ออ่านค่าปัจจุบันได้
+- Incorrect/correct/timeout/persistence เป็น status message ไม่ย้าย focusฉับพลัน
+- หลัง match announce แล้ว focus ไป first actionable unmatched tile; matched semantics ถูก exclude
+- Sheet close/continue คืน focus ไป board instruction/selected contextตาม transition
+- Switch Access ทำทุก actionได้ด้วย single activation ไม่มี drag-only/nested duplicate node
+- Audio unavailable มี text/IPA fallback; no-audio ไม่ block completion
+
+### 17.11 Prototype validation matrix
+
+| Prototype | Persistence | What it proves | Gate |
+|---|---|---|---|
+| Pair A — Interaction | fixture only | setup, two layouts, repair copy, timeout/result comprehension | PM-A |
+| Pair B — Contract | plan/engine/checkpoint reader; writer hidden/off | exact 4/6, deterministic state, source/legacy compatibility | PM-B |
+| Pair C — Integrated | hidden writer | evidence/restart/replay/history and Standard/Adventure parity | PM-C/G4P |
+
+Formative tasks:
+
+1. เริ่มแบบไม่จับเวลาโดยไม่ต้องมีคนบอก;
+2. อธิบายว่าคำมาจากอะไรและจำนวนคู่ถูกกำหนดอย่างไร;
+3. จงใจจับผิดแล้วสังเกตว่าความคืบหน้าไม่ลด;
+4. ใช้เสียงปกติและ answer-revealing hint แล้วอธิบายความต่าง;
+5. ทำ timeout ทั้ง Continue, +30 และ Restart;
+6. อธิบายว่าดาวไม่ใช่ mastery/reward;
+7. ใช้ Practice Replay และอธิบายว่าไม่เพิ่มรางวัล/เลื่อน SRS;
+8. เล่น flow เดียวกันใน Standard/Adventure และตรวจว่ากติกาไม่เปลี่ยน
+
+### 17.12 Pair UX acceptance criteria
+
+| ID | Criterion |
+|---|---|
+| UX-AC-17 | 5/5 formative users start untimed and identify how to select a pair without moderator instruction |
+| UX-AC-18 | 5/5 understand timer is optional and all three timeout choices; +30 once remains clear after resume |
+| UX-AC-19 | 5/5 understand wrong does not remove progress/reward and can identify delayed/guided Review outcome |
+| UX-AC-20 | At least 4/5 distinguish stars from mastery/reward and timed praise from stars |
+| UX-AC-21 | compact4/standard6, EN→TH/TH→EN and Thai long-label fixtures complete without ambiguity or clipping |
+| UX-AC-22 | Two-column and focused layouts dispatch semantically equivalent answers and receive equal outcomes |
+| UX-AC-23 | Pair setup/board/wrong/timeout/result/history pass TalkBack, Switch Access, keyboard, 200% text, reduced motion and no-audio |
+| UX-AC-24 | Practice Replay copy is understood by 5/5 and normal/replay results are visually and semantically distinguishable |
+| UX-AC-25 | Standard/Adventure Pair action hierarchy, timer, support and result meanings remain equivalent |
+| UX-AC-26 | No hearts/lives, pay-to-continue, public ranking, star currency, speed reward or shame copy appears |

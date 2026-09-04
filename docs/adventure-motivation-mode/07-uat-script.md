@@ -1,11 +1,11 @@
 # UAT Script — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-UAT-001
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Draft for Product Owner/UAT Lead Review
-**Date:** 2026-09-01
-**References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.1
-**Baseline:** commit `99f7fb21`, Drift schema v22
+**Date:** 2026-09-04
+**References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
+**Baseline:** Adventure planning commit `99f7fb21`; Pair Matching source closure `f56e2eb`; Drift schema v22
 **Release warning:** baseline ปัจจุบันมี 3,202 tests ผ่าน / 15 tests ไม่ผ่าน จึงใช้เอกสารนี้ทำ dry run ได้ แต่ห้าม sign-off Pilot/Production จน `G0B` และ `BG-01–BG-12` ผ่าน
 
 ## 1. วัตถุประสงค์
@@ -22,9 +22,10 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 8. ใช้งานได้กับภาษาไทย screen reader, text 200%, high contrast และ reduced motion;
 9. รักษาแบรนด์ `LexiQuest` และไม่มีข้อความ “เก่งศัพท์” กลับเข้ามา;
 10. มีหลักฐานตรวจย้อนกลับถึง Requirement, WBS และ Test Case ได้;
-11. แยก MS-08A Feasibility ออกจาก MS-08B Efficacy และ rollout adult/minor
+11. แยก MS-08A Feasibility ออกจาก MS-08B Efficacy และ rollout adult/minor;
+12. รับรอง Pair Matching Prototype ว่าใช้กิจกรรม f10 เดิม เป็นกิจกรรมย่อยใน Learn/Today Mission/Review/Adventure โดยไม่เพิ่มเมนูหลัก ไม่ให้รางวัลซ้ำ และไม่บิด SRS/Mastery
 
-Controlled inventory รวม **38 UAT scripts (UAT-001–038)** ทุก script ยังเป็น Planned จนกว่าจะมี build, evidence และ sign-off ตาม gate
+Controlled inventory รวม **50 UAT scripts (UAT-001–050)** ทุก script ยังเป็น Planned จนกว่าจะมี build, evidence และ sign-off ตาม gate
 
 ## 2. ขอบเขตและรอบ UAT
 
@@ -35,6 +36,7 @@ Controlled inventory รวม **38 UAT scripts (UAT-001–038)** ทุก scri
 | MS-08A Android Feasibility UAT | ผู้เข้าร่วม adult/minor ที่มี signed permit | Limited | UAT-001–037 ตาม applicability | MS-08A Limited/Revise/Stop |
 | MS-08B decision rehearsal | คณะตัดสินและ frozen class evidence | Limited | UAT-038 | Expand/Remain Limited/Stop แยก class |
 | Post-expansion Android smoke | class ที่ผ่าน MS-08B | Controlled | critical path, targeting and rollback | Increment continue/hold |
+| Pair Matching Prototype UAT | learner/guardian/accessibility representatives | Prototype flag, no research treatment required | UAT-039–050 | Pair Matching Prototype Accept/Revise/Reject |
 
 UAT ไม่แทน automated test, rules emulator, migration test, security/dependency gate หรือ accessibility certification
 
@@ -609,7 +611,141 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 | 4 | ตรวจ analysis package | baseline ≤24h, post หลัง first accepted completion ≤30m, ITT ANCOVA, MI และ tipping-point ครบ |
 | 5 | ทำ Controlled Expansion + emergency rollback rehearsal | เฉพาะ class approvedเข้าได้; signed decision/monitoring/rollback evidenceครบ |
 
-## 15. คำถามวัดความเข้าใจและแรงจูงใจ
+## 15. UAT Scripts — Pair Matching Prototype Standard
+
+### UAT-039 — Existing entry points and source transparency
+
+**Trace:** FR-105–110, DATA-016, UI-018, BR-024–026; WBS PM0/PM1; TC-PMT-001–005/007–009/012
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เปิด Learn, Today Mission, Review และ Adventure ด้วย fixture ที่แต่ละ entry มีแผนจับคู่ | เข้ากิจกรรม Pair Matching เดิมได้จาก entry ที่เกี่ยวข้องโดยไม่เกิดเมนูหลักหรือ route ใหม่ |
+| 2 | ตรวจข้อความก่อนเริ่ม | บอกเหตุผลแหล่งคำ เช่น “คำที่ถึงเวลาทบทวน” หรือ “คำจากภารกิจวันนี้” โดยไม่อ้าง mastery เกินจริง |
+| 3 | เปิด entry ที่ canonical source ให้คำไม่ครบ 4 คู่ | กิจกรรมแสดง unavailable และทางกลับที่ปลอดภัย; ไม่เติมคำเงียบจาก source อื่น |
+| 4 | สลับ Standard/Adventure แล้วเปิด plan เดียวกัน | pair IDs, direction, density และ source provenance ตรงกัน ต่างเฉพาะ presentation shell |
+
+### UAT-040 — Density preference and guardian control
+
+**Trace:** FR-112, DATA-019, UI-018, NFR-038/039, BR-026/027; WBS PM1/PM6; TC-PMT-006–008
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เปิดครั้งแรกโดยไม่มีค่า density | ถามเลือก 4 หรือ 6 คู่ครั้งเดียว; ถ้าปิดคำถาม fallback เป็น 4 คู่โดยไม่ใช้วันเกิดหรือ research permit |
+| 2 | ผู้เรียนทั่วไปเลือก 6 คู่แล้วเริ่มรอบที่ source ครบ | แผนถูกตรึงเป็น 6 คู่และไม่เปลี่ยนกลางรอบ |
+| 3 | ผู้ปกครองกำหนด 4 คู่ | profile ใช้ 4 คู่และ learner เปลี่ยนเกิน policy ไม่ได้ |
+| 4 | source มีเพียง 4–5 คู่ขณะ preference เป็น 6 | ระบบขอยืนยันลดเป็น 4 คู่; ปฏิเสธได้และไม่มี silent downgrade |
+
+### UAT-041 — English–Thai direction and pair identity
+
+**Trace:** FR-107/110/111, DATA-016, NFR-038/039, BR-026; WBS PM1/PM2; TC-PMT-009–012/040
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เลือก English → Thai แล้วเริ่ม | ฝั่ง prompt เป็นอังกฤษและตัวเลือกเป็นคำแปลไทยตลอดรอบ |
+| 2 | เลือก Thai → English แล้วเริ่มรอบใหม่ | ฝั่ง prompt เป็นไทยและตัวเลือกเป็นอังกฤษตลอดรอบ |
+| 3 | ใช้ fixture ที่คำสะกดซ้ำแต่คนละความหมาย | ระบบใช้ curated sense/translation allowlist และป้ายกำกับที่มองเห็นได้; ไม่จับคู่ด้วย surface text อย่างเดียว |
+| 4 | resume/rebuild | direction และ pair identity คงเดิม ไม่มีการสุ่มความหมายใหม่ |
+
+### UAT-042 — Wrong answer, delayed repair and tail completion
+
+**Trace:** FR-113–118, DATA-017, UI-022, BR-028/029; WBS PM2/PM3; TC-PMT-013–021
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | จับคู่ผิดหนึ่งคำหลังจับถูกแล้วหนึ่งคู่ | คู่ที่จับถูกยังอยู่; progress ไม่ลดและไม่เพิ่มจากคำตอบผิด |
+| 2 | อ่านคำแนะนำสั้นแล้วทำคู่ถูกอื่นต่อ | คำที่ผิดกลับมาหลังคู่ถูกอื่นที่ไม่ซ้ำ 2 คู่ในรอบ 4 คู่ หรือ 3 คู่ในรอบ 6 คู่ |
+| 3 | ทำผิดเมื่อท้ายรอบไม่มีระยะพอ | ระบบช่วยให้จบรอบอย่างสุภาพและส่ง independent retry ไป canonical Review; ไม่สร้าง filler pair |
+| 4 | ตรวจผลและ history | แยก independent/guided evidence ได้ และไม่มีถ้อยคำลงโทษหรือหัก progress |
+
+### UAT-043 — Pronunciation support versus revealing hint
+
+**Trace:** FR-119, DATA-021, UI-021/026, NFR-043/044, BR-030; WBS PM3/PM6; TC-PMT-022–024/043
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | กดเสียงอ่านก่อนตอบ | เล่นเสียง/อ่านออกเสียงได้และยังนับเป็น independent attempt เพราะไม่ได้เปิดเฉลยความหมาย |
+| 2 | ใช้ TalkBack ฟัง label ของคำและปุ่มเสียง | accessibility narration ไม่ถูกนับเป็น hint และไม่ลดดาว |
+| 3 | กดคำใบ้ที่เปิดเผยความหมายหรือคู่ที่ถูก | attempt ถูกบันทึกเป็น guided และ UI แจ้งว่าระบบกำลังช่วย |
+| 4 | จบรอบ | คำ guided ถูกส่งเข้า SRS/Weakness รอบที่เหมาะสม โดยไม่ claim mastery จากรอบนี้ |
+
+### UAT-044 — Timer setup and active-interaction clock
+
+**Trace:** FR-120/121/127, DATA-017, UI-018/024, NFR-041–043, BR-031; WBS PM4; TC-PMT-025–027/037
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เปิด setup ใหม่ | ค่าเริ่มต้นเป็น “ไม่จับเวลา”; ผู้ใช้เลือก 60/90/120 วินาทีได้ก่อนเริ่ม |
+| 2 | เริ่มรอบจับเวลาแล้วเปิด system dialog/background app | clock หยุดระหว่าง non-active interval และ resume อย่างสม่ำเสมอ |
+| 3 | ใช้ screen reader อ่านคำอธิบายยาว | narration interval ตาม policy ไม่ทำให้เสียเวลาเป้าหมาย |
+| 4 | จบรอบ | ผลสรุปแสดง active time และตัวเลือก timer อย่างถูกต้องโดยไม่เปลี่ยน mastery/reward |
+
+### UAT-045 — Timeout choices without forced failure
+
+**Trace:** FR-122/124/127, DATA-017/018, UI-023/024, NFR-041/043, BR-031/033; WBS PM4; TC-PMT-027/028/030/031/037
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | ปล่อยเวลาเป้าหมายหมด | เกมหยุด clock แต่ไม่ประกาศแพ้และไม่หัก progress |
+| 2 | เลือก “เล่นต่อแบบไม่จับเวลา” ซึ่งเป็น primary action | เล่นต่อจากสถานะเดิมและผลสรุปบอก “ยังไม่ทันเป้าหมาย แต่ทำต่อได้” |
+| 3 | ใน fixture ใหม่เลือก “เริ่มรอบใหม่” | ใช้ exact content set เดิม สับตำแหน่งใหม่ และยังอยู่ใน Learning Session เดิม |
+| 4 | ตรวจ reward/mastery หลังทั้งสองทาง | เท่ากับโหมดไม่จับเวลาเมื่อ evidence การเรียนเท่ากัน |
+
+### UAT-046 — One extension and restart persistence
+
+**Trace:** FR-123/124, DATA-017/018, NFR-038/041, BR-031/033; WBS PM4; TC-PMT-029–031/040/041
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | เมื่อหมดเวลาเลือก “เพิ่ม 30 วินาที” | เพิ่มได้หนึ่งครั้งต่อ Learning Session และ clock เดินต่อจาก terminal state เดิม |
+| 2 | ปล่อยหมดเวลาอีกครั้ง | ไม่มีสิทธิ์เพิ่มครั้งที่สอง; ยังเลือกเล่นต่อแบบไม่จับเวลาหรือเริ่มรอบใหม่ได้ |
+| 3 | restart หลังเคยใช้ extension | extension entitlement ไม่ถูกรีเซ็ต และ evidence ก่อนหน้าไม่หาย |
+| 4 | kill/relaunch ระหว่างสถานะ timeout | restore โดยไม่เพิ่มเวลา, reset attempt หรือสร้าง Learning Session ซ้ำ |
+
+### UAT-047 — Stars and time as transparent result projections
+
+**Trace:** FR-125–127, DATA-020, UI-024, BR-031/032; WBS PM5; TC-PMT-032–037
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | จบรอบแบบถูกครั้งแรกทุกคู่และไม่ใช้ revealing hint | ได้ 3 ดาว |
+| 2 | จบรอบด้วย independent success อย่างน้อย 3/4 หรือ 5/6 รวม self-correction ก่อน reveal | ได้ 2 ดาว |
+| 3 | จบรอบแบบ guided หรือ independent ต่ำกว่าเกณฑ์ | ได้ 1 ดาว; ถ้าออกก่อนจบแสดง incomplete ไม่แสดง 0 ดาว |
+| 4 | เทียบ timer on/off, TalkBack on/off และ Standard/Adventure ด้วย ledger เดียวกัน | ดาวเท่ากัน; เวลาเป็นข้อมูลสรุป ไม่ใช่ currency, mastery หรือเงื่อนไข reward |
+
+### UAT-048 — Practice Replay isolation
+
+**Trace:** FR-128/129, DATA-018/020/021, UI-025, NFR-041, BR-032/033; WBS PM5; TC-PMT-038–041
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | จากผล/ประวัติเลือก Practice Replay | สร้าง Learning Session ใหม่ purpose=`practiceReplay` ด้วย exact content set และ shuffle ใหม่ |
+| 2 | เล่นจบซ้ำหลายครั้ง | แสดงผลและเก็บ history แบบ grouped/labeled ได้ แต่ไม่เพิ่ม XP/reward/quest/streak/achievement |
+| 3 | ตรวจ SRS/Mastery/Weakness/global accuracy/Today due | ค่า authority เหล่านี้ไม่เปลี่ยนและไม่ถูกเร่งจาก replay |
+| 4 | กลับดู best result | normal best แยกจาก practice best/attempts อย่างชัดเจน |
+
+### UAT-049 — Adaptive accessibility and localization
+
+**Trace:** UI-019–027, NFR-042/043, BR-030–032; WBS PM6; TC-PMT-022–024/037/043
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | ใช้ TalkBack, Switch Access และ keyboard จบรอบ | ทุกคู่ ปุ่มเสียง คำใบ้ timeout และผลลัพธ์ reachable; focus order/restore ถูกต้อง |
+| 2 | ใช้ text 200% และ narrow width | layout เปลี่ยนเป็น focused/list presentation โดยไม่ซ่อนคำหรือ action สำคัญ |
+| 3 | ตรวจ target/contrast/motion | touch target ≥48×48, contrast ผ่าน, reduced motion ไม่เสีย state cue |
+| 4 | ตรวจ copy ไทย/อังกฤษและตัวเลขเวลา | ไม่ clip/สลับภาษาโดยไม่ตั้งใจ; semantic order คงเดิม |
+
+### UAT-050 — Standard/Adventure parity and safe fallback
+
+**Trace:** FR-105/108/129/130, NFR-040/044–046, BR-024/034; WBS PM7/PM8; TC-PMT-038/040/042–044
+
+| Step | Tester action | Expected result/evidence |
+|---:|---|---|
+| 1 | รัน immutable plan fixture เดียวกันใน Standard และ Adventure | engine transitions, timer, repair, attempt ledger, stars และ learning writes ตรงกัน |
+| 2 | ทำ Adventure renderer fail กลางรอบ | กลับ Standard presentation จาก plan/checkpoint เดิมโดยไม่เสีย progress หรือเขียน reward ซ้ำ |
+| 3 | เปิด feature flag Pair UI ใหม่เป็น off | f10/Standard เดิมยังใช้ได้และไม่มี orphan route |
+| 4 | ตรวจ source and schema compatibility | reader รุ่นใหม่อ่าน checkpoint เดิมได้; writer ใหม่เริ่มหลัง compatibility gate เท่านั้น |
+
+## 16. คำถามวัดความเข้าใจและแรงจูงใจ
 
 ถามหลังผู้ใช้ทำงานเอง ห้ามชี้นำคำตอบ:
 
@@ -622,6 +758,9 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 7. “คุณอยากเริ่ม mission ต่อหรือกลับมาภายหลัง เพราะอะไร?”
 8. “เมื่อระบบมีปัญหา คุณรู้หรือไม่ว่าควร Retry หรือใช้ Standard?”
 9. สำหรับ research prompt: “คุณเข้าใจหรือไม่ว่าข้อมูลนี้เก็บเพื่ออะไร และ Skip ได้หรือไม่?”
+10. “ดาวและเวลาหมายถึงอะไร และมีผลต่อ Mastery หรือรางวัลหรือไม่?”
+11. “ถ้าหมดเวลา คุณยังทำอะไรต่อได้บ้าง?”
+12. “Practice Replay มีผลกับคำที่ถึงเวลาทบทวนหรือรางวัลหรือไม่?”
 
 ### เกณฑ์ comprehension
 
@@ -633,11 +772,13 @@ Accessibility participants รวมอย่างน้อย 4 moderated sess
 - accessibility sessions ขั้นต่ำ 4 และ required path ต้องผ่านทุก session;
 - research comprehension participants ขั้นต่ำ 10 และ 10/10 ระบุได้ว่า Skip/withdraw ได้และไม่กระทบสิทธิ์เรียน;
 - guardian–learner dyads ขั้นต่ำ 5 คู่ โดย guardian 5/5 และ learner 5/5 ต้องผ่าน Skip/withdraw/no-learning-impact แยกกัน;
+- Pair Matching representatives ต้องครอบคลุม 4/6 คู่, ทั้งสองทิศทาง, timer off/60/90/120 และอย่างน้อยหนึ่ง assistive-technology path;
+- อย่างน้อย 11/12 อธิบายได้ว่าดาว/เวลาเป็นผลแสดงการทำ ไม่ใช่เงินหรือ mastery และ Practice Replay ไม่ให้ reward ซ้ำ;
 - shame/coercion/false mastery finding ที่ยืนยันแล้วต้องเป็นศูนย์ก่อน Pilot
 
 ค่าเหล่านี้เป็น acceptance threshold ของ UAT ไม่ใช่ผลวิจัยประสิทธิผล และห้ามตีความแทน protocol
 
-## 16. Defect และ Decision Log
+## 17. Defect และ Decision Log
 
 | Defect ID | UAT/Step | Severity | Actual/Expected | Evidence | Owner | Target | Retest | Disposition |
 |---|---|---|---|---|---|---|---|---|
@@ -652,9 +793,9 @@ Severity:
 
 S0/S1 ต้องแก้และ rerun affected scripts + regression ก่อน sign-off; S2 ต้องมี owner/date/accepted risk; S3 เข้า backlog ได้เมื่อไม่กระทบ comprehension/accessibility
 
-## 17. Exit Criteria และ Sign-off
+## 18. Exit Criteria และ Sign-off
 
-### 17.1 Internal acceptance
+### 18.1 Internal acceptance
 
 - UAT-001–024 และ 030–032 ผ่านอย่างน้อยหนึ่งครั้งบน mainstream Android และ critical subsets ผ่านบน profile ตามตาราง 4.4;
 - general learner representatives ≥12 และ accessibility sessions ≥4 พร้อม numerator/denominator ตาม MDS;
@@ -663,7 +804,18 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 - baseline `G0A` ผ่าน และไม่มี unclassified failure ใน touched foundation;
 - Requirement/Test/UAT links ใน RTM ตรงกับ build
 
-### 17.2 MS-08A Feasibility acceptance
+### 18.2 Pair Matching Prototype acceptance
+
+- UAT-039–050 และ TC-PMT-001–044 ผ่าน;
+- no-new-main-menu, exact 4/6 plan, no silent filler/downgrade และ Standard/Adventure parity ผ่าน;
+- timer pause/restore, one-extension entitlement, timeout continue/restart และ immutable evidence ผ่าน;
+- stars projection ผ่านทุก boundary และไม่แตะ reward/mastery;
+- Practice Replay write isolation = 100%;
+- accessibility path และ comprehension threshold ผ่าน;
+- ไม่มี S0/S1 เปิดค้าง และ S2 มี owner/date/accepted risk;
+- Product, UX/Accessibility, QA และ Tech sign-off ครบ
+
+### 18.3 MS-08A Feasibility acceptance
 
 - Internal acceptance ผ่าน;
 - `G0B` และ `BG-01–BG-12` ผ่านด้วย fresh evidence;
@@ -677,7 +829,7 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 - Research/Privacy, Accessibility, QA, Tech และ Product sign-off ครบ;
 - decision ได้เพียง Limited/Revise/Stop; ห้าม Controlled Expansion/Enabled หรือ efficacy claim
 
-### 17.3 MS-08B Efficacy acceptance
+### 18.4 MS-08B Efficacy acceptance
 
 - UAT-038 ผ่านด้วย frozen evidence ของ participant class นั้น;
 - powered sample, endpoint window, ANCOVA, MI/tipping-point และ learning/safety thresholds ผ่าน;
@@ -686,7 +838,7 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 - class ที่ไม่ผ่านยังคง Limited;
 - signed Expand/Remain Limited/Stop decision ครบ
 
-### 17.4 Sign-off table
+### 18.5 Sign-off table
 
 | Role | Decision | Name | Date | Build/evidence | Conditions |
 |---|---|---|---|---|---|
