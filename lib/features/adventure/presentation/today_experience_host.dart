@@ -95,7 +95,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   var _preferenceGeneration = 0;
   bool? _permitControlsPresentation;
   _PresentationSaveRun? _activePresentationSave;
-  TodayExperiencePresentation? _queuedPresentationSave;
+  _QueuedPresentationSave? _queuedPresentationSave;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
   _presentationSaveFailure;
 
@@ -133,6 +133,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   void _startNewOpening() {
     _sessionChoice = null;
     _permitControlsPresentation = null;
+    _queuedPresentationSave = null;
     _refreshGeneration += 1;
     _presentationGeneration += 1;
     _occurredAtUtc = widget.nowUtc();
@@ -167,12 +168,12 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     if (presentationGeneration != _presentationGeneration) {
       return _TodayExperienceModel(result: result);
     }
-    final permitWasUnresolved = _permitControlsPresentation == null;
     _permitControlsPresentation = result!.decision.permitId != null;
-    if (permitWasUnresolved &&
-        _permitControlsPresentation == false &&
-        sessionChoice != null) {
-      _queuePresentationSave(sessionChoice);
+    if (_permitControlsPresentation == false && sessionChoice != null) {
+      _queuePresentationSave(
+        sessionChoice,
+        presentationGeneration: presentationGeneration,
+      );
     }
     final decision = result.decision;
     if (decision.destination != AdventureEntryDestination.adventure) {
@@ -210,6 +211,8 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     setState(() {
       _sessionChoice = choice;
       _presentationGeneration = presentationGeneration;
+      _permitControlsPresentation = null;
+      _queuedPresentationSave = null;
       _loadFuture = _load(
         _refreshGeneration,
         presentationGeneration,
@@ -217,15 +220,24 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
         choice,
       );
     });
-    if (_permitControlsPresentation == false) {
-      _queuePresentationSave(choice);
-    }
+    _clearPresentationSaveFailure();
   }
 
-  void _queuePresentationSave(TodayExperiencePresentation choice) {
+  void _queuePresentationSave(
+    TodayExperiencePresentation choice, {
+    int? presentationGeneration,
+  }) {
+    final queuedGeneration = presentationGeneration ?? _presentationGeneration;
     final saver = widget.presentationPreferences;
-    if (saver == null || _permitControlsPresentation != false) return;
-    _queuedPresentationSave = choice;
+    if (saver == null ||
+        _permitControlsPresentation != false ||
+        queuedGeneration != _presentationGeneration) {
+      return;
+    }
+    _queuedPresentationSave = _QueuedPresentationSave(
+      presentationGeneration: queuedGeneration,
+      choice: choice,
+    );
     final current = _activePresentationSave;
     if (current != null && current.generation == _preferenceGeneration) return;
     final run = _PresentationSaveRun(
@@ -240,19 +252,22 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   Future<void> _drainPresentationSaves(_PresentationSaveRun run) async {
     try {
       while (_isCurrentSaveRun(run)) {
-        final choice = _queuedPresentationSave;
-        if (choice == null) return;
+        final queued = _queuedPresentationSave;
+        if (queued == null) return;
         _queuedPresentationSave = null;
+        if (!_isCurrentPresentationSave(queued)) continue;
         try {
-          await run.saver.saveForOwner(run.ownerId, choice);
+          await run.saver.saveForOwner(run.ownerId, queued.choice);
           if (!_isCurrentSaveRun(run)) return;
-          if (_queuedPresentationSave == null && _sessionChoice == choice) {
+          if (_queuedPresentationSave == null &&
+              _isCurrentPresentationSave(queued)) {
             _clearPresentationSaveFailure();
           }
         } catch (_) {
           if (!_isCurrentSaveRun(run)) return;
-          if (_queuedPresentationSave == null && _sessionChoice == choice) {
-            _showPresentationSaveFailure(choice);
+          if (_queuedPresentationSave == null &&
+              _isCurrentPresentationSave(queued)) {
+            _showPresentationSaveFailure(queued.choice);
           }
         }
       }
@@ -268,6 +283,11 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       identical(_activePresentationSave, run) &&
       run.generation == _preferenceGeneration &&
       run.ownerId == widget.ownerId;
+
+  bool _isCurrentPresentationSave(_QueuedPresentationSave queued) =>
+      queued.presentationGeneration == _presentationGeneration &&
+      _permitControlsPresentation == false &&
+      _sessionChoice == queued.choice;
 
   void _showPresentationSaveFailure(TodayExperiencePresentation choice) {
     final messenger = ScaffoldMessenger.of(context);
@@ -418,6 +438,16 @@ final class _PresentationSaveRun {
   final int generation;
   final String ownerId;
   final AdventurePresentationPreferenceWriter saver;
+}
+
+final class _QueuedPresentationSave {
+  const _QueuedPresentationSave({
+    required this.presentationGeneration,
+    required this.choice,
+  });
+
+  final int presentationGeneration;
+  final TodayExperiencePresentation choice;
 }
 
 final class _UnavailableState extends StatelessWidget {

@@ -220,6 +220,97 @@ void main() {
   );
 
   testWidgets(
+    'permit activation before a switch resolution blocks the Standard save',
+    (tester) async {
+      final permits = _MutablePermits();
+      final loader = _Loader(_today());
+      final ids = <String>[];
+      final savedChoices = <TodayExperiencePresentation>[];
+      await tester.pumpWidget(
+        _app(
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            const id = '11111111-1111-4111-8111-111111111111';
+            ids.add(id);
+            return id;
+          },
+          activePermits: permits,
+          presentationPreferences: _CallbackPreferenceWriter(
+            (_, choice) async => savedChoices.add(choice),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('ผจญภัย'));
+      await tester.pumpAndSettle();
+      expect(savedChoices, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+      ]);
+
+      permits.permit = _permit();
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(savedChoices, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+      ]);
+      expect(loader.calls, 1);
+      expect(ids, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'permit activation fences an in-flight nonparticipant save drain',
+    (tester) async {
+      final permits = _MutablePermits();
+      final loader = _Loader(_today());
+      final ids = <String>[];
+      final saver = _ControlledPreferenceSaver();
+      await tester.pumpWidget(
+        _app(
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            const id = '11111111-1111-4111-8111-111111111111';
+            ids.add(id);
+            return id;
+          },
+          activePermits: permits,
+          presentationPreferences: saver,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('ผจญภัย'));
+      await tester.pumpAndSettle();
+      expect(saver.started, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+      ]);
+
+      permits.permit = _permit();
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pumpAndSettle();
+      saver.failNext();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(saver.started, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+      ]);
+      expect(saver.completed, isEmpty);
+      expect(
+        find.byKey(const ValueKey('today-presentation-save-failure')),
+        findsNothing,
+      );
+      expect(loader.calls, 1);
+      expect(ids, hasLength(1));
+    },
+  );
+
+  testWidgets(
     'loads Today once and reuses the exact snapshot and UUID across switches',
     (tester) async {
       final today = _today();
@@ -650,6 +741,16 @@ final class _PendingPermits implements ActivePresentationPermitReader {
   void complete(ActivePresentationPermit? permit) => _pending.complete(permit);
 }
 
+final class _MutablePermits implements ActivePresentationPermitReader {
+  ActivePresentationPermit? permit;
+
+  @override
+  Future<ActivePresentationPermit?> readActivePermit({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) async => permit;
+}
+
 final class _ControlledPreferenceSaver
     implements AdventurePresentationPreferenceWriter {
   final List<TodayExperiencePresentation> started =
@@ -671,6 +772,9 @@ final class _ControlledPreferenceSaver
   }
 
   void completeNext() => _pending.removeAt(0).complete();
+
+  void failNext() =>
+      _pending.removeAt(0).completeError(StateError('save unavailable'));
 }
 
 final class _CallbackPreferenceWriter
