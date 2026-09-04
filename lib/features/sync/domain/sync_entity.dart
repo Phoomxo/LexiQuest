@@ -24,6 +24,7 @@ const String contentQualityReportV1RulesRevision =
 const String learningTimeSegmentV1RulesRevision = 'learning-time-segment-v1-r1';
 const String learningGoalV1RulesRevision = 'learning-goal-v1-r1';
 const String learnerPreferenceV1RulesRevision = 'learner-preference-v1-r1';
+const String learnerPreferenceV2RulesRevision = 'learner-preference-v2-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -115,7 +116,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.contentQualityReports => const <int>{1},
     SyncCollection.learningTimeSegments => const <int>{1},
     SyncCollection.learningGoals => const <int>{1},
-    SyncCollection.learnerPreferences => const <int>{1},
+    SyncCollection.learnerPreferences => const <int>{1, 2},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -170,21 +171,32 @@ final class SyncPayloadRollout {
 final class LearnerPreferenceSyncRollout {
   const LearnerPreferenceSyncRollout.off()
     : enabled = false,
-      deployedRulesRevision = '';
+      deployedRulesRevision = '',
+      writePayloadVersion = 1;
 
   const LearnerPreferenceSyncRollout.v1({required this.deployedRulesRevision})
-    : enabled = true;
+    : enabled = true,
+      writePayloadVersion = 1;
+
+  const LearnerPreferenceSyncRollout.v2({required this.deployedRulesRevision})
+    : enabled = true,
+      writePayloadVersion = 2;
 
   final bool enabled;
   final String deployedRulesRevision;
+  final int writePayloadVersion;
 
   bool get allowsClaims =>
-      enabled && deployedRulesRevision == learnerPreferenceV1RulesRevision;
+      enabled &&
+      deployedRulesRevision ==
+          (writePayloadVersion == 2
+              ? learnerPreferenceV2RulesRevision
+              : learnerPreferenceV1RulesRevision);
 }
 
 abstract final class LearnerPreferenceSyncPayloadContract {
   static const String canonicalEntityId = 'current';
-  static const Set<String> keys = <String>{
+  static const Set<String> v1Keys = <String>{
     'ownerId',
     'preferenceVersion',
     'goal',
@@ -192,6 +204,8 @@ abstract final class LearnerPreferenceSyncPayloadContract {
     'activityPreference',
     'updatedAtUtcMs',
   };
+  static const Set<String> v2Keys = <String>{...v1Keys, 'homeExperience'};
+  static const Set<String> keys = v1Keys;
   static const Set<String> goals = <String>{
     'balancedGrowth',
     'examPreparation',
@@ -215,9 +229,18 @@ abstract final class LearnerPreferenceSyncPayloadContract {
     final goal = payload['goal'];
     final availableMinutesPerDay = payload['availableMinutesPerDay'];
     final activityPreference = payload['activityPreference'];
+    final homeExperience = payload['homeExperience'];
     final updatedAtUtcMs = payload['updatedAtUtcMs'];
-    if (preferenceVersion is! int ||
-        preferenceVersion != 1 ||
+    if (preferenceVersion is! int) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final expectedKeys = switch (preferenceVersion) {
+      1 => v1Keys,
+      2 => v2Keys,
+      _ => throw const InvalidSyncPayloadFailure(),
+    };
+    if (payload.length != expectedKeys.length ||
+        !payload.keys.every(expectedKeys.contains) ||
         goal is! String ||
         !goals.contains(goal) ||
         availableMinutesPerDay is! int ||
@@ -225,6 +248,12 @@ abstract final class LearnerPreferenceSyncPayloadContract {
         availableMinutesPerDay > 240 ||
         activityPreference is! String ||
         !activities.contains(activityPreference) ||
+        (preferenceVersion == 2 &&
+            (homeExperience is! String ||
+                !const <String>{
+                  'standard',
+                  'adventure',
+                }.contains(homeExperience))) ||
         updatedAtUtcMs is! int ||
         updatedAtUtcMs < 0 ||
         baseRevision < 0 ||
@@ -232,16 +261,17 @@ abstract final class LearnerPreferenceSyncPayloadContract {
       throw const InvalidSyncPayloadFailure();
     }
     final identity = <Object>[
-      'v1',
+      'v$preferenceVersion',
       preferenceVersion,
       goal,
       availableMinutesPerDay,
       activityPreference,
+      if (preferenceVersion == 2) homeExperience! as String,
       updatedAtUtcMs,
       baseRevision,
       resultingRevision,
     ].join('|');
-    return 'learner-preference-operation:v1:'
+    return 'learner-preference-operation:v$preferenceVersion:'
         '${sha256.convert(utf8.encode(identity))}';
   }
 
@@ -252,10 +282,7 @@ abstract final class LearnerPreferenceSyncPayloadContract {
     required bool isDeleted,
     required int clientUpdatedAtUtcMs,
   }) {
-    if (isDeleted ||
-        expectedEntityId != canonicalEntityId ||
-        payload.length != keys.length ||
-        !payload.keys.every(keys.contains)) {
+    if (isDeleted || expectedEntityId != canonicalEntityId) {
       throw const InvalidSyncPayloadFailure();
     }
     final ownerId = payload['ownerId'];
@@ -263,12 +290,22 @@ abstract final class LearnerPreferenceSyncPayloadContract {
     final goal = payload['goal'];
     final availableMinutesPerDay = payload['availableMinutesPerDay'];
     final activityPreference = payload['activityPreference'];
+    final homeExperience = payload['homeExperience'];
     final updatedAtUtcMs = payload['updatedAtUtcMs'];
+    if (preferenceVersion is! int) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final expectedKeys = switch (preferenceVersion) {
+      1 => v1Keys,
+      2 => v2Keys,
+      _ => throw const InvalidSyncPayloadFailure(),
+    };
     if (ownerId is! String ||
         ownerId != expectedOwnerId ||
         ownerId.isEmpty ||
         ownerId != ownerId.trim() ||
-        preferenceVersion != 1 ||
+        payload.length != expectedKeys.length ||
+        !payload.keys.every(expectedKeys.contains) ||
         goal is! String ||
         !goals.contains(goal) ||
         availableMinutesPerDay is! int ||
@@ -276,6 +313,12 @@ abstract final class LearnerPreferenceSyncPayloadContract {
         availableMinutesPerDay > 240 ||
         activityPreference is! String ||
         !activities.contains(activityPreference) ||
+        (preferenceVersion == 2 &&
+            (homeExperience is! String ||
+                !const <String>{
+                  'standard',
+                  'adventure',
+                }.contains(homeExperience))) ||
         updatedAtUtcMs is! int ||
         updatedAtUtcMs < 0 ||
         updatedAtUtcMs != clientUpdatedAtUtcMs) {
@@ -1552,6 +1595,7 @@ final class PushMutation {
     }
     _requireUtc(clientUpdatedAtUtc, 'clientUpdatedAtUtc');
     _requireJsonSafe(payload);
+    _requirePayloadVersionMatchesBody(collection, payloadVersion, payload);
   }
 
   final String operationId;
@@ -1583,6 +1627,7 @@ final class SyncEntity {
     _requireUtc(clientUpdatedAtUtc, 'clientUpdatedAtUtc');
     _requireUtc(serverUpdatedAtUtc, 'serverUpdatedAtUtc');
     _requireJsonSafe(payload);
+    _requirePayloadVersionMatchesBody(collection, payloadVersion, payload);
   }
 
   final SyncCollection collection;
@@ -1618,6 +1663,17 @@ String _requiredId(String value, String field) {
 
 void _requireJsonSafe(Map<String, Object?> payload) {
   if (!_isJsonSafe(payload)) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+void _requirePayloadVersionMatchesBody(
+  SyncCollection collection,
+  int payloadVersion,
+  Map<String, Object?> payload,
+) {
+  if (collection == SyncCollection.learnerPreferences &&
+      payload['preferenceVersion'] != payloadVersion) {
     throw const InvalidSyncPayloadFailure();
   }
 }

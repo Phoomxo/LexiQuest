@@ -2387,10 +2387,12 @@ final class DriftSyncStore implements SyncStore {
                   ..where((row) => row.ownerId.equals(operation.ownerId)))
                 .getSingleOrNull();
         final localRevision = _operationRevision(operation);
+        final payloadVersion = learnerPreferenceSyncRollout.writePayloadVersion;
         if (preference == null ||
             !learnerPreferenceSyncRollout.allowsClaims ||
             operation.operationKind != SyncOperationKind.upsert.name ||
-            operation.payloadVersion != 1 ||
+            (operation.payloadVersion != payloadVersion &&
+                !(payloadVersion == 2 && operation.payloadVersion == 1)) ||
             localRevision <= baseRevision ||
             localRevision > preference.localRevision ||
             operation.entityId != operation.ownerId) {
@@ -2399,6 +2401,7 @@ final class DriftSyncStore implements SyncStore {
         final payload = _learnerPreferencePayload(
           preference,
           firebaseUid: firebaseUid,
+          payloadVersion: payloadVersion,
         );
         LearnerPreferenceSyncPayloadContract.requireCanonical(
           payload: payload,
@@ -2419,7 +2422,7 @@ final class DriftSyncStore implements SyncStore {
           collection: SyncCollection.learnerPreferences,
           entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
           operationKind: SyncOperationKind.upsert,
-          payloadVersion: 1,
+          payloadVersion: payloadVersion,
           baseRevision: baseRevision,
           localRevision: localRevision,
           clientUpdatedAtUtc: _utc(preference.updatedAtUtcMs),
@@ -3218,11 +3221,20 @@ final class DriftSyncStore implements SyncStore {
     final existing = await (database.select(
       database.learnerPreferences,
     )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+    final incomingPreferenceVersion = payload['preferenceVersion']! as int;
+    final effectivePreferenceVersion =
+        existing != null &&
+            existing.preferenceVersion > incomingPreferenceVersion
+        ? existing.preferenceVersion
+        : incomingPreferenceVersion;
     final learningUpdate = db.LearnerPreferencesCompanion(
-      preferenceVersion: Value(payload['preferenceVersion']! as int),
+      preferenceVersion: Value(effectivePreferenceVersion),
       goal: Value(payload['goal']! as String),
       availableMinutesPerDay: Value(payload['availableMinutesPerDay']! as int),
       activityPreference: Value(payload['activityPreference']! as String),
+      homeExperience: entity.payloadVersion == 2
+          ? Value(payload['homeExperience']! as String)
+          : const Value.absent(),
       updatedAtUtcMs: Value(payload['updatedAtUtcMs']! as int),
       localRevision: Value(entity.revision),
       cloudRevision: Value(entity.revision),
@@ -3249,6 +3261,9 @@ final class DriftSyncStore implements SyncStore {
             goal: payload['goal']! as String,
             availableMinutesPerDay: payload['availableMinutesPerDay']! as int,
             activityPreference: payload['activityPreference']! as String,
+            homeExperience: entity.payloadVersion == 2
+                ? Value(payload['homeExperience']! as String)
+                : const Value('standard'),
             updatedAtUtcMs: payload['updatedAtUtcMs']! as int,
             localRevision: Value(entity.revision),
             cloudRevision: Value(entity.revision),
@@ -3368,9 +3383,11 @@ final class DriftSyncStore implements SyncStore {
       throw const InvalidSyncPayloadFailure();
     }
     final rebasedRevision = cloudEntity.revision + 1;
+    final payloadVersion = learnerPreferenceSyncRollout.writePayloadVersion;
     final payload = _learnerPreferencePayload(
       current,
       firebaseUid: firebaseUid,
+      payloadVersion: payloadVersion,
     );
     final cloudOperationId =
         LearnerPreferenceSyncPayloadContract.canonicalOperationId(
@@ -3399,7 +3416,7 @@ final class DriftSyncStore implements SyncStore {
             entityType: SyncCollection.learnerPreferences.entityType,
             entityId: current.ownerId,
             operationKind: SyncOperationKind.upsert.name,
-            payloadVersion: const Value(1),
+            payloadVersion: Value(payloadVersion),
             baseRevision: Value(cloudEntity.revision),
             state: Value(replacementState),
             attemptCount: const Value(0),
@@ -5735,14 +5752,22 @@ Map<String, Object?> _learningGoalPayload(db.LearningGoalRow goal) =>
 Map<String, Object?> _learnerPreferencePayload(
   db.LearnerPreferenceRow preference, {
   required String firebaseUid,
-}) => <String, Object?>{
-  'ownerId': firebaseUid,
-  'preferenceVersion': preference.preferenceVersion,
-  'goal': preference.goal,
-  'availableMinutesPerDay': preference.availableMinutesPerDay,
-  'activityPreference': preference.activityPreference,
-  'updatedAtUtcMs': preference.updatedAtUtcMs,
-};
+  int? payloadVersion,
+}) {
+  final version = payloadVersion ?? preference.preferenceVersion;
+  if (version != 1 && version != 2) {
+    throw const UnsupportedSyncSchemaFailure();
+  }
+  return <String, Object?>{
+    'ownerId': firebaseUid,
+    'preferenceVersion': version,
+    'goal': preference.goal,
+    'availableMinutesPerDay': preference.availableMinutesPerDay,
+    'activityPreference': preference.activityPreference,
+    if (version == 2) 'homeExperience': preference.homeExperience,
+    'updatedAtUtcMs': preference.updatedAtUtcMs,
+  };
+}
 
 Map<String, Object?> _rewardTransactionPayload(
   db.RewardTransaction transaction,

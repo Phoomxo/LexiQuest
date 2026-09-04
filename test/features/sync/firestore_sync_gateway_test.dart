@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Value, Variable;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -238,6 +239,46 @@ void main() {
         expect(decoded.payloadVersion, 1, reason: collection.name);
         expect(decoded.payload, payload, reason: collection.name);
       }
+    });
+
+    test('learner preference v2 round-trips exact home experience payload', () {
+      final payload = _learnerPreferencePayload(
+        payloadVersion: 2,
+        homeExperience: 'adventure',
+        updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final mutation = PushMutation(
+        operationId: LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+          payload: payload,
+          baseRevision: 1,
+          resultingRevision: 2,
+        ),
+        firebaseUid: 'firebase-user-1',
+        collection: SyncCollection.learnerPreferences,
+        entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+        operationKind: SyncOperationKind.upsert,
+        payloadVersion: 2,
+        baseRevision: 1,
+        localRevision: 2,
+        clientUpdatedAtUtc: clientUpdatedAt,
+        payload: payload,
+      );
+
+      final encoded = FirestoreSyncCodec.encodeEntity(
+        mutation,
+        serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+      );
+      final decoded = FirestoreSyncCodec.decodeEntity(
+        collection: SyncCollection.learnerPreferences,
+        documentId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+        expectedFirebaseUid: 'firebase-user-1',
+        data: encoded,
+      );
+
+      expect(encoded['schemaVersion'], 2);
+      expect(decoded.payloadVersion, 2);
+      expect(decoded.payload, payload);
+      expect(decoded.payload.keys, LearnerPreferenceSyncPayloadContract.v2Keys);
     });
 
     test(
@@ -975,7 +1016,9 @@ void main() {
     test('rejects payload v2 for every remaining v1-only collection', () {
       for (final collection in SyncCollection.values.where(
         (value) =>
-            value != SyncCollection.attempts && value != SyncCollection.words,
+            value != SyncCollection.attempts &&
+            value != SyncCollection.words &&
+            value != SyncCollection.learnerPreferences,
       )) {
         expect(
           () => FirestoreSyncCodec.decodeEntity(
@@ -1259,6 +1302,34 @@ void main() {
     );
 
     test(
+      'admits exact learner preference v1/v2 before a transaction',
+      () async {
+        const preflight = FirestoreSyncPreflight();
+        var transactions = 0;
+        for (final version in const <int>[1, 2]) {
+          final result = await preflight.beforeTransaction<int>(
+            collection: SyncCollection.learnerPreferences,
+            payloadVersion: version,
+            payload: _learnerPreferencePayload(
+              payloadVersion: version,
+              updatedAtUtcMs: 2000,
+            ),
+            entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+            firebaseUid: 'firebase-user-1',
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 2000,
+            beginTransaction: () async {
+              transactions += 1;
+              return version;
+            },
+          );
+          expect(result, version);
+        }
+        expect(transactions, 2);
+      },
+    );
+
+    test(
       'rejects remaining legacy collection v2 without a transaction',
       () async {
         const preflight = FirestoreSyncPreflight();
@@ -1266,7 +1337,9 @@ void main() {
 
         for (final collection in SyncCollection.values.where(
           (value) =>
-              value != SyncCollection.attempts && value != SyncCollection.words,
+              value != SyncCollection.attempts &&
+              value != SyncCollection.words &&
+              value != SyncCollection.learnerPreferences,
         )) {
           await expectLater(
             preflight.beforeTransaction<void>(
@@ -1331,6 +1404,66 @@ void main() {
         expect(transactions, 0);
       },
     );
+  });
+
+  group('FirestoreSyncGateway learner preference rollout', () {
+    test('rejects a write version that differs from the selected rollout', () {
+      Future<void> expectRejected({
+        required LearnerPreferenceSyncRollout rollout,
+        required int payloadVersion,
+      }) async {
+        final payload = _learnerPreferencePayload(
+          payloadVersion: payloadVersion,
+          updatedAtUtcMs: 2000,
+        );
+        final gateway = FirestoreSyncGateway(
+          firestore: _NeverTouchedFirestore(),
+          auth: _SignedInFirebaseAuth('firebase-user-1'),
+          learnerPreferenceRollout: rollout,
+        );
+
+        await expectLater(
+          gateway.push(
+            PushMutation(
+              operationId:
+                  LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                    payload: payload,
+                    baseRevision: 0,
+                    resultingRevision: 1,
+                  ),
+              firebaseUid: 'firebase-user-1',
+              collection: SyncCollection.learnerPreferences,
+              entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+              operationKind: SyncOperationKind.upsert,
+              payloadVersion: payloadVersion,
+              baseRevision: 0,
+              localRevision: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              payload: payload,
+            ),
+          ),
+          throwsA(isA<PermissionDeniedSyncFailure>()),
+        );
+      }
+
+      return Future.wait(<Future<void>>[
+        expectRejected(
+          rollout: const LearnerPreferenceSyncRollout.v2(
+            deployedRulesRevision: learnerPreferenceV2RulesRevision,
+          ),
+          payloadVersion: 1,
+        ),
+        expectRejected(
+          rollout: const LearnerPreferenceSyncRollout.v1(
+            deployedRulesRevision: learnerPreferenceV1RulesRevision,
+          ),
+          payloadVersion: 2,
+        ),
+      ]);
+    });
   });
 
   group('FirestoreSyncErrorMapper', () {
@@ -3192,15 +3325,19 @@ Map<String, Object?> _learningGoalPayload({
   'isDeleted': isDeleted,
 };
 
-Map<String, Object?> _learnerPreferencePayload({required int updatedAtUtcMs}) =>
-    <String, Object?>{
-      'ownerId': 'firebase-user-1',
-      'preferenceVersion': 1,
-      'goal': 'balancedGrowth',
-      'availableMinutesPerDay': 20,
-      'activityPreference': 'mixedPractice',
-      'updatedAtUtcMs': updatedAtUtcMs,
-    };
+Map<String, Object?> _learnerPreferencePayload({
+  required int updatedAtUtcMs,
+  int payloadVersion = 1,
+  String homeExperience = 'standard',
+}) => <String, Object?>{
+  'ownerId': 'firebase-user-1',
+  'preferenceVersion': payloadVersion,
+  'goal': 'balancedGrowth',
+  'availableMinutesPerDay': 20,
+  'activityPreference': 'mixedPractice',
+  if (payloadVersion == 2) 'homeExperience': homeExperience,
+  'updatedAtUtcMs': updatedAtUtcMs,
+};
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.independentRecall,
@@ -3217,6 +3354,35 @@ EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   researchConsentVersion: 1,
   engagementAllowed: true,
 );
+
+final class _NeverTouchedFirestore implements FirebaseFirestore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    throw StateError('Firestore must not be touched for a rollout mismatch.');
+  }
+}
+
+final class _SignedInFirebaseAuth implements FirebaseAuth {
+  _SignedInFirebaseAuth(String uid) : _user = _SignedInUser(uid);
+
+  final User _user;
+
+  @override
+  User get currentUser => _user;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _SignedInUser implements User {
+  _SignedInUser(this.uid);
+
+  @override
+  final String uid;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 PushMutation _attemptMutation({
   required int payloadVersion,

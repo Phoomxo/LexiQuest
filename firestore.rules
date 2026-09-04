@@ -72,6 +72,11 @@ service cloud.firestore {
         && request.resource.data.schemaVersion in [1, 2];
     }
 
+    function fieldLearnerPreferenceEntityEnvelopeOk(entityId) {
+      return fieldEntityEnvelopeShapeOk(entityId)
+        && request.resource.data.schemaVersion == 2;
+    }
+
     function fieldCategoryPayloadOk() {
       let payload = request.resource.data.payload;
       return payload.keys().hasOnly([
@@ -326,13 +331,13 @@ service cloud.firestore {
         && payload.keys().hasOnly([
              'ownerId', 'preferenceVersion', 'goal',
              'availableMinutesPerDay', 'activityPreference',
-             'updatedAtUtcMs'
+             'homeExperience', 'updatedAtUtcMs'
            ])
-        && payload.keys().size() == 6
+        && payload.keys().size() == 7
         && payload.ownerId is string
         && payload.ownerId == uid
         && payload.preferenceVersion is int
-        && payload.preferenceVersion == 1
+        && payload.preferenceVersion == 2
         && payload.goal is string
         && payload.goal in [
              'balancedGrowth', 'examPreparation',
@@ -345,6 +350,8 @@ service cloud.firestore {
         && payload.activityPreference in [
              'mixedPractice', 'quiz', 'speaking', 'reading', 'vocabulary'
            ]
+        && payload.homeExperience is string
+        && payload.homeExperience in ['standard', 'adventure']
         && payload.updatedAtUtcMs is int
         && payload.updatedAtUtcMs >= 0
         && payload.updatedAtUtcMs
@@ -352,7 +359,7 @@ service cloud.firestore {
         && !request.resource.data.isDeleted
         && request.resource.data.lastOperationId is string
         && request.resource.data.lastOperationId.matches(
-             '^learner-preference-operation:v1:[0-9a-f]{64}$'
+             '^learner-preference-operation:v2:[0-9a-f]{64}$'
            );
     }
 
@@ -363,10 +370,10 @@ service cloud.firestore {
 
     function fieldLearnerPreferenceUpdateOk(uid, entityId) {
       return fieldLearnerPreferencePayloadOk(uid, entityId)
-        && resource.data.schemaVersion == 1
+        && resource.data.schemaVersion in [1, 2]
         && resource.data.entityId == 'current'
         && resource.data.payload.ownerId == uid
-        && resource.data.payload.preferenceVersion == 1
+        && resource.data.payload.preferenceVersion in [1, 2]
         && !resource.data.isDeleted
         && request.resource.data.revision == resource.data.revision + 1;
     }
@@ -981,7 +988,9 @@ service cloud.firestore {
            ])
         && ((request.resource.data.schemaVersion == 1)
             || (request.resource.data.schemaVersion == 2
-                && request.resource.data.entityType == 'attempt'))
+                && request.resource.data.entityType in [
+                     'attempt', 'learnerPreference'
+                   ]))
         && request.resource.data.operationId == operationId
         && request.resource.data.operationId is string
         && request.resource.data.operationId.size() > 0
@@ -1116,15 +1125,16 @@ service cloud.firestore {
         /databases/$(database)/documents/field_users/$(uid)/learner_preferences/$(entityId);
       let entity = getAfter(entityPath).data;
       return entityId == 'current'
-        && request.resource.data.schemaVersion == 1
+        && request.resource.data.schemaVersion == 2
         && request.resource.data.operationKind == 'upsert'
         && request.resource.data.operationId
-             == 'learner-preference-operation:v1:'
+             == 'learner-preference-operation:v2:'
                   + hashing.sha256((
-                      'v1|' + string(entity.payload.preferenceVersion)
+                      'v2|' + string(entity.payload.preferenceVersion)
                       + '|' + entity.payload.goal
                       + '|' + string(entity.payload.availableMinutesPerDay)
                       + '|' + entity.payload.activityPreference
+                      + '|' + entity.payload.homeExperience
                       + '|' + string(entity.payload.updatedAtUtcMs)
                       + '|' + string(request.resource.data.baseRevision)
                       + '|' + string(request.resource.data.resultingRevision)
@@ -1137,7 +1147,7 @@ service cloud.firestore {
                      == request.resource.data.baseRevision
                 && request.resource.data.resultingRevision
                      == request.resource.data.baseRevision + 1))
-        && entity.schemaVersion == 1
+        && entity.schemaVersion == 2
         && entity.entityId == 'current'
         && entity.lastOperationId == request.resource.data.operationId
         && entity.revision == request.resource.data.resultingRevision
@@ -1589,11 +1599,11 @@ service cloud.firestore {
       match /learner_preferences/{entityId} {
         allow read: if ownsFieldUser(uid) && entityId == 'current';
         allow create: if ownsFieldUser(uid)
-          && fieldEntityEnvelopeOk(entityId)
+          && fieldLearnerPreferenceEntityEnvelopeOk(entityId)
           && fieldLearnerPreferenceCreateOk(uid, entityId)
           && fieldOperationLinksEntity(uid, 'learnerPreference', entityId);
         allow update: if ownsFieldUser(uid)
-          && fieldEntityEnvelopeOk(entityId)
+          && fieldLearnerPreferenceEntityEnvelopeOk(entityId)
           && fieldLearnerPreferenceUpdateOk(uid, entityId)
           && fieldOperationLinksEntity(uid, 'learnerPreference', entityId);
         allow delete: if false;

@@ -104,7 +104,9 @@ final class FirestoreSyncGateway
       throw const PermissionDeniedSyncFailure();
     }
     if (mutation.collection == SyncCollection.learnerPreferences &&
-        !_learnerPreferenceRollout.allowsClaims) {
+        (!_learnerPreferenceRollout.allowsClaims ||
+            mutation.payloadVersion !=
+                _learnerPreferenceRollout.writePayloadVersion)) {
       throw const PermissionDeniedSyncFailure();
     }
 
@@ -889,7 +891,9 @@ final class FirestoreSyncCodec {
       return;
     }
     if (mutation.collection == SyncCollection.learnerPreferences) {
-      if (mutation.payloadVersion != 1 ||
+      if (!mutation.collection.supportedPayloadVersions.contains(
+            mutation.payloadVersion,
+          ) ||
           mutation.operationKind != SyncOperationKind.upsert ||
           mutation.localRevision != mutation.baseRevision + 1 ||
           mutation.operationId !=

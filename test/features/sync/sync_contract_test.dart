@@ -60,7 +60,7 @@ void main() {
           SyncCollection.contentQualityReports: <int>{1},
           SyncCollection.learningTimeSegments: <int>{1},
           SyncCollection.learningGoals: <int>{1},
-          SyncCollection.learnerPreferences: <int>{1},
+          SyncCollection.learnerPreferences: <int>{1, 2},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -151,8 +151,8 @@ void main() {
       }
     });
 
-    test('f35 learner preference v1 is exact and rollout defaults off', () {
-      final payload = <String, Object?>{
+    test('f35 learner preference v1/v2 are exact and v2 is deploy-gated', () {
+      final legacyPayload = <String, Object?>{
         'ownerId': 'firebase-user-1',
         'preferenceVersion': 1,
         'goal': 'examPreparation',
@@ -161,7 +161,19 @@ void main() {
         'updatedAtUtcMs': 1788048000000,
       };
       LearnerPreferenceSyncPayloadContract.requireCanonical(
-        payload: payload,
+        payload: legacyPayload,
+        expectedEntityId: 'current',
+        expectedOwnerId: 'firebase-user-1',
+        isDeleted: false,
+        clientUpdatedAtUtcMs: 1788048000000,
+      );
+      final payloadV2 = <String, Object?>{
+        ...legacyPayload,
+        'preferenceVersion': 2,
+        'homeExperience': 'adventure',
+      };
+      LearnerPreferenceSyncPayloadContract.requireCanonical(
+        payload: payloadV2,
         expectedEntityId: 'current',
         expectedOwnerId: 'firebase-user-1',
         isDeleted: false,
@@ -176,18 +188,45 @@ void main() {
       );
       expect(
         const LearnerPreferenceSyncRollout.v1(
+          deployedRulesRevision: learnerPreferenceV2RulesRevision,
+        ).allowsClaims,
+        isFalse,
+      );
+      expect(
+        const LearnerPreferenceSyncRollout.v2(
+          deployedRulesRevision: learnerPreferenceV2RulesRevision,
+        ).allowsClaims,
+        isTrue,
+      );
+      expect(
+        const LearnerPreferenceSyncRollout.v2(
+          deployedRulesRevision: learnerPreferenceV1RulesRevision,
+        ).allowsClaims,
+        isFalse,
+      );
+      expect(
+        const LearnerPreferenceSyncRollout.v2(
+          deployedRulesRevision: learnerPreferenceV2RulesRevision,
+        ).writePayloadVersion,
+        2,
+      );
+      expect(
+        const LearnerPreferenceSyncRollout.v1(
           deployedRulesRevision: 'stale-rules',
         ).allowsClaims,
         isFalse,
       );
       for (final invalid in <Map<String, Object?>>[
-        {...payload, 'learningStyle': 'visual'},
-        {...payload}..remove('activityPreference'),
-        {...payload, 'goal': 'visualLearner'},
-        {...payload, 'availableMinutesPerDay': 0},
-        {...payload, 'availableMinutesPerDay': 241},
-        {...payload, 'activityPreference': 'personalityDriven'},
-        {...payload, 'updatedAtUtcMs': 1},
+        {...legacyPayload, 'learningStyle': 'visual'},
+        {...legacyPayload, 'homeExperience': 'standard'},
+        {...legacyPayload}..remove('activityPreference'),
+        {...legacyPayload, 'goal': 'visualLearner'},
+        {...legacyPayload, 'availableMinutesPerDay': 0},
+        {...legacyPayload, 'availableMinutesPerDay': 241},
+        {...legacyPayload, 'activityPreference': 'personalityDriven'},
+        {...legacyPayload, 'updatedAtUtcMs': 1},
+        {...payloadV2}..remove('homeExperience'),
+        {...payloadV2, 'homeExperience': 'immersive'},
       ]) {
         expect(
           () => LearnerPreferenceSyncPayloadContract.requireCanonical(
@@ -203,29 +242,103 @@ void main() {
     });
 
     test(
+      'learner preference envelope version must match preferenceVersion',
+      () {
+        final payloadV2 = <String, Object?>{
+          'ownerId': 'firebase-user-1',
+          'preferenceVersion': 2,
+          'goal': 'balancedGrowth',
+          'availableMinutesPerDay': 20,
+          'activityPreference': 'mixedPractice',
+          'homeExperience': 'standard',
+          'updatedAtUtcMs': 1,
+        };
+        expect(
+          () => PushMutation(
+            operationId: 'learner-preference-operation:v2:mismatch',
+            firebaseUid: 'firebase-user-1',
+            collection: SyncCollection.learnerPreferences,
+            entityId: 'current',
+            operationKind: SyncOperationKind.upsert,
+            payloadVersion: 1,
+            baseRevision: 0,
+            localRevision: 1,
+            clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+              1,
+              isUtc: true,
+            ),
+            payload: payloadV2,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+        expect(
+          () => SyncEntity(
+            collection: SyncCollection.learnerPreferences,
+            entityId: 'current',
+            revision: 1,
+            isDeleted: false,
+            payloadVersion: 1,
+            clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+              1,
+              isUtc: true,
+            ),
+            serverUpdatedAtUtc: DateTime.utc(2026, 9, 4),
+            payload: payloadV2,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      },
+    );
+
+    test(
       'attempts and words accept v1/v2 while legacy collections reject v2',
       () {
-        PushMutation mutation(SyncCollection collection, int payloadVersion) =>
-            PushMutation(
-              operationId: 'operation:${collection.name}:$payloadVersion',
-              firebaseUid: 'uid-a',
-              collection: collection,
-              entityId: '${collection.entityType}:entity',
-              operationKind: SyncOperationKind.upsert,
-              payloadVersion: payloadVersion,
-              baseRevision: 0,
-              localRevision: 1,
-              clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
-              payload: const <String, Object?>{'value': 'safe'},
-            );
+        PushMutation mutation(SyncCollection collection, int payloadVersion) {
+          final learnerPreference =
+              collection == SyncCollection.learnerPreferences;
+          return PushMutation(
+            operationId: 'operation:${collection.name}:$payloadVersion',
+            firebaseUid: 'uid-a',
+            collection: collection,
+            entityId: learnerPreference
+                ? LearnerPreferenceSyncPayloadContract.canonicalEntityId
+                : '${collection.entityType}:entity',
+            operationKind: SyncOperationKind.upsert,
+            payloadVersion: payloadVersion,
+            baseRevision: 0,
+            localRevision: 1,
+            clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
+            payload: learnerPreference
+                ? <String, Object?>{
+                    'ownerId': 'uid-a',
+                    'preferenceVersion': payloadVersion,
+                    'goal': 'balancedGrowth',
+                    'availableMinutesPerDay': 20,
+                    'activityPreference': 'mixedPractice',
+                    if (payloadVersion == 2) 'homeExperience': 'standard',
+                    'updatedAtUtcMs': DateTime.utc(
+                      2026,
+                      7,
+                      30,
+                    ).millisecondsSinceEpoch,
+                  }
+                : const <String, Object?>{'value': 'safe'},
+          );
+        }
 
         expect(mutation(SyncCollection.attempts, 1).payloadVersion, 1);
         expect(mutation(SyncCollection.attempts, 2).payloadVersion, 2);
         expect(mutation(SyncCollection.words, 1).payloadVersion, 1);
         expect(mutation(SyncCollection.words, 2).payloadVersion, 2);
+        expect(
+          mutation(SyncCollection.learnerPreferences, 2).payloadVersion,
+          2,
+        );
         for (final collection in SyncCollection.values.where(
           (value) =>
-              value != SyncCollection.attempts && value != SyncCollection.words,
+              value != SyncCollection.attempts &&
+              value != SyncCollection.words &&
+              value != SyncCollection.learnerPreferences,
         )) {
           expect(
             () => mutation(collection, 2),

@@ -811,13 +811,18 @@ function writeFieldLearningGoal(db, {
   return batch.commit();
 }
 
-function fieldLearnerPreferencePayload(overrides = {}) {
+function fieldLearnerPreferencePayload({
+  preferenceVersion = 2,
+  homeExperience = 'standard',
+  ...overrides
+} = {}) {
   return {
     ownerId: alice,
-    preferenceVersion: 1,
+    preferenceVersion,
     goal: 'examPreparation',
     availableMinutesPerDay: 45,
     activityPreference: 'quiz',
+    ...(preferenceVersion === 2 ? { homeExperience } : {}),
     updatedAtUtcMs: 1788048000000,
     ...overrides,
   };
@@ -829,16 +834,17 @@ function fieldLearnerPreferenceOperationId(
   resultingRevision,
 ) {
   const identity = [
-    'v1',
+    `v${payload.preferenceVersion}`,
     payload.preferenceVersion,
     payload.goal,
     payload.availableMinutesPerDay,
     payload.activityPreference,
+    ...(payload.preferenceVersion === 2 ? [payload.homeExperience] : []),
     payload.updatedAtUtcMs,
     baseRevision,
     resultingRevision,
   ].join('|');
-  return `learner-preference-operation:v1:${createHash('sha256')
+  return `learner-preference-operation:v${payload.preferenceVersion}:${createHash('sha256')
     .update(identity, 'utf8').digest('hex')}`;
 }
 
@@ -855,7 +861,7 @@ function writeFieldLearnerPreference(db, {
     fieldLearnerPreferenceOperationId(payload, baseRevision, revision);
   const batch = writeBatch(db);
   batch.set(doc(db, 'field_users', uid, 'learner_preferences', entityId), {
-    schemaVersion: 1,
+    schemaVersion: payload.preferenceVersion,
     entityId,
     payload,
     revision,
@@ -865,7 +871,7 @@ function writeFieldLearnerPreference(db, {
     lastOperationId: resolvedOperationId,
   });
   batch.set(doc(db, 'field_users', uid, 'operations', resolvedOperationId), {
-    schemaVersion: 1,
+    schemaVersion: payload.preferenceVersion,
     operationId: resolvedOperationId,
     entityType: 'learnerPreference',
     entityId,
@@ -3369,6 +3375,7 @@ describe('learner_preferences exact owner-scoped payload contract', () => {
         goal: 'conversationConfidence',
         availableMinutesPerDay: 30,
         activityPreference: 'speaking',
+        homeExperience: 'adventure',
         updatedAtUtcMs: 1788134400000,
       }),
       revision: 2,
@@ -3383,6 +3390,7 @@ describe('learner_preferences exact owner-scoped payload contract', () => {
       goal: 'conversationConfidence',
       availableMinutesPerDay: 30,
       activityPreference: 'speaking',
+      homeExperience: 'adventure',
       updatedAtUtcMs: 1788048000001,
     });
     const firstOperationId = fieldLearnerPreferenceOperationId(first, 0, 1);
@@ -3407,11 +3415,12 @@ describe('learner_preferences exact owner-scoped payload contract', () => {
       { ...canonical, personality: 'competitive' },
       missing,
       { ...canonical, ownerId: bob },
-      { ...canonical, preferenceVersion: 2 },
+      { ...canonical, preferenceVersion: 1 },
       { ...canonical, goal: 'visualLearner' },
       { ...canonical, availableMinutesPerDay: 0 },
       { ...canonical, availableMinutesPerDay: 241 },
       { ...canonical, activityPreference: 'personalityDriven' },
+      { ...canonical, homeExperience: 'immersive' },
       { ...canonical, updatedAtUtcMs: -1 },
     ];
     for (const [index, payload] of cases.entries()) {
@@ -3428,6 +3437,35 @@ describe('learner_preferences exact owner-scoped payload contract', () => {
     await assertFails(writeFieldLearnerPreference(db, {
       clientUpdatedAtUtcMs: canonical.updatedAtUtcMs + 1,
     }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({ preferenceVersion: 1 }),
+    }));
+  });
+
+  it('cuts off v1 writes before they can overwrite stored v2 home experience', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({ homeExperience: 'adventure' }),
+    }));
+    await assertFails(writeFieldLearnerPreference(db, {
+      payload: fieldLearnerPreferencePayload({
+        preferenceVersion: 1,
+        goal: 'conversationConfidence',
+        updatedAtUtcMs: 1788134400000,
+      }),
+      revision: 2,
+      baseRevision: 1,
+    }));
+    const stored = await assertSucceeds(getDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learner_preferences',
+      'current',
+    )));
+    if (stored.data().payload.homeExperience !== 'adventure') {
+      throw new Error('A legacy v1 write erased stored v2 home experience.');
+    }
   });
 
   it('rejects revision gaps immutable owner changes and deletion', async () => {

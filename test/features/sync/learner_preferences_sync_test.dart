@@ -817,6 +817,104 @@ void main() {
         );
       },
     );
+
+    test(
+      'v2 rollout upgrades a queued v1 delivery to exact home experience v2',
+      () async {
+        await database.customUpdate(
+          "UPDATE learner_preferences SET preference_version = 2, "
+          "home_experience = 'adventure', local_revision = 1",
+        );
+        final store = _v2EnabledStore(database);
+
+        final claims = await store.claimPending(
+          ownerId: 'local:preferences',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'v2-upgrade-lease',
+          ownerGateToken: ownerGateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+
+        expect(claims, hasLength(1));
+        expect(claims.single.mutation.payloadVersion, 2);
+        expect(
+          claims.single.mutation.payload,
+          _v2Payload(homeExperience: 'adventure', updatedAtUtcMs: 1000),
+        );
+        expect(
+          claims.single.mutation.operationId,
+          LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+            payload: _v2Payload(
+              homeExperience: 'adventure',
+              updatedAtUtcMs: 1000,
+            ),
+            baseRevision: 0,
+            resultingRevision: 1,
+          ),
+        );
+      },
+    );
+
+    test('legacy v1 pull cannot erase local v2 home experience', () async {
+      await database.customUpdate(
+        "UPDATE learner_preferences SET preference_version = 2, "
+        "home_experience = 'adventure', local_revision = 0, "
+        'cloud_revision = 0',
+      );
+      await database.customUpdate(
+        "DELETE FROM outbox_operations WHERE entity_type = 'learnerPreference'",
+      );
+      final serverTime = nowUtc.add(const Duration(seconds: 1));
+
+      await _v2EnabledStore(database).applyPullPage(
+        ownerId: 'local:preferences',
+        collection: SyncCollection.learnerPreferences,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.learnerPreferences,
+              entityId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: serverTime,
+              payload: _payload(
+                goal: 'conversationConfidence',
+                minutes: 30,
+                activity: 'speaking',
+                updatedAtUtcMs: 2000,
+              ),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: serverTime,
+            documentId: LearnerPreferenceSyncPayloadContract.canonicalEntityId,
+          ),
+          hasMore: false,
+        ),
+        ownerGateToken: ownerGateToken,
+        nowUtc: nowUtc,
+      );
+
+      final row = await database
+          .customSelect(
+            'SELECT preference_version, home_experience, goal, '
+            'available_minutes_per_day, activity_preference '
+            "FROM learner_preferences WHERE owner_id = 'local:preferences'",
+          )
+          .getSingle();
+      expect(row.read<int>('preference_version'), 2);
+      expect(row.read<String>('home_experience'), 'adventure');
+      expect(row.read<String>('goal'), 'conversationConfidence');
+      expect(row.read<int>('available_minutes_per_day'), 30);
+      expect(row.read<String>('activity_preference'), 'speaking');
+    });
   });
 }
 
@@ -824,6 +922,13 @@ DriftSyncStore _enabledStore(AppDatabase database) => DriftSyncStore(
   database,
   learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v1(
     deployedRulesRevision: learnerPreferenceV1RulesRevision,
+  ),
+);
+
+DriftSyncStore _v2EnabledStore(AppDatabase database) => DriftSyncStore(
+  database,
+  learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v2(
+    deployedRulesRevision: learnerPreferenceV2RulesRevision,
   ),
 );
 
@@ -838,5 +943,21 @@ Map<String, Object?> _payload({
   'goal': goal,
   'availableMinutesPerDay': minutes,
   'activityPreference': activity,
+  'updatedAtUtcMs': updatedAtUtcMs,
+};
+
+Map<String, Object?> _v2Payload({
+  String goal = 'examPreparation',
+  int minutes = 45,
+  String activity = 'quiz',
+  String homeExperience = 'standard',
+  required int updatedAtUtcMs,
+}) => <String, Object?>{
+  'ownerId': 'firebase-user-1',
+  'preferenceVersion': 2,
+  'goal': goal,
+  'availableMinutesPerDay': minutes,
+  'activityPreference': activity,
+  'homeExperience': homeExperience,
   'updatedAtUtcMs': updatedAtUtcMs,
 };
