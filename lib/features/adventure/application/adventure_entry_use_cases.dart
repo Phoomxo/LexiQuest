@@ -152,6 +152,7 @@ final class AdventureEntryHost {
 
   String? _ownerId;
   String? _entryAttemptId;
+  Future<ActivePresentationPermit?>? _activePermitFuture;
   Future<TodayHubSnapshot>? _todayFuture;
   int _generation = 0;
 
@@ -174,10 +175,13 @@ final class AdventureEntryHost {
       return AdventureEntryHostResult(decision: blocked);
     }
 
-    final activePermit = await activePermits.readActivePermit(
-      ownerId: ownerId,
-      evaluatedAtUtc: occurredAtUtc,
-    );
+    final activePermit = await (_activePermitFuture ??=
+        Future<ActivePresentationPermit?>.sync(
+          () => activePermits.readActivePermit(
+            ownerId: ownerId,
+            evaluatedAtUtc: occurredAtUtc,
+          ),
+        ));
     if (!_isCurrent(ownerId, generation)) return null;
     request = AdventureEntryRequest(
       ownerId: ownerId,
@@ -203,6 +207,7 @@ final class AdventureEntryHost {
     if (_ownerId == ownerId) return;
     _ownerId = ownerId;
     _entryAttemptId = null;
+    _activePermitFuture = null;
     _todayFuture = null;
     _generation += 1;
   }

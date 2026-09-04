@@ -214,13 +214,14 @@ void main() {
 
       expect(find.byType(TodayHubView), findsOneWidget);
       expect(savedChoices, isEmpty);
+      expect(permits.calls, 1);
       expect(loader.calls, 1);
       expect(ids, hasLength(1));
     },
   );
 
   testWidgets(
-    'permit activation before a switch resolution blocks the Standard save',
+    'confirmed no-permit opening stays nonparticipant until refresh adopts permit',
     (tester) async {
       final permits = _MutablePermits();
       final loader = _Loader(_today());
@@ -231,7 +232,9 @@ void main() {
           loader: loader,
           journey: _Journey(),
           createId: () {
-            const id = '11111111-1111-4111-8111-111111111111';
+            final id = ids.isEmpty
+                ? '11111111-1111-4111-8111-111111111111'
+                : '22222222-2222-4222-8222-222222222222';
             ids.add(id);
             return id;
           },
@@ -245,9 +248,6 @@ void main() {
 
       await tester.tap(find.text('ผจญภัย'));
       await tester.pumpAndSettle();
-      expect(savedChoices, <TodayExperiencePresentation>[
-        TodayExperiencePresentation.adventure,
-      ]);
 
       permits.permit = _permit();
       await tester.tap(find.text('มาตรฐาน'));
@@ -256,14 +256,34 @@ void main() {
       expect(find.byType(TodayHubView), findsOneWidget);
       expect(savedChoices, <TodayExperiencePresentation>[
         TodayExperiencePresentation.adventure,
+        TodayExperiencePresentation.standard,
       ]);
       expect(loader.calls, 1);
       expect(ids, hasLength(1));
+      expect(permits.calls, 1);
+
+      await tester.tap(find.byKey(const ValueKey('adventure-refresh')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('adventure-hub')), findsOneWidget);
+      expect(loader.calls, 2);
+      expect(ids, hasLength(2));
+      expect(permits.calls, 2);
+
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(savedChoices, <TodayExperiencePresentation>[
+        TodayExperiencePresentation.adventure,
+        TodayExperiencePresentation.standard,
+      ]);
+      expect(permits.calls, 2);
     },
   );
 
   testWidgets(
-    'permit activation fences an in-flight nonparticipant save drain',
+    'refresh activation fences an in-flight nonparticipant save drain',
     (tester) async {
       final permits = _MutablePermits();
       final loader = _Loader(_today());
@@ -274,7 +294,9 @@ void main() {
           loader: loader,
           journey: _Journey(),
           createId: () {
-            const id = '11111111-1111-4111-8111-111111111111';
+            final id = ids.isEmpty
+                ? '11111111-1111-4111-8111-111111111111'
+                : '22222222-2222-4222-8222-222222222222';
             ids.add(id);
             return id;
           },
@@ -291,6 +313,10 @@ void main() {
       ]);
 
       permits.permit = _permit();
+      await tester.tap(find.byKey(const ValueKey('adventure-refresh')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('adventure-hub')), findsOneWidget);
+
       await tester.tap(find.text('มาตรฐาน'));
       await tester.pumpAndSettle();
       saver.failNext();
@@ -305,8 +331,9 @@ void main() {
         find.byKey(const ValueKey('today-presentation-save-failure')),
         findsNothing,
       );
-      expect(loader.calls, 1);
-      expect(ids, hasLength(1));
+      expect(loader.calls, 2);
+      expect(ids, hasLength(2));
+      expect(permits.calls, 2);
     },
   );
 
@@ -731,24 +758,32 @@ final class _Permits implements ActivePresentationPermitReader {
 final class _PendingPermits implements ActivePresentationPermitReader {
   final Completer<ActivePresentationPermit?> _pending =
       Completer<ActivePresentationPermit?>();
+  int calls = 0;
 
   @override
   Future<ActivePresentationPermit?> readActivePermit({
     required String ownerId,
     required DateTime evaluatedAtUtc,
-  }) => _pending.future;
+  }) {
+    calls += 1;
+    return _pending.future;
+  }
 
   void complete(ActivePresentationPermit? permit) => _pending.complete(permit);
 }
 
 final class _MutablePermits implements ActivePresentationPermitReader {
   ActivePresentationPermit? permit;
+  int calls = 0;
 
   @override
   Future<ActivePresentationPermit?> readActivePermit({
     required String ownerId,
     required DateTime evaluatedAtUtc,
-  }) async => permit;
+  }) async {
+    calls += 1;
+    return permit;
+  }
 }
 
 final class _ControlledPreferenceSaver
