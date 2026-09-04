@@ -295,12 +295,13 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms, local_revision, '
+        'activity_preference, home_experience, updated_at_utc_ms, local_revision, '
         'cloud_revision, last_acknowledged_at_utc_ms, '
         'server_updated_at_utc_ms) VALUES '
-        "('guest-owner', 1, 'conversationConfidence', 30, 'speaking', "
-        '40, 2, 0, NULL, NULL), '
-        "('account-owner', 1, 'examPreparation', 45, 'quiz', 30, 2, 2, 25, 25)",
+        "('guest-owner', 2, 'conversationConfidence', 30, 'speaking', "
+        "'adventure', 40, 2, 0, NULL, NULL), "
+        "('account-owner', 2, 'examPreparation', 45, 'quiz', 'standard', "
+        '30, 2, 2, 25, 25)',
       );
       await database.customInsert(
         'INSERT INTO outbox_operations '
@@ -308,9 +309,9 @@ void main() {
         'payload_version, base_revision, state, attempt_count, '
         'created_at_utc_ms) VALUES '
         "('learnerPreference:guest-owner:2', 'guest-owner', "
-        "'learnerPreference', 'guest-owner', 'upsert', 1, 1, 'pending', 0, 40), "
+        "'learnerPreference', 'guest-owner', 'upsert', 2, 1, 'pending', 0, 40), "
         "('learnerPreference:account-owner:1', 'account-owner', "
-        "'learnerPreference', 'account-owner', 'upsert', 1, 0, 'pending', 0, 30)",
+        "'learnerPreference', 'account-owner', 'upsert', 2, 0, 'pending', 0, 30)",
       );
 
       final result = await repository.upgrade(
@@ -322,7 +323,7 @@ void main() {
       final preferences = await database
           .customSelect(
             'SELECT owner_id, goal, available_minutes_per_day, '
-            'activity_preference, local_revision, cloud_revision '
+            'activity_preference, home_experience, local_revision, cloud_revision '
             'FROM learner_preferences',
           )
           .get();
@@ -332,6 +333,7 @@ void main() {
         'goal': 'conversationConfidence',
         'available_minutes_per_day': 30,
         'activity_preference': 'speaking',
+        'home_experience': 'adventure',
         'local_revision': 3,
         'cloud_revision': 2,
       });
