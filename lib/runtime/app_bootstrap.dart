@@ -24,6 +24,10 @@ import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_rollout_gate.dart';
+import '../features/adventure/data/adventure_world_catalog_validator.dart';
+import '../features/adventure/data/packaged_adventure_world_catalog.dart';
 import '../features/ai_tutor/application/ai_tutor_use_cases.dart';
 import '../features/ai_tutor/application/owner_operation_coordinator.dart';
 import '../features/ai_tutor/data/ai_tutor_gateway_factory.dart';
@@ -114,6 +118,7 @@ import '../features/rewards/domain/economy_transaction_policy.dart';
 import '../features/rewards/domain/reward_models.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
+import '../features/research/domain/research_participation_permit.dart';
 import '../features/research/data/drift_experiment_assignment_repository.dart';
 import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/reminders/data/drift_study_reminder_repository.dart';
@@ -1253,6 +1258,25 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: resolvedLearningTimezoneId,
     );
+    final adventureCatalog = PackagedAdventureWorldCatalog.forLocale('th');
+    final adventureCatalogValidation = const AdventureWorldCatalogValidator()
+        .validate(
+          adventureCatalog,
+          packagedBytes: PackagedAdventureWorldCatalog.assetBytes,
+        );
+    final adventureEntry = AdventureEntryUseCases(
+      rollout: AdventureRolloutGate(
+        features: runtimeFeatures,
+        requiredDependenciesReady: () => true,
+        catalogReadiness: () => adventureCatalogValidation.isValid
+            ? AdventureCatalogReadiness.ready
+            : AdventureCatalogReadiness.invalid,
+      ),
+      catalog: adventureCatalog,
+      todayHubIdentity: todayHub,
+      learningIdentity: learning,
+    );
+    const adventurePresentationPermits = NoActivePresentationPermitReader();
     ActiveLearningTimeController createActiveLearningTimeController() {
       final timezoneId = resolvedLearningTimezoneId;
       final location = timezone.getLocation(timezoneId);
@@ -1606,6 +1630,9 @@ final class AppBootstrap {
       streak: streak,
       voice: voice,
       associativeLearning: associativeLearning,
+      adventureEntry: adventureEntry,
+      adventureCatalog: adventureCatalog,
+      adventurePresentationPermits: adventurePresentationPermits,
       disposeResources: resources.dispose,
     );
   }

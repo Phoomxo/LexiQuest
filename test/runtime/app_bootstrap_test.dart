@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
@@ -4786,6 +4787,22 @@ void main() {
             dependencies.features.stateOf(Feature.dailyContinuity),
             FeatureState.hidden,
             reason: 'composition must not auto-enable f42 delivery',
+          );
+          expect(dependencies.adventureEntry, isA<AdventureEntryUseCases>());
+          final adventureEntry =
+              dependencies.adventureEntry! as AdventureEntryUseCases;
+          expect(adventureEntry.todayHubIdentity, same(dependencies.todayHub));
+          expect(adventureEntry.learningIdentity, same(dependencies.learning));
+          expect(adventureEntry.catalog, same(dependencies.adventureCatalog));
+          expect(dependencies.adventurePresentationPermits, isNotNull);
+          expect(
+            dependencies.hasComposedDependencyFor(Feature.adventureMotivation),
+            isTrue,
+          );
+          expect(
+            dependencies.features.stateOf(Feature.adventureMotivation),
+            FeatureState.hidden,
+            reason: 'Adventure composition must not publish a route',
           );
           expect(
             await database

@@ -115,6 +115,44 @@ void main() {
     expect(unavailable.state, FeatureState.emergencyOff);
     expect(builds, 1, reason: 'disabled rebuild must stay lazy');
   });
+
+  testWidgets('enabled Adventure remains lazy until its rollout is durable', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    const registry = BuildFeatureRegistry({
+      Feature.adventureMotivation: FeatureState.enabled,
+    });
+    var builds = 0;
+
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, registry),
+        child: MaterialApp(
+          home: ProductionFeatureGate(
+            feature: Feature.adventureMotivation,
+            registry: registry,
+            builder: (_) {
+              builds += 1;
+              return const Text('Adventure presentation');
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(builds, 0);
+    expect(find.text('Adventure presentation'), findsNothing);
+    expect(
+      tester
+          .widget<ProductionFeatureUnavailable>(
+            find.byType(ProductionFeatureUnavailable),
+          )
+          .reason,
+      ProductionFeatureUnavailableReason.incompatibleRollout,
+    );
+  });
 }
 
 AppDependencies _dependencies(AppDatabase database, FeatureRegistry features) {

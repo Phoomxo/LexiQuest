@@ -4,6 +4,9 @@ import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
+import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/domain/adventure_entry.dart';
+import '../features/adventure/domain/adventure_world_catalog.dart';
 import '../features/assessment/application/assessment_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
@@ -34,6 +37,7 @@ import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
+import '../features/research/domain/research_participation_permit.dart';
 import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/content_quality_report_repository.dart';
 import '../features/review/domain/learner_intent.dart';
@@ -128,6 +132,9 @@ final class AppDependencies {
     this.voice,
     this.streak,
     this.associativeLearning,
+    this.adventureEntry,
+    this.adventureCatalog,
+    this.adventurePresentationPermits,
     this.disposeResources,
   });
 
@@ -201,6 +208,12 @@ final class AppDependencies {
   /// Associative learning persistence port. Null means unavailable.
   final AssociativeLearningPort? associativeLearning;
 
+  /// Read-only Adventure Product Entry. Raw consent and measurement
+  /// authorities are intentionally absent from this boundary.
+  final AdventureProductEntryResolver? adventureEntry;
+  final AdventureWorldCatalog? adventureCatalog;
+  final ActivePresentationPermitReader? adventurePresentationPermits;
+
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
 
@@ -239,7 +252,24 @@ final class AppDependencies {
           identical(reviewCenter?.sessionAuthorityIdentity, learning) &&
           identical(learningHistory?.sessionAuthorityIdentity, learning),
     Feature.offlineContent => offlineContent != null,
-    Feature.adventureMotivation => false,
+    Feature.adventureMotivation =>
+      adventureEntry is AdventureEntryUseCases &&
+          adventureCatalog != null &&
+          adventurePresentationPermits != null &&
+          todayHub != null &&
+          learning != null &&
+          identical(
+            (adventureEntry! as AdventureEntryUseCases).todayHubIdentity,
+            todayHub,
+          ) &&
+          identical(
+            (adventureEntry! as AdventureEntryUseCases).learningIdentity,
+            learning,
+          ) &&
+          identical(
+            (adventureEntry! as AdventureEntryUseCases).catalog,
+            adventureCatalog,
+          ),
   };
 
   Future<void> dispose() {

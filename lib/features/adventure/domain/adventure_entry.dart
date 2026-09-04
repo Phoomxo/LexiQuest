@@ -76,6 +76,17 @@ final class ActivePresentationPermit {
   final String protocolVersion;
   final String assignmentId;
   final DateTime expiresAtUtc;
+
+  ActivePresentationPermit copyWith({DateTime? expiresAtUtc}) =>
+      ActivePresentationPermit(
+        permitId: permitId,
+        ownerId: ownerId,
+        assignedPresentation: assignedPresentation,
+        protocolId: protocolId,
+        protocolVersion: protocolVersion,
+        assignmentId: assignmentId,
+        expiresAtUtc: expiresAtUtc ?? this.expiresAtUtc,
+      );
 }
 
 final class AdventureEntryRequest {

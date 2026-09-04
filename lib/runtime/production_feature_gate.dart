@@ -127,11 +127,17 @@ final class _ProductionFeatureGateState extends State<ProductionFeatureGate> {
     }
     final dependencies = AppDependenciesScope.maybeOf(context);
     final delivery = productionFeatureContract[widget.feature];
-    if (dependencies == null ||
-        delivery == null ||
+    if (delivery == null ||
         !delivery.durable ||
         delivery.productionEntryId.isEmpty ||
-        delivery.dependencyId.isEmpty ||
+        delivery.dependencyId.isEmpty) {
+      return ProductionFeatureUnavailable(
+        feature: widget.feature,
+        reason: ProductionFeatureUnavailableReason.incompatibleRollout,
+        state: state,
+      );
+    }
+    if (dependencies == null ||
         !dependencies.hasComposedDependencyFor(widget.feature)) {
       return ProductionFeatureUnavailable(
         feature: widget.feature,
