@@ -32,7 +32,10 @@ final class _UnavailableGuestSessionService implements GuestSessionService {
       const GuestSessionFailed(GuestSessionFailure.unknown);
 }
 
-AppBootstrap _fileBackedBootstrap(String databasePath) {
+AppBootstrap _fileBackedBootstrap(
+  String databasePath,
+  Directory supportDirectory,
+) {
   return AppBootstrap(
     initializeFirebase: () async => throw StateError('firebase unavailable'),
     initializeSupabase: () async => throw StateError('supabase unavailable'),
@@ -40,6 +43,7 @@ AppBootstrap _fileBackedBootstrap(String databasePath) {
     guestSessionService: _UnavailableGuestSessionService(),
     createDatabase: () => AppDatabase(NativeDatabase(File(databasePath))),
     createEntryStateStore: () async => _GuestEntryStateStore(),
+    applicationSupportDirectoryProvider: () async => supportDirectory,
   );
 }
 
@@ -59,6 +63,7 @@ void main() {
       try {
         firstDependencies = await _fileBackedBootstrap(
           databasePath,
+          temporaryDirectory,
         ).initialize();
         expect(firstDependencies.initialRoute, AppRoute.home);
         final activeOwner = await firstDependencies.localOwners!
@@ -125,6 +130,7 @@ void main() {
 
         reopenedDependencies = await _fileBackedBootstrap(
           databasePath,
+          temporaryDirectory,
         ).initialize();
         final reopenedOwner = await reopenedDependencies.localOwners!
             .getOrCreateActiveOwner();

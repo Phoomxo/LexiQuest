@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +17,16 @@ void main() {
   testWidgets(
     'AppBootstrap scope writes Quiz evidence through its shared adapter',
     (tester) async {
+      final supportDirectory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp(
+          'lexiquest-current-activity-evidence-',
+        ),
+      ))!;
+      addTearDown(() async {
+        if (await supportDirectory.exists()) {
+          await supportDirectory.delete(recursive: true);
+        }
+      });
       final database = AppDatabase(NativeDatabase.memory());
       final bootstrap = AppBootstrap(
         initializeFirebase: () async {},
@@ -27,6 +39,7 @@ void main() {
         guestSessionService: _GuestSessionService(),
         createDatabase: () => database,
         createEntryStateStore: () async => _EntryStateStore(),
+        applicationSupportDirectoryProvider: () async => supportDirectory,
         buildAiTutor: (_) => throw StateError('AI intentionally unavailable'),
         buildVoice: (_) => throw StateError('voice intentionally unavailable'),
       );

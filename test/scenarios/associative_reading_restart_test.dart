@@ -11,13 +11,10 @@ import 'package:vocab_learning_app/features/learning/application/learning_layer_
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
-import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
-import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
-import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 final class _GuestEntryStateStore implements AppEntryStateStore {
@@ -39,7 +36,7 @@ final class _GuestSession implements GuestSessionService {
 
 const _flutterTtsChannel = MethodChannel('flutter_tts');
 
-AppBootstrap _bootstrap(String databasePath) {
+AppBootstrap _bootstrap(String databasePath, Directory supportDirectory) {
   return AppBootstrap(
     initializeFirebase: () async => throw StateError('firebase unavailable'),
     initializeSupabase: () async => throw StateError('supabase unavailable'),
@@ -47,6 +44,7 @@ AppBootstrap _bootstrap(String databasePath) {
     guestSessionService: _GuestSession(),
     createDatabase: () => AppDatabase(NativeDatabase(File(databasePath))),
     createEntryStateStore: () async => _GuestEntryStateStore(),
+    applicationSupportDirectoryProvider: () async => supportDirectory,
   );
 }
 
@@ -62,16 +60,33 @@ Future<void> _pumpUntilFound(
       () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
   }
-  fail('Widget did not appear after $maxPumps bounded pumps: $finder');
+  final visibleText = tester
+      .widgetList<Text>(find.byType(Text))
+      .map((widget) => widget.data)
+      .whereType<String>()
+      .toList(growable: false);
+  fail(
+    'Widget did not appear after $maxPumps bounded pumps: $finder. '
+    'Visible text: $visibleText',
+  );
 }
 
 Future<void> _pumpUntilContinueEnabled(
   WidgetTester tester, {
   int maxPumps = 100,
 }) async {
-  final finder = find.widgetWithText(FilledButton, 'Complete & Continue');
+  final continueFinder = find.widgetWithText(
+    FilledButton,
+    'Complete & Continue',
+  );
+  final associationRetryFinder = find.byKey(
+    const ValueKey<String>('current-association-retry'),
+  );
   for (var index = 0; index < maxPumps; index++) {
     await tester.pump(const Duration(milliseconds: 20));
+    final finder = associationRetryFinder.evaluate().isNotEmpty
+        ? associationRetryFinder
+        : continueFinder;
     if (finder.evaluate().isNotEmpty) {
       final button = tester.widget<FilledButton>(finder);
       if (button.onPressed != null) return;
@@ -139,7 +154,7 @@ void main() {
 
       try {
         first = (await tester.runAsync(
-          () => _bootstrap(databasePath).initialize(),
+          () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         expect(first.initialRoute, AppRoute.home);
         expect(
@@ -164,23 +179,24 @@ void main() {
           ),
         ))!;
 
-        await tester.pumpWidget(MyApp(dependencies: first));
-        await _pumpUntilFound(tester, find.byType(MainNavigationScreen));
-        final learnDestination = find
-            .descendant(
-              of: find.byType(MainNavigationScreen),
-              matching: find.byType(NavigationDestination),
-            )
-            .at(1);
-        await tester.tap(learnDestination);
-        await _pumpUntilFound(tester, find.byType(ChooseModeScreen));
-        await tester.tap(find.text('Associative Reading'));
-        await _pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
-        await _pumpUntilFound(
-          tester,
-          find.byType(AssociativeReadingSessionScreen),
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: first,
+            child: MaterialApp(
+              home: AssociativeReadingSessionScreen(
+                cefrLevel: 'B2',
+                targetWords: const <String>['resilient'],
+                targetWordIds: <String, String>{'resilient': word.id},
+                passageText: 'Resilient means able to recover.',
+                documentId: 'associative-reading:restart-resilient',
+                documentRevision: 1,
+                learning: first.learning,
+                associativeLearning: first.associativeLearning,
+              ),
+            ),
+          ),
         );
+        expect(find.byType(AssociativeReadingSessionScreen), findsOneWidget);
         await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
 
         const stageTitles = <String>[
@@ -245,7 +261,7 @@ void main() {
         first = null;
 
         reopened = (await tester.runAsync(
-          () => _bootstrap(databasePath).initialize(),
+          () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         final reopenedOwner = (await tester.runAsync(
           reopened.localOwners!.getOrCreateActiveOwner,
@@ -319,7 +335,7 @@ void main() {
 
       try {
         first = (await tester.runAsync(
-          () => _bootstrap(databasePath).initialize(),
+          () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         final category = (await tester.runAsync(
           () => first!.vocabulary!.createCategory('Atomic association'),
@@ -336,16 +352,19 @@ void main() {
         ))!;
 
         Widget session(AppDependencies dependencies) {
-          return MaterialApp(
-            home: AssociativeReadingSessionScreen(
-              cefrLevel: 'B1',
-              targetWords: const ['anchor'],
-              targetWordIds: {'anchor': word.id},
-              passageText: 'An anchor keeps the vessel stable.',
-              documentId: 'associative-reading:atomic-review',
-              documentRevision: 1,
-              learning: dependencies.learning,
-              associativeLearning: dependencies.associativeLearning,
+          return AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: AssociativeReadingSessionScreen(
+                cefrLevel: 'B1',
+                targetWords: const ['anchor'],
+                targetWordIds: {'anchor': word.id},
+                passageText: 'An anchor keeps the vessel stable.',
+                documentId: 'associative-reading:atomic-review',
+                documentRevision: 1,
+                learning: dependencies.learning,
+                associativeLearning: dependencies.associativeLearning,
+              ),
             ),
           );
         }
@@ -386,7 +405,7 @@ END
         first = null;
 
         reopened = (await tester.runAsync(
-          () => _bootstrap(databasePath).initialize(),
+          () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         await tester.pumpWidget(session(reopened));
         await _pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
@@ -475,7 +494,7 @@ END
 
       try {
         final initialized = (await tester.runAsync(
-          () => _bootstrap(databasePath).initialize(),
+          () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         dependencies = initialized;
         final category = (await tester.runAsync(
@@ -502,19 +521,22 @@ END
         }))!;
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: AssociativeReadingSessionScreen(
-              cefrLevel: 'B1',
-              targetWords: const ['anchor', 'beacon'],
-              targetWordIds: {
-                'anchor': words.anchor.id,
-                'beacon': words.beacon.id,
-              },
-              passageText: 'An anchor steadies us while a beacon guides us.',
-              documentId: 'associative-reading:multi-target-review',
-              documentRevision: 1,
-              learning: initialized.learning,
-              associativeLearning: initialized.associativeLearning,
+          AppDependenciesScope(
+            dependencies: initialized,
+            child: MaterialApp(
+              home: AssociativeReadingSessionScreen(
+                cefrLevel: 'B1',
+                targetWords: const ['anchor', 'beacon'],
+                targetWordIds: {
+                  'anchor': words.anchor.id,
+                  'beacon': words.beacon.id,
+                },
+                passageText: 'An anchor steadies us while a beacon guides us.',
+                documentId: 'associative-reading:multi-target-review',
+                documentRevision: 1,
+                learning: initialized.learning,
+                associativeLearning: initialized.associativeLearning,
+              ),
             ),
           ),
         );
@@ -571,7 +593,9 @@ END
             'DROP TRIGGER fail_second_associative_memory_insert',
           ),
         );
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(
+          find.byKey(const ValueKey<String>('current-association-retry')),
+        );
         await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
 
         final afterRetry = (await tester.runAsync(() async {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -27,9 +28,11 @@ void main() {
   test(
     'local learning survives isolated AI and voice composition failures',
     () async {
+      final supportDirectory = await _scenarioSupportDirectory('local');
       final database = AppDatabase(NativeDatabase.memory());
       final bootstrap = _bootstrap(
         database,
+        supportDirectory: supportDirectory,
         buildAiTutor: (_) => throw StateError('AI unavailable'),
         buildVoice: (_) => throw StateError('voice unavailable'),
       );
@@ -71,11 +74,13 @@ void main() {
   test(
     'missing cloud config keeps BYOK AI and native voice available',
     () async {
+      final supportDirectory = await _scenarioSupportDirectory('byok');
       final database = AppDatabase(NativeDatabase.memory());
       final controller = _ScenarioAiController();
       final nativeVoice = _ScenarioManagedVoice();
       final bootstrap = _bootstrap(
         database,
+        supportDirectory: supportDirectory,
         loadConfig: () => throw const AppConfigException('missing endpoints'),
         buildAiTutor: (_) => ManagedAiTutor(
           controller: controller,
@@ -199,6 +204,7 @@ void main() {
 
 AppBootstrap _bootstrap(
   AppDatabase database, {
+  required Directory supportDirectory,
   AppConfig Function()? loadConfig,
   ManagedAiTutorBuilder? buildAiTutor,
   ManagedVoiceBuilder? buildVoice,
@@ -215,9 +221,22 @@ AppBootstrap _bootstrap(
   guestSessionService: _ScenarioGuestSession(),
   createDatabase: () => database,
   createEntryStateStore: () async => _ScenarioEntryStateStore(),
+  applicationSupportDirectoryProvider: () async => supportDirectory,
   buildAiTutor: buildAiTutor,
   buildVoice: buildVoice,
 );
+
+Future<Directory> _scenarioSupportDirectory(String suffix) async {
+  final directory = await Directory.systemTemp.createTemp(
+    'lexiquest-ai-voice-$suffix-',
+  );
+  addTearDown(() async {
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
+  });
+  return directory;
+}
 
 final class _AiJourneyHarness {
   _AiJourneyHarness._({
