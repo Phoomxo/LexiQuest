@@ -3298,6 +3298,18 @@ final class _CoordinatedLearningRepository
       .loadLatestActivityRecovery(ownerId: ownerId, activityType: activityType);
 
   @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .loadExactActivityRecovery(
+        ownerId: ownerId,
+        sessionId: sessionId,
+        activityType: activityType,
+      );
+
+  @override
   Future<void> appendActivityCheckpoint({
     required String ownerId,
     required LearningActivityCheckpoint checkpoint,

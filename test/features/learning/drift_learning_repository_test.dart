@@ -16,6 +16,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
@@ -87,6 +88,257 @@ void main() {
         'mode',
         EvidencePolicyRolloutMode.legacy,
       ),
+    );
+  });
+
+  test(
+    'checkpointed start is exact-idempotent and rejects another active session',
+    () async {
+      final first = LearningSessionDraft(
+        id: 'session:checkpoint-one',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 9),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      final firstCheckpoint = LearningActivityCheckpoint(
+        sessionId: first.id,
+        activityType: first.activityType,
+        revision: 1,
+        occurredAtUtc: first.startedAtUtc!,
+        state: const <String, Object?>{'schemaVersion': 1},
+      );
+      await repository.startSessionWithCheckpoint(
+        session: first,
+        checkpoint: firstCheckpoint,
+      );
+      await repository.startSessionWithCheckpoint(
+        session: first,
+        checkpoint: firstCheckpoint,
+      );
+
+      final conflicting = LearningSessionDraft(
+        id: 'session:checkpoint-two',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 9, 1),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      await expectLater(
+        repository.startSessionWithCheckpoint(
+          session: conflicting,
+          checkpoint: LearningActivityCheckpoint(
+            sessionId: conflicting.id,
+            activityType: conflicting.activityType,
+            revision: 1,
+            occurredAtUtc: conflicting.startedAtUtc!,
+            state: const <String, Object?>{'schemaVersion': 1},
+          ),
+        ),
+        throwsA(
+          isA<ActiveLearningSessionConflict>()
+              .having((error) => error.ownerId, 'ownerId', 'owner-1')
+              .having(
+                (error) => error.activeSessionId,
+                'activeSessionId',
+                first.id,
+              )
+              .having(
+                (error) => error.requestedSessionId,
+                'requestedSessionId',
+                conflicting.id,
+              ),
+        ),
+      );
+
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(1),
+      );
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventType.equals('LearningActivityCheckpoint'),
+            ))
+            .get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'completed and other-owner sessions do not block checkpointed start',
+    () async {
+      final first = LearningSessionDraft(
+        id: 'session:completed',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 10),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      await repository.startSessionWithCheckpoint(
+        session: first,
+        checkpoint: LearningActivityCheckpoint(
+          sessionId: first.id,
+          activityType: first.activityType,
+          revision: 1,
+          occurredAtUtc: first.startedAtUtc!,
+          state: const <String, Object?>{'schemaVersion': 1},
+        ),
+      );
+      await repository.finishSession(
+        ownerId: first.ownerId,
+        sessionId: first.id,
+        endedAtUtc: DateTime.utc(2026, 8, 30, 10, 1),
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-2',
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      final otherOwner = LearningSessionDraft(
+        id: 'session:other-owner',
+        ownerId: 'owner-2',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 10, 2),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      await repository.startSessionWithCheckpoint(
+        session: otherOwner,
+        checkpoint: LearningActivityCheckpoint(
+          sessionId: otherOwner.id,
+          activityType: otherOwner.activityType,
+          revision: 1,
+          occurredAtUtc: otherOwner.startedAtUtc!,
+          state: const <String, Object?>{'schemaVersion': 1},
+        ),
+      );
+      final next = LearningSessionDraft(
+        id: 'session:next',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 10, 3),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      await repository.startSessionWithCheckpoint(
+        session: next,
+        checkpoint: LearningActivityCheckpoint(
+          sessionId: next.id,
+          activityType: next.activityType,
+          revision: 1,
+          occurredAtUtc: next.startedAtUtc!,
+          state: const <String, Object?>{'schemaVersion': 1},
+        ),
+      );
+
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(3),
+      );
+    },
+  );
+
+  test(
+    'exact recovery never substitutes another session or activity',
+    () async {
+      final draft = LearningSessionDraft(
+        id: 'session:exact',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 8, 30, 11),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      await repository.startSessionWithCheckpoint(
+        session: draft,
+        checkpoint: LearningActivityCheckpoint(
+          sessionId: draft.id,
+          activityType: draft.activityType,
+          revision: 1,
+          occurredAtUtc: draft.startedAtUtc!,
+          state: const <String, Object?>{'schemaVersion': 1, 'cursor': 0},
+        ),
+      );
+
+      final exact = await repository.loadExactActivityRecovery(
+        ownerId: draft.ownerId,
+        sessionId: draft.id,
+        activityType: draft.activityType,
+      );
+      expect(exact!.session.id, draft.id);
+      expect(exact.checkpoint!.state['cursor'], 0);
+      expect(
+        await repository.loadExactActivityRecovery(
+          ownerId: draft.ownerId,
+          sessionId: 'session:missing',
+          activityType: draft.activityType,
+        ),
+        equals(null),
+      );
+      expect(
+        await repository.loadExactActivityRecovery(
+          ownerId: draft.ownerId,
+          sessionId: draft.id,
+          activityType: 'differentActivity',
+        ),
+        equals(null),
+      );
+      expect(
+        await repository.loadExactActivityRecovery(
+          ownerId: 'owner:other',
+          sessionId: draft.id,
+          activityType: draft.activityType,
+        ),
+        equals(null),
+      );
+    },
+  );
+
+  test('exact recovery rejects corrupt matching durable data', () async {
+    final draft = LearningSessionDraft(
+      id: 'session:corrupt-exact',
+      ownerId: 'owner-1',
+      activityType: 'adventureQuiz',
+      startedAtUtc: DateTime.utc(2026, 8, 30, 11, 30),
+      appVersion: 'test',
+      buildId: 'test',
+    );
+    await repository.startSessionWithCheckpoint(
+      session: draft,
+      checkpoint: LearningActivityCheckpoint(
+        sessionId: draft.id,
+        activityType: draft.activityType,
+        revision: 1,
+        occurredAtUtc: draft.startedAtUtc!,
+        state: const <String, Object?>{'schemaVersion': 1},
+      ),
+    );
+    final checkpoint =
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventType.equals('LearningActivityCheckpoint'),
+            ))
+            .getSingle();
+    await (database.update(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(checkpoint.eventId))).write(
+      const EventsV2Companion(payloadJson: Value('{"schemaVersion":1}')),
+    );
+
+    await expectLater(
+      repository.loadExactActivityRecovery(
+        ownerId: draft.ownerId,
+        sessionId: draft.id,
+        activityType: draft.activityType,
+      ),
+      throwsStateError,
     );
   });
 

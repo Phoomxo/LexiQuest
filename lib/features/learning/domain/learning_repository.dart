@@ -1,6 +1,26 @@
 import '../../learning_packs/domain/content_manifest.dart';
 import 'learning_models.dart';
 
+/// A checkpointed Learning start found another accepted session for the same
+/// owner. Callers must resume or retire [activeSessionId] instead of creating
+/// [requestedSessionId].
+final class ActiveLearningSessionConflict implements Exception {
+  const ActiveLearningSessionConflict({
+    required this.ownerId,
+    required this.activeSessionId,
+    required this.requestedSessionId,
+  });
+
+  final String ownerId;
+  final String activeSessionId;
+  final String requestedSessionId;
+
+  @override
+  String toString() =>
+      'ActiveLearningSessionConflict($ownerId, $activeSessionId, '
+      '$requestedSessionId)';
+}
+
 abstract interface class LearningEvidenceReplayRepository {
   Future<CommittedAnswerReplay?> replayCommittedAnswer(
     RecordAnswerCandidate candidate,
@@ -58,6 +78,12 @@ abstract interface class LearningActivityRecoveryRepository {
 
   Future<LearningActivityRecovery?> loadLatestActivityRecovery({
     required String ownerId,
+    required String activityType,
+  });
+
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
     required String activityType,
   });
 

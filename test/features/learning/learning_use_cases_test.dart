@@ -138,6 +138,60 @@ void main() {
   );
 
   test(
+    'checkpointed quiz pins exact ordered content and exact recovery identity',
+    () async {
+      final session = await useCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        pinnedWordIds: const <String>['word-3', 'word-1'],
+        limit: 2,
+        initialState: (created) => <String, Object?>{
+          'schemaVersion': 1,
+          'wordIds': created.questions
+              .map((question) => question.word.id)
+              .toList(growable: false),
+        },
+      );
+
+      expect(
+        session.questions.map((question) => question.word.id),
+        const <String>['word-3', 'word-1'],
+      );
+      final recovery = await useCases.loadExactActivityRecovery(
+        ownerId: session.ownerId!,
+        sessionId: session.id,
+        activityType: 'adventureQuiz',
+      );
+      expect(recovery!.session.id, session.id);
+      expect(recovery.checkpoint!.state['wordIds'], const <Object?>[
+        'word-3',
+        'word-1',
+      ]);
+      expect(
+        await useCases.loadExactActivityRecovery(
+          ownerId: session.ownerId!,
+          sessionId: 'session:other',
+          activityType: 'adventureQuiz',
+        ),
+        isNull,
+      );
+    },
+  );
+
+  test('checkpointed quiz rejects category plus pinned content', () async {
+    await expectLater(
+      useCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        categoryId: 'category-1',
+        pinnedWordIds: const <String>['word-1'],
+        limit: 1,
+        initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+      ),
+      throwsStateError,
+    );
+    expect(await database.select(database.learningSessions).get(), isEmpty);
+  });
+
+  test(
     'records answers and finishes a session from durable evidence',
     () async {
       final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 2);

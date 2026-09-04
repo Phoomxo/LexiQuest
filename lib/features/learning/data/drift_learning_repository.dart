@@ -372,12 +372,32 @@ final class DriftLearningRepository
       );
     }
     final canonicalCheckpoint = _canonicalizeActivityCheckpoint(checkpoint);
+    final sessionId = _required(session.id, 'session.id');
+    final ownerId = _required(session.ownerId, 'session.ownerId');
     return database.transaction(() async {
+      final activeSessions =
+          await (database.select(database.learningSessions)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) & row.state.equals('active'),
+                )
+                ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                ..limit(2))
+              .get();
+      for (final active in activeSessions) {
+        if (active.id != sessionId) {
+          throw ActiveLearningSessionConflict(
+            ownerId: ownerId,
+            activeSessionId: active.id,
+            requestedSessionId: sessionId,
+          );
+        }
+      }
       await startSession(session);
       final stored = await (database.select(
         database.learningSessions,
-      )..where((row) => row.id.equals(session.id))).getSingle();
-      if (stored.ownerId != session.ownerId ||
+      )..where((row) => row.id.equals(sessionId))).getSingle();
+      if (stored.ownerId != ownerId ||
           stored.activityType != session.activityType ||
           stored.state != 'active' ||
           stored.startedAtUtcMs !=
@@ -394,7 +414,7 @@ final class DriftLearningRepository
         throw StateError('learning activity session identity conflict');
       }
       await _appendActivityCheckpoint(
-        ownerId: session.ownerId,
+        ownerId: ownerId,
         checkpoint: canonicalCheckpoint,
       );
     });
@@ -616,9 +636,43 @@ final class DriftLearningRepository
               ..limit(1))
             .getSingleOrNull();
     if (session == null) return null;
+    return _loadActivityRecoveryForSession(
+      ownerId: requiredOwnerId,
+      session: session,
+    );
+  }
+
+  @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) async {
+    final requiredOwnerId = _required(ownerId, 'ownerId');
+    final requiredSessionId = _required(sessionId, 'sessionId');
+    final requiredActivityType = _required(activityType, 'activityType');
+    final session =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.id.equals(requiredSessionId) &
+                  row.ownerId.equals(requiredOwnerId) &
+                  row.activityType.equals(requiredActivityType),
+            ))
+            .getSingleOrNull();
+    if (session == null) return null;
+    return _loadActivityRecoveryForSession(
+      ownerId: requiredOwnerId,
+      session: session,
+    );
+  }
+
+  Future<LearningActivityRecovery?> _loadActivityRecoveryForSession({
+    required String ownerId,
+    required db.LearningSession session,
+  }) async {
     final recoverySession = session;
     final checkpoint = await _latestActivityCheckpoint(
-      ownerId: requiredOwnerId,
+      ownerId: ownerId,
       session: recoverySession,
     );
     if (checkpoint == null) {
@@ -637,7 +691,7 @@ final class DriftLearningRepository
         await (database.select(database.answerAttempts)
               ..where(
                 (row) =>
-                    row.ownerId.equals(requiredOwnerId) &
+                    row.ownerId.equals(ownerId) &
                     row.sessionId.equals(recoverySession.id),
               )
               ..orderBy([

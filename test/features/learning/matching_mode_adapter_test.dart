@@ -1100,6 +1100,7 @@ void main() {
               attemptNumber: 1,
             )
             .record();
+        await learning.finishSession(recallSession.id);
 
         final matchingPrepared = await adapter.prepareSession(
           learning: learning,
@@ -3849,6 +3850,7 @@ void main() {
           ),
           throwsStateError,
         );
+        await learning.finishSession(prepared.session.id);
 
         final collisionStartedAt = DateTime.utc(2026, 8, 25, 18, 30);
         await repository.startSession(
@@ -4677,6 +4679,17 @@ final class _RestartRecoveryRepository
     if (recovery == null) return null;
     return recoveryTransform?.call(recovery) ?? recovery;
   }
+
+  @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) => delegate.loadExactActivityRecovery(
+    ownerId: ownerId,
+    sessionId: sessionId,
+    activityType: activityType,
+  );
 
   @override
   Future<void> appendActivityCheckpoint({

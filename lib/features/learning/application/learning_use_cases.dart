@@ -494,6 +494,7 @@ final class LearningUseCases {
     required LearningActivityInitialState initialState,
     String? categoryId,
     int limit = 10,
+    List<String>? pinnedWordIds,
     SessionConfiguration? sessionConfiguration,
   }) async {
     final activity = _requiredId(activityType, 'activityType');
@@ -508,11 +509,31 @@ final class LearningUseCases {
       ownerId: owner.id,
       itemCount: limit,
     );
-    final words = await repository.listQuizWords(
-      ownerId: owner.id,
-      categoryId: _optionalId(categoryId, 'categoryId'),
-      limit: limit,
-    );
+    final List<QuizWord> words;
+    if (pinnedWordIds == null) {
+      words = await repository.listQuizWords(
+        ownerId: owner.id,
+        categoryId: _optionalId(categoryId, 'categoryId'),
+        limit: limit,
+      );
+    } else {
+      if (categoryId != null ||
+          repository is! PinnedLearningContentRepository) {
+        throw StateError('Pinned quiz content authority is unavailable.');
+      }
+      final selected = pinnedWordIds.take(limit).toList(growable: false);
+      if (selected.length != limit) {
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+      words = await (repository as PinnedLearningContentRepository)
+          .listPinnedQuizWords(ownerId: owner.id, wordIds: selected);
+      if (words.length != selected.length ||
+          <String>[
+            for (final word in words) word.id,
+          ].indexed.any((entry) => entry.$2 != selected[entry.$1])) {
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+    }
     if (words.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
@@ -563,6 +584,22 @@ final class LearningUseCases {
     return (repository as LearningActivityRecoveryRepository)
         .loadLatestActivityRecovery(
           ownerId: pinnedOwnerId,
+          activityType: _requiredId(activityType, 'activityType'),
+        );
+  }
+
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) {
+    if (repository is! LearningActivityRecoveryRepository) {
+      return Future<LearningActivityRecovery?>.value();
+    }
+    return (repository as LearningActivityRecoveryRepository)
+        .loadExactActivityRecovery(
+          ownerId: _requiredId(ownerId, 'ownerId'),
+          sessionId: _requiredId(sessionId, 'sessionId'),
           activityType: _requiredId(activityType, 'activityType'),
         );
   }
