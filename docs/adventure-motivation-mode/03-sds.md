@@ -1,13 +1,40 @@
 # Software Design Specification (SDS) — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-SDS-001
-**Version:** 1.2
-**Status:** Draft for Owner Review
+**Version:** 1.3
+**Status:** Product as-built overlay complete; owner review and external gates pending
 **Date:** 2026-09-04
 **SRS reference:** `LQ-AMM-SRS-001 v1.2`
-**Baseline:** commit `99f7fb21`, schema v22
-**Audit reference:** `AMM-AUDIT-001 v1.0`; 15 baseline failures remain explicit gates
+**As-built baseline:** product source `be2ef6db`, local evidence `bc546f09`, schema v23
+**Audit reference:** `AMM-AUDIT-001 v1.0`; local BG-01–BG-12 evidence has zero unclassified failure and retains explicit excluded/pending gates
 **Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
+
+## 0. As-built scope and authority boundary
+
+The production branch now implements M01–M09 and M11 for the approved
+Adventure product extension. The as-built surface includes typed entry and
+fallback, one canonical Today snapshot, deterministic Map/List projection,
+session composition, the unchanged Unified Learning evidence bridge, repair
+and recovery, read-only motivation receipts, scripted companion behavior,
+bounded diagnostics, catalog quarantine/repair and Learner Preferences v2.
+
+Schema v23 is live for owner-scoped `homeExperience` and has migration,
+lifecycle, sync, export, owner-merge and Firestore policy evidence. Adventure
+adds no learning, reward, mastery, relationship or journey-progress authority.
+The primary implementation and verification locations are
+`lib/features/adventure/**`,
+`lib/features/adventure/presentation/today_experience_host.dart`,
+`lib/screens/today_hub_view.dart`,
+`lib/data/local/tables/preference_tables.dart`, `test/features/adventure/**`
+and
+`docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`.
+
+M10 research storage/capture and planned schema v24 are not implemented
+because their protocol, measurement, privacy and ethics prerequisites are not
+approved. M12 Pair Matching remains design-only and PM0–PM8 are not
+authorized. Automated accessibility/responsive scope is green; physical
+assistive-technology, performance, UAT and rollout evidence remain external
+acceptance gates.
 
 ## 1. Design Decision Summary
 
@@ -17,9 +44,9 @@ Adventure เป็น bounded context ใหม่ที่ไม่มี writ
 
 1. Learn surface เดิมไม่เปลี่ยนเมื่อ hidden; authorized entry เปิด `TodayExperienceHost` ซึ่ง load canonical Today snapshot หนึ่งครั้งแล้วเลือก Standard/Adventure presentation
 2. Journey เป็น pure/rebuildable projection; ไม่มี Adventure progress table
-3. Phase 1 ไม่มี schema migration
-4. Preference v2 วางแผนเพิ่มใน schema v23 หลัง shell/learning bridge ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
-5. Research tables วางแผนเพิ่มใน schema v24 หลัง feature core ผ่าน gate แต่ implementation ต้อง reserve/rebase จาก ledger จริง
+3. Phase 1 shipped without schema migration
+4. Preference v2 was subsequently implemented on the reserved schema v23 after shell/learning bridge acceptance
+5. Research tables remain planned for a future reserved ledger version only after the independent research gate is approved
 6. `EvidenceContext` และ learning-answer event ไม่เพิ่ม Adventure field
 7. `AdventureOriginContextV1` เป็น transient launch context
 8. Participant ทุก treatment ใช้ neutral events และ `MeasurementOpportunity`; nonparticipant zero-row ตาม ADR-003
@@ -733,9 +760,11 @@ Diagnostics expose only counters and bounded reason codes. No raw owner ID, answ
 
 ## 4. Data Design
 
-### 4.1 Planned schema v23 — preference v2
+### 4.1 As-built schema v23 — preference v2
 
-`v23` is a planning label. The implementation task first reserves the next free ledger number and substitutes that number consistently if v23 has already been occupied.
+`v23` was the next free ledger number and is now the implemented current
+schema. The generated Drift code, v22→v23 migration and compatibility tests
+are part of the local verification evidence.
 
 Modify `lib/data/local/tables/preference_tables.dart`:
 
@@ -878,7 +907,9 @@ No table named or semantically equivalent to `adventure_progress`, node completi
 
 ### 4.4 Lifecycle integration
 
-Update exactly these cross-cutting authorities for v23/v24:
+Schema v23 updates the applicable preference paths in these cross-cutting
+authorities. The listed v24 research integrations remain planned and must not
+be inferred from the product implementation:
 
 - `lib/features/identity/domain/owner_lifecycle_manifest.dart`
 - `lib/features/identity/data/drift_owner_upgrade_repository.dart`

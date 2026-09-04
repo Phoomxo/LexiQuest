@@ -1,12 +1,12 @@
 # UAT Script — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-UAT-001
-**Version:** 1.2
-**Status:** Draft for Product Owner/UAT Lead Review
+**Version:** 1.3
+**Status:** Execution-ready; external sessions and owner sign-off pending
 **Date:** 2026-09-04
 **References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
-**Baseline:** Adventure planning commit `99f7fb21`; Pair Matching source closure `f56e2eb`; Drift schema v22
-**Release warning:** baseline ปัจจุบันมี 3,202 tests ผ่าน / 15 tests ไม่ผ่าน จึงใช้เอกสารนี้ทำ dry run ได้ แต่ห้าม sign-off Pilot/Production จน `G0B` และ `BG-01–BG-12` ผ่าน
+**Build baseline:** Adventure product source `be2ef6db`; local verification evidence `bc546f09`; Drift schema v23; Pair Matching source closure `f56e2eb`
+**Release warning:** Android/shared local BG-01–BG-12 ผ่านโดยไม่มี unclassified failure ตาม evidence ข้างต้น แต่ยังห้าม sign-off Pilot/Production จนกว่าจะมี device accessibility/performance certification, participant UAT, approved research package และ signed MS-08A/MS-08B decision ตาม applicability
 
 ## 1. วัตถุประสงค์
 
@@ -25,7 +25,21 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 11. แยก MS-08A Feasibility ออกจาก MS-08B Efficacy และ rollout adult/minor;
 12. รับรอง Pair Matching Prototype ว่าใช้กิจกรรม f10 เดิม เป็นกิจกรรมย่อยใน Learn/Today Mission/Review/Adventure โดยไม่เพิ่มเมนูหลัก ไม่ให้รางวัลซ้ำ และไม่บิด SRS/Mastery
 
-Controlled inventory รวม **50 UAT scripts (UAT-001–050)** ทุก script ยังเป็น Planned จนกว่าจะมี build, evidence และ sign-off ตาม gate
+Controlled inventory รวม **50 UAT scripts (UAT-001–050)** โดย UAT-001–038
+มี build สำหรับเริ่ม external execution แต่ยังเป็น Not Run; UAT-039–050 เป็น
+Blocked เพราะ Pair prototype ยังไม่ได้รับอนุมัติให้พัฒนา ไม่มี script ใดถูกนับ
+เป็น Pass จาก automated test แทนผู้ใช้จริง
+
+### 1.1 Execution status snapshot
+
+| Scope | Current status | Evidence/blocker |
+|---|---|---|
+| Android/shared engineering preflight | Ready | BG-01–BG-12 local scope ผ่าน; 3,403 Flutter tests ผ่านทั้ง default/serial; APK SHA-256 `5F4C48537C3F06FD33E219764C2A2E1A7C90A273D8DB0AAC877CE6898967D928`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
+| Internal UAT UAT-001–024, 030–032 | Not Run | ต้องใช้ learner representatives ≥12, accessibility moderated sessions ≥4, certified profiles และผู้ sign-off ที่เป็นอิสระจากผู้พัฒนา |
+| Research/permit UAT-025–037 | Blocked | ยังไม่มี approved protocol/instruments/response-code catalog/power plan/privacy-ethics package หรือ signed runtime permit fixtures; ระบบจงใจไม่มี research schema/capture |
+| MS-08B UAT-038 | Blocked | ต้องรอ MS-08A, powered adult/minor samples, frozen windows และ approved ANCOVA/MI/tipping-point evidence |
+| Pair UAT-039–050 | Blocked | Pair ADR/SRS/SDS/RTM v1.2 และ separate delivery flag ยังไม่ได้รับอนุมัติ; PM0–PM8 ยังไม่เริ่ม |
+| Defect/sign-off records | Empty by design | ยังไม่มี external attempt จึงไม่มี defect disposition หรือลายเซ็นที่สามารถบันทึกอย่างถูกต้อง |
 
 ## 2. ขอบเขตและรอบ UAT
 
@@ -851,4 +865,7 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 | Product Owner | Accept / Reject |  |  |  |  |
 | Release Owner | Continue / Hold / Rollback |  |  |  |  |
 
-การลงชื่อใน Draft หรือ build ที่ baseline gates ยังไม่ผ่านไม่ถือเป็น Pilot/Production approval
+ผล automated/local preflight ไม่ใช่ UAT Pass และไม่แทนลายเซ็นของ learner,
+Accessibility, UAT, QA, Research/Privacy, Product หรือ Release owner การลงชื่อ
+ก่อนครบ external evidence และ gate ที่เกี่ยวข้องไม่ถือเป็น Pilot/Production
+approval

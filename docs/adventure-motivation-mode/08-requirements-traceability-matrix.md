@@ -1,18 +1,21 @@
 # Requirements Traceability Matrix — Adventure Motivation Mode
 
 **Document ID:** LQ-AMM-RTM-001
-**Version:** 1.2
-**Status:** Draft for BA/QA/Tech Review
+**Version:** 1.3
+**Status:** As-built engineering overlay recorded; external acceptance pending
 **Date:** 2026-09-04
 **Requirements source:** `02-srs.md` v1.2
-**Design source:** `03-sds.md` v1.2
+**Design source:** `03-sds.md` v1.3
 **Delivery source:** `04-project-plan-wbs.md` v1.2
-**Verification sources:** `06-test-plan-and-test-cases.md` และ `07-uat-script.md` v1.2
+**Verification sources:** `06-test-plan-and-test-cases.md` v1.2 และ `07-uat-script.md` v1.3
 **Decision sources:** `00b-architecture-decision-records.md` และ `09-measurement-decision-spec.md` v1.2
 
 ## 1. วิธีใช้ Matrix
 
-RTM นี้ทำให้ requirement ทุกข้อมี design owner, work package และ verification evidence ที่วางแผนไว้ โดยยังไม่แสดงสถานะ “ผ่าน” เพราะ Adventure ยังไม่ได้ implement
+RTM นี้ทำให้ requirement ทุกข้อมี design owner, work package และ verification
+evidence ที่วางแผนไว้ ตาราง requirement เดิมเก็บสถานะ planning baseline เพื่อ
+ไม่สร้าง UAT/owner acceptance เทียม และใช้ §12.1 เป็น execution overlay ที่
+authoritative สำหรับ implementation รอบปัจจุบัน
 
 | Code | ความหมาย |
 |---|---|
@@ -22,6 +25,8 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 | `V` | Verified — ต้องมี fresh command/device/UAT evidence |
 | `A` | Accepted — Product/UAT sign-off แล้ว |
 | `GOV` | Governance/manual evidence เป็นหลัก |
+| `V-AUTO` | Verified เฉพาะ automated/local engineering; manual/device/UAT ส่วนที่เกี่ยวข้องยังไม่ผ่าน |
+| `BLOCKED` | ยังเริ่มไม่ได้เพราะขาด approval, participant evidence หรือ separate delivery authorization |
 
 กติกา:
 
@@ -365,12 +370,31 @@ RTM นี้ทำให้ requirement ทุกข้อมี design owner, 
 
 | Requirement family | Count | Design mapped | WBS mapped | Verification mapped | Current verified |
 |---|---:|---:|---:|---:|---:|
-| Functional | 130 | 130 | 130 | 130 | 0 — implementation not started |
-| Data | 21 | 21 | 21 | 21 | 0 — planned contract/checkpoint changes not created |
-| UI/UX | 27 | 27 | 27 | 27 | 0 — wireframe/spec only |
-| Non-functional | 46 | 46 | 46 | 46 | 0 Adventure/Pair; baseline evidence recorded separately |
-| Business rules | 34 | 34 | 34 | 34 | 0 Adventure/Pair; authority behavior characterized in Audit |
-| **Total** | **258** | **258** | **258** | **258** | **0 Adventure/Pair verified** |
+| Functional | 130 | 130 | 130 | 130 | Adventure product FR-001–075, FR-089–093, FR-095–096 and FR-101–102 are I/V-AUTO; research/rollout and Pair ranges remain Planned/BLOCKED |
+| Data | 21 | 21 | 21 | 21 | DATA-002–006 are I/V-AUTO on schema v23; research DATA-007–015 and Pair DATA-016–021 remain BLOCKED |
+| UI/UX | 27 | 27 | 27 | 27 | UI-001–013 have automated implementation evidence; physical assistive-tech/UAT remains pending; research and Pair UI remain BLOCKED |
+| Non-functional | 46 | 46 | 46 | 46 | Product invariants have local evidence; device performance/manual accessibility, research efficacy and Pair gates remain pending/BLOCKED |
+| Business rules | 34 | 34 | 34 | 34 | Product authority/repair/reward rules have local evidence; research decisions and Pair rules remain Planned/BLOCKED |
+| **Total** | **258** | **258** | **258** | **258** | **No requirement is marked A; local verification cannot substitute for owner/UAT acceptance** |
+
+### 12.1 As-built execution overlay
+
+| Scope | Status | Actual evidence |
+|---|---|---|
+| G0A, MS-02, MS-03, MS-04, MS-05 product implementation | I/V-AUTO | Checkpoint records `docs/development/2026-09-04-adventure-motivation-checkpoint-0.md`, `-2.md`, `-3.md`, `-4.md`; source through `be2ef6db` |
+| Task 6.1 diagnostics/catalog recovery | I/V-AUTO | Adventure diagnostics, download adapter and recovery suites are included in the 391-test focused product result |
+| Task 6.2 automated responsive/accessibility/media scope | V-AUTO | 34 dedicated tests; 320px/text 200%/dark/high-contrast/reduced-motion/no-audio coverage; packaged visual/audio bytes = 0 |
+| Task 6.2 physical accessibility/performance | Pending external | TalkBack, Switch Access, keyboard traversal, certified device profiles and p95/frame evidence are not yet signed |
+| Task 6.3 BG-01–BG-12 Android/shared scope | V-AUTO | `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`; 3,403 full Flutter tests pass default and serial with four explicit release exclusions |
+| Task 6.4 UAT/MS-08A/MS-08B | BLOCKED/Not Run | `07-uat-script.md` v1.3 records required cohorts, denominators, signatures and the missing research/device prerequisites; no UAT result is fabricated |
+| M10 research implementation | BLOCKED | No approved MDS/protocol/instrument/form/response-code/power/analysis/privacy-ethics package; schema/capture intentionally absent |
+| M12 Pair PM0–PM8 | BLOCKED | Pair ADR/SRS/SDS/RTM v1.2 and separate delivery authorization are not approved |
+
+The executable feature map remains revision 1.3.0 with exactly 44 product
+capabilities and hash
+`41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`.
+The schema-v23 Final 8/44 Test Plan fingerprint is
+`ec068b590b05103e2c33f2dbcd51bd570e37262b15cf175f7a6826d3e19b9b81`.
 
 ## 13. Gate Traceability
 
