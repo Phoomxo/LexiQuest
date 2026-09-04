@@ -28,6 +28,7 @@ import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_s
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -194,8 +195,12 @@ void main() {
       await pump(tester, const ChooseModeScreen());
       await tester.pump();
 
-      expect(find.text('Associative Reading'), findsOneWidget);
-      await tester.tap(find.text('Associative Reading'));
+      const routeId = 'home/learn/associative-reading';
+      final glossary = NavigationGlossary.require(routeId);
+      final launcherEntry = find.byKey(const ValueKey<String>(routeId));
+      expect(launcherEntry, findsOneWidget);
+      expect(find.text(glossary.fullThaiLabel), findsOneWidget);
+      await tester.tap(launcherEntry);
       await pumpUntilFound(
         tester,
         find.byKey(const ValueKey<String>('session-config-start')),

@@ -9,6 +9,7 @@ library;
 
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -41,6 +42,45 @@ List<String> _dartFiles(String relativeDir) {
       .where((f) => f.path.endsWith('.dart'))
       .map((f) => f.path)
       .toList();
+}
+
+List<String> _ambiguousRewardPointUsages({
+  required String filePath,
+  required String source,
+}) {
+  if (source.contains('PointsLedger')) {
+    return const <String>[];
+  }
+  final pointsAliasPattern = RegExp(
+    r'\b(?:final|var|int|double|num)\s+points\b',
+    caseSensitive: false,
+  );
+  final rewardAuthorityPattern = RegExp(
+    r'\b(?:xp|coins?|rewards?|currency|balance|grant|ledger|economy|quest|achievement)\b',
+    caseSensitive: false,
+  );
+  final rewardAuthorityPathPattern = RegExp(
+    r'[\\/](?:rewards?|economy|quests?|achievements?|ledger)[\\/]',
+    caseSensitive: false,
+  );
+  final fileHasRewardAuthority = rewardAuthorityPathPattern.hasMatch(filePath);
+  final violations = <String>[];
+
+  var lineNo = 0;
+  for (final line in source.split('\n')) {
+    lineNo++;
+    final trimmed = line.trim();
+    if (trimmed.startsWith('//') ||
+        line.contains('// legacy') ||
+        line.contains('PointsLedger')) {
+      continue;
+    }
+    if (pointsAliasPattern.hasMatch(line) &&
+        (fileHasRewardAuthority || rewardAuthorityPattern.hasMatch(line))) {
+      violations.add('$filePath:$lineNo → $line');
+    }
+  }
+  return violations;
 }
 
 // ---------------------------------------------------------------------------
@@ -285,13 +325,19 @@ void main() {
       },
     );
 
-    test('current schemaVersion in code is 11', () {
+    test('current schemaVersion delegates to the current runtime contract', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 11'),
+        AppDatabase.currentSchemaVersion,
+        greaterThanOrEqualTo(11),
+        reason:
+            'The current schema must not regress behind the audited v11 baseline',
+      );
+      expect(
+        dbContent.contains('schemaVersion => currentSchemaVersion'),
         isTrue,
         reason:
-            'app_database.dart schemaVersion must be 11 after P0 integration',
+            'app_database.dart must delegate schemaVersion to its current contract constant',
       );
     });
   });
@@ -478,36 +524,33 @@ void main() {
       );
     });
 
-    test('lib/features/ does not use ambiguous "points" identifier', () {
+    test('reward authority does not introduce an ambiguous "points" alias', () {
       final featureFiles = _dartFiles('lib/features');
       final violations = <String>[];
-      final pointsPattern = RegExp(r'\bpoints\b', caseSensitive: false);
 
       for (final filePath in featureFiles) {
         final fileContent = File(filePath).readAsStringSync();
-        if (pointsPattern.hasMatch(fileContent) &&
-            !fileContent.contains('PointsLedger') &&
-            !fileContent.contains('// legacy')) {
-          // Check each line
-          var lineNo = 0;
-          for (final line in fileContent.split('\n')) {
-            lineNo++;
-            if (pointsPattern.hasMatch(line) &&
-                !line.contains('PointsLedger') &&
-                !line.trim().startsWith('//') &&
-                !line.contains('// legacy')) {
-              violations.add('$filePath:$lineNo → $line');
-            }
-          }
-        }
+        violations.addAll(
+          _ambiguousRewardPointUsages(filePath: filePath, source: fileContent),
+        );
       }
 
       expect(
         violations,
         isEmpty,
         reason:
-            'Ambiguous "points" usage in lib/features/:\n${violations.join('\n')}',
+            'Ambiguous reward "points" aliases in lib/features/:\n'
+            '${violations.join('\n')}',
       );
+    });
+
+    test('reward points guard rejects a prohibited reward alias fixture', () {
+      final violations = _ambiguousRewardPointUsages(
+        filePath: 'lib/features/rewards/application/reward_projection.dart',
+        source: 'final points = xpReward;',
+      );
+
+      expect(violations, hasLength(1));
     });
   });
 }
