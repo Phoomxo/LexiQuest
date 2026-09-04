@@ -427,6 +427,29 @@ older binaries must not open a v22 database.
 
 ---
 
+### v23 — Adventure Home Experience Preference v2
+**Reserved:** 2026-09-04  
+**Branch:** `feature/adventure-motivation-plan`  
+**Status:** RESERVED — implementation and release evidence pending
+
+Reserved for the forward-only extension of the existing
+`learner_preferences` authority with
+`home_experience TEXT NOT NULL DEFAULT 'standard'`. The migration will update
+existing active rows from preference version 1 to version 2 while preserving
+goal, available minutes, activity, display fields, timestamps, local/cloud
+revisions, acknowledgements and tombstones exactly. No table is added and the
+named inventory remains 44 tables.
+
+The only valid durable values are `standard` and `adventure`; unknown values
+fail closed to Standard. Product preference does not grant feature visibility,
+assignment, permit, research capture, learning evidence or reward authority.
+
+**Migration safety:** v22→v23 is an additive column migration plus a bounded
+version upgrade on the existing row. Rollback is forward-only; older binaries
+must not open a v23 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -451,6 +474,7 @@ older binaries must not open a v22 database.
 | 2026-08-26 | Recorded released v20 session configuration authority and session audit pins. | LexiQuest integration |
 | 2026-08-30 | Recorded forward-only v21 learner preferences, raising the named inventory to 44 tables. | LexiQuest integration |
 | 2026-08-30 | Extended the v21 learner preference row with local-only display controls in v22; named inventory remains 44 tables. | LexiQuest integration |
+| 2026-09-04 | Reserved v23 for Adventure `home_experience` and Learner Preferences v2; planned v23 was free, so no rebase was required. | LexiQuest integration |
 
 ---
 
