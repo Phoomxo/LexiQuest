@@ -39,6 +39,7 @@ class QuizScreen extends StatefulWidget {
     this.pinnedContentChecksumsSha256 = const <String, String>{},
     this.completionPageBuilder,
     this.adventureDiagnostics,
+    this.allowSkip = false,
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -53,6 +54,7 @@ class QuizScreen extends StatefulWidget {
     this.pinnedContentChecksumsSha256 = const <String, String>{},
     this.completionPageBuilder,
     this.adventureDiagnostics,
+    this.allowSkip = false,
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
        typedRecall = true;
@@ -68,6 +70,7 @@ class QuizScreen extends StatefulWidget {
   final Map<String, String> pinnedContentChecksumsSha256;
   final QuizCompletionPageBuilder? completionPageBuilder;
   final AdventureDiagnostics? adventureDiagnostics;
+  final bool allowSkip;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -101,6 +104,8 @@ class _QuizScreenState extends State<QuizScreen> {
       _lessonLifecycle?.acceptsOperations == false ||
       (_typedReview?.actionLocked ?? _meaningReview?.actionLocked ?? true) ||
       _completionCommitted;
+  bool get _isSkipped =>
+      _typedReview?.isSkipped ?? _meaningReview?.isSkipped ?? false;
 
   @override
   void didChangeDependencies() {
@@ -546,7 +551,15 @@ class _QuizScreenState extends State<QuizScreen> {
                 child: AnswerFeedbackPanel(feedback: feedback),
               ),
             ],
-            if (_isAnswered) ...<Widget>[
+            if (widget.allowSkip && !_isAnswered && !_isSkipped) ...<Widget>[
+              const SizedBox(height: 12),
+              TextButton(
+                key: const ValueKey<String>('meaning-quiz-skip'),
+                onPressed: actionLocked ? null : _skip,
+                child: const Text('ข้ามข้อนี้'),
+              ),
+            ],
+            if (_isAnswered || _isSkipped) ...<Widget>[
               const SizedBox(height: 12),
               FilledButton(
                 key: const ValueKey<String>('meaning-quiz-next'),
@@ -652,6 +665,21 @@ class _QuizScreenState extends State<QuizScreen> {
     } catch (_) {
       _showSessionCloseFailure();
     }
+  }
+
+  void _skip() {
+    if (!widget.allowSkip || _actionLocked || _isAnswered || _isSkipped) {
+      return;
+    }
+    final review = _typedReview ?? _meaningReview;
+    if (review is TypedRecallQuizReviewController) {
+      review.skip();
+    } else if (review is MeaningQuizReviewController) {
+      review.skip();
+    } else {
+      return;
+    }
+    _lessonLifecycle?.noteSkippedItem();
   }
 
   Future<void> _retrySessionClose() async {

@@ -748,6 +748,7 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
   bool get expectsTypedResponse =>
       currentQuestion.direction == MeaningQuizDirection.meaningToWord;
   bool get isAnswered => _phase == MeaningQuizReviewPhase.answered;
+  bool get isSkipped => _phase == MeaningQuizReviewPhase.skipped;
   bool get isSaving =>
       _phase == MeaningQuizReviewPhase.savingEvidence ||
       _phase == MeaningQuizReviewPhase.completing;
@@ -762,7 +763,15 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
   bool get actionLocked =>
       !_acceptsOperation() ||
       (_phase != MeaningQuizReviewPhase.awaitingAnswer &&
-          _phase != MeaningQuizReviewPhase.answered);
+          _phase != MeaningQuizReviewPhase.answered &&
+          _phase != MeaningQuizReviewPhase.skipped);
+
+  void skip() {
+    _requireOperationAccepted();
+    _requirePhase(MeaningQuizReviewPhase.awaitingAnswer, 'skip');
+    _recordInteraction();
+    _setPhase(MeaningQuizReviewPhase.skipped);
+  }
 
   Future<AnswerRecordResult> answerChoice({
     required String option,
@@ -902,7 +911,10 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
 
   Future<LearningSessionSummary?> advance() async {
     _requireOperationAccepted();
-    _requirePhase(MeaningQuizReviewPhase.answered, 'advance');
+    if (_phase != MeaningQuizReviewPhase.answered &&
+        _phase != MeaningQuizReviewPhase.skipped) {
+      throw StateError('Cannot advance typed recall from ${_phase.name}.');
+    }
     if (_index < questions.length - 1) {
       _index += 1;
       _selectedOption = null;

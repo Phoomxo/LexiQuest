@@ -469,6 +469,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
             completionPageBuilder: completionPage,
             adventureDiagnostics: dependencies.adventureDiagnostics,
+            allowSkip: true,
           )
         : QuizScreen(
             modeAdapter: adapter as MeaningQuizModeAdapter,
@@ -477,6 +478,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
             completionPageBuilder: completionPage,
             adventureDiagnostics: dependencies.adventureDiagnostics,
+            allowSkip: true,
           );
     return UnifiedLessonModeHost(
       adapter: adapter,

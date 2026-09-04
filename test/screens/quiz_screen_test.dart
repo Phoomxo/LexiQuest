@@ -1151,6 +1151,62 @@ void main() {
     expect(session.state, 'completed');
   });
 
+  testWidgets(
+    'Adventure presentation can skip without creating learning evidence',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            allowSkip: true,
+          ),
+        ),
+      );
+      await _pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey<String>('meaning-quiz-skip')),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('meaning-quiz-skip')));
+      await tester.pump();
+
+      expect(find.text('ดูผลการเรียน'), findsOneWidget);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+
+      await tester.tap(find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+
+      expect(find.text('0%'), findsOneWidget);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      expect(session.state, 'completed');
+    },
+  );
+
+  testWidgets('Standard presentation does not expose Adventure skip', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(
+          categoryId: 'category-1',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
+      ),
+    );
+    await _pumpUntilFound(tester, find.text('station'));
+
+    expect(
+      find.byKey(const ValueKey<String>('meaning-quiz-skip')),
+      findsNothing,
+    );
+  });
+
   testWidgets('optional completion page receives committed session summary', (
     tester,
   ) async {

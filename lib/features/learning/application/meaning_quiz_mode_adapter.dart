@@ -55,6 +55,7 @@ enum MeaningQuizReviewPhase {
   savingEvidence,
   evidenceRetryRequired,
   answered,
+  skipped,
   completing,
   completionRetryRequired,
   completed,
@@ -345,6 +346,7 @@ final class MeaningQuizReviewController extends ChangeNotifier {
   AnswerFeedback? get feedback => _feedback;
   String? get selectedOption => _selectedOption;
   bool get isAnswered => _phase == MeaningQuizReviewPhase.answered;
+  bool get isSkipped => _phase == MeaningQuizReviewPhase.skipped;
   bool get isCompleted => _phase == MeaningQuizReviewPhase.completed;
   bool get isSaving =>
       _phase == MeaningQuizReviewPhase.savingEvidence ||
@@ -360,7 +362,15 @@ final class MeaningQuizReviewController extends ChangeNotifier {
   bool get actionLocked =>
       !_acceptsOperation() ||
       (_phase != MeaningQuizReviewPhase.awaitingAnswer &&
-          _phase != MeaningQuizReviewPhase.answered);
+          _phase != MeaningQuizReviewPhase.answered &&
+          _phase != MeaningQuizReviewPhase.skipped);
+
+  void skip() {
+    _requireOperationAccepted();
+    _requirePhase(MeaningQuizReviewPhase.awaitingAnswer, 'skip');
+    _recordInteraction();
+    _setPhase(MeaningQuizReviewPhase.skipped);
+  }
 
   Future<AnswerRecordResult> answer({
     required String option,
@@ -510,7 +520,10 @@ final class MeaningQuizReviewController extends ChangeNotifier {
 
   Future<LearningSessionSummary?> advance() async {
     _requireOperationAccepted();
-    _requirePhase(MeaningQuizReviewPhase.answered, 'advance');
+    if (_phase != MeaningQuizReviewPhase.answered &&
+        _phase != MeaningQuizReviewPhase.skipped) {
+      throw StateError('Cannot advance meaning quiz from ${_phase.name}.');
+    }
     if (_index < questions.length - 1) {
       _index += 1;
       _selectedOption = null;
