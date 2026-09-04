@@ -64,38 +64,42 @@ void main() {
     },
   );
 
-  test('iOS notification integration is CocoaPods-backed at iOS 13', () {
-    final project = File(
-      'ios/Runner.xcodeproj/project.pbxproj',
-    ).readAsStringSync();
-    final podfile = File('ios/Podfile').readAsStringSync();
-    final lock = File('ios/Podfile.lock').readAsStringSync();
-    final delegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
-    final debug = File('ios/Flutter/Debug.xcconfig').readAsStringSync();
-    final release = File('ios/Flutter/Release.xcconfig').readAsStringSync();
-    final workspace = File(
-      'ios/Runner.xcworkspace/contents.xcworkspacedata',
-    ).readAsStringSync();
-    final scheduler = File(
-      'lib/features/reminders/data/platform_reminder_scheduler.dart',
-    ).readAsStringSync();
+  test(
+    'iOS notification integration is CocoaPods-backed at iOS 13',
+    () {
+      final project = File(
+        'ios/Runner.xcodeproj/project.pbxproj',
+      ).readAsStringSync();
+      final podfile = File('ios/Podfile').readAsStringSync();
+      final lock = File('ios/Podfile.lock').readAsStringSync();
+      final delegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
+      final debug = File('ios/Flutter/Debug.xcconfig').readAsStringSync();
+      final release = File('ios/Flutter/Release.xcconfig').readAsStringSync();
+      final workspace = File(
+        'ios/Runner.xcworkspace/contents.xcworkspacedata',
+      ).readAsStringSync();
+      final scheduler = File(
+        'lib/features/reminders/data/platform_reminder_scheduler.dart',
+      ).readAsStringSync();
 
-    for (final match in RegExp(
-      r'IPHONEOS_DEPLOYMENT_TARGET = ([0-9.]+);',
-    ).allMatches(project)) {
-      expect(_versionAtLeast(match.group(1)!, '13.0'), isTrue);
-    }
-    expect(podfile, contains("platform :ios, '13.0'"));
-    expect(lock, contains('flutter_local_notifications'));
-    expect(debug, contains('Pods-Runner.debug.xcconfig'));
-    expect(release, contains('Pods-Runner.release.xcconfig'));
-    expect(workspace, contains('Pods/Pods.xcodeproj'));
-    expect(
-      delegate,
-      contains('UNUserNotificationCenter.current().delegate = self'),
-    );
-    expect(scheduler, contains('maxPendingIosNotifications = 64'));
-  });
+      for (final match in RegExp(
+        r'IPHONEOS_DEPLOYMENT_TARGET = ([0-9.]+);',
+      ).allMatches(project)) {
+        expect(_versionAtLeast(match.group(1)!, '13.0'), isTrue);
+      }
+      expect(podfile, contains("platform :ios, '13.0'"));
+      expect(lock, contains('flutter_local_notifications'));
+      expect(debug, contains('Pods-Runner.debug.xcconfig'));
+      expect(release, contains('Pods-Runner.release.xcconfig'));
+      expect(workspace, contains('Pods/Pods.xcodeproj'));
+      expect(
+        delegate,
+        contains('UNUserNotificationCenter.current().delegate = self'),
+      );
+      expect(scheduler, contains('maxPendingIosNotifications = 64'));
+    },
+    tags: 'release-excluded',
+  );
 }
 
 bool _versionAtLeast(String actual, String minimum) {

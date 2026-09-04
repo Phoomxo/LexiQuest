@@ -55,5 +55,5 @@ void main() {
         'peak_rss_bytes=${result.peakWorkingSetBytes}',
       );
     }
-  });
+  }, tags: 'release-excluded');
 }

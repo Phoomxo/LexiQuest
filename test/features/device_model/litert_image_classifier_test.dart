@@ -44,37 +44,42 @@ void main() {
       );
       expect(classifier.delegate, ModelDelegate.xnnpack);
     },
+    tags: 'release-excluded',
   );
 
-  test('verifier rejects a manifest with the wrong output contract', () async {
-    final model = File(_modelPath);
-    final manifest = ModelManifest(
-      id: 'wrong-contract',
-      version: '1',
-      minimumAppVersion: '1.0.0+1',
-      sourceUri: Uri.https('models.example', '/wrong.tflite'),
-      license: 'Apache-2.0',
-      licenseUri: Uri.https('models.example', '/LICENSE'),
-      expectedSha256: 'a' * 64,
-      expectedBytes: await model.length(),
-      inputShape: const [1, 224, 224, 3],
-      inputType: ModelTensorType.uint8,
-      outputShape: const [1, 2],
-      outputType: ModelTensorType.uint8,
-      inputEncoding: ModelInputEncoding.rawUint8Rgb,
-      labelAssetName: 'labels.txt',
-      supportedDelegates: const {ModelDelegate.cpu},
-    );
+  test(
+    'verifier rejects a manifest with the wrong output contract',
+    () async {
+      final model = File(_modelPath);
+      final manifest = ModelManifest(
+        id: 'wrong-contract',
+        version: '1',
+        minimumAppVersion: '1.0.0+1',
+        sourceUri: Uri.https('models.example', '/wrong.tflite'),
+        license: 'Apache-2.0',
+        licenseUri: Uri.https('models.example', '/LICENSE'),
+        expectedSha256: 'a' * 64,
+        expectedBytes: await model.length(),
+        inputShape: const [1, 224, 224, 3],
+        inputType: ModelTensorType.uint8,
+        outputShape: const [1, 2],
+        outputType: ModelTensorType.uint8,
+        inputEncoding: ModelInputEncoding.rawUint8Rgb,
+        labelAssetName: 'labels.txt',
+        supportedDelegates: const {ModelDelegate.cpu},
+      );
 
-    await expectLater(
-      const LiteRtModelFileVerifier().verify(model.path, manifest),
-      throwsA(
-        isA<ModelLifecycleException>().having(
-          (error) => error.code,
-          'code',
-          ModelFailureCode.incompatibleTensor,
+      await expectLater(
+        const LiteRtModelFileVerifier().verify(model.path, manifest),
+        throwsA(
+          isA<ModelLifecycleException>().having(
+            (error) => error.code,
+            'code',
+            ModelFailureCode.incompatibleTensor,
+          ),
         ),
-      ),
-    );
-  });
+      );
+    },
+    tags: 'release-excluded',
+  );
 }
