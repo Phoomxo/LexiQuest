@@ -45,6 +45,22 @@ function Assert-True {
     }
 }
 
+function Get-PropertyValue {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+    return $property.Value
+}
+
 function Restore-EnvironmentValue {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
@@ -114,6 +130,11 @@ $originalDriverResponse = $env:LEXIQUEST_STUB_DRIVER_RESPONSE
 $originalDriveExitCode = $env:LEXIQUEST_STUB_DRIVE_EXIT_CODE
 $originalStandardError = $env:LEXIQUEST_STUB_STDERR
 $originalStubLog = $env:LEXIQUEST_STUB_LOG
+$originalGitStagedDiffExitCode = $env:LEXIQUEST_STUB_GIT_STAGED_DIFF_EXIT_CODE
+$originalGitUnstagedDiffExitCode = `
+    $env:LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE
+$originalGitUntracked = $env:LEXIQUEST_STUB_GIT_UNTRACKED
+$originalGitTrackedStatus = $env:LEXIQUEST_STUB_GIT_TRACKED_STATUS
 $originalDriverOutput = $env:LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT
 $createdEvidenceDirectories = [System.Collections.Generic.List[string]]::new()
 $failure = $null
@@ -141,32 +162,123 @@ if /I "%~1"=="drive" (
 exit /b 90
 '@ | Set-Content -LiteralPath $flutterStub -Encoding Ascii
 
+    $gitStub = Join-Path $temporaryRoot 'git.bat'
+    @'
+@echo off
+if /I "%~1"=="rev-parse" (
+  echo 0123456789abcdef0123456789abcdef01234567
+  exit /b 0
+)
+if /I "%~1"=="diff" if /I "%~2"=="--cached" exit /b %LEXIQUEST_STUB_GIT_STAGED_DIFF_EXIT_CODE%
+if /I "%~1"=="diff" exit /b %LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE%
+if /I "%~1"=="ls-files" (
+  powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_UNTRACKED)"
+  exit /b 0
+)
+if /I "%~1"=="status" (
+  powershell -NoProfile -Command "[Console]::Out.Write($env:LEXIQUEST_STUB_GIT_TRACKED_STATUS)"
+  exit /b 0
+)
+exit /b 90
+'@ | Set-Content -LiteralPath $gitStub -Encoding Ascii
+
     $env:PATH = "$temporaryRoot;$originalPath"
     $env:LEXIQUEST_STUB_LOG = $stubLog
 
     $passingProfile = [ordered]@{
         schemaVersion = 1
         profileId = 'adventure-performance-v1'
-        sampleCount = 20
-        allBudgetsPassed = $true
+        buildMode = 'profile'
+        percentileMethod = 'nearest-rank'
+        deviceViewport = [ordered]@{
+            physicalWidthPx = 1080.0
+            physicalHeightPx = 2400.0
+            logicalWidth = 432.0
+            logicalHeight = 960.0
+            devicePixelRatio = 2.5
+        }
+        sampleCounts = [ordered]@{
+            localEntryResolution = 20
+            journeyProjection = 20
+            firstMeaningfulRender = 20
+            standardSessionStart = 20
+            adventureSessionStart = 20
+            pairedSessionStartOverhead = 20
+            mapListTransitions = 20
+            mapListFrames = 24
+            timelineTransitionMarkers = 20
+        }
+        budgets = [ordered]@{
+            localEntryResolutionP95Ms = 50.0
+            journeyProjectionP95Ms = 100.0
+            firstMeaningfulRenderP95Ms = 1500.0
+            adventureSessionStartOverheadP95Ms = 150.0
+            mapListFrameP95Ms = 16.7
+            longFrameOrTaskMs = 100.0
+        }
         metrics = [ordered]@{
             localEntryResolutionP95Ms = 1.25
             journeyProjectionP95Ms = 2.5
             firstMeaningfulRenderP95Ms = 140.0
+            standardSessionStartP95Ms = 0.25
+            adventureSessionStartP95Ms = 0.75
             adventureSessionStartOverheadP95Ms = 0.75
             mapListFrameP95Ms = 8.2
+            mapListFrameMaxMs = 12.0
+            timelineSynchronousTaskP95Ms = 2.0
+            timelineSynchronousTaskMaxMs = 28.0
             mapListLongFrameCount = 0
-            mapListLongTaskCount = 0
+            timelineLongTaskCount = 0
+            timelineSynchronousTaskCount = 240
+            timelineSourceEventCount = 6503
+        }
+        passes = [ordered]@{
+            profileMode = $true
+            localAssetsValid = $true
+            localEntryResolution = $true
+            threeNodeJourneyProjection = $true
+            firstMeaningfulRender = $true
+            adventureSessionStartOverhead = $true
+            mapListFrameCoverage = $true
+            mapListTransitions = $true
+            timelineLongTasks = $true
+            learnerPause = $true
+            deviceViewportCaptured = $true
+        }
+        authorityInvariants = [ordered]@{
+            threeNodeProjection = $true
+            standardAdventureCommandsEquivalent = $true
+            canonicalSnapshotPinned = $true
+            evidenceAuthorityUnchanged = $true
+            pairedSessionStartInputsEquivalent = $true
         }
         learnerPause = [ordered]@{
             timeoutPolicy = 'none'
-            observedPauseMs = 3000
+            sessionTiming = 'untimedAlternative'
+            maximumActiveEffortMs = 600000
+            fakeClockAdvanceMs = 601000
+            boundaryExceeded = $true
             missionAvailableAfterPause = $true
         }
+        allBudgetsPassed = $true
     }
     $passingResponse = ConvertTo-Json -InputObject ([ordered]@{
         adventurePerformance = $passingProfile
     }) -Depth 20 -Compress
+
+    function Copy-Profile {
+        param([Parameter(Mandatory = $true)]$Profile)
+        return ConvertFrom-Json -InputObject (
+            ConvertTo-Json -InputObject $Profile -Depth 20 -Compress
+        )
+    }
+
+    function ConvertTo-DriverResponse {
+        param([Parameter(Mandatory = $true)]$Profile)
+        return ConvertTo-Json -InputObject ([ordered]@{
+            adventurePerformance = $Profile
+        }) -Depth 20 -Compress
+    }
 
     function Invoke-RunnerCase {
         param(
@@ -176,6 +288,13 @@ exit /b 90
             [string]$DriverResponse = $passingResponse,
             [int]$DriveExitCode = 0,
             [string]$StandardError = '',
+            [int]$StagedDiffExitCode = 0,
+            [int]$UnstagedDiffExitCode = 0,
+            [AllowEmptyString()][string]$NonIgnoredUntracked = '',
+            [AllowEmptyString()][string]$TrackedStatus = (
+                " M lib/features/sync/domain/sync_entity.dart`n" +
+                ' M lib/learning/storage/learning_database.g.dart'
+            ),
             [string]$OutputDirectory
         )
 
@@ -197,6 +316,12 @@ exit /b 90
         $env:LEXIQUEST_STUB_DRIVER_RESPONSE = $DriverResponse
         $env:LEXIQUEST_STUB_DRIVE_EXIT_CODE = [string]$DriveExitCode
         $env:LEXIQUEST_STUB_STDERR = $StandardError
+        $env:LEXIQUEST_STUB_GIT_STAGED_DIFF_EXIT_CODE = `
+            [string]$StagedDiffExitCode
+        $env:LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE = `
+            [string]$UnstagedDiffExitCode
+        $env:LEXIQUEST_STUB_GIT_UNTRACKED = $NonIgnoredUntracked
+        $env:LEXIQUEST_STUB_GIT_TRACKED_STATUS = $TrackedStatus
         Remove-Item -LiteralPath $stubLog -ErrorAction SilentlyContinue
 
         if ([string]::IsNullOrEmpty($DeviceId)) {
@@ -252,6 +377,12 @@ exit /b 90
     $emulatorEvidence = Get-Content -Raw -LiteralPath (
         $emulatorEvidenceFile.FullName
     ) | ConvertFrom-Json
+    if ($emulator.ExitCode -ne 0) {
+        Write-Host (
+            '  [DIAGNOSTIC] Passing profile validation error: ' +
+            [string]$emulatorEvidence.integrationOutput.error
+        )
+    }
     Assert-Equal 'emulator_rehearsal' $emulatorEvidence.evidenceClass `
         'Emulator evidence must be labeled rehearsal-only.'
     Assert-Equal 'not_certified' $emulatorEvidence.certificationStatus `
@@ -268,10 +399,104 @@ exit /b 90
         'Passing metrics and test process must produce passed evidence.'
     Assert-True ($emulatorEvidence.source.commitSha -match '^[0-9a-f]{40}$') `
         'Evidence must record a full commit SHA.'
+    Assert-Equal $true (Get-PropertyValue $emulatorEvidence.source 'reproducible') `
+        'Successful evidence must record reproducible committed source.'
+    Assert-Equal `
+        $false `
+        (Get-PropertyValue $emulatorEvidence.source 'stagedContentDiff') `
+        'Successful evidence must record no staged content diff.'
+    Assert-Equal `
+        $false `
+        (Get-PropertyValue $emulatorEvidence.source 'unstagedContentDiff') `
+        'Content-equal stat drift must not count as an unstaged content diff.'
+    Assert-Equal `
+        0 `
+        (Get-PropertyValue $emulatorEvidence.source 'nonIgnoredUntrackedCount') `
+        'Successful evidence must record no non-ignored untracked files.'
+    Assert-Equal `
+        2 `
+        (Get-PropertyValue $emulatorEvidence.source 'statusOnlyTrackedPathCount') `
+        'Evidence must record the two content-equal stat-only paths.'
+    $statusOnlyTrackedPaths = @(
+        Get-PropertyValue $emulatorEvidence.source 'statusOnlyTrackedPaths'
+    )
+    $firstStatusOnlyPath = if ($statusOnlyTrackedPaths.Count -ge 1) {
+        $statusOnlyTrackedPaths[0]
+    }
+    else {
+        $null
+    }
+    $secondStatusOnlyPath = if ($statusOnlyTrackedPaths.Count -ge 2) {
+        $statusOnlyTrackedPaths[1]
+    }
+    else {
+        $null
+    }
+    Assert-Equal `
+        'lib/features/sync/domain/sync_entity.dart' `
+        $firstStatusOnlyPath `
+        'Evidence must preserve the first stat-only path without staging it.'
+    Assert-Equal `
+        'lib/learning/storage/learning_database.g.dart' `
+        $secondStatusOnlyPath `
+        'Evidence must preserve the second stat-only path without staging it.'
     Assert-True ($emulatorEvidence.integrationOutput.sha256 -match '^[0-9a-f]{64}$') `
         'Evidence must bind the captured integration JSON by SHA-256.'
     Assert-True ($emulatorOutputFile.Length -gt 0) `
         'Captured integration output must be non-empty.'
+
+    foreach ($dirtySource in @(
+        @{
+            Name = 'staged-content-diff'
+            Parameters = @{ StagedDiffExitCode = 1 }
+        },
+        @{
+            Name = 'unstaged-content-diff'
+            Parameters = @{ UnstagedDiffExitCode = 1 }
+        },
+        @{
+            Name = 'non-ignored-untracked'
+            Parameters = @{ NonIgnoredUntracked = 'scratch.txt' }
+        }
+    )) {
+        $sourceParameters = @{
+            CaseName = $dirtySource.Name
+            DeviceId = 'emulator-5554'
+            Devices = @(
+                @{
+                    id = 'emulator-5554'
+                    targetPlatform = 'android-x64'
+                    platformType = 'android'
+                    emulator = $true
+                }
+            )
+        }
+        foreach ($entry in $dirtySource.Parameters.GetEnumerator()) {
+            $sourceParameters[$entry.Key] = $entry.Value
+        }
+        $dirtyResult = Invoke-RunnerCase @sourceParameters
+        Assert-Equal 71 $dirtyResult.ExitCode `
+            "$($dirtySource.Name) must fail the reproducible-source gate."
+        Assert-Equal 0 @($dirtyResult.Calls).Count `
+            "$($dirtySource.Name) must fail before Flutter Drive."
+    }
+
+    $sourceInspectionError = Invoke-RunnerCase `
+        -CaseName 'source-inspection-error' `
+        -DeviceId 'emulator-5554' `
+        -UnstagedDiffExitCode 2 `
+        -Devices @(
+            @{
+                id = 'emulator-5554'
+                targetPlatform = 'android-x64'
+                platformType = 'android'
+                emulator = $true
+            }
+        )
+    Assert-Equal 68 $sourceInspectionError.ExitCode `
+        'A failed Git source inspection must fail closed.'
+    Assert-Equal 0 @($sourceInspectionError.Calls).Count `
+        'A failed Git source inspection must fail before Flutter Drive.'
 
     $stderrWarning = Invoke-RunnerCase `
         -CaseName 'stderr-warning' `
@@ -351,14 +576,11 @@ exit /b 90
     Assert-Equal $false $unclassifiedEvidence.eligibleForPhysicalCertification `
         'Unclassified Android hardware must not be certification eligible.'
 
-    $failingProfile = [ordered]@{}
-    foreach ($entry in $passingProfile.GetEnumerator()) {
-        $failingProfile[$entry.Key] = $entry.Value
-    }
-    $failingProfile['allBudgetsPassed'] = $false
-    $budgetFailureResponse = ConvertTo-Json -InputObject ([ordered]@{
-        adventurePerformance = $failingProfile
-    }) -Depth 20 -Compress
+    $failingProfile = Copy-Profile $passingProfile
+    $failingProfile.metrics.localEntryResolutionP95Ms = 51.0
+    $failingProfile.passes.localEntryResolution = $false
+    $failingProfile.allBudgetsPassed = $false
+    $budgetFailureResponse = ConvertTo-DriverResponse $failingProfile
     $budgetFailure = Invoke-RunnerCase `
         -CaseName 'budget-failure' `
         -DeviceId 'emulator-5554' `
@@ -381,6 +603,132 @@ exit /b 90
     ) | ConvertFrom-Json
     Assert-Equal 'budget_failed' $budgetEvidence.result.status `
         'Budget failure must be explicit in evidence.'
+
+    $invariantFailureProfile = Copy-Profile $passingProfile
+    $invariantFailureProfile.authorityInvariants.canonicalSnapshotPinned = $false
+    $invariantFailureProfile.passes.adventureSessionStartOverhead = $false
+    $invariantFailureProfile.allBudgetsPassed = $false
+    $invariantFailure = Invoke-RunnerCase `
+        -CaseName 'invariant-failure' `
+        -DeviceId 'emulator-5554' `
+        -DriverResponse (ConvertTo-DriverResponse $invariantFailureProfile) `
+        -Devices @(
+            @{
+                id = 'emulator-5554'
+                targetPlatform = 'android-x64'
+                platformType = 'android'
+                emulator = $true
+            }
+        )
+    Assert-Equal 70 $invariantFailure.ExitCode `
+        'A coherent false authority invariant must fail the profile.'
+
+    $invalidProfiles = @(
+        @{
+            Name = 'wrong-schema'
+            Mutate = { param($profile) $profile.schemaVersion = 2 }
+        },
+        @{
+            Name = 'wrong-profile-id'
+            Mutate = { param($profile) $profile.profileId = 'other-profile' }
+        },
+        @{
+            Name = 'wrong-build-mode'
+            Mutate = { param($profile) $profile.buildMode = 'debug' }
+        },
+        @{
+            Name = 'missing-pass-flag'
+            Mutate = {
+                param($profile)
+                $profile.passes.PSObject.Properties.Remove('timelineLongTasks')
+            }
+        },
+        @{
+            Name = 'insufficient-frame-coverage'
+            Mutate = { param($profile) $profile.sampleCounts.mapListFrames = 19 }
+        },
+        @{
+            Name = 'insufficient-timeline-markers'
+            Mutate = {
+                param($profile)
+                $profile.sampleCounts.timelineTransitionMarkers = 19
+            }
+        },
+        @{
+            Name = 'non-numeric-budget'
+            Mutate = {
+                param($profile)
+                $profile.budgets.mapListFrameP95Ms = '16.7'
+            }
+        },
+        @{
+            Name = 'wrong-approved-budget'
+            Mutate = { param($profile) $profile.budgets.mapListFrameP95Ms = 17.0 }
+        },
+        @{
+            Name = 'missing-metric'
+            Mutate = {
+                param($profile)
+                $profile.metrics.PSObject.Properties.Remove(
+                    'timelineSynchronousTaskMaxMs'
+                )
+            }
+        },
+        @{
+            Name = 'metric-flag-inconsistency'
+            Mutate = {
+                param($profile)
+                $profile.metrics.mapListFrameP95Ms = 20.0
+            }
+        },
+        @{
+            Name = 'all-budgets-inconsistency'
+            Mutate = { param($profile) $profile.allBudgetsPassed = $false }
+        },
+        @{
+            Name = 'viewport-inconsistency'
+            Mutate = { param($profile) $profile.deviceViewport.logicalWidth = 400.0 }
+        },
+        @{
+            Name = 'pause-boundary-not-exceeded'
+            Mutate = {
+                param($profile)
+                $profile.learnerPause.fakeClockAdvanceMs = 600000
+                $profile.learnerPause.boundaryExceeded = $false
+            }
+        }
+    )
+    foreach ($invalid in $invalidProfiles) {
+        $invalidProfile = Copy-Profile $passingProfile
+        & $invalid.Mutate $invalidProfile
+        $invalidResult = Invoke-RunnerCase `
+            -CaseName $invalid.Name `
+            -DeviceId 'emulator-5554' `
+            -DriverResponse (ConvertTo-DriverResponse $invalidProfile) `
+            -Devices @(
+                @{
+                    id = 'emulator-5554'
+                    targetPlatform = 'android-x64'
+                    platformType = 'android'
+                    emulator = $true
+                }
+            )
+        Assert-Equal 69 $invalidResult.ExitCode `
+            "$($invalid.Name) output must fail closed as invalid."
+        $invalidEvidenceFile = Get-OnlyFile `
+            -Directory $invalidResult.OutputDirectory `
+            -Filter '*.evidence.json'
+        $invalidEvidence = Get-Content -Raw -LiteralPath (
+            $invalidEvidenceFile.FullName
+        ) | ConvertFrom-Json
+        Assert-Equal 'invalid_output' $invalidEvidence.result.status `
+            "$($invalid.Name) must be labeled invalid output."
+        Assert-True `
+            (-not [string]::IsNullOrWhiteSpace(
+                [string]$invalidEvidence.integrationOutput.error
+            )) `
+            "$($invalid.Name) must record a validation error."
+    }
 
     $childFailure = Invoke-RunnerCase `
         -CaseName 'child-failure' `
@@ -486,6 +834,18 @@ finally {
         -Name 'LEXIQUEST_STUB_STDERR' `
         -Value $originalStandardError
     Restore-EnvironmentValue -Name 'LEXIQUEST_STUB_LOG' -Value $originalStubLog
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_STAGED_DIFF_EXIT_CODE' `
+        -Value $originalGitStagedDiffExitCode
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_UNSTAGED_DIFF_EXIT_CODE' `
+        -Value $originalGitUnstagedDiffExitCode
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_UNTRACKED' `
+        -Value $originalGitUntracked
+    Restore-EnvironmentValue `
+        -Name 'LEXIQUEST_STUB_GIT_TRACKED_STATUS' `
+        -Value $originalGitTrackedStatus
     Restore-EnvironmentValue `
         -Name 'LEXIQUEST_ADVENTURE_PERFORMANCE_DRIVER_OUTPUT' `
         -Value $originalDriverOutput

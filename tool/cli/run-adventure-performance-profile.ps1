@@ -75,6 +75,528 @@ function Write-RunnerError {
     [Console]::Error.WriteLine($Message)
 }
 
+function Test-IntegerValue {
+    param([AllowNull()]$Value)
+
+    return (
+        $Value -is [byte] -or
+        $Value -is [sbyte] -or
+        $Value -is [int16] -or
+        $Value -is [uint16] -or
+        $Value -is [int32] -or
+        $Value -is [uint32] -or
+        $Value -is [int64] -or
+        $Value -is [uint64]
+    )
+}
+
+function Test-FiniteNumber {
+    param([AllowNull()]$Value)
+
+    if (
+        -not (Test-IntegerValue $Value) -and
+        $Value -isnot [single] -and
+        $Value -isnot [double] -and
+        $Value -isnot [decimal]
+    ) {
+        return $false
+    }
+    $number = [double]$Value
+    return -not [double]::IsNaN($number) -and -not [double]::IsInfinity($number)
+}
+
+function Add-ProfileValidationError {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors,
+        [Parameter(Mandatory = $true)][string]$Message
+    )
+
+    $Errors.Add($Message) | Out-Null
+}
+
+function Get-RequiredProfileProperty {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    if ($null -eq $InputObject) {
+        Add-ProfileValidationError $Errors "$Path is missing."
+        return $null
+    }
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property -or $null -eq $property.Value) {
+        Add-ProfileValidationError $Errors "$Path.$Name is missing."
+        return $null
+    }
+    return $property.Value
+}
+
+function Get-RequiredProfileBoolean {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    $value = Get-RequiredProfileProperty $InputObject $Name $Path $Errors
+    if ($null -ne $value -and $value -isnot [bool]) {
+        Add-ProfileValidationError $Errors "$Path.$Name must be boolean."
+        return $null
+    }
+    return $value
+}
+
+function Get-RequiredProfileInteger {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    $value = Get-RequiredProfileProperty $InputObject $Name $Path $Errors
+    if ($null -ne $value -and -not (Test-IntegerValue $value)) {
+        Add-ProfileValidationError $Errors "$Path.$Name must be an integer."
+        return $null
+    }
+    return $value
+}
+
+function Get-RequiredProfileNumber {
+    param(
+        [AllowNull()]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()]
+        [System.Collections.Generic.List[string]]$Errors
+    )
+
+    $value = Get-RequiredProfileProperty $InputObject $Name $Path $Errors
+    if ($null -ne $value -and -not (Test-FiniteNumber $value)) {
+        Add-ProfileValidationError $Errors "$Path.$Name must be a finite number."
+        return $null
+    }
+    return $value
+}
+
+function Test-AdventurePerformanceProfile {
+    param([AllowNull()]$Profile)
+
+    $errors = [System.Collections.Generic.List[string]]::new()
+    if ($null -eq $Profile) {
+        Add-ProfileValidationError $errors 'adventurePerformance is missing.'
+        return [pscustomobject]@{
+            IsValid = $false
+            AllBudgetsPassed = $null
+            Errors = @($errors)
+        }
+    }
+
+    $schemaVersion = Get-RequiredProfileInteger `
+        $Profile 'schemaVersion' 'adventurePerformance' $errors
+    if ($null -ne $schemaVersion -and $schemaVersion -ne 1) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.schemaVersion must equal 1.'
+    }
+    $profileId = Get-RequiredProfileProperty `
+        $Profile 'profileId' 'adventurePerformance' $errors
+    if ($null -ne $profileId -and $profileId -cne 'adventure-performance-v1') {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.profileId is not the required profile.'
+    }
+    $buildMode = Get-RequiredProfileProperty `
+        $Profile 'buildMode' 'adventurePerformance' $errors
+    if ($null -ne $buildMode -and $buildMode -cne 'profile') {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.buildMode must equal profile.'
+    }
+
+    $sampleCounts = Get-RequiredProfileProperty `
+        $Profile 'sampleCounts' 'adventurePerformance' $errors
+    $exactSampleNames = @(
+        'localEntryResolution',
+        'journeyProjection',
+        'firstMeaningfulRender',
+        'standardSessionStart',
+        'adventureSessionStart',
+        'pairedSessionStartOverhead',
+        'mapListTransitions',
+        'timelineTransitionMarkers'
+    )
+    $sampleValues = @{}
+    foreach ($name in $exactSampleNames) {
+        $value = Get-RequiredProfileInteger `
+            $sampleCounts $name 'adventurePerformance.sampleCounts' $errors
+        $sampleValues[$name] = $value
+        if ($null -ne $value -and $value -ne 20) {
+            Add-ProfileValidationError $errors `
+                "adventurePerformance.sampleCounts.$name must equal 20."
+        }
+    }
+    $frameCount = Get-RequiredProfileInteger `
+        $sampleCounts `
+        'mapListFrames' `
+        'adventurePerformance.sampleCounts' `
+        $errors
+    if ($null -ne $frameCount -and $frameCount -lt 20) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.sampleCounts.mapListFrames must be at least 20.'
+    }
+
+    $budgets = Get-RequiredProfileProperty `
+        $Profile 'budgets' 'adventurePerformance' $errors
+    $approvedBudgets = [ordered]@{
+        localEntryResolutionP95Ms = 50.0
+        journeyProjectionP95Ms = 100.0
+        firstMeaningfulRenderP95Ms = 1500.0
+        adventureSessionStartOverheadP95Ms = 150.0
+        mapListFrameP95Ms = 16.7
+        longFrameOrTaskMs = 100.0
+    }
+    $budgetValues = @{}
+    foreach ($entry in $approvedBudgets.GetEnumerator()) {
+        $value = Get-RequiredProfileNumber `
+            $budgets `
+            $entry.Key `
+            'adventurePerformance.budgets' `
+            $errors
+        $budgetValues[$entry.Key] = $value
+        if (
+            $null -ne $value -and
+            [math]::Abs(([double]$value) - ([double]$entry.Value)) -gt 0.000001
+        ) {
+            Add-ProfileValidationError $errors `
+                "adventurePerformance.budgets.$($entry.Key) is not approved."
+        }
+    }
+
+    $metrics = Get-RequiredProfileProperty `
+        $Profile 'metrics' 'adventurePerformance' $errors
+    $metricNames = @(
+        'localEntryResolutionP95Ms',
+        'journeyProjectionP95Ms',
+        'firstMeaningfulRenderP95Ms',
+        'standardSessionStartP95Ms',
+        'adventureSessionStartP95Ms',
+        'adventureSessionStartOverheadP95Ms',
+        'mapListFrameP95Ms',
+        'mapListFrameMaxMs',
+        'timelineSynchronousTaskP95Ms',
+        'timelineSynchronousTaskMaxMs'
+    )
+    $metricValues = @{}
+    foreach ($name in $metricNames) {
+        $value = Get-RequiredProfileNumber `
+            $metrics $name 'adventurePerformance.metrics' $errors
+        $metricValues[$name] = $value
+        if (
+            $null -ne $value -and
+            $name -ne 'adventureSessionStartOverheadP95Ms' -and
+            [double]$value -lt 0
+        ) {
+            Add-ProfileValidationError $errors `
+                "adventurePerformance.metrics.$name must be non-negative."
+        }
+    }
+    $longFrameCount = Get-RequiredProfileInteger `
+        $metrics `
+        'mapListLongFrameCount' `
+        'adventurePerformance.metrics' `
+        $errors
+    $timelineLongTaskCount = Get-RequiredProfileInteger `
+        $metrics `
+        'timelineLongTaskCount' `
+        'adventurePerformance.metrics' `
+        $errors
+    $timelineSynchronousTaskCount = Get-RequiredProfileInteger `
+        $metrics `
+        'timelineSynchronousTaskCount' `
+        'adventurePerformance.metrics' `
+        $errors
+    $timelineSourceEventCount = Get-RequiredProfileInteger `
+        $metrics `
+        'timelineSourceEventCount' `
+        'adventurePerformance.metrics' `
+        $errors
+    foreach ($countEntry in @(
+        @{ Name = 'mapListLongFrameCount'; Value = $longFrameCount },
+        @{ Name = 'timelineLongTaskCount'; Value = $timelineLongTaskCount }
+    )) {
+        if ($null -ne $countEntry.Value -and $countEntry.Value -lt 0) {
+            Add-ProfileValidationError $errors `
+                "adventurePerformance.metrics.$($countEntry.Name) must be non-negative."
+        }
+    }
+    if (
+        $null -ne $timelineSynchronousTaskCount -and
+        $timelineSynchronousTaskCount -lt 1
+    ) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.metrics.timelineSynchronousTaskCount must be positive.'
+    }
+    if (
+        $null -ne $timelineSourceEventCount -and
+        ($timelineSourceEventCount -lt 1 -or $timelineSourceEventCount -gt 100000)
+    ) {
+        Add-ProfileValidationError $errors `
+            'adventurePerformance.metrics.timelineSourceEventCount must be between 1 and 100000.'
+    }
+    if (
+        $null -ne $timelineSynchronousTaskCount -and
+        $null -ne $timelineSourceEventCount -and
+        $timelineSynchronousTaskCount -gt $timelineSourceEventCount
+    ) {
+        Add-ProfileValidationError $errors `
+            'Synchronous timeline task count cannot exceed source event count.'
+    }
+    if (
+        $null -ne $metricValues.mapListFrameP95Ms -and
+        $null -ne $metricValues.mapListFrameMaxMs -and
+        [double]$metricValues.mapListFrameP95Ms -gt
+            [double]$metricValues.mapListFrameMaxMs
+    ) {
+        Add-ProfileValidationError $errors `
+            'Map/list frame p95 cannot exceed its maximum.'
+    }
+    if (
+        $null -ne $metricValues.timelineSynchronousTaskP95Ms -and
+        $null -ne $metricValues.timelineSynchronousTaskMaxMs -and
+        [double]$metricValues.timelineSynchronousTaskP95Ms -gt
+            [double]$metricValues.timelineSynchronousTaskMaxMs
+    ) {
+        Add-ProfileValidationError $errors `
+            'Timeline synchronous task p95 cannot exceed its maximum.'
+    }
+
+    $authority = Get-RequiredProfileProperty `
+        $Profile 'authorityInvariants' 'adventurePerformance' $errors
+    $invariantNames = @(
+        'threeNodeProjection',
+        'standardAdventureCommandsEquivalent',
+        'canonicalSnapshotPinned',
+        'evidenceAuthorityUnchanged',
+        'pairedSessionStartInputsEquivalent'
+    )
+    $invariantValues = @{}
+    foreach ($name in $invariantNames) {
+        $invariantValues[$name] = Get-RequiredProfileBoolean `
+            $authority `
+            $name `
+            'adventurePerformance.authorityInvariants' `
+            $errors
+    }
+
+    $viewport = Get-RequiredProfileProperty `
+        $Profile 'deviceViewport' 'adventurePerformance' $errors
+    $viewportValues = @{}
+    foreach ($name in @(
+        'physicalWidthPx',
+        'physicalHeightPx',
+        'logicalWidth',
+        'logicalHeight',
+        'devicePixelRatio'
+    )) {
+        $viewportValues[$name] = Get-RequiredProfileNumber `
+            $viewport `
+            $name `
+            'adventurePerformance.deviceViewport' `
+            $errors
+        if (
+            $null -ne $viewportValues[$name] -and
+            [double]$viewportValues[$name] -le 0
+        ) {
+            Add-ProfileValidationError $errors `
+                "adventurePerformance.deviceViewport.$name must be positive."
+        }
+    }
+    $viewportCaptured = $false
+    if (
+        $null -ne $viewportValues.physicalWidthPx -and
+        $null -ne $viewportValues.physicalHeightPx -and
+        $null -ne $viewportValues.logicalWidth -and
+        $null -ne $viewportValues.logicalHeight -and
+        $null -ne $viewportValues.devicePixelRatio
+    ) {
+        $widthDelta = [math]::Abs(
+            [double]$viewportValues.physicalWidthPx -
+            ([double]$viewportValues.logicalWidth *
+                [double]$viewportValues.devicePixelRatio)
+        )
+        $heightDelta = [math]::Abs(
+            [double]$viewportValues.physicalHeightPx -
+            ([double]$viewportValues.logicalHeight *
+                [double]$viewportValues.devicePixelRatio)
+        )
+        $viewportCaptured =
+            [double]$viewportValues.physicalWidthPx -gt 0 -and
+            [double]$viewportValues.physicalHeightPx -gt 0 -and
+            [double]$viewportValues.logicalWidth -gt 0 -and
+            [double]$viewportValues.logicalHeight -gt 0 -and
+            [double]$viewportValues.devicePixelRatio -gt 0 -and
+            $widthDelta -le 0.5 -and
+            $heightDelta -le 0.5
+        if (-not $viewportCaptured) {
+            Add-ProfileValidationError $errors `
+                'Device viewport physical/logical dimensions and DPR are inconsistent.'
+        }
+    }
+
+    $pause = Get-RequiredProfileProperty `
+        $Profile 'learnerPause' 'adventurePerformance' $errors
+    $timeoutPolicy = Get-RequiredProfileProperty `
+        $pause 'timeoutPolicy' 'adventurePerformance.learnerPause' $errors
+    $sessionTiming = Get-RequiredProfileProperty `
+        $pause 'sessionTiming' 'adventurePerformance.learnerPause' $errors
+    $maximumActiveEffortMs = Get-RequiredProfileInteger `
+        $pause `
+        'maximumActiveEffortMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $fakeClockAdvanceMs = Get-RequiredProfileInteger `
+        $pause `
+        'fakeClockAdvanceMs' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $boundaryExceeded = Get-RequiredProfileBoolean `
+        $pause `
+        'boundaryExceeded' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $missionAvailableAfterPause = Get-RequiredProfileBoolean `
+        $pause `
+        'missionAvailableAfterPause' `
+        'adventurePerformance.learnerPause' `
+        $errors
+    $pauseExpected =
+        $timeoutPolicy -ceq 'none' -and
+        $sessionTiming -ceq 'untimedAlternative' -and
+        $maximumActiveEffortMs -eq 600000 -and
+        $null -ne $fakeClockAdvanceMs -and
+        $fakeClockAdvanceMs -gt $maximumActiveEffortMs -and
+        $boundaryExceeded -eq $true -and
+        $missionAvailableAfterPause -eq $true
+
+    $passes = Get-RequiredProfileProperty `
+        $Profile 'passes' 'adventurePerformance' $errors
+    $passNames = @(
+        'profileMode',
+        'localAssetsValid',
+        'localEntryResolution',
+        'threeNodeJourneyProjection',
+        'firstMeaningfulRender',
+        'adventureSessionStartOverhead',
+        'mapListFrameCoverage',
+        'mapListTransitions',
+        'timelineLongTasks',
+        'learnerPause',
+        'deviceViewportCaptured'
+    )
+    $passValues = @{}
+    foreach ($name in $passNames) {
+        $passValues[$name] = Get-RequiredProfileBoolean `
+            $passes $name 'adventurePerformance.passes' $errors
+    }
+
+    $canCompute =
+        $null -ne $budgetValues.localEntryResolutionP95Ms -and
+        $null -ne $budgetValues.journeyProjectionP95Ms -and
+        $null -ne $budgetValues.firstMeaningfulRenderP95Ms -and
+        $null -ne $budgetValues.adventureSessionStartOverheadP95Ms -and
+        $null -ne $budgetValues.mapListFrameP95Ms -and
+        $null -ne $budgetValues.longFrameOrTaskMs -and
+        $null -ne $metricValues.localEntryResolutionP95Ms -and
+        $null -ne $metricValues.journeyProjectionP95Ms -and
+        $null -ne $metricValues.firstMeaningfulRenderP95Ms -and
+        $null -ne $metricValues.adventureSessionStartOverheadP95Ms -and
+        $null -ne $metricValues.mapListFrameP95Ms -and
+        $null -ne $metricValues.mapListFrameMaxMs -and
+        $null -ne $metricValues.timelineSynchronousTaskMaxMs -and
+        $null -ne $longFrameCount -and
+        $null -ne $timelineLongTaskCount -and
+        $null -ne $timelineSynchronousTaskCount -and
+        $null -ne $timelineSourceEventCount -and
+        $null -ne $frameCount
+    $expectedPasses = @{}
+    if ($canCompute) {
+        $expectedPasses.profileMode = $buildMode -ceq 'profile'
+        $expectedPasses.localAssetsValid = $true
+        $expectedPasses.localEntryResolution =
+            [double]$metricValues.localEntryResolutionP95Ms -le
+                [double]$budgetValues.localEntryResolutionP95Ms
+        $expectedPasses.threeNodeJourneyProjection =
+            [double]$metricValues.journeyProjectionP95Ms -le
+                [double]$budgetValues.journeyProjectionP95Ms -and
+            $invariantValues.threeNodeProjection -eq $true
+        $expectedPasses.firstMeaningfulRender =
+            [double]$metricValues.firstMeaningfulRenderP95Ms -le
+                [double]$budgetValues.firstMeaningfulRenderP95Ms
+        $expectedPasses.adventureSessionStartOverhead =
+            [double]$metricValues.adventureSessionStartOverheadP95Ms -le
+                [double]$budgetValues.adventureSessionStartOverheadP95Ms -and
+            $invariantValues.standardAdventureCommandsEquivalent -eq $true -and
+            $invariantValues.canonicalSnapshotPinned -eq $true -and
+            $invariantValues.evidenceAuthorityUnchanged -eq $true -and
+            $invariantValues.pairedSessionStartInputsEquivalent -eq $true
+        $expectedPasses.mapListFrameCoverage = $frameCount -ge 20
+        $expectedPasses.mapListTransitions =
+            $expectedPasses.mapListFrameCoverage -and
+            [double]$metricValues.mapListFrameP95Ms -le
+                [double]$budgetValues.mapListFrameP95Ms -and
+            [double]$metricValues.mapListFrameMaxMs -le
+                [double]$budgetValues.longFrameOrTaskMs -and
+            $longFrameCount -eq 0
+        $expectedPasses.timelineLongTasks =
+            $sampleValues.timelineTransitionMarkers -eq 20 -and
+            $timelineSynchronousTaskCount -gt 0 -and
+            $timelineSourceEventCount -le 100000 -and
+            [double]$metricValues.timelineSynchronousTaskMaxMs -le
+                [double]$budgetValues.longFrameOrTaskMs -and
+            $timelineLongTaskCount -eq 0
+        $expectedPasses.learnerPause = $pauseExpected
+        $expectedPasses.deviceViewportCaptured = $viewportCaptured
+
+        foreach ($name in $passNames) {
+            if (
+                $null -ne $passValues[$name] -and
+                $passValues[$name] -ne $expectedPasses[$name]
+            ) {
+                Add-ProfileValidationError $errors `
+                    "adventurePerformance.passes.$name is inconsistent with evidence."
+            }
+        }
+    }
+
+    $reportedAllBudgetsPassed = Get-RequiredProfileBoolean `
+        $Profile 'allBudgetsPassed' 'adventurePerformance' $errors
+    $computedAllBudgetsPassed = $null
+    if ($canCompute -and $passNames.Where({ $null -eq $passValues[$_] }).Count -eq 0) {
+        $computedAllBudgetsPassed = $true
+        foreach ($name in $passNames) {
+            if ($passValues[$name] -ne $true) {
+                $computedAllBudgetsPassed = $false
+            }
+        }
+        if ($reportedAllBudgetsPassed -ne $computedAllBudgetsPassed) {
+            Add-ProfileValidationError $errors `
+                'adventurePerformance.allBudgetsPassed is inconsistent with pass flags.'
+        }
+    }
+
+    return [pscustomobject]@{
+        IsValid = $errors.Count -eq 0
+        AllBudgetsPassed = $reportedAllBudgetsPassed
+        Errors = @($errors)
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($DeviceId)) {
     Write-RunnerError 'Select an Android device explicitly with -DeviceId.'
     exit 64
@@ -104,6 +626,73 @@ if (-not (Test-PathWithinRoot `
 
 Push-Location $repositoryRoot
 try {
+    $commitOutput = @(& git rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0 -or $commitOutput.Count -ne 1) {
+        Write-RunnerError 'Unable to resolve the build commit identity.'
+        exit 68
+    }
+    $commitSha = ([string]$commitOutput[0]).Trim().ToLowerInvariant()
+    if ($commitSha -notmatch '^[0-9a-f]{40}$') {
+        Write-RunnerError 'Git returned a non-canonical commit identity.'
+        exit 68
+    }
+    $shortCommit = $commitSha.Substring(0, 12)
+
+    & git diff --cached --quiet --exit-code
+    $stagedDiffExitCode = $LASTEXITCODE
+    if ($stagedDiffExitCode -notin @(0, 1)) {
+        Write-RunnerError 'Unable to inspect staged source content.'
+        exit 68
+    }
+    & git diff --quiet --exit-code
+    $unstagedDiffExitCode = $LASTEXITCODE
+    if ($unstagedDiffExitCode -notin @(0, 1)) {
+        Write-RunnerError 'Unable to inspect unstaged source content.'
+        exit 68
+    }
+    $untrackedOutput = @(& git ls-files --others --exclude-standard)
+    if ($LASTEXITCODE -ne 0) {
+        Write-RunnerError 'Unable to inspect non-ignored untracked files.'
+        exit 68
+    }
+    $nonIgnoredUntrackedPaths = @(
+        $untrackedOutput | ForEach-Object { ([string]$_).Trim() } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    )
+    $trackedStatus = @(& git status --porcelain --untracked-files=no)
+    if ($LASTEXITCODE -ne 0) {
+        Write-RunnerError 'Unable to inspect tracked worktree status.'
+        exit 68
+    }
+    $statusOnlyTrackedPaths = @(
+        $trackedStatus | ForEach-Object {
+            $line = [string]$_
+            if ($line.Length -ge 4) {
+                $line.Substring(3).Trim()
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($line)) {
+                $line.Trim()
+            }
+        }
+    )
+    $hasStagedContentDiff = $stagedDiffExitCode -eq 1
+    $hasUnstagedContentDiff = $unstagedDiffExitCode -eq 1
+    $sourceReproducible =
+        -not $hasStagedContentDiff -and
+        -not $hasUnstagedContentDiff -and
+        $nonIgnoredUntrackedPaths.Count -eq 0
+    if (-not $sourceReproducible) {
+        $sourceError = ((
+            'Committed source is not reproducible: staged content diff={0}; ' +
+            'unstaged content diff={1}; non-ignored untracked files={2}.'
+        ) -f
+            $hasStagedContentDiff,
+            $hasUnstagedContentDiff,
+            $nonIgnoredUntrackedPaths.Count)
+        Write-RunnerError $sourceError
+        exit 71
+    }
+
     $devicesOutput = @(& flutter devices --machine)
     if ($LASTEXITCODE -ne 0) {
         Write-RunnerError 'Unable to enumerate Flutter devices.'
@@ -161,23 +750,6 @@ try {
         'unclassified_android_rehearsal'
     }
     $eligibleForPhysicalCertification = $isEmulator -eq $false
-
-    $commitOutput = @(& git rev-parse HEAD)
-    if ($LASTEXITCODE -ne 0 -or $commitOutput.Count -ne 1) {
-        Write-RunnerError 'Unable to resolve the build commit identity.'
-        exit 68
-    }
-    $commitSha = ([string]$commitOutput[0]).Trim().ToLowerInvariant()
-    if ($commitSha -notmatch '^[0-9a-f]{40}$') {
-        Write-RunnerError 'Git returned a non-canonical commit identity.'
-        exit 68
-    }
-    $shortCommit = $commitSha.Substring(0, 12)
-    $trackedChanges = @(& git status --porcelain --untracked-files=no)
-    if ($LASTEXITCODE -ne 0) {
-        Write-RunnerError 'Unable to inspect tracked worktree state.'
-        exit 68
-    }
 
     $versionMatch = Select-String `
         -LiteralPath (Join-Path $repositoryRoot 'pubspec.yaml') `
@@ -272,6 +844,7 @@ try {
     $integrationResponse = $null
     $profile = $null
     $allBudgetsPassed = $null
+    $profileValidationErrors = @()
     if ($integrationOutputExists) {
         try {
             $integrationResponse = Get-Content `
@@ -280,13 +853,13 @@ try {
             $profile = Get-ObjectPropertyValue `
                 $integrationResponse `
                 'adventurePerformance'
-            $budgetValue = Get-ObjectPropertyValue $profile 'allBudgetsPassed'
-            if ($budgetValue -is [bool]) {
-                $allBudgetsPassed = $budgetValue
-            }
-            else {
-                $integrationOutputError = `
-                    'allBudgetsPassed is missing or is not boolean.'
+            $profileValidation = Test-AdventurePerformanceProfile $profile
+            $allBudgetsPassed = $profileValidation.AllBudgetsPassed
+            if (-not $profileValidation.IsValid) {
+                $profileValidationErrors = @(
+                    $profileValidation.Errors | Select-Object -First 50
+                )
+                $integrationOutputError = $profileValidationErrors -join ' '
             }
         }
         catch {
@@ -340,7 +913,12 @@ try {
         source = [ordered]@{
             commitSha = $commitSha
             applicationVersion = $applicationVersion
-            trackedWorktreeChangeCount = $trackedChanges.Count
+            reproducible = $sourceReproducible
+            stagedContentDiff = $hasStagedContentDiff
+            unstagedContentDiff = $hasUnstagedContentDiff
+            nonIgnoredUntrackedCount = $nonIgnoredUntrackedPaths.Count
+            statusOnlyTrackedPathCount = $statusOnlyTrackedPaths.Count
+            statusOnlyTrackedPaths = $statusOnlyTrackedPaths
         }
         device = [ordered]@{
             id = $DeviceId
@@ -372,6 +950,7 @@ try {
             sha256 = $integrationHash
             byteLength = $integrationBytes
             error = $integrationOutputError
+            validationErrors = $profileValidationErrors
         }
         profile = $profile
         result = [ordered]@{

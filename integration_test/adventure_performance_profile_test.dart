@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -38,8 +40,11 @@ const _renderBudgetUs = 1500 * Duration.microsecondsPerMillisecond;
 const _sessionOverheadBudgetUs = 150 * Duration.microsecondsPerMillisecond;
 const _frameBudgetUs = 16700;
 const _longFrameOrTaskBudgetUs = 100 * Duration.microsecondsPerMillisecond;
-const _learnerPause = Duration(seconds: 3);
+const _learnerPauseBoundaryMargin = Duration(seconds: 1);
 const _frameReportKey = 'adventureMapListFrameTiming';
+const _timelineTaskName = 'LexiQuestAdventureMapListTransition';
+const _timelineTaskFilterKey = 'lexiquest.adventure.map-list-transition';
+const _maximumTimelineSourceEvents = 100000;
 
 final _now = DateTime.utc(2026, 9, 4, 10);
 const _ownerId = 'owner-001';
@@ -51,10 +56,15 @@ void main() {
   testWidgets(
     'Adventure production profile stays within approved Android budgets',
     (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      final physicalSize = tester.view.physicalSize;
+      final devicePixelRatio = tester.view.devicePixelRatio;
+      final logicalSize = physicalSize / devicePixelRatio;
+      final deviceViewportCaptured =
+          physicalSize.width > 0 &&
+          physicalSize.height > 0 &&
+          logicalSize.width > 0 &&
+          logicalSize.height > 0 &&
+          devicePixelRatio > 0;
 
       const validator = AdventureWorldCatalogValidator();
       final catalog = PackagedAdventureWorldCatalog.forLocale('th');
@@ -149,55 +159,55 @@ void main() {
       }
       const composer = CanonicalAdventureSessionComposer();
       const bridge = AdventureLearningBridge();
-      final standardRun = _measureSync<LessonStartCommand>(
+      final sessionPreparationRun = await _measureSessionPreparationPairs(
         warmups: _warmupCount,
         samples: _sampleCount,
-        action: (_) => LessonStartCommand(
-          mode: configuration.mode,
-          sessionId: 'session:performance',
-          startedAtUtc: _now,
-          itemCount: mission.content.length,
-          ownerId: _ownerId,
-          configuration: configuration,
-        ),
-        consume: _consumeCommand,
+        composer: composer,
+        bridge: bridge,
+        mission: mission,
+        today: today,
+        configuration: configuration,
+        entry: entryRun.last,
       );
-      final adventureRun = await _measureAsync<AdventureLearningLaunch>(
-        warmups: _warmupCount,
-        samples: _sampleCount,
-        action: (_) async {
-          final plan = await composer.compose(
-            mission: mission,
-            today: today,
-            requestedConfiguration: configuration,
-            entry: entryRun.last,
-          );
-          return bridge.prepare(
-            plan: plan,
-            activeOwnerId: _ownerId,
-            sessionId: 'session:performance',
-            startedAtUtc: _now,
-          );
-        },
-        consume: _consumeLaunch,
+      final standardSessionStartP95Us = _p95(
+        sessionPreparationRun.standardSamples,
       );
-      final standardSessionStartP95Us = _p95(standardRun.samples);
-      final adventureSessionStartP95Us = _p95(adventureRun.samples);
-      final sessionOverheadP95Us =
-          adventureSessionStartP95Us > standardSessionStartP95Us
-          ? adventureSessionStartP95Us - standardSessionStartP95Us
-          : 0;
+      final adventureSessionStartP95Us = _p95(
+        sessionPreparationRun.adventureSamples,
+      );
+      final sessionOverheadP95Us = _p95(sessionPreparationRun.overheadSamples);
       final commandAuthorityPreserved =
-          jsonEncode(_commandPayload(adventureRun.last.command)) ==
-          jsonEncode(_commandPayload(standardRun.last));
+          sessionPreparationRun.allCommandsEquivalent;
+      final pairedSessionStartInputsEquivalent =
+          sessionPreparationRun.allInputsEquivalent;
       final snapshotAuthorityPreserved =
-          adventureRun.last.plan.sourceEvaluatedAtUtc == today.evaluatedAtUtc &&
-          _sameContent(adventureRun.last.plan.content, mission.content) &&
-          identical(adventureRun.last.plan.configuration, configuration);
-      final evidenceAuthorityPreserved = !adventureRun.last.plan.origin
+          sessionPreparationRun.lastAdventure.plan.sourceEvaluatedAtUtc ==
+              today.evaluatedAtUtc &&
+          _sameContent(
+            sessionPreparationRun.lastAdventure.plan.content,
+            mission.content,
+          ) &&
+          identical(
+            sessionPreparationRun.lastAdventure.plan.configuration,
+            configuration,
+          );
+      final evidenceAuthorityPreserved = !sessionPreparationRun
+          .lastAdventure
+          .plan
+          .origin
           .toJson()
           .containsKey('evidence');
 
+      final actualSessionConfiguration =
+          sessionPreparationRun.lastAdventure.plan.configuration;
+      final maximumActiveEffort =
+          actualSessionConfiguration.timing.maximumActiveEffort;
+      if (!actualSessionConfiguration.timing.isUntimedAlternative ||
+          maximumActiveEffort == null) {
+        fail('The canonical Adventure launch did not retain untimed timing.');
+      }
+      final fakeClockAdvance =
+          maximumActiveEffort + _learnerPauseBoundaryMargin;
       var missionStarts = 0;
       await tester.pumpWidget(
         _adventureApp(
@@ -208,15 +218,16 @@ void main() {
         ),
       );
       await tester.pump();
-      await tester.runAsync(() => Future<void>.delayed(_learnerPause));
-      await tester.pump();
+      await _pumpWithFakeClock(tester, fakeClockAdvance);
       final missionButton = find.byKey(
         const ValueKey('adventure-start-mission'),
       );
+      final pauseBoundaryExceeded = fakeClockAdvance > maximumActiveEffort;
       final missionAvailableAfterPause =
           missionButton.evaluate().length == 1 &&
           tester.widget<ButtonStyleButton>(missionButton).onPressed != null &&
-          missionStarts == 0;
+          missionStarts == 0 &&
+          pauseBoundaryExceeded;
 
       await tester.ensureVisible(
         find.byKey(const ValueKey('adventure-map-list-switch')),
@@ -224,14 +235,10 @@ void main() {
       await tester.pumpAndSettle();
       await _selectJourneyPresentation(tester, showList: true);
       await _selectJourneyPresentation(tester, showList: false);
-      final transitionTaskSamples = <int>[];
       await binding.watchPerformance(() async {
         for (var index = 0; index < _sampleCount; index++) {
           final showList = index.isEven;
-          final stopwatch = Stopwatch()..start();
           await _selectJourneyPresentation(tester, showList: showList);
-          stopwatch.stop();
-          transitionTaskSamples.add(stopwatch.elapsedMicroseconds);
         }
       }, reportKey: _frameReportKey);
       final frameSummary = Map<String, dynamic>.from(
@@ -252,14 +259,45 @@ void main() {
       final frameMaxUs = frameTimes.reduce(
         (left, right) => left >= right ? left : right,
       );
-      final transitionTaskP95Us = _p95(transitionTaskSamples);
-      final transitionTaskMaxUs = transitionTaskSamples.reduce(
+      final frameCoveragePassed = frameTimes.length >= _sampleCount;
+
+      final timeline = await binding.traceTimeline(() async {
+        for (var index = 0; index < _sampleCount; index++) {
+          final task = developer.TimelineTask(
+            filterKey: _timelineTaskFilterKey,
+          );
+          task.start(
+            _timelineTaskName,
+            arguments: <String, Object?>{'transitionIndex': index},
+          );
+          try {
+            await _selectJourneyPresentation(tester, showList: index.isEven);
+          } finally {
+            task.finish();
+          }
+        }
+      }, streams: const <String>['Dart']);
+      final timelineEvents = timeline.traceEvents ?? const [];
+      final timelineTaskSummary = _summarizeTransitionTimeline(timelineEvents);
+      if (timelineTaskSummary.transitionMarkerCount != _sampleCount) {
+        fail(
+          'Expected $_sampleCount bounded transition timeline markers, found '
+          '${timelineTaskSummary.transitionMarkerCount}.',
+        );
+      }
+      final timelineSynchronousTaskSamples =
+          timelineTaskSummary.synchronousTaskDurationsUs;
+      if (timelineSynchronousTaskSamples.isEmpty) {
+        fail('The bounded transition timeline contained no synchronous work.');
+      }
+      final timelineTaskP95Us = _p95(timelineSynchronousTaskSamples);
+      final timelineTaskMaxUs = timelineSynchronousTaskSamples.reduce(
         (left, right) => left >= right ? left : right,
       );
       final longFrameCount = frameTimes
           .where((value) => value > _longFrameOrTaskBudgetUs)
           .length;
-      final longTaskCount = transitionTaskSamples
+      final timelineLongTaskCount = timelineSynchronousTaskSamples
           .where((value) => value > _longFrameOrTaskBudgetUs)
           .length;
 
@@ -270,12 +308,19 @@ void main() {
       final sessionPassed =
           sessionOverheadP95Us <= _sessionOverheadBudgetUs &&
           commandAuthorityPreserved &&
+          pairedSessionStartInputsEquivalent &&
           snapshotAuthorityPreserved &&
           evidenceAuthorityPreserved;
       final transitionsPassed =
+          frameCoveragePassed &&
           frameP95Us <= _frameBudgetUs &&
-          longFrameCount == 0 &&
-          longTaskCount == 0;
+          frameMaxUs <= _longFrameOrTaskBudgetUs &&
+          longFrameCount == 0;
+      final timelineTasksPassed =
+          timelineTaskSummary.transitionMarkerCount == _sampleCount &&
+          timelineSynchronousTaskSamples.isNotEmpty &&
+          timelineTaskMaxUs <= _longFrameOrTaskBudgetUs &&
+          timelineLongTaskCount == 0;
       final pausePassed = missionAvailableAfterPause;
       final allBudgetsPassed =
           kProfileMode &&
@@ -285,7 +330,9 @@ void main() {
           renderPassed &&
           sessionPassed &&
           transitionsPassed &&
-          pausePassed;
+          timelineTasksPassed &&
+          pausePassed &&
+          deviceViewportCaptured;
 
       final profile = <String, Object?>{
         'schemaVersion': 1,
@@ -293,14 +340,26 @@ void main() {
         'buildMode': kProfileMode ? 'profile' : 'not-profile',
         'benchmarkSink': _benchmarkSink,
         'percentileMethod': 'nearest-rank',
+        'deviceViewport': <String, double>{
+          'physicalWidthPx': physicalSize.width,
+          'physicalHeightPx': physicalSize.height,
+          'logicalWidth': logicalSize.width,
+          'logicalHeight': logicalSize.height,
+          'devicePixelRatio': devicePixelRatio,
+        },
         'sampleCounts': <String, int>{
           'localEntryResolution': entryRun.samples.length,
           'journeyProjection': journeyRun.samples.length,
           'firstMeaningfulRender': renderSamples.length,
-          'standardSessionStart': standardRun.samples.length,
-          'adventureSessionStart': adventureRun.samples.length,
+          'standardSessionStart': sessionPreparationRun.standardSamples.length,
+          'adventureSessionStart':
+              sessionPreparationRun.adventureSamples.length,
+          'pairedSessionStartOverhead':
+              sessionPreparationRun.overheadSamples.length,
+          'mapListTransitions': _sampleCount,
           'mapListFrames': frameTimes.length,
-          'mapListTransitionTasks': transitionTaskSamples.length,
+          'timelineTransitionMarkers':
+              timelineTaskSummary.transitionMarkerCount,
         },
         'budgets': <String, Object?>{
           'localEntryResolutionP95Ms': _milliseconds(_entryBudgetUs),
@@ -325,10 +384,12 @@ void main() {
           ),
           'mapListFrameP95Ms': _milliseconds(frameP95Us),
           'mapListFrameMaxMs': _milliseconds(frameMaxUs),
-          'mapListTransitionTaskP95Ms': _milliseconds(transitionTaskP95Us),
-          'mapListTransitionTaskMaxMs': _milliseconds(transitionTaskMaxUs),
+          'timelineSynchronousTaskP95Ms': _milliseconds(timelineTaskP95Us),
+          'timelineSynchronousTaskMaxMs': _milliseconds(timelineTaskMaxUs),
           'mapListLongFrameCount': longFrameCount,
-          'mapListLongTaskCount': longTaskCount,
+          'timelineLongTaskCount': timelineLongTaskCount,
+          'timelineSynchronousTaskCount': timelineSynchronousTaskSamples.length,
+          'timelineSourceEventCount': timelineTaskSummary.sourceEventCount,
         },
         'passes': <String, bool>{
           'profileMode': kProfileMode,
@@ -337,31 +398,46 @@ void main() {
           'threeNodeJourneyProjection': journeyPassed,
           'firstMeaningfulRender': renderPassed,
           'adventureSessionStartOverhead': sessionPassed,
+          'mapListFrameCoverage': frameCoveragePassed,
           'mapListTransitions': transitionsPassed,
+          'timelineLongTasks': timelineTasksPassed,
           'learnerPause': pausePassed,
+          'deviceViewportCaptured': deviceViewportCaptured,
         },
         'authorityInvariants': <String, bool>{
           'threeNodeProjection': projectedThreeNodes,
           'standardAdventureCommandsEquivalent': commandAuthorityPreserved,
           'canonicalSnapshotPinned': snapshotAuthorityPreserved,
           'evidenceAuthorityUnchanged': evidenceAuthorityPreserved,
+          'pairedSessionStartInputsEquivalent':
+              pairedSessionStartInputsEquivalent,
         },
         'measurementScope': <String, String>{
           'firstMeaningfulRender':
               'packaged catalog and asset validation, production journey '
               'projection, and AdventureHubScreen first meaningful frame',
           'sessionStartOverhead':
-              'Adventure compose and bridge preparation minus canonical '
-              'Standard LessonStartCommand construction; shared controller '
-              'start is unchanged and excluded',
+              'Per-sample Adventure canonical compose+bridge preparation '
+              'minus the equivalent production Standard LessonStartCommand '
+              'preparation using the same mission, configuration, owner, '
+              'session ID, and start instant; alternating pair order limits '
+              'ordering bias, p95 is calculated from paired differences, and '
+              'the unchanged shared controller start is excluded',
           'mapListFrame':
-              'maximum of Flutter build and raster duration for each frame',
-          'mapListTask': 'tap, state transition, and settled widget pump',
+              'maximum of Flutter build and raster duration for every frame '
+              'captured across 20 fully settled map/list transitions',
+          'mapListTask':
+              '20 Dart TimelineTask markers bound the tap-through-settle '
+              'trace; long tasks are complete or paired synchronous Dart '
+              'events within that trace, and only aggregate '
+              'p95/max/count values are retained, never the raw timeline',
         },
         'learnerPause': <String, Object?>{
           'timeoutPolicy': 'none',
-          'sessionTiming': configuration.timing.kind.name,
-          'observedPauseMs': _learnerPause.inMilliseconds,
+          'sessionTiming': actualSessionConfiguration.timing.kind.name,
+          'maximumActiveEffortMs': maximumActiveEffort.inMilliseconds,
+          'fakeClockAdvanceMs': fakeClockAdvance.inMilliseconds,
+          'boundaryExceeded': pauseBoundaryExceeded,
           'missionAvailableAfterPause': missionAvailableAfterPause,
         },
         'allBudgetsPassed': allBudgetsPassed,
@@ -395,6 +471,7 @@ void main() {
         reason: 'First meaningful Adventure render p95 exceeded 1.5 s.',
       );
       expect(commandAuthorityPreserved, isTrue);
+      expect(pairedSessionStartInputsEquivalent, isTrue);
       expect(snapshotAuthorityPreserved, isTrue);
       expect(evidenceAuthorityPreserved, isTrue);
       expect(
@@ -407,11 +484,16 @@ void main() {
         lessThanOrEqualTo(_frameBudgetUs),
         reason: 'Map/list frame p95 exceeded 16.7 ms.',
       );
+      expect(
+        frameCoveragePassed,
+        isTrue,
+        reason: 'Fewer than 20 frames covered the 20 map/list transitions.',
+      );
       expect(longFrameCount, 0, reason: 'A map/list frame exceeded 100 ms.');
       expect(
-        longTaskCount,
+        timelineLongTaskCount,
         0,
-        reason: 'A map/list transition task exceeded 100 ms.',
+        reason: 'A timeline-derived map/list task exceeded 100 ms.',
       );
       expect(
         missionAvailableAfterPause,
@@ -419,7 +501,6 @@ void main() {
         reason: 'Learner pause disabled or started the mission.',
       );
     },
-    timeout: Timeout.none,
   );
 }
 
@@ -472,12 +553,62 @@ Future<void> _selectJourneyPresentation(
   required bool showList,
 }) async {
   await tester.tap(find.text(showList ? 'รายการ' : 'แผนที่'));
-  await tester.pump();
+  await tester.pumpAndSettle();
+  await tester.pump(const Duration(milliseconds: 16));
   final target = find.byKey(
     ValueKey(showList ? 'adventure-map-list' : 'adventure-map'),
   );
   if (target.evaluate().length != 1) {
     fail('Adventure map/list transition did not settle.');
+  }
+}
+
+Future<void> _pumpWithFakeClock(WidgetTester tester, Duration duration) {
+  _ManualOneShotTimer? pumpTimer;
+  final frame = runZoned<Future<void>>(
+    () => tester.pump(duration),
+    zoneSpecification: ZoneSpecification(
+      createTimer: (self, parent, zone, timerDuration, callback) {
+        if (pumpTimer == null && timerDuration == duration) {
+          pumpTimer = _ManualOneShotTimer(zone, callback);
+          return pumpTimer!;
+        }
+        return parent.createTimer(zone, timerDuration, callback);
+      },
+    ),
+  );
+  final timer = pumpTimer;
+  if (timer == null) {
+    throw StateError('The live widget pump did not schedule its clock timer.');
+  }
+  timer.fire();
+  return frame;
+}
+
+final class _ManualOneShotTimer implements Timer {
+  _ManualOneShotTimer(this._zone, this._callback);
+
+  final Zone _zone;
+  final void Function() _callback;
+  var _active = true;
+  var _tick = 0;
+
+  void fire() {
+    if (!_active) return;
+    _active = false;
+    _tick = 1;
+    _zone.runGuarded(_callback);
+  }
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  int get tick => _tick;
+
+  @override
+  void cancel() {
+    _active = false;
   }
 }
 
@@ -502,25 +633,205 @@ Future<({List<int> samples, T last})> _measureAsync<T>({
   return (samples: List<int>.unmodifiable(durations), last: last);
 }
 
-({List<int> samples, T last}) _measureSync<T>({
+Future<
+  ({
+    List<int> standardSamples,
+    List<int> adventureSamples,
+    List<int> overheadSamples,
+    LessonStartCommand lastStandard,
+    AdventureLearningLaunch lastAdventure,
+    bool allCommandsEquivalent,
+    bool allInputsEquivalent,
+  })
+>
+_measureSessionPreparationPairs({
   required int warmups,
   required int samples,
-  required T Function(int index) action,
-  required void Function(T value) consume,
-}) {
-  for (var index = 0; index < warmups; index++) {
-    consume(action(index));
+  required CanonicalAdventureSessionComposer composer,
+  required AdventureLearningBridge bridge,
+  required AdventureMissionRef mission,
+  required TodayHubSnapshot today,
+  required SessionConfiguration configuration,
+  required AdventureProductEntryDecision entry,
+}) async {
+  final standardSamples = <int>[];
+  final adventureSamples = <int>[];
+  final overheadSamples = <int>[];
+  late LessonStartCommand lastStandard;
+  late AdventureLearningLaunch lastAdventure;
+  var allCommandsEquivalent = true;
+  var allInputsEquivalent = true;
+
+  for (var index = 0; index < warmups + samples; index++) {
+    final sessionId = 'session:performance:$index';
+    late ({LessonStartCommand value, int elapsedUs}) standard;
+    late ({AdventureLearningLaunch value, int elapsedUs}) adventure;
+
+    ({LessonStartCommand value, int elapsedUs}) prepareStandard() {
+      final stopwatch = Stopwatch()..start();
+      final value = LessonStartCommand(
+        mode: configuration.mode,
+        sessionId: sessionId,
+        startedAtUtc: _now,
+        itemCount: mission.content.length,
+        ownerId: _ownerId,
+        configuration: configuration,
+      );
+      stopwatch.stop();
+      _consumeCommand(value);
+      return (value: value, elapsedUs: stopwatch.elapsedMicroseconds);
+    }
+
+    Future<({AdventureLearningLaunch value, int elapsedUs})>
+    prepareAdventure() async {
+      final stopwatch = Stopwatch()..start();
+      final plan = await composer.compose(
+        mission: mission,
+        today: today,
+        requestedConfiguration: configuration,
+        entry: entry,
+      );
+      final value = bridge.prepare(
+        plan: plan,
+        activeOwnerId: _ownerId,
+        sessionId: sessionId,
+        startedAtUtc: _now,
+      );
+      stopwatch.stop();
+      _consumeLaunch(value);
+      return (value: value, elapsedUs: stopwatch.elapsedMicroseconds);
+    }
+
+    if (index.isEven) {
+      standard = prepareStandard();
+      adventure = await prepareAdventure();
+    } else {
+      adventure = await prepareAdventure();
+      standard = prepareStandard();
+    }
+    lastStandard = standard.value;
+    lastAdventure = adventure.value;
+
+    final commandsEquivalent =
+        jsonEncode(_commandPayload(adventure.value.command)) ==
+        jsonEncode(_commandPayload(standard.value));
+    allCommandsEquivalent &= commandsEquivalent;
+    allInputsEquivalent &=
+        commandsEquivalent &&
+        identical(standard.value.configuration, configuration) &&
+        identical(adventure.value.plan.configuration, configuration) &&
+        adventure.value.plan.sourceEvaluatedAtUtc == today.evaluatedAtUtc &&
+        _sameContent(adventure.value.plan.content, mission.content);
+
+    if (index >= warmups) {
+      standardSamples.add(standard.elapsedUs);
+      adventureSamples.add(adventure.elapsedUs);
+      overheadSamples.add(adventure.elapsedUs - standard.elapsedUs);
+    }
   }
-  final durations = <int>[];
-  late T last;
-  for (var index = 0; index < samples; index++) {
-    final stopwatch = Stopwatch()..start();
-    last = action(index + warmups);
-    consume(last);
-    stopwatch.stop();
-    durations.add(stopwatch.elapsedMicroseconds);
+
+  return (
+    standardSamples: List<int>.unmodifiable(standardSamples),
+    adventureSamples: List<int>.unmodifiable(adventureSamples),
+    overheadSamples: List<int>.unmodifiable(overheadSamples),
+    lastStandard: lastStandard,
+    lastAdventure: lastAdventure,
+    allCommandsEquivalent: allCommandsEquivalent,
+    allInputsEquivalent: allInputsEquivalent,
+  );
+}
+
+({
+  List<int> synchronousTaskDurationsUs,
+  int transitionMarkerCount,
+  int sourceEventCount,
+})
+_summarizeTransitionTimeline(Iterable<Object?> events) {
+  final markerStartsById = <String, int>{};
+  final synchronousStacks = <String, List<({String name, int startedAtUs})>>{};
+  final synchronousTaskDurationsUs = <int>[];
+  var transitionMarkerCount = 0;
+  var sourceEventCount = 0;
+
+  for (final rawEvent in events) {
+    sourceEventCount += 1;
+    if (sourceEventCount > _maximumTimelineSourceEvents) {
+      throw StateError(
+        'Bounded transition trace exceeded $_maximumTimelineSourceEvents '
+        'source events.',
+      );
+    }
+    final dynamic event = rawEvent;
+    final Object? rawJson = event.json;
+    if (rawJson is! Map) continue;
+    final json = Map<String, Object?>.from(rawJson);
+    final timestamp = json['ts'];
+    if (timestamp is! num) continue;
+    final phase = json['ph'];
+    final name = json['name']?.toString() ?? '<unnamed>';
+
+    if (name == _timelineTaskName) {
+      final arguments = json['args'];
+      if (arguments is! Map ||
+          arguments['filterKey'] != _timelineTaskFilterKey) {
+        continue;
+      }
+      final id = _timelineEventId(json['id'] ?? json['id2']);
+      if (id == null) continue;
+      if (phase == 'b' || phase == 'S') {
+        markerStartsById[id] = timestamp.round();
+      } else if (phase == 'e' || phase == 'F') {
+        final startedAt = markerStartsById.remove(id);
+        if (startedAt != null && timestamp >= startedAt) {
+          transitionMarkerCount += 1;
+        }
+      }
+      continue;
+    }
+
+    if (phase == 'X') {
+      final duration = json['dur'];
+      if (duration is num && duration >= 0) {
+        synchronousTaskDurationsUs.add(duration.round());
+      }
+      continue;
+    }
+    final threadKey = '${json['pid'] ?? ''}:${json['tid'] ?? ''}';
+    if (phase == 'B') {
+      synchronousStacks
+          .putIfAbsent(threadKey, () => <({String name, int startedAtUs})>[])
+          .add((name: name, startedAtUs: timestamp.round()));
+      continue;
+    }
+    if (phase == 'E') {
+      final stack = synchronousStacks[threadKey];
+      if (stack != null && stack.isNotEmpty) {
+        final started = stack.removeLast();
+        if (timestamp >= started.startedAtUs) {
+          synchronousTaskDurationsUs.add(
+            timestamp.round() - started.startedAtUs,
+          );
+        }
+      }
+    }
   }
-  return (samples: List<int>.unmodifiable(durations), last: last);
+
+  return (
+    synchronousTaskDurationsUs: List<int>.unmodifiable(
+      synchronousTaskDurationsUs,
+    ),
+    transitionMarkerCount: transitionMarkerCount,
+    sourceEventCount: sourceEventCount,
+  );
+}
+
+String? _timelineEventId(Object? value) {
+  if (value == null) return null;
+  if (value is Map) {
+    final nested = value['local'] ?? value['global'];
+    return nested?.toString();
+  }
+  return value.toString();
 }
 
 int _p95(List<int> values) {

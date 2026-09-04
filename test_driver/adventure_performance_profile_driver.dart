@@ -30,9 +30,12 @@ Future<void> main() => integrationDriver(
       );
     }
 
+    final boundedResponse = <String, Object?>{
+      'adventurePerformance': data?['adventurePerformance'],
+    };
     await output.parent.create(recursive: true);
     await output.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(data),
+      const JsonEncoder.withIndent('  ').convert(boundedResponse),
       flush: true,
     );
   },
