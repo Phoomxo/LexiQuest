@@ -147,11 +147,195 @@ void main() {
   );
 
   test(
+    'supplemental exceptions degrade only next preview and preserve Today primary',
+    () async {
+      final primaryCases =
+          <({TodayHubSnapshot today, AdventureMissionKind expectedKind})>[
+            (
+              today: _today(resumableSession: _session()),
+              expectedKind: AdventureMissionKind.resume,
+            ),
+            (
+              today: _today(
+                reviewWork: <TodayHubReviewWorkItem>[_review('word-a')],
+              ),
+              expectedKind: AdventureMissionKind.review,
+            ),
+            (
+              today: _today(recommendation: _recommended('word-new')),
+              expectedKind: AdventureMissionKind.recommendation,
+            ),
+          ];
+
+      for (final failedAuthority in _supplementalAuthorities) {
+        for (final primaryCase in primaryCases) {
+          final result = await AdventureJourneyUseCases(
+            factReaders: <AdventureJourneyFactReader>[
+              for (final authority in _supplementalAuthorities)
+                if (authority == failedAuthority)
+                  _ThrowingFacts(authority)
+                else
+                  _Facts(authority),
+            ],
+          ).compose(_request(today: primaryCase.today));
+
+          expect(
+            result.dependencyStates[failedAuthority],
+            AdventureJourneyDependencyState.unavailable,
+            reason: failedAuthority.name,
+          );
+          expect(
+            result.freshness,
+            AdventureSnapshotFreshness.current,
+            reason: failedAuthority.name,
+          );
+          expect(
+            result.primaryMission?.kind,
+            primaryCase.expectedKind,
+            reason: failedAuthority.name,
+          );
+          expect(
+            result.nodes
+                .singleWhere(
+                  (node) => node.nodeId == result.primaryMission!.nodeId,
+                )
+                .state,
+            AdventureNodeState.current,
+            reason: failedAuthority.name,
+          );
+          expect(
+            result.nodes
+                .singleWhere((node) => node.nodeId == 'next-preview')
+                .state,
+            AdventureNodeState.unavailable,
+            reason: failedAuthority.name,
+          );
+          expect(
+            result.nodes
+                .singleWhere((node) => node.nodeId == 'next-preview')
+                .reasonCode,
+            'source_unavailable',
+            reason: failedAuthority.name,
+          );
+          expect(result.inputFingerprintSha256, hasLength(64));
+        }
+      }
+    },
+  );
+
+  test(
+    'wrong returned supplemental authority is contained as corrupt',
+    () async {
+      final reader = AdventureJourneyUseCases(
+        factReaders: <AdventureJourneyFactReader>[
+          const _WrongAuthorityFacts(
+            configured: AdventureJourneyAuthority.achievement,
+            returned: AdventureJourneyAuthority.reward,
+          ),
+          const _Facts(AdventureJourneyAuthority.reward),
+          const _Facts(AdventureJourneyAuthority.history),
+          const _Facts(AdventureJourneyAuthority.packCompletion),
+        ],
+      );
+
+      final first = await reader.compose(
+        _request(today: _today(recommendation: _recommended('word-new'))),
+      );
+      final second = await reader.compose(
+        _request(today: _today(recommendation: _recommended('word-new'))),
+      );
+
+      expect(
+        first.dependencyStates[AdventureJourneyAuthority.achievement],
+        AdventureJourneyDependencyState.corrupt,
+      );
+      expect(first.freshness, AdventureSnapshotFreshness.current);
+      expect(first.primaryMission?.kind, AdventureMissionKind.recommendation);
+      expect(
+        first.nodes.singleWhere((node) => node.nodeId == 'next-preview').state,
+        AdventureNodeState.unavailable,
+      );
+      expect(
+        first.nodes
+            .singleWhere((node) => node.nodeId == 'next-preview')
+            .reasonCode,
+        'source_corrupt',
+      );
+      expect(second.inputFingerprintSha256, first.inputFingerprintSha256);
+    },
+  );
+
+  test('corrupt supplemental facts cannot fabricate completed nodes', () async {
+    final result = await AdventureJourneyUseCases(
+      factReaders: const <AdventureJourneyFactReader>[
+        _CorruptFactsWithCompletion(AdventureJourneyAuthority.achievement),
+      ],
+    ).compose(_request(today: _today()));
+
+    expect(
+      result.dependencyStates[AdventureJourneyAuthority.achievement],
+      AdventureJourneyDependencyState.corrupt,
+    );
+    expect(
+      result.nodes.singleWhere((node) => node.nodeId == 'today-mission').state,
+      AdventureNodeState.available,
+    );
+    expect(
+      result.nodes.singleWhere((node) => node.nodeId == 'next-preview').state,
+      AdventureNodeState.unavailable,
+    );
+  });
+
+  test('corrupt required Today dependency still blocks its mission', () async {
+    final result = await AdventureJourneyUseCases().compose(
+      _request(
+        today: _today(
+          recommendation: _recommended('word-new'),
+          dependencyStates: <TodayHubDependency, TodayHubDependencyState>{
+            for (final dependency in TodayHubDependency.values)
+              dependency: dependency == TodayHubDependency.recommendation
+                  ? TodayHubDependencyState.corrupt
+                  : TodayHubDependencyState.ready,
+          },
+        ),
+      ),
+    );
+
+    expect(result.freshness, AdventureSnapshotFreshness.corrupt);
+    expect(result.primaryMission, isNull);
+    expect(
+      result.nodes.singleWhere((node) => node.nodeId == 'today-mission').state,
+      AdventureNodeState.unavailable,
+    );
+    expect(
+      result.nodes
+          .singleWhere((node) => node.nodeId == 'today-mission')
+          .reasonCode,
+      'source_corrupt',
+    );
+  });
+
+  test('configured supplemental authority view is canonical and immutable', () {
+    final authorities = AdventureJourneyUseCases(
+      factReaders: _supplementalAuthorities.reversed
+          .map<AdventureJourneyFactReader>(_Facts.new)
+          .toList(),
+    ).configuredAuthorities;
+
+    expect(authorities.toList(), _supplementalAuthorities);
+    expect(
+      () => authorities.remove(AdventureJourneyAuthority.achievement),
+      throwsUnsupportedError,
+    );
+  });
+
+  test(
     'Adventure journey source has no Drift row or progress store imports',
     () {
       final source = <String>[
         'lib/features/adventure/domain/adventure_journey.dart',
         'lib/features/adventure/application/adventure_journey_reader.dart',
+        'lib/features/adventure/application/adventure_journey_fact_readers.dart',
       ].map((path) => File(path).readAsStringSync()).join('\n');
       expect(source, isNot(contains('app_database')));
       expect(source, isNot(contains('drift')));
@@ -175,6 +359,7 @@ TodayHubSnapshot _today({
   LearningSessionSummary? resumableSession,
   List<TodayHubReviewWorkItem> reviewWork = const <TodayHubReviewWorkItem>[],
   TodayHubRecommendation? recommendation,
+  Map<TodayHubDependency, TodayHubDependencyState>? dependencyStates,
 }) => TodayHubSnapshot(
   ownerId: _ownerId,
   evaluatedAtUtc: evaluatedAtUtc ?? _now,
@@ -187,10 +372,12 @@ TodayHubSnapshot _today({
   reminders: const [],
   quests: const [],
   gentleStreak: null,
-  dependencyStates: <TodayHubDependency, TodayHubDependencyState>{
-    for (final dependency in TodayHubDependency.values)
-      dependency: TodayHubDependencyState.ready,
-  },
+  dependencyStates:
+      dependencyStates ??
+      <TodayHubDependency, TodayHubDependencyState>{
+        for (final dependency in TodayHubDependency.values)
+          dependency: TodayHubDependencyState.ready,
+      },
 );
 
 LearningSessionSummary _session() => LearningSessionSummary(
@@ -291,6 +478,68 @@ final class _Facts implements AdventureJourneyFactReader {
     fingerprintPart: '${authority.name}:ready',
   );
 }
+
+final class _ThrowingFacts implements AdventureJourneyFactReader {
+  const _ThrowingFacts(this.authority);
+
+  @override
+  final AdventureJourneyAuthority authority;
+
+  @override
+  Future<AdventureJourneyFacts> read({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) => throw StateError('sensitive source failure that must stay contained');
+}
+
+final class _WrongAuthorityFacts implements AdventureJourneyFactReader {
+  const _WrongAuthorityFacts({
+    required this.configured,
+    required this.returned,
+  });
+
+  final AdventureJourneyAuthority configured;
+  final AdventureJourneyAuthority returned;
+
+  @override
+  AdventureJourneyAuthority get authority => configured;
+
+  @override
+  Future<AdventureJourneyFacts> read({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) async => AdventureJourneyFacts(
+    authority: returned,
+    state: AdventureJourneyDependencyState.ready,
+    completedNodeIds: const <String>{},
+    fingerprintPart: 'malformed-authority',
+  );
+}
+
+final class _CorruptFactsWithCompletion implements AdventureJourneyFactReader {
+  const _CorruptFactsWithCompletion(this.authority);
+
+  @override
+  final AdventureJourneyAuthority authority;
+
+  @override
+  Future<AdventureJourneyFacts> read({
+    required String ownerId,
+    required DateTime evaluatedAtUtc,
+  }) async => AdventureJourneyFacts(
+    authority: authority,
+    state: AdventureJourneyDependencyState.corrupt,
+    completedNodeIds: const <String>{'today-mission'},
+    fingerprintPart: 'corrupt-with-fabricated-completion',
+  );
+}
+
+const _supplementalAuthorities = <AdventureJourneyAuthority>[
+  AdventureJourneyAuthority.achievement,
+  AdventureJourneyAuthority.reward,
+  AdventureJourneyAuthority.history,
+  AdventureJourneyAuthority.packCompletion,
+];
 
 const _ownerId = 'owner-001';
 final _now = DateTime.utc(2026, 9, 4, 10);

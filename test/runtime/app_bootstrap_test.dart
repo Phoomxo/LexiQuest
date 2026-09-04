@@ -17,9 +17,11 @@ import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
@@ -4799,6 +4801,32 @@ void main() {
           expect(adventureEntry.learningIdentity, same(dependencies.learning));
           expect(adventureEntry.catalog, same(dependencies.adventureCatalog));
           expect(dependencies.adventurePresentationPermits, isNotNull);
+          expect(
+            dependencies.adventureJourney,
+            isA<AdventureJourneyUseCases>(),
+          );
+          final adventureJourney =
+              dependencies.adventureJourney! as AdventureJourneyUseCases;
+          expect(
+            adventureJourney.configuredAuthorities.toList(),
+            <AdventureJourneyAuthority>[
+              AdventureJourneyAuthority.achievement,
+              AdventureJourneyAuthority.reward,
+              AdventureJourneyAuthority.history,
+              AdventureJourneyAuthority.packCompletion,
+            ],
+          );
+          expect(
+            () => adventureJourney.configuredAuthorities.clear(),
+            throwsUnsupportedError,
+          );
+          expect(
+            RegExp(r'DriftLearningHistoryReader\(').allMatches(
+              File('lib/runtime/app_bootstrap.dart').readAsStringSync(),
+            ),
+            hasLength(1),
+            reason: 'History UI and both Journey authorities reuse one reader',
+          );
           expect(
             dependencies.adventureSessionComposer,
             isA<CanonicalAdventureSessionComposer>(),

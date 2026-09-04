@@ -28,6 +28,7 @@ import '../features/adventure/application/adventure_entry_use_cases.dart';
 import '../features/adventure/application/adventure_diagnostics.dart';
 import '../features/adventure/application/adventure_motivation_projection_reader.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
+import '../features/adventure/application/adventure_journey_fact_readers.dart';
 import '../features/adventure/application/adventure_journey_reader.dart';
 import '../features/adventure/application/adventure_rollout_gate.dart';
 import '../features/adventure/application/adventure_session_composer.dart';
@@ -1222,13 +1223,14 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: resolvedLearningTimezoneId,
     );
+    final learningHistoryReader = DriftLearningHistoryReader(
+      database,
+      learningTime: learningTime,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
     final learningHistory = LearningHistoryUseCases(
       owners: localOwners,
-      reader: DriftLearningHistoryReader(
-        database,
-        learningTime: learningTime,
-        nowUtc: () => DateTime.now().toUtc(),
-      ),
+      reader: learningHistoryReader,
       sessionLauncher: _BootstrapLearningHistorySessionLauncher(
         learning: learning,
         repository: learningRepository,
@@ -1295,7 +1297,14 @@ final class AppBootstrap {
       diagnostics: adventureDiagnostics,
     );
     const adventurePresentationPermits = NoActivePresentationPermitReader();
-    final adventureJourney = AdventureJourneyUseCases();
+    final adventureJourney = AdventureJourneyUseCases(
+      factReaders: [
+        AdventureAchievementFactReader(loadForOwner: progress.loadForOwner),
+        AdventureRewardFactReader(accounts: rewards),
+        AdventureHistoryFactReader(history: learningHistoryReader),
+        AdventurePackCompletionFactReader(history: learningHistoryReader),
+      ],
+    );
     final adventureMotivation = DriftAdventureMotivationProjectionReader(
       learningReceipts: DriftLearningProjectionReceiptReader(database),
       achievements: DriftAdventureAchievementReceiptReader(database),

@@ -13,10 +13,18 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
     List<AdventureJourneyFactReader> factReaders =
         const <AdventureJourneyFactReader>[],
     this.maximumSourceAge = const Duration(minutes: 15),
-  }) : _factReaders = _indexReaders(factReaders);
+  }) : _factReaders = _indexReaders(factReaders) {
+    _configuredAuthorities = Set<AdventureJourneyAuthority>.unmodifiable(
+      AdventureJourneyAuthority.values.where(_factReaders.containsKey),
+    );
+  }
 
   final Map<AdventureJourneyAuthority, AdventureJourneyFactReader> _factReaders;
+  late final Set<AdventureJourneyAuthority> _configuredAuthorities;
   final Duration maximumSourceAge;
+
+  Set<AdventureJourneyAuthority> get configuredAuthorities =>
+      _configuredAuthorities;
 
   @override
   Future<AdventureJourneySnapshot> compose(
@@ -27,19 +35,28 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
     for (final authority in AdventureJourneyAuthority.values) {
       final reader = _factReaders[authority];
       if (reader != null) {
-        final value = await reader.read(
-          ownerId: request.ownerId,
-          evaluatedAtUtc: request.evaluatedAtUtc,
-        );
-        if (value.authority != authority) {
-          throw StateError('Adventure fact authority changed during read.');
+        try {
+          final value = await reader.read(
+            ownerId: request.ownerId,
+            evaluatedAtUtc: request.evaluatedAtUtc,
+          );
+          facts[authority] = value.authority == authority
+              ? value
+              : _containedFact(
+                  authority,
+                  AdventureJourneyDependencyState.corrupt,
+                );
+        } on Object {
+          facts[authority] = _containedFact(
+            authority,
+            AdventureJourneyDependencyState.unavailable,
+          );
         }
-        facts[authority] = value;
       }
     }
 
     final states = _dependencyStates(request.today, facts);
-    var freshness = _freshness(states);
+    var freshness = _freshness(states, _requiredAuthorities);
     if (request.evaluatedAtUtc.difference(request.today.evaluatedAtUtc) >
         maximumSourceAge) {
       freshness = AdventureSnapshotFreshness.stale;
@@ -48,11 +65,14 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
     }
 
     final completedNodeIds = <String>{
-      for (final value in facts.values) ...value.completedNodeIds,
+      for (final value in facts.values)
+        if (value.state == AdventureJourneyDependencyState.ready)
+          ...value.completedNodeIds,
     };
     final primary = freshness == AdventureSnapshotFreshness.current
         ? _primaryMission(request.today)
         : null;
+    final supplementalState = _worstState(states, _supplementalAuthorities);
     final orderedDefinitions = _canonicalNodes(request.catalog);
     final nodes = <AdventureNodeSnapshot>[
       for (final definition in orderedDefinitions)
@@ -60,6 +80,7 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
           definition,
           request.catalog.locale,
           freshness,
+          supplementalState,
           completedNodeIds,
           primary,
         ),
@@ -86,6 +107,33 @@ final class AdventureJourneyUseCases implements AdventureJourneyReader {
     );
   }
 }
+
+const _requiredAuthorities = <AdventureJourneyAuthority>[
+  AdventureJourneyAuthority.today,
+  AdventureJourneyAuthority.quest,
+  AdventureJourneyAuthority.streak,
+];
+
+const _supplementalAuthorities = <AdventureJourneyAuthority>[
+  AdventureJourneyAuthority.achievement,
+  AdventureJourneyAuthority.reward,
+  AdventureJourneyAuthority.history,
+  AdventureJourneyAuthority.packCompletion,
+];
+
+AdventureJourneyFacts _containedFact(
+  AdventureJourneyAuthority authority,
+  AdventureJourneyDependencyState state,
+) => AdventureJourneyFacts(
+  authority: authority,
+  state: state,
+  completedNodeIds: const <String>{},
+  fingerprintPart: jsonEncode(<String, Object?>{
+    'schemaVersion': 1,
+    'authority': authority.name,
+    'state': state.name,
+  }),
+);
 
 Map<AdventureJourneyAuthority, AdventureJourneyFactReader> _indexReaders(
   List<AdventureJourneyFactReader> readers,
@@ -187,11 +235,9 @@ int _dependencySeverity(AdventureJourneyDependencyState state) =>
 
 AdventureSnapshotFreshness _freshness(
   Map<AdventureJourneyAuthority, AdventureJourneyDependencyState> states,
+  Iterable<AdventureJourneyAuthority> authorities,
 ) {
-  final worst = states.values.fold(
-    AdventureJourneyDependencyState.ready,
-    _worseDependencyState,
-  );
+  final worst = _worstState(states, authorities);
   return switch (worst) {
     AdventureJourneyDependencyState.ready ||
     AdventureJourneyDependencyState.empty => AdventureSnapshotFreshness.current,
@@ -202,6 +248,13 @@ AdventureSnapshotFreshness _freshness(
       AdventureSnapshotFreshness.corrupt,
   };
 }
+
+AdventureJourneyDependencyState _worstState(
+  Map<AdventureJourneyAuthority, AdventureJourneyDependencyState> states,
+  Iterable<AdventureJourneyAuthority> authorities,
+) => authorities
+    .map((authority) => states[authority]!)
+    .fold(AdventureJourneyDependencyState.ready, _worseDependencyState);
 
 AdventureMissionRef? _primaryMission(TodayHubSnapshot today) {
   final resumable = today.resumableSession;
@@ -267,6 +320,7 @@ AdventureNodeSnapshot _projectNode(
   AdventureNodeDefinition definition,
   String locale,
   AdventureSnapshotFreshness freshness,
+  AdventureJourneyDependencyState supplementalState,
   Set<String> completedNodeIds,
   AdventureMissionRef? primary,
 ) {
@@ -288,6 +342,17 @@ AdventureNodeSnapshot _projectNode(
       AdventureSnapshotFreshness.unavailable => 'source_unavailable',
       AdventureSnapshotFreshness.corrupt => 'source_corrupt',
       AdventureSnapshotFreshness.current => 'available',
+    };
+  } else if (definition.kind == AdventureNodeKind.rewardPreview &&
+      supplementalState != AdventureJourneyDependencyState.ready &&
+      supplementalState != AdventureJourneyDependencyState.empty) {
+    state = AdventureNodeState.unavailable;
+    reason = switch (supplementalState) {
+      AdventureJourneyDependencyState.stale => 'source_stale',
+      AdventureJourneyDependencyState.unavailable => 'source_unavailable',
+      AdventureJourneyDependencyState.corrupt => 'source_corrupt',
+      AdventureJourneyDependencyState.ready ||
+      AdventureJourneyDependencyState.empty => 'preview_locked',
     };
   } else if (definition.kind == AdventureNodeKind.rewardPreview) {
     state = AdventureNodeState.locked;
