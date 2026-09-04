@@ -56,6 +56,7 @@ const productContractIdsByRuntimeFeature = <Feature, Set<FeatureContractId>>{
     FeatureContractId.f43,
   },
   Feature.offlineContent: <FeatureContractId>{FeatureContractId.f44},
+  Feature.adventureMotivation: <FeatureContractId>{},
 };
 
 final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(

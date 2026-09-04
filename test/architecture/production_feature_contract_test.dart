@@ -3,9 +3,9 @@ import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
-  test('production delivery contract is the exact frozen 19-row contract', () {
+  test('production delivery contract is the exact frozen 20-row contract', () {
     expect(productionFeatureContract.keys.toSet(), Feature.values.toSet());
-    expect(productionFeatureContract, hasLength(19));
+    expect(productionFeatureContract, hasLength(20));
 
     const expected =
         <
@@ -108,6 +108,11 @@ void main() {
             dependencyId: 'OfflineContentManager',
             durable: true,
           ),
+          Feature.adventureMotivation: (
+            productionEntryId: '',
+            dependencyId: '',
+            durable: false,
+          ),
         };
 
     for (final entry in expected.entries) {
@@ -130,6 +135,7 @@ void main() {
     expect(registry.stateOf(Feature.researchAssessment), FeatureState.hidden);
     expect(registry.stateOf(Feature.dailyContinuity), FeatureState.hidden);
     expect(registry.stateOf(Feature.offlineContent), FeatureState.hidden);
+    expect(registry.stateOf(Feature.adventureMotivation), FeatureState.hidden);
 
     for (final delivery in productionFeatureContract.values) {
       final state = registry.stateOf(delivery.feature);

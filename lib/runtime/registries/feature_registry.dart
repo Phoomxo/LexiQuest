@@ -60,6 +60,7 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.researchAssessment: FeatureState.hidden,
         Feature.dailyContinuity: FeatureState.hidden,
         Feature.offlineContent: FeatureState.hidden,
+        Feature.adventureMotivation: FeatureState.hidden,
       };
 
   const BuildFeatureRegistry.allEnabled()
@@ -83,6 +84,7 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.researchAssessment: FeatureState.enabled,
         Feature.dailyContinuity: FeatureState.enabled,
         Feature.offlineContent: FeatureState.enabled,
+        Feature.adventureMotivation: FeatureState.enabled,
       };
 
   final Map<Feature, FeatureState> _states;

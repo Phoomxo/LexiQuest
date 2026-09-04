@@ -751,8 +751,9 @@ void main() {
           FeatureContractId.f43,
         },
         Feature.offlineContent: {FeatureContractId.f44},
+        Feature.adventureMotivation: <FeatureContractId>{},
       };
-      expect(Feature.values, hasLength(19));
+      expect(Feature.values, hasLength(20));
       expect(productContractIdsByRuntimeFeature, expected);
       expect(
         productContractIdsByRuntimeFeature.keys.toSet(),

@@ -239,6 +239,7 @@ final class AppDependencies {
           identical(reviewCenter?.sessionAuthorityIdentity, learning) &&
           identical(learningHistory?.sessionAuthorityIdentity, learning),
     Feature.offlineContent => offlineContent != null,
+    Feature.adventureMotivation => false,
   };
 
   Future<void> dispose() {

@@ -135,4 +135,10 @@ const productionFeatureContract = <Feature, ProductionFeatureDelivery>{
     durable: true,
     screenClassName: 'OfflineContentManagerScreen',
   ),
+  Feature.adventureMotivation: ProductionFeatureDelivery(
+    feature: Feature.adventureMotivation,
+    productionEntryId: '',
+    dependencyId: '',
+    durable: false,
+  ),
 };

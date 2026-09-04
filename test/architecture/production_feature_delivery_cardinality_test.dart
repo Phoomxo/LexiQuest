@@ -38,6 +38,7 @@ const _persistedFeatureNames = <String>[
   'researchAssessment',
   'dailyContinuity',
   'offlineContent',
+  'adventureMotivation',
 ];
 
 const _broadDeliveries =
@@ -75,6 +76,7 @@ const _productContractsByBroadFeature = <String, Set<FeatureContractId>>{
     FeatureContractId.f43,
   },
   'offlineContent': {FeatureContractId.f44},
+  'adventureMotivation': <FeatureContractId>{},
 };
 
 void main() {
@@ -98,7 +100,7 @@ void main() {
     );
   });
 
-  test('runtime feature identities append exactly four broad parents', () {
+  test('runtime feature identities preserve the append-only broad parents', () {
     expect(
       Feature.values.map((feature) => feature.name).toList(growable: false),
       _persistedFeatureNames,

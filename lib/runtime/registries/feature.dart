@@ -18,6 +18,7 @@ enum Feature {
   researchAssessment,
   dailyContinuity,
   offlineContent,
+  adventureMotivation,
 }
 
 enum FeatureState { enabled, limited, hidden, disabled, emergencyOff }
