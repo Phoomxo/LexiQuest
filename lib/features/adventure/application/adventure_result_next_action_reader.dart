@@ -52,6 +52,9 @@ final class ReviewCenterAdventureResultNextActionReader
           limit: limit,
         ),
       );
+      if (await ownerIdentities.requireSingleActiveOwnerId() != ownerId) {
+        return AdventureNextAction.none;
+      }
       if (items.isEmpty) return AdventureNextAction.none;
       final hasDueSrs = items.any(
         (item) => item.provenance.any(

@@ -81,7 +81,7 @@ void main() {
       await subject.read(ownerId: _ownerId);
 
       expect(nowCalls, 1);
-      expect(owners.calls, 1);
+      expect(owners.calls, 2);
       expect(reader.calls, 1);
       expect(reader.filter!.ownerId, _ownerId);
       expect(reader.filter!.evaluatedAtUtc, _nowUtc);
@@ -111,6 +111,37 @@ void main() {
 
         expect(await subject.read(ownerId: _ownerId), AdventureNextAction.none);
         expect(reader.calls, 0);
+      },
+    );
+
+    test(
+      'owner drift during the queue read fails closed after composition',
+      () async {
+        final owners = _OwnerIdentities.sequence(<String>[
+          _ownerId,
+          'owner:other',
+        ]);
+        final reader = _ReviewReader(<ReviewQueueItem>[
+          _item(
+            id: 'word:stale-owner',
+            provenance: <ReviewReasonProvenance>[
+              ReviewReasonProvenance.saved(
+                sourceId: 'saved:stale-owner',
+                occurredAtUtc: _nowUtc,
+              ),
+            ],
+          ),
+        ]);
+
+        expect(
+          await _subject(
+            reader: reader,
+            owners: owners,
+          ).read(ownerId: _ownerId),
+          AdventureNextAction.none,
+        );
+        expect(reader.calls, 1);
+        expect(owners.calls, 2);
       },
     );
 
@@ -266,11 +297,15 @@ final class _ReviewReader implements ReviewCenterReader {
 }
 
 final class _OwnerIdentities implements ReviewOwnerIdentityReader {
-  _OwnerIdentities.value(this.ownerId) : error = null;
+  _OwnerIdentities.value(String ownerId)
+    : ownerIds = <String>[ownerId],
+      error = null;
 
-  _OwnerIdentities.error(this.error) : ownerId = null;
+  _OwnerIdentities.sequence(this.ownerIds) : error = null;
 
-  final String? ownerId;
+  _OwnerIdentities.error(this.error) : ownerIds = const <String>[];
+
+  final List<String> ownerIds;
   final Object? error;
   int calls = 0;
 
@@ -278,7 +313,7 @@ final class _OwnerIdentities implements ReviewOwnerIdentityReader {
   Future<String> requireSingleActiveOwnerId() async {
     calls += 1;
     if (error case final error?) throw error;
-    return ownerId!;
+    return ownerIds[(calls - 1).clamp(0, ownerIds.length - 1)];
   }
 }
 
