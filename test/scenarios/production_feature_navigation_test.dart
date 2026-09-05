@@ -1451,7 +1451,7 @@ final class _NavigationSessionConfigurationProtocols
 }
 
 final class _NavigationSessionConfigurationStore
-    implements SessionConfigurationStore {
+    implements ActiveOwnerSessionConfigurationStore {
   SessionConfiguration? _configuration;
 
   @override
@@ -1471,6 +1471,19 @@ final class _NavigationSessionConfigurationStore
     required DateTime updatedAtUtc,
   }) async {
     _configuration = configuration;
+  }
+
+  @override
+  Future<void> saveForActiveOwner(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) async {
+    if (configuration.ownerId != _OwnerRepository.owner.id) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
+    await save(configuration, updatedAtUtc: updatedAtUtc);
   }
 
   @override

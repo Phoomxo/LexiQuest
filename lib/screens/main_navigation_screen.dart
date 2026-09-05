@@ -6,15 +6,19 @@ import 'package:uuid/uuid.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
 import '../features/adventure/application/adventure_entry_use_cases.dart';
+import '../features/adventure/application/adventure_mixed_review_prompt_catalog.dart';
 import '../features/adventure/application/adventure_presentation_preferences.dart';
-import '../features/adventure/application/adventure_learning_bridge.dart';
+import '../features/adventure/application/adventure_recovery_use_cases.dart';
 import '../features/adventure/domain/adventure_journey.dart';
 import '../features/adventure/domain/adventure_session_plan.dart';
+import '../features/adventure/presentation/adventure_mixed_review_screen.dart';
 import '../features/adventure/presentation/adventure_today_entry_card.dart';
 import '../features/adventure/presentation/adventure_result_lifecycle_screen.dart';
 import '../features/adventure/presentation/today_experience_host.dart';
 import '../features/adventure/presentation/widgets/adventure_companion_panel.dart';
 import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/application/cloze_mode_adapter.dart';
+import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
@@ -46,10 +50,10 @@ import 'export_center_screen.dart';
 import 'learning_history_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
-import 'quiz_screen.dart';
 import 'pre_post_assessment_screen.dart';
 import 'quest_status_screen.dart';
 import 'review_center_screen.dart';
+import 'score_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
@@ -239,11 +243,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         features?.isVisible(Feature.adventureMotivation) == true &&
         dependencies?.hasComposedDependencyFor(Feature.adventureMotivation) ==
             true;
+    final canDiscoverTerminalRecovery =
+        dependencies?.learning != null &&
+        dependencies?.currentActivityEvidence != null &&
+        dependencies?.createLessonController != null &&
+        dependencies?.lessonModes != null &&
+        dependencies?.activeOwnerIdentities != null;
     return ChooseModeScreen(
       featureRegistry: widget.featureRegistry,
-      leadingCards: eligible
-          ? <Widget>[AdventureTodayEntryCard(onOpen: _openTodayExperience)]
-          : const <Widget>[],
+      leadingCards: <Widget>[
+        if (canDiscoverTerminalRecovery)
+          _PendingMixedReviewRecoveryCard(
+            key: const ValueKey<String>('mixed-review-terminal-recovery-card'),
+            load: () async {
+              final ownerId = await dependencies!.activeOwnerIdentities!
+                  .requireSingleActiveOwnerId();
+              final discovery = AdventureRecoveryUseCases(
+                learning: dependencies.learning!,
+                evidence: dependencies.currentActivityEvidence!,
+                canStartNewMission: () => false,
+                isRepairModeEligible: (_, _, _) => false,
+              );
+              return discovery.findLatestPendingTerminal(ownerId: ownerId);
+            },
+            onResume: _resumeFromToday,
+          ),
+        if (eligible) AdventureTodayEntryCard(onOpen: _openTodayExperience),
+      ],
     );
   }
 
@@ -261,10 +287,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (!mounted) return;
     _pushDestination(
       'home/learn/today-experience',
-      (_) => ProductionFeatureGate(
-        feature: Feature.adventureMotivation,
-        registry: widget.featureRegistry ?? dependencies.features,
-        builder: (_) => TodayExperienceHost(
+      (_) => _AdventureTodayRouteGuard(
+        features: widget.featureRegistry ?? dependencies.features,
+        onDisabled: _selectLearningFromToday,
+        child: TodayExperienceHost(
           ownerId: ownerId,
           entry: dependencies.adventureEntry! as AdventureEntryUseCases,
           activePermits: dependencies.adventurePresentationPermits!,
@@ -299,23 +325,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       if (resumable == null || resumable.id != mission.sourceId) {
         throw StateError('The accepted learning session is no longer active.');
       }
-      await _resumeFromToday(resumable);
       if (mounted) Navigator.of(context).maybePop();
+      await _resumeFromToday(resumable);
       return;
     }
 
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final mode = mission.suggestedMode ?? LessonMode.meaningQuiz;
+    final features = dependencies == null
+        ? null
+        : widget.featureRegistry ?? dependencies.features;
+    final mode = mission.suggestedMode ?? LessonMode.typedRecall;
     final registration = dependencies?.lessonModes?.resolve(mode);
     final adapter = registration?.adapter;
     if (dependencies == null ||
+        features?.isEnabled(Feature.adventureMotivation) != true ||
+        !dependencies.hasComposedDependencyFor(Feature.adventureMotivation) ||
         dependencies.learning == null ||
         dependencies.createLessonController == null ||
         dependencies.currentActivityEvidence == null ||
+        dependencies.vocabulary == null ||
         registration == null ||
-        (adapter is! MeaningQuizModeAdapter &&
-            adapter is! TypedRecallModeAdapter) ||
-        dependencies.features.isEnabled(registration.feature) != true ||
+        !_isAdventureMixedReviewRootAdapter(adapter) ||
+        features?.isEnabled(registration.feature) != true ||
         mission.content.isEmpty) {
       throw StateError('The canonical Adventure lesson is unavailable.');
     }
@@ -366,11 +397,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ) async {
       final current = AppDependenciesScope.maybeOf(context);
       final currentRegistration = current?.lessonModes?.resolve(mode);
+      final currentFeatures = current == null
+          ? null
+          : widget.featureRegistry ?? current.features;
       if (current == null ||
           currentRegistration == null ||
           !identical(currentRegistration.adapter, lessonAdapter) ||
-          current.features.isEnabled(registration.feature) != true ||
-          !current.features.isEnabled(Feature.adventureMotivation)) {
+          currentFeatures?.isEnabled(registration.feature) != true ||
+          currentFeatures?.isEnabled(Feature.adventureMotivation) != true ||
+          !current.hasComposedDependencyFor(Feature.adventureMotivation)) {
         throw const SessionConfigurationResetRequired(
           SessionConfigurationResetReason.modeUnavailable,
         );
@@ -409,50 +444,315 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       entry: launch.entryDecision,
     );
     final store = dependencies.sessionConfigurations;
-    if (store == null) {
+    if (store is! ActiveOwnerSessionConfigurationStore) {
       throw StateError('Session configuration authority is unavailable.');
     }
-    await store.save(validated, updatedAtUtc: DateTime.now().toUtc());
+    if (!mounted || !await _todayOwnerMatches(plan.ownerId)) {
+      throw StateError('Adventure mission owner changed before persistence.');
+    }
+    await store.saveForActiveOwner(
+      validated,
+      updatedAtUtc: DateTime.now().toUtc(),
+    );
     if (!mounted || !await _todayOwnerMatches(plan.ownerId)) {
       throw StateError('Adventure mission owner changed before launch.');
     }
-    _pushDestination(
-      registration.routeName,
-      (_) => ProductionFeatureGate(
-        feature: registration.feature,
-        registry: widget.featureRegistry ?? dependencies.features,
-        builder: (_) => _buildAdventureQuiz(
+    await _startAdventureMixedReview(
+      dependencies: dependencies,
+      plan: plan,
+      rewardOwnership: launch.rewardOwnership,
+    );
+  }
+
+  Future<void> _startAdventureMixedReview({
+    required AppDependencies dependencies,
+    required AdventureSessionPlanV1 plan,
+    required RewardAccount rewardOwnership,
+  }) async {
+    AdventureMixedReviewPromptCatalog? catalog;
+    final recovery = AdventureRecoveryUseCases(
+      learning: dependencies.learning!,
+      evidence: dependencies.currentActivityEvidence!,
+      canStartNewMission: _canStartAdventureMission,
+      isRepairModeEligible: (identity, mode, promptVariant) {
+        final current = AppDependenciesScope.maybeOf(context);
+        final currentCatalog = catalog;
+        final registration = current?.lessonModes?.resolve(mode);
+        final features = current == null
+            ? null
+            : widget.featureRegistry ?? current.features;
+        return mounted &&
+            currentCatalog != null &&
+            registration != null &&
+            features?.isEnabled(registration.feature) == true &&
+            currentCatalog.supports(identity, mode, promptVariant);
+      },
+    );
+    final run = await recovery.startOrResume(
+      plan: plan,
+      activeOwnerId: plan.ownerId,
+      buildPromptCatalogSnapshot: (session) async {
+        final registry = dependencies.lessonModes;
+        final vocabulary = dependencies.vocabulary;
+        final configuration = session.sessionConfiguration;
+        if (registry == null || vocabulary == null || configuration == null) {
+          throw StateError(
+            'Mixed-review reconstruction authority is unavailable.',
+          );
+        }
+        final lexicalWords = await vocabulary.readPinnedByIds(
+          plan.content.map((identity) => identity.id),
+        );
+        final prepared = AdventureMixedReviewPromptCatalog(
+          session: session,
+          lexicalWords: lexicalWords,
+          registry: registry,
+          direction: configuration.direction,
+        );
+        _validateAdventureMixedReviewCatalog(
+          catalog: prepared,
+          content: plan.content,
+          mode: plan.mode,
+        );
+        catalog = prepared;
+        return prepared.snapshot;
+      },
+    );
+    if (!mounted) return;
+    final resolvedCatalog =
+        catalog ??
+        await _buildAdventureMixedReviewCatalog(
           dependencies: dependencies,
-          registrationFeature: registration.feature,
-          adapter: lessonAdapter,
-          plan: plan,
-          rewardOwnership: launch.rewardOwnership,
-          revalidateConfiguration: revalidate,
+          run: run,
+        );
+    if (!mounted) return;
+    _openAdventureMixedReview(
+      dependencies: dependencies,
+      recovery: recovery,
+      catalog: resolvedCatalog,
+      rewardOwnership: run.recovered ? null : rewardOwnership,
+      catalogVersion: run.recovered ? null : plan.origin.catalogVersion,
+    );
+  }
+
+  bool _canStartAdventureMission() {
+    if (!mounted) return false;
+    final current = AppDependenciesScope.maybeOf(context);
+    final features = current == null
+        ? null
+        : widget.featureRegistry ?? current.features;
+    return current != null &&
+        features?.isEnabled(Feature.adventureMotivation) == true &&
+        current.hasComposedDependencyFor(Feature.adventureMotivation);
+  }
+
+  Future<AdventureMixedReviewPromptCatalog> _buildAdventureMixedReviewCatalog({
+    required AppDependencies dependencies,
+    required AdventureLearningRun run,
+  }) async {
+    final registry = dependencies.lessonModes;
+    final configuration = run.session.sessionConfiguration;
+    if (registry == null || configuration == null) {
+      throw StateError('Mixed-review reconstruction authority is unavailable.');
+    }
+    final snapshot = run.state.promptCatalogSnapshot;
+    final AdventureMixedReviewPromptCatalog catalog;
+    if (snapshot != null) {
+      catalog = AdventureMixedReviewPromptCatalog.fromSnapshot(
+        session: run.session,
+        snapshot: snapshot,
+        registry: registry,
+        direction: configuration.direction,
+      );
+    } else {
+      final vocabulary = dependencies.vocabulary;
+      if (vocabulary == null) {
+        throw StateError(
+          'Legacy mixed-review reconstruction authority is unavailable.',
+        );
+      }
+      final lexicalWords = await vocabulary.readPinnedByIds(
+        run.state.content.map((identity) => identity.id),
+      );
+      catalog = AdventureMixedReviewPromptCatalog(
+        session: run.session,
+        lexicalWords: lexicalWords,
+        registry: registry,
+        direction: configuration.direction,
+      );
+    }
+    _validateAdventureMixedReviewCatalog(
+      catalog: catalog,
+      content: run.state.content,
+      mode: run.state.mode,
+    );
+    return catalog;
+  }
+
+  void _validateAdventureMixedReviewCatalog({
+    required AdventureMixedReviewPromptCatalog catalog,
+    required Iterable<ContentIdentity> content,
+    required LessonMode mode,
+  }) {
+    for (final identity in content) {
+      if (!_hasAdventureOriginalPrompt(catalog, identity, mode)) {
+        throw StateError(
+          'Exact mixed-review prompt is unavailable for ${identity.id}.',
+        );
+      }
+    }
+  }
+
+  void _openAdventureMixedReview({
+    required AppDependencies dependencies,
+    required AdventureRecoveryUseCases recovery,
+    required AdventureMixedReviewPromptCatalog catalog,
+    required RewardAccount? rewardOwnership,
+    required String? catalogVersion,
+  }) {
+    final run = recovery.currentRun;
+    final configuration = run?.session.sessionConfiguration;
+    final registration = run == null
+        ? null
+        : dependencies.lessonModes?.resolve(run.state.mode);
+    final adapter = registration?.adapter;
+    if (run == null ||
+        configuration == null ||
+        registration == null ||
+        !_isAdventureMixedReviewRootAdapter(adapter) ||
+        configuration.ownerId != run.state.ownerId ||
+        configuration.mode != run.state.mode ||
+        configuration.itemCount != run.state.content.length) {
+      throw StateError('Accepted mixed-review session is inconsistent.');
+    }
+    final LessonModeAdapter lessonAdapter = adapter!;
+    final revalidateConfiguration = _acceptedMixedReviewRevalidator(
+      ownerId: run.state.ownerId,
+      mode: run.state.mode,
+      adapter: lessonAdapter,
+      itemCount: run.state.content.length,
+    );
+    _pushDestination(
+      'learning/mixed-review',
+      (_) => UnifiedLessonModeHost(
+        adapter: lessonAdapter,
+        createController: dependencies.createLessonController!,
+        feature: registration.feature,
+        featureRegistry: widget.featureRegistry ?? dependencies.features,
+        learning: dependencies.learning,
+        configuration: configuration,
+        revalidateConfiguration: revalidateConfiguration,
+        preservePreacceptedSessionOnAttachmentFailure: true,
+        contrastiveFeedback: dependencies.contrastiveFeedback,
+        companionBuilder: rewardOwnership == null || catalogVersion == null
+            ? null
+            : (_, controller) => _AdventureLessonCompanionGate(
+                controller: controller,
+                rewardOwnership: rewardOwnership,
+                catalogVersion: catalogVersion,
+                recovery: recovery,
+                features: widget.featureRegistry ?? dependencies.features,
+              ),
+        builder: (_) => AdventureMixedReviewScreen(
+          recovery: recovery,
+          catalog: catalog,
+          registry: dependencies.lessonModes!,
+          completionPageBuilder: (resultContext, summary, presentation) =>
+              _buildAdventureMixedReviewResult(
+                resultContext: resultContext,
+                summary: summary,
+                presentation: presentation,
+                recovery: recovery,
+                rewardOwnership: rewardOwnership,
+                catalogVersion: catalogVersion,
+              ),
         ),
       ),
     );
   }
 
-  Widget _buildAdventureQuiz({
-    required AppDependencies dependencies,
-    required Feature registrationFeature,
+  SessionConfigurationRevalidator _acceptedMixedReviewRevalidator({
+    required String ownerId,
+    required LessonMode mode,
     required LessonModeAdapter adapter,
-    required AdventureSessionPlanV1 plan,
-    required RewardAccount rewardOwnership,
-    required SessionConfigurationRevalidator revalidateConfiguration,
+    required int itemCount,
+  }) => (candidate) async {
+    final current = AppDependenciesScope.maybeOf(context);
+    final currentRegistration = current?.lessonModes?.resolve(mode);
+    final features = current == null
+        ? null
+        : widget.featureRegistry ?? current.features;
+    if (current == null ||
+        currentRegistration == null ||
+        !identical(currentRegistration.adapter, adapter) ||
+        features?.isEnabled(currentRegistration.feature) != true) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.modeUnavailable,
+      );
+    }
+    final currentContext = await _loadSessionConfigurationContext(
+      current,
+      mode,
+    );
+    if (currentContext.ownerId != ownerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
+    final reset = currentContext.protocolResetRequired;
+    if (reset != null) throw reset;
+    final maximumItems = itemCount < currentContext.limits.maximumItemCount
+        ? itemCount
+        : currentContext.limits.maximumItemCount;
+    if (maximumItems < currentContext.limits.minimumItemCount) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.invalidProtocol,
+      );
+    }
+    return const SessionConfigurationPolicy().revalidate(
+      configuration: candidate,
+      registration: currentRegistration,
+      limits: currentContext.limits.copyWith(maximumItemCount: maximumItems),
+      ownerId: currentContext.ownerId,
+      availablePackIdentities: const <ContentIdentity>[],
+    );
+  };
+
+  Widget _buildAdventureMixedReviewResult({
+    required BuildContext resultContext,
+    required LearningSessionSummary summary,
+    required AdventureLearningPresentation presentation,
+    required AdventureRecoveryUseCases recovery,
+    required RewardAccount? rewardOwnership,
+    required String? catalogVersion,
   }) {
-    final createController = dependencies.createLessonController!;
-    Widget completionPage(
-      BuildContext resultContext,
-      LearningSessionSummary summary,
-    ) => AdventureResultLifecycleScreen(
+    final current = AppDependenciesScope.maybeOf(resultContext);
+    final features = current == null
+        ? null
+        : widget.featureRegistry ?? current.features;
+    final canPresentAdventure =
+        presentation == AdventureLearningPresentation.adventure &&
+        rewardOwnership != null &&
+        catalogVersion != null &&
+        current != null &&
+        identical(current.learning, recovery.learning) &&
+        features?.isEnabled(Feature.adventureMotivation) == true &&
+        current.hasComposedDependencyFor(Feature.adventureMotivation);
+    if (!canPresentAdventure) {
+      return ScoreScreen(
+        correctAnswers: summary.correctCount,
+        wrongAnswers: summary.wrongCount,
+        score: summary.score,
+      );
+    }
+    return AdventureResultLifecycleScreen(
       summary: summary,
-      motivation: dependencies.adventureMotivation!,
-      nextActionReader: dependencies.adventureResultNextAction!,
-      receiptBarrier: dependencies.adventureReceiptBarrier!,
+      motivation: current.adventureMotivation!,
+      nextActionReader: current.adventureResultNextAction!,
+      receiptBarrier: current.adventureReceiptBarrier!,
       rewardOwnership: rewardOwnership,
-      catalogVersion: plan.origin.catalogVersion,
-      diagnostics: dependencies.adventureDiagnostics,
+      catalogVersion: catalogVersion,
+      diagnostics: current.adventureDiagnostics,
       onNextAction: () {
         Navigator.of(resultContext).pop();
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -461,54 +761,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           }
         });
       },
-    );
-    final lesson = adapter is TypedRecallModeAdapter
-        ? QuizScreen.typedRecall(
-            modeAdapter: adapter,
-            sessionConfiguration: plan.configuration,
-            pinnedContent: plan.content,
-            pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
-            completionPageBuilder: completionPage,
-            adventureDiagnostics: dependencies.adventureDiagnostics,
-            allowSkip: true,
-          )
-        : QuizScreen(
-            modeAdapter: adapter as MeaningQuizModeAdapter,
-            sessionConfiguration: plan.configuration,
-            pinnedContent: plan.content,
-            pinnedContentChecksumsSha256: plan.contentChecksumsSha256,
-            completionPageBuilder: completionPage,
-            adventureDiagnostics: dependencies.adventureDiagnostics,
-            allowSkip: true,
-          );
-    return UnifiedLessonModeHost(
-      adapter: adapter,
-      createController: createController,
-      feature: registrationFeature,
-      featureRegistry: widget.featureRegistry ?? dependencies.features,
-      learning: dependencies.learning,
-      configuration: plan.configuration,
-      revalidateConfiguration: revalidateConfiguration,
-      contrastiveFeedback: dependencies.contrastiveFeedback,
-      companionBuilder: (_, controller) => AdventureLessonCompanionPanel(
-        controller: controller,
-        rewardOwnership: rewardOwnership,
-        catalogVersion: plan.origin.catalogVersion,
-      ),
-      controllerStarter: (controller, command) {
-        final launch = const AdventureLearningBridge().prepare(
-          plan: plan,
-          activeOwnerId: command.ownerId ?? '',
-          sessionId: command.sessionId,
-          startedAtUtc: command.startedAtUtc,
-        );
-        return const AdventureLearningBridge().start(
-          launch: launch,
-          controller: controller,
-          revalidateConfiguration: revalidateConfiguration,
-        );
-      },
-      builder: (_) => lesson,
     );
   }
 
@@ -552,6 +804,55 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _resumeFromToday(LearningSessionSummary session) async {
     if (!await _todayOwnerMatches(session.ownerId) || !mounted) {
       throw StateError('Today resume no longer belongs to the active owner.');
+    }
+    if (session.activityType == mixedReviewActivityType) {
+      final dependencies = AppDependenciesScope.maybeOf(context);
+      if (dependencies?.learning == null ||
+          dependencies?.currentActivityEvidence == null ||
+          dependencies?.createLessonController == null ||
+          dependencies?.lessonModes == null) {
+        throw StateError(
+          'Mixed-review reconstruction authority is unavailable.',
+        );
+      }
+      AdventureMixedReviewPromptCatalog? catalog;
+      final recovery = AdventureRecoveryUseCases(
+        learning: dependencies!.learning!,
+        evidence: dependencies.currentActivityEvidence!,
+        canStartNewMission: _canStartAdventureMission,
+        isRepairModeEligible: (identity, mode, promptVariant) {
+          final current = AppDependenciesScope.maybeOf(context);
+          final registration = current?.lessonModes?.resolve(mode);
+          final features = current == null
+              ? null
+              : widget.featureRegistry ?? current.features;
+          return mounted &&
+              catalog != null &&
+              registration != null &&
+              features?.isEnabled(registration.feature) == true &&
+              catalog.supports(identity, mode, promptVariant);
+        },
+      );
+      final run = await recovery.recoverExact(
+        ownerId: session.ownerId,
+        sessionId: session.id,
+      );
+      if (run == null) {
+        throw StateError('The accepted mixed-review session is unavailable.');
+      }
+      catalog = await _buildAdventureMixedReviewCatalog(
+        dependencies: dependencies,
+        run: run,
+      );
+      if (!mounted) return;
+      _openAdventureMixedReview(
+        dependencies: dependencies,
+        recovery: recovery,
+        catalog: catalog,
+        rewardOwnership: null,
+        catalogVersion: null,
+      );
+      return;
     }
     _selectLearningFromToday();
   }
@@ -1286,6 +1587,310 @@ DateTime _adventureNowUtc() {
     now.millisecondsSinceEpoch,
     isUtc: true,
   );
+}
+
+bool _isAdventureMixedReviewRootAdapter(Object? adapter) =>
+    adapter is TypedRecallModeAdapter ||
+    adapter is MeaningQuizModeAdapter ||
+    adapter is ClozeModeAdapter ||
+    adapter is DefinitionQuizModeAdapter;
+
+bool _hasAdventureOriginalPrompt(
+  AdventureMixedReviewPromptCatalog catalog,
+  ContentIdentity identity,
+  LessonMode mode,
+) => switch (mode) {
+  LessonMode.typedRecall => catalog.supports(identity, mode, 'typedRecall'),
+  LessonMode.meaningQuiz =>
+    catalog.supports(identity, mode, 'meaningChoice') ||
+        catalog.supports(identity, mode, 'wordChoice'),
+  LessonMode.cloze => catalog.supports(identity, mode, 'clozeSelected'),
+  LessonMode.definitionQuiz => catalog.supports(
+    identity,
+    mode,
+    'definitionChoice',
+  ),
+  _ => false,
+};
+
+final class _AdventureLessonCompanionGate extends StatefulWidget {
+  const _AdventureLessonCompanionGate({
+    required this.controller,
+    required this.rewardOwnership,
+    required this.catalogVersion,
+    required this.recovery,
+    required this.features,
+  });
+
+  final UnifiedLessonController controller;
+  final RewardAccount rewardOwnership;
+  final String catalogVersion;
+  final AdventureRecoveryUseCases recovery;
+  final FeatureRegistry features;
+
+  @override
+  State<_AdventureLessonCompanionGate> createState() =>
+      _AdventureLessonCompanionGateState();
+}
+
+final class _AdventureLessonCompanionGateState
+    extends State<_AdventureLessonCompanionGate> {
+  Listenable? _featureChanges;
+
+  @override
+  void initState() {
+    super.initState();
+    _observe(widget.features);
+  }
+
+  @override
+  void didUpdateWidget(_AdventureLessonCompanionGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.features, widget.features)) {
+      _observe(widget.features);
+    }
+  }
+
+  void _observe(FeatureRegistry features) {
+    _featureChanges?.removeListener(_onFeatureChanged);
+    _featureChanges = features is Listenable ? features as Listenable : null;
+    _featureChanges?.addListener(_onFeatureChanged);
+  }
+
+  void _onFeatureChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final show =
+        widget.features.isEnabled(Feature.adventureMotivation) &&
+        widget.recovery.currentRun?.presentation ==
+            AdventureLearningPresentation.adventure;
+    if (!show) return const SizedBox.shrink();
+    return AdventureLessonCompanionPanel(
+      controller: widget.controller,
+      rewardOwnership: widget.rewardOwnership,
+      catalogVersion: widget.catalogVersion,
+    );
+  }
+
+  @override
+  void dispose() {
+    _featureChanges?.removeListener(_onFeatureChanged);
+    super.dispose();
+  }
+}
+
+final class _PendingMixedReviewRecoveryCard extends StatefulWidget {
+  const _PendingMixedReviewRecoveryCard({
+    super.key,
+    required this.load,
+    required this.onResume,
+  });
+
+  final Future<LearningSessionSummary?> Function() load;
+  final Future<void> Function(LearningSessionSummary session) onResume;
+
+  @override
+  State<_PendingMixedReviewRecoveryCard> createState() =>
+      _PendingMixedReviewRecoveryCardState();
+}
+
+final class _AdventureTodayRouteGuard extends StatefulWidget {
+  const _AdventureTodayRouteGuard({
+    required this.features,
+    required this.onDisabled,
+    required this.child,
+  });
+
+  final FeatureRegistry features;
+  final VoidCallback onDisabled;
+  final Widget child;
+
+  @override
+  State<_AdventureTodayRouteGuard> createState() =>
+      _AdventureTodayRouteGuardState();
+}
+
+final class _AdventureTodayRouteGuardState
+    extends State<_AdventureTodayRouteGuard>
+    with RouteAware {
+  Listenable? _featureChanges;
+  PageRoute<dynamic>? _route;
+  bool _popScheduled = false;
+  bool _returned = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _observeFeatures();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    final pageRoute = route is PageRoute<dynamic> ? route : null;
+    if (!identical(pageRoute, _route)) {
+      if (_route != null) appRouteObserver.unsubscribe(this);
+      _route = pageRoute;
+      if (pageRoute != null) appRouteObserver.subscribe(this, pageRoute);
+    }
+    _reconcile();
+  }
+
+  @override
+  void didUpdateWidget(_AdventureTodayRouteGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.features, widget.features)) {
+      _observeFeatures();
+    }
+    _reconcile();
+  }
+
+  void _observeFeatures() {
+    _featureChanges?.removeListener(_reconcile);
+    _featureChanges = widget.features is Listenable
+        ? widget.features as Listenable
+        : null;
+    _featureChanges?.addListener(_reconcile);
+  }
+
+  @override
+  void didPopNext() => _reconcile();
+
+  void _reconcile() {
+    if (!mounted ||
+        _returned ||
+        _popScheduled ||
+        widget.features.isEnabled(Feature.adventureMotivation)) {
+      return;
+    }
+    final route = _route ?? ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
+    _popScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _popScheduled = false;
+      if (!mounted ||
+          _returned ||
+          widget.features.isEnabled(Feature.adventureMotivation) ||
+          ModalRoute.of(context)?.isCurrent != true) {
+        return;
+      }
+      _returned = true;
+      await Navigator.of(context).maybePop();
+      widget.onDisabled();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+
+  @override
+  void dispose() {
+    _featureChanges?.removeListener(_reconcile);
+    if (_route != null) appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+}
+
+final class _PendingMixedReviewRecoveryCardState
+    extends State<_PendingMixedReviewRecoveryCard>
+    with RouteAware {
+  LearningSessionSummary? _session;
+  PageRoute<dynamic>? _route;
+  var _loadGeneration = 0;
+  bool _opening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    final pageRoute = route is PageRoute<dynamic> ? route : null;
+    if (!identical(pageRoute, _route)) {
+      if (_route != null) appRouteObserver.unsubscribe(this);
+      _route = pageRoute;
+      if (pageRoute != null) appRouteObserver.subscribe(this, pageRoute);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_PendingMixedReviewRecoveryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.load, widget.load)) unawaited(_load());
+  }
+
+  @override
+  void didPopNext() => unawaited(_load());
+
+  Future<void> _load() async {
+    final generation = ++_loadGeneration;
+    if (mounted && _session != null) setState(() => _session = null);
+    try {
+      final session = await widget.load();
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _session = session);
+      }
+    } on Object {
+      // Discovery is an optional read model. Learn remains fully usable when
+      // it is temporarily unavailable.
+    }
+  }
+
+  Future<void> _resume() async {
+    final session = _session;
+    if (session == null || _opening) return;
+    setState(() => _opening = true);
+    try {
+      await widget.onResume(session);
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เปิดบทเรียนที่บันทึกไว้ไม่ได้ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_session == null) return const SizedBox.shrink();
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.restore_rounded),
+        title: const Text('ทำบทเรียนที่บันทึกไว้ให้เสร็จ'),
+        subtitle: const Text(
+          'ความคืบหน้ายังอยู่ครบ และจะเปิดต่อในรูปแบบมาตรฐาน',
+        ),
+        trailing: _opening
+            ? const SizedBox.square(
+                dimension: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right_rounded),
+        enabled: !_opening,
+        onTap: _opening ? null : _resume,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _loadGeneration += 1;
+    if (_route != null) appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
 }
 
 final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {

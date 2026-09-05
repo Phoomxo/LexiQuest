@@ -97,12 +97,18 @@ final class UnifiedLessonSessionLifecycle {
   Future<AnswerRecordResult> recordCapturedEvidence(
     PendingCurrentActivityEvidence pending, {
     required AnswerFeedbackContext feedbackContext,
-  }) => runAcceptedOperation(
-    () => _controller.recordCapturedEvidence(
+    LessonModeAdapter? occurrenceAdapter,
+  }) {
+    Future<AnswerRecordResult> record() => _controller.recordCapturedEvidence(
       pending,
       feedbackContext: feedbackContext,
-    ),
-  );
+      occurrenceAdapter: occurrenceAdapter,
+    );
+
+    return _routeLifecycle?._insideAcceptedLease == true
+        ? record()
+        : runAcceptedOperation(record);
+  }
 
   Future<void> start({
     required String sessionId,
@@ -250,12 +256,14 @@ final class UnifiedLessonRouteLifecycle {
     this._learning,
     this._nowUtc, {
     this.controllerStarter,
+    this.preservePreacceptedSessionOnAttachmentFailure = false,
   });
 
   final UnifiedLessonController _controller;
   final LearningUseCases? _learning;
   final LessonUtcNow _nowUtc;
   final UnifiedLessonControllerStarter? controllerStarter;
+  final bool preservePreacceptedSessionOnAttachmentFailure;
   final Map<String, Future<void>> _unattachedCompensations =
       <String, Future<void>>{};
 
@@ -271,6 +279,7 @@ final class UnifiedLessonRouteLifecycle {
   Future<void> Function()? _acceptedClosePreparation;
   LessonTerminalCutoff? _retirementCutoff;
   Future<void>? _terminal;
+  bool _initializationAttached = false;
   final Set<Future<void>> _acceptedOperations = <Future<void>>{};
   final LessonEphemeralStateRegistry _ephemeralStates =
       LessonEphemeralStateRegistry();
@@ -356,6 +365,8 @@ final class UnifiedLessonRouteLifecycle {
     final startedAtUtc = session.startedAtUtc;
     if (session.isEmpty) return session;
     final sessionOwnerId = session.ownerId;
+    _loadedSessionId = session.id;
+    _loadedOwnerId = ownerId ?? sessionOwnerId;
     if (ownerId != null &&
         sessionOwnerId != null &&
         ownerId != sessionOwnerId) {
@@ -363,7 +374,6 @@ final class UnifiedLessonRouteLifecycle {
       throw StateError('Loaded lesson session owner identity changed.');
     }
     final pinnedOwnerId = ownerId ?? sessionOwnerId;
-    _loadedSessionId = session.id;
     _loadedOwnerId = pinnedOwnerId;
     final restoredClose = recoveredClose?.call();
     if (restoredClose != null) {
@@ -403,6 +413,7 @@ final class UnifiedLessonRouteLifecycle {
       }
       rethrow;
     }
+    _initializationAttached = true;
     return session;
   }
 
@@ -611,10 +622,19 @@ final class UnifiedLessonRouteLifecycle {
       );
       return;
     }
+    if (preservePreacceptedSessionOnAttachmentFailure &&
+        _loadedSessionId != null &&
+        !_initializationAttached) {
+      return;
+    }
     await _controller.abandonAtCutoff(cutoff);
   }
 
   Future<void> _compensateUnattached(String sessionId, [String? ownerId]) {
+    if (preservePreacceptedSessionOnAttachmentFailure &&
+        _loadedSessionId == sessionId) {
+      return Future<void>.value();
+    }
     final existing = _unattachedCompensations[sessionId];
     if (existing != null) return existing;
     final learning = _learning;
@@ -836,6 +856,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
     this.contrastiveFeedback,
     this.controllerStarter,
     this.companionBuilder,
+    this.preservePreacceptedSessionOnAttachmentFailure = false,
   });
 
   final LessonModeAdapter adapter;
@@ -850,6 +871,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
   final ContrastiveFeedbackUseCases? contrastiveFeedback;
   final UnifiedLessonControllerStarter? controllerStarter;
   final UnifiedLessonCompanionBuilder? companionBuilder;
+  final bool preservePreacceptedSessionOnAttachmentFailure;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
@@ -891,6 +913,8 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
       widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning,
       widget.nowUtc ?? _systemUtcNow,
       controllerStarter: widget.controllerStarter,
+      preservePreacceptedSessionOnAttachmentFailure:
+          widget.preservePreacceptedSessionOnAttachmentFailure,
     );
     _observeFeatures(
       widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features,

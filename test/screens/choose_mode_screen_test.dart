@@ -3232,6 +3232,15 @@ final class _CoordinatedLearningRepository
   );
 
   @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) => (delegate as PinnedLearningContentRepository).listExactPinnedQuizWords(
+    ownerId: ownerId,
+    content: content,
+  );
+
+  @override
   Future<List<QuizWord>> listDueWords({
     required String ownerId,
     required DateTime nowUtc,

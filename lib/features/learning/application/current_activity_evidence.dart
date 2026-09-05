@@ -166,6 +166,7 @@ final class FrozenPendingCurrentActivityEvidence {
   ) {
     if (json.length != _jsonKeys.length ||
         !json.keys.every(_jsonKeys.contains) ||
+        json['schemaVersion'] is! int ||
         json['schemaVersion'] != currentSchemaVersion) {
       throw const FormatException('invalid frozen pending evidence schema');
     }
@@ -729,6 +730,11 @@ final class CurrentActivityEvidenceAdapter {
     required int attemptNumber,
     required int contentRevision,
     required String checksumSha256,
+    HintEvidenceClassification classification =
+        const HintEvidenceClassification(
+          evidenceClass: EvidenceClass.recognition,
+          hintLevel: 0,
+        ),
     ContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     if (input != CurrentActivityInput.meaningMultipleChoice &&
@@ -739,12 +745,27 @@ final class CurrentActivityEvidenceAdapter {
         !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksumSha256)) {
       throw ArgumentError('Pinned meaning content identity is invalid.');
     }
+    final guidedMeaningChoice =
+        input == CurrentActivityInput.meaningMultipleChoice &&
+        classification.evidenceClass == EvidenceClass.guidedPractice &&
+        classification.hintLevel > 0 &&
+        classification.hintLevel <= 2;
+    final unassistedRecognition =
+        classification.evidenceClass == EvidenceClass.recognition &&
+        classification.hintLevel == 0;
+    if (!unassistedRecognition && !guidedMeaningChoice) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must be unhinted recognition or guided meaning choice',
+      );
+    }
     final declaration = _declarationFor(input);
     return _capture(
       ownerId: ownerId,
       input: input,
       declaration: _CurrentActivityDeclaration(
-        evidenceClass: declaration.evidenceClass,
+        evidenceClass: classification.evidenceClass,
         skillId: declaration.skillId,
         promptMode: declaration.promptMode,
         contentRevision: contrastiveEvidenceContentRevision(
@@ -761,7 +782,7 @@ final class CurrentActivityEvidenceAdapter {
       attemptNumber: attemptNumber,
       providerProvenance:
           'reviewed-lexical-meaning:$contentRevision:$checksumSha256',
-      hintLevel: 0,
+      hintLevel: classification.hintLevel,
       contrastiveFeedback: contrastiveFeedback,
     );
   }
@@ -1102,11 +1123,22 @@ final class CurrentActivityEvidenceAdapter {
   /// Reconstructs a fully resolved occurrence without consulting mutable
   /// owner, rollout, or research providers. An explicit retry is mandatory.
   PendingCurrentActivityEvidence restore(
-    FrozenPendingCurrentActivityEvidence frozen,
-  ) {
+    FrozenPendingCurrentActivityEvidence frozen, {
+    String? ownerId,
+  }) {
+    final recoveredOwnerId = ownerId ?? frozen.ownerId;
+    if (recoveredOwnerId.isEmpty ||
+        recoveredOwnerId != recoveredOwnerId.trim() ||
+        recoveredOwnerId.runes.length > 256) {
+      throw ArgumentError.value(
+        recoveredOwnerId,
+        'ownerId',
+        'must be canonical',
+      );
+    }
     return PendingCurrentActivityEvidence._(
       learning: learning,
-      ownerId: frozen.ownerId,
+      ownerId: recoveredOwnerId,
       input: frozen.input,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: frozen.declaredEvidenceClass,

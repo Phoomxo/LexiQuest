@@ -309,6 +309,14 @@ abstract interface class SessionConfigurationStore {
   Future<void> clear({required String ownerId, required LessonMode mode});
 }
 
+abstract interface class ActiveOwnerSessionConfigurationStore
+    implements SessionConfigurationStore {
+  Future<void> saveForActiveOwner(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  });
+}
+
 final class SessionConfiguration {
   SessionConfiguration.validated({
     required this.schemaVersion,

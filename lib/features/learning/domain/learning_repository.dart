@@ -56,6 +56,21 @@ abstract interface class PinnedLearningContentRepository {
     required String ownerId,
     required List<String> wordIds,
   });
+
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  });
+}
+
+/// Atomically revalidates exact lexical pins and the uniquely active owner
+/// before accepting a Learning session and its initial recovery checkpoint.
+abstract interface class ExactPinnedLearningActivityRepository {
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  });
 }
 
 /// Revalidates an exact review selection and persists its canonical session
@@ -90,6 +105,16 @@ abstract interface class LearningActivityRecoveryRepository {
   Future<void> appendActivityCheckpoint({
     required String ownerId,
     required LearningActivityCheckpoint checkpoint,
+  });
+}
+
+/// Read model for bounded recovery scans that must not be displaced by newer
+/// sessions from unrelated activity types.
+abstract interface class LearningActivitySessionHistoryRepository {
+  Future<List<LearningSessionSummary>> listCompletedActivitySessionHistory({
+    required String ownerId,
+    required String activityType,
+    required int limit,
   });
 }
 

@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Variable, driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, Variable, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -21,6 +22,8 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -144,7 +147,7 @@ void main() {
     () async {
       final session = await useCases.startCheckpointedQuiz(
         activityType: 'adventureQuiz',
-        pinnedWordIds: const <String>['word-3', 'word-1'],
+        pinnedContent: <PinnedQuizContent>[_pin('word-3'), _pin('word-1')],
         limit: 2,
         initialState: (created) => <String, Object?>{
           'schemaVersion': 1,
@@ -179,12 +182,115 @@ void main() {
     },
   );
 
+  test(
+    'checkpointed quiz accepts the immutable pin snapshot used to build it',
+    () async {
+      final mutablePins = <PinnedQuizContent>[_pin('word-3'), _pin('word-1')];
+      final capturingRepository = _CapturingPinnedRecoveryRepository(
+        DriftLearningRepository(database),
+      );
+      final capturingUseCases = LearningUseCases(
+        owners: owners,
+        repository: capturingRepository,
+        generateId: () => 'immutable-pin-snapshot',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      final session = await capturingUseCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        pinnedContent: mutablePins,
+        limit: 2,
+        initialState: (created) {
+          mutablePins[1] = _pin('word-4');
+          return <String, Object?>{
+            'schemaVersion': 1,
+            'wordIds': created.questions
+                .map((question) => question.word.id)
+                .toList(growable: false),
+          };
+        },
+      );
+
+      expect(
+        session.questions.map((question) => question.word.id),
+        const <String>['word-3', 'word-1'],
+      );
+      expect(
+        capturingRepository.acceptedContent.map((pin) => pin.identity.id),
+        const <String>['word-3', 'word-1'],
+      );
+      final recovery = await capturingUseCases.loadExactActivityRecovery(
+        ownerId: session.ownerId!,
+        sessionId: session.id,
+        activityType: 'adventureQuiz',
+      );
+      expect(recovery!.checkpoint!.state['wordIds'], const <Object?>[
+        'word-3',
+        'word-1',
+      ]);
+    },
+  );
+
+  test(
+    'checkpointed quiz freezes mutable pins before owner resolution',
+    () async {
+      final mutablePins = <PinnedQuizContent>[_pin('word-3'), _pin('word-1')];
+      final gatedOwners = _GatedLocalOwnerRepository(owners);
+      final capturingRepository = _CapturingPinnedRecoveryRepository(
+        DriftLearningRepository(database),
+      );
+      final capturingUseCases = LearningUseCases(
+        owners: gatedOwners,
+        repository: capturingRepository,
+        generateId: () => 'pre-owner-pin-snapshot',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      final pendingStart = capturingUseCases.startCheckpointedQuiz(
+        activityType: 'adventureQuiz',
+        pinnedContent: mutablePins,
+        limit: 2,
+        initialState: (created) => <String, Object?>{
+          'schemaVersion': 1,
+          'wordIds': created.questions
+              .map((question) => question.word.id)
+              .toList(growable: false),
+        },
+      );
+      await gatedOwners.resolutionRequested;
+      mutablePins[1] = _pin('word-4');
+      gatedOwners.releaseResolution();
+
+      final session = await pendingStart;
+
+      expect(
+        session.questions.map((question) => question.word.id),
+        const <String>['word-3', 'word-1'],
+      );
+      expect(
+        capturingRepository.acceptedContent.map((pin) => pin.identity.id),
+        const <String>['word-3', 'word-1'],
+      );
+      final recovery = await capturingUseCases.loadExactActivityRecovery(
+        ownerId: session.ownerId!,
+        sessionId: session.id,
+        activityType: 'adventureQuiz',
+      );
+      expect(recovery!.checkpoint!.state['wordIds'], const <Object?>[
+        'word-3',
+        'word-1',
+      ]);
+    },
+  );
+
   test('checkpointed quiz rejects category plus pinned content', () async {
     await expectLater(
       useCases.startCheckpointedQuiz(
         activityType: 'adventureQuiz',
         categoryId: 'category-1',
-        pinnedWordIds: const <String>['word-1'],
+        pinnedContent: <PinnedQuizContent>[_pin('word-1')],
         limit: 1,
         initialState: (_) => const <String, Object?>{'schemaVersion': 1},
       ),
@@ -198,13 +304,24 @@ void main() {
     () async {
       final short = await useCases.startCheckpointedQuiz(
         activityType: 'adventureQuiz',
-        pinnedWordIds: const <String>['word-1'],
+        pinnedContent: <PinnedQuizContent>[_pin('word-1')],
         limit: 2,
         initialState: (_) => const <String, Object?>{'schemaVersion': 1},
       );
       final missing = await useCases.startCheckpointedQuiz(
         activityType: 'adventureQuiz',
-        pinnedWordIds: const <String>['word-1', 'word-missing'],
+        pinnedContent: <PinnedQuizContent>[
+          _pin('word-1'),
+          const PinnedQuizContent(
+            identity: ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: 'word-missing',
+              revision: 1,
+            ),
+            checksumSha256:
+                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          ),
+        ],
         limit: 2,
         initialState: (_) => const <String, Object?>{'schemaVersion': 1},
       );
@@ -220,7 +337,7 @@ void main() {
             buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
           ).startCheckpointedQuiz(
             activityType: 'adventureQuiz',
-            pinnedWordIds: const <String>['word-1', 'word-2'],
+            pinnedContent: <PinnedQuizContent>[_pin('word-1'), _pin('word-2')],
             limit: 2,
             initialState: (_) => const <String, Object?>{'schemaVersion': 1},
           );
@@ -230,6 +347,110 @@ void main() {
       expect(reordered.questions, isEmpty);
       expect(reorderedRepository.startCalls, 0);
       expect(await database.select(database.learningSessions).get(), isEmpty);
+    },
+  );
+
+  test(
+    'checkpointed pin rejects same-ID revision and checksum drift',
+    () async {
+      final changedRevision = PinnedQuizContent(
+        identity: const ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: 'word-1',
+          revision: 2,
+        ),
+        checksumSha256: _pin('word-1').checksumSha256,
+      );
+      final changedChecksum = PinnedQuizContent(
+        identity: _pin('word-2').identity,
+        checksumSha256:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      );
+
+      for (final pin in <PinnedQuizContent>[changedRevision, changedChecksum]) {
+        final result = await useCases.startCheckpointedQuiz(
+          activityType: 'adventureQuiz',
+          pinnedContent: <PinnedQuizContent>[pin],
+          limit: 1,
+          initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+        );
+        expect(result.isEmpty, isTrue);
+      }
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+    },
+  );
+
+  test(
+    'checkpointed pinned start rejects a mixed active owner at acceptance',
+    () async {
+      final racingRepository = _PinnedCheckpointStartRaceRepository(
+        delegate: DriftLearningRepository(database),
+        database: database,
+        mutation: _PinnedCheckpointStartMutation.addSecondActiveOwner,
+      );
+      final racingUseCases = LearningUseCases(
+        owners: owners,
+        repository: racingRepository,
+        generateId: () => 'mixed-owner-checkpoint',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await expectLater(
+        racingUseCases.startCheckpointedQuiz(
+          activityType: 'adventureQuiz',
+          pinnedContent: <PinnedQuizContent>[_pin('word-1')],
+          limit: 1,
+          initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+        ),
+        throwsStateError,
+      );
+
+      expect(racingRepository.mutationApplied, isTrue);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(
+        (await database.select(database.eventsV2).get()).where(
+          (event) => event.eventType == 'LearningActivityCheckpoint',
+        ),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'checkpointed pinned start rejects lexical drift at acceptance',
+    () async {
+      final racingRepository = _PinnedCheckpointStartRaceRepository(
+        delegate: DriftLearningRepository(database),
+        database: database,
+        mutation: _PinnedCheckpointStartMutation.revisePinnedWord,
+      );
+      final racingUseCases = LearningUseCases(
+        owners: owners,
+        repository: racingRepository,
+        generateId: () => 'stale-pin-checkpoint',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await expectLater(
+        racingUseCases.startCheckpointedQuiz(
+          activityType: 'adventureQuiz',
+          pinnedContent: <PinnedQuizContent>[_pin('word-1')],
+          limit: 1,
+          initialState: (_) => const <String, Object?>{'schemaVersion': 1},
+        ),
+        throwsStateError,
+      );
+
+      expect(racingRepository.mutationApplied, isTrue);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(
+        (await database.select(database.eventsV2).get()).where(
+          (event) => event.eventType == 'LearningActivityCheckpoint',
+        ),
+        isEmpty,
+      );
     },
   );
 
@@ -1376,6 +1597,34 @@ LearningEventContext _researchEventContext(
   );
 }
 
+PinnedQuizContent _pin(String id) {
+  final values = <String, (String, String)>{
+    'word-1': ('station', 'สถานี'),
+    'word-2': ('ticket', 'ตั๋ว'),
+    'word-3': ('platform', 'ชานชาลา'),
+    'word-4': ('journey', 'การเดินทาง'),
+  };
+  final value = values[id]!;
+  return PinnedQuizContent(
+    identity: ContentIdentity(
+      type: ContentType.lexicalMetadata,
+      id: id,
+      revision: 1,
+    ),
+    checksumSha256: ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: 'category-1',
+      spelling: value.$1,
+      normalizedSpelling: value.$1,
+      meaning: value.$2,
+      normalizedMeaning: value.$2,
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'manual',
+      isGlobal: false,
+    ),
+  );
+}
+
 SessionConfiguration _f16Configuration(
   String ownerId, {
   required int itemCount,
@@ -1463,10 +1712,36 @@ final class _CountingLocalOwnerRepository implements LocalOwnerRepository {
   ) => delegate.bindFirebaseUid(ownerId, firebaseUid);
 }
 
+final class _GatedLocalOwnerRepository implements LocalOwnerRepository {
+  _GatedLocalOwnerRepository(this.delegate);
+
+  final LocalOwnerRepository delegate;
+  final Completer<void> _resolutionRequested = Completer<void>();
+  final Completer<void> _resolutionGate = Completer<void>();
+
+  Future<void> get resolutionRequested => _resolutionRequested.future;
+
+  void releaseResolution() => _resolutionGate.complete();
+
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async {
+    _resolutionRequested.complete();
+    await _resolutionGate.future;
+    return delegate.getOrCreateActiveOwner();
+  }
+
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) => delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
 final class _ReorderedPinnedRecoveryRepository
     implements
         LearningRepository,
         PinnedLearningContentRepository,
+        ExactPinnedLearningActivityRepository,
         LearningActivityRecoveryRepository {
   _ReorderedPinnedRecoveryRepository(this.delegate);
 
@@ -1486,6 +1761,18 @@ final class _ReorderedPinnedRecoveryRepository
   }
 
   @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) async {
+    final words = await delegate.listExactPinnedQuizWords(
+      ownerId: ownerId,
+      content: content,
+    );
+    return words.reversed.toList(growable: false);
+  }
+
+  @override
   Future<void> startSessionWithCheckpoint({
     required LearningSessionDraft session,
     required LearningActivityCheckpoint checkpoint,
@@ -1496,6 +1783,136 @@ final class _ReorderedPinnedRecoveryRepository
       checkpoint: checkpoint,
     );
   }
+
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) => delegate.startExactPinnedSessionWithCheckpoint(
+    session: session,
+    content: content,
+    checkpoint: checkpoint,
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _CapturingPinnedRecoveryRepository
+    implements
+        LearningRepository,
+        PinnedLearningContentRepository,
+        ExactPinnedLearningActivityRepository,
+        LearningActivityRecoveryRepository {
+  _CapturingPinnedRecoveryRepository(this.delegate);
+
+  final DriftLearningRepository delegate;
+  List<PinnedQuizContent> acceptedContent = const <PinnedQuizContent>[];
+
+  @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) => delegate.listExactPinnedQuizWords(ownerId: ownerId, content: content);
+
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) {
+    acceptedContent = List<PinnedQuizContent>.unmodifiable(content);
+    return delegate.startExactPinnedSessionWithCheckpoint(
+      session: session,
+      content: content,
+      checkpoint: checkpoint,
+    );
+  }
+
+  @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) => delegate.loadExactActivityRecovery(
+    ownerId: ownerId,
+    sessionId: sessionId,
+    activityType: activityType,
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+enum _PinnedCheckpointStartMutation { addSecondActiveOwner, revisePinnedWord }
+
+final class _PinnedCheckpointStartRaceRepository
+    implements
+        LearningRepository,
+        PinnedLearningContentRepository,
+        ExactPinnedLearningActivityRepository,
+        LearningActivityRecoveryRepository {
+  _PinnedCheckpointStartRaceRepository({
+    required this.delegate,
+    required this.database,
+    required this.mutation,
+  });
+
+  final DriftLearningRepository delegate;
+  final AppDatabase database;
+  final _PinnedCheckpointStartMutation mutation;
+  bool mutationApplied = false;
+
+  @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) async {
+    final words = await delegate.listExactPinnedQuizWords(
+      ownerId: ownerId,
+      content: content,
+    );
+    if (!mutationApplied) {
+      mutationApplied = true;
+      switch (mutation) {
+        case _PinnedCheckpointStartMutation.addSecondActiveOwner:
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'local:competing-owner',
+                  createdAtUtcMs: 2,
+                ),
+              );
+        case _PinnedCheckpointStartMutation.revisePinnedWord:
+          await (database.update(database.vocabularyWords)
+                ..where((word) => word.id.equals(content.single.identity.id)))
+              .write(const VocabularyWordsCompanion(contentRevision: Value(2)));
+      }
+    }
+    return words;
+  }
+
+  @override
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  }) => delegate.startSessionWithCheckpoint(
+    session: session,
+    checkpoint: checkpoint,
+  );
+
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) => delegate.startExactPinnedSessionWithCheckpoint(
+    session: session,
+    content: content,
+    checkpoint: checkpoint,
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

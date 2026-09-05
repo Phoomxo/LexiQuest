@@ -641,6 +641,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   Future<AnswerRecordResult> recordCapturedEvidence(
     PendingCurrentActivityEvidence pending, {
     required AnswerFeedbackContext feedbackContext,
+    LessonModeAdapter? occurrenceAdapter,
   }) {
     try {
       _requireNotDisposed();
@@ -655,6 +656,16 @@ final class UnifiedLessonController extends ChangeNotifier {
       if (!pending.belongsToLearningAuthority(_learning)) {
         throw StateError(
           'Captured evidence belongs to another learning authority.',
+        );
+      }
+      final resolvedOccurrenceAdapter = occurrenceAdapter ?? _adapter;
+      if (_activeLearningTime != null &&
+          resolvedOccurrenceAdapter
+              is! TrustworthyActiveEffortLessonModeAdapter) {
+        throw ArgumentError.value(
+          resolvedOccurrenceAdapter,
+          'occurrenceAdapter',
+          'active learning time requires a trustworthy-effort adapter',
         );
       }
       if (pending.attemptNumber < 1) {
@@ -686,6 +697,7 @@ final class UnifiedLessonController extends ChangeNotifier {
       final fingerprint = _CapturedEvidenceFingerprint.from(
         pending,
         feedbackContext: normalizedFeedback,
+        occurrenceMode: resolvedOccurrenceAdapter.mode,
       );
       final existing = _capturedEvidence[evidenceId];
       if (existing != null) {
@@ -707,6 +719,7 @@ final class UnifiedLessonController extends ChangeNotifier {
         pending: pending,
         fingerprint: fingerprint,
         feedbackContext: normalizedFeedback,
+        occurrenceAdapter: resolvedOccurrenceAdapter,
       );
       _capturedEvidence[evidenceId] = captured;
       final future = _startCapturedEvidence(captured);
@@ -963,7 +976,7 @@ final class UnifiedLessonController extends ChangeNotifier {
             feedbackContext: captured.feedbackContext,
             providerProvenance: pending.providerProvenance,
           );
-          final classified = _adapter.classify(
+          final classified = captured.occurrenceAdapter.classify(
             response,
             LessonSupport(evidenceContext: contexts.evidenceContext),
           )..validate();
@@ -1846,11 +1859,13 @@ final class _PendingCapturedEvidence {
     required this.pending,
     required this.fingerprint,
     required this.feedbackContext,
+    required this.occurrenceAdapter,
   });
 
   final PendingCurrentActivityEvidence pending;
   final _CapturedEvidenceFingerprint fingerprint;
   final AnswerFeedbackContext feedbackContext;
+  final LessonModeAdapter occurrenceAdapter;
   Future<AnswerRecordResult>? inFlight;
   AnswerRecordResult? result;
   bool writeAttempted = false;
@@ -1862,6 +1877,7 @@ final class _CapturedEvidenceFingerprint {
   factory _CapturedEvidenceFingerprint.from(
     PendingCurrentActivityEvidence pending, {
     required AnswerFeedbackContext feedbackContext,
+    required LessonMode occurrenceMode,
   }) => _CapturedEvidenceFingerprint(
     jsonEncode(<String, Object?>{
       'sourceEvidenceId': pending.sourceEvidenceId,
@@ -1873,6 +1889,7 @@ final class _CapturedEvidenceFingerprint {
       'responseTimeMs': pending.responseTimeMs,
       'attemptNumber': pending.attemptNumber,
       'providerProvenance': pending.providerProvenance,
+      'occurrenceMode': occurrenceMode.name,
       'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
       'bookmarkIdentity': _bookmarkIdentityJson(
         feedbackContext.bookmarkIdentity,

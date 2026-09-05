@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_policy_roll
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -567,6 +568,7 @@ void main() {
       final unknown = copy()..['unexpected'] = true;
       final missing = copy()..remove('wordId');
       final mistyped = copy()..['attemptNumber'] = '1';
+      final fractionalSchema = copy()..['schemaVersion'] = 1.0;
       final future = copy()..['schemaVersion'] = 2;
       final conflictingInput = copy()..['input'] = 'speakToText';
       final conflictingDeclaration = copy();
@@ -578,6 +580,7 @@ void main() {
         unknown,
         missing,
         mistyped,
+        fractionalSchema,
         future,
         conflictingInput,
         conflictingDeclaration,
@@ -630,7 +633,7 @@ void main() {
         ),
         rolloutModeProvider: rollout,
         researchStateProvider: research,
-      ).restore(frozen);
+      ).restore(frozen, ownerId: 'owner-2');
 
       expect(
         restored.status,
@@ -656,6 +659,9 @@ void main() {
       expect(repository.commands, hasLength(2));
       final first = repository.commands.first;
       final second = repository.commands.last;
+      expect(first.ownerId, 'owner-2');
+      expect(first.event!.ownerIdentity, 'owner-2');
+      expect(first.event!.actorIdentity, 'owner-2');
       expect(second.id, first.id);
       expect(second.ownerId, first.ownerId);
       expect(second.occurredAtUtc, first.occurredAtUtc);
@@ -732,6 +738,35 @@ void main() {
       () => FrozenPendingCurrentActivityEvidence.fromJson(tampered),
       throwsA(isA<FormatException>()),
     );
+  });
+
+  test('pinned meaning choice freezes guided hint classification', () async {
+    const checksum =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    final pending =
+        CurrentActivityEvidenceAdapter(
+          learning: _learning(repository: _RecordingRepository()),
+        ).capturePinnedMeaningRecognition(
+          ownerId: 'owner-1',
+          input: CurrentActivityInput.meaningMultipleChoice,
+          sessionId: 'session-guided-meaning',
+          wordId: 'word-guided-meaning',
+          isCorrect: true,
+          responseTimeMs: 321,
+          attemptNumber: 1,
+          contentRevision: 7,
+          checksumSha256: checksum,
+          classification: const HintEvidenceClassification(
+            evidenceClass: EvidenceClass.guidedPractice,
+            hintLevel: 1,
+          ),
+        );
+
+    final frozen = await pending.freezeForRecovery();
+
+    expect(frozen.declaredEvidenceClass, EvidenceClass.guidedPractice);
+    expect(frozen.evidenceContext.hintLevel, 1);
+    expect(frozen.promptMode, 'meaningChoice');
   });
 }
 

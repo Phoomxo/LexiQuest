@@ -7,7 +7,7 @@ import '../domain/session_configuration.dart';
 /// Durable owner-scoped selection store. It persists only the signed stable
 /// serialization and never reads or writes assignment/cohort/evidence rows.
 final class DriftSessionConfigurationStore
-    implements SessionConfigurationStore {
+    implements ActiveOwnerSessionConfigurationStore {
   const DriftSessionConfigurationStore(this._database);
 
   final AppDatabase _database;
@@ -44,6 +44,35 @@ final class DriftSessionConfigurationStore
     SessionConfiguration configuration, {
     required DateTime updatedAtUtc,
   }) async {
+    final owner = _validateSave(configuration, updatedAtUtc);
+    await _upsert(configuration, owner, updatedAtUtc);
+  }
+
+  @override
+  Future<void> saveForActiveOwner(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) async {
+    final owner = _validateSave(configuration, updatedAtUtc);
+    await _database.transaction(() async {
+      final activeOwners =
+          await (_database.select(_database.localOwners)
+                ..where((row) => row.isActive.equals(true))
+                ..limit(2))
+              .get();
+      if (activeOwners.length != 1 || activeOwners.single.id != owner) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.ownerDrift,
+        );
+      }
+      await _upsert(configuration, owner, updatedAtUtc);
+    });
+  }
+
+  String _validateSave(
+    SessionConfiguration configuration,
+    DateTime updatedAtUtc,
+  ) {
     if (!updatedAtUtc.isUtc) {
       throw ArgumentError.value(updatedAtUtc, 'updatedAtUtc', 'must be UTC');
     }
@@ -56,7 +85,15 @@ final class DriftSessionConfigurationStore
         SessionConfigurationResetReason.tampered,
       );
     }
-    await _database
+    return owner;
+  }
+
+  Future<void> _upsert(
+    SessionConfiguration configuration,
+    String owner,
+    DateTime updatedAtUtc,
+  ) {
+    return _database
         .into(_database.sessionConfigurations)
         .insertOnConflictUpdate(
           SessionConfigurationsCompanion.insert(

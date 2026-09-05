@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
@@ -16,7 +18,7 @@ typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
 typedef LearningActivityInitialState =
-    Map<String, Object?> Function(QuizSession session);
+    FutureOr<Map<String, Object?>> Function(QuizSession session);
 
 /// Immutable response semantics captured by the UI before any provider wait.
 final class FrozenLearningEvidenceCommand {
@@ -123,6 +125,9 @@ final class PendingLearningSessionClose {
   bool get isInFlight => _finishInFlight != null;
 
   String? get ownerId => _ownerId;
+
+  bool belongsToLearningAuthority(LearningUseCases authority) =>
+      identical(_learning, authority);
 
   void pinOwner(String ownerId) {
     final canonical = _learning._requiredId(ownerId, 'ownerId');
@@ -494,9 +499,12 @@ final class LearningUseCases {
     required LearningActivityInitialState initialState,
     String? categoryId,
     int limit = 10,
-    List<String>? pinnedWordIds,
+    List<PinnedQuizContent>? pinnedContent,
     SessionConfiguration? sessionConfiguration,
   }) async {
+    final frozenPinnedContent = pinnedContent == null
+        ? null
+        : List<PinnedQuizContent>.unmodifiable(pinnedContent);
     final activity = _requiredId(activityType, 'activityType');
     if (repository is! LearningActivityRecoveryRepository) {
       throw StateError(
@@ -510,7 +518,8 @@ final class LearningUseCases {
       itemCount: limit,
     );
     final List<QuizWord> words;
-    if (pinnedWordIds == null) {
+    List<PinnedQuizContent>? selectedPinnedContent;
+    if (frozenPinnedContent == null) {
       words = await repository.listQuizWords(
         ownerId: owner.id,
         categoryId: _optionalId(categoryId, 'categoryId'),
@@ -518,19 +527,23 @@ final class LearningUseCases {
       );
     } else {
       if (categoryId != null ||
-          repository is! PinnedLearningContentRepository) {
+          repository is! PinnedLearningContentRepository ||
+          repository is! ExactPinnedLearningActivityRepository) {
         throw StateError('Pinned quiz content authority is unavailable.');
       }
-      final selected = pinnedWordIds.take(limit).toList(growable: false);
+      final selected = List<PinnedQuizContent>.unmodifiable(
+        frozenPinnedContent.take(limit),
+      );
+      selectedPinnedContent = selected;
       if (selected.length != limit) {
         return const QuizSession(id: '', questions: [], startedAtUtc: null);
       }
       words = await (repository as PinnedLearningContentRepository)
-          .listPinnedQuizWords(ownerId: owner.id, wordIds: selected);
+          .listExactPinnedQuizWords(ownerId: owner.id, content: selected);
       if (words.length != selected.length ||
-          <String>[
-            for (final word in words) word.id,
-          ].indexed.any((entry) => entry.$2 != selected[entry.$1])) {
+          <String>[for (final word in words) word.id].indexed.any(
+            (entry) => entry.$2 != selected[entry.$1].identity.id,
+          )) {
         return const QuizSession(id: '', questions: [], startedAtUtc: null);
       }
     }
@@ -554,21 +567,28 @@ final class LearningUseCases {
       activityType: activity,
       revision: 1,
       occurredAtUtc: now,
-      state: initialState(session),
+      state: await initialState(session),
     );
-    await (repository as LearningActivityRecoveryRepository)
-        .startSessionWithCheckpoint(
-          session: LearningSessionDraft(
-            id: sessionId,
-            ownerId: owner.id,
-            activityType: activity,
-            startedAtUtc: now,
-            appVersion: buildInfo.version,
-            buildId: buildInfo.buildId,
-            sessionConfiguration: sessionConfiguration,
-          ),
-          checkpoint: checkpoint,
-        );
+    final draft = LearningSessionDraft(
+      id: sessionId,
+      ownerId: owner.id,
+      activityType: activity,
+      startedAtUtc: now,
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+      sessionConfiguration: sessionConfiguration,
+    );
+    if (frozenPinnedContent == null) {
+      await (repository as LearningActivityRecoveryRepository)
+          .startSessionWithCheckpoint(session: draft, checkpoint: checkpoint);
+    } else {
+      await (repository as ExactPinnedLearningActivityRepository)
+          .startExactPinnedSessionWithCheckpoint(
+            session: draft,
+            content: selectedPinnedContent!,
+            checkpoint: checkpoint,
+          );
+    }
     onLocalMutation?.call();
     return session;
   }
@@ -602,6 +622,78 @@ final class LearningUseCases {
           sessionId: _requiredId(sessionId, 'sessionId'),
           activityType: _requiredId(activityType, 'activityType'),
         );
+  }
+
+  /// Reconstructs a quiz-shaped view of an already accepted Learning session
+  /// from an exact, ordered lexical identity set. This does not create a new
+  /// session and fails closed when any pinned revision or checksum changed.
+  Future<QuizSession> reconstructPinnedQuizSession({
+    required LearningSessionSummary session,
+    required List<ContentIdentity> content,
+    required Map<String, String> contentChecksumsSha256,
+  }) async {
+    final sessionId = _requiredId(session.id, 'session.id');
+    final ownerId = _requiredId(session.ownerId, 'session.ownerId');
+    if (repository is! PinnedLearningContentRepository) {
+      throw StateError('Pinned quiz content authority is unavailable.');
+    }
+    if (content.isEmpty || content.length > 100) {
+      throw ArgumentError.value(
+        content,
+        'content',
+        'must contain 1–100 lexical identities',
+      );
+    }
+    final seen = <String>{};
+    for (final identity in content) {
+      final id = _requiredId(identity.id, 'content.id');
+      final checksum = contentChecksumsSha256[id];
+      if (identity.type != ContentType.lexicalMetadata ||
+          identity.revision <= 0 ||
+          !seen.add(id) ||
+          checksum == null ||
+          !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+        throw StateError('Pinned quiz content identity is invalid.');
+      }
+    }
+    if (contentChecksumsSha256.length != content.length ||
+        !contentChecksumsSha256.keys.every(seen.contains)) {
+      throw StateError('Pinned quiz content checksum set is invalid.');
+    }
+    final pins = <PinnedQuizContent>[
+      for (final identity in content)
+        PinnedQuizContent(
+          identity: identity,
+          checksumSha256: contentChecksumsSha256[identity.id]!,
+        ),
+    ];
+    final words = await (repository as PinnedLearningContentRepository)
+        .listExactPinnedQuizWords(ownerId: ownerId, content: pins);
+    if (words.length != content.length) {
+      throw StateError('Pinned quiz content is unavailable.');
+    }
+    for (var index = 0; index < words.length; index += 1) {
+      final word = words[index];
+      final identity = content[index];
+      if (word.id != identity.id ||
+          word.contentRevision != identity.revision ||
+          word.contentChecksumSha256 != contentChecksumsSha256[identity.id]) {
+        throw StateError('Pinned quiz content identity changed.');
+      }
+    }
+    final configuration = session.sessionConfiguration;
+    if (configuration != null &&
+        (configuration.ownerId != ownerId ||
+            configuration.itemCount != content.length)) {
+      throw StateError('Pinned quiz session configuration is corrupt.');
+    }
+    return QuizSession(
+      id: sessionId,
+      ownerId: ownerId,
+      startedAtUtc: session.startedAtUtc,
+      questions: _questions(words),
+      sessionConfiguration: configuration,
+    );
   }
 
   Future<void> appendActivityCheckpoint(
@@ -923,6 +1015,10 @@ final class LearningUseCases {
     LearningEventContext? resolvedEventContext,
     FrozenContrastiveFeedbackContext? contrastiveFeedback,
   }) async {
+    resolvedEventContext?.validateAgainst(
+      evidenceContext: evidenceContext,
+      occurredAtUtc: command.occurredAtUtc,
+    );
     final candidate = RecordAnswerCandidate(
       id: command.sourceEvidenceId,
       ownerId: ownerId,
@@ -935,7 +1031,8 @@ final class LearningUseCases {
       occurredAtUtc: command.occurredAtUtc,
       evidenceContext: evidenceContext,
       providerProvenance: command.providerProvenance,
-      actorIdentity: command.actorIdentity,
+      actorIdentity: command.actorIdentity ?? ownerId,
+      eventContext: resolvedEventContext,
     );
     _validateContrastiveFeedback(
       command: command,
@@ -1178,6 +1275,23 @@ final class LearningUseCases {
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
     return repository.listSessionHistory(ownerId: owner.id, limit: limit);
+  }
+
+  Future<List<LearningSessionSummary>> listCompletedActivitySessionHistory({
+    required String activityType,
+    int limit = 20,
+  }) async {
+    final scoped = repository;
+    if (scoped is! LearningActivitySessionHistoryRepository) {
+      throw StateError('Learning activity history authority is unavailable.');
+    }
+    final activityHistory = scoped as LearningActivitySessionHistoryRepository;
+    final owner = await owners.getOrCreateActiveOwner();
+    return activityHistory.listCompletedActivitySessionHistory(
+      ownerId: _requiredId(owner.id, 'ownerId'),
+      activityType: _requiredId(activityType, 'activityType'),
+      limit: limit,
+    );
   }
 
   Future<ReadingProgressSnapshot?> loadReadingProgress({

@@ -34,7 +34,9 @@ final class DriftLearningRepository
         LearningSessionLifecycleRepository,
         SessionConfiguredLearningRepository,
         LearningActivityRecoveryRepository,
+        LearningActivitySessionHistoryRepository,
         PinnedLearningContentRepository,
+        ExactPinnedLearningActivityRepository,
         ReviewSessionLearningRepository {
   static const int maxActivityRecoveryCheckpoints = 64;
   static const int maxActivityRecoveryAttempts = 128;
@@ -154,6 +156,53 @@ final class DriftLearningRepository
     } on Object {
       return ordered;
     }
+  }
+
+  @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) async {
+    final wordIds = _requireExactPinnedQuizIds(content);
+    final words = await listPinnedQuizWords(ownerId: ownerId, wordIds: wordIds);
+    if (words.length != content.length) return const <QuizWord>[];
+    for (var index = 0; index < words.length; index += 1) {
+      final word = words[index];
+      final pin = content[index];
+      if (word.id != pin.identity.id ||
+          word.contentRevision != pin.identity.revision ||
+          word.contentChecksumSha256 != pin.checksumSha256) {
+        return const <QuizWord>[];
+      }
+    }
+    return List<QuizWord>.unmodifiable(words);
+  }
+
+  List<String> _requireExactPinnedQuizIds(List<PinnedQuizContent> content) {
+    if (content.isEmpty || content.length > 100) {
+      throw ArgumentError.value(
+        content,
+        'content',
+        'must contain 1–100 exact lexical identities',
+      );
+    }
+    final ids = <String>{};
+    for (final pin in content) {
+      final identity = pin.identity;
+      if (identity.type != ContentType.lexicalMetadata ||
+          identity.id.isEmpty ||
+          identity.id != identity.id.trim() ||
+          identity.revision <= 0 ||
+          !ids.add(identity.id) ||
+          !RegExp(r'^[0-9a-f]{64}$').hasMatch(pin.checksumSha256)) {
+        throw ArgumentError.value(
+          pin,
+          'content',
+          'contains an invalid exact lexical identity',
+        );
+      }
+    }
+    return List<String>.unmodifiable(content.map((pin) => pin.identity.id));
   }
 
   @override
@@ -374,54 +423,123 @@ final class DriftLearningRepository
     final canonicalCheckpoint = _canonicalizeActivityCheckpoint(checkpoint);
     final sessionId = _required(session.id, 'session.id');
     final ownerId = _required(session.ownerId, 'session.ownerId');
-    return database.transaction(() async {
-      var stored = await (database.select(
-        database.learningSessions,
-      )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
-      if (stored == null) {
-        final active =
-            await (database.select(database.learningSessions)
-                  ..where(
-                    (row) =>
-                        row.ownerId.equals(ownerId) &
-                        row.state.equals('active'),
-                  )
-                  ..orderBy([(row) => OrderingTerm.asc(row.id)])
-                  ..limit(1))
-                .getSingleOrNull();
-        if (active != null) {
-          throw ActiveLearningSessionConflict(
-            ownerId: ownerId,
-            activeSessionId: active.id,
-            requestedSessionId: sessionId,
-          );
-        }
-        await startSession(session);
-        stored = await (database.select(
-          database.learningSessions,
-        )..where((row) => row.id.equals(sessionId))).getSingle();
-      }
-      if (stored.ownerId != ownerId ||
-          stored.activityType != session.activityType ||
-          stored.state != 'active' ||
-          stored.startedAtUtcMs !=
-              _requiredUtc(
-                session.startedAtUtc,
-                'startedAtUtc',
-              ).millisecondsSinceEpoch ||
-          stored.appVersion != session.appVersion ||
-          stored.buildId != session.buildId ||
-          stored.sessionConfigurationIdentity !=
-              session.sessionConfiguration?.contentIdentity ||
-          stored.sessionConfigurationJson !=
-              session.sessionConfiguration?.stableSerialization) {
-        throw StateError('learning activity session identity conflict');
-      }
-      await _appendActivityCheckpoint(
-        ownerId: ownerId,
+    return database.transaction(
+      () => _startSessionWithCheckpointInTransaction(
+        session: session,
         checkpoint: canonicalCheckpoint,
+        sessionId: sessionId,
+        ownerId: ownerId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) {
+    final frozenContent = List<PinnedQuizContent>.unmodifiable(content);
+    if (checkpoint.sessionId != session.id ||
+        checkpoint.activityType != session.activityType ||
+        checkpoint.revision != 1) {
+      throw ArgumentError.value(
+        checkpoint,
+        'checkpoint',
+        'must be revision 1 for the same activity session',
+      );
+    }
+    final wordIds = _requireExactPinnedQuizIds(frozenContent);
+    final canonicalCheckpoint = _canonicalizeActivityCheckpoint(checkpoint);
+    final sessionId = _required(session.id, 'session.id');
+    final ownerId = _required(session.ownerId, 'session.ownerId');
+    return database.transaction(() async {
+      final activeOwners =
+          await (database.select(database.localOwners)
+                ..where((row) => row.isActive.equals(true))
+                ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                ..limit(2))
+              .get();
+      if (activeOwners.length != 1 || activeOwners.single.id != ownerId) {
+        throw StateError(
+          'Pinned checkpoint session owner is no longer uniquely active.',
+        );
+      }
+      final rows =
+          await (database.select(database.vocabularyWords)..where(
+                (row) => row.ownerId.equals(ownerId) & row.id.isIn(wordIds),
+              ))
+              .get();
+      final byId = <String, db.VocabularyWord>{
+        for (final row in rows) row.id: row,
+      };
+      for (final pin in frozenContent) {
+        final row = byId[pin.identity.id];
+        final word = row == null ? null : _quizWordFromRow(row);
+        if (row == null ||
+            row.isDeleted ||
+            word!.contentRevision != pin.identity.revision ||
+            word.contentChecksumSha256 != pin.checksumSha256) {
+          throw StateError('Pinned checkpoint content is no longer exact.');
+        }
+      }
+      await _startSessionWithCheckpointInTransaction(
+        session: session,
+        checkpoint: canonicalCheckpoint,
+        sessionId: sessionId,
+        ownerId: ownerId,
       );
     });
+  }
+
+  Future<void> _startSessionWithCheckpointInTransaction({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+    required String sessionId,
+    required String ownerId,
+  }) async {
+    var stored = await (database.select(
+      database.learningSessions,
+    )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
+    if (stored == null) {
+      final active =
+          await (database.select(database.learningSessions)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) & row.state.equals('active'),
+                )
+                ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                ..limit(1))
+              .getSingleOrNull();
+      if (active != null) {
+        throw ActiveLearningSessionConflict(
+          ownerId: ownerId,
+          activeSessionId: active.id,
+          requestedSessionId: sessionId,
+        );
+      }
+      await startSession(session);
+      stored = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(sessionId))).getSingle();
+    }
+    if (stored.ownerId != ownerId ||
+        stored.activityType != session.activityType ||
+        stored.state != 'active' ||
+        stored.startedAtUtcMs !=
+            _requiredUtc(
+              session.startedAtUtc,
+              'startedAtUtc',
+            ).millisecondsSinceEpoch ||
+        stored.appVersion != session.appVersion ||
+        stored.buildId != session.buildId ||
+        stored.sessionConfigurationIdentity !=
+            session.sessionConfiguration?.contentIdentity ||
+        stored.sessionConfigurationJson !=
+            session.sessionConfiguration?.stableSerialization) {
+      throw StateError('learning activity session identity conflict');
+    }
+    await _appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
   }
 
   @override
@@ -840,9 +958,22 @@ final class DriftLearningRepository
       final schemaVersion = decoded['schemaVersion'];
       final isV1 = schemaVersion == 1;
       final isV2 = schemaVersion == 2;
-      final expectedLength = isV1 ? 5 : 7;
+      const v1Keys = <String>{
+        'schemaVersion',
+        'activityType',
+        'sessionId',
+        'revision',
+        'state',
+      };
+      const v2Keys = <String>{
+        ...v1Keys,
+        'terminalAtUtc',
+        'terminalAcknowledged',
+      };
+      final expectedKeys = isV1 ? v1Keys : v2Keys;
       if ((!isV1 && !isV2) ||
-          decoded.length != expectedLength ||
+          decoded.length != expectedKeys.length ||
+          !decoded.keys.every(expectedKeys.contains) ||
           decoded['activityType'] != session.activityType ||
           decoded['sessionId'] != session.id ||
           decoded['revision'] is! int ||
@@ -1047,8 +1178,35 @@ final class DriftLearningRepository
                 attempt: existing,
                 source: event,
               ) !=
-              null) {
+              null ||
+          !events.isExactDeclaredSourceForCandidate(
+            candidate: candidate,
+            source: event,
+            // A retry captured after a guest-to-account merge naturally binds
+            // to the active account owner while the durable event keeps the
+            // historical guest actor. validateSourceForAttempt above has
+            // already authenticated that actor lineage. An explicitly pinned
+            // historical actor must still match exactly.
+            allowStoredHistoricalActor:
+                candidate.actorIdentity == candidate.ownerId,
+          )) {
         throw StateError('committed answer has missing or corrupt event');
+      }
+      final expectedEventContext = candidate.eventContext;
+      if (expectedEventContext != null) {
+        late final LearningEventContext storedEventContext;
+        try {
+          storedEventContext = LearningEventContext.fromEvidenceEnvelope(
+            envelope: event,
+            evidenceContext: candidate.evidenceContext,
+          );
+        } on Object {
+          throw StateError('committed answer has corrupt event context');
+        }
+        if (jsonEncode(storedEventContext.toJson()) !=
+            jsonEncode(expectedEventContext.toJson())) {
+          throw StateError('committed answer event context changed');
+        }
       }
       final decisionSet = await events.ensureDecisionSetForAttempt(
         attempt: existing,
@@ -1976,6 +2134,31 @@ final class DriftLearningRepository
                 (t) => t.ownerId.equals(ownerId) & t.state.equals('completed'),
               )
               ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
+              ..limit(limit))
+            .get();
+    return rows.map(_rowToSummary).toList(growable: false);
+  }
+
+  @override
+  Future<List<LearningSessionSummary>> listCompletedActivitySessionHistory({
+    required String ownerId,
+    required String activityType,
+    required int limit,
+  }) async {
+    final canonicalOwnerId = _required(ownerId, 'ownerId');
+    final canonicalActivityType = _required(activityType, 'activityType');
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
+    final rows =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(canonicalOwnerId) &
+                    row.activityType.equals(canonicalActivityType) &
+                    row.state.equals('completed'),
+              )
+              ..orderBy([(row) => OrderingTerm.desc(row.startedAtUtcMs)])
               ..limit(limit))
             .get();
     return rows.map(_rowToSummary).toList(growable: false);

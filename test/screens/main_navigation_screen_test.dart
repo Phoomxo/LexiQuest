@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:ui' show Tristate;
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -10,30 +12,45 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/features/adventure/application/adventure_entry_use_cases.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_motivation_projection_reader.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_mixed_review_prompt_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_journey_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_presentation_preferences.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_result_next_action_reader.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_rollout_gate.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_recovery_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_repair_policy.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_session_composer.dart';
 import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_world_catalog.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_result.dart';
+import 'package:vocab_learning_app/features/adventure/domain/adventure_session_plan.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/adventure_mixed_review_screen.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/adventure_result_lifecycle_screen.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_today_entry_card.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
 import 'package:vocab_learning_app/features/history/domain/learning_history_models.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_session_configuration_store.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
@@ -51,6 +68,7 @@ import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_category.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
@@ -66,6 +84,7 @@ import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/today_hub_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -133,7 +152,704 @@ void main() {
       enabled.emergencyOff(Feature.adventureMotivation);
       await tester.pumpAndSettle();
       expect(find.byType(TodayExperienceHost), findsNothing);
+      expect(find.byType(ChooseModeScreen), findsOneWidget);
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
       expect(loader.calls, callsBeforeAdventureEntry + 1);
+    },
+  );
+
+  testWidgets(
+    'Adventure launches canonical mixed review and emergency-off finishes as Standard',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'navigation-mixed-review',
+        nowUtc: () => DateTime.utc(2026, 9, 5, 8),
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      final seeded = await _seedNavigationMixedReviewWord(database, ownerId);
+      final vocabularyRepository = DriftVocabularyRepository(database);
+      var now = DateTime.utc(2026, 9, 5, 9);
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(
+          database,
+          lexicalVocabulary: vocabularyRepository,
+        ),
+        generateId: () => 'navigation-mixed-review-session',
+        nowUtc: () {
+          final value = now;
+          now = now.add(const Duration(seconds: 1));
+          return value;
+        },
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'navigation-mixed-review',
+        ),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: vocabularyRepository,
+        generateId: () => 'unused',
+        nowUtc: () => now,
+      );
+      final today = _navigationMixedReviewToday(
+        ownerId: ownerId,
+        identity: seeded.identity,
+        checksumSha256: seeded.checksumSha256,
+      );
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+      final dependencyRegistry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      )..emergencyOff(Feature.quiz);
+      addTearDown(dependencyRegistry.dispose);
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          registry,
+          dependencyFeatureRegistry: dependencyRegistry,
+          todayHub: _NavigationTodayHubLoader(today),
+          localOwners: owners,
+          databaseOverride: database,
+          learningOverride: learning,
+          vocabularyOverride: vocabulary,
+          activeOwnerIdentities: _NavigationReviewOwnerIdentities(ownerId),
+          includeAdventure: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/today-experience')),
+      );
+      await tester.pumpAndSettle();
+      final host = tester.widget<TodayExperienceHost>(
+        find.byType(TodayExperienceHost),
+      );
+      final mission = AdventureMissionRef(
+        missionId: 'review:${seeded.identity.id}',
+        ownerId: ownerId,
+        nodeId: 'resume-review',
+        kind: AdventureMissionKind.review,
+        sourceId: seeded.identity.id,
+        content: <ContentIdentity>[seeded.identity],
+        reasonCode: 'due_review',
+        sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+        suggestedMode: null,
+      );
+      final launch = host.onStartMission(
+        AdventureMissionLaunchContext(
+          mission: mission,
+          today: today,
+          entryDecision: AdventureProductEntryDecision(
+            entryAttemptId: 'entry-navigation-mixed-review',
+            availability: AdventureAvailability.available,
+            destination: AdventureEntryDestination.adventure,
+            fallbackReason: AdventureFallbackReason.none,
+            catalogId: host.catalog.catalogId,
+            catalogVersion: host.catalog.catalogVersion,
+            catalogSchemaVersion: host.catalog.schemaVersion,
+            treatment: 'adventure',
+          ),
+          rewardOwnership: const RewardAccount(
+            coinBalance: 0,
+            catalogVersion: RewardCatalog.version,
+            ownedItemIds: <String>{},
+            equippedBySlot: <String, String>{},
+            transactionCount: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('session-configuration-sheet')),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.pumpAndSettle();
+      await launch;
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AdventureMixedReviewScreen), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('mixed-review-typed-input')),
+        findsOneWidget,
+      );
+      final active = await database.select(database.learningSessions).get();
+      expect(active, hasLength(1));
+      expect(active.single.activityType, mixedReviewActivityType);
+      expect(active.single.state, 'active');
+
+      registry.emergencyOff(Feature.adventureMotivation);
+      await tester.pump();
+      expect(find.byType(AdventureMixedReviewScreen), findsOneWidget);
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
+
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('mixed-review-typed-input')),
+        seeded.spelling,
+      );
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('mixed-review-submit')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mixed-review-submit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('mixed-review-next')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('mixed-review-next')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ScoreScreen), findsOneWidget);
+      expect(find.byType(AdventureResultLifecycleScreen), findsNothing);
+      final completed = await database.select(database.learningSessions).get();
+      expect(completed.single.state, 'completed');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
+
+  testWidgets(
+    'Today resumes snapshotted mixed review without Adventure or vocabulary dependencies',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'navigation-mixed-review-resume',
+        nowUtc: () => DateTime.utc(2026, 9, 5, 10),
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      final seeded = await _seedNavigationMixedReviewWord(database, ownerId);
+      final vocabularyRepository = DriftVocabularyRepository(database);
+      var now = DateTime.utc(2026, 9, 5, 11);
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(
+          database,
+          lexicalVocabulary: vocabularyRepository,
+        ),
+        generateId: () => 'navigation-mixed-review-resume-session',
+        nowUtc: () {
+          final value = now;
+          now = now.add(const Duration(seconds: 1));
+          return value;
+        },
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'navigation-mixed-review-resume',
+        ),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: vocabularyRepository,
+        generateId: () => 'unused',
+        nowUtc: () => now,
+      );
+      final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+      final recovery = AdventureRecoveryUseCases(
+        learning: learning,
+        evidence: evidence,
+        canStartNewMission: () => true,
+        isRepairModeEligible: (_, _, _) => false,
+      );
+      await recovery.startOrResume(
+        plan: _navigationMixedReviewPlan(
+          ownerId: ownerId,
+          identity: seeded.identity,
+          checksumSha256: seeded.checksumSha256,
+        ),
+        activeOwnerId: ownerId,
+        buildPromptCatalogSnapshot: (session) async {
+          final lexicalWords = await vocabulary.readPinnedByIds(
+            session.questions.map((question) => question.word.id),
+          );
+          return AdventureMixedReviewPromptCatalog(
+            session: session,
+            lexicalWords: lexicalWords,
+            registry: buildLessonModeRegistry(),
+            direction: SessionDirection.forward,
+          ).snapshot;
+        },
+      );
+      final activeSession = await learning.getActiveSession();
+      expect(activeSession, isNotNull);
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      )..emergencyOff(Feature.adventureMotivation);
+      addTearDown(registry.dispose);
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          registry,
+          todayHub: _NavigationTodayHubLoader(
+            _navigationResumeToday(ownerId, activeSession!),
+          ),
+          localOwners: owners,
+          databaseOverride: database,
+          learningOverride: learning,
+          includeVocabulary: false,
+          activeOwnerIdentities: _NavigationReviewOwnerIdentities(ownerId),
+          includeAdventure: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('home/today')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-hub-resume-action')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AdventureMixedReviewScreen), findsOneWidget);
+      expect(find.text('ทบทวนคำศัพท์'), findsOneWidget);
+      expect(find.byType(ProductionFeatureUnavailable), findsNothing);
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('mixed-review-typed-input')),
+        seeded.spelling,
+      );
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('mixed-review-submit')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mixed-review-submit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('mixed-review-next')),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('mixed-review-next')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ScoreScreen), findsOneWidget);
+      expect(find.byType(AdventureResultLifecycleScreen), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
+
+  testWidgets(
+    'catalog preflight failure leaves no accepted mixed review behind',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'navigation-mixed-review-catalog-failure',
+        nowUtc: () => DateTime.utc(2026, 9, 5, 12),
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      final seeded = await _seedNavigationMixedReviewWord(database, ownerId);
+      final vocabularyRepository = _FailingSecondPinnedReadVocabularyRepository(
+        DriftVocabularyRepository(database),
+      );
+      var now = DateTime.utc(2026, 9, 5, 13);
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(
+          database,
+          lexicalVocabulary: vocabularyRepository,
+        ),
+        generateId: () => 'navigation-mixed-review-catalog-failure-session',
+        nowUtc: () {
+          final value = now;
+          now = now.add(const Duration(seconds: 1));
+          return value;
+        },
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'navigation-mixed-review-catalog-failure',
+        ),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: vocabularyRepository,
+        generateId: () => 'unused',
+        nowUtc: () => now,
+      );
+      final today = _navigationMixedReviewToday(
+        ownerId: ownerId,
+        identity: seeded.identity,
+        checksumSha256: seeded.checksumSha256,
+      );
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          registry,
+          todayHub: _NavigationTodayHubLoader(today),
+          localOwners: owners,
+          databaseOverride: database,
+          learningOverride: learning,
+          vocabularyOverride: vocabulary,
+          activeOwnerIdentities: _NavigationReviewOwnerIdentities(ownerId),
+          includeAdventure: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/today-experience')),
+      );
+      await tester.pumpAndSettle();
+      final host = tester.widget<TodayExperienceHost>(
+        find.byType(TodayExperienceHost),
+      );
+      final launch = host.onStartMission(
+        AdventureMissionLaunchContext(
+          mission: AdventureMissionRef(
+            missionId: 'review:${seeded.identity.id}',
+            ownerId: ownerId,
+            nodeId: 'resume-review',
+            kind: AdventureMissionKind.review,
+            sourceId: seeded.identity.id,
+            content: <ContentIdentity>[seeded.identity],
+            reasonCode: 'due_review',
+            sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+            suggestedMode: LessonMode.typedRecall,
+          ),
+          today: today,
+          entryDecision: AdventureProductEntryDecision(
+            entryAttemptId: 'entry-navigation-catalog-failure',
+            availability: AdventureAvailability.available,
+            destination: AdventureEntryDestination.adventure,
+            fallbackReason: AdventureFallbackReason.none,
+            catalogId: host.catalog.catalogId,
+            catalogVersion: host.catalog.catalogVersion,
+            catalogSchemaVersion: host.catalog.schemaVersion,
+            treatment: 'adventure',
+          ),
+          rewardOwnership: const RewardAccount(
+            coinBalance: 0,
+            catalogVersion: RewardCatalog.version,
+            ownedItemIds: <String>{},
+            equippedBySlot: <String, String>{},
+            transactionCount: 0,
+          ),
+        ),
+      );
+      final launchFailure = expectLater(launch, throwsA(isA<StateError>()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.pumpAndSettle();
+
+      await launchFailure;
+      final sessions = await database.select(database.learningSessions).get();
+      expect(sessions, isEmpty);
+      expect(vocabularyRepository.pinnedReadCalls, 2);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
+
+  testWidgets(
+    'owner drift during atomic persistence performs zero stale writes and zero launch',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'navigation-mixed-review-owner-drift',
+        nowUtc: () => DateTime.utc(2026, 9, 5, 13, 30),
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      final seeded = await _seedNavigationMixedReviewWord(database, ownerId);
+      final vocabularyRepository = DriftVocabularyRepository(database);
+      var now = DateTime.utc(2026, 9, 5, 13, 31);
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(
+          database,
+          lexicalVocabulary: vocabularyRepository,
+        ),
+        generateId: () => 'navigation-mixed-review-owner-drift-session',
+        nowUtc: () {
+          final value = now;
+          now = now.add(const Duration(seconds: 1));
+          return value;
+        },
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'navigation-mixed-review-owner-drift',
+        ),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: vocabularyRepository,
+        generateId: () => 'unused',
+        nowUtc: () => now,
+      );
+      final today = _navigationMixedReviewToday(
+        ownerId: ownerId,
+        identity: seeded.identity,
+        checksumSha256: seeded.checksumSha256,
+      );
+      final ownerIdentities = _MutableNavigationReviewOwnerIdentities(ownerId);
+      final configurations = _GatedActiveOwnerSessionConfigurationStore(
+        ownerId,
+      );
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          registry,
+          todayHub: _NavigationTodayHubLoader(today),
+          localOwners: owners,
+          databaseOverride: database,
+          learningOverride: learning,
+          vocabularyOverride: vocabulary,
+          activeOwnerIdentities: ownerIdentities,
+          sessionConfigurationsOverride: configurations,
+          includeAdventure: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/today-experience')),
+      );
+      await tester.pumpAndSettle();
+      final host = tester.widget<TodayExperienceHost>(
+        find.byType(TodayExperienceHost),
+      );
+      final launch = host.onStartMission(
+        AdventureMissionLaunchContext(
+          mission: AdventureMissionRef(
+            missionId: 'review:${seeded.identity.id}',
+            ownerId: ownerId,
+            nodeId: 'resume-review',
+            kind: AdventureMissionKind.review,
+            sourceId: seeded.identity.id,
+            content: <ContentIdentity>[seeded.identity],
+            reasonCode: 'due_review',
+            sourceEvaluatedAtUtc: today.evaluatedAtUtc,
+            suggestedMode: LessonMode.typedRecall,
+          ),
+          today: today,
+          entryDecision: AdventureProductEntryDecision(
+            entryAttemptId: 'entry-navigation-owner-drift',
+            availability: AdventureAvailability.available,
+            destination: AdventureEntryDestination.adventure,
+            fallbackReason: AdventureFallbackReason.none,
+            catalogId: host.catalog.catalogId,
+            catalogVersion: host.catalog.catalogVersion,
+            catalogSchemaVersion: host.catalog.schemaVersion,
+            treatment: 'adventure',
+          ),
+          rewardOwnership: const RewardAccount(
+            coinBalance: 0,
+            catalogVersion: RewardCatalog.version,
+            ownedItemIds: <String>{},
+            equippedBySlot: <String, String>{},
+            transactionCount: 0,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('session-configuration-sheet')),
+        findsOneWidget,
+      );
+
+      final launchFailure = expectLater(
+        launch,
+        throwsA(
+          isA<SessionConfigurationResetRequired>().having(
+            (error) => error.reason,
+            'reason',
+            SessionConfigurationResetReason.ownerDrift,
+          ),
+        ),
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      await tester.pump();
+      await configurations.persistenceStarted.future;
+      ownerIdentities.ownerId = 'owner:changed-during-persistence';
+      configurations.activeOwnerId = ownerIdentities.ownerId;
+      configurations.releasePersistence.complete();
+      await tester.pumpAndSettle();
+
+      await launchFailure;
+      expect(configurations.atomicSaveCalls, 1);
+      expect(configurations.saveCalls, 0);
+      expect(configurations.writeCalls, 0);
+      expect(find.byType(AdventureMixedReviewScreen), findsNothing);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+  );
+
+  testWidgets(
+    'emergency-off exposes completed unpresented mixed review on Learn',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'navigation-terminal-recovery',
+        nowUtc: () => DateTime.utc(2026, 9, 5, 14),
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      final seeded = await _seedNavigationMixedReviewWord(database, ownerId);
+      final vocabularyRepository = DriftVocabularyRepository(database);
+      var now = DateTime.utc(2026, 9, 5, 15);
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(
+          database,
+          lexicalVocabulary: vocabularyRepository,
+        ),
+        generateId: () => 'navigation-terminal-recovery-session',
+        nowUtc: () {
+          final value = now;
+          now = now.add(const Duration(seconds: 1));
+          return value;
+        },
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'navigation-terminal-recovery',
+        ),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: vocabularyRepository,
+        generateId: () => 'unused',
+        nowUtc: () => now,
+      );
+      final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+      final recovery = AdventureRecoveryUseCases(
+        learning: learning,
+        evidence: evidence,
+        canStartNewMission: () => true,
+        isRepairModeEligible: (_, _, _) => false,
+      );
+      final plan = _navigationMixedReviewPlan(
+        ownerId: ownerId,
+        identity: seeded.identity,
+        checksumSha256: seeded.checksumSha256,
+      );
+      final run = await recovery.startOrResume(
+        plan: plan,
+        activeOwnerId: ownerId,
+        buildPromptCatalogSnapshot: (session) async {
+          final lexicalWords = await vocabulary.readPinnedByIds(
+            session.questions.map((question) => question.word.id),
+          );
+          return AdventureMixedReviewPromptCatalog(
+            session: session,
+            lexicalWords: lexicalWords,
+            registry: buildLessonModeRegistry(),
+            direction: SessionDirection.forward,
+          ).snapshot;
+        },
+      );
+      final pending = evidence.capture(
+        ownerId: ownerId,
+        input: CurrentActivityInput.typedRecall,
+        sessionId: run.session.id,
+        wordId: seeded.identity.id,
+        isCorrect: true,
+        responseTimeMs: 500,
+        attemptNumber: 1,
+      );
+      await recovery.checkpointPendingEvidence(
+        pending: pending,
+        originalIndex: 0,
+        role: AdventureLearningItemRole.original,
+        mode: LessonMode.typedRecall,
+      );
+      await pending.record();
+      recovery.acceptPendingOccurrence(
+        AdventureRepairAttempt(
+          identity: seeded.identity,
+          mode: LessonMode.typedRecall,
+          promptVariant: 'typedRecall',
+          outcome: AdventureAttemptOutcome.correct,
+          evidenceClass: EvidenceClass.independentRecall,
+          canonicalEvidenceCommitted: true,
+          sourceEvidenceId: pending.sourceEvidenceId,
+        ),
+        nextOriginalIndex: 1,
+        remainingOriginalItems: 0,
+      );
+      await recovery.completeSession(
+        learning.captureSessionClose(
+          sessionId: run.session.id,
+          ownerId: ownerId,
+        ),
+      );
+      expect(await learning.getActiveSession(), isNull);
+
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      )..emergencyOff(Feature.adventureMotivation);
+      addTearDown(registry.dispose);
+      await tester.pumpWidget(
+        _mainNavigationApp(
+          registry,
+          todayHub: _NavigationTodayHubLoader(
+            _emptyTodayHubSnapshot(ownerId: ownerId),
+          ),
+          localOwners: owners,
+          databaseOverride: database,
+          learningOverride: learning,
+          includeVocabulary: false,
+          activeOwnerIdentities: _NavigationReviewOwnerIdentities(ownerId),
+          includeAdventure: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('ทำบทเรียนที่บันทึกไว้ให้เสร็จ'), findsOneWidget);
+      await tester.tap(find.text('ทำบทเรียนที่บันทึกไว้ให้เสร็จ'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ScoreScreen), findsOneWidget);
+      expect(find.byType(AdventureResultLifecycleScreen), findsNothing);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(ScoreScreen), findsNothing);
+      expect(find.text('ทำบทเรียนที่บันทึกไว้ให้เสร็จ'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
     },
   );
 
@@ -164,9 +880,11 @@ void main() {
     'Adventure entry fails closed when a launch authority is absent',
     (tester) async {
       for (final missing in <String>[
+        'vocabulary',
         'lessonModes',
         'controller',
         'configurationStore',
+        'atomicConfigurationStore',
         'evidence',
         'rewardReader',
         'sessionComposer',
@@ -182,9 +900,13 @@ void main() {
             const BuildFeatureRegistry.allEnabled(),
             todayHub: _NavigationTodayHubLoader(_emptyTodayHubSnapshot()),
             includeAdventure: true,
+            includeVocabulary: missing != 'vocabulary',
             includeLessonModes: missing != 'lessonModes',
             includeCreateLessonController: missing != 'controller',
             includeSessionConfigurations: missing != 'configurationStore',
+            sessionConfigurationsOverride: missing == 'atomicConfigurationStore'
+                ? _CountingSessionConfigurationStore()
+                : null,
             includeCurrentActivityEvidence: missing != 'evidence',
             includeRewardAccounts: missing != 'rewardReader',
             includeAdventureSessionComposer: missing != 'sessionComposer',
@@ -912,15 +1634,21 @@ void _expectSingleThaiDrawerAction(
 
 Widget _mainNavigationApp(
   FeatureRegistry registry, {
+  FeatureRegistry? dependencyFeatureRegistry,
   TodayHubSnapshotLoader? todayHub,
   LocalOwnerRepository? localOwners,
+  AppDatabase? databaseOverride,
+  LearningUseCases? learningOverride,
+  VocabularyUseCases? vocabularyOverride,
   ReviewOwnerIdentityReader? activeOwnerIdentities,
   bool includeReviewCenter = true,
   bool includeLearningHistory = true,
   bool includeLearning = true,
+  bool includeVocabulary = true,
   bool includeLessonModes = true,
   bool includeCreateLessonController = true,
   bool includeSessionConfigurations = true,
+  SessionConfigurationStore? sessionConfigurationsOverride,
   bool includeCurrentActivityEvidence = true,
   bool includeRewardAccounts = true,
   bool includeAdventureMotivation = true,
@@ -938,8 +1666,8 @@ Widget _mainNavigationApp(
   AdventureDiagnostics? adventureDiagnosticsOverride,
   ValueSetter<AppDependencies>? onDependencies,
 }) {
-  final database = AppDatabase(NativeDatabase.memory());
-  addTearDown(database.close);
+  final database = databaseOverride ?? AppDatabase(NativeDatabase.memory());
+  if (databaseOverride == null) addTearDown(database.close);
   final research = InertResearchDependencies(database);
   final owner = localOwners ?? _NavigationOwner();
   final ownerIdentities =
@@ -950,13 +1678,15 @@ Widget _mainNavigationApp(
     queries: DriftProgressQueries(database),
     nowUtc: () => DateTime.utc(2026, 8, 24),
   );
-  final learning = LearningUseCases(
-    owners: owner,
-    repository: _NavigationLearningRepository(),
-    generateId: () => 'navigation-learning',
-    nowUtc: () => DateTime.utc(2026, 8, 24),
-    buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
-  );
+  final learning =
+      learningOverride ??
+      LearningUseCases(
+        owners: owner,
+        repository: _NavigationLearningRepository(),
+        generateId: () => 'navigation-learning',
+        nowUtc: () => DateTime.utc(2026, 8, 24),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
   final learnerPreferences = LearnerPreferencesUseCases(
     repository: _NavigationPreferences(),
     owners: owner,
@@ -999,19 +1729,22 @@ Widget _mainNavigationApp(
     config: null,
     guestSessionService: _NavigationGuestSession(),
     quest: testQuestUseCases(),
-    features: registry,
+    features: dependencyFeatureRegistry ?? registry,
     experiments: research.experiments,
     consents: research.consents,
     experimentAssignments: research.experimentAssignments,
     assignedLearningEventContext: research.assignedLearningEventContext,
     evidencePolicyRolloutModeProvider:
         research.evidencePolicyRolloutModeProvider,
-    vocabulary: VocabularyUseCases(
-      owners: owner,
-      vocabulary: _NavigationVocabularyRepository(),
-      generateId: () => 'navigation-vocabulary',
-      nowUtc: () => DateTime.utc(2026, 8, 24),
-    ),
+    vocabulary: includeVocabulary
+        ? vocabularyOverride ??
+              VocabularyUseCases(
+                owners: owner,
+                vocabulary: _NavigationVocabularyRepository(),
+                generateId: () => 'navigation-vocabulary',
+                nowUtc: () => DateTime.utc(2026, 8, 24),
+              )
+        : null,
     localOwners: owner,
     learning: includeLearning ? learning : null,
     lessonModes: includeLessonModes ? buildLessonModeRegistry() : null,
@@ -1023,7 +1756,8 @@ Widget _mainNavigationApp(
         ? CurrentActivityEvidenceAdapter(learning: learning)
         : null,
     sessionConfigurations: includeSessionConfigurations
-        ? DriftSessionConfigurationStore(database)
+        ? sessionConfigurationsOverride ??
+              DriftSessionConfigurationStore(database)
         : null,
     progress: progress,
     learnerPreferences: learnerPreferences,
@@ -1101,7 +1835,10 @@ Widget _mainNavigationApp(
   onDependencies?.call(dependencies);
   return AppDependenciesScope(
     dependencies: dependencies,
-    child: MaterialApp(home: MainNavigationScreen(featureRegistry: registry)),
+    child: MaterialApp(
+      navigatorObservers: <NavigatorObserver>[appRouteObserver],
+      home: MainNavigationScreen(featureRegistry: registry),
+    ),
   );
 }
 
@@ -1240,8 +1977,9 @@ final class _NavigationPreferences implements LearnerPreferencesRepository {
 
 TodayHubSnapshot _emptyTodayHubSnapshot({
   LearningSessionSummary? resumableSession,
+  String ownerId = 'owner:main-navigation',
 }) => TodayHubSnapshot(
-  ownerId: 'owner:main-navigation',
+  ownerId: ownerId,
   evaluatedAtUtc: DateTime.utc(2026, 8, 31, 8),
   sectionOrder: TodayHubSectionKind.values,
   resumableSession: resumableSession,
@@ -1249,7 +1987,218 @@ TodayHubSnapshot _emptyTodayHubSnapshot({
   reviewWork: const <TodayHubReviewWorkItem>[],
   recommendation: TodayHubRecommendation(
     result: RecommendationPanelResult.unavailable(
-      ownerId: 'owner:main-navigation',
+      ownerId: ownerId,
+      reason: RecommendationPanelReason.noEligibleActivity,
+      freshness: RecommendationEvidenceFreshness.missing,
+      protocolConstraint: RecommendationProtocolConstraint.open,
+    ),
+    isAuthoritative: false,
+    mergedInto: null,
+  ),
+  goals: const [],
+  reminders: const [],
+  quests: const [],
+  gentleStreak: null,
+  dependencyStates: <TodayHubDependency, TodayHubDependencyState>{
+    for (final dependency in TodayHubDependency.values)
+      dependency: TodayHubDependencyState.ready,
+  },
+);
+
+Future<({ContentIdentity identity, String checksumSha256, String spelling})>
+_seedNavigationMixedReviewWord(AppDatabase database, String ownerId) async {
+  const categoryId = 'category:navigation-mixed-review';
+  const wordId = 'word:navigation-station';
+  const spelling = 'station';
+  const meaning = 'สถานี';
+  const partOfSpeech = 'noun';
+  const source = 'pack';
+  const isGlobal = true;
+  final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
+    categoryId: categoryId,
+    spelling: spelling,
+    normalizedSpelling: spelling,
+    meaning: meaning,
+    normalizedMeaning: meaning,
+    partOfSpeech: partOfSpeech,
+    cefrLevel: 'A1',
+    source: source,
+    isGlobal: isGlobal,
+  );
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Navigation mixed review',
+          normalizedName: 'navigation mixed review',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: spelling,
+          normalizedSpelling: spelling,
+          meaning: meaning,
+          normalizedMeaning: meaning,
+          partOfSpeech: partOfSpeech,
+          cefrLevel: const Value('A1'),
+          source: const Value(source),
+          isGlobal: const Value(isGlobal),
+          contentRevision: const Value(1),
+          contentChecksumSha256: Value(checksum),
+          contentProvenance: Value(ContentProvenance.packaged.name),
+          contentReviewState: Value(ContentReviewState.approved.name),
+          contentPublicationState: Value(
+            ContentPublicationState.published.name,
+          ),
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+  return (
+    identity: const ContentIdentity(
+      type: ContentType.lexicalMetadata,
+      id: wordId,
+      revision: 1,
+    ),
+    checksumSha256: checksum,
+    spelling: spelling,
+  );
+}
+
+TodayHubSnapshot _navigationMixedReviewToday({
+  required String ownerId,
+  required ContentIdentity identity,
+  required String checksumSha256,
+}) {
+  final evaluatedAtUtc = DateTime.utc(2026, 9, 5, 9);
+  final item = TodayHubReviewWorkItem(
+    item: ReviewQueueItem(
+      snapshot: ReviewedLexicalContentSnapshot(
+        identity: identity,
+        categoryId: 'category:navigation-mixed-review',
+        spelling: 'station',
+        normalizedSpelling: 'station',
+        meaning: 'สถานี',
+        normalizedMeaning: 'สถานี',
+        partOfSpeech: 'noun',
+        cefrLevel: 'A1',
+        source: 'pack',
+        isGlobal: true,
+        coreChecksumSha256: checksumSha256,
+        provenance: ContentProvenance.packaged,
+        reviewState: ContentReviewState.approved,
+        publicationState: ContentPublicationState.published,
+        artifact: null,
+      ),
+      provenance: <ReviewReasonProvenance>[
+        ReviewReasonProvenance.due(
+          sourceId: 'srs:${identity.id}',
+          dueAtUtc: evaluatedAtUtc,
+        ),
+      ],
+    ),
+    recommendation: null,
+  );
+  return TodayHubSnapshot(
+    ownerId: ownerId,
+    evaluatedAtUtc: evaluatedAtUtc,
+    sectionOrder: TodayHubSectionKind.values,
+    resumableSession: null,
+    assignedAssessment: null,
+    reviewWork: <TodayHubReviewWorkItem>[item],
+    recommendation: TodayHubRecommendation(
+      result: RecommendationPanelResult.unavailable(
+        ownerId: ownerId,
+        reason: RecommendationPanelReason.noEligibleActivity,
+        freshness: RecommendationEvidenceFreshness.missing,
+        protocolConstraint: RecommendationProtocolConstraint.open,
+      ),
+      isAuthoritative: false,
+      mergedInto: null,
+    ),
+    goals: const [],
+    reminders: const [],
+    quests: const [],
+    gentleStreak: null,
+    dependencyStates: <TodayHubDependency, TodayHubDependencyState>{
+      for (final dependency in TodayHubDependency.values)
+        dependency: TodayHubDependencyState.ready,
+    },
+  );
+}
+
+AdventureSessionPlanV1 _navigationMixedReviewPlan({
+  required String ownerId,
+  required ContentIdentity identity,
+  required String checksumSha256,
+}) {
+  final createdAtUtc = DateTime.utc(2026, 9, 5, 11);
+  final limits = const SessionConfigurationProtocolLimits.standard().copyWith(
+    maximumItemCount: 1,
+  );
+  final registration = buildLessonModeRegistry().resolve(
+    LessonMode.typedRecall,
+  )!;
+  final configuration = const SessionConfigurationPolicy().validate(
+    draft: const SessionConfigurationDraft(
+      itemCount: 1,
+      direction: SessionDirection.mixed,
+      difficulty: SessionDifficulty.standard,
+      hintBudget: 1,
+      timing: SessionTiming.timed(Duration(minutes: 5)),
+      packIdentity: null,
+    ),
+    registration: registration,
+    limits: limits,
+    ownerId: ownerId,
+    availablePackIdentities: const <ContentIdentity>[],
+  );
+  const planId = 'adventure-plan:navigation-mixed-review';
+  return AdventureSessionPlanV1(
+    planId: planId,
+    ownerId: ownerId,
+    createdAtUtc: createdAtUtc,
+    sourceEvaluatedAtUtc: createdAtUtc,
+    content: <ContentIdentity>[identity],
+    contentChecksumsSha256: <String, String>{identity.id: checksumSha256},
+    mode: LessonMode.typedRecall,
+    configuration: configuration,
+    recommendationPolicyVersion: 'f14-v1',
+    sourceReasonCode: 'due_review',
+    learnerOverrideApplied: false,
+    origin: const AdventureOriginContextV1(
+      planId: planId,
+      nodeId: 'resume-review',
+      catalogId: PackagedAdventureWorldCatalog.catalogId,
+      catalogVersion: PackagedAdventureWorldCatalog.catalogVersion,
+      catalogSchemaVersion: 1,
+      presentation: TodayExperiencePresentation.adventure,
+    ),
+  );
+}
+
+TodayHubSnapshot _navigationResumeToday(
+  String ownerId,
+  LearningSessionSummary session,
+) => TodayHubSnapshot(
+  ownerId: ownerId,
+  evaluatedAtUtc: DateTime.utc(2026, 9, 5, 11, 1),
+  sectionOrder: TodayHubSectionKind.values,
+  resumableSession: session,
+  assignedAssessment: null,
+  reviewWork: const <TodayHubReviewWorkItem>[],
+  recommendation: TodayHubRecommendation(
+    result: RecommendationPanelResult.unavailable(
+      ownerId: ownerId,
       reason: RecommendationPanelReason.noEligibleActivity,
       freshness: RecommendationEvidenceFreshness.missing,
       protocolConstraint: RecommendationProtocolConstraint.open,
@@ -1299,10 +2248,105 @@ final class _NavigationAdventureResultNextActionReader
 
 final class _NavigationReviewOwnerIdentities
     implements ReviewOwnerIdentityReader {
-  const _NavigationReviewOwnerIdentities();
+  const _NavigationReviewOwnerIdentities([
+    this.ownerId = 'owner:main-navigation',
+  ]);
+
+  final String ownerId;
 
   @override
-  Future<String> requireSingleActiveOwnerId() async => 'owner:main-navigation';
+  Future<String> requireSingleActiveOwnerId() async => ownerId;
+}
+
+final class _MutableNavigationReviewOwnerIdentities
+    implements ReviewOwnerIdentityReader {
+  _MutableNavigationReviewOwnerIdentities(this.ownerId);
+
+  String ownerId;
+
+  @override
+  Future<String> requireSingleActiveOwnerId() async => ownerId;
+}
+
+final class _CountingSessionConfigurationStore
+    implements SessionConfigurationStore {
+  int saveCalls = 0;
+
+  @override
+  Future<void> clear({
+    required String ownerId,
+    required LessonMode mode,
+  }) async {}
+
+  @override
+  Future<SessionConfiguration?> read({
+    required String ownerId,
+    required LessonMode mode,
+  }) async => null;
+
+  @override
+  Future<void> save(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) async {
+    saveCalls += 1;
+  }
+}
+
+final class _GatedActiveOwnerSessionConfigurationStore
+    implements ActiveOwnerSessionConfigurationStore {
+  _GatedActiveOwnerSessionConfigurationStore(this.activeOwnerId);
+
+  String activeOwnerId;
+  final Completer<void> persistenceStarted = Completer<void>();
+  final Completer<void> releasePersistence = Completer<void>();
+  int saveCalls = 0;
+  int atomicSaveCalls = 0;
+  int writeCalls = 0;
+
+  @override
+  Future<void> clear({
+    required String ownerId,
+    required LessonMode mode,
+  }) async {}
+
+  @override
+  Future<SessionConfiguration?> read({
+    required String ownerId,
+    required LessonMode mode,
+  }) async => null;
+
+  @override
+  Future<void> save(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) {
+    saveCalls += 1;
+    return _persist(configuration, validateActiveOwner: false);
+  }
+
+  @override
+  Future<void> saveForActiveOwner(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) {
+    atomicSaveCalls += 1;
+    return _persist(configuration, validateActiveOwner: true);
+  }
+
+  Future<void> _persist(
+    SessionConfiguration configuration, {
+    required bool validateActiveOwner,
+  }) async {
+    if (!persistenceStarted.isCompleted) persistenceStarted.complete();
+    await releasePersistence.future;
+    if (validateActiveOwner && configuration.ownerId != activeOwnerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
+    writeCalls += 1;
+  }
 }
 
 final class _UnavailableNavigationOwnerIdentities
@@ -1408,6 +2452,28 @@ final class _NavigationVocabularyRepository implements VocabularyRepository {
 
   @override
   Future<List<VocabularyWord>> listAllWords(String ownerId) async => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _FailingSecondPinnedReadVocabularyRepository
+    implements VocabularyRepository {
+  _FailingSecondPinnedReadVocabularyRepository(this.delegate);
+
+  final VocabularyRepository delegate;
+  int pinnedReadCalls = 0;
+
+  @override
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds) {
+    pinnedReadCalls += 1;
+    if (pinnedReadCalls == 2) {
+      return Future<List<VocabularyWord>>.error(
+        StateError('transient mixed-review catalog read failure'),
+      );
+    }
+    return delegate.readPinnedByIds(wordIds);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

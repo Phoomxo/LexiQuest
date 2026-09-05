@@ -41,6 +41,127 @@ void main() {
     },
   );
 
+  test('atomic save persists for the sole matching active owner', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'f16-atomic-matching',
+      nowUtc: () => DateTime.utc(2026, 9, 5),
+    );
+    final owner = await owners.getOrCreateActiveOwner();
+    final configuration = _configuration(owner.id);
+    final ActiveOwnerSessionConfigurationStore store =
+        DriftSessionConfigurationStore(database);
+
+    await store.saveForActiveOwner(
+      configuration,
+      updatedAtUtc: DateTime.utc(2026, 9, 5, 9),
+    );
+
+    expect(
+      await store.read(ownerId: owner.id, mode: LessonMode.meaningQuiz),
+      configuration,
+    );
+  });
+
+  test(
+    'atomic save rejects a stale inactive owner without writing a row',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'f16-atomic-stale',
+        nowUtc: () => DateTime.utc(2026, 9, 5),
+      );
+      final staleOwner = await owners.getOrCreateActiveOwner();
+      await (database.update(database.localOwners)
+            ..where((row) => row.id.equals(staleOwner.id)))
+          .write(const LocalOwnersCompanion(isActive: Value(false)));
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'local:f16-atomic-current',
+              createdAtUtcMs: DateTime.utc(
+                2026,
+                9,
+                5,
+                8,
+              ).millisecondsSinceEpoch,
+            ),
+          );
+      final store = DriftSessionConfigurationStore(database);
+
+      await expectLater(
+        store.saveForActiveOwner(
+          _configuration(staleOwner.id),
+          updatedAtUtc: DateTime.utc(2026, 9, 5, 9),
+        ),
+        throwsA(
+          isA<SessionConfigurationResetRequired>().having(
+            (error) => error.reason,
+            'reason',
+            SessionConfigurationResetReason.ownerDrift,
+          ),
+        ),
+      );
+
+      expect(
+        await database.select(database.sessionConfigurations).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'atomic save rejects ambiguous active owners without writing a row',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'f16-atomic-ambiguous',
+        nowUtc: () => DateTime.utc(2026, 9, 5),
+      );
+      final owner = await owners.getOrCreateActiveOwner();
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'local:f16-atomic-also-active',
+              createdAtUtcMs: DateTime.utc(
+                2026,
+                9,
+                5,
+                8,
+              ).millisecondsSinceEpoch,
+            ),
+          );
+      final store = DriftSessionConfigurationStore(database);
+
+      await expectLater(
+        store.saveForActiveOwner(
+          _configuration(owner.id),
+          updatedAtUtc: DateTime.utc(2026, 9, 5, 9),
+        ),
+        throwsA(
+          isA<SessionConfigurationResetRequired>().having(
+            (error) => error.reason,
+            'reason',
+            SessionConfigurationResetReason.ownerDrift,
+          ),
+        ),
+      );
+
+      expect(
+        await database.select(database.sessionConfigurations).get(),
+        isEmpty,
+      );
+    },
+  );
+
   test(
     'tampered durable configuration fails closed with typed reset',
     () async {

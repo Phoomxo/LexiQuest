@@ -224,12 +224,19 @@ final class MeaningQuizModeAdapter
   @override
   EvidenceContext classify(LessonResponse response, LessonSupport support) {
     final context = support.evidenceContext;
+    final unassistedRecognition =
+        context.evidenceClass == EvidenceClass.recognition &&
+        context.hintLevel == 0;
+    final guidedMeaningChoice =
+        response.promptMode == 'meaningChoice' &&
+        context.evidenceClass == EvidenceClass.guidedPractice &&
+        context.hintLevel > 0 &&
+        context.hintLevel <= 2;
     if ((response.promptMode != 'meaningChoice' &&
             response.promptMode != 'wordChoice') ||
-        context.evidenceClass != EvidenceClass.recognition ||
-        context.hintLevel != 0) {
+        (!unassistedRecognition && !guidedMeaningChoice)) {
       throw StateError(
-        'Meaning quiz answers must remain unassisted recognition evidence.',
+        'Meaning quiz answers require recognition or guided meaning choice evidence.',
       );
     }
     return context;

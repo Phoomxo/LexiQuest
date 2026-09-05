@@ -276,7 +276,8 @@ final class AppDependencies {
           identical(learningHistory?.sessionAuthorityIdentity, learning),
     Feature.offlineContent => offlineContent != null,
     Feature.adventureMotivation =>
-      adventureEntry is AdventureEntryUseCases &&
+      vocabulary != null &&
+          adventureEntry is AdventureEntryUseCases &&
           adventureCatalog != null &&
           adventurePresentationPermits != null &&
           adventureJourney != null &&
@@ -290,7 +291,7 @@ final class AppDependencies {
           learning != null &&
           lessonModes != null &&
           createLessonController != null &&
-          sessionConfigurations != null &&
+          sessionConfigurations is ActiveOwnerSessionConfigurationStore &&
           learnerPreferences != null &&
           rewardAccounts != null &&
           currentActivityEvidence != null &&

@@ -964,7 +964,7 @@ void main() {
     );
   });
 
-  test('meaning quiz keeps both directions recognition-only', () {
+  test('meaning quiz permits guided support only for meaning choice', () {
     const adapter = MeaningQuizModeAdapter();
     final recognition = EvidenceContext.legacyCompatibility(
       evidenceClass: EvidenceClass.recognition,
@@ -977,6 +977,13 @@ void main() {
       evidenceClass: EvidenceClass.independentRecall,
       skillId: 'meaning-recall',
       hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+    final guided = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.guidedPractice,
+      skillId: 'meaning-recall',
+      hintLevel: 1,
       contentRevision: 'built-in-v1',
       engagementAllowed: true,
     );
@@ -1007,6 +1014,20 @@ void main() {
         LessonSupport(evidenceContext: recognition),
       ),
       same(recognition),
+    );
+    expect(
+      adapter.classify(
+        response('meaningChoice'),
+        LessonSupport(evidenceContext: guided),
+      ),
+      same(guided),
+    );
+    expect(
+      () => adapter.classify(
+        response('wordChoice'),
+        LessonSupport(evidenceContext: guided),
+      ),
+      throwsStateError,
     );
     expect(
       () => adapter.classify(

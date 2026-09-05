@@ -38,6 +38,18 @@ final class QuizWord {
   final String? acceptedSpellingVariantsChecksumSha256;
 }
 
+/// Exact lexical identity requested by a checkpointed quiz start or restore.
+/// The repository must match all three identity axes before returning data.
+final class PinnedQuizContent {
+  const PinnedQuizContent({
+    required this.identity,
+    required this.checksumSha256,
+  });
+
+  final ContentIdentity identity;
+  final String checksumSha256;
+}
+
 final class QuizQuestion {
   const QuizQuestion({required this.word, required this.options});
 

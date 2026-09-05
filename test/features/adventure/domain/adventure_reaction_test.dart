@@ -169,10 +169,6 @@ void main() {
         caseSensitive: false,
       ),
       RegExp(
-        r'\b(?:(?:system|user)[_-]?)?prompt(?:[_-]?(?:template|config(?:uration)?))?\b',
-        caseSensitive: false,
-      ),
-      RegExp(
         r'\b(?:relationship|affinity)[_-]?(?:score|level|state)\b',
         caseSensitive: false,
       ),
@@ -195,6 +191,28 @@ void main() {
           reason: '${file.path} matched ${pattern.pattern}',
         );
       }
+    }
+
+    final scriptedReactionFiles = <File>[
+      File('lib/features/adventure/domain/adventure_reaction.dart'),
+      File(
+        'lib/features/adventure/application/adventure_reaction_selector.dart',
+      ),
+      File(
+        'lib/features/adventure/presentation/widgets/'
+        'adventure_companion_panel.dart',
+      ),
+    ];
+    final promptConfiguration = RegExp(
+      r'\b(?:(?:system|user)[_-]?)?prompt(?:[_-]?(?:template|config(?:uration)?))?\b',
+      caseSensitive: false,
+    );
+    for (final file in scriptedReactionFiles) {
+      expect(
+        promptConfiguration.hasMatch(file.readAsStringSync()),
+        isFalse,
+        reason: '${file.path} matched ${promptConfiguration.pattern}',
+      );
     }
 
     final host = File(

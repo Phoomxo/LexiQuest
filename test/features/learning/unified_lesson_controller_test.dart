@@ -222,6 +222,36 @@ void main() {
     },
   );
 
+  test(
+    'preaccepted recovery preserves its durable session when attachment fails',
+    () async {
+      final fixture = await _fixture();
+      addTearDown(fixture.controller.dispose);
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now,
+        preservePreacceptedSessionOnAttachmentFailure: true,
+        controllerStarter: (_, _) async {
+          throw StateError('simulated attachment failure');
+        },
+      );
+
+      await expectLater(
+        route.initializeSession(Future<QuizSession>.value(fixture.session)),
+        throwsStateError,
+      );
+      await route.retire();
+
+      final durable = await (fixture.database.select(
+        fixture.database.learningSessions,
+      )..where((row) => row.id.equals(fixture.session.id))).getSingle();
+      expect(durable.state, 'active');
+      expect(fixture.repository.scopedAbandonCalls, 0);
+      expect(fixture.controller.state.status, LessonSessionStatus.planned);
+    },
+  );
+
   testWidgets('f16 finite timing stops accepting active lesson operations', (
     tester,
   ) async {
@@ -3755,6 +3785,182 @@ void main() {
     },
   );
 
+  test(
+    'mixed review validates captured evidence with its exact occurrence adapter',
+    () async {
+      final primary = _PromptModeAdapter(
+        mode: LessonMode.meaningQuiz,
+        promptMode: 'meaningChoice',
+      );
+      final occurrence = _PromptModeAdapter(
+        mode: LessonMode.dictation,
+        promptMode: 'dictation',
+      );
+      final fixture = await _fixture(adapter: primary);
+      await fixture.controller.start(fixture.startCommand);
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: fixture.learning,
+            generateId: () => 'mixed-review:evidence:1',
+            nowUtc: () => fixture.now,
+          ).capture(
+            ownerId: fixture.startCommand.ownerId,
+            input: CurrentActivityInput.dictation,
+            sessionId: fixture.session.id,
+            wordId: fixture.wordId,
+            isCorrect: true,
+            responseTimeMs: 240,
+            attemptNumber: 1,
+            providerProvenance: 'native-dictation:v1:correct',
+          );
+
+      final result = await fixture.controller.recordCapturedEvidence(
+        pending,
+        feedbackContext: const AnswerFeedbackContext(
+          canonicalCorrectAnswer: 'lesson',
+        ),
+        occurrenceAdapter: occurrence,
+      );
+
+      expect(result.inserted, isTrue);
+      expect(primary.classifyCalls, 0);
+      expect(occurrence.classifyCalls, 1);
+      expect(fixture.controller.state.committedResponseCount, 1);
+      expect(fixture.controller.feedback, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'session lifecycle forwards the exact occurrence adapter for captured evidence',
+    (tester) async {
+      final primary = _PromptModeAdapter(
+        mode: LessonMode.meaningQuiz,
+        promptMode: 'meaningChoice',
+      );
+      final occurrence = _PromptModeAdapter(
+        mode: LessonMode.dictation,
+        promptMode: 'dictation',
+      );
+      final fixture = await _fixture(adapter: primary);
+      addTearDown(fixture.controller.dispose);
+      await fixture.controller.start(fixture.startCommand);
+      late UnifiedLessonSessionLifecycle lifecycle;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            builder: (context) {
+              lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context)!;
+              return const Text('mixed review');
+            },
+          ),
+        ),
+      );
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: fixture.learning,
+            generateId: () => 'mixed-review:lifecycle-evidence:1',
+            nowUtc: () => fixture.now,
+          ).capture(
+            ownerId: fixture.startCommand.ownerId,
+            input: CurrentActivityInput.dictation,
+            sessionId: fixture.session.id,
+            wordId: fixture.wordId,
+            isCorrect: true,
+            responseTimeMs: 240,
+            attemptNumber: 1,
+            providerProvenance: 'native-dictation:v1:correct',
+          );
+
+      final result = await lifecycle.recordCapturedEvidence(
+        pending,
+        feedbackContext: const AnswerFeedbackContext(
+          canonicalCorrectAnswer: 'lesson',
+        ),
+        occurrenceAdapter: occurrence,
+      );
+
+      expect(result.inserted, isTrue);
+      expect(primary.classifyCalls, 0);
+      expect(occurrence.classifyCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'captured evidence admitted by a recovery lease survives route retirement',
+    (tester) async {
+      final primary = _PromptModeAdapter(
+        mode: LessonMode.meaningQuiz,
+        promptMode: 'meaningChoice',
+      );
+      final occurrence = _PromptModeAdapter(
+        mode: LessonMode.dictation,
+        promptMode: 'dictation',
+      );
+      final fixture = await _fixture(adapter: primary);
+      addTearDown(fixture.controller.dispose);
+      await fixture.controller.start(fixture.startCommand);
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now,
+      );
+      late UnifiedLessonSessionLifecycle lifecycle;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            routeLifecycle: route,
+            builder: (context) {
+              lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context)!;
+              return const Text('mixed review recovery lease');
+            },
+          ),
+        ),
+      );
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: fixture.learning,
+            generateId: () => 'mixed-review:retirement-evidence:1',
+            nowUtc: () => fixture.now,
+          ).capture(
+            ownerId: fixture.startCommand.ownerId,
+            input: CurrentActivityInput.dictation,
+            sessionId: fixture.session.id,
+            wordId: fixture.wordId,
+            isCorrect: true,
+            responseTimeMs: 240,
+            attemptNumber: 1,
+            providerProvenance: 'native-dictation:v1:correct',
+          );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final admitted = lifecycle.runRecoveryOperation(() async {
+        entered.complete();
+        await release.future;
+        return lifecycle.recordCapturedEvidence(
+          pending,
+          feedbackContext: const AnswerFeedbackContext(
+            canonicalCorrectAnswer: 'lesson',
+          ),
+          occurrenceAdapter: occurrence,
+        );
+      });
+      await entered.future;
+
+      final retirement = route.retire();
+      release.complete();
+      final result = await admitted;
+      await retirement;
+
+      expect(result.inserted, isTrue);
+      expect(primary.classifyCalls, 0);
+      expect(occurrence.classifyCalls, 1);
+      expect(fixture.repository.recordCalls, 1);
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
   testWidgets(
     'production lesson shell save is idempotent and does not mutate weakness',
     (tester) async {
@@ -4704,6 +4910,28 @@ final class _Adapter implements LessonModeAdapter {
   @override
   Future<LessonItem> next(LessonCursor cursor) async =>
       LessonItem(id: 'item-${cursor.index}');
+}
+
+final class _PromptModeAdapter implements LessonModeAdapter {
+  _PromptModeAdapter({required this.mode, required this.promptMode});
+
+  @override
+  final LessonMode mode;
+  final String promptMode;
+  int classifyCalls = 0;
+
+  @override
+  EvidenceContext classify(LessonResponse response, LessonSupport support) {
+    classifyCalls += 1;
+    if (response.promptMode != promptMode) {
+      throw StateError('unexpected prompt for ${mode.name}');
+    }
+    return support.evidenceContext;
+  }
+
+  @override
+  Future<LessonItem> next(LessonCursor cursor) async =>
+      LessonItem(id: '${mode.name}-${cursor.index}');
 }
 
 final class _AccessibilityVoiceProvider implements VoiceProvider {

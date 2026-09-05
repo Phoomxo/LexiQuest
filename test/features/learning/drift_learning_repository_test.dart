@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -28,9 +29,13 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 void main() {
   late AppDatabase database;
   late DriftLearningRepository repository;
+  late _TransactionSelectGate transactionSelectGate;
 
   setUp(() async {
-    database = AppDatabase(NativeDatabase.memory());
+    transactionSelectGate = _TransactionSelectGate();
+    database = AppDatabase(
+      NativeDatabase.memory().interceptWith(transactionSelectGate),
+    );
     repository = DriftLearningRepository(database);
     await database
         .into(database.localOwners)
@@ -90,6 +95,77 @@ void main() {
       ),
     );
   });
+
+  test(
+    'exact pinned start freezes mutable content before transaction validation',
+    () async {
+      final words = await repository.listPinnedQuizWords(
+        ownerId: 'owner-1',
+        wordIds: const <String>['word-1', 'word-2'],
+      );
+      final mutablePins = <PinnedQuizContent>[
+        for (final word in words)
+          PinnedQuizContent(
+            identity: ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: word.id,
+              revision: word.contentRevision!,
+            ),
+            checksumSha256: word.contentChecksumSha256!,
+          ),
+      ];
+      final draft = LearningSessionDraft(
+        id: 'session:frozen-pinned-content',
+        ownerId: 'owner-1',
+        activityType: 'adventureQuiz',
+        startedAtUtc: DateTime.utc(2026, 9, 5, 9),
+        appVersion: 'test',
+        buildId: 'test',
+      );
+      final checkpoint = LearningActivityCheckpoint(
+        sessionId: draft.id,
+        activityType: draft.activityType,
+        revision: 1,
+        occurredAtUtc: draft.startedAtUtc!,
+        state: const <String, Object?>{
+          'schemaVersion': 1,
+          'wordIds': <Object?>['word-1', 'word-2'],
+        },
+      );
+
+      transactionSelectGate.arm();
+      final pendingStart = repository.startExactPinnedSessionWithCheckpoint(
+        session: draft,
+        content: mutablePins,
+        checkpoint: checkpoint,
+      );
+      await transactionSelectGate.blocked;
+      final originalSecondPin = mutablePins[1];
+      mutablePins[1] = PinnedQuizContent(
+        identity: ContentIdentity(
+          type: originalSecondPin.identity.type,
+          id: originalSecondPin.identity.id,
+          revision: originalSecondPin.identity.revision + 1,
+        ),
+        checksumSha256:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      );
+      transactionSelectGate.release();
+
+      await pendingStart;
+
+      final recovery = await repository.loadExactActivityRecovery(
+        ownerId: draft.ownerId,
+        sessionId: draft.id,
+        activityType: draft.activityType,
+      );
+      expect(recovery!.session.id, draft.id);
+      expect(recovery.checkpoint!.state['wordIds'], const <Object?>[
+        'word-1',
+        'word-2',
+      ]);
+    },
+  );
 
   test(
     'checkpointed start is exact-idempotent and rejects another active session',
@@ -390,6 +466,135 @@ void main() {
       throwsStateError,
     );
   });
+
+  test('exact recovery rejects a same-length malformed V2 payload', () async {
+    final draft = LearningSessionDraft(
+      id: 'session:corrupt-v2-keys',
+      ownerId: 'owner-1',
+      activityType: 'adventureQuiz',
+      startedAtUtc: DateTime.utc(2026, 8, 30, 11, 50),
+      appVersion: 'test',
+      buildId: 'test',
+    );
+    await repository.startSessionWithCheckpoint(
+      session: draft,
+      checkpoint: LearningActivityCheckpoint(
+        sessionId: draft.id,
+        activityType: draft.activityType,
+        revision: 1,
+        occurredAtUtc: draft.startedAtUtc!,
+        state: const <String, Object?>{'schemaVersion': 1},
+      ),
+    );
+    final checkpoint = await database.select(database.eventsV2).getSingle();
+    final payload =
+        (jsonDecode(checkpoint.payloadJson) as Map).cast<String, Object?>()
+          ..remove('terminalAtUtc')
+          ..['unexpected'] = null;
+    await (database.update(database.eventsV2)
+          ..where((row) => row.eventId.equals(checkpoint.eventId)))
+        .write(EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
+
+    await expectLater(
+      repository.loadExactActivityRecovery(
+        ownerId: draft.ownerId,
+        sessionId: draft.id,
+        activityType: draft.activityType,
+      ),
+      throwsStateError,
+    );
+  });
+
+  test(
+    'committed replay authenticates frozen actor and event context',
+    () async {
+      final learning = LearningUseCases(
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => DateTime.utc(2026, 8, 30, 11, 55),
+        ),
+        repository: repository,
+        generateId: () => 'replay-auth',
+        nowUtc: () => DateTime.utc(2026, 8, 30, 11, 55),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final session = await learning.startQuiz(
+        categoryId: 'category-1',
+        limit: 1,
+      );
+      final pending = CurrentActivityEvidenceAdapter(learning: learning)
+          .capture(
+            ownerId: 'owner-1',
+            input: CurrentActivityInput.typedRecall,
+            sessionId: session.id,
+            wordId: session.questions.single.word.id,
+            isCorrect: true,
+            responseTimeMs: 350,
+            attemptNumber: 1,
+          );
+      final frozen = await pending.freezeForRecovery();
+      await pending.record();
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'historical-owner',
+              accountState: const Value('mergedInto:owner-1'),
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      RecordAnswerCandidate candidate({
+        required String actorIdentity,
+        required LearningEventContext eventContext,
+      }) => RecordAnswerCandidate(
+        id: frozen.sourceEvidenceId,
+        ownerId: frozen.ownerId,
+        sessionId: frozen.sessionId,
+        wordId: frozen.wordId,
+        promptMode: frozen.promptMode,
+        isCorrect: frozen.isCorrect,
+        responseTimeMs: frozen.responseTimeMs,
+        attemptNumber: frozen.attemptNumber,
+        occurredAtUtc: frozen.occurredAtUtc,
+        evidenceContext: frozen.evidenceContext,
+        providerProvenance: frozen.providerProvenance,
+        actorIdentity: actorIdentity,
+        eventContext: eventContext,
+      );
+      final changedContextJson =
+          (jsonDecode(jsonEncode(frozen.eventContext.toJson())) as Map)
+              .cast<String, Object?>();
+      (changedContextJson['consentContext']!
+              as Map<String, dynamic>)['aiConsentGranted'] =
+          true;
+      final changedContext = LearningEventContext.fromJson(changedContextJson);
+      changedContext.validateAgainst(
+        evidenceContext: frozen.evidenceContext,
+        occurredAtUtc: frozen.occurredAtUtc,
+      );
+
+      await expectLater(
+        repository.replayCommittedAnswer(
+          candidate(
+            actorIdentity: 'historical-owner',
+            eventContext: frozen.eventContext,
+          ),
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        repository.replayCommittedAnswer(
+          candidate(
+            actorIdentity: frozen.actorIdentity,
+            eventContext: changedContext,
+          ),
+        ),
+        throwsStateError,
+      );
+    },
+  );
 
   test(
     'current-schema null checksum rows receive a canonical read identity',
@@ -1806,4 +2011,34 @@ EventEnvelopeV2 _eventForEvidence(
     evidenceContext: evidenceContext,
     learningEventContext: LearningEventContext.noResearch(evidenceContext),
   );
+}
+
+final class _TransactionSelectGate extends QueryInterceptor {
+  bool _armed = false;
+  Completer<void>? _blocked;
+  Completer<void>? _release;
+
+  Future<void> get blocked => _blocked!.future;
+
+  void arm() {
+    _armed = true;
+    _blocked = Completer<void>();
+    _release = Completer<void>();
+  }
+
+  void release() => _release!.complete();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    if (_armed) {
+      _armed = false;
+      _blocked!.complete();
+      await _release!.future;
+    }
+    return super.runSelect(executor, statement, args);
+  }
 }

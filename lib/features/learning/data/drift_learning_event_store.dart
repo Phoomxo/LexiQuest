@@ -415,9 +415,11 @@ final class DriftLearningEventStore {
   bool isExactDeclaredSourceForCandidate({
     required RecordAnswerCandidate candidate,
     required EventEnvelopeV2 source,
+    bool allowStoredHistoricalActor = false,
   }) {
-    if (source.actorIdentity !=
-        (candidate.actorIdentity ?? candidate.ownerId)) {
+    if (!allowStoredHistoricalActor &&
+        source.actorIdentity !=
+            (candidate.actorIdentity ?? candidate.ownerId)) {
       return false;
     }
     return _validateDeclaredSource(
