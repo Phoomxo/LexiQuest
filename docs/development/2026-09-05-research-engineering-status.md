@@ -226,8 +226,15 @@ synthetic/emulator engineering results.
   plan pins the verified implementation commit above; its fingerprint is unchanged.
   Existing native registrant/learning-generated-file line-ending/stat noise was
   preserved and excluded from the implementation commit because it has no Git content diff.
-- Pair Matching PM0–PM8 dispatch: ready after this engineering closure; record the
-  new task identifier after creation. Preserve the Research worktree and root user's edits.
+- Pair Matching PM0–PM8 creation was accepted after engineering closure for the
+  existing LexiQuest project, using a separate app-managed worktree starting from
+  `feature/adventure-research`. Requested title: `พัฒนา Pair Matching รุ่นใหม่ PM0–PM8`.
+  Queued client identifier: `client-new-thread:507f41f7-53b1-40ef-87f2-fe009c3ae854`.
+  Git confirms the new `C:/Users/Phet/.codex/worktrees/02fa/LexiQuest` checkout is
+  at evidence commit `ca123dddc1349acc4ed67bdd8f5476b02165307c`. A ready task ID and
+  implementation progress have not yet been returned by the app listing; do not
+  claim Pair implementation has started or create a duplicate while setup is pending.
+  The Research worktree and root user's edits remain preserved.
 
 Machine-readable test logs and scoped independent review reports remain locally
 under `.superpowers/sdd/`; the committed evidence summary above is the portable
