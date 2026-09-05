@@ -1,9 +1,37 @@
 import 'dart:convert';
 import '../domain/pair_matching_engine.dart';
+import '../domain/pair_active_clock.dart';
 import '../domain/pair_matching_plan.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_matching_checkpoint_budget.dart';
 import '../../domain/learning_evidence_contract.dart';
+
+final class PairTerminalState {
+  const PairTerminalState(
+    this.atUtc, {
+    this.acknowledged = false,
+    this.presented = false,
+  });
+  final DateTime atUtc;
+  final bool acknowledged, presented;
+  Map<String, Object?> toJson() => {
+    'atUtc': atUtc.toIso8601String(),
+    'acknowledged': acknowledged,
+    'presented': presented,
+  };
+  static PairTerminalState fromJson(Object? value) {
+    final j = pairJson(value, {'atUtc', 'acknowledged', 'presented'});
+    final t = PairTerminalState(
+      DateTime.parse(j['atUtc'] as String),
+      acknowledged: j['acknowledged'] as bool,
+      presented: j['presented'] as bool,
+    );
+    if (!t.atUtc.isUtc || (t.presented && !t.acknowledged)) {
+      throw const FormatException('Invalid Pair terminal');
+    }
+    return t;
+  }
+}
 
 final class PairMatchingCheckpointSnapshot {
   PairMatchingCheckpointSnapshot({
@@ -11,6 +39,8 @@ final class PairMatchingCheckpointSnapshot {
     required this.startOperation,
     Iterable<String> evidenceIds = const [],
     Map<String, Object?>? frozenEvidence,
+    this.timer,
+    this.terminal,
   }) : evidenceIds = List.unmodifiable(evidenceIds),
        frozenEvidence = frozenEvidence == null
            ? null
@@ -19,16 +49,23 @@ final class PairMatchingCheckpointSnapshot {
   final String startOperation;
   final List<String> evidenceIds;
   final Map<String, Object?>? frozenEvidence;
+  final PairTimerState? timer;
+  final PairTerminalState? terminal;
   Map<String, Object?> toJson() =>
       _freeze({
             'schemaVersion': 6,
-            'codecVersion': 2,
+            'codecVersion': timer == null ? 2 : 3,
             'planFingerprint': engine.plan.planFingerprint,
             'plan': engine.plan.toJson(),
             'startOperation': _compactStart(startOperation),
             'engine': _compactEngine(engine),
             'evidenceIds': evidenceIds,
             'frozenEvidence': frozenEvidence,
+            if (timer != null) ...{
+              'timer': timer!.toJson(),
+              'roundSeed': engine.roundSeed,
+              'terminal': terminal?.toJson(),
+            },
           })
           as Map<String, Object?>;
 }
@@ -110,7 +147,7 @@ Map<String, Object?> _expandEngine(
   }
 
   final j = Map<String, Object?>.of((value as Map).cast<String, Object?>());
-  if (version == 2) {
+  if (version >= 2) {
     j['selected'] = j['selected'] == null
         ? null
         : {
@@ -138,6 +175,123 @@ Map<String, Object?> _expandEngine(
 }
 
 abstract final class PairMatchingCheckpointCodec {
+  static void validateTransition(
+    PairMatchingCheckpointSnapshot prior,
+    PairMatchingCheckpointSnapshot next,
+  ) {
+    if (prior.timer != null && next.timer == null) {
+      throw StateError('Pair timer writer cannot downgrade');
+    }
+    final a =
+        prior.timer ?? PairTimerState.initial(prior.engine.plan.timerPreset);
+    final b =
+        next.timer ?? PairTimerState.initial(next.engine.plan.timerPreset);
+    final delta = b.elapsedActiveMs - a.elapsedActiveMs;
+    if (delta < 0 ||
+        delta > a.remainingActiveMs ||
+        (a.extensionUsed && !b.extensionUsed)) {
+      throw StateError('Pair active time/entitlement regressed');
+    }
+    final newDecision = b.lastOperationId != a.lastOperationId;
+    if (!newDecision) {
+      if (a.lastFingerprint != b.lastFingerprint ||
+          a.mode != b.mode ||
+          a.extensionUsed != b.extensionUsed ||
+          a.remainingActiveMs - b.remainingActiveMs != delta ||
+          prior.engine.roundOrdinal != next.engine.roundOrdinal) {
+        throw StateError('Pair timer changed without decision');
+      }
+    } else {
+      final roundChanged =
+          next.engine.roundOrdinal != prior.engine.roundOrdinal;
+      final action = roundChanged
+          ? PairTimerAction.restart
+          : switch (b.mode) {
+              PairTimerMode.timeoutDecision => PairTimerAction.expire,
+              PairTimerMode.continuedUntimed => PairTimerAction.continueUntimed,
+              PairTimerMode.extendedRunning => PairTimerAction.extend,
+              _ => throw StateError('Invalid Pair timer decision mode'),
+            };
+      final command = PairTimerDecision(
+        operationId: b.lastOperationId!,
+        ownerId: prior.engine.plan.ownerId,
+        sessionId: prior.engine.plan.learningSessionId,
+        roundOrdinal: prior.engine.roundOrdinal,
+        expectedRevision: next.engine.operationRevision - 1,
+        action: action,
+      );
+      if (command.fingerprint != b.lastFingerprint ||
+          next.engine.lastOperationId != command.operationId ||
+          next.engine.lastFingerprint != command.fingerprint ||
+          next.engine.attempts.length != prior.engine.attempts.length ||
+          prior.engine.pending != null ||
+          next.engine.pending != null ||
+          next.engine.selected != null ||
+          jsonEncode(prior.engine.supportAtRevision) !=
+              jsonEncode(next.engine.supportAtRevision) ||
+          (!roundChanged &&
+              jsonEncode(prior.engine.matchedWordIds.toList()..sort()) !=
+                  jsonEncode(next.engine.matchedWordIds.toList()..sort()))) {
+        throw StateError('Pair decision identity changed');
+      }
+      switch (action) {
+        case PairTimerAction.expire:
+          if (!a.timed ||
+              a.remainingActiveMs != delta ||
+              b.remainingActiveMs != 0 ||
+              b.extensionUsed != a.extensionUsed) {
+            throw StateError('Invalid Pair expiry');
+          }
+        case PairTimerAction.extend:
+          if (a.mode != PairTimerMode.timeoutDecision ||
+              a.extensionUsed ||
+              !b.extensionUsed ||
+              b.remainingActiveMs != 30000 ||
+              delta != 0) {
+            throw StateError('Invalid Pair extension');
+          }
+        case PairTimerAction.continueUntimed:
+          if ((!a.timed &&
+                  a.mode != PairTimerMode.timeoutDecision &&
+                  !a.reasons.contains(PairPauseReason.clockFault)) ||
+              b.remainingActiveMs != 0 ||
+              b.extensionUsed != a.extensionUsed) {
+            throw StateError('Invalid Pair Continue');
+          }
+        case PairTimerAction.restart:
+          if (a.mode != PairTimerMode.timeoutDecision ||
+              next.engine.roundOrdinal != prior.engine.roundOrdinal + 1 ||
+              b.mode != PairTimerMode.running ||
+              b.remainingActiveMs !=
+                  PairTimerState.initial(
+                    next.engine.plan.timerPreset,
+                  ).remainingActiveMs ||
+              delta != 0 ||
+              b.extensionUsed != a.extensionUsed ||
+              next.engine.matchedWordIds.isNotEmpty) {
+            throw StateError('Invalid Pair restart');
+          }
+      }
+    }
+    final old = prior.terminal, terminal = next.terminal;
+    if (old != null &&
+        (terminal == null ||
+            old.atUtc != terminal.atUtc ||
+            (old.acknowledged && !terminal.acknowledged) ||
+            (old.presented && !terminal.presented) ||
+            jsonEncode(prior.engine.toJson()) !=
+                jsonEncode(next.engine.toJson()) ||
+            delta != 0 ||
+            newDecision)) {
+      throw StateError('Pair terminal changed');
+    }
+    if (terminal != null &&
+        ((old == null && terminal.acknowledged) ||
+            (terminal.presented && old?.acknowledged != true))) {
+      throw StateError('Pair terminal receipt skipped');
+    }
+  }
+
   static int encodedBytes(Object? value) =>
       utf8.encode(jsonEncode(value)).length;
 
@@ -203,6 +357,7 @@ abstract final class PairMatchingCheckpointCodec {
     engine['pending'] = null;
     engine['selected'] = {'side': 'prompt', 'wordId': 5};
     engine['operationRevision'] = maxInt;
+    engine['roundOrdinal'] = maxInt;
     engine['lastOperationId'] = maxOperationId;
     engine['lastFingerprint'] = 'f' * 64;
     engine['matchedWordIds'] = List.generate(
@@ -218,6 +373,18 @@ abstract final class PairMatchingCheckpointCodec {
         '$i': maxInt,
     };
     map['frozenEvidence'] = null;
+    // Reserve the actual bounded timer schema even for immutable PM1 starts.
+    map['timer'] = PairTimerState.initial(state.plan.timerPreset)
+        .copy(
+          mode: PairTimerMode.continuedUntimed,
+          remainingActiveMs: maxInt,
+          elapsedActiveMs: maxInt,
+          reasons: PairPauseReason.values.toSet(),
+          lastOperationId: maxOperationId,
+          lastFingerprint: 'f' * 64,
+        )
+        .toJson();
+    map['roundSeed'] = 2147483647;
     return encodedBytes(map) +
         ((remaining > 0 || pending != null)
             ? frozenOccurrenceByteBound(state.plan)
@@ -273,7 +440,7 @@ abstract final class PairMatchingCheckpointCodec {
         jsonEncode(source['plan']),
       );
       final version = source['codecVersion'];
-      final compactStart = version == 2
+      final compactStart = version == 2 || version == 3
           ? pairJson(source['startOperation'], {
               'schemaVersion',
               'launchOperationId',
@@ -332,12 +499,13 @@ abstract final class PairMatchingCheckpointCodec {
         'engine',
         'evidenceIds',
         'frozenEvidence',
+        if (version == 3) ...{'timer', 'roundSeed', 'terminal'},
       });
       final engine = PairMatchingState.fromJson(
         plan,
         _expandEngine(plan, j['engine'], j['codecVersion'] as int),
       );
-      if (version == 2 &&
+      if ((version == 2 || version == 3) &&
           jsonEncode(_compactEngine(engine)) != jsonEncode(j['engine'])) {
         throw const FormatException('Invalid Pair compact engine');
       }
@@ -345,7 +513,9 @@ abstract final class PairMatchingCheckpointCodec {
       final frozen = j['frozenEvidence'] == null
           ? null
           : (j['frozenEvidence'] as Map).cast<String, Object?>();
-      if ((j['codecVersion'] != 1 && j['codecVersion'] != 2) ||
+      if ((j['codecVersion'] != 1 &&
+              j['codecVersion'] != 2 &&
+              j['codecVersion'] != 3) ||
           ids.length != engine.attempts.length ||
           ids.toSet().length != ids.length ||
           ids.any(
@@ -371,11 +541,62 @@ abstract final class PairMatchingCheckpointCodec {
           throw const FormatException('Invalid Pair frozen occurrence');
         }
       }
+      final timer = version == 3 ? PairTimerState.fromJson(j['timer']) : null;
+      final terminal = version == 3 && j['terminal'] != null
+          ? PairTerminalState.fromJson(j['terminal'])
+          : null;
+      if (timer?.lastOperationId != null) {
+        final id = timer!.lastOperationId!;
+        final revision = int.parse(id.split(':').first);
+        final action = switch (timer.mode) {
+          PairTimerMode.timeoutDecision => PairTimerAction.expire,
+          PairTimerMode.extendedRunning => PairTimerAction.extend,
+          PairTimerMode.continuedUntimed => PairTimerAction.continueUntimed,
+          PairTimerMode.running => PairTimerAction.restart,
+          PairTimerMode.off => throw const FormatException(
+            'OFF cannot have timer decision',
+          ),
+        };
+        final command = PairTimerDecision(
+          operationId: id,
+          ownerId: plan.ownerId,
+          sessionId: plan.learningSessionId,
+          roundOrdinal:
+              engine.roundOrdinal - (action == PairTimerAction.restart ? 1 : 0),
+          expectedRevision: revision,
+          action: action,
+        );
+        if (revision >= engine.operationRevision ||
+            command.fingerprint != timer.lastFingerprint ||
+            (revision == engine.operationRevision - 1 &&
+                (engine.lastOperationId != id ||
+                    engine.lastFingerprint != command.fingerprint))) {
+          throw const FormatException('Pair timer decision binding changed');
+        }
+      } else if (timer != null &&
+          (timer.extensionUsed ||
+              engine.roundOrdinal != 0 ||
+              (timer.mode != PairTimerMode.off &&
+                  timer.mode != PairTimerMode.running))) {
+        throw const FormatException('Pair timer decision missing');
+      }
+      if ((version != 3 && engine.roundOrdinal != 0) ||
+          (version == 3 && j['roundSeed'] != engine.roundSeed) ||
+          (terminal != null && (!engine.complete || engine.pending != null)) ||
+          (timer != null &&
+              plan.timerPreset == PairTimerPreset.off &&
+              (timer.mode != PairTimerMode.off ||
+                  timer.extensionUsed ||
+                  timer.elapsedActiveMs != 0))) {
+        throw const FormatException('Invalid Pair timer/terminal pins');
+      }
       return PairMatchingCheckpointSnapshot(
         engine: engine,
         startOperation: operation,
         evidenceIds: ids,
         frozenEvidence: frozen,
+        timer: timer,
+        terminal: terminal,
       );
     } catch (_) {
       throw const FormatException('Invalid Pair checkpoint');

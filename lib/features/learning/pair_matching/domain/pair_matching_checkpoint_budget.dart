@@ -10,6 +10,26 @@ abstract final class PairMatchingCheckpointBudget {
       LearningActivityRecoveryLimits.maximumCheckpointBytes;
   static const terminalReserve = 3;
   static const continueUntimedReserve = 1;
+  static bool canTransition({
+    required int revision,
+    required int cost,
+    required int attempts,
+    required int remainingAttemptBound,
+    required int revealReserve,
+    required int timerReserve,
+  }) =>
+      revision >= 1 &&
+      cost >= 0 &&
+      attempts >= 0 &&
+      remainingAttemptBound >= 0 &&
+      attempts + remainingAttemptBound <= maximumAttempts &&
+      revision +
+              cost +
+              remainingAttemptBound * 2 +
+              revealReserve +
+              timerReserve +
+              terminalReserve <=
+          maximumRevisions;
   static bool canAnswer({
     required int revision,
     required int attempts,
@@ -17,20 +37,16 @@ abstract final class PairMatchingCheckpointBudget {
     bool isCorrect = false,
     int? remainingAttemptBound,
     int revealReserve = 0,
+    int timerReserve = continueUntimedReserve,
   }) =>
-      revision >= 1 &&
-      attempts >= 0 &&
       remainingPairs > 0 &&
-      attempts +
-              1 +
-              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) <=
-          maximumAttempts &&
-      revision +
-              2 +
-              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) *
-                  2 +
-              revealReserve +
-              terminalReserve +
-              continueUntimedReserve <=
-          maximumRevisions;
+      canTransition(
+        revision: revision,
+        cost: 2,
+        attempts: attempts + 1,
+        remainingAttemptBound:
+            remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0),
+        revealReserve: revealReserve,
+        timerReserve: timerReserve,
+      );
 }

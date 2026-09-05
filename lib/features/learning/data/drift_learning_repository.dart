@@ -1631,6 +1631,11 @@ final class DriftLearningRepository
   ) async {
     await _requireActivePairOwner(command.ownerId);
     final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+    if (snapshot.terminal?.atUtc != checkpoint.terminalAtUtc ||
+        (snapshot.terminal?.acknowledged ?? false) !=
+            checkpoint.terminalAcknowledged) {
+      throw StateError('Pair terminal envelope changed');
+    }
     if (snapshot.frozenEvidence == null) {
       throw StateError('Pair answer has no durable reservation');
     }
@@ -1671,6 +1676,11 @@ final class DriftLearningRepository
       throw StateError('Pair writer cannot downgrade');
     }
     final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+    if (snapshot.terminal?.atUtc != checkpoint.terminalAtUtc ||
+        (snapshot.terminal?.acknowledged ?? false) !=
+            checkpoint.terminalAcknowledged) {
+      throw StateError('Pair terminal envelope changed');
+    }
     final plan = snapshot.engine.plan;
     final start = jsonDecode(snapshot.startOperation) as Map<String, dynamic>;
     if (plan.ownerId != session.ownerId ||
@@ -1695,6 +1705,11 @@ final class DriftLearningRepository
     }
     if (latest != null) {
       final prior = _decodePinnedPairCheckpoint(latest.state);
+      // An exact immutable replay is validated by the ordinary repository
+      // identity comparison below; it is not another lifecycle transition.
+      if (checkpoint.revision != latest.revision) {
+        PairMatchingCheckpointCodec.validateTransition(prior, snapshot);
+      }
       if (prior.startOperation != snapshot.startOperation ||
           prior.engine.plan.planFingerprint != plan.planFingerprint ||
           snapshot.engine.operationRevision < prior.engine.operationRevision ||

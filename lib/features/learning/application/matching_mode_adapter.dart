@@ -565,11 +565,17 @@ final class MatchingModeAdapter
     MatchingOperationAcceptance? acceptsOperation,
     MatchingAdmittedOperation? runAdmittedOperation,
     MatchingRecoveryOperation? runRecoveryOperation,
+    int Function()? monotonicMicros,
+    MatchingSessionCompleter? completeSession,
+    MatchingCloseOwner? ownClose,
   }) => PairMatchingSessionCoordinator.restore(
     operation: operation,
     learning: learning,
     evidence: evidence,
     activeOwnerId: activeOwnerId,
+    monotonicMicros: monotonicMicros,
+    completeSession: completeSession,
+    ownClose: ownClose,
     acceptsOperation: acceptsOperation,
     runAdmittedOperation: runAdmittedOperation == null
         ? null

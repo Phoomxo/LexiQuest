@@ -7,6 +7,25 @@ import '../../domain/learning_activity_recovery_limits.dart';
 
 enum PairTileSide { prompt, target }
 
+enum PairTimerAction { expire, continueUntimed, extend, restart }
+
+final class PairTimerDecision extends PairMatchingCommand {
+  PairTimerDecision({
+    required super.operationId,
+    required super.ownerId,
+    required super.sessionId,
+    required super.roundOrdinal,
+    required super.expectedRevision,
+    required this.action,
+  });
+  final PairTimerAction action;
+  @override
+  Map<String, Object?> get payload => {
+    'kind': 'timerDecision',
+    'action': action.name,
+  };
+}
+
 enum PairAttemptRole {
   firstOpportunity,
   independentRetry,
@@ -225,7 +244,12 @@ final class PairMatchingState {
   List<PairRepairTicket> get repairTickets => PairRepairPolicy.project(
     plan.orderedLexicalItems.map((i) => i.wordId).toList(),
     attempts.map(
-      (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+      (a) => PairRepairAnswer(
+        a.operationId,
+        a.promptWordId,
+        a.isCorrect,
+        roundOrdinal: a.roundOrdinal,
+      ),
     ),
   );
   PairRepairTicket? repairFor(String wordId) {
@@ -259,7 +283,7 @@ final class PairMatchingState {
             ? plan.orderedLexicalItems.length ~/ 2
             : ticket.status == PairRepairStatus.available
             ? 0
-            : ticket.dueOrdinal - matchedWordIds.length;
+            : ticket.remainingSpacing;
         if (firstRepairDelay == null || delay < firstRepairDelay) {
           firstRepairDelay = delay;
         }
@@ -276,6 +300,27 @@ final class PairMatchingState {
   Set<String> get firstOpportunityWordIds =>
       Set.unmodifiable(attempts.map((a) => a.promptWordId));
   bool get complete => matchedWordIds.length == plan.orderedLexicalItems.length;
+  int get roundSeed => roundOrdinal == 0
+      ? plan.shuffleSeed
+      : int.parse(
+          pairHash(
+            '${plan.shuffleSeed}:round:$roundOrdinal:v1',
+          ).substring(0, 7),
+          radix: 16,
+        );
+  List<String> orderFor(PairTileSide side) {
+    if (roundOrdinal == 0) {
+      return side == PairTileSide.prompt ? plan.sourceOrder : plan.targetOrder;
+    }
+    final ids = plan.orderedLexicalItems.map((i) => i.wordId).toList();
+    ids.sort(
+      (a, b) => pairHash(
+        '$roundSeed:${side.name}:$a',
+      ).compareTo(pairHash('$roundSeed:${side.name}:$b')),
+    );
+    return List.unmodifiable(ids);
+  }
+
   Map<String, Object?> toJson() => {
     'roundOrdinal': roundOrdinal,
     'operationRevision': operationRevision,
@@ -321,12 +366,18 @@ final class PairMatchingState {
     );
     final ids = plan.orderedLexicalItems.map((i) => i.wordId).toSet();
     final seen = <String>{}, operations = <String>{}, matched = <String>{};
-    var previousRevision = -1;
+    var previousRevision = -1, previousRound = 0;
     final repairHistory = <PairRepairAnswer>[];
     for (final a in [
       ...state.attempts,
       if (state.pending != null) state.pending!,
     ]) {
+      if (a.roundOrdinal < previousRound ||
+          a.roundOrdinal > state.roundOrdinal) {
+        throw const FormatException('Pair round history changed');
+      }
+      if (a.roundOrdinal != previousRound) matched.clear();
+      previousRound = a.roundOrdinal;
       final revision = int.tryParse(a.operationId.split(':').first);
       final supportRevision = state.supportAtRevision[a.promptWordId];
       final tickets = PairRepairPolicy.project(ids.toList(), repairHistory);
@@ -348,7 +399,8 @@ final class PairMatchingState {
               (hiddenTarget ||
                   ticket?.status == PairRepairStatus.waiting ||
                   (a.role == PairAttemptRole.independentRetry &&
-                      ticket != null)))) {
+                      ticket != null &&
+                      ticket.status != PairRepairStatus.completed)))) {
         throw const FormatException('Pair repair chronology changed');
       }
       if ((a.role == PairAttemptRole.guidedCompletion &&
@@ -364,7 +416,7 @@ final class PairMatchingState {
       }
       if (!ids.contains(a.promptWordId) ||
           !ids.contains(a.targetWordId) ||
-          a.roundOrdinal != state.roundOrdinal ||
+          a.roundOrdinal < 0 ||
           a.responseTimeMs < 0 ||
           a.operationId.length > 128 ||
           !RegExp(r'^[0-9a-f]{64}$').hasMatch(a.fingerprint) ||
@@ -386,7 +438,12 @@ final class PairMatchingState {
       }
       previousRevision = revision;
       repairHistory.add(
-        PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+        PairRepairAnswer(
+          a.operationId,
+          a.promptWordId,
+          a.isCorrect,
+          roundOrdinal: a.roundOrdinal,
+        ),
       );
       seen.add(a.promptWordId);
       if (!identical(a, state.pending) && a.isCorrect) {
@@ -400,7 +457,10 @@ final class PairMatchingState {
         )) {
       throw const FormatException('Invalid Pair support ledger');
     }
-    if (state.roundOrdinal != 0 ||
+    if (previousRound != state.roundOrdinal) matched.clear();
+    if (state.roundOrdinal < 0 ||
+        state.roundOrdinal >
+            LearningActivityRecoveryLimits.maximumCheckpoints ||
         state.operationRevision < 0 ||
         !ids.containsAll(state.supportedWordIds) ||
         !ids.containsAll(state.matchedWordIds) ||
@@ -470,6 +530,8 @@ abstract final class PairMatchingEngine {
     final supportRevisions = {...state.supportAtRevision};
     PairAttemptRequested? pending;
     switch (command) {
+      case PairTimerDecision():
+        selected = null;
       case PairConfirmGuidedMapping(
         :final wordId,
         :final shownSupportRevision,
@@ -542,10 +604,19 @@ abstract final class PairMatchingEngine {
     return PairMatchingTransition(
       PairMatchingState._(
         plan: state.plan,
-        roundOrdinal: state.roundOrdinal,
+        roundOrdinal:
+            state.roundOrdinal +
+            (command is PairTimerDecision &&
+                    command.action == PairTimerAction.restart
+                ? 1
+                : 0),
         operationRevision: state.operationRevision + 1,
         selected: selected,
-        matchedWordIds: state.matchedWordIds,
+        matchedWordIds:
+            command is PairTimerDecision &&
+                command.action == PairTimerAction.restart
+            ? const {}
+            : state.matchedWordIds,
         supportedWordIds: supported,
         supportAtRevision: supportRevisions,
         attempts: state.attempts,
@@ -571,7 +642,12 @@ abstract final class PairMatchingEngine {
     final tickets = PairRepairPolicy.project(
       state.plan.orderedLexicalItems.map((i) => i.wordId).toList(),
       attempts.map(
-        (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+        (a) => PairRepairAnswer(
+          a.operationId,
+          a.promptWordId,
+          a.isCorrect,
+          roundOrdinal: a.roundOrdinal,
+        ),
       ),
     );
     for (final t in tickets) {

@@ -1,7 +1,13 @@
 enum PairRepairStatus { waiting, available, guidedRequired, completed }
 
 final class PairRepairAnswer {
-  const PairRepairAnswer(this.operationId, this.wordId, this.isCorrect);
+  const PairRepairAnswer(
+    this.operationId,
+    this.wordId,
+    this.isCorrect, {
+    this.roundOrdinal = 0,
+  });
+  final int roundOrdinal;
   final String operationId, wordId;
   final bool isCorrect;
 }
@@ -14,18 +20,24 @@ final class PairRepairTicket {
     required this.dueOrdinal,
     required this.status,
     this.deferred = false,
+    this.remainingSpacing = 0,
   });
   final String wordId, sourceOperationId;
   final int originalOrdinal, dueOrdinal;
   final PairRepairStatus status;
   final bool deferred;
-  PairRepairTicket withStatus(PairRepairStatus value) => PairRepairTicket(
+  final int remainingSpacing;
+  PairRepairTicket withStatus(
+    PairRepairStatus value, {
+    int? remainingSpacing,
+  }) => PairRepairTicket(
     wordId: wordId,
     sourceOperationId: sourceOperationId,
     originalOrdinal: originalOrdinal,
     dueOrdinal: dueOrdinal,
     status: value,
     deferred: deferred || value == PairRepairStatus.guidedRequired,
+    remainingSpacing: remainingSpacing ?? this.remainingSpacing,
   );
 }
 
@@ -38,11 +50,20 @@ abstract final class PairRepairPolicy {
   ) {
     final tickets = <String, PairRepairTicket>{};
     final matched = <String>{};
+    final sinceFailure = <String, Set<String>>{};
+    var round = 0, successOrdinal = 0;
     var ordinal = 0;
     for (final a in answers) {
+      if (a.roundOrdinal != round) {
+        matched.clear();
+        round = a.roundOrdinal;
+      }
       final previous = tickets[a.wordId];
       if (a.isCorrect) {
-        matched.add(a.wordId);
+        if (matched.add(a.wordId)) successOrdinal++;
+        for (final entry in sinceFailure.entries) {
+          if (entry.key != a.wordId) entry.value.add(a.wordId);
+        }
         if (previous != null) {
           tickets[a.wordId] = previous.withStatus(PairRepairStatus.completed);
         }
@@ -51,25 +72,37 @@ abstract final class PairRepairPolicy {
           wordId: a.wordId,
           sourceOperationId: a.operationId,
           originalOrdinal: ordinal,
-          dueOrdinal: matched.length + wordIds.length ~/ 2,
+          dueOrdinal: successOrdinal + wordIds.length ~/ 2,
           status: PairRepairStatus.waiting,
+          remainingSpacing: wordIds.length ~/ 2,
         );
+        sinceFailure[a.wordId] = <String>{};
       } else {
         tickets[a.wordId] = previous.withStatus(
           PairRepairStatus.guidedRequired,
         );
       }
       for (final t in tickets.values.toList()) {
-        if (t.status == PairRepairStatus.waiting &&
-            matched.length >= t.dueOrdinal) {
-          tickets[t.wordId] = t.withStatus(PairRepairStatus.available);
+        final since = sinceFailure[t.wordId]!;
+        final needed = wordIds.length ~/ 2 - since.length;
+        if (t.status == PairRepairStatus.waiting && needed <= 0) {
+          tickets[t.wordId] = t.withStatus(
+            PairRepairStatus.available,
+            remainingSpacing: 0,
+          );
+        } else if (t.status == PairRepairStatus.waiting) {
+          tickets[t.wordId] = t.withStatus(t.status, remainingSpacing: needed);
         }
         if (t.status == PairRepairStatus.waiting &&
-            matched.length +
-                    wordIds
-                        .where((id) => id != t.wordId && !matched.contains(id))
-                        .length <
-                t.dueOrdinal) {
+            wordIds
+                    .where(
+                      (id) =>
+                          id != t.wordId &&
+                          !matched.contains(id) &&
+                          !since.contains(id),
+                    )
+                    .length <
+                needed) {
           tickets[t.wordId] = t.withStatus(PairRepairStatus.guidedRequired);
         }
       }

@@ -32,10 +32,28 @@ class PairFaultRepository
   PairFaultRepository(this.delegate);
   final DriftLearningRepository delegate;
   int? checkpointFault;
-  bool afterWrite = false, answerFault = false;
+  bool afterWrite = false, answerFault = false, closeFault = false;
   Future<void> Function()? beforeAnswer;
   final checkpoints = <LearningActivityCheckpoint>[];
   final commands = <RecordAnswerCommand>[];
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) async {
+    final fail = closeFault;
+    closeFault = false;
+    if (fail && !afterWrite) throw StateError('synthetic close before write');
+    final result = await delegate.finishSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    );
+    if (fail) throw StateError('synthetic close lost ack');
+    return result;
+  }
+
   @override
   Future<void> appendActivityCheckpoint({
     required String ownerId,
@@ -213,7 +231,7 @@ class PairHarness {
           operationId: '${c.state.operationRevision}:confirm',
           ownerId: owner,
           sessionId: operation.plan.learningSessionId,
-          roundOrdinal: 0,
+          roundOrdinal: c.state.roundOrdinal,
           expectedRevision: c.state.operationRevision,
           wordId: word,
           shownSupportRevision: c.state.supportAtRevision[word]!,
@@ -311,6 +329,11 @@ void main() {
           engine['lastFingerprint'] = a.fingerprint;
           source['engine'] = engine;
           source['codecVersion'] = version;
+          // Build an actual historical shape; v3-only fields cannot belong to
+          // a codec1/2 fixture. The strict chronology assertions stay unchanged.
+          source.remove('timer');
+          source.remove('roundSeed');
+          source.remove('terminal');
           if (version == 1) {
             source['startOperation'] = h.operation.stableSerialization;
           }
