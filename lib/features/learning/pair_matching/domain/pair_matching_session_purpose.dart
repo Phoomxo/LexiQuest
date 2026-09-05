@@ -58,6 +58,7 @@ final class PairMatchingSessionPurpose {
         throw const FormatException();
       }
       final byRevision = <int, PairMatchingCheckpointSnapshot>{};
+      final occurredByRevision = <int, int>{};
       final legacyRevisions = <int>{};
       for (var index = 0; index < checkpoints.length; index++) {
         final row = checkpoints[index], p = payloads[index];
@@ -188,6 +189,7 @@ final class PairMatchingSessionPurpose {
           throw const FormatException();
         }
         byRevision[revision] = snapshot;
+        occurredByRevision[revision] = row['occurred_at_utc'] as int;
       }
       if (legacy) {
         for (var i = 1; i <= legacyRevisions.length; i++) {
@@ -209,6 +211,11 @@ final class PairMatchingSessionPurpose {
           PairMatchingCheckpointCodec.validateTransition(
             byRevision[revision - 1]!,
             current,
+            allowMeasuredAdmission:
+                revision == 2 &&
+                occurredByRevision[2] == occurredByRevision[1] &&
+                occurredByRevision[2] ==
+                    (session['started_at_utc_ms'] as int) ~/ 1000,
           );
         }
       }

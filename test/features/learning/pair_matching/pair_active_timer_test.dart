@@ -5,6 +5,75 @@ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_r
 import 'pair_matching_evidence_contract_test.dart';
 
 void main() {
+  test(
+    'full OFF elapsed shares pause leases and preserves submillisecond carry',
+    () {
+      var micros = 0;
+      final clock = PairActiveClock(
+        PairTimerState(
+          mode: PairTimerMode.off,
+          remainingActiveMs: 0,
+          interactiveElapsedMs: 0,
+        ),
+        () => micros,
+      );
+      clock.resumeInteraction();
+      for (var i = 0; i < 10; i++) {
+        micros += 500;
+        final first = clock.pause(PairPauseReason.modal);
+        final second = clock.pause(PairPauseReason.narration);
+        micros += 900000;
+        clock.release(first);
+        clock.release(second);
+      }
+      expect(clock.value.interactiveElapsedMs, 5);
+      expect(clock.value.elapsedActiveMs, 0);
+    },
+  );
+  test('full elapsed caps timeout then continues through the same clock', () {
+    var micros = 0;
+    final clock = PairActiveClock(
+      PairTimerState(
+        mode: PairTimerMode.running,
+        remainingActiveMs: 1000,
+        interactiveElapsedMs: 0,
+      ),
+      () => micros,
+    );
+    clock.resumeInteraction();
+    micros += 5000000;
+    expect(clock.value.interactiveElapsedMs, 1000);
+    expect(clock.value.elapsedActiveMs, 1000);
+    clock.replace(clock.value.copy(mode: PairTimerMode.continuedUntimed));
+    micros += 2000000;
+    expect(clock.value.interactiveElapsedMs, 3000);
+    expect(clock.value.elapsedActiveMs, 1000);
+  });
+  test(
+    'historical missing coverage stays missing and OFF clock fault stays playable',
+    () {
+      var micros = 1000;
+      final historical = PairActiveClock(
+        PairTimerState.initial(PairTimerPreset.off),
+        () => micros,
+      );
+      historical.resumeInteraction();
+      micros += 5000000;
+      expect(historical.value.interactiveElapsedMs, isNull);
+      final measured = PairActiveClock(
+        PairTimerState(
+          mode: PairTimerMode.off,
+          remainingActiveMs: 0,
+          interactiveElapsedMs: 0,
+        ),
+        () => micros,
+      );
+      measured.resumeInteraction();
+      micros = 0;
+      expect(measured.value.interactiveElapsedMs, isNull);
+      expect(measured.isPaused, isFalse);
+    },
+  );
   test('repeated submillisecond pauses retain runtime rounding remainder', () {
     var micros = 0;
     final clock = PairActiveClock(

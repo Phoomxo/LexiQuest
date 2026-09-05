@@ -5,9 +5,16 @@ import '../features/assessment/domain/assessment_models.dart';
 import '../features/history/application/learning_history_use_cases.dart';
 import '../features/history/domain/learning_history_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/pair_matching/domain/pair_matching_history_projection.dart';
+import '../features/learning/pair_matching/domain/pair_matching_launch.dart';
 import '../navigation/navigation_glossary.dart';
 
 typedef LearningHistoryReplayOperationIdGenerator = String Function();
+typedef PairHistoryReplayCallback =
+    Future<void> Function(
+      PairMatchingHistoryProjection source,
+      String replayOperationId,
+    );
 
 String _defaultReplayOperationId() => 'history-replay:${const Uuid().v4()}';
 
@@ -17,17 +24,19 @@ final class LearningHistoryScreen extends StatefulWidget {
     super.key,
     required this.useCases,
     this.generateReplayOperationId = _defaultReplayOperationId,
+    this.onPairReplay,
   });
 
   final LearningHistoryUseCases useCases;
   final LearningHistoryReplayOperationIdGenerator generateReplayOperationId;
+  final PairHistoryReplayCallback? onPairReplay;
 
   @override
   State<LearningHistoryScreen> createState() => _LearningHistoryScreenState();
 }
 
 final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
-  late Future<List<LearningHistoryEntry>> _load;
+  late Future<_HistoryPage> _load;
   String? _openingSessionId;
   final Map<String, String> _pendingReplayOperationIdsBySource =
       <String, String>{};
@@ -35,14 +44,31 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _load = widget.useCases.load();
+    _load = _loadHistory();
   }
 
   void _retryLoad() {
-    final next = widget.useCases.load();
+    final next = _loadHistory();
     setState(() {
       _load = next;
     });
+  }
+
+  Future<_HistoryPage> _loadHistory() async {
+    final entries = await widget.useCases.load();
+    final pairSessionIds = entries
+        .where((entry) => entry.mode == LessonMode.matching)
+        .map((entry) => entry.sessionId)
+        .toList(growable: false);
+    if (pairSessionIds.isEmpty) {
+      return _HistoryPage(entries: entries);
+    }
+    try {
+      final projections = await widget.useCases.loadPairResults(pairSessionIds);
+      return _HistoryPage(entries: entries, pairResults: projections);
+    } on Object {
+      return _HistoryPage(entries: entries, pairReadFailed: true);
+    }
   }
 
   @override
@@ -53,7 +79,7 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
           NavigationGlossary.require('home/today/history').fullThaiLabel,
         ),
       ),
-      body: FutureBuilder<List<LearningHistoryEntry>>(
+      body: FutureBuilder<_HistoryPage>(
         future: _load,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -75,7 +101,8 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
               ),
             );
           }
-          final entries = snapshot.data!;
+          final page = snapshot.data!;
+          final entries = page.entries;
           if (entries.isEmpty) {
             return const _HistoryMessage(
               semanticsLabel: 'ประวัติการเรียนว่าง',
@@ -88,6 +115,34 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
             separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final entry = entries[index];
+              final pairResult = page.pairResults[entry.sessionId];
+              final pairEntry =
+                  pairResult != null ||
+                  entry.pairSummary != null ||
+                  entry.pairPurposeUnavailable;
+              if (pairEntry) {
+                return _PairHistoryCard(
+                  key: ValueKey('pair-history-${entry.sessionId}'),
+                  entry: entry,
+                  result: pairResult,
+                  sourceEntry: entries
+                      .where(
+                        (candidate) =>
+                            candidate.sessionId == pairResult?.sourceSessionId,
+                      )
+                      .firstOrNull,
+                  overview: page.pairOverview,
+                  pairReadFailed: page.pairReadFailed,
+                  opening: _openingSessionId == entry.sessionId,
+                  replayEnabled:
+                      pairResult?.result.stars != null &&
+                      widget.onPairReplay != null &&
+                      _openingSessionId == null,
+                  onReplay: pairResult == null
+                      ? null
+                      : () => _replayPair(pairResult),
+                );
+              }
               return _HistoryCard(
                 key: ValueKey('learning-history-${entry.sessionId}'),
                 entry: entry,
@@ -143,6 +198,300 @@ final class _LearningHistoryScreenState extends State<LearningHistoryScreen> {
       }
     }
   }
+
+  Future<void> _replayPair(PairMatchingHistoryProjection source) async {
+    final callback = widget.onPairReplay;
+    if (callback == null ||
+        source.result.stars == null ||
+        _openingSessionId != null) {
+      return;
+    }
+    final operationId =
+        _pendingReplayOperationIdsBySource[source.sessionId] ??
+        widget.generateReplayOperationId();
+    setState(() {
+      _openingSessionId = source.sessionId;
+      _pendingReplayOperationIdsBySource[source.sessionId] = operationId;
+    });
+    var acknowledged = false;
+    try {
+      await callback(source, operationId);
+      acknowledged = true;
+      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่สามารถเริ่มการฝึกซ้ำได้')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _openingSessionId = null;
+          if (acknowledged) {
+            _pendingReplayOperationIdsBySource.remove(source.sessionId);
+          }
+        });
+      }
+    }
+  }
+}
+
+final class _HistoryPage {
+  _HistoryPage({
+    required Iterable<LearningHistoryEntry> entries,
+    Iterable<PairMatchingHistoryProjection> pairResults = const [],
+    this.pairReadFailed = false,
+  }) : entries = List<LearningHistoryEntry>.unmodifiable(entries),
+       pairResults = Map<String, PairMatchingHistoryProjection>.unmodifiable({
+         for (final result in pairResults) result.sessionId: result,
+       }),
+       pairOverview = PairMatchingHistoryOverview(pairResults);
+
+  final List<LearningHistoryEntry> entries;
+  final Map<String, PairMatchingHistoryProjection> pairResults;
+  final PairMatchingHistoryOverview pairOverview;
+  final bool pairReadFailed;
+}
+
+final class _PairHistoryCard extends StatelessWidget {
+  const _PairHistoryCard({
+    super.key,
+    required this.entry,
+    required this.result,
+    this.sourceEntry,
+    required this.overview,
+    required this.pairReadFailed,
+    required this.opening,
+    required this.replayEnabled,
+    required this.onReplay,
+  });
+
+  final LearningHistoryEntry entry;
+  final PairMatchingHistoryProjection? result;
+  final LearningHistoryEntry? sourceEntry;
+  final PairMatchingHistoryOverview overview;
+  final bool pairReadFailed;
+  final bool opening;
+  final bool replayEnabled;
+  final VoidCallback? onReplay;
+
+  @override
+  Widget build(BuildContext context) {
+    final english = Localizations.localeOf(context).languageCode == 'en';
+    String copy(String thai, String englishCopy) =>
+        english ? englishCopy : thai;
+    final status = _terminalPresentation(entry.terminalState);
+    final packTitle =
+        entry.packTitle ??
+        copy(
+          'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน',
+          'Saved content is unavailable',
+        );
+    final projection = result;
+    final stopped =
+        !pairReadFailed &&
+        entry.terminalState == LearningHistoryTerminalState.abandoned &&
+        entry.pairSummary != null;
+    final replay = projection?.purpose == PairSessionPurpose.practiceReplay;
+    final heading = stopped
+        ? copy('รอบจับคู่หยุดก่อนจบ', 'Pair Matching stopped before completion')
+        : projection == null
+        ? copy('ผลจับคู่ไม่พร้อมใช้งาน', 'Pair Matching result unavailable')
+        : replay
+        ? copy('ผลการฝึกซ้ำ', 'Practice Replay result')
+        : copy('ผลการจับคู่', 'Pair Matching result');
+    final badges = projection == null
+        ? const <String>[]
+        : _overviewBadges(projection, overview, english: english);
+    final actionLabel = opening
+        ? copy('กำลังเริ่มการฝึกซ้ำ', 'Starting Practice Replay')
+        : replayEnabled
+        ? copy('ฝึกซ้ำชุดเดิม', 'Practice Replay')
+        : copy('การฝึกซ้ำไม่พร้อมใช้งาน', 'Practice Replay unavailable');
+    final unavailable = projection == null || pairReadFailed;
+
+    return Semantics(
+      container: true,
+      label: '${status.label}, $packTitle, $heading',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(status.icon),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      status.label,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Semantics(
+                header: true,
+                child: Text(
+                  heading,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(packTitle),
+              if (badges.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  copy(
+                    'เปรียบเทียบเฉพาะรายการที่โหลดในหน้านี้',
+                    'Comparisons cover only results loaded on this page.',
+                  ),
+                ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final badge in badges) Chip(label: Text(badge)),
+                  ],
+                ),
+              ],
+              if (projection != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  copy(
+                    'จับคู่แล้ว ${projection.result.matched} คู่',
+                    'Matched ${projection.result.matched} pairs',
+                  ),
+                ),
+                Text(
+                  copy(
+                    'ทำได้เอง ${projection.result.independent} คู่',
+                    'Independent ${projection.result.independent} pairs',
+                  ),
+                ),
+                Text(
+                  copy(
+                    'ใช้ตัวช่วย ${projection.result.assisted} คู่',
+                    'Assisted ${projection.result.assisted} pairs',
+                  ),
+                ),
+                Text(
+                  projection.result.stars == null
+                      ? copy('ยังไม่มีผลดาว', 'Not scored')
+                      : copy(
+                          'ดาว ${projection.result.stars}/3',
+                          'Stars ${projection.result.stars}/3',
+                        ),
+                ),
+                Text(_pairElapsedLabel(projection, english: english)),
+                if (replay) ...[
+                  Text(
+                    copy(
+                      sourceEntry == null
+                          ? 'ฝึกซ้ำจากรอบต้นทางที่เลือกไว้'
+                          : 'รอบต้นทาง: ${sourceEntry!.packTitle ?? 'ชุดคำที่บันทึกไว้'} • ${MaterialLocalizations.of(context).formatCompactDate(sourceEntry!.startedAtUtc.toLocal())}',
+                      sourceEntry == null
+                          ? 'Practice Replay of the selected source session'
+                          : 'Source session: ${sourceEntry!.packTitle ?? 'Saved word set'} • ${MaterialLocalizations.of(context).formatCompactDate(sourceEntry!.startedAtUtc.toLocal())}',
+                    ),
+                  ),
+                  Text(
+                    copy(
+                      'รอบฝึกซ้ำไม่เพิ่มความก้าวหน้าหรือรางวัล',
+                      'Practice Replay does not add progress or rewards',
+                    ),
+                  ),
+                ],
+              ] else ...[
+                const SizedBox(height: 8),
+                Text(
+                  copy(
+                    stopped
+                        ? 'รอบนี้ยังไม่จบ จึงไม่มีผลดาวหรือการฝึกซ้ำ'
+                        : 'ไม่สามารถยืนยันผลจับคู่จากข้อมูลที่บันทึกไว้ได้',
+                    stopped
+                        ? 'This session is incomplete and has no star result or Practice Replay.'
+                        : 'The saved Pair Matching result could not be verified',
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                copy(
+                  'การฝึกซ้ำเป็นโหมดฝึก และไม่เพิ่มความก้าวหน้าหรือรางวัล',
+                  'Practice Replay is practice-only and does not add progress or rewards',
+                ),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                key: ValueKey('pair-replay-history-${entry.sessionId}'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                onPressed: !unavailable && replayEnabled ? onReplay : null,
+                icon: opening
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.replay),
+                label: Text(actionLabel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+List<String> _overviewBadges(
+  PairMatchingHistoryProjection result,
+  PairMatchingHistoryOverview overview, {
+  required bool english,
+}) {
+  String copy(String thai, String englishCopy) => english ? englishCopy : thai;
+  final badges = <String>[];
+  if (result.purpose == PairSessionPurpose.learning) {
+    if (overview.latestNormal?.sessionId == result.sessionId) {
+      badges.add(copy('รอบปกติล่าสุด', 'Latest normal result'));
+    }
+    if (overview.bestNormal?.sessionId == result.sessionId) {
+      badges.add(copy('รอบปกติดีที่สุด', 'Best normal result'));
+    }
+  } else {
+    final source = result.sourceSessionId!;
+    if (overview.latestReplayFor(source)?.sessionId == result.sessionId) {
+      badges.add(
+        copy('ฝึกซ้ำล่าสุดของต้นทางนี้', 'Latest replay for this source'),
+      );
+    }
+    if (overview.bestReplayFor(source)?.sessionId == result.sessionId) {
+      badges.add(
+        copy('ฝึกซ้ำดีที่สุดของต้นทางนี้', 'Best replay for this source'),
+      );
+    }
+  }
+  return List<String>.unmodifiable(badges);
+}
+
+String _pairElapsedLabel(
+  PairMatchingHistoryProjection result, {
+  required bool english,
+}) {
+  final elapsed = result.timer.interactiveElapsedMs;
+  if (elapsed == null) {
+    return english
+        ? 'Full interactive duration unavailable'
+        : 'ไม่มีข้อมูลเวลาเรียนจริงครบทั้งรอบ';
+  }
+  final seconds = elapsed ~/ 1000;
+  return english
+      ? 'Full interactive duration $seconds seconds'
+      : 'เวลาเรียนจริงทั้งรอบ $seconds วินาที';
 }
 
 final class _HistoryCard extends StatelessWidget {

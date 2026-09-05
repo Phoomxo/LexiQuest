@@ -27,6 +27,9 @@ import '../domain/session_configuration.dart';
 import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
+import '../pair_matching/domain/pair_active_clock.dart';
+import '../pair_matching/domain/pair_matching_engine.dart';
+import '../pair_matching/domain/pair_matching_checkpoint_budget.dart';
 import '../pair_matching/domain/pair_matching_launch.dart';
 import '../domain/learning_activity_recovery_limits.dart';
 import '../pair_matching/data/pair_matching_checkpoint_codec.dart';
@@ -532,6 +535,37 @@ final class DriftLearningRepository
     required String launchOperationId,
     required LearningActivityCheckpoint checkpoint,
     required PairMatchingStartCapability capability,
+  }) => _startPinnedPairSession(
+    session: session,
+    plan: plan,
+    launchOperationId: launchOperationId,
+    checkpoint: checkpoint,
+    capability: capability,
+  );
+
+  @override
+  Future<void> startMeasuredPinnedPairSession({
+    required LearningSessionDraft session,
+    required PairMatchingPlanV1 plan,
+    required String launchOperationId,
+    required LearningActivityCheckpoint checkpoint,
+    required PairMatchingStartCapability capability,
+  }) => _startPinnedPairSession(
+    session: session,
+    plan: plan,
+    launchOperationId: launchOperationId,
+    checkpoint: checkpoint,
+    capability: capability,
+    measuredAdmission: true,
+  );
+
+  Future<void> _startPinnedPairSession({
+    required LearningSessionDraft session,
+    required PairMatchingPlanV1 plan,
+    required String launchOperationId,
+    required LearningActivityCheckpoint checkpoint,
+    required PairMatchingStartCapability capability,
+    bool measuredAdmission = false,
   }) {
     final frozen = _canonicalizeActivityCheckpoint(checkpoint);
     final acceptedOperation =
@@ -630,6 +664,42 @@ final class DriftLearningRepository
       PairMatchingCheckpointCodec.requireCompletionCapacity(
         _decodePinnedPairCheckpoint(frozen.state),
       );
+      final admissionSnapshot = measuredAdmission
+          ? PairMatchingCheckpointSnapshot(
+              engine: PairMatchingState.initial(plan),
+              startOperation: acceptedOperation.stableSerialization,
+              timer: PairTimerState.initial(
+                plan.timerPreset,
+              ).copy(interactiveElapsedMs: 0),
+            )
+          : null;
+      final admission = admissionSnapshot == null
+          ? null
+          : _canonicalizeActivityCheckpoint(
+              LearningActivityCheckpoint(
+                sessionId: session.id,
+                activityType: 'matching',
+                revision: 2,
+                occurredAtUtc: plan.createdAtUtc,
+                state: admissionSnapshot.toJson(),
+              ),
+            );
+      if (admissionSnapshot != null) {
+        PairMatchingCheckpointCodec.requireCompletionCapacity(
+          admissionSnapshot,
+        );
+        if (!PairMatchingCheckpointBudget.canTransition(
+          revision: 1,
+          cost: 1,
+          attempts: 0,
+          remainingAttemptBound:
+              admissionSnapshot.engine.remainingRepairAttemptBound,
+          revealReserve: plan.orderedLexicalItems.length,
+          timerReserve: admissionSnapshot.timer!.decisionReserve,
+        )) {
+          throw StateError('Pair measured admission capacity unavailable');
+        }
+      }
       final ids = plan.orderedLexicalItems.map((i) => i.wordId).toList();
       final reports =
           await (database.select(database.contentQualityReports)
@@ -684,6 +754,13 @@ final class DriftLearningRepository
             .toList(),
         checkpoint: frozen,
       );
+      if (admission != null) {
+        await _appendActivityCheckpoint(
+          ownerId: plan.ownerId,
+          checkpoint: admission,
+          measuredPairAdmission: true,
+        );
+      }
       // A gate may change during asynchronous persistence; rollback if so.
       capability.requireAllowed(plan);
     });
@@ -798,6 +875,7 @@ final class DriftLearningRepository
     required String ownerId,
     required LearningActivityCheckpoint checkpoint,
     bool pairAdmission = false,
+    bool measuredPairAdmission = false,
   }) async {
     final requiredOwnerId = _required(ownerId, 'ownerId');
     final sessionId = _required(checkpoint.sessionId, 'sessionId');
@@ -867,6 +945,7 @@ final class DriftLearningRepository
         session: session,
         checkpoint: checkpoint,
         latest: latest,
+        measuredAdmission: measuredPairAdmission,
       );
     }
     if (latest != null && latest.revision >= checkpoint.revision) {
@@ -1736,6 +1815,7 @@ final class DriftLearningRepository
     required db.LearningSession session,
     required LearningActivityCheckpoint checkpoint,
     required LearningActivityCheckpoint? latest,
+    bool measuredAdmission = false,
   }) async {
     await _requireActivePairOwner(session.ownerId);
     if (checkpoint.state['schemaVersion'] != 6) {
@@ -1782,7 +1862,15 @@ final class DriftLearningRepository
       // An exact immutable replay is validated by the ordinary repository
       // identity comparison below; it is not another lifecycle transition.
       if (checkpoint.revision != latest.revision) {
-        PairMatchingCheckpointCodec.validateTransition(prior, snapshot);
+        PairMatchingCheckpointCodec.validateTransition(
+          prior,
+          snapshot,
+          allowMeasuredAdmission:
+              measuredAdmission &&
+              latest.revision == 1 &&
+              checkpoint.revision == 2 &&
+              checkpoint.occurredAtUtc == plan.createdAtUtc,
+        );
       }
       if (prior.startOperation != snapshot.startOperation ||
           prior.engine.plan.planFingerprint != plan.planFingerprint ||

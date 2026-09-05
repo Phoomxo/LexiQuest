@@ -3,6 +3,7 @@ import '../../domain/learning_activity_recovery_limits.dart';
 /// Optional actions must reserve the worst allowed
 /// remaining answers, Continue untimed, and exact terminal receipts.
 abstract final class PairMatchingCheckpointBudget {
+  static const maximumCounter = 9223372036854775807;
   static const maximumRevisions =
       LearningActivityRecoveryLimits.maximumCheckpoints;
   static const maximumAttempts = LearningActivityRecoveryLimits.maximumAttempts;

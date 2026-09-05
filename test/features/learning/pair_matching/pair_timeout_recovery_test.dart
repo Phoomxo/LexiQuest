@@ -58,6 +58,148 @@ PairTimerDecision decision(
 );
 
 void main() {
+  for (final loss in ['capacity', 'clock']) {
+    test(
+      'measured OFF $loss coverage loss remains playable through all answers and three receipts',
+      () async {
+        var micros = 0;
+        final h = PairHarness();
+        addTearDown(h.db.close);
+        await h.initialize(measured: true);
+        var c = await clocked(h, () => micros);
+        c.resumeInteraction();
+        if (loss == 'capacity') {
+          for (
+            var i = 0;
+            i < 100 && c.timer.interactiveElapsedMs != null;
+            i++
+          ) {
+            micros += 1000;
+            await c.flush();
+          }
+        } else {
+          micros = 1000000;
+          expect(c.timer.interactiveElapsedMs, 1000);
+          micros = 0;
+        }
+        expect(c.timer.interactiveElapsedMs, isNull);
+        expect(c.hostStatus.canDispatch, true);
+        await h.tap(c, 'synthetic-0', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-0', PairTileSide.target);
+        c.dispose();
+        c = await clocked(h, () => micros);
+        c.resumeInteraction();
+        expect(c.timer.interactiveElapsedMs, isNull);
+        for (var i = 1; i < 4; i++) {
+          await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+          await h.tap(c, 'synthetic-$i', PairTileSide.target);
+        }
+        await c.finish();
+        await c.markSummaryPresented();
+        final result = await h.real.read(
+          ownerId: h.owner,
+          sessionId: h.operation.plan.learningSessionId,
+        );
+        expect(result.snapshot!.timer!.interactiveElapsedMs, isNull);
+        expect(result.snapshot!.terminal!.presented, true);
+        expect(
+          h.repository.checkpoints.where((p) => p.terminalAtUtc != null),
+          hasLength(3),
+        );
+        expect((await h.db.select(h.db.answerAttempts).get()), hasLength(4));
+      },
+    );
+  }
+  test(
+    'read-only restart availability includes restored matches and future byte reserve',
+    () async {
+      var micros = 0;
+      final h = PairHarness(pinnedPlan: timedPlan());
+      addTearDown(h.db.close);
+      await h.initialize();
+      final c = await clocked(h, () => micros);
+      c.resumeInteraction();
+      for (var i = 0; i < 3; i++) {
+        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-$i', PairTileSide.target);
+      }
+      for (var i = 0; i < 38; i++) {
+        micros += 1000;
+        await c.flush();
+      }
+      micros += 60000000;
+      await c.expire();
+      expect(c.timerAvailability.restart.available, false);
+      expect(c.timerAvailability.continueUntimed.available, true);
+      await expectLater(
+        c.dispatch(decision(c, PairTimerAction.restart)),
+        throwsStateError,
+      );
+      await c.dispatch(decision(c, PairTimerAction.continueUntimed));
+      await h.tap(c, 'synthetic-3', PairTileSide.prompt);
+      await h.tap(c, 'synthetic-3', PairTileSide.target);
+      await c.finish();
+      await c.markSummaryPresented();
+    },
+  );
+  test(
+    'typed host status retains failed capture and read-only timer availability',
+    () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      final c = await h.restore();
+      final revision = c.checkpointRevision;
+      expect(c.hostStatus.canDispatch, true);
+      expect(c.timerAvailability.continueUntimed.available, false);
+      expect(c.checkpointRevision, revision);
+      h.repository.answerFault = true;
+      await h.tap(c, 'synthetic-0', PairTileSide.prompt);
+      await expectLater(
+        h.tap(c, 'synthetic-0', PairTileSide.target),
+        throwsStateError,
+      );
+      expect(c.hostStatus.canDispatch, false);
+      expect(c.hostStatus.canRetry, true);
+      await c.retryPending();
+      expect(c.hostStatus.canDispatch, true);
+    },
+  );
+  test(
+    'measured OFF pause flush and reopen retains full elapsed through terminal receipts',
+    () async {
+      var micros = 0;
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize(measured: true);
+      var c = await clocked(h, () => micros);
+      c.resumeInteraction();
+      micros += 1250000;
+      c.pause(PairPauseReason.background);
+      await c.flush();
+      c.dispose();
+      c = await clocked(h, () => micros);
+      expect(c.timer.interactiveElapsedMs, 1250);
+      c.resumeInteraction();
+      micros += 750000;
+      for (var i = 0; i < 4; i++) {
+        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-$i', PairTileSide.target);
+      }
+      await c.finish();
+      micros += 90000000;
+      await c.markSummaryPresented();
+      final persisted = await h.real.read(
+        ownerId: h.owner,
+        sessionId: h.operation.plan.learningSessionId,
+      );
+      expect(persisted.snapshot!.timer!.interactiveElapsedMs, 2000);
+      expect(
+        h.repository.checkpoints.where((p) => p.terminalAtUtc != null).length,
+        3,
+      );
+    },
+  );
   test(
     'completed board stops active clock before delayed summary request',
     () async {
@@ -102,6 +244,7 @@ void main() {
       );
     },
   );
+  for (final measured in [false, true]) {
   for (final after in [false, true]) {
     for (final action in [
       'pause',
@@ -111,7 +254,7 @@ void main() {
       'continueUntimed',
     ]) {
       test(
-        'disk reopen preserves actual durable $action after=$after',
+        'disk reopen preserves actual durable $action after=$after measured=$measured',
         () async {
           var micros = 0;
           final directory = await Directory.systemTemp.createTemp(
@@ -122,7 +265,7 @@ void main() {
             pinnedPlan: timedPlan(),
             executor: NativeDatabase(file),
           );
-          await h.initialize();
+          await h.initialize(measured: measured);
           final c = await clocked(h, () => micros);
           c.resumeInteraction();
           micros = 3000000;
@@ -199,6 +342,7 @@ void main() {
           );
           expect(restored.timerPaused, true);
           final elapsed = restored.timer.elapsedActiveMs;
+          expect(restored.timer.interactiveElapsedMs, measured ? elapsed : null);
           micros += 999999999;
           expect(restored.timer.elapsedActiveMs, elapsed);
           expect(restored.timer.extensionUsed, action == 'extend' && after);
@@ -210,6 +354,7 @@ void main() {
         },
       );
     }
+  }
   }
   for (final tamper in [
     'elapsed',

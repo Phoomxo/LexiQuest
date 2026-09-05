@@ -58,6 +58,7 @@ class VoiceRequest {
     required this.assignedEngine,
     required this.capability,
     required this.privacyScope,
+    required this.localOnly,
   });
 
   final String text;
@@ -70,6 +71,7 @@ class VoiceRequest {
   final VoiceEngine? assignedEngine;
   final VoiceCapability capability;
   final VoicePrivacyScope privacyScope;
+  final bool localOnly;
 
   factory VoiceRequest.create({
     required String text,
@@ -82,6 +84,7 @@ class VoiceRequest {
     VoiceEngine? assignedEngine,
     VoiceCapability capability = VoiceCapability.standardTargetSpeech,
     VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
+    bool localOnly = false,
   }) {
     final normalizedText = _normalizeText(text);
     if (normalizedText.isEmpty || normalizedText.length > 500) {
@@ -118,6 +121,16 @@ class VoiceRequest {
       );
     }
 
+    if (localOnly &&
+        (mode == VoiceMode.researchEvaluation ||
+            capability == VoiceCapability.sessionVoiceMirror ||
+            privacyScope == VoicePrivacyScope.participantTransient)) {
+      throw const VoiceFailure(
+        category: VoiceFailureCategory.validation,
+        message: 'Local-only voice is unavailable for this request.',
+      );
+    }
+
     if (mode == VoiceMode.researchEvaluation && assignedEngine == null) {
       throw const VoiceFailure(
         category: VoiceFailureCategory.validation,
@@ -151,6 +164,7 @@ class VoiceRequest {
       assignedEngine: assignedEngine,
       capability: capability,
       privacyScope: privacyScope,
+      localOnly: localOnly,
     );
   }
 

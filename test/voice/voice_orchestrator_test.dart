@@ -36,6 +36,7 @@ VoiceRequest _request({
   VoiceEngine? assignedEngine,
   VoiceCapability capability = VoiceCapability.standardTargetSpeech,
   VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
+  bool localOnly = false,
 }) {
   return VoiceRequest.create(
     text: 'Good morning.',
@@ -48,6 +49,7 @@ VoiceRequest _request({
     assignedEngine: assignedEngine,
     capability: capability,
     privacyScope: privacyScope,
+    localOnly: localOnly,
   );
 }
 
@@ -304,6 +306,82 @@ void main() {
         expect(result.actualEngine, VoiceEngine.offlinePack);
         expect(offlinePack.calls, const <VoiceEngine>[VoiceEngine.offlinePack]);
         expect(native.calls, isEmpty);
+      },
+    );
+  });
+
+  group('local-only practice', () {
+    _FakeHandler handler(VoiceEngine engine, {VoiceFailure? speakFailure}) =>
+        _FakeHandler(
+          VoiceProviderDescriptor(
+            engine: engine,
+            capabilities: const <VoiceCapability>{
+              VoiceCapability.standardTargetSpeech,
+            },
+            privacyScope: VoicePrivacyScope.standardContent,
+            allowsStandardCache: engine != VoiceEngine.nativeTts,
+          ),
+          speakFailure: speakFailure,
+        );
+
+    test(
+      'offline pack success makes zero remote or native speak calls',
+      () async {
+        final offlinePack = handler(VoiceEngine.offlinePack);
+        final vox = handler(VoiceEngine.voxCpmStandard);
+        final omni = handler(VoiceEngine.omniVoice);
+        final mirror = handler(VoiceEngine.voxCpmMirror);
+        final native = handler(VoiceEngine.nativeTts);
+        final orchestrator = VoiceOrchestrator(
+          policySource: const StaticVoicePolicySource(_online),
+          policyResolver: resolver,
+          handlerRegistry: _registry([offlinePack, vox, omni, mirror, native]),
+        );
+
+        final result = await orchestrator.speak(_request(localOnly: true));
+
+        expect(result.actualEngine, VoiceEngine.offlinePack);
+        expect(offlinePack.calls, const <VoiceEngine>[VoiceEngine.offlinePack]);
+        expect(vox.calls, isEmpty);
+        expect(omni.calls, isEmpty);
+        expect(mirror.calls, isEmpty);
+        expect(native.calls, isEmpty);
+        expect(offlinePack.requests.single.localOnly, isTrue);
+      },
+    );
+
+    test(
+      'offline pack failure falls directly to native and preserves flag',
+      () async {
+        final offlinePack = handler(
+          VoiceEngine.offlinePack,
+          speakFailure: const VoiceFailure(
+            category: VoiceFailureCategory.synthesis,
+            message: 'Verified pack could not synthesize.',
+          ),
+        );
+        final vox = handler(VoiceEngine.voxCpmStandard);
+        final omni = handler(VoiceEngine.omniVoice);
+        final mirror = handler(VoiceEngine.voxCpmMirror);
+        final native = handler(VoiceEngine.nativeTts);
+        final orchestrator = VoiceOrchestrator(
+          policySource: const StaticVoicePolicySource(_online),
+          policyResolver: resolver,
+          handlerRegistry: _registry([offlinePack, vox, omni, mirror, native]),
+        );
+
+        final result = await orchestrator.speak(_request(localOnly: true));
+
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(result.usedFallback, isTrue);
+        expect(vox.calls, isEmpty);
+        expect(omni.calls, isEmpty);
+        expect(mirror.calls, isEmpty);
+        expect(native.calls, const <VoiceEngine>[VoiceEngine.nativeTts]);
+        final routed = native.requests.single;
+        expect(routed.localOnly, isTrue);
+        expect(routed.capability, VoiceCapability.standardTargetSpeech);
+        expect(routed.privacyScope, VoicePrivacyScope.standardContent);
       },
     );
   });

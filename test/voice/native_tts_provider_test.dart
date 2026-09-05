@@ -11,6 +11,7 @@ VoiceRequest _validRequest({
   double speed = 1.0,
   VoiceMode mode = VoiceMode.practice,
   VoiceEngine? assignedEngine,
+  bool localOnly = false,
 }) {
   return VoiceRequest.create(
     text: text,
@@ -21,6 +22,7 @@ VoiceRequest _validRequest({
     contentType: 'word',
     mode: mode,
     assignedEngine: assignedEngine,
+    localOnly: localOnly,
   );
 }
 
@@ -124,6 +126,173 @@ void main() {
     ]);
   });
 
+  group('local-only installed voice proof', () {
+    Future<VoiceFailure> localFailure(NativeTtsAdapter adapter) async {
+      try {
+        await NativeTtsProvider(adapter).speak(_validRequest(localOnly: true));
+        fail('Expected local-only native synthesis to fail closed.');
+      } on VoiceFailure catch (failure) {
+        return failure;
+      }
+    }
+
+    test(
+      'adapter without local proof capability fails before text speak',
+      () async {
+        final adapter = _LegacyTtsAdapter();
+
+        final failure = await localFailure(adapter);
+
+        expect(failure.category, VoiceFailureCategory.synthesis);
+        expect(adapter.speakCalls, 0);
+        expect(adapter.setLanguageCalls, 0);
+      },
+    );
+
+    test(
+      'not-installed language fails before voice lookup and speak',
+      () async {
+        final adapter = _RecordingTtsAdapter(languageInstalled: false);
+
+        final failure = await localFailure(adapter);
+
+        expect(failure.category, VoiceFailureCategory.synthesis);
+        expect(adapter.invocations, const <_TtsInvocation>[
+          _TtsInvocation(_TtsCall.isLanguageInstalled, 'en-US'),
+        ]);
+      },
+    );
+
+    test('missing voices fail before selection and speak', () async {
+      final adapter = _RecordingTtsAdapter(voices: const <Object?>[]);
+
+      final failure = await localFailure(adapter);
+
+      expect(failure.category, VoiceFailureCategory.synthesis);
+      expect(adapter.invocations.map((call) => call.call), const <_TtsCall>[
+        _TtsCall.isLanguageInstalled,
+        _TtsCall.loadVoices,
+      ]);
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.speak),
+        isEmpty,
+      );
+    });
+
+    test('network-only voice fails before selection and speak', () async {
+      final adapter = _RecordingTtsAdapter(
+        voices: const <Object?>[
+          <String, Object?>{
+            'name': 'network-en',
+            'locale': 'en-US',
+            'network_required': '1',
+            'features': 'networkTts',
+          },
+        ],
+      );
+
+      final failure = await localFailure(adapter);
+
+      expect(failure.category, VoiceFailureCategory.synthesis);
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.setVoice),
+        isEmpty,
+      );
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.speak),
+        isEmpty,
+      );
+    });
+
+    test(
+      'voice marked not installed fails before selection and speak',
+      () async {
+        final adapter = _RecordingTtsAdapter(
+          voices: const <Object?>[
+            <String, Object?>{
+              'name': 'missing-en',
+              'locale': 'en-US',
+              'network_required': '0',
+              'features': 'notInstalled',
+            },
+          ],
+        );
+
+        final failure = await localFailure(adapter);
+
+        expect(failure.category, VoiceFailureCategory.synthesis);
+        expect(
+          adapter.invocations.where((call) => call.call == _TtsCall.speak),
+          isEmpty,
+        );
+      },
+    );
+
+    test('selection failure returns no text to the native engine', () async {
+      final adapter = _RecordingTtsAdapter(selectVoiceResult: 0);
+
+      final failure = await localFailure(adapter);
+
+      expect(failure.category, VoiceFailureCategory.synthesis);
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.setVoice),
+        hasLength(1),
+      );
+      expect(
+        adapter.invocations.where((call) => call.call == _TtsCall.speak),
+        isEmpty,
+      );
+    });
+
+    test(
+      'installed non-network voice is selected before text is spoken',
+      () async {
+        final adapter = _RecordingTtsAdapter(
+          voices: const <Object?>[
+            <String, Object?>{
+              'name': 'network-en',
+              'locale': 'en-US',
+              'network_required': '1',
+              'features': '',
+            },
+            <String, Object?>{
+              'name': 'local-en',
+              'locale': 'en-US',
+              'network_required': '0',
+              'features': 'embeddedTts',
+            },
+          ],
+        );
+
+        final result = await NativeTtsProvider(
+          adapter,
+        ).speak(_validRequest(localOnly: true));
+
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(
+          adapter.invocations.map((invocation) => invocation.call),
+          const <_TtsCall>[
+            _TtsCall.isLanguageInstalled,
+            _TtsCall.loadVoices,
+            _TtsCall.setLanguage,
+            _TtsCall.setVoice,
+            _TtsCall.setSpeechRate,
+            _TtsCall.setVolume,
+            _TtsCall.setPitch,
+            _TtsCall.speak,
+          ],
+        );
+        expect(adapter.invocations[0].argument, 'en-US');
+        expect(adapter.invocations[2].argument, 'en-US');
+        expect(adapter.invocations[3].argument, const <String, String>{
+          'name': 'local-en',
+          'locale': 'en-US',
+        });
+        expect(adapter.invocations.last.argument, 'Hello world.');
+      },
+    );
+  });
+
   group('successful speak result', () {
     test('reports native provenance without fallback or cache', () async {
       final adapter = _RecordingTtsAdapter();
@@ -216,7 +385,17 @@ void main() {
   });
 }
 
-enum _TtsCall { setLanguage, setSpeechRate, setVolume, setPitch, speak, stop }
+enum _TtsCall {
+  isLanguageInstalled,
+  loadVoices,
+  setVoice,
+  setLanguage,
+  setSpeechRate,
+  setVolume,
+  setPitch,
+  speak,
+  stop,
+}
 
 class _TtsInvocation {
   const _TtsInvocation(this.call, [this.argument]);
@@ -237,12 +416,29 @@ class _TtsInvocation {
   String toString() => '${call.name}($argument)';
 }
 
-class _RecordingTtsAdapter implements NativeTtsAdapter {
-  _RecordingTtsAdapter({this.failingCall, this.failure});
+class _RecordingTtsAdapter
+    implements NativeTtsAdapter, NativeTtsLocalVoiceAdapter {
+  _RecordingTtsAdapter({
+    this.failingCall,
+    this.failure,
+    this.languageInstalled = true,
+    this.voices = const <Object?>[
+      <String, Object?>{
+        'name': 'local-en',
+        'locale': 'en-US',
+        'network_required': '0',
+        'features': '',
+      },
+    ],
+    this.selectVoiceResult = 1,
+  });
 
   final List<_TtsInvocation> invocations = [];
   final _TtsCall? failingCall;
   final Object? failure;
+  final Object? languageInstalled;
+  final Object? voices;
+  final Object? selectVoiceResult;
 
   Future<void> _invoke(_TtsCall call, [Object? argument]) async {
     if (failingCall == call && failure != null) {
@@ -250,6 +446,29 @@ class _RecordingTtsAdapter implements NativeTtsAdapter {
     }
     invocations.add(_TtsInvocation(call, argument));
   }
+
+  Future<Object?> _invokeResult(
+    _TtsCall call,
+    Object? result, [
+    Object? argument,
+  ]) async {
+    await _invoke(call, argument);
+    return result;
+  }
+
+  @override
+  Future<Object?> isLanguageInstalled(String language) =>
+      _invokeResult(_TtsCall.isLanguageInstalled, languageInstalled, language);
+
+  @override
+  Future<Object?> loadVoices() => _invokeResult(_TtsCall.loadVoices, voices);
+
+  @override
+  Future<Object?> selectVoice({required String name, required String locale}) =>
+      _invokeResult(_TtsCall.setVoice, selectVoiceResult, <String, String>{
+        'name': name,
+        'locale': locale,
+      });
 
   @override
   Future<void> setLanguage(String language) =>
@@ -270,4 +489,31 @@ class _RecordingTtsAdapter implements NativeTtsAdapter {
 
   @override
   Future<void> stop() => _invoke(_TtsCall.stop);
+}
+
+final class _LegacyTtsAdapter implements NativeTtsAdapter {
+  int setLanguageCalls = 0;
+  int speakCalls = 0;
+
+  @override
+  Future<void> setLanguage(String language) async {
+    setLanguageCalls += 1;
+  }
+
+  @override
+  Future<void> setSpeechRate(double rate) async {}
+
+  @override
+  Future<void> setVolume(double volume) async {}
+
+  @override
+  Future<void> setPitch(double pitch) async {}
+
+  @override
+  Future<void> speak(String text) async {
+    speakCalls += 1;
+  }
+
+  @override
+  Future<void> stop() async {}
 }

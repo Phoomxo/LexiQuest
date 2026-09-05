@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart';
@@ -10,6 +11,172 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'pair_matching_source_composer_test.dart' as f;
 
 void main() {
+  test(
+    'measured admission exception accepts only virgin initial to codec4 zero',
+    () {
+      final plan =
+          (f.compose(List.generate(4, f.fixture)) as PairPlanReady).plan;
+      final op = PairMatchingStartOperation(
+        plan: plan,
+        launchOperationId: 'synthetic-operation',
+        appVersion: 'synthetic',
+        buildId: 'synthetic',
+      );
+      final virgin = PairMatchingState.initial(plan);
+      final selected = PairMatchingEngine.reduce(
+        virgin,
+        PairSelectTile(
+          operationId: '0:synthetic-select',
+          ownerId: plan.ownerId,
+          sessionId: plan.learningSessionId,
+          roundOrdinal: 0,
+          expectedRevision: 0,
+          tile: PairTile(
+            PairTileSide.prompt,
+            plan.orderedLexicalItems.first.wordId,
+          ),
+          responseTimeMs: 0,
+        ),
+      ).state;
+      PairMatchingCheckpointSnapshot snapshot(
+        PairMatchingState engine, {
+        PairTimerState? timer,
+        int codec = 4,
+      }) => PairMatchingCheckpointSnapshot(
+        engine: engine,
+        startOperation: op.stableSerialization,
+        timer: timer,
+        timerCodecVersion: codec,
+      );
+      final initial = PairMatchingCheckpointCodec.decode(
+        op.initialCheckpoint.state,
+      );
+      final zero = PairTimerState.initial(
+        plan.timerPreset,
+      ).copy(interactiveElapsedMs: 0);
+      final admitted = snapshot(virgin, timer: zero);
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(initial, admitted),
+        throwsStateError,
+      );
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          initial,
+          admitted,
+          allowMeasuredAdmission: true,
+        ),
+        returnsNormally,
+      );
+      for (final invalid in [
+        snapshot(selected, timer: zero),
+        snapshot(virgin, timer: zero.copy(interactiveElapsedMs: 1)),
+        snapshot(virgin, timer: zero, codec: 3),
+      ]) {
+        expect(
+          () => PairMatchingCheckpointCodec.validateTransition(
+            initial,
+            invalid,
+            allowMeasuredAdmission: true,
+          ),
+          throwsStateError,
+        );
+      }
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          snapshot(selected),
+          snapshot(selected, timer: zero),
+          allowMeasuredAdmission: true,
+        ),
+        throwsStateError,
+      );
+      final historicalTimer = snapshot(
+        virgin,
+        timer: PairTimerState.initial(plan.timerPreset),
+      );
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          historicalTimer,
+          admitted,
+          allowMeasuredAdmission: true,
+        ),
+        throwsStateError,
+      );
+      PairMatchingCheckpointCodec.validateTransition(admitted, historicalTimer);
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          historicalTimer,
+          admitted,
+        ),
+        throwsStateError,
+      );
+      expect(
+        jsonEncode(op.initialCheckpoint.state),
+        jsonEncode(
+          PairMatchingCheckpointCodec.initialState(
+            plan,
+            op.stableSerialization,
+          ),
+        ),
+      );
+    },
+  );
+  test(
+    'codec4 retains full elapsed and rejects historical coverage invention',
+    () {
+      final plan =
+          (f.compose(List.generate(4, f.fixture)) as PairPlanReady).plan;
+      final op = PairMatchingStartOperation(
+        plan: plan,
+        launchOperationId: 'synthetic-operation',
+        appVersion: 'synthetic',
+        buildId: 'synthetic',
+      );
+      PairMatchingCheckpointSnapshot snapshot(int? elapsed) =>
+          PairMatchingCheckpointSnapshot(
+            engine: PairMatchingState.initial(plan),
+            startOperation: op.stableSerialization,
+            timer: PairTimerState.initial(
+              plan.timerPreset,
+            ).copy(interactiveElapsedMs: elapsed),
+          );
+      final measured = snapshot(3000);
+      expect(measured.toJson()['codecVersion'], 4);
+      expect(
+        PairMatchingCheckpointCodec.decode(
+          measured.toJson(),
+        ).timer!.interactiveElapsedMs,
+        3000,
+      );
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          snapshot(null),
+          measured,
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => PairMatchingCheckpointCodec.validateTransition(
+          measured,
+          snapshot(2000),
+        ),
+        throwsStateError,
+      );
+      PairMatchingCheckpointCodec.validateTransition(measured, snapshot(null));
+      final old =
+          jsonDecode(jsonEncode(snapshot(null).toJson()))
+              as Map<String, dynamic>;
+      old['codecVersion'] = 3;
+      (old['timer'] as Map).remove('interactiveElapsedMs');
+      expect(
+        PairMatchingCheckpointCodec.decode(old).timer!.interactiveElapsedMs,
+        isNull,
+      );
+      expect(
+        PairMatchingCheckpointCodec.decode(op.initialCheckpoint.state).timer,
+        isNull,
+      );
+    },
+  );
   test(
     'review Unicode 29-attempt ledger fits compact codec and preserves start identity',
     () {

@@ -153,6 +153,17 @@ final class PairMatchingAtomicStartAdapter {
   });
   final PairPinnedLearningActivityRepository repository;
   final PairMatchingStartCapability capability;
+
+  /// Establishes full elapsed coverage atomically only for a newly inserted
+  /// session. An idempotent historical initial-only session remains unmeasured.
+  Future<void> startMeasured(PairMatchingStartOperation operation) =>
+      repository.startMeasuredPinnedPairSession(
+        session: operation.session,
+        plan: operation.plan,
+        launchOperationId: operation.launchOperationId,
+        checkpoint: operation.initialCheckpoint,
+        capability: capability,
+      );
   Future<void> start(PairMatchingStartOperation operation) =>
       repository.startPinnedPairSession(
         session: operation.session,

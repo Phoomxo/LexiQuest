@@ -36,6 +36,21 @@ const _wavBytes = <int>[
 const _idToken = 'id-token';
 const _requestId = 'req-123';
 const _modelVersion = 'voxcpm2-2.0.3';
+// Synthetic Pair pronunciation metadata: neither the text nor an owner id is
+// embedded in the identifier forwarded to the existing telemetry contract.
+const _pairContentId = 'ad738345-64c4-4626-8f32-c55e2f30ac8c';
+const _pairText = 'Synthetic blue lantern.';
+
+VoiceRequest _pairRequest({bool localOnly = true}) => VoiceRequest.create(
+  text: _pairText,
+  language: 'en',
+  voiceId: 'teacher_female',
+  speed: 1.0,
+  contentId: _pairContentId,
+  contentType: 'pairPronunciation',
+  mode: VoiceMode.practice,
+  localOnly: localOnly,
+);
 
 AppConfig _config() => AppConfig.fromValues(
   voiceApiUrl: 'https://voice.example.com',
@@ -69,7 +84,10 @@ http.Response _wavResponse() => http.Response.bytes(
   },
 );
 
-Future<InstalledStandardVoicePack> _installedPack() async {
+Future<InstalledStandardVoicePack> _installedPack({
+  String contentId = 'word-001',
+  String text = 'Hello world.',
+}) async {
   final root = await Directory.systemTemp.createTemp('factory-pack-');
   addTearDown(() => root.delete(recursive: true));
   final bytes = Uint8List.fromList(_wavBytes);
@@ -91,10 +109,8 @@ Future<InstalledStandardVoicePack> _installedPack() async {
     'totalBytes': bytes.length,
     'files': [
       {
-        'contentId': 'word-001',
-        'normalizedTextSha256': sha256
-            .convert(utf8.encode('Hello world.'))
-            .toString(),
+        'contentId': contentId,
+        'normalizedTextSha256': sha256.convert(utf8.encode(text)).toString(),
         'relativePath': 'hello.wav',
         'byteSize': bytes.length,
         'sha256': sha256.convert(bytes).toString(),
@@ -223,6 +239,275 @@ void main() {
     expect(result.requestedEngine, VoiceEngine.offlinePack);
     expect(result.actualEngine, VoiceEngine.offlinePack);
     expect(player.playBytesCalls, hasLength(1));
+  });
+
+  group('local-only Pair pronunciation through the full facade', () {
+    for (final rollback in <bool>[false, true]) {
+      final remoteEngine = rollback
+          ? VoiceEngine.omniVoice
+          : VoiceEngine.voxCpmStandard;
+      test(
+        'online ${remoteEngine.name} is skipped locally and remains available '
+        'to the default route',
+        () async {
+          final tokenReader = _RecordingTokenReader(_idToken);
+          final client = _RecordingHttpClient((_) async => _wavResponse());
+          final native = _RecordingLocalNativeTtsAdapter();
+          final player = _RecordingAudioPlayerAdapter();
+          final sink = _RecordingTelemetrySink();
+          final service = VoiceServiceFactory.create(
+            config: _config(),
+            client: client,
+            firebaseTokenReader: tokenReader,
+            nativeTtsAdapter: native,
+            audioPlayerAdapter: player,
+            telemetrySink: sink,
+            useOmniVoiceRollback: rollback,
+          );
+          final facade = VoiceUseCases(
+            provider: service,
+            disposeProvider: service.dispose,
+          );
+          addTearDown(facade.dispose);
+          final session = facade.acquireSession();
+          addTearDown(session.release);
+
+          final localResult = await session.speak(_pairRequest());
+
+          expect(localResult.requestedEngine, VoiceEngine.nativeTts);
+          expect(localResult.actualEngine, VoiceEngine.nativeTts);
+          expect(localResult.usedFallback, isFalse);
+          expect(client.requests, isEmpty);
+          expect(client.sendCount, 0);
+          expect(tokenReader.forceRefreshFlags, isEmpty);
+          expect(player.playBytesCalls, isEmpty);
+          expect(native.speakCalls, <String>[_pairText]);
+          // These calls originate in the real NativeTtsProvider after the
+          // orchestrator copies the request. Losing localOnly at that boundary
+          // would bypass the installed/nonnetwork proof and fail this check.
+          expect(native.localCalls, <String>[
+            'installed:en-US',
+            'voices',
+            'language:en-US',
+            'select:synthetic-local-en:en-US',
+            'speak',
+          ]);
+          _expectSafePairTelemetry(sink.events.single);
+
+          // A successful ordinary request on this same service proves that
+          // the remote route and auth fixture really were enabled and online.
+          final ordinaryResult = await session.speak(
+            _pairRequest(localOnly: false),
+          );
+
+          expect(ordinaryResult.requestedEngine, remoteEngine);
+          expect(ordinaryResult.actualEngine, remoteEngine);
+          expect(ordinaryResult.usedFallback, isFalse);
+          expect(client.sendCount, 1);
+          expect(client.requests, hasLength(1));
+          expect(
+            client.requests.single.headers['authorization'],
+            'Bearer $_idToken',
+          );
+          expect(
+            (jsonDecode(client.requests.single.body) as Map)['text'],
+            _pairText,
+          );
+          expect(tokenReader.forceRefreshFlags, <bool>[false]);
+          expect(player.playBytesCalls, hasLength(1));
+          expect(native.speakCalls, <String>[_pairText]);
+          expect(sink.events, hasLength(2));
+          _expectSafePairTelemetry(sink.events.last);
+        },
+      );
+    }
+
+    test(
+      'verified installed pack plays locally without native or auth',
+      () async {
+        final tokenReader = _RecordingTokenReader(_idToken);
+        final client = _RecordingHttpClient((_) async => _wavResponse());
+        final native = _RecordingLocalNativeTtsAdapter();
+        final player = _RecordingAudioPlayerAdapter();
+        final sink = _RecordingTelemetrySink();
+        final service = VoiceServiceFactory.create(
+          config: _config(),
+          client: client,
+          firebaseTokenReader: tokenReader,
+          nativeTtsAdapter: native,
+          audioPlayerAdapter: player,
+          telemetrySink: sink,
+          installedVoicePack: await _installedPack(
+            contentId: _pairContentId,
+            text: _pairText,
+          ),
+        );
+        final facade = VoiceUseCases(
+          provider: service,
+          disposeProvider: service.dispose,
+        );
+        addTearDown(facade.dispose);
+        final session = facade.acquireSession();
+        addTearDown(session.release);
+
+        final result = await session.speak(_pairRequest());
+
+        expect(result.requestedEngine, VoiceEngine.offlinePack);
+        expect(result.actualEngine, VoiceEngine.offlinePack);
+        expect(result.usedFallback, isFalse);
+        expect(player.playBytesCalls, <Uint8List>[
+          Uint8List.fromList(_wavBytes),
+        ]);
+        expect(native.speakCalls, isEmpty);
+        expect(native.localCalls, isEmpty);
+        expect(client.requests, isEmpty);
+        expect(client.sendCount, 0);
+        expect(tokenReader.forceRefreshFlags, isEmpty);
+        _expectSafePairTelemetry(sink.events.single);
+      },
+    );
+
+    for (final corruptPack in <bool>[false, true]) {
+      final reason = corruptPack
+          ? VoiceFailureCategory.checksumMismatch
+          : VoiceFailureCategory.modelUnavailable;
+      test(
+        'installed pack ${reason.name} falls back only to proven native',
+        () async {
+          final pack = await _installedPack(
+            contentId: corruptPack ? _pairContentId : 'word-001',
+            text: _pairText,
+          );
+          if (corruptPack) {
+            // Keep the real manifest and byte length, but change the actual file
+            // so InstalledVoicePackProvider must reject its SHA-256.
+            final corrupted = Uint8List.fromList(_wavBytes)..[0] = 0;
+            await File(pack.pathFor('hello.wav')).writeAsBytes(corrupted);
+          }
+          final tokenReader = _RecordingTokenReader(_idToken);
+          final client = _RecordingHttpClient((_) async => _wavResponse());
+          final native = _RecordingLocalNativeTtsAdapter();
+          final player = _RecordingAudioPlayerAdapter();
+          final sink = _RecordingTelemetrySink();
+          final service = VoiceServiceFactory.create(
+            config: _config(),
+            client: client,
+            firebaseTokenReader: tokenReader,
+            nativeTtsAdapter: native,
+            audioPlayerAdapter: player,
+            telemetrySink: sink,
+            installedVoicePack: pack,
+          );
+          final facade = VoiceUseCases(
+            provider: service,
+            disposeProvider: service.dispose,
+          );
+          addTearDown(facade.dispose);
+          final session = facade.acquireSession();
+          addTearDown(session.release);
+
+          final result = await session.speak(_pairRequest());
+
+          expect(result.requestedEngine, VoiceEngine.offlinePack);
+          expect(result.actualEngine, VoiceEngine.nativeTts);
+          expect(result.usedFallback, isTrue);
+          expect(sink.events.single.fallbackReason, reason);
+          expect(native.speakCalls, <String>[_pairText]);
+          expect(native.localCalls, <String>[
+            'installed:en-US',
+            'voices',
+            'language:en-US',
+            'select:synthetic-local-en:en-US',
+            'speak',
+          ]);
+          expect(player.playBytesCalls, isEmpty);
+          expect(client.requests, isEmpty);
+          expect(client.sendCount, 0);
+          expect(tokenReader.forceRefreshFlags, isEmpty);
+          _expectSafePairTelemetry(sink.events.single);
+        },
+      );
+    }
+
+    for (final unavailable in <String>[
+      'unsupported proof capability',
+      'language not installed',
+      'network-only voice',
+      'voice selection not acknowledged',
+    ]) {
+      test(
+        '$unavailable fails safely after a pack miss without remote speech',
+        () async {
+          final _RecordingNativeTtsAdapter native = switch (unavailable) {
+            'unsupported proof capability' => _RecordingNativeTtsAdapter(),
+            'language not installed' => _RecordingLocalNativeTtsAdapter(
+              languageInstalled: false,
+            ),
+            'network-only voice' => _RecordingLocalNativeTtsAdapter(
+              voices: const <Map<String, String>>[
+                <String, String>{
+                  'name': 'synthetic-network-en',
+                  'locale': 'en-US',
+                  'network_required': '1',
+                  'features': '',
+                },
+              ],
+            ),
+            _ => _RecordingLocalNativeTtsAdapter(selectionResult: 0),
+          };
+          final tokenReader = _RecordingTokenReader(_idToken);
+          final client = _RecordingHttpClient((_) async => _wavResponse());
+          final player = _RecordingAudioPlayerAdapter();
+          final sink = _RecordingTelemetrySink();
+          final service = VoiceServiceFactory.create(
+            config: _config(),
+            client: client,
+            firebaseTokenReader: tokenReader,
+            nativeTtsAdapter: native,
+            audioPlayerAdapter: player,
+            telemetrySink: sink,
+            installedVoicePack: await _installedPack(),
+          );
+          final facade = VoiceUseCases(
+            provider: service,
+            disposeProvider: service.dispose,
+          );
+          addTearDown(facade.dispose);
+          final session = facade.acquireSession();
+          addTearDown(session.release);
+
+          await expectLater(
+            session.speak(_pairRequest()),
+            throwsA(
+              isA<VoiceFailure>()
+                  .having(
+                    (failure) => failure.category,
+                    'category',
+                    VoiceFailureCategory.synthesis,
+                  )
+                  .having(
+                    (failure) => failure.message,
+                    'privacy-safe message',
+                    isNot(contains(_pairText)),
+                  ),
+            ),
+          );
+
+          expect(native.speakCalls, isEmpty);
+          expect(player.playBytesCalls, isEmpty);
+          expect(client.requests, isEmpty);
+          expect(client.sendCount, 0);
+          expect(tokenReader.forceRefreshFlags, isEmpty);
+          expect(sink.events, hasLength(1));
+          expect(sink.events.single.outcome, VoiceTelemetryOutcome.failed);
+          expect(
+            sink.events.single.failureCategory,
+            VoiceFailureCategory.synthesis,
+          );
+          _expectSafePairTelemetry(sink.events.single);
+        },
+      );
+    }
   });
 
   test('factory-wired network failure falls back to native TTS', () async {
@@ -476,6 +761,17 @@ void main() {
   });
 }
 
+void _expectSafePairTelemetry(VoiceTelemetryEvent event) {
+  expect(event.contentId, _pairContentId);
+  expect(event.contentType, 'pairPronunciation');
+  expect(event.privacyScope, VoicePrivacyScope.standardContent);
+  final serialized = jsonEncode(event.toMap());
+  expect(serialized, isNot(contains(_pairText)));
+  expect(serialized, isNot(contains(_idToken)));
+  expect(event.toMap().keys, isNot(contains('text')));
+  expect(event.toMap().keys, isNot(contains('ownerId')));
+}
+
 final class _RecordedRequest {
   _RecordedRequest(http.Request request)
     : method = request.method,
@@ -561,6 +857,66 @@ final class _RecordingNativeTtsAdapter implements NativeTtsAdapter {
   Future<void> stop() async {
     stopCount++;
     await stopGate;
+  }
+}
+
+final class _RecordingLocalNativeTtsAdapter extends _RecordingNativeTtsAdapter
+    implements NativeTtsLocalVoiceAdapter {
+  _RecordingLocalNativeTtsAdapter({
+    this.languageInstalled = true,
+    this.voices = const <Map<String, String>>[
+      <String, String>{
+        'name': 'synthetic-network-en',
+        'locale': 'en-US',
+        'network_required': '1',
+        'features': '',
+      },
+      <String, String>{
+        'name': 'synthetic-local-en',
+        'locale': 'en-US',
+        'network_required': '0',
+        'features': '',
+      },
+    ],
+    this.selectionResult = 1,
+  });
+
+  final Object? languageInstalled;
+  final Object? voices;
+  final Object? selectionResult;
+  final List<String> localCalls = <String>[];
+
+  @override
+  Future<Object?> isLanguageInstalled(String language) async {
+    localCalls.add('installed:$language');
+    return languageInstalled;
+  }
+
+  @override
+  Future<Object?> loadVoices() async {
+    localCalls.add('voices');
+    return voices;
+  }
+
+  @override
+  Future<void> setLanguage(String language) async {
+    localCalls.add('language:$language');
+    await super.setLanguage(language);
+  }
+
+  @override
+  Future<Object?> selectVoice({
+    required String name,
+    required String locale,
+  }) async {
+    localCalls.add('select:$name:$locale');
+    return selectionResult;
+  }
+
+  @override
+  Future<void> speak(String text) async {
+    localCalls.add('speak');
+    await super.speak(text);
   }
 }
 

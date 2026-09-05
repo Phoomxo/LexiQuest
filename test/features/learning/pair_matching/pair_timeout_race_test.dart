@@ -297,10 +297,13 @@ void main() {
           micros += 60000000;
           await c.expire();
           final revision = c.checkpointRevision, round = c.state.roundOrdinal;
+          final restartAvailable = c.timerAvailability.restart.available;
           try {
             await c.dispatch(decision(c, PairTimerAction.restart));
+            expect(restartAvailable, true);
             restarts++;
           } on StateError catch (e) {
+            expect(restartAvailable, false);
             expect(e.message, contains('capacity'));
             expect(c.checkpointRevision, revision);
             expect(c.state.roundOrdinal, round);

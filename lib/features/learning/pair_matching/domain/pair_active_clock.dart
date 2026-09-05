@@ -1,4 +1,5 @@
 import 'pair_matching_launch.dart';
+import 'pair_matching_checkpoint_budget.dart';
 import 'pair_matching_plan.dart';
 
 enum PairTimerMode {
@@ -26,6 +27,7 @@ final class PairTimerState {
     required this.mode,
     required this.remainingActiveMs,
     this.elapsedActiveMs = 0,
+    this.interactiveElapsedMs,
     this.extensionUsed = false,
     Set<PairPauseReason> reasons = const {},
     this.lastOperationId,
@@ -44,6 +46,10 @@ final class PairTimerState {
   );
   final PairTimerMode mode;
   final int remainingActiveMs, elapsedActiveMs;
+
+  /// Full observed interactive duration; null means coverage is unavailable.
+  /// It is descriptive only and never feeds learning-time or rewards.
+  final int? interactiveElapsedMs;
   final bool extensionUsed;
   final Set<PairPauseReason> reasons;
   final String? lastOperationId, lastFingerprint;
@@ -59,6 +65,8 @@ final class PairTimerState {
     PairTimerMode? mode,
     int? remainingActiveMs,
     int? elapsedActiveMs,
+    int? interactiveElapsedMs,
+    bool loseInteractiveCoverage = false,
     bool? extensionUsed,
     Set<PairPauseReason>? reasons,
     String? lastOperationId,
@@ -67,25 +75,33 @@ final class PairTimerState {
     mode: mode ?? this.mode,
     remainingActiveMs: remainingActiveMs ?? this.remainingActiveMs,
     elapsedActiveMs: elapsedActiveMs ?? this.elapsedActiveMs,
+    interactiveElapsedMs: loseInteractiveCoverage
+        ? null
+        : interactiveElapsedMs ?? this.interactiveElapsedMs,
     extensionUsed: extensionUsed ?? this.extensionUsed,
     reasons: Set.unmodifiable(reasons ?? this.reasons),
     lastOperationId: lastOperationId ?? this.lastOperationId,
     lastFingerprint: lastFingerprint ?? this.lastFingerprint,
   );
-  Map<String, Object?> toJson() => {
+  Map<String, Object?> toJson({bool includeInteractiveElapsed = true}) => {
     'mode': mode.name,
     'remainingActiveMs': remainingActiveMs,
     'elapsedActiveMs': elapsedActiveMs,
+    if (includeInteractiveElapsed) 'interactiveElapsedMs': interactiveElapsedMs,
     'extensionUsed': extensionUsed,
     'reasons': reasons.map((r) => r.name).toList()..sort(),
     'lastOperationId': lastOperationId,
     'lastFingerprint': lastFingerprint,
   };
-  static PairTimerState fromJson(Object? value) {
+  static PairTimerState fromJson(
+    Object? value, {
+    bool includesInteractiveElapsed = true,
+  }) {
     final j = pairJson(value, {
       'mode',
       'remainingActiveMs',
       'elapsedActiveMs',
+      if (includesInteractiveElapsed) 'interactiveElapsedMs',
       'extensionUsed',
       'reasons',
       'lastOperationId',
@@ -95,6 +111,9 @@ final class PairTimerState {
       mode: PairTimerMode.values.byName(j['mode'] as String),
       remainingActiveMs: j['remainingActiveMs'] as int,
       elapsedActiveMs: j['elapsedActiveMs'] as int,
+      interactiveElapsedMs: includesInteractiveElapsed
+          ? j['interactiveElapsedMs'] as int?
+          : null,
       extensionUsed: j['extensionUsed'] as bool,
       reasons: Set.unmodifiable(
         (j['reasons'] as List).map(
@@ -107,7 +126,11 @@ final class PairTimerState {
     if (state.remainingActiveMs < 0 ||
         state.remainingActiveMs > 120000 ||
         state.elapsedActiveMs < 0 ||
-        state.elapsedActiveMs > 9223372036854775807 ||
+        state.elapsedActiveMs > PairMatchingCheckpointBudget.maximumCounter ||
+        (state.interactiveElapsedMs != null &&
+            (state.interactiveElapsedMs! < 0 ||
+                state.interactiveElapsedMs! >
+                    PairMatchingCheckpointBudget.maximumCounter)) ||
         (state.mode == PairTimerMode.timeoutDecision &&
             state.remainingActiveMs != 0) ||
         ((state.mode == PairTimerMode.off ||
@@ -156,6 +179,9 @@ final class PairActiveClock {
     return _state.copy(reasons: reasons);
   }
 
+  /// Does not sample or mutate the clock; operational queries use this view.
+  PairTimerState get snapshot => _state.copy(reasons: reasons);
+
   void replace(PairTimerState value) {
     _state = value;
     if (value.mode == PairTimerMode.continuedUntimed) {
@@ -181,7 +207,7 @@ final class PairActiveClock {
   }
 
   void _open() {
-    if (isPaused || !_state.timed || _anchor != null) return;
+    if (isPaused || !_measuring || _anchor != null) return;
     try {
       final n = monotonicMicros();
       if (n < 0) throw StateError('clock');
@@ -193,14 +219,15 @@ final class PairActiveClock {
 
   void _fault() {
     _anchor = null;
-    if (!reasons.contains(PairPauseReason.clockFault)) {
+    _state = _state.copy(loseInteractiveCoverage: true);
+    if (_state.timed && !reasons.contains(PairPauseReason.clockFault)) {
       _leases.add(PairPauseLease._(PairPauseReason.clockFault));
     }
   }
 
   void fold() {
     final anchor = _anchor;
-    if (anchor == null || isPaused || !_state.timed) return;
+    if (anchor == null || isPaused || !_measuring) return;
     try {
       final now = monotonicMicros();
       if (now < anchor) {
@@ -209,17 +236,45 @@ final class PairActiveClock {
       }
       final total = now - anchor + _carryMicros;
       final delta = total ~/ 1000;
-      final used = delta > _state.remainingActiveMs
+      final used = _state.timed && delta > _state.remainingActiveMs
           ? _state.remainingActiveMs
           : delta;
+      final interactive = _state.interactiveElapsedMs;
+      final overflow =
+          interactive != null &&
+          interactive > PairMatchingCheckpointBudget.maximumCounter - used;
       _state = _state.copy(
-        remainingActiveMs: _state.remainingActiveMs - used,
-        elapsedActiveMs: _state.elapsedActiveMs + used,
+        remainingActiveMs: _state.timed
+            ? _state.remainingActiveMs - used
+            : _state.remainingActiveMs,
+        elapsedActiveMs: _state.timed
+            ? _state.elapsedActiveMs + used
+            : _state.elapsedActiveMs,
+        interactiveElapsedMs: interactive == null || overflow
+            ? null
+            : interactive + used,
+        loseInteractiveCoverage: overflow,
       );
-      _carryMicros = _state.remainingActiveMs == 0 ? 0 : total % 1000;
+      _carryMicros = _state.timed && _state.remainingActiveMs == 0
+          ? 0
+          : total % 1000;
       _anchor = now;
     } catch (_) {
       _fault();
     }
+  }
+
+  bool get _measuring =>
+      _state.timed ||
+      (_state.interactiveElapsedMs != null &&
+          (_state.mode == PairTimerMode.off ||
+              _state.mode == PairTimerMode.continuedUntimed));
+
+  /// Drop only the optional measurement when coverage cannot be guaranteed.
+  /// Timed challenge accounting and its pause/recovery policy remain intact.
+  void loseInteractiveCoverage() {
+    fold();
+    _state = _state.copy(loseInteractiveCoverage: true);
+    if (!_state.timed) _anchor = null;
   }
 }

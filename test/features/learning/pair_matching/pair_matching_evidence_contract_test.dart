@@ -127,7 +127,7 @@ class PairHarness {
   late PairMatchingStartOperation operation;
   var nextId = 0;
   String owner = 'synthetic-owner';
-  Future<void> initialize() async {
+  Future<void> initialize({bool measured = false}) async {
     owner = pinnedPlan?.ownerId ?? owner;
     await db
         .into(db.localOwners)
@@ -195,7 +195,7 @@ class PairHarness {
       buildId: buildTag,
       configuration: configuration,
     );
-    await PairMatchingAtomicStartAdapter(
+    final starter = PairMatchingAtomicStartAdapter(
       repository: real,
       capability: InternalPairMatchingCapability(
         allowlist: PairCuratedAllowlist(
@@ -204,7 +204,10 @@ class PairHarness {
         ),
         isEnabled: () => true,
       ),
-    ).start(operation);
+    );
+    await (measured
+        ? starter.startMeasured(operation)
+        : starter.start(operation));
   }
 
   Future<PairMatchingSessionCoordinator> restore() =>

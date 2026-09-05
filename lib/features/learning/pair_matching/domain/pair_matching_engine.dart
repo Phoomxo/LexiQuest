@@ -601,22 +601,16 @@ abstract final class PairMatchingEngine {
           selected = null;
         }
     }
+    final timerProjection = command is PairTimerDecision
+        ? previewTimerAction(state, command.action)
+        : state;
     return PairMatchingTransition(
       PairMatchingState._(
         plan: state.plan,
-        roundOrdinal:
-            state.roundOrdinal +
-            (command is PairTimerDecision &&
-                    command.action == PairTimerAction.restart
-                ? 1
-                : 0),
+        roundOrdinal: timerProjection.roundOrdinal,
         operationRevision: state.operationRevision + 1,
         selected: selected,
-        matchedWordIds:
-            command is PairTimerDecision &&
-                command.action == PairTimerAction.restart
-            ? const {}
-            : state.matchedWordIds,
+        matchedWordIds: timerProjection.matchedWordIds,
         supportedWordIds: supported,
         supportAtRevision: supportRevisions,
         attempts: state.attempts,
@@ -627,6 +621,28 @@ abstract final class PairMatchingEngine {
       pending,
     );
   }
+
+  /// Capacity projection only: no command identity, revision admission or write.
+  /// The reducer consumes these same round/match rules after command validation.
+  static PairMatchingState previewTimerAction(
+    PairMatchingState state,
+    PairTimerAction action,
+  ) => PairMatchingState._(
+    plan: state.plan,
+    roundOrdinal:
+        state.roundOrdinal + (action == PairTimerAction.restart ? 1 : 0),
+    operationRevision: state.operationRevision,
+    selected: null,
+    matchedWordIds: action == PairTimerAction.restart
+        ? const {}
+        : state.matchedWordIds,
+    supportedWordIds: state.supportedWordIds,
+    supportAtRevision: state.supportAtRevision,
+    attempts: state.attempts,
+    pending: state.pending,
+    lastOperationId: state.lastOperationId,
+    lastFingerprint: state.lastFingerprint,
+  );
 
   static PairMatchingState acknowledge(
     PairMatchingState state,

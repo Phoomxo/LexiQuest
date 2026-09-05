@@ -436,7 +436,11 @@ final class MatchingModeAdapter
         FocusTimerSupportingLessonModeAdapter,
         HintSupportingLessonModeAdapter,
         SessionConfigurableLessonModeAdapter {
-  const MatchingModeAdapter({this.maximumPairs = 6});
+  const MatchingModeAdapter({this.maximumPairs = 6})
+    : internalPairMatching = false;
+  const MatchingModeAdapter.internalPair({this.maximumPairs = 6})
+    : internalPairMatching = true;
+  final bool internalPairMatching;
 
   /// Read-only use of the actual supported legacy schema/timer decoder.
   void validateLegacyCheckpointShape(
@@ -503,11 +507,14 @@ final class MatchingModeAdapter
 
   @override
   SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
-      const SessionConfigurationCapabilities(
+      SessionConfigurationCapabilities(
         minimumItemCount: 2,
         maximumItemCount: 6,
         defaultItemCount: 6,
-        directions: <SessionDirection>{SessionDirection.forward},
+        directions: <SessionDirection>{
+          SessionDirection.forward,
+          if (internalPairMatching) SessionDirection.reverse,
+        },
         difficulties: <SessionDifficulty>{SessionDifficulty.standard},
         maximumHintBudget: 2,
         supportsTimed: true,

@@ -10,11 +10,12 @@ final class PairMatchingResultView extends StatelessWidget {
     required this.result,
     this.onPracticeReplay,
     this.onReview,
+    this.onReturn,
     this.locale = const Locale('th'),
   });
   final Locale locale;
   final PairMatchingHistoryProjection result;
-  final VoidCallback? onPracticeReplay, onReview;
+  final VoidCallback? onPracticeReplay, onReview, onReturn;
   @override
   Widget build(BuildContext context) {
     final english = locale.languageCode == 'en';
@@ -73,12 +74,53 @@ final class PairMatchingResultView extends StatelessWidget {
               'Assisted ${result.result.assisted} pairs',
             ),
           ),
-          Text(
-            stars == null
-                ? copy('ยังไม่มีผลดาว', 'Not scored')
-                : copy('ดาว $stars/3', 'Stars $stars/3'),
-          ),
+          if (stars == null)
+            Text(copy('ยังไม่มีผลดาว', 'Not scored'))
+          else
+            Semantics(
+              label: copy('ดาว $stars จาก 3', '$stars of 3 stars'),
+              child: ExcludeSemantics(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        for (var i = 0; i < 3; i++)
+                          Icon(
+                            i < stars ? Icons.star : Icons.star_border,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                      ],
+                    ),
+                    Text(copy('ดาว $stars/3', 'Stars $stars/3')),
+                  ],
+                ),
+              ),
+            ),
           Text(timer),
+          Text(
+            result.timer.interactiveElapsedMs == null
+                ? copy(
+                    'ไม่มีข้อมูลเวลาเรียนจริงครบทั้งรอบ',
+                    'Full interactive duration unavailable',
+                  )
+                : replay
+                ? copy(
+                    'เวลาฝึกซ้ำ ${result.timer.interactiveElapsedMs! ~/ 1000} วินาที',
+                    'Practice Replay duration ${result.timer.interactiveElapsedMs! ~/ 1000} seconds',
+                  )
+                : copy(
+                    'ใช้เวลาเรียนจริง ${result.timer.interactiveElapsedMs! ~/ 1000} วินาที',
+                    'Interactive duration ${result.timer.interactiveElapsedMs! ~/ 1000} seconds',
+                  ),
+          ),
+          Text(
+            copy(
+              'ดาวเป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง',
+              'Stars describe this session, not mastery.',
+            ),
+          ),
           if (result.timer.mode != PairTimerMode.off)
             Text(
               copy(
@@ -94,16 +136,36 @@ final class PairMatchingResultView extends StatelessWidget {
                   )
                 : copy('ไปทบทวนคำที่ถึงเวลาได้ต่อไป', 'Review due words next'),
           ),
+          const SizedBox(height: 16),
+          if (onReturn != null)
+            FilledButton(
+              key: const ValueKey('pair-result-return'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: onReturn,
+              child: Text(copy('กลับไปเรียนต่อ', 'Return to learning')),
+            ),
           if (onReview != null)
             TextButton(
               onPressed: onReview,
               child: Text(copy('ไปทบทวน', 'Review next')),
             ),
-          if (onPracticeReplay != null)
-            FilledButton(
+          if (onPracticeReplay != null) ...[
+            Text(
+              copy(
+                'ฝึกซ้ำได้โดยไม่เพิ่มความก้าวหน้าหรือรางวัล',
+                'Practice again without additional progress or rewards.',
+              ),
+            ),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
               onPressed: onPracticeReplay,
               child: Text(copy('ฝึกซ้ำชุดเดิม', 'Practice Replay')),
             ),
+          ],
         ],
       ),
     );

@@ -16,6 +16,57 @@ import '../../../review/domain/review_queue_item.dart';
 typedef PairSessionOperation =
     Future<void> Function(Future<void> Function() action);
 
+enum PairHostRecovery { none, retryPending, finish, acknowledgePresentation }
+
+enum PairActionUnavailable {
+  busy,
+  recoveryRequired,
+  ownerOrLifecycle,
+  terminal,
+  timerState,
+  extensionUsed,
+  capacity,
+}
+
+final class PairActionAvailability {
+  const PairActionAvailability([this.reason]);
+  final PairActionUnavailable? reason;
+  bool get available => reason == null;
+}
+
+final class PairTimerAvailability {
+  const PairTimerAvailability({
+    required this.expire,
+    required this.continueUntimed,
+    required this.extend,
+    required this.restart,
+  });
+  final PairActionAvailability expire, continueUntimed, extend, restart;
+}
+
+final class PairMatchingHostStatus {
+  const PairMatchingHostStatus({
+    required this.busy,
+    required this.unavailable,
+    required this.recovery,
+    required this.canDispatch,
+    required this.canFlush,
+    required this.canResumeInteraction,
+    required this.canRetry,
+    required this.terminalAcknowledged,
+    required this.summaryPresented,
+  });
+  final bool busy,
+      unavailable,
+      canDispatch,
+      canFlush,
+      canResumeInteraction,
+      canRetry,
+      terminalAcknowledged,
+      summaryPresented;
+  final PairHostRecovery recovery;
+}
+
 /// M12 application owner for the v6 session. Hosts dispatch typed intents and
 /// await acknowledgement; they never write answers/checkpoints themselves.
 final class PairMatchingSessionCoordinator {
@@ -73,6 +124,105 @@ final class PairMatchingSessionCoordinator {
   LearningActivityCheckpoint? _pendingAppend;
   PairMatchingCheckpointSnapshot? _pendingSnapshot;
   PairMatchingState? _capturedState;
+
+  bool get _retainedPending =>
+      _pending != null ||
+      _frozen != null ||
+      _pendingAppend != null ||
+      _pendingSnapshot != null ||
+      _capturedState != null ||
+      state.pending != null;
+
+  PairMatchingHostStatus get hostStatus {
+    final unavailable =
+        _disposed ||
+        activeOwnerId() != operation.plan.ownerId ||
+        acceptsOperation?.call() == false;
+    final retained = _retainedPending;
+    final terminal = _snapshot.terminal;
+    final ready =
+        !unavailable &&
+        !_busy &&
+        !retained &&
+        terminal == null &&
+        _close == null;
+    return PairMatchingHostStatus(
+      busy: _busy,
+      unavailable: unavailable,
+      recovery: retained
+          ? PairHostRecovery.retryPending
+          : terminal?.acknowledged == true && !summaryPresented
+          ? PairHostRecovery.acknowledgePresentation
+          : state.complete || _close != null
+          ? PairHostRecovery.finish
+          : PairHostRecovery.none,
+      canDispatch: ready && !state.complete,
+      canFlush: ready && !state.complete,
+      canResumeInteraction: ready && !state.complete,
+      canRetry: !unavailable && !_busy && retained,
+      terminalAcknowledged: terminal?.acknowledged == true,
+      summaryPresented: summaryPresented,
+    );
+  }
+
+  PairTimerAvailability get timerAvailability => PairTimerAvailability(
+    expire: _timerActionAvailability(PairTimerAction.expire),
+    continueUntimed: _timerActionAvailability(PairTimerAction.continueUntimed),
+    extend: _timerActionAvailability(PairTimerAction.extend),
+    restart: _timerActionAvailability(PairTimerAction.restart),
+  );
+
+  PairActionAvailability _timerActionAvailability(PairTimerAction action) {
+    final status = hostStatus;
+    if (status.unavailable) {
+      return const PairActionAvailability(
+        PairActionUnavailable.ownerOrLifecycle,
+      );
+    }
+    if (_busy) return const PairActionAvailability(PairActionUnavailable.busy);
+    if (_retainedPending) {
+      return const PairActionAvailability(
+        PairActionUnavailable.recoveryRequired,
+      );
+    }
+    if (state.complete || _close != null || _snapshot.terminal != null) {
+      return const PairActionAvailability(PairActionUnavailable.terminal);
+    }
+    final clock = _clock.snapshot;
+    if (action == PairTimerAction.extend && clock.extensionUsed) {
+      return const PairActionAvailability(PairActionUnavailable.extensionUsed);
+    }
+    final legal = switch (action) {
+      PairTimerAction.expire => clock.timed && clock.remainingActiveMs == 0,
+      PairTimerAction.continueUntimed =>
+        clock.timed ||
+            clock.mode == PairTimerMode.timeoutDecision ||
+            clock.reasons.contains(PairPauseReason.clockFault),
+      PairTimerAction.extend ||
+      PairTimerAction.restart => clock.mode == PairTimerMode.timeoutDecision,
+    };
+    if (!legal) {
+      return const PairActionAvailability(PairActionUnavailable.timerState);
+    }
+    final next = _nextTimerState(clock, action);
+    final candidate = PairMatchingEngine.previewTimerAction(state, action);
+    if (!_hasCapacity(candidate, next, 1)) {
+      return const PairActionAvailability(PairActionUnavailable.capacity);
+    }
+    try {
+      PairMatchingCheckpointCodec.requireCompletionCapacity(
+        PairMatchingCheckpointSnapshot(
+          engine: candidate,
+          startOperation: operation.stableSerialization,
+          evidenceIds: _snapshot.evidenceIds,
+          timer: next,
+        ),
+      );
+    } on StateError {
+      return const PairActionAvailability(PairActionUnavailable.capacity);
+    }
+    return const PairActionAvailability();
+  }
 
   static Future<PairMatchingSessionCoordinator> restore({
     required PairMatchingStartOperation operation,
@@ -470,7 +620,14 @@ final class PairMatchingSessionCoordinator {
       final stored =
           _snapshot.timer ?? PairTimerState.initial(operation.plan.timerPreset);
       if (stored.remainingActiveMs == timer.remainingActiveMs &&
-          stored.elapsedActiveMs == timer.elapsedActiveMs) {
+          stored.elapsedActiveMs == timer.elapsedActiveMs &&
+          stored.interactiveElapsedMs == timer.interactiveElapsedMs) {
+        return;
+      }
+      if (!timer.timed && !_hasCapacity(state, timer, 1)) {
+        // Optional duration coverage must never consume the mandatory answer
+        // and close reserve. Persist null with the next required checkpoint.
+        _clock.loseInteractiveCoverage();
         return;
       }
     }
@@ -566,6 +723,11 @@ final class PairMatchingSessionCoordinator {
   }
 
   void _prepareClockResume({bool failIfFull = true}) {
+    if (!state.complete &&
+        timer.interactiveElapsedMs != null &&
+        !_hasCapacity(state, timer, 1)) {
+      _clock.loseInteractiveCoverage();
+    }
     if (!state.complete && timer.timed && !_hasCapacity(state, timer, 1)) {
       _capacityPause ??= _clock.pause(PairPauseReason.capacity);
       if (failIfFull) throw StateError('Pair persistence capacity reserved');
@@ -612,7 +774,25 @@ final class PairMatchingSessionCoordinator {
       return;
     }
     if (state.complete) throw StateError('Pair board already complete');
-    switch (command.action) {
+    next = _nextTimerState(next, command.action).copy(
+      lastOperationId: command.operationId,
+      lastFingerprint: command.fingerprint,
+    );
+    final candidate = PairMatchingEngine.reduce(state, command).state;
+    _requireCapacity(candidate, next, 1);
+    final snapshot = PairMatchingCheckpointSnapshot(
+      engine: candidate,
+      startOperation: operation.stableSerialization,
+      evidenceIds: _snapshot.evidenceIds,
+      timer: next,
+    );
+    PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
+    await _append(snapshot);
+    _state = candidate;
+  }
+
+  PairTimerState _nextTimerState(PairTimerState next, PairTimerAction action) {
+    switch (action) {
       case PairTimerAction.expire:
         if (!next.timed || next.remainingActiveMs != 0) {
           throw StateError('Pair timer has not expired');
@@ -655,21 +835,7 @@ final class PairMatchingSessionCoordinator {
           ).remainingActiveMs,
         );
     }
-    next = next.copy(
-      lastOperationId: command.operationId,
-      lastFingerprint: command.fingerprint,
-    );
-    final candidate = PairMatchingEngine.reduce(state, command).state;
-    _requireCapacity(candidate, next, 1);
-    final snapshot = PairMatchingCheckpointSnapshot(
-      engine: candidate,
-      startOperation: operation.stableSerialization,
-      evidenceIds: _snapshot.evidenceIds,
-      timer: next,
-    );
-    PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
-    await _append(snapshot);
-    _state = candidate;
+    return next;
   }
 
   Future<LearningSessionSummary> finish() async {

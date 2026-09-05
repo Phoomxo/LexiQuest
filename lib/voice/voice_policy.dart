@@ -132,26 +132,63 @@ final class VoicePolicyResolver {
       return _strictPlan(request, context, registeredEngines);
     }
 
-    final steps = switch (request.capability) {
-      VoiceCapability.standardTargetSpeech => _standardSteps(
-        context,
-        registeredEngines,
-      ),
-      VoiceCapability.dynamicTargetSpeech => _dynamicSteps(
-        context,
-        registeredEngines,
-      ),
-      VoiceCapability.sessionVoiceMirror => _mirrorSteps(
-        context,
-        registeredEngines,
-      ),
-      VoiceCapability.speechToText ||
-      VoiceCapability.pronunciationEvidence => const <VoiceRouteStep>[],
-    };
+    final List<VoiceRouteStep> steps;
+    if (request.localOnly) {
+      steps = _localSteps(request, context, registeredEngines);
+    } else {
+      steps = switch (request.capability) {
+        VoiceCapability.standardTargetSpeech => _standardSteps(
+          context,
+          registeredEngines,
+        ),
+        VoiceCapability.dynamicTargetSpeech => _dynamicSteps(
+          context,
+          registeredEngines,
+        ),
+        VoiceCapability.sessionVoiceMirror => _mirrorSteps(
+          context,
+          registeredEngines,
+        ),
+        VoiceCapability.speechToText ||
+        VoiceCapability.pronunciationEvidence => const <VoiceRouteStep>[],
+      };
+    }
     if (steps.isEmpty) {
       throw _providerDisabledFailure;
     }
     return VoiceRoutePlan(steps);
+  }
+
+  List<VoiceRouteStep> _localSteps(
+    VoiceRequest request,
+    VoiceRouteContext context,
+    Set<VoiceEngine> registeredEngines,
+  ) {
+    final steps = <VoiceRouteStep>[];
+    switch (request.capability) {
+      case VoiceCapability.standardTargetSpeech:
+        _addStandard(
+          steps,
+          VoiceEngine.offlinePack,
+          context.offlinePackAvailable,
+          registeredEngines,
+        );
+        _addStandard(steps, VoiceEngine.nativeTts, true, registeredEngines);
+      case VoiceCapability.dynamicTargetSpeech:
+        _add(
+          steps,
+          engine: VoiceEngine.nativeTts,
+          capability: VoiceCapability.dynamicTargetSpeech,
+          privacyScope: VoicePrivacyScope.standardContent,
+          permitted: true,
+          registeredEngines: registeredEngines,
+        );
+      case VoiceCapability.sessionVoiceMirror ||
+          VoiceCapability.speechToText ||
+          VoiceCapability.pronunciationEvidence:
+        break;
+    }
+    return steps;
   }
 
   VoiceRoutePlan _strictPlan(

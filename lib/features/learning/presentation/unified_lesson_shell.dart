@@ -9,6 +9,8 @@ import '../application/current_activity_evidence.dart';
 import '../application/unified_lesson_controller.dart';
 import '../application/learning_use_cases.dart';
 import '../application/contrastive_feedback_use_cases.dart';
+import '../pair_matching/application/pair_matching_session_coordinator.dart';
+import '../pair_matching/domain/pair_active_clock.dart';
 import '../domain/learning_models.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/lesson_mode.dart';
@@ -71,6 +73,34 @@ final class UnifiedLessonSessionLifecycle {
       (_routeLifecycle?.acceptsOperations ?? true);
   bool get sessionCompletionRetryRequired =>
       _controller.sessionCompletionRetryRequired;
+
+  /// Only already admitted continuations may cross a closed route fence.
+  bool get acceptsPairContinuation =>
+      _routeLifecycle?.acceptsPairContinuation ?? acceptsOperations;
+  Future<T> runPairAdmittedOperation<T>(Future<T> Function() operation) {
+    final route = _routeLifecycle;
+    if (route == null) throw StateError('Pair route unavailable');
+    return route.runPairAdmittedOperation(operation);
+  }
+
+  void reservePairSession(PairMatchingSessionCoordinator coordinator) {
+    final route = _routeLifecycle;
+    if (route == null) {
+      throw StateError('Pair requires a route lifecycle owner');
+    }
+    route.reservePairSession(coordinator);
+  }
+
+  Future<void> detachPairPresentation() =>
+      _routeLifecycle?.retire() ?? Future<void>.value();
+  bool get pairConfigurationLimitReached =>
+      _controller.configurationLimitReached;
+  Future<void> endPairAtConfigurationLimit() {
+    final route = _routeLifecycle;
+    if (route == null) throw StateError('Pair route unavailable');
+    return route.endPairAtConfigurationLimit();
+  }
+
   SessionConfiguration? get configuration => _controller.sessionConfiguration;
 
   void registerEphemeralState(EphemeralLessonState state) =>
@@ -280,6 +310,52 @@ final class UnifiedLessonRouteLifecycle {
   LessonTerminalCutoff? _retirementCutoff;
   Future<void>? _terminal;
   bool _initializationAttached = false;
+  PairMatchingSessionCoordinator? _pairSession;
+  bool get ownsPairSession => _pairSession != null;
+  bool _pairLimitDisposition = false;
+  bool _pairLimitAbandonStarted = false;
+  Future<void>? _pairLimitClose;
+
+  Future<void> endPairAtConfigurationLimit() {
+    if (!_controller.configurationLimitReached || _pairSession == null) {
+      return Future<void>.error(
+        StateError('Pair configured limit is not reached'),
+      );
+    }
+    return _pairLimitClose ??= _endPairAtConfigurationLimit();
+  }
+
+  Future<T> runPairAdmittedOperation<T>(Future<T> Function() operation) =>
+      _pairSession != null && _insideAcceptedLease
+      ? _trackOperation(operation)
+      : runAcceptedOperation(operation);
+
+  Future<void> _endPairAtConfigurationLimit() async {
+    try {
+      if (_pairLimitAbandonStarted) {
+        await _controller.abandonAtCutoff(_retirementCutoff!);
+        _pairSession!.dispose();
+        _terminal = Future<void>.value();
+        return;
+      }
+      while (_acceptedOperations.isNotEmpty) {
+        await Future.wait<void>(_acceptedOperations.toList(growable: false));
+      }
+      await _trackOperation(_settlePair);
+      if (_pairSession!.state.complete) return;
+      _pairLimitDisposition = true;
+      await retire();
+    } catch (_) {
+      _pairLimitClose = null;
+      // Reuse the original cutoff and its accepted configuration/time close.
+      // A failed acknowledgement must not advance the terminal occurrence.
+      _terminal = null;
+      rethrow;
+    }
+  }
+
+  PairPauseLease? _pairBackgroundPause;
+  PairPauseLease? _pairRetirementPause;
   final Set<Future<void>> _acceptedOperations = <Future<void>>{};
   final LessonEphemeralStateRegistry _ephemeralStates =
       LessonEphemeralStateRegistry();
@@ -288,6 +364,56 @@ final class UnifiedLessonRouteLifecycle {
 
   bool get acceptsOperations =>
       _accepting && _controller.configurationAcceptsOperations;
+  bool get acceptsPairContinuation => acceptsOperations || _insideAcceptedLease;
+
+  /// Takes resource ownership of an already authenticated exact coordinator.
+  /// Widgets may detach immediately; this reservation outlives their disposal.
+  void reservePairSession(PairMatchingSessionCoordinator coordinator) {
+    if (!_accepting ||
+        _controller.state.mode != LessonMode.matching ||
+        !identical(coordinator.learning, _learning) ||
+        coordinator.activeOwnerId() != coordinator.operation.plan.ownerId ||
+        (_pairSession != null && !identical(_pairSession, coordinator)) ||
+        (_loadedSessionId != null &&
+            _loadedSessionId != coordinator.operation.plan.learningSessionId)) {
+      throw StateError('Pair reservation does not belong to this route');
+    }
+    _pairSession = coordinator;
+  }
+
+  void pausePairForBackground() {
+    final pair = _pairSession;
+    if (pair == null || _pairRetirementPause != null) return;
+    _pairBackgroundPause ??= pair.pause(PairPauseReason.background);
+  }
+
+  Future<void> flushPairForBackground() async {
+    if (_pairSession == null) return;
+    pausePairForBackground();
+    while (_acceptedOperations.isNotEmpty) {
+      await Future.wait<void>(_acceptedOperations.toList(growable: false));
+    }
+    if (!_accepting) return;
+    await _trackOperation(_settlePair);
+  }
+
+  void resumePairAfterBackground() {
+    final pair = _pairSession, pause = _pairBackgroundPause;
+    if (!_accepting || pair == null || pause == null) return;
+    pair.releasePause(pause);
+    _pairBackgroundPause = null;
+  }
+
+  Future<void> _settlePair() async {
+    final pair = _pairSession;
+    if (pair == null) return;
+    if (pair.hostStatus.canRetry) await pair.retryPending();
+    if (pair.state.complete) {
+      await pair.finish();
+    } else if (pair.hostStatus.canFlush) {
+      await pair.flush();
+    }
+  }
 
   Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
     if (!acceptsOperations) {
@@ -375,6 +501,12 @@ final class UnifiedLessonRouteLifecycle {
     }
     final pinnedOwnerId = ownerId ?? sessionOwnerId;
     _loadedOwnerId = pinnedOwnerId;
+    final pair = _pairSession;
+    if (pair != null &&
+        (pair.operation.plan.learningSessionId != session.id ||
+            pair.operation.plan.ownerId != pinnedOwnerId)) {
+      throw StateError('Loaded Pair differs from reserved session');
+    }
     final restoredClose = recoveredClose?.call();
     if (restoredClose != null) {
       _reserveLoadedRecoveryClose(restoredClose, session.id);
@@ -399,11 +531,11 @@ final class UnifiedLessonRouteLifecycle {
       ownerId: pinnedOwnerId,
     );
     try {
-      if (restoredClose == null) {
+      if (restoredClose == null && pair == null) {
         await start(command);
       } else {
         final operation = _startController(command);
-        _activateReservedClose(restoredClose);
+        if (restoredClose != null) _activateReservedClose(restoredClose);
         await operation;
       }
     } catch (_) {
@@ -555,6 +687,10 @@ final class UnifiedLessonRouteLifecycle {
 
   Future<void> retire() {
     _accepting = false;
+    final pair = _pairSession;
+    if (pair != null) {
+      _pairRetirementPause ??= pair.pause(PairPauseReason.boardUnavailable);
+    }
     _ephemeralStates.clear();
     final existing = _terminal;
     if (existing != null) return existing;
@@ -597,6 +733,11 @@ final class UnifiedLessonRouteLifecycle {
     while (_acceptedOperations.isNotEmpty) {
       await Future.wait<void>(_acceptedOperations.toList(growable: false));
     }
+    if (_pairSession != null) {
+      // The reserved coordinator settles under a bounded route lease. New
+      // operations remain refused outside this exact preparation.
+      await _trackOperation(_settlePair);
+    }
     await _acceptedClosePreparation?.call();
     await _acceptedCloseConfigurationClose;
     await configurationClose;
@@ -625,6 +766,14 @@ final class UnifiedLessonRouteLifecycle {
     if (preservePreacceptedSessionOnAttachmentFailure &&
         _loadedSessionId != null &&
         !_initializationAttached) {
+      return;
+    }
+    if (_pairSession != null) {
+      if (_pairLimitDisposition) {
+        _pairLimitAbandonStarted = true;
+        await _controller.abandonAtCutoff(cutoff);
+      }
+      _pairSession!.dispose();
       return;
     }
     await _controller.abandonAtCutoff(cutoff);
@@ -1125,6 +1274,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       case AppLifecycleState.detached:
       case AppLifecycleState.inactive:
         _lifecycleWantsActive = false;
+        widget.routeLifecycle?.pausePairForBackground();
         _ephemeralStates.clear();
         unawaited(_reconcileLifecycle());
       case AppLifecycleState.resumed:
@@ -1175,6 +1325,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
           return _LifecycleDriveOutcome.conflict;
         }
         try {
+          await widget.routeLifecycle?.flushPairForBackground();
           await controller.pause(_now(), processBackground: true);
         } catch (error) {
           if (controller.state.status != LessonSessionStatus.active ||
@@ -1196,6 +1347,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       if (_pauseRetryRequired &&
           controller.state.status == LessonSessionStatus.active) {
         try {
+          await widget.routeLifecycle?.flushPairForBackground();
           await controller.pause(_now(), processBackground: true);
         } catch (error) {
           if (controller.state.status != LessonSessionStatus.active ||
@@ -1219,6 +1371,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       }
       try {
         await controller.resume(_now());
+        widget.routeLifecycle?.resumePairAfterBackground();
       } catch (error) {
         // A simultaneous user action may already have left the paused state.
         if (mounted &&
@@ -1414,6 +1567,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                       children: <Widget>[
                         if (controller.state.status ==
                                 LessonSessionStatus.active &&
+                            widget.routeLifecycle?.ownsPairSession != true &&
                             hintState != null)
                           HintPanel(
                             state: hintState,

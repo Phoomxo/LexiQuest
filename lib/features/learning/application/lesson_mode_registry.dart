@@ -144,6 +144,7 @@ final class LessonModeRegistry {
 /// Production registry. Each migrated mode replaces the legacy adapter at the
 /// same typed entry and route, so there is never a competing delivery path.
 LessonModeRegistry buildLessonModeRegistry({
+  bool internalPairMatching = false,
   LessonModeDeliveryState matchingDeliveryState =
       LessonModeDeliveryState.implementedOff,
   LessonModeDeliveryState handwritingDeliveryState =
@@ -185,7 +186,9 @@ LessonModeRegistry buildLessonModeRegistry({
         routeName: 'learning/cloze',
       ),
       registration(
-        adapter: const MatchingModeAdapter(),
+        adapter: internalPairMatching
+            ? const MatchingModeAdapter.internalPair()
+            : const MatchingModeAdapter(),
         feature: Feature.quiz,
         routeName: 'learning/matching',
         deliveryState: matchingDeliveryState,

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'pair_matching_source_composer_test.dart' as f;
 import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_active_clock.dart';
 
 void main() {
   late AppDatabase db;
@@ -85,6 +86,259 @@ void main() {
         repository: repo,
         capability: capability,
       ).start(value ?? operation);
+  test(
+    'measured admission writes exact initial and zero receipt once, including gate-off retry',
+    () async {
+      final adapter = PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      );
+      await adapter.startMeasured(operation);
+      final first = await repo.loadExactActivityRecovery(
+        ownerId: plan.ownerId,
+        sessionId: plan.learningSessionId,
+        activityType: 'matching',
+      );
+      expect(first!.checkpoint!.revision, 2);
+      expect(
+        PairMatchingCheckpointCodec.decode(
+          first.checkpoint!.state,
+        ).timer!.interactiveElapsedMs,
+        0,
+      );
+      final before = await db.select(db.eventsV2).get();
+      enabled = false;
+      await adapter.startMeasured(operation);
+      final after = await db.select(db.eventsV2).get();
+      expect(after.map((e) => e.payloadJson), before.map((e) => e.payloadJson));
+      expect(
+        (await repo.read(
+          ownerId: plan.ownerId,
+          sessionId: plan.learningSessionId,
+        )).snapshot!.timer!.interactiveElapsedMs,
+        0,
+      );
+    },
+  );
+  test(
+    'measured API cannot retrofit historical initial-only admission',
+    () async {
+      await start();
+      await PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      ).startMeasured(operation);
+      final recovered = await repo.loadExactActivityRecovery(
+        ownerId: plan.ownerId,
+        sessionId: plan.learningSessionId,
+        activityType: 'matching',
+      );
+      expect(recovered!.checkpoint!.revision, 1);
+      expect(
+        PairMatchingCheckpointCodec.decode(recovered.checkpoint!.state).timer,
+        isNull,
+      );
+    },
+  );
+  for (final boundary in ['BEFORE', 'AFTER']) {
+    test(
+      'measured revision2 $boundary insert failure rolls back both receipts',
+      () async {
+        final initialBytes = jsonEncode(operation.initialCheckpoint.state);
+        final startBytes = operation.stableSerialization;
+        await db.customStatement(
+          "CREATE TRIGGER synthetic_measured_crash $boundary INSERT ON events_v2 "
+          "WHEN json_extract(NEW.payload_json, '\$.revision') = 2 "
+          "BEGIN SELECT RAISE(ABORT, 'synthetic measured revision2 crash'); END",
+        );
+        final adapter = PairMatchingAtomicStartAdapter(
+          repository: repo,
+          capability: capability,
+        );
+        await expectLater(adapter.startMeasured(operation), throwsA(anything));
+        expect(await db.select(db.learningSessions).get(), isEmpty);
+        expect(await db.select(db.eventsV2).get(), isEmpty);
+        expect(await db.select(db.answerAttempts).get(), isEmpty);
+        await db.customStatement('DROP TRIGGER synthetic_measured_crash');
+        await adapter.startMeasured(
+          PairMatchingStartOperation.fromStableSerialization(startBytes),
+        );
+        final rows = await db.select(db.eventsV2).get();
+        expect(rows, hasLength(2));
+        final initial = rows.singleWhere(
+          (row) => (jsonDecode(row.payloadJson) as Map)['revision'] == 1,
+        );
+        expect(
+          jsonEncode((jsonDecode(initial.payloadJson) as Map)['state']),
+          initialBytes,
+        );
+        expect(
+          (await repo.read(
+            ownerId: plan.ownerId,
+            sessionId: plan.learningSessionId,
+          )).snapshot!.timer!.interactiveElapsedMs,
+          0,
+        );
+        expect(operation.stableSerialization, startBytes);
+      },
+    );
+  }
+  test(
+    'measured committed write with lost caller acknowledgement retries exact bytes gate-off',
+    () async {
+      final adapter = PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      );
+      final startBytes = operation.stableSerialization;
+      Future<void> loseAcknowledgement() async {
+        await adapter.startMeasured(operation);
+        // The real transaction committed; simulate loss only at its caller boundary.
+        throw StateError('synthetic committed admission acknowledgement lost');
+      }
+
+      await expectLater(loseAcknowledgement(), throwsStateError);
+      final before = await db.select(db.eventsV2).get();
+      expect(before, hasLength(2));
+      enabled = false;
+      await adapter.startMeasured(
+        PairMatchingStartOperation.fromStableSerialization(startBytes),
+      );
+      expect(await db.select(db.eventsV2).get(), before);
+      expect(await db.select(db.learningSessions).get(), hasLength(1));
+      expect(await db.select(db.answerAttempts).get(), isEmpty);
+    },
+  );
+  test(
+    'measured failure immediately before transaction commit rolls back durable admission',
+    () async {
+      final adapter = PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      );
+      race.failMeasuredCommit = true;
+      await expectLater(adapter.startMeasured(operation), throwsStateError);
+      expect(race.measuredRowsBeforeFailedCommit, 2);
+      expect(await db.select(db.learningSessions).get(), isEmpty);
+      expect(await db.select(db.eventsV2).get(), isEmpty);
+      await adapter.startMeasured(operation);
+      expect(await db.select(db.learningSessions).get(), hasLength(1));
+      expect(await db.select(db.eventsV2).get(), hasLength(2));
+    },
+  );
+  test(
+    'generic append cannot forge measured admission at any revision or occurrence',
+    () async {
+      await start();
+      final before = await db.select(db.eventsV2).get();
+      final zero = PairMatchingCheckpointSnapshot(
+        engine: PairMatchingState.initial(plan),
+        startOperation: operation.stableSerialization,
+        timer: PairTimerState.initial(
+          plan.timerPreset,
+        ).copy(interactiveElapsedMs: 0),
+      ).toJson();
+      for (final revision in [2, 3]) {
+        for (final offset in [Duration.zero, const Duration(seconds: 1)]) {
+          await expectLater(
+            repo.appendActivityCheckpoint(
+              ownerId: plan.ownerId,
+              checkpoint: LearningActivityCheckpoint(
+                sessionId: plan.learningSessionId,
+                activityType: 'matching',
+                revision: revision,
+                occurredAtUtc: plan.createdAtUtc.add(offset),
+                state: zero,
+              ),
+            ),
+            throwsStateError,
+          );
+          expect(await db.select(db.eventsV2).get(), before);
+        }
+      }
+      await PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      ).startMeasured(operation);
+      expect(await db.select(db.eventsV2).get(), before);
+    },
+  );
+  test(
+    'persisted measured admission with changed occurrence fails strict purpose reader',
+    () async {
+      await PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      ).startMeasured(operation);
+      expect(
+        (await repo.read(
+          ownerId: plan.ownerId,
+          sessionId: plan.learningSessionId,
+        )).snapshot!.timer!.interactiveElapsedMs,
+        0,
+      );
+      await db.customStatement(
+        "UPDATE events_v2 SET occurred_at_utc = occurred_at_utc + 1 "
+        "WHERE aggregate_id = ? AND json_extract(payload_json, '\$.revision') = 2",
+        [plan.learningSessionId],
+      );
+      await expectLater(
+        repo.read(ownerId: plan.ownerId, sessionId: plan.learningSessionId),
+        throwsStateError,
+      );
+    },
+  );
+  test(
+    'measured coverage cannot be initialized a second time after durable null',
+    () async {
+      await PairMatchingAtomicStartAdapter(
+        repository: repo,
+        capability: capability,
+      ).startMeasured(operation);
+      final unmeasured = PairMatchingCheckpointSnapshot(
+        engine: PairMatchingState.initial(plan),
+        startOperation: operation.stableSerialization,
+        timer: PairTimerState.initial(plan.timerPreset),
+      );
+      await repo.appendActivityCheckpoint(
+        ownerId: plan.ownerId,
+        checkpoint: LearningActivityCheckpoint(
+          sessionId: plan.learningSessionId,
+          activityType: 'matching',
+          revision: 3,
+          occurredAtUtc: plan.createdAtUtc,
+          state: unmeasured.toJson(),
+        ),
+      );
+      final before = await db.select(db.eventsV2).get();
+      final zero = PairMatchingCheckpointSnapshot(
+        engine: unmeasured.engine,
+        startOperation: operation.stableSerialization,
+        timer: unmeasured.timer!.copy(interactiveElapsedMs: 0),
+      );
+      await expectLater(
+        repo.appendActivityCheckpoint(
+          ownerId: plan.ownerId,
+          checkpoint: LearningActivityCheckpoint(
+            sessionId: plan.learningSessionId,
+            activityType: 'matching',
+            revision: 4,
+            occurredAtUtc: plan.createdAtUtc,
+            state: zero.toJson(),
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(await db.select(db.eventsV2).get(), before);
+      expect(
+        (await repo.read(
+          ownerId: plan.ownerId,
+          sessionId: plan.learningSessionId,
+        )).snapshot!.timer!.interactiveElapsedMs,
+        isNull,
+      );
+    },
+  );
   test(
     'Pair initial rejects progressed codec and mismatched start build',
     () async {
@@ -434,6 +688,32 @@ void main() {
 final class _SyntheticOwnerRace extends QueryInterceptor {
   bool armed = false;
   bool didSwitch = false;
+  bool failMeasuredCommit = false;
+  int? measuredRowsBeforeFailedCommit;
+  @override
+  Future<void> commitTransaction(TransactionExecutor inner) async {
+    if (failMeasuredCommit) {
+      final rows = await inner.runSelect(
+        "SELECT payload_json FROM events_v2 WHERE event_type = 'LearningActivityCheckpoint'",
+        [],
+      );
+      final revisions = rows
+          .map(
+            (row) =>
+                (jsonDecode(row['payload_json'] as String) as Map)['revision'],
+          )
+          .toSet();
+      if (revisions.contains(1) && revisions.contains(2)) {
+        failMeasuredCommit = false;
+        measuredRowsBeforeFailedCommit = rows.length;
+        throw StateError(
+          'synthetic failure before measured transaction commit',
+        );
+      }
+    }
+    await super.commitTransaction(inner);
+  }
+
   @override
   Future<List<Map<String, Object?>>> runSelect(
     QueryExecutor executor,

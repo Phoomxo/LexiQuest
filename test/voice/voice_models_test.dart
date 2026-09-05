@@ -23,6 +23,7 @@ VoiceRequest _validRequest({
   VoiceEngine? assignedEngine,
   VoiceCapability capability = VoiceCapability.standardTargetSpeech,
   VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
+  bool localOnly = false,
 }) {
   return VoiceRequest.create(
     text: text,
@@ -35,6 +36,7 @@ VoiceRequest _validRequest({
     assignedEngine: assignedEngine,
     capability: capability,
     privacyScope: privacyScope,
+    localOnly: localOnly,
   );
 }
 
@@ -149,6 +151,43 @@ void main() {
         );
       });
     }
+  });
+
+  group('VoiceRequest local-only contract', () {
+    test('defaults existing requests to normal hybrid routing', () {
+      expect(_validRequest().localOnly, isFalse);
+    });
+
+    test('accepts local-only standard practice speech', () {
+      final request = _validRequest(localOnly: true);
+
+      expect(request.localOnly, isTrue);
+      expect(request.mode, VoiceMode.practice);
+      expect(request.capability, VoiceCapability.standardTargetSpeech);
+      expect(request.privacyScope, VoicePrivacyScope.standardContent);
+    });
+
+    test('rejects local-only research before routing', () {
+      expect(
+        () => _validRequest(
+          localOnly: true,
+          mode: VoiceMode.researchEvaluation,
+          assignedEngine: VoiceEngine.nativeTts,
+        ),
+        throwsA(_validationFailure),
+      );
+    });
+
+    test('rejects local-only mirror before consent or provider lookup', () {
+      expect(
+        () => _validRequest(
+          localOnly: true,
+          capability: VoiceCapability.sessionVoiceMirror,
+          privacyScope: VoicePrivacyScope.participantTransient,
+        ),
+        throwsA(_validationFailure),
+      );
+    });
   });
 
   group('VoiceRequest text normalization', () {
@@ -322,6 +361,7 @@ void main() {
       contentType: 'word',
       mode: VoiceMode.researchEvaluation,
       assignedEngine: VoiceEngine.omniVoice,
+      localOnly: false,
     );
 
     expect(request.text, 'Hello world.');
@@ -332,6 +372,7 @@ void main() {
     expect(request.contentType, 'word');
     expect(request.mode, VoiceMode.researchEvaluation);
     expect(request.assignedEngine, VoiceEngine.omniVoice);
+    expect(request.localOnly, isFalse);
   });
 
   group('VoicePlaybackResult', () {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -17,6 +18,48 @@ import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_mat
 import 'pair_matching_source_composer_test.dart' as f;
 
 void main() {
+  test(
+    'internal Pair registration validates both real policy directions without changing legacy',
+    () {
+      const policy = SessionConfigurationPolicy(),
+          limits = SessionConfigurationProtocolLimits.standard();
+      final registry = buildLessonModeRegistry(
+        internalPairMatching: true,
+        matchingDeliveryState: LessonModeDeliveryState.enabled,
+      );
+      final registration = registry.resolve(LessonMode.matching)!;
+      for (final direction in SessionDirection.values.where(
+        (d) => d == SessionDirection.forward || d == SessionDirection.reverse,
+      )) {
+        final config = policy.validate(
+          draft: policy
+              .defaultsFor(registration: registration, limits: limits)
+              .copyWith(itemCount: 4, direction: direction),
+          registration: registration,
+          limits: limits,
+          ownerId: 'synthetic-owner',
+          availablePackIdentities: const [],
+        );
+        expect(config.direction, direction);
+      }
+      expect(buildLessonModeRegistry().resolve(LessonMode.matching), isNull);
+      final legacy = buildLessonModeRegistry(
+        matchingDeliveryState: LessonModeDeliveryState.enabled,
+      ).resolve(LessonMode.matching)!;
+      expect(
+        () => policy.validate(
+          draft: policy
+              .defaultsFor(registration: legacy, limits: limits)
+              .copyWith(direction: SessionDirection.reverse),
+          registration: legacy,
+          limits: limits,
+          ownerId: 'synthetic-owner',
+          availablePackIdentities: const [],
+        ),
+        throwsA(isA<SessionConfigurationResetRequired>()),
+      );
+    },
+  );
   test(
     'configured maximum Thai plan counts actual envelope bytes and rejects before INSERT',
     () async {

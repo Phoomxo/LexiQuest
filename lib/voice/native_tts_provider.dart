@@ -20,8 +20,19 @@ abstract interface class NativeTtsAdapter {
   Future<void> stop();
 }
 
+/// Optional native capability used to prove that a selected voice is fully
+/// installed and does not require a network connection.
+abstract interface class NativeTtsLocalVoiceAdapter {
+  Future<Object?> isLanguageInstalled(String language);
+
+  Future<Object?> loadVoices();
+
+  Future<Object?> selectVoice({required String name, required String locale});
+}
+
 /// Production [NativeTtsAdapter] backed by an injected-or-default [FlutterTts].
-final class FlutterTtsAdapter implements NativeTtsAdapter {
+final class FlutterTtsAdapter
+    implements NativeTtsAdapter, NativeTtsLocalVoiceAdapter {
   FlutterTtsAdapter({FlutterTts? flutterTts})
     : _flutterTts = _retainFlutterTts(flutterTts);
 
@@ -32,6 +43,27 @@ final class FlutterTtsAdapter implements NativeTtsAdapter {
   // headless host has no platform messenger, and remote composition failure
   // cannot remove the native route.
   FlutterTts get _resolved => _flutterTts ??= FlutterTts();
+
+  @override
+  Future<Object?> isLanguageInstalled(String language) async {
+    return await _resolved.isLanguageInstalled(language);
+  }
+
+  @override
+  Future<Object?> loadVoices() async {
+    return await _resolved.getVoices;
+  }
+
+  @override
+  Future<Object?> selectVoice({
+    required String name,
+    required String locale,
+  }) async {
+    return await _resolved.setVoice(<String, String>{
+      'name': name,
+      'locale': locale,
+    });
+  }
 
   @override
   Future<void> setLanguage(String language) async {
@@ -88,7 +120,22 @@ final class NativeTtsProvider implements VoiceProvider {
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     try {
-      await _adapter.setLanguage(_languageTagFor(request.language));
+      final languageTag = _languageTagFor(request.language);
+      final localVoice = request.localOnly
+          ? await _requireInstalledLocalVoice(languageTag)
+          : null;
+
+      await _adapter.setLanguage(languageTag);
+      if (localVoice != null) {
+        final localAdapter = _adapter as NativeTtsLocalVoiceAdapter;
+        final selected = await localAdapter.selectVoice(
+          name: localVoice.name,
+          locale: localVoice.locale,
+        );
+        if (selected != 1) {
+          throw StateError('Native local voice selection failed.');
+        }
+      }
       await _adapter.setSpeechRate(request.speed / 2);
       await _adapter.setVolume(1.0);
       await _adapter.setPitch(1.0);
@@ -104,6 +151,55 @@ final class NativeTtsProvider implements VoiceProvider {
     }
   }
 
+  Future<_InstalledLocalVoice> _requireInstalledLocalVoice(
+    String languageTag,
+  ) async {
+    final adapter = _adapter;
+    if (adapter is! NativeTtsLocalVoiceAdapter) {
+      throw StateError('Native local voice proof is unavailable.');
+    }
+    final localAdapter = adapter as NativeTtsLocalVoiceAdapter;
+
+    final installed = await localAdapter.isLanguageInstalled(languageTag);
+    if (installed != true) {
+      throw StateError('Native language is not installed.');
+    }
+
+    final rawVoices = await localAdapter.loadVoices();
+    if (rawVoices is! Iterable<Object?>) {
+      throw StateError('Native voice inventory is unavailable.');
+    }
+
+    final candidates = <_InstalledLocalVoice>[];
+    for (final rawVoice in rawVoices) {
+      if (rawVoice is! Map<Object?, Object?>) {
+        continue;
+      }
+      final name = rawVoice['name'];
+      final locale = rawVoice['locale'];
+      final networkRequired = rawVoice['network_required'];
+      final features = rawVoice['features'];
+      if (name is! String ||
+          name.trim().isEmpty ||
+          locale is! String ||
+          locale.toLowerCase() != languageTag.toLowerCase() ||
+          networkRequired != '0' ||
+          features is! String ||
+          _hasNotInstalledFeature(features)) {
+        continue;
+      }
+      candidates.add(_InstalledLocalVoice(name: name.trim(), locale: locale));
+    }
+    if (candidates.isEmpty) {
+      throw StateError('No installed local voice is available.');
+    }
+    candidates.sort((left, right) {
+      final byName = left.name.compareTo(right.name);
+      return byName != 0 ? byName : left.locale.compareTo(right.locale);
+    });
+    return candidates.first;
+  }
+
   @override
   Future<void> stop() async {
     try {
@@ -112,4 +208,18 @@ final class NativeTtsProvider implements VoiceProvider {
       throw _nativePlaybackFailure;
     }
   }
+}
+
+bool _hasNotInstalledFeature(String features) {
+  return features
+      .split('\t')
+      .map((feature) => feature.trim().toLowerCase())
+      .contains('notinstalled');
+}
+
+final class _InstalledLocalVoice {
+  const _InstalledLocalVoice({required this.name, required this.locale});
+
+  final String name;
+  final String locale;
 }

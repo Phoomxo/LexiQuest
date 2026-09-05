@@ -147,6 +147,7 @@ final class VoiceOrchestrator implements VoiceProvider {
       assignedEngine: step.engine,
       capability: step.capability,
       privacyScope: step.privacyScope,
+      localOnly: request.localOnly,
     );
   }
 

@@ -34,6 +34,7 @@ VoiceRequest _request({
   VoiceEngine? assignedEngine,
   VoiceCapability capability = VoiceCapability.standardTargetSpeech,
   VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
+  bool localOnly = false,
 }) {
   return VoiceRequest.create(
     text: 'Good morning.',
@@ -46,6 +47,7 @@ VoiceRequest _request({
     assignedEngine: assignedEngine,
     capability: capability,
     privacyScope: privacyScope,
+    localOnly: localOnly,
   );
 }
 
@@ -97,6 +99,64 @@ void main() {
       }
     },
   );
+
+  test('local-only online standard speech excludes every remote engine', () {
+    final plan = resolver.resolve(
+      request: _request(localOnly: true),
+      context: _online,
+      registeredEngines: _allEngines,
+    );
+
+    expect(_engines(plan), const <VoiceEngine>[
+      VoiceEngine.offlinePack,
+      VoiceEngine.nativeTts,
+    ]);
+  });
+
+  test('local-only standard speech falls back directly to native', () {
+    final plan = resolver.resolve(
+      request: _request(localOnly: true),
+      context: const VoiceRouteContext(
+        isOnline: true,
+        remoteStandardEnabled: true,
+        offlinePackAvailable: false,
+        voiceMirrorEnabled: true,
+        hasVoiceMirrorConsent: true,
+        hasActiveVoiceMirrorSession: true,
+      ),
+      registeredEngines: _allEngines,
+    );
+
+    expect(_engines(plan), const <VoiceEngine>[VoiceEngine.nativeTts]);
+  });
+
+  test('local-only fails when only remote providers are registered', () {
+    expect(
+      () => resolver.resolve(
+        request: _request(localOnly: true),
+        context: _online,
+        registeredEngines: const <VoiceEngine>{
+          VoiceEngine.omniVoice,
+          VoiceEngine.voxCpmStandard,
+          VoiceEngine.voxCpmMirror,
+        },
+      ),
+      throwsA(_failure(VoiceFailureCategory.providerDisabled)),
+    );
+  });
+
+  test('local-only dynamic speech uses native without a remote step', () {
+    final plan = resolver.resolve(
+      request: _request(
+        localOnly: true,
+        capability: VoiceCapability.dynamicTargetSpeech,
+      ),
+      context: _online,
+      registeredEngines: _allEngines,
+    );
+
+    expect(_engines(plan), const <VoiceEngine>[VoiceEngine.nativeTts]);
+  });
 
   test('dynamic speech skips offline pack', () {
     final plan = resolver.resolve(

@@ -3,6 +3,13 @@ import 'learning_models.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
 
 abstract interface class PairPinnedLearningActivityRepository {
+  Future<void> startMeasuredPinnedPairSession({
+    required LearningSessionDraft session,
+    required PairMatchingPlanV1 plan,
+    required String launchOperationId,
+    required LearningActivityCheckpoint checkpoint,
+    required PairMatchingStartCapability capability,
+  });
   Future<void> startPinnedPairSession({
     required LearningSessionDraft session,
     required PairMatchingPlanV1 plan,

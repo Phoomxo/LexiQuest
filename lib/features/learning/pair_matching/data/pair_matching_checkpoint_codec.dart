@@ -41,6 +41,7 @@ final class PairMatchingCheckpointSnapshot {
     Map<String, Object?>? frozenEvidence,
     this.timer,
     this.terminal,
+    this.timerCodecVersion = 4,
   }) : evidenceIds = List.unmodifiable(evidenceIds),
        frozenEvidence = frozenEvidence == null
            ? null
@@ -51,10 +52,11 @@ final class PairMatchingCheckpointSnapshot {
   final Map<String, Object?>? frozenEvidence;
   final PairTimerState? timer;
   final PairTerminalState? terminal;
+  final int timerCodecVersion;
   Map<String, Object?> toJson() =>
       _freeze({
             'schemaVersion': 6,
-            'codecVersion': timer == null ? 2 : 3,
+            'codecVersion': timer == null ? 2 : timerCodecVersion,
             'planFingerprint': engine.plan.planFingerprint,
             'plan': engine.plan.toJson(),
             'startOperation': _compactStart(startOperation),
@@ -62,7 +64,9 @@ final class PairMatchingCheckpointSnapshot {
             'evidenceIds': evidenceIds,
             'frozenEvidence': frozenEvidence,
             if (timer != null) ...{
-              'timer': timer!.toJson(),
+              'timer': timer!.toJson(
+                includeInteractiveElapsed: timerCodecVersion >= 4,
+              ),
               'roundSeed': engine.roundSeed,
               'terminal': terminal?.toJson(),
             },
@@ -179,8 +183,9 @@ Map<String, Object?> _expandEngine(
 abstract final class PairMatchingCheckpointCodec {
   static void validateTransition(
     PairMatchingCheckpointSnapshot prior,
-    PairMatchingCheckpointSnapshot next,
-  ) {
+    PairMatchingCheckpointSnapshot next, {
+    bool allowMeasuredAdmission = false,
+  }) {
     if (prior.timer != null && next.timer == null) {
       throw StateError('Pair timer writer cannot downgrade');
     }
@@ -189,6 +194,36 @@ abstract final class PairMatchingCheckpointCodec {
     final b =
         next.timer ?? PairTimerState.initial(next.engine.plan.timerPreset);
     final delta = b.elapsedActiveMs - a.elapsedActiveMs;
+    if (prior.timer != null &&
+        prior.timerCodecVersion > next.timerCodecVersion) {
+      throw StateError('Pair timer codec cannot downgrade');
+    }
+    final fullBefore = a.interactiveElapsedMs,
+        fullAfter = b.interactiveElapsedMs;
+    if (fullBefore == null && fullAfter != null) {
+      if (!allowMeasuredAdmission ||
+          prior.timer != null ||
+          fullAfter != 0 ||
+          next.timerCodecVersion != 4 ||
+          next.terminal != null ||
+          jsonEncode(prior.engine.toJson()) !=
+              jsonEncode(
+                PairMatchingState.initial(prior.engine.plan).toJson(),
+              ) ||
+          jsonEncode(next.engine.toJson()) !=
+              jsonEncode(prior.engine.toJson()) ||
+          jsonEncode(b.toJson(includeInteractiveElapsed: false)) !=
+              jsonEncode(a.toJson(includeInteractiveElapsed: false))) {
+        throw StateError('Pair full elapsed admission missing');
+      }
+    } else if (fullBefore != null &&
+        fullAfter != null &&
+        (fullAfter < fullBefore ||
+            (a.timed && fullAfter - fullBefore != delta) ||
+            (a.mode == PairTimerMode.timeoutDecision &&
+                fullAfter != fullBefore))) {
+      throw StateError('Pair full elapsed chronology changed');
+    }
     if (delta < 0 ||
         delta > a.remainingActiveMs ||
         (a.extensionUsed && !b.extensionUsed)) {
@@ -284,6 +319,7 @@ abstract final class PairMatchingCheckpointCodec {
             jsonEncode(prior.engine.toJson()) !=
                 jsonEncode(next.engine.toJson()) ||
             delta != 0 ||
+            fullBefore != fullAfter ||
             newDecision)) {
       throw StateError('Pair terminal changed');
     }
@@ -326,7 +362,7 @@ abstract final class PairMatchingCheckpointCodec {
     final engine = map['engine'] as Map<String, dynamic>;
     final attempts = engine['attempts'] as List;
     final ids = map['evidenceIds'] as List;
-    const maxInt = 9223372036854775807;
+    const maxInt = PairMatchingCheckpointBudget.maximumCounter;
     final maxOperationId = '${'\u0000' * 127}x';
     final maxEvidenceId =
         '${'\u0000' * (LearningEvidenceContract.maxSourceEvidenceIdLength - 1)}x';
@@ -381,6 +417,7 @@ abstract final class PairMatchingCheckpointCodec {
           mode: PairTimerMode.continuedUntimed,
           remainingActiveMs: maxInt,
           elapsedActiveMs: maxInt,
+          interactiveElapsedMs: maxInt,
           reasons: PairPauseReason.values.toSet(),
           lastOperationId: maxOperationId,
           lastFingerprint: 'f' * 64,
@@ -442,7 +479,7 @@ abstract final class PairMatchingCheckpointCodec {
         jsonEncode(source['plan']),
       );
       final version = source['codecVersion'];
-      final compactStart = version == 2 || version == 3
+      final compactStart = version == 2 || version == 3 || version == 4
           ? pairJson(source['startOperation'], {
               'schemaVersion',
               'launchOperationId',
@@ -507,13 +544,13 @@ abstract final class PairMatchingCheckpointCodec {
         'engine',
         'evidenceIds',
         'frozenEvidence',
-        if (version == 3) ...{'timer', 'roundSeed', 'terminal'},
+        if (version == 3 || version == 4) ...{'timer', 'roundSeed', 'terminal'},
       });
       final engine = PairMatchingState.fromJson(
         plan,
         _expandEngine(plan, j['engine'], j['codecVersion'] as int),
       );
-      if ((version == 2 || version == 3) &&
+      if ((version == 2 || version == 3 || version == 4) &&
           jsonEncode(_compactEngine(engine)) != jsonEncode(j['engine'])) {
         throw const FormatException('Invalid Pair compact engine');
       }
@@ -523,7 +560,8 @@ abstract final class PairMatchingCheckpointCodec {
           : (j['frozenEvidence'] as Map).cast<String, Object?>();
       if ((j['codecVersion'] != 1 &&
               j['codecVersion'] != 2 &&
-              j['codecVersion'] != 3) ||
+              j['codecVersion'] != 3 &&
+              j['codecVersion'] != 4) ||
           ids.length != engine.attempts.length ||
           ids.toSet().length != ids.length ||
           ids.any(
@@ -552,8 +590,13 @@ abstract final class PairMatchingCheckpointCodec {
           throw const FormatException('Invalid Pair frozen occurrence');
         }
       }
-      final timer = version == 3 ? PairTimerState.fromJson(j['timer']) : null;
-      final terminal = version == 3 && j['terminal'] != null
+      final timer = version == 3 || version == 4
+          ? PairTimerState.fromJson(
+              j['timer'],
+              includesInteractiveElapsed: version == 4,
+            )
+          : null;
+      final terminal = (version == 3 || version == 4) && j['terminal'] != null
           ? PairTerminalState.fromJson(j['terminal'])
           : null;
       if (timer?.lastOperationId != null) {
@@ -591,8 +634,9 @@ abstract final class PairMatchingCheckpointCodec {
                   timer.mode != PairTimerMode.running))) {
         throw const FormatException('Pair timer decision missing');
       }
-      if ((version != 3 && engine.roundOrdinal != 0) ||
-          (version == 3 && j['roundSeed'] != engine.roundSeed) ||
+      if ((version != 3 && version != 4 && engine.roundOrdinal != 0) ||
+          ((version == 3 || version == 4) &&
+              j['roundSeed'] != engine.roundSeed) ||
           (terminal != null && (!engine.complete || engine.pending != null)) ||
           (timer != null &&
               plan.timerPreset == PairTimerPreset.off &&
@@ -608,6 +652,7 @@ abstract final class PairMatchingCheckpointCodec {
         frozenEvidence: frozen,
         timer: timer,
         terminal: terminal,
+        timerCodecVersion: version == 3 ? 3 : 4,
       );
     } catch (_) {
       throw const FormatException('Invalid Pair checkpoint');
