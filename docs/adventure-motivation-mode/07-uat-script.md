@@ -38,7 +38,7 @@ MS-08B และ Pair scripts ยังติด prerequisite ของตนเ
 | Internal UAT UAT-001–024, 030–032 | Not Run | ต้องใช้ learner representatives ≥12, accessibility moderated sessions ≥4, certified profiles และผู้ sign-off ที่เป็นอิสระจากผู้พัฒนา |
 | Research/permit UAT-025–037 | Blocked | ยังไม่มี approved protocol/instruments/response-code catalog/power plan/privacy-ethics package หรือ signed runtime permit fixtures; ระบบจงใจไม่มี research schema/capture |
 | MS-08B UAT-038 | Blocked | ต้องรอ MS-08A, powered adult/minor samples, frozen windows และ approved ANCOVA/MI/tipping-point evidence |
-| Pair UAT-039–050 | Engineering in progress; external UAT Not Run | ผู้ใช้อนุมัติแผน PM0–PM8 และ design B — Playful Quest แล้ว; PM0–PM1 ผ่าน local engineering checks และ PM2 กำลังพัฒนา ดู `docs/development/2026-09-05-pair-matching-engineering-status.md`; ยังไม่ถือว่า external UAT หรือ G4P sign-off ผ่าน |
+| Pair UAT-039–050 | Engineering in progress; external UAT Not Run | ผู้ใช้อนุมัติแผน PM0–PM8 และ design B — Playful Quest แล้ว; PM0–PM2 ผ่าน local engineering checks และ PM3 กำลังพัฒนา ดู `docs/development/2026-09-05-pair-matching-engineering-status.md`; ยังไม่ถือว่า external UAT หรือ G4P sign-off ผ่าน |
 | Defect/sign-off records | Empty by design | ยังไม่มี external attempt จึงไม่มี defect disposition หรือลายเซ็นที่สามารถบันทึกอย่างถูกต้อง |
 
 APK ที่ตรวจ hash แล้วเก็บไว้ใน development worktree ที่
