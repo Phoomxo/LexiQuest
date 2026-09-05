@@ -1,18 +1,21 @@
 # Adventure Motivation — Checkpoint 6 Local Verification Evidence
 
-Date: 2026-09-04; performance rehearsal addendum 2026-09-05 (Asia/Bangkok)
+Date: 2026-09-04; performance and completion addenda 2026-09-05 (Asia/Bangkok)
 
 Scope: Task 6.3 local engineering verification for the approved Android/shared
-Adventure Motivation delivery. This record is **local engineering evidence
-only**. It is not formal device accessibility/performance certification, UAT
-or rollout approval, research/MDS authorization, or Pair prototype
-authorization.
+Adventure Motivation delivery, including the Task 3.2-3.3 production closure
+and Task 6.2 automated-accessibility addendum below. This record is **local
+engineering evidence only**. It is not formal device
+accessibility/performance certification, UAT or rollout approval, research/MDS
+authorization, or Pair prototype authorization.
 
 ## Reproducible environment
 
 - Branch: `feature/adventure-motivation-plan`
 - Evidence source before this document:
   `be2ef6dbb3423e794fbf0921c0c22073614f69ba`
+- Task 3.2-3.3 implementation source:
+  `f8a5f8bbf2bc90fd21b3b365f8f9e109dff1a0bc`
 - Worktree:
   `C:\Users\Phet\Documents\LexiQuest\.worktrees\adventure-motivation-plan`
 - Flutter: 3.44.7 stable, framework `84fc5cbb22`
@@ -83,6 +86,31 @@ source `c8784d0398ac762db6e1d322ffac2b2bed210b8f`. The source pin intentionally
 precedes the documentation-only fingerprint refresh and the narrow Gitleaks
 policy commit; neither changes the generated product/test catalog.
 
+## Task 3.2-3.3 and Task 6.2 automated completion addendum — 2026-09-05
+
+Production source `f8a5f8bbf2bc90fd21b3b365f8f9e109dff1a0bc`
+closes the mixed-review, supportive-repair and restart-recovery path without
+changing the Standard learning authority. Session pins are immutable before
+the first asynchronous boundary, active-owner configuration persistence is
+atomic, cached terminal summaries are revalidated, and stale/ambiguous owner
+or session state fails closed.
+
+| Completion check | Result |
+| --- | --- |
+| Repair scheduling, flashcard reentrancy and immutable prompt-catalog snapshots | PASS — 37/37 focused tests. |
+| Canonical restart and terminal-summary recovery | PASS — 26/26 focused tests. |
+| Immutable pinned-session startup and Drift transaction fencing | PASS — 56/56 focused tests. |
+| Atomic active-owner configuration persistence and production launch integration | PASS — 144/144 focused tests. |
+| Broad Adventure/Learning/bootstrap/navigation/runtime/architecture regression | PASS — 655/655 tests. |
+| `flutter analyze --no-pub lib test` | PASS — zero issues. |
+| Exact 8/44 feature-map check | PASS — revision 1.3.0 and SHA-256 `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`. |
+| Deterministic presentation goldens | PASS — four scenes cover Adventure typed recall, flashcard reveal at 200% text with reduced motion, dark/high-contrast support state, and recovered Standard state; all four were visually inspected. |
+| Generated Final 8/44 Test Plan | PASS — schema-v23 fingerprint `270556e2036a455fd2ca3bcea991d1e630118ccecbf18b7d78dab64512d0edb6`, source-pinned to the implementation commit above. |
+
+The automated Task 6.2 scope is complete. Physical TalkBack, Switch Access,
+keyboard traversal and certified-device performance evidence remain external
+certification requirements and are not represented as passing here.
+
 ## Full-inventory classification
 
 | Initial failures | Count | Disposition |
@@ -103,7 +131,7 @@ The two accepted full runs exclude only tests carrying the executable
 | Desktop | EXCLUDED/BLOCKED. | Define and pass a separate desktop platform gate. | Mobile Platform Lead |
 | LiteRT field model | EXCLUDED/BLOCKED; approved model fixture and physical-device evidence are absent. | Supply checksum-pinned approved fixture and complete model/device certification before reachability. | ML/Field Lead |
 | Remote AI Voice / OmniVoice GPU | EXCLUDED/BLOCKED; only the CPU service suite is counted. | Resolve or renew the optional GPU dependency disposition, then certify the compatible Torch/Torchaudio/OmniVoice/CUDA stack on physical GPU before separate enablement. | Voice/ML Lead |
-| TalkBack, Switch Access, keyboard traversal and certified-device performance | PENDING EXTERNAL CERTIFICATION; automated responsive/accessibility coverage and a source-gated host-GPU emulator performance rehearsal are green, but neither is a physical-device sign-off. | Run the approved physical device/profile matrix, archive p95/frame and assistive-technology measurements, and obtain Accessibility QA approval. | Accessibility QA Lead |
+| TalkBack, Switch Access, keyboard traversal and certified-device performance | PENDING EXTERNAL CERTIFICATION; automated responsive/accessibility coverage, four deterministic golden scenes and a source-gated host-GPU emulator performance rehearsal are green, but none is a physical-device sign-off. | Run the approved physical device/profile matrix, archive p95/frame and assistive-technology measurements, and obtain Accessibility QA approval. | Accessibility QA Lead |
 | Research instrumentation / MDS | GOVERNANCE-BLOCKED; no research entities or capture were added. | Approve the protocol, instruments, response-code catalog, class-specific power calculations, analysis policy and privacy/ethics package. | Research / Privacy / Ethics owners |
 | UAT and rollout | PENDING EXTERNAL EXECUTION. | Complete the approved adult/minor, accessibility and guardian–learner cohorts and record signed MS-08A/MS-08B decisions. | UAT and Release owners |
 | Pair prototype PM0–PM8 | NOT AUTHORIZED. | Approve Pair ADR/SRS/SDS/RTM v1.2 and authorize its separate delivery flag. | Product / Architecture owners |
