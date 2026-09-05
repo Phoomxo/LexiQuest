@@ -10,13 +10,16 @@ import 'package:vocab_learning_app/features/learning/application/matching_mode_a
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_atomic_start.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_session_coordinator.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_repair_policy.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
-import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'pair_matching_source_composer_test.dart' as f;
 
@@ -204,9 +207,192 @@ class PairHarness {
       responseTimeMs: 25,
     ),
   );
+  Future<void> confirm(PairMatchingSessionCoordinator c, String word) =>
+      c.dispatch(
+        PairConfirmGuidedMapping(
+          operationId: '${c.state.operationRevision}:confirm',
+          ownerId: owner,
+          sessionId: operation.plan.learningSessionId,
+          roundOrdinal: 0,
+          expectedRevision: c.state.operationRevision,
+          wordId: word,
+          shownSupportRevision: c.state.supportAtRevision[word]!,
+          responseTimeMs: 25,
+        ),
+      );
+
+  /// Adversarial but valid schedule: guess wrong while two playable identities
+  /// remain; otherwise complete available spacing or explicitly confirm tail.
+  Future<void> finishBounded(PairMatchingSessionCoordinator c) async {
+    var steps = 0;
+    while (!c.state.complete) {
+      if (++steps > 18) {
+        throw StateError('synthetic finite tail bound exceeded');
+      }
+      final playable = operation.plan.orderedLexicalItems
+          .map((i) => i.wordId)
+          .where(
+            (id) =>
+                !c.state.matchedWordIds.contains(id) &&
+                c.state.repairFor(id)?.status != PairRepairStatus.waiting &&
+                c.state.repairFor(id)?.status !=
+                    PairRepairStatus.guidedRequired,
+          )
+          .toList();
+      if (playable.isNotEmpty) {
+        await tap(c, playable.first, PairTileSide.prompt);
+        await tap(
+          c,
+          playable.length > 1 ? playable[1] : playable.first,
+          PairTileSide.target,
+        );
+      } else {
+        await confirm(
+          c,
+          c.state.repairTickets
+              .firstWhere((t) => t.status == PairRepairStatus.guidedRequired)
+              .wordId,
+        );
+      }
+    }
+  }
 }
 
 void main() {
+  for (final version in [1, 2]) {
+    test(
+      'historical codec $version cannot admit an immediate repair answer',
+      () async {
+        final h = PairHarness();
+        addTearDown(h.db.close);
+        await h.initialize();
+        final c = await h.restore();
+        await h.tap(c, 'synthetic-0', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-1', PairTileSide.target);
+        final original = c.state.attempts.single;
+        Future<({Map<String, dynamic> source, Map<String, Object?> public})>
+        fixture(PairAttemptRole role) async {
+          final a = PairAttemptRequested(
+            operationId: '${c.state.operationRevision}:forged',
+            fingerprint: original.fingerprint,
+            promptWordId: 'synthetic-0',
+            targetWordId: 'synthetic-0',
+            roundOrdinal: 0,
+            role: role,
+            responseTimeMs: 25,
+          );
+          final source =
+              jsonDecode(jsonEncode(h.repository.checkpoints.last.state))
+                  as Map<String, dynamic>;
+          final public = c.state.toJson();
+          public['pending'] = a.toJson();
+          public['operationRevision'] = c.state.operationRevision + 1;
+          public['lastOperationId'] = a.operationId;
+          public['lastFingerprint'] = a.fingerprint;
+          final ids = h.operation.plan.orderedLexicalItems
+              .map((i) => i.wordId)
+              .toList();
+          Map<String, Object?> compact(Map<String, Object?> row) => row.map(
+            (k, v) => k == 'promptWordId'
+                ? MapEntry('promptIndex', ids.indexOf(v as String))
+                : k == 'targetWordId'
+                ? MapEntry('targetIndex', ids.indexOf(v as String))
+                : MapEntry(k, v),
+          );
+          final engine = version == 1
+              ? Map<String, Object?>.of(public)
+              : Map<String, Object?>.from(source['engine'] as Map);
+          engine['pending'] = compact(a.toJson());
+          engine['attempts'] = c.state.attempts
+              .map((a) => compact(a.toJson()))
+              .toList();
+          engine['operationRevision'] = public['operationRevision'];
+          engine['lastOperationId'] = a.operationId;
+          engine['lastFingerprint'] = a.fingerprint;
+          source['engine'] = engine;
+          source['codecVersion'] = version;
+          if (version == 1) {
+            source['startOperation'] = h.operation.stableSerialization;
+          }
+          final frozen =
+              await CurrentActivityEvidenceAdapter(learning: h.learning)
+                  .captureMatching(
+                    ownerId: h.owner,
+                    sessionId: h.operation.plan.learningSessionId,
+                    wordId: a.promptWordId,
+                    isCorrect: a.isCorrect,
+                    responseTimeMs: a.responseTimeMs,
+                    attemptNumber: c.state.attempts.length + 1,
+                    contentRevision: h
+                        .repository
+                        .commands
+                        .first
+                        .evidenceContext
+                        .contentRevision,
+                    classification: const HintEvidenceClassification(
+                      evidenceClass: EvidenceClass.recognition,
+                      hintLevel: 0,
+                    ),
+                  )
+                  .freezeForRecovery();
+          source['frozenEvidence'] = frozen.toJson();
+          expect(
+            FrozenPendingCurrentActivityEvidence.fromJson(
+              source['frozenEvidence'] as Map<String, Object?>,
+            ).wordId,
+            a.promptWordId,
+          );
+          return (source: source, public: public);
+        }
+
+        final invalid = await fixture(PairAttemptRole.independentRetry);
+        final source = invalid.source;
+        // This direct assertion has no frozen-envelope binding boundary: the
+        // failure must specifically be the repair chronology fence.
+        expect(
+          () => PairMatchingState.fromJson(h.operation.plan, invalid.public),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'strict path',
+              'Pair repair chronology changed',
+            ),
+          ),
+        );
+        expect(
+          () => PairMatchingCheckpointCodec.decode(source),
+          throwsFormatException,
+        );
+        await expectLater(
+          h.learning.appendActivityCheckpoint(
+            LearningActivityCheckpoint(
+              sessionId: h.operation.plan.learningSessionId,
+              activityType: 'matching',
+              revision: c.checkpointRevision + 1,
+              occurredAtUtc: h.learning.nowUtc(),
+              state: source,
+            ),
+            ownerId: h.owner,
+          ),
+          throwsStateError,
+        );
+        expect(await h.db.select(h.db.answerAttempts).get(), hasLength(1));
+        expect((await h.restore()).state.attempts, hasLength(1));
+        for (final i in [1, 2]) {
+          await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+          await h.tap(c, 'synthetic-$i', PairTileSide.target);
+        }
+        // Same codec shape and real capture path become valid once the two
+        // committed distinct other pairs make this delayed repair available.
+        final valid = await fixture(PairAttemptRole.delayedRepair);
+        final decoded = PairMatchingCheckpointCodec.decode(valid.source);
+        expect(decoded.engine.pending!.role, PairAttemptRole.delayedRepair);
+        expect(decoded.frozenEvidence == null, false);
+        expect(decoded.evidenceIds, hasLength(3));
+        expect(await h.db.select(h.db.answerAttempts).get(), hasLength(3));
+      },
+    );
+  }
   test(
     'initial bytes fit but mandatory byte reserve rejects before session insert',
     () async {
@@ -283,104 +469,122 @@ void main() {
       expect(await h.db.select(h.db.eventsV2).get(), isEmpty);
     },
   );
-  test(
-    'permitted Thai IDs and canonical long evidence IDs complete with bounded pending snapshots',
-    () async {
-      final items = List.generate(6, (i) {
-        final item = f.fixture(
-          i,
-          spelling: '${'e' * 255}$i',
-          meaning: '${'ก' * 255}$i',
+  for (final count in [4, 6]) {
+    test(
+      'Thai256 IDs and canonical197 evidence IDs bounded pending admission $count',
+      () async {
+        final items = List.generate(count, (i) {
+          final item = f.fixture(
+            i,
+            spelling: '${'e' * 255}$i',
+            meaning: '${'ก' * 255}$i',
+          );
+          return PairLexicalItem(
+            wordId: '${'ก' * 255}$i',
+            contentRevision: item.contentRevision,
+            checksum: item.checksum,
+            spelling: item.spelling,
+            meaning: item.meaning,
+            sourceLocale: 'en',
+            targetLocale: 'th',
+            sourceReasons: PairSourceReason.values.where(
+              (r) => r != PairSourceReason.reported,
+            ),
+          );
+        });
+        final owner = 'o' * 256, launch = 'l' * 256;
+        final plan = PairMatchingPlanV1(
+          ownerId: owner,
+          orderedLexicalItems: items,
+          direction: PairDirection.thToEn,
+          density: count == 4 ? PairDensity.compact4 : PairDensity.standard6,
+          shuffleSeed: 42,
+          timerPreset: PairTimerPreset.seconds120,
+          allowlistVersion: 'a' * 256,
+          learningSessionId: pairSessionId(owner, launch),
+          entryKind: PairSourceSurface.learn,
+          sourceSnapshotId: 's' * 256,
+          createdAtUtc: DateTime.utc(2026, 9, 5),
         );
-        return PairLexicalItem(
-          wordId: '${'ก' * 255}$i',
-          contentRevision: item.contentRevision,
-          checksum: item.checksum,
-          spelling: item.spelling,
-          meaning: item.meaning,
-          sourceLocale: 'en',
-          targetLocale: 'th',
-          sourceReasons: PairSourceReason.values.where(
-            (r) => r != PairSourceReason.reported,
-          ),
+        var id = 0;
+        final h = PairHarness(
+          pinnedPlan: plan,
+          launchId: launch,
+          buildTag: 'b' * 256,
+          // Canonical binding prefixes "attempt:" (8 bytes): 189 + 8 = 197.
+          evidenceId: () => '${'x' * 186}${(++id).toString().padLeft(3, '0')}',
         );
-      });
-      final owner = 'o' * 256, launch = 'l' * 256;
-      final plan = PairMatchingPlanV1(
-        ownerId: owner,
-        orderedLexicalItems: items,
-        direction: PairDirection.thToEn,
-        density: PairDensity.standard6,
-        shuffleSeed: 42,
-        timerPreset: PairTimerPreset.seconds120,
-        allowlistVersion: 'a' * 256,
-        learningSessionId: pairSessionId(owner, launch),
-        entryKind: PairSourceSurface.learn,
-        sourceSnapshotId: 's' * 256,
-        createdAtUtc: DateTime.utc(2026, 9, 5),
-      );
-      var id = 0;
-      final h = PairHarness(
-        pinnedPlan: plan,
-        launchId: launch,
-        buildTag: 'b' * 256,
-        evidenceId: () => '${'x' * 186}${(++id).toString().padLeft(3, '0')}',
-      );
-      addTearDown(h.db.close);
-      await h.initialize();
-      var c = await h.restore();
-      var wrong = 0;
-      for (; wrong < 23; wrong++) {
+        addTearDown(h.db.close);
+        if (count == 6) {
+          await h.db.customStatement(
+            "CREATE TRIGGER synthetic_no_large_pair_start BEFORE INSERT ON learning_sessions BEGIN SELECT RAISE(ABORT, 'session insert reached'); END",
+          );
+          await expectLater(
+            h.initialize(),
+            throwsA(
+              isA<StateError>().having(
+                (e) => e.message,
+                'reason',
+                contains('byte capacity'),
+              ),
+            ),
+          );
+          expect(await h.db.select(h.db.learningSessions).get(), isEmpty);
+          expect(id, 0);
+          return;
+        }
+        await h.initialize();
+        var c = await h.restore();
         await h.tap(c, items[0].wordId, PairTileSide.prompt);
+        h.repository.answerFault = true;
+        h.repository.afterWrite = true;
+        await expectLater(
+          h.tap(c, items[1].wordId, PairTileSide.target),
+          throwsStateError,
+        );
+        c.dispose();
+        c = await h.restore();
+        await c.retryPending();
         final before = jsonEncode(c.state.toJson());
         final idsBefore = id, writesBefore = h.repository.checkpoints.length;
-        try {
-          await h.tap(c, items[1].wordId, PairTileSide.target);
-        } on StateError catch (error) {
-          expect(error.message, contains('byte capacity'));
-          expect(jsonEncode(c.state.toJson()), before);
-          expect(id, idsBefore);
-          expect(h.repository.checkpoints.length, writesBefore);
-          break;
-        }
-      }
-      expect(wrong, inExclusiveRange(0, 23));
-      h.repository.answerFault = true;
-      h.repository.afterWrite = true;
-      await expectLater(
-        h.tap(c, items[0].wordId, PairTileSide.target),
-        throwsStateError,
-      );
-      c.dispose();
-      c = await h.restore();
-      await c.retryPending();
-      for (final item in items.skip(1)) {
-        await h.tap(c, item.wordId, PairTileSide.prompt);
-        if (item == items[1]) {
-          h.repository.checkpointFault =
-              h.repository.checkpoints.last.revision + 2;
-          await expectLater(
-            h.tap(c, item.wordId, PairTileSide.target),
-            throwsStateError,
-          );
-          await c.retryPending();
-        } else {
-          await h.tap(c, item.wordId, PairTileSide.target);
-        }
-      }
-      expect(c.state.complete, true);
-      expect(
-        await h.db.select(h.db.answerAttempts).get(),
-        hasLength(wrong + 6),
-      );
-      for (final checkpoint in h.repository.checkpoints) {
-        expect(
-          utf8.encode(jsonEncode(checkpoint.state)).length,
-          lessThanOrEqualTo(65536),
+        await expectLater(
+          h.tap(c, items[0].wordId, PairTileSide.prompt),
+          throwsStateError,
         );
-      }
-    },
-  );
+        expect(jsonEncode(c.state.toJson()), before);
+        expect(id, idsBefore);
+        expect(h.repository.checkpoints.length, writesBefore);
+        await h.tap(c, items[1].wordId, PairTileSide.prompt);
+        h.repository.checkpointFault =
+            h.repository.checkpoints.last.revision + 2;
+        await expectLater(
+          h.tap(c, items[2].wordId, PairTileSide.target),
+          throwsStateError,
+        );
+        await c.retryPending();
+        await h.finishBounded(c);
+        expect(c.state.complete, true);
+        expect(
+          await h.db.select(h.db.answerAttempts).get(),
+          hasLength(c.state.attempts.length),
+        );
+        for (final checkpoint in h.repository.checkpoints) {
+          expect(
+            utf8.encode(jsonEncode(checkpoint.state)).length,
+            lessThanOrEqualTo(65536),
+          );
+        }
+        expect(c.state.attempts.where((a) => a.isCorrect), hasLength(count));
+        expect(c.state.attempts.where((a) => !a.isCorrect), isNotEmpty);
+        final maximumPendingBytes = h.repository.checkpoints
+            .map((c) => utf8.encode(jsonEncode(c.state)).length)
+            .reduce((a, b) => a > b ? a : b);
+        printOnFailure(
+          'PM3 admitted Thai256 compact4 maximum written snapshot: $maximumPendingBytes bytes',
+        );
+      },
+    );
+  }
   test(
     'owner mutation at checkpoint SQL insert rolls back entire append',
     () async {
@@ -460,17 +664,32 @@ void main() {
         ),
       );
       c = await h.restore();
+      for (final i in [1, 2, 3]) {
+        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-$i', PairTileSide.target);
+      }
       await h.tap(c, 'synthetic-0', PairTileSide.target);
       await h.tap(c, 'synthetic-0', PairTileSide.prompt);
       final attempts = await h.db.select(h.db.answerAttempts).get();
       expect(attempts.map((a) => a.evidenceClass), [
         'recognition',
+        'recognition',
+        'recognition',
+        'recognition',
         'guidedPractice',
       ]);
-      expect(c.state.matchedWordIds, {'synthetic-0'});
+      expect(c.state.matchedWordIds, {
+        'synthetic-0',
+        'synthetic-1',
+        'synthetic-2',
+        'synthetic-3',
+      });
       expect((await h.restore()).state.attempts.map((a) => a.role), [
         PairAttemptRole.firstOpportunity,
-        PairAttemptRole.guidedCompletion,
+        PairAttemptRole.firstOpportunity,
+        PairAttemptRole.firstOpportunity,
+        PairAttemptRole.firstOpportunity,
+        PairAttemptRole.delayedRepair,
       ]);
       expect(jsonDecode(attempts.last.evidenceContextJson)['hintLevel'], 1);
     },
@@ -601,25 +820,32 @@ void main() {
       addTearDown(h.db.close);
       await h.initialize();
       final c = await h.restore();
-      for (var i = 0; i < 23; i++) {
-        await h.tap(c, 'synthetic-0', PairTileSide.prompt);
-        await h.tap(c, 'synthetic-1', PairTileSide.target);
-      }
-      expect(c.checkpointRevision, 47);
       await h.tap(c, 'synthetic-0', PairTileSide.prompt);
+      await h.tap(c, 'synthetic-1', PairTileSide.target);
       await expectLater(
-        h.tap(c, 'synthetic-1', PairTileSide.target),
+        h.tap(c, 'synthetic-0', PairTileSide.prompt),
         throwsStateError,
       );
-      await h.tap(c, 'synthetic-0', PairTileSide.target);
-      for (var i = 1; i < 6; i++) {
-        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
-        await h.tap(c, 'synthetic-$i', PairTileSide.target);
-      }
+      await h.finishBounded(c);
       expect(c.state.complete, true);
-      expect(c.checkpointRevision, 59);
-      expect(await h.db.select(h.db.answerAttempts).get(), hasLength(29));
+      expect(c.checkpointRevision, lessThanOrEqualTo(59));
+      final answers = await h.db.select(h.db.answerAttempts).get();
+      expect(answers.length, 13);
+      expect(answers.where((a) => a.isCorrect), hasLength(6));
       expect((await h.restore()).state.complete, true);
+      final maximumPendingBytes = h.repository.checkpoints
+          .map((c) => utf8.encode(jsonEncode(c.state)).length)
+          .reduce((a, b) => a > b ? a : b);
+      final reservedInitial =
+          PairMatchingCheckpointCodec.reservedCompletionBytes(
+            PairMatchingCheckpointSnapshot(
+              engine: PairMatchingState.initial(h.operation.plan),
+              startOperation: h.operation.stableSerialization,
+            ),
+          );
+      printOnFailure(
+        'PM3 six-pair 13-attempt schedule: maximum written $maximumPendingBytes bytes; initial worst-future reservation $reservedInitial bytes',
+      );
     },
   );
 }

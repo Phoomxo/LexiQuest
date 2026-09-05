@@ -28,7 +28,6 @@ import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
 import '../pair_matching/domain/pair_matching_launch.dart';
-import '../pair_matching/domain/pair_matching_engine.dart';
 import '../domain/learning_activity_recovery_limits.dart';
 import '../pair_matching/data/pair_matching_checkpoint_codec.dart';
 import '../application/current_activity_evidence.dart'
@@ -1619,9 +1618,7 @@ final class DriftLearningRepository
     if (pin == null ||
         frozen.contentRevision != pin.evidenceContentRevision ||
         frozen.declaredEvidenceClass !=
-            (role.role == PairAttemptRole.guidedCompletion
-                ? EvidenceClass.guidedPractice
-                : EvidenceClass.recognition) ||
+            snapshot.engine.classificationFor(role).evidenceClass ||
         frozen.contrastiveFeedback != null) {
       throw StateError('Pair occurrence pin/classification changed');
     }
@@ -1765,9 +1762,7 @@ final class DriftLearningRepository
           a.attemptNumber != i + 1 ||
           a.responseTimeMs != role.responseTimeMs ||
           a.evidenceClass !=
-              (role.role == PairAttemptRole.guidedCompletion
-                  ? 'guidedPractice'
-                  : 'recognition')) {
+              snapshot.engine.classificationFor(role).evidenceClass.name) {
         throw StateError('Pair checkpoint does not match canonical attempts');
       }
     }

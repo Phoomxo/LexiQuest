@@ -2,13 +2,14 @@ import 'dart:convert';
 import '../../application/current_activity_evidence.dart';
 import '../../application/learning_use_cases.dart';
 import '../../domain/evidence_context.dart';
-import '../../domain/hint_policy.dart';
 import '../../domain/learning_models.dart';
 import '../../domain/lexical_prompt_artifact_identity.dart';
 import '../data/pair_matching_checkpoint_codec.dart';
 import '../domain/pair_matching_engine.dart';
 import '../domain/pair_matching_checkpoint_budget.dart';
 import 'pair_matching_atomic_start.dart';
+import '../../../review/application/pair_review_deferral.dart';
+import '../../../review/domain/review_queue_item.dart';
 
 typedef PairSessionOperation =
     Future<void> Function(Future<void> Function() action);
@@ -118,7 +119,7 @@ final class PairMatchingSessionCoordinator {
       final id = i < _snapshot.evidenceIds.length
           ? _snapshot.evidenceIds[i]
           : _snapshot.frozenEvidence!['sourceEvidenceId'];
-      final guided = role.role == PairAttemptRole.guidedCompletion;
+      final guided = state.classificationFor(role).hintLevel > 0;
       if (actual.id != id ||
           actual.ownerId != operation.plan.ownerId ||
           actual.sessionId != operation.plan.learningSessionId ||
@@ -173,9 +174,7 @@ final class PairMatchingSessionCoordinator {
     final role = (capturedState ?? state).pending!;
     if (frozen.contentRevision != _contentRevision(role.promptWordId) ||
         frozen.declaredEvidenceClass !=
-            (role.role == PairAttemptRole.guidedCompletion
-                ? EvidenceClass.guidedPractice
-                : EvidenceClass.recognition) ||
+            (capturedState ?? state).classificationFor(role).evidenceClass ||
         frozen.contrastiveFeedback != null) {
       throw StateError('Pair frozen evidence pin/classification changed');
     }
@@ -229,6 +228,13 @@ final class PairMatchingSessionCoordinator {
               operation.plan.orderedLexicalItems.length -
               state.matchedWordIds.length,
           isCorrect: transition.attempt!.isCorrect,
+          remainingAttemptBound: PairMatchingEngine.acknowledge(
+            transition.state,
+            transition.attempt!.operationId,
+          ).remainingRepairAttemptBound,
+          revealReserve:
+              operation.plan.orderedLexicalItems.length -
+              state.supportedWordIds.length,
         )) {
       throw StateError('Pair persistence capacity reserved');
     }
@@ -250,12 +256,7 @@ final class PairMatchingSessionCoordinator {
       responseTimeMs: attempt.responseTimeMs,
       attemptNumber: state.attempts.length + 1,
       contentRevision: _contentRevision(attempt.promptWordId),
-      classification: HintEvidenceClassification(
-        evidenceClass: attempt.role == PairAttemptRole.guidedCompletion
-            ? EvidenceClass.guidedPractice
-            : EvidenceClass.recognition,
-        hintLevel: attempt.role == PairAttemptRole.guidedCompletion ? 1 : 0,
-      ),
+      classification: transition.state.classificationFor(attempt),
     );
     _capturedState = transition.state;
     await _resumeEvidence();
@@ -333,12 +334,38 @@ final class PairMatchingSessionCoordinator {
   }
 
   Future<void> retryPending() => _admit(_resumeEvidence, recovery: true);
+  Future<List<ReviewQueueItem>> deferredReview(
+    PairReviewDeferral adapter,
+  ) async {
+    _requireLive(checkLease: false);
+    final result = <ReviewQueueItem>[];
+    // Only the durable acknowledged snapshot supplies provenance identities.
+    for (final ticket in _snapshot.engine.repairTickets.where(
+      (t) => t.deferred,
+    )) {
+      final item = operation.plan.orderedLexicalItems.singleWhere(
+        (i) => i.wordId == ticket.wordId,
+      );
+      final need = await adapter.expose(
+        ownerId: operation.plan.ownerId,
+        sessionId: operation.plan.learningSessionId,
+        wordId: ticket.wordId,
+        contentRevision: item.contentRevision,
+        answerId: _snapshot.evidenceIds[ticket.originalOrdinal],
+      );
+      _requireLive(checkLease: false);
+      if (need != null) result.add(need);
+    }
+    return List.unmodifiable(result);
+  }
+
   void _requireFlushCapacity() {
     final remaining =
         operation.plan.orderedLexicalItems.length - state.matchedWordIds.length;
     if (_checkpoint.revision +
             1 +
-            remaining * 2 +
+            state.remainingRepairAttemptBound * 2 +
+            remaining +
             PairMatchingCheckpointBudget.terminalReserve +
             PairMatchingCheckpointBudget.continueUntimedReserve >
         PairMatchingCheckpointBudget.maximumRevisions) {

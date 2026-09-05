@@ -48,39 +48,30 @@ void main() {
         appVersion: 'v' * 256,
         buildId: 'b' * 256,
       );
-      var state = PairMatchingState.initial(plan);
-      void tap(String id, PairTileSide side) {
-        final prefix = '${state.operationRevision}:';
-        state = PairMatchingEngine.reduce(
-          state,
-          PairSelectTile(
-            operationId: '$prefix${'n' * (128 - prefix.length)}',
-            ownerId: owner,
-            sessionId: plan.learningSessionId,
-            roundOrdinal: 0,
-            expectedRevision: state.operationRevision,
-            tile: PairTile(side, id),
-            responseTimeMs: 2147483647,
-          ),
-        ).state;
-      }
-
-      for (var i = 0; i < 23; i++) {
-        tap(items[0].wordId, PairTileSide.prompt);
-        tap(items[1].wordId, PairTileSide.target);
-        state = PairMatchingEngine.acknowledge(
-          state,
-          state.pending!.operationId,
+      // Preserve the accepted PM2 codec regression as historical committed
+      // data. New PM3 commands cannot generate unlimited immediate retries.
+      final ledger = List.generate(29, (i) {
+        final prefix = '${i * 2 + 1}:';
+        final word = i < 23 ? 0 : i - 23;
+        return PairAttemptRequested(
+          operationId: '$prefix${'n' * (128 - prefix.length)}',
+          fingerprint: 'f' * 64,
+          promptWordId: items[word].wordId,
+          targetWordId: items[i < 23 ? 1 : word].wordId,
+          roundOrdinal: 0,
+          role: i == 0 || i > 23
+              ? PairAttemptRole.firstOpportunity
+              : PairAttemptRole.independentRetry,
+          responseTimeMs: 2147483647,
         );
-      }
-      for (final item in items) {
-        tap(item.wordId, PairTileSide.prompt);
-        tap(item.wordId, PairTileSide.target);
-        state = PairMatchingEngine.acknowledge(
-          state,
-          state.pending!.operationId,
-        );
-      }
+      });
+      final map = PairMatchingState.initial(plan).toJson();
+      map['attempts'] = ledger.map((a) => a.toJson()).toList();
+      map['matchedWordIds'] = items.map((i) => i.wordId).toList()..sort();
+      map['operationRevision'] = 58;
+      map['lastOperationId'] = ledger.last.operationId;
+      map['lastFingerprint'] = ledger.last.fingerprint;
+      final state = PairMatchingState.fromJson(plan, map);
       final snapshot = PairMatchingCheckpointSnapshot(
         engine: state,
         startOperation: operation.stableSerialization,

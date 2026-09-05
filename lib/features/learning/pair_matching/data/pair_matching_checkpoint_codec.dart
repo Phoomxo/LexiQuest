@@ -183,7 +183,11 @@ abstract final class PairMatchingCheckpointCodec {
         state.plan.orderedLexicalItems.length -
         state.matchedWordIds.length -
         (pending?.isCorrect == true ? 1 : 0);
-    for (var i = 0; i < remaining; i++) {
+    final projected = pending == null
+        ? state
+        : PairMatchingEngine.acknowledge(state, pending.operationId);
+    final futureAttempts = projected.remainingRepairAttemptBound;
+    for (var i = 0; i < futureAttempts; i++) {
       attempts.add({
         'operationId': maxOperationId,
         'fingerprint': 'f' * 64,
@@ -363,8 +367,7 @@ abstract final class PairMatchingCheckpointCodec {
             frozen['promptMode'] != 'matchingPair' ||
             frozen['providerProvenance'] != 'pinned-lexical-matching' ||
             frozen['input'] != 'matchingPair' ||
-            frozen['hintLevel'] !=
-                (a.role == PairAttemptRole.guidedCompletion ? 1 : 0)) {
+            frozen['hintLevel'] != engine.classificationFor(a).hintLevel) {
           throw const FormatException('Invalid Pair frozen occurrence');
         }
       }

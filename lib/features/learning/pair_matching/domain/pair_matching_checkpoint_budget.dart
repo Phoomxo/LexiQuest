@@ -15,14 +15,21 @@ abstract final class PairMatchingCheckpointBudget {
     required int attempts,
     required int remainingPairs,
     bool isCorrect = false,
+    int? remainingAttemptBound,
+    int revealReserve = 0,
   }) =>
       revision >= 1 &&
       attempts >= 0 &&
       remainingPairs > 0 &&
-      attempts + 1 + remainingPairs - (isCorrect ? 1 : 0) <= maximumAttempts &&
+      attempts +
+              1 +
+              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) <=
+          maximumAttempts &&
       revision +
               2 +
-              (remainingPairs - (isCorrect ? 1 : 0)) * 2 +
+              (remainingAttemptBound ?? remainingPairs - (isCorrect ? 1 : 0)) *
+                  2 +
+              revealReserve +
               terminalReserve +
               continueUntimedReserve <=
           maximumRevisions;

@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'pair_matching_plan.dart';
+import 'pair_repair_policy.dart';
+import 'pair_support_policy.dart';
+import '../../domain/hint_policy.dart';
 import '../../domain/learning_activity_recovery_limits.dart';
 
 enum PairTileSide { prompt, target }
@@ -157,6 +160,30 @@ final class PairAttemptRequested {
   }
 }
 
+/// Learner confirms the exact mapping already exposed by the guided state.
+/// This is not a guessed distractor answer or an automatic success on failure.
+final class PairConfirmGuidedMapping extends PairMatchingCommand {
+  PairConfirmGuidedMapping({
+    required super.operationId,
+    required super.ownerId,
+    required super.sessionId,
+    required super.roundOrdinal,
+    required super.expectedRevision,
+    required this.wordId,
+    required this.shownSupportRevision,
+    required this.responseTimeMs,
+  });
+  final String wordId;
+  final int shownSupportRevision, responseTimeMs;
+  @override
+  Map<String, Object?> get payload => {
+    'kind': 'confirmGuidedMapping',
+    'wordId': wordId,
+    'shownSupportRevision': shownSupportRevision,
+    'responseTimeMs': responseTimeMs,
+  };
+}
+
 final class PairMatchingState {
   PairMatchingState._({
     required this.plan,
@@ -195,6 +222,57 @@ final class PairMatchingState {
   final List<PairAttemptRequested> attempts;
   final PairAttemptRequested? pending;
   final String? lastOperationId, lastFingerprint;
+  List<PairRepairTicket> get repairTickets => PairRepairPolicy.project(
+    plan.orderedLexicalItems.map((i) => i.wordId).toList(),
+    attempts.map(
+      (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+    ),
+  );
+  PairRepairTicket? repairFor(String wordId) {
+    for (final t in repairTickets) {
+      if (t.wordId == wordId) return t;
+    }
+    return null;
+  }
+
+  HintEvidenceClassification classificationFor(PairAttemptRequested a) =>
+      PairSupportPolicy.classify(
+        supportRevision: supportAtRevision[a.promptWordId],
+        attemptRevision: int.parse(a.operationId.split(':').first),
+      );
+  int get remainingRepairAttemptBound {
+    var count = 0;
+    int? firstRepairDelay;
+    var guided = 0;
+    for (final item in plan.orderedLexicalItems) {
+      if (matchedWordIds.contains(item.wordId)) continue;
+      final ticket = repairFor(item.wordId);
+      count += ticket == null
+          ? 3
+          : ticket.status == PairRepairStatus.guidedRequired
+          ? 1
+          : 2;
+      if (ticket?.status == PairRepairStatus.guidedRequired) {
+        guided++;
+      } else {
+        final delay = ticket == null
+            ? plan.orderedLexicalItems.length ~/ 2
+            : ticket.status == PairRepairStatus.available
+            ? 0
+            : ticket.dueOrdinal - matchedWordIds.length;
+        if (firstRepairDelay == null || delay < firstRepairDelay) {
+          firstRepairDelay = delay;
+        }
+      }
+    }
+    // Before any further scheduled failure, distinct other pairs must finish.
+    // Each costs at least one theoretical third attempt; already-forced
+    // confirmations can supply that spacing without another deduction.
+    final delay = firstRepairDelay ?? 0;
+    final deduction = delay > guided ? delay - guided : 0;
+    return count == 0 ? 0 : count - (deduction < count ? deduction : count - 1);
+  }
+
   Set<String> get firstOpportunityWordIds =>
       Set.unmodifiable(attempts.map((a) => a.promptWordId));
   bool get complete => matchedWordIds.length == plan.orderedLexicalItems.length;
@@ -244,14 +322,42 @@ final class PairMatchingState {
     final ids = plan.orderedLexicalItems.map((i) => i.wordId).toSet();
     final seen = <String>{}, operations = <String>{}, matched = <String>{};
     var previousRevision = -1;
+    final repairHistory = <PairRepairAnswer>[];
     for (final a in [
       ...state.attempts,
       if (state.pending != null) state.pending!,
     ]) {
       final revision = int.tryParse(a.operationId.split(':').first);
       final supportRevision = state.supportAtRevision[a.promptWordId];
-      if ((a.role == PairAttemptRole.guidedCompletion) !=
-          (supportRevision != null &&
+      final tickets = PairRepairPolicy.project(ids.toList(), repairHistory);
+      final priorTickets = tickets.where((t) => t.wordId == a.promptWordId);
+      final ticket = priorTickets.isEmpty ? null : priorTickets.single;
+      final hiddenTarget = tickets.any(
+        (t) =>
+            t.wordId == a.targetWordId &&
+            (t.status == PairRepairStatus.waiting ||
+                (t.status == PairRepairStatus.guidedRequired &&
+                    a.role != PairAttemptRole.guidedCompletion)),
+      );
+      if ((a.role == PairAttemptRole.delayedRepair &&
+              ticket?.status != PairRepairStatus.available) ||
+          (ticket?.status == PairRepairStatus.guidedRequired &&
+              a.role != PairAttemptRole.independentRetry &&
+              (a.role != PairAttemptRole.guidedCompletion || !a.isCorrect)) ||
+          (identical(a, state.pending) &&
+              (hiddenTarget ||
+                  ticket?.status == PairRepairStatus.waiting ||
+                  (a.role == PairAttemptRole.independentRetry &&
+                      ticket != null)))) {
+        throw const FormatException('Pair repair chronology changed');
+      }
+      if ((a.role == PairAttemptRole.guidedCompletion &&
+              !(supportRevision != null &&
+                  revision != null &&
+                  supportRevision < revision)) ||
+          (a.role != PairAttemptRole.guidedCompletion &&
+              a.role != PairAttemptRole.delayedRepair &&
+              supportRevision != null &&
               revision != null &&
               supportRevision < revision)) {
         throw const FormatException('Pair support chronology changed');
@@ -272,12 +378,16 @@ final class PairMatchingState {
               seen.contains(a.promptWordId)) ||
           (a.role == PairAttemptRole.independentRetry &&
               !seen.contains(a.promptWordId)) ||
-          a.role == PairAttemptRole.delayedRepair ||
+          (a.role == PairAttemptRole.delayedRepair &&
+              !seen.contains(a.promptWordId)) ||
           (a.role == PairAttemptRole.guidedCompletion &&
               !state.supportedWordIds.contains(a.promptWordId))) {
         throw const FormatException('Invalid Pair attempt ledger');
       }
       previousRevision = revision;
+      repairHistory.add(
+        PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+      );
       seen.add(a.promptWordId);
       if (!identical(a, state.pending) && a.isCorrect) {
         matched.add(a.promptWordId);
@@ -360,6 +470,31 @@ abstract final class PairMatchingEngine {
     final supportRevisions = {...state.supportAtRevision};
     PairAttemptRequested? pending;
     switch (command) {
+      case PairConfirmGuidedMapping(
+        :final wordId,
+        :final shownSupportRevision,
+        :final responseTimeMs,
+      ):
+        if (!ids.contains(wordId) ||
+            state.matchedWordIds.contains(wordId) ||
+            state.supportAtRevision[wordId] != shownSupportRevision ||
+            shownSupportRevision >= command.expectedRevision ||
+            responseTimeMs < 0 ||
+            (state.repairFor(wordId) != null &&
+                state.repairFor(wordId)?.status !=
+                    PairRepairStatus.guidedRequired)) {
+          throw StateError('Invalid Pair guided confirmation');
+        }
+        pending = PairAttemptRequested(
+          operationId: command.operationId,
+          fingerprint: command.fingerprint,
+          promptWordId: wordId,
+          targetWordId: wordId,
+          roundOrdinal: state.roundOrdinal,
+          role: PairAttemptRole.guidedCompletion,
+          responseTimeMs: responseTimeMs,
+        );
+        selected = null;
       case PairRevealMapping(:final wordId):
         if (!ids.contains(wordId) || state.matchedWordIds.contains(wordId)) {
           throw StateError('Invalid Pair reveal');
@@ -369,6 +504,9 @@ abstract final class PairMatchingEngine {
       case PairSelectTile(:final tile, :final responseTimeMs):
         if (!ids.contains(tile.wordId) ||
             state.matchedWordIds.contains(tile.wordId) ||
+            state.repairFor(tile.wordId)?.status == PairRepairStatus.waiting ||
+            state.repairFor(tile.wordId)?.status ==
+                PairRepairStatus.guidedRequired ||
             responseTimeMs < 0) {
           throw StateError('Invalid Pair tile/response');
         }
@@ -389,7 +527,9 @@ abstract final class PairMatchingEngine {
             promptWordId: prompt,
             targetWordId: target,
             roundOrdinal: state.roundOrdinal,
-            role: supported.contains(prompt)
+            role: state.repairFor(prompt)?.status == PairRepairStatus.available
+                ? PairAttemptRole.delayedRepair
+                : supported.contains(prompt)
                 ? PairAttemptRole.guidedCompletion
                 : state.firstOpportunityWordIds.contains(prompt)
                 ? PairAttemptRole.independentRetry
@@ -425,6 +565,25 @@ abstract final class PairMatchingEngine {
     if (pending == null || pending.operationId != operationId) {
       throw StateError('Stale Pair acknowledgement');
     }
+    final attempts = [...state.attempts, pending];
+    final supported = {...state.supportedWordIds};
+    final supportRevisions = {...state.supportAtRevision};
+    final tickets = PairRepairPolicy.project(
+      state.plan.orderedLexicalItems.map((i) => i.wordId).toList(),
+      attempts.map(
+        (a) => PairRepairAnswer(a.operationId, a.promptWordId, a.isCorrect),
+      ),
+    );
+    for (final t in tickets) {
+      if (t.status == PairRepairStatus.guidedRequired) {
+        supported.add(t.wordId);
+        // Equal to this attempted revision: it cannot reclassify that answer.
+        supportRevisions.putIfAbsent(
+          t.wordId,
+          () => state.operationRevision - 1,
+        );
+      }
+    }
     return PairMatchingState._(
       plan: state.plan,
       roundOrdinal: state.roundOrdinal,
@@ -434,9 +593,9 @@ abstract final class PairMatchingEngine {
         ...state.matchedWordIds,
         if (pending.isCorrect) pending.promptWordId,
       },
-      supportedWordIds: state.supportedWordIds,
-      supportAtRevision: state.supportAtRevision,
-      attempts: [...state.attempts, pending],
+      supportedWordIds: supported,
+      supportAtRevision: supportRevisions,
+      attempts: attempts,
       pending: null,
       lastOperationId: state.lastOperationId,
       lastFingerprint: state.lastFingerprint,

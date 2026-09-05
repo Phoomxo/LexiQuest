@@ -56,11 +56,21 @@ void main() {
         expect(state.matchedWordIds, isEmpty);
         state = PairMatchingEngine.acknowledge(state, wrong.operationId);
         expect(state.matchedWordIds, isEmpty);
+        final spaced = plan.orderedLexicalItems
+            .where((i) => i.wordId != wrong.promptWordId)
+            .take(2)
+            .map((i) => i.wordId)
+            .toList();
+        for (final id in spaced) {
+          tap(id, PairTileSide.prompt);
+          final success = tap(id, PairTileSide.target).attempt!;
+          state = PairMatchingEngine.acknowledge(state, success.operationId);
+        }
         tap(wrong.promptWordId, PairTileSide.prompt);
         final correct = tap(wrong.promptWordId, PairTileSide.target).attempt!;
-        expect(correct.role, PairAttemptRole.independentRetry);
+        expect(correct.role, PairAttemptRole.delayedRepair);
         state = PairMatchingEngine.acknowledge(state, correct.operationId);
-        expect(state.matchedWordIds, {wrong.promptWordId});
+        expect(state.matchedWordIds, {...spaced, wrong.promptWordId});
         expect(() => state.matchedWordIds.add('bad'), throwsUnsupportedError);
       });
     }
@@ -140,9 +150,26 @@ void main() {
       PairMatchingState.fromJson(plan, state.toJson()).attempts.single.role,
       PairAttemptRole.firstOpportunity,
     );
+    for (final id in ['synthetic-1', 'synthetic-2']) {
+      for (final side in PairTileSide.values) {
+        state = PairMatchingEngine.reduce(
+          state,
+          PairSelectTile(
+            operationId: '${state.operationRevision}:spacing',
+            ownerId: plan.ownerId,
+            sessionId: plan.learningSessionId,
+            roundOrdinal: 0,
+            expectedRevision: state.operationRevision,
+            tile: PairTile(side, id),
+            responseTimeMs: 1,
+          ),
+        ).state;
+      }
+      state = PairMatchingEngine.acknowledge(state, state.pending!.operationId);
+    }
     for (final tile in [
       const PairTile(PairTileSide.prompt, 'synthetic-0'),
-      const PairTile(PairTileSide.target, 'synthetic-1'),
+      const PairTile(PairTileSide.target, 'synthetic-3'),
     ]) {
       state = PairMatchingEngine.reduce(
         state,
@@ -160,7 +187,7 @@ void main() {
     state = PairMatchingEngine.acknowledge(state, state.pending!.operationId);
     final tampered = state.toJson();
     final guided = state.attempts.last;
-    (tampered['attempts'] as List)[1] = PairAttemptRequested(
+    (tampered['attempts'] as List)[3] = PairAttemptRequested(
       operationId: guided.operationId,
       fingerprint: guided.fingerprint,
       promptWordId: guided.promptWordId,
