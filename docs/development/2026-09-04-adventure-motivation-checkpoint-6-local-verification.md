@@ -119,6 +119,13 @@ The automated Task 6.2 scope is complete. Physical TalkBack, Switch Access,
 keyboard traversal and certified-device performance evidence remain external
 certification requirements and are not represented as passing here.
 
+The verified APK is retained in the development worktree as the ignored
+artifact `build/deliverables/adventure-703aabe4-debug.apk`. Its copied bytes
+were rehashed on 2026-09-05 and match the SHA-256 and 223,102,333-byte size
+recorded above. This delivery artifact preserves the tested hidden/default-off
+configuration. `adb devices -l` reported no connected device during the same
+handoff audit; no new physical-device or participant result is claimed.
+
 ## Full-inventory classification
 
 | Initial failures | Count | Disposition |

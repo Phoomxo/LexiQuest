@@ -2,10 +2,10 @@
 
 **Document ID:** LQ-AMM-UAT-001
 **Version:** 1.3
-**Status:** Execution-ready; external sessions and owner sign-off pending
+**Status:** Product engineering preflight ready; research/Pair prerequisites and external acceptance pending
 **Date:** 2026-09-04; evidence update 2026-09-05
-**References:** `AMM-AUDIT-001 v1.0`; TOR, SRS, SDS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
-**Build baseline:** Adventure product source `be2ef6db`; performance rehearsal source `85b17755`; local verification evidence `bc546f09`; Drift schema v23; Pair Matching source closure `f56e2eb`
+**References:** `AMM-AUDIT-001 v1.0`; SDS v1.3; TOR, SRS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
+**Build baseline:** Adventure product source `f8a5f8bb` + hardening `703aabe4`; performance rehearsal source `85b17755`; local verification evidence `3c698cdd`; Drift schema v23; Pair Matching design source closure `f56e2eb`
 **Release warning:** Android/shared local BG-01–BG-12 ผ่านโดยไม่มี unclassified failure และ source-gated Android host-GPU emulator performance rehearsal ผ่านทุก budget แต่ยังเป็น `not_certified`; ห้าม sign-off Pilot/Production จนกว่าจะมี physical-device accessibility/performance certification, participant UAT, approved research package และ signed MS-08A/MS-08B decision ตาม applicability
 
 ## 1. วัตถุประสงค์
@@ -25,21 +25,27 @@ UAT ชุดนี้ใช้พิสูจน์กับผู้ใช้�
 11. แยก MS-08A Feasibility ออกจาก MS-08B Efficacy และ rollout adult/minor;
 12. รับรอง Pair Matching Prototype ว่าใช้กิจกรรม f10 เดิม เป็นกิจกรรมย่อยใน Learn/Today Mission/Review/Adventure โดยไม่เพิ่มเมนูหลัก ไม่ให้รางวัลซ้ำ และไม่บิด SRS/Mastery
 
-Controlled inventory รวม **50 UAT scripts (UAT-001–050)** โดย UAT-001–038
-มี build สำหรับเริ่ม external execution แต่ยังเป็น Not Run; UAT-039–050 เป็น
-Blocked เพราะ Pair prototype ยังไม่ได้รับอนุมัติให้พัฒนา ไม่มี script ใดถูกนับ
-เป็น Pass จาก automated test แทนผู้ใช้จริง
+Controlled inventory รวม **50 UAT scripts (UAT-001–050)** โดยมี Android build
+สำหรับ product engineering preflight ตามตารางด้านล่าง ส่วน research/permit,
+MS-08B และ Pair scripts ยังติด prerequisite ของตนเอง จึงไม่ถือว่า UAT-001–038
+พร้อมรันทั้งหมด ไม่มี script ใดถูกนับเป็น Pass จาก automated test แทนผู้ใช้จริง
 
 ### 1.1 Execution status snapshot
 
 | Scope | Current status | Evidence/blocker |
 |---|---|---|
-| Android/shared engineering preflight | Ready | BG-01–BG-12 local scope ผ่าน; 3,403 Flutter tests ผ่านทั้ง default/serial; source-gated host-GPU emulator rehearsal ผ่าน 20/20 transitions ที่มีเฟรมจริง (p95 4.290 ms, max 7.031 ms) แต่ไม่ใช่ physical certification; APK SHA-256 `5F4C48537C3F06FD33E219764C2A2E1A7C90A273D8DB0AAC877CE6898967D928`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
+| Android/shared engineering preflight | Ready | Product source `703aabe4`; BG-01–BG-12 local scope ผ่าน; 3,542 Flutter tests ผ่านทั้ง default/serial; source-gated host-GPU emulator rehearsal ที่ source `85b17755` ผ่าน 20/20 transitions ที่มีเฟรมจริง (p95 4.290 ms, max 7.031 ms) แต่ไม่ใช่ physical certification; APK SHA-256 `951F53BC5551E0DCDA631346F89015F31EDA52BAB01A48F9C9C2691BAFE7E64A`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
 | Internal UAT UAT-001–024, 030–032 | Not Run | ต้องใช้ learner representatives ≥12, accessibility moderated sessions ≥4, certified profiles และผู้ sign-off ที่เป็นอิสระจากผู้พัฒนา |
 | Research/permit UAT-025–037 | Blocked | ยังไม่มี approved protocol/instruments/response-code catalog/power plan/privacy-ethics package หรือ signed runtime permit fixtures; ระบบจงใจไม่มี research schema/capture |
 | MS-08B UAT-038 | Blocked | ต้องรอ MS-08A, powered adult/minor samples, frozen windows และ approved ANCOVA/MI/tipping-point evidence |
 | Pair UAT-039–050 | Blocked | Pair ADR/SRS/SDS/RTM v1.2 และ separate delivery flag ยังไม่ได้รับอนุมัติ; PM0–PM8 ยังไม่เริ่ม |
 | Defect/sign-off records | Empty by design | ยังไม่มี external attempt จึงไม่มี defect disposition หรือลายเซ็นที่สามารถบันทึกอย่างถูกต้อง |
+
+APK ที่ตรวจ hash แล้วเก็บไว้ใน development worktree ที่
+`build/deliverables/adventure-703aabe4-debug.apk` (ignored build artifact,
+223,102,333 bytes) โดยยังใช้ feature configuration ที่ hidden/default-off
+เช่นเดียวกับ source ที่ตรวจแล้ว รอบตรวจสถานะวันที่ 2026-09-05 ไม่พบอุปกรณ์
+Android เชื่อมต่อจาก `adb devices -l`; ยังไม่มี physical-device session ใหม่
 
 ## 2. ขอบเขตและรอบ UAT
 

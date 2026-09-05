@@ -5,7 +5,7 @@
 **Status:** Product as-built overlay complete; owner review and external gates pending
 **Date:** 2026-09-04; evidence update 2026-09-05
 **SRS reference:** `LQ-AMM-SRS-001 v1.2`
-**As-built baseline:** product source `be2ef6db`, performance source `85b17755`, local evidence `bc546f09`, schema v23
+**As-built baseline:** product source `f8a5f8bb`, recovery/pinned-read hardening `703aabe4`, performance source `85b17755`, local evidence `3c698cdd`, schema v23
 **Audit reference:** `AMM-AUDIT-001 v1.0`; local BG-01–BG-12 evidence has zero unclassified failure and retains explicit excluded/pending gates
 **Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 
@@ -18,6 +18,14 @@ session composition, the unchanged Unified Learning evidence bridge, repair
 and recovery, read-only motivation receipts, scripted companion behavior,
 bounded diagnostics, catalog quarantine/repair and Learner Preferences v2.
 
+The mixed-review path presents typed recall, cloze, definition and flashcard
+prompts through `AdventureMixedReviewController` and the canonical learning
+bridge. Persisted checkpoint intent distinguishes a skipped flashcard repair
+from exposure after restart; ambiguous legacy repair-flashcard checkpoints
+fail closed. Session pins and exact pinned-query inputs are copied before
+asynchronous work, owner configuration is persisted atomically, and cached
+terminal results are checked against the canonical session summary before use.
+
 Schema v23 is live for owner-scoped `homeExperience` and has migration,
 lifecycle, sync, export, owner-merge and Firestore policy evidence. Adventure
 adds no learning, reward, mastery, relationship or journey-progress authority.
@@ -28,6 +36,12 @@ The primary implementation and verification locations are
 `lib/data/local/tables/preference_tables.dart`, `test/features/adventure/**`
 and
 `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`.
+
+The hardened source passes 658 related regression tests and 3,542 complete
+Flutter tests in each of default and serial modes. Four visually inspected
+golden scenes cover typed recall, flashcard reveal at 200% text/reduced motion,
+dark/high-contrast support and recovered Standard presentation. These are local
+engineering results; the acceptance boundaries below still apply.
 
 M10 research storage/capture and planned schema v24 are not implemented
 because their protocol, measurement, privacy and ethics prerequisites are not
@@ -587,8 +601,11 @@ enum AdventureReactionTrigger {
 **Files**
 
 - `lib/features/adventure/domain/adventure_result.dart`
+- `lib/features/adventure/application/adventure_mixed_review_controller.dart`
+- `lib/features/adventure/application/adventure_mixed_review_prompt_catalog.dart`
 - `lib/features/adventure/application/adventure_recovery_use_cases.dart`
 - `lib/features/adventure/application/adventure_repair_policy.dart`
+- `lib/features/adventure/presentation/adventure_mixed_review_screen.dart`
 - `lib/features/adventure/presentation/adventure_result_screen.dart`
 
 ```dart
