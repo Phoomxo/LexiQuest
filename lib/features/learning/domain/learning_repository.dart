@@ -53,6 +53,52 @@ abstract interface class LearningSessionLifecycleRepository {
   });
 }
 
+/// Read-only classification of an exact accepted Pair. A pending source is
+/// committed only when its immutable answer, source and decision receipts all
+/// validate. This does not authorize a new answer or alter configuration pins.
+enum PairAcceptedDispositionKind {
+  incomplete,
+  pendingUncommitted,
+  pendingCommitted,
+  complete,
+  stopped,
+}
+
+final class PairAcceptedDispositionSnapshot {
+  const PairAcceptedDispositionSnapshot({
+    required this.kind,
+    required this.recovery,
+  });
+  final PairAcceptedDispositionKind kind;
+  final LearningActivityRecovery recovery;
+}
+
+abstract interface class PairAcceptedSessionDispositionRepository {
+  Future<PairAcceptedDispositionSnapshot> inspectPairDisposition({
+    required String ownerId,
+    required String startOperation,
+  });
+
+  Future<LearningSessionSummary> abandonUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required LearningActivityCheckpoint expectedCheckpoint,
+    required DateTime abandonedAtUtc,
+  });
+
+  Future<LearningSessionSummary> completeUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required DateTime completedAtUtc,
+  });
+
+  Future<void> replayAcceptedPairAnswer({
+    required String ownerId,
+    required String startOperation,
+    required String sourceEvidenceId,
+  });
+}
+
 /// Durable f16 authority attached to the canonical learning session. The
 /// latest owner/mode preference is never used to reconstruct an active run.
 abstract interface class SessionConfiguredLearningRepository {

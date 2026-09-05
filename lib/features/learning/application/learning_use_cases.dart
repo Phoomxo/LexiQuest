@@ -1242,6 +1242,66 @@ final class LearningUseCases {
     return result;
   }
 
+  PairAcceptedSessionDispositionRepository get _pairDispositionRepository {
+    final source = repository;
+    if (source is! PairAcceptedSessionDispositionRepository) {
+      throw StateError(
+        'Learning repository cannot dispose an unavailable Pair',
+      );
+    }
+    return source as PairAcceptedSessionDispositionRepository;
+  }
+
+  Future<PairAcceptedDispositionSnapshot> inspectPairDisposition({
+    required String ownerId,
+    required String startOperation,
+  }) => _pairDispositionRepository.inspectPairDisposition(
+    ownerId: ownerId,
+    startOperation: startOperation,
+  );
+
+  Future<void> replayAcceptedPairAnswer({
+    required String ownerId,
+    required String startOperation,
+    required String sourceEvidenceId,
+  }) => _pairDispositionRepository.replayAcceptedPairAnswer(
+    ownerId: ownerId,
+    startOperation: startOperation,
+    sourceEvidenceId: sourceEvidenceId,
+  );
+
+  Future<LearningSessionSummary> abandonUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required LearningActivityCheckpoint expectedCheckpoint,
+    required DateTime abandonedAtUtc,
+  }) async {
+    final result = await _pairDispositionRepository
+        .abandonUnavailablePairSession(
+          ownerId: ownerId,
+          startOperation: startOperation,
+          expectedCheckpoint: expectedCheckpoint,
+          abandonedAtUtc: abandonedAtUtc,
+        );
+    onLocalMutation?.call();
+    return result;
+  }
+
+  Future<LearningSessionSummary> completeUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required DateTime completedAtUtc,
+  }) async {
+    final result = await _pairDispositionRepository
+        .completeUnavailablePairSession(
+          ownerId: ownerId,
+          startOperation: startOperation,
+          completedAtUtc: completedAtUtc,
+        );
+    onLocalMutation?.call();
+    return result;
+  }
+
   Future<LearningSessionSummary> _finishCapturedSessionClose({
     required String ownerId,
     required String sessionId,

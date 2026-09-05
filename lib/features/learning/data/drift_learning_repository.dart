@@ -44,6 +44,7 @@ final class DriftLearningRepository
         LearningRepository,
         LearningEvidenceReplayRepository,
         LearningSessionLifecycleRepository,
+        PairAcceptedSessionDispositionRepository,
         SessionConfiguredLearningRepository,
         LearningActivityRecoveryRepository,
         LearningActivitySessionHistoryRepository,
@@ -2625,6 +2626,264 @@ final class DriftLearningRepository
           ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active')))
         .write(const db.LearningSessionsCompanion(state: Value('abandoned')));
   }
+
+  @override
+  Future<PairAcceptedDispositionSnapshot> inspectPairDisposition({
+    required String ownerId,
+    required String startOperation,
+  }) => database.transaction(
+    () => _inspectPairDisposition(
+      ownerId: ownerId,
+      startOperation: startOperation,
+    ),
+  );
+
+  Future<PairAcceptedDispositionSnapshot> _inspectPairDisposition({
+    required String ownerId,
+    required String startOperation,
+  }) async {
+    await _requireActivePairOwner(ownerId);
+    final operation = PairMatchingStartOperation.fromStableSerialization(
+      startOperation,
+    );
+    if (operation.plan.ownerId != ownerId || operation.configuration == null) {
+      throw StateError(
+        'unavailable Pair requires its accepted owner and configuration',
+      );
+    }
+    final recovery = await loadExactActivityRecovery(
+      ownerId: ownerId,
+      sessionId: operation.plan.learningSessionId,
+      activityType: 'matching',
+    );
+    if (recovery == null || recovery.checkpoint == null) {
+      throw StateError('accepted Pair recovery is unavailable');
+    }
+    final purpose = await read(
+      ownerId: ownerId,
+      sessionId: operation.plan.learningSessionId,
+    );
+    final snapshot = purpose.snapshot;
+    if (snapshot == null || snapshot.startOperation != startOperation) {
+      throw StateError('accepted Pair configuration or checkpoint changed');
+    }
+    final row =
+        await (database.select(database.learningSessions)..where(
+              (r) =>
+                  r.id.equals(operation.plan.learningSessionId) &
+                  r.ownerId.equals(ownerId),
+            ))
+            .getSingle();
+    await _validatePinnedPairCheckpoint(
+      session: row,
+      checkpoint: recovery.checkpoint!,
+      latest: recovery.checkpoint!,
+    );
+    if (row.correctCount !=
+            recovery.attempts.where((a) => a.isCorrect).length ||
+        row.wrongCount != recovery.attempts.where((a) => !a.isCorrect).length) {
+      throw StateError('Pair canonical answer counts changed');
+    }
+    for (final candidate in recovery.attempts) {
+      final attempt = await (database.select(
+        database.answerAttempts,
+      )..where((r) => r.id.equals(candidate.id))).getSingle();
+      final source = await events.readBySourceEvidenceId(candidate.id);
+      if (source == null) {
+        throw StateError('Pair committed source is unavailable');
+      }
+      await events.requireExistingDecisionSetForAttempt(
+        attempt: attempt,
+        sourceEvent: source,
+      );
+    }
+    var kind = snapshot.engine.complete
+        ? PairAcceptedDispositionKind.complete
+        : PairAcceptedDispositionKind.incomplete;
+    final frozen = snapshot.frozenEvidence == null
+        ? null
+        : _pinnedPairOccurrence(snapshot);
+    if (frozen != null) {
+      final attempt = await (database.select(
+        database.answerAttempts,
+      )..where((r) => r.id.equals(frozen.sourceEvidenceId))).getSingleOrNull();
+      if (attempt == null) {
+        final source = await events.readBySourceEvidenceId(
+          frozen.sourceEvidenceId,
+        );
+        final orphanReceipts =
+            await (database.select(database.eventsV2)
+                  ..where((r) => r.aggregateId.equals(frozen.sourceEvidenceId))
+                  ..limit(1))
+                .get();
+        final orphanOutbox =
+            await (database.select(database.outboxOperations)
+                  ..where((r) => r.entityId.equals(frozen.sourceEvidenceId))
+                  ..limit(1))
+                .get();
+        if (source != null ||
+            orphanReceipts.isNotEmpty ||
+            orphanOutbox.isNotEmpty) {
+          throw StateError('Pair pending answer has partial durable receipts');
+        }
+        kind = PairAcceptedDispositionKind.pendingUncommitted;
+      } else {
+        final candidate = RecordAnswerCandidate(
+          id: frozen.sourceEvidenceId,
+          ownerId: ownerId,
+          sessionId: frozen.sessionId,
+          wordId: frozen.wordId,
+          promptMode: frozen.promptMode,
+          isCorrect: frozen.isCorrect,
+          responseTimeMs: frozen.responseTimeMs,
+          attemptNumber: frozen.attemptNumber,
+          occurredAtUtc: frozen.occurredAtUtc,
+          evidenceContext: frozen.evidenceContext,
+          providerProvenance: frozen.providerProvenance,
+          actorIdentity: frozen.actorIdentity,
+          eventContext: frozen.eventContext,
+        );
+        final source = await events.readBySourceEvidenceId(
+          frozen.sourceEvidenceId,
+        );
+        if (!_sameAttempt(attempt, candidate) ||
+            source == null ||
+            !events.isExactDeclaredSourceForCandidate(
+              candidate: candidate,
+              source: source,
+            ) ||
+            jsonEncode(
+                  LearningEventContext.fromEvidenceEnvelope(
+                    envelope: source,
+                    evidenceContext: frozen.evidenceContext,
+                  ).toJson(),
+                ) !=
+                jsonEncode(frozen.eventContext.toJson())) {
+          throw StateError('Pair pending committed identity changed');
+        }
+        await events.requireExistingDecisionSetForAttempt(
+          attempt: attempt,
+          sourceEvent: source,
+        );
+        kind = PairAcceptedDispositionKind.pendingCommitted;
+      }
+    }
+    if (row.state == 'abandoned') {
+      if (kind == PairAcceptedDispositionKind.pendingCommitted ||
+          snapshot.engine.complete ||
+          snapshot.terminal != null ||
+          row.endedAtUtcMs == null) {
+        throw StateError('stopped Pair has inconsistent terminal identity');
+      }
+      kind = PairAcceptedDispositionKind.stopped;
+    } else if (row.state == 'completed' &&
+        (kind != PairAcceptedDispositionKind.complete ||
+            snapshot.terminal == null ||
+            row.endedAtUtcMs !=
+                snapshot.terminal!.atUtc.millisecondsSinceEpoch)) {
+      throw StateError('completed Pair has inconsistent terminal identity');
+    } else if (row.state != 'active' && row.state != 'completed') {
+      throw StateError('Pair canonical state is unavailable');
+    }
+    await _requireActivePairOwner(ownerId);
+    return PairAcceptedDispositionSnapshot(kind: kind, recovery: recovery);
+  }
+
+  @override
+  Future<LearningSessionSummary> abandonUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required LearningActivityCheckpoint expectedCheckpoint,
+    required DateTime abandonedAtUtc,
+  }) => database.transaction(() async {
+    final loaded = await _inspectPairDisposition(
+      ownerId: ownerId,
+      startOperation: startOperation,
+    );
+    final checkpoint = loaded.recovery.checkpoint!;
+    if (checkpoint.sessionId != expectedCheckpoint.sessionId ||
+        checkpoint.activityType != expectedCheckpoint.activityType ||
+        checkpoint.revision != expectedCheckpoint.revision ||
+        checkpoint.occurredAtUtc != expectedCheckpoint.occurredAtUtc ||
+        checkpoint.terminalAtUtc != expectedCheckpoint.terminalAtUtc ||
+        checkpoint.terminalAcknowledged !=
+            expectedCheckpoint.terminalAcknowledged ||
+        jsonEncode(checkpoint.state) != jsonEncode(expectedCheckpoint.state)) {
+      throw StateError('Pair disposition checkpoint changed');
+    }
+    if (loaded.kind == PairAcceptedDispositionKind.complete ||
+        loaded.kind == PairAcceptedDispositionKind.pendingCommitted) {
+      throw StateError('Pair committed work requires exact reconciliation');
+    }
+    if (loaded.kind == PairAcceptedDispositionKind.pendingUncommitted) {
+      final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+      final frozen = _pinnedPairOccurrence(snapshot);
+      final currentMode = await events.rolloutModeProvider.resolve(
+        ownerId: ownerId,
+        evidenceContext: frozen.evidenceContext,
+      );
+      if (currentMode == frozen.evidenceContext.rolloutMode) {
+        throw StateError(
+          'Pair pending answer remains eligible for exact retry',
+        );
+      }
+    }
+    final result = await abandonSession(
+      ownerId: ownerId,
+      sessionId: loaded.recovery.session.id,
+      abandonedAtUtc: abandonedAtUtc,
+    );
+    await _requireActivePairOwner(ownerId);
+    return result;
+  });
+
+  @override
+  Future<LearningSessionSummary> completeUnavailablePairSession({
+    required String ownerId,
+    required String startOperation,
+    required DateTime completedAtUtc,
+  }) => database.transaction(() async {
+    final loaded = await _inspectPairDisposition(
+      ownerId: ownerId,
+      startOperation: startOperation,
+    );
+    if (loaded.kind != PairAcceptedDispositionKind.complete ||
+        loaded.recovery.checkpoint!.terminalAtUtc != completedAtUtc) {
+      throw StateError(
+        'Pair completion requires exact accepted terminal intent',
+      );
+    }
+    final result = await finishSession(
+      ownerId: ownerId,
+      sessionId: loaded.recovery.session.id,
+      endedAtUtc: completedAtUtc,
+    );
+    await _requireActivePairOwner(ownerId);
+    return result;
+  });
+
+  @override
+  Future<void> replayAcceptedPairAnswer({
+    required String ownerId,
+    required String startOperation,
+    required String sourceEvidenceId,
+  }) => database.transaction(() async {
+    final loaded = await _inspectPairDisposition(
+      ownerId: ownerId,
+      startOperation: startOperation,
+    );
+    if (loaded.kind != PairAcceptedDispositionKind.pendingCommitted ||
+        loaded.recovery.attempts.last.id != sourceEvidenceId) {
+      throw StateError(
+        'Pair recovery requires an already committed pending answer',
+      );
+    }
+    // Classification and the existing replay share this transaction. Neither
+    // a missing attempt nor a missing decision can become a new first write.
+    final result = await replayCommittedAnswer(loaded.recovery.attempts.last);
+    if (result == null) throw StateError('Pair committed answer disappeared');
+    await _requireActivePairOwner(ownerId);
+  });
 
   @override
   Future<LearningSessionSummary> abandonSession({

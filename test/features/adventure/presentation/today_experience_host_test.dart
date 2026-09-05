@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/adventure/data/packaged_adventure_wo
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
+import 'package:vocab_learning_app/features/adventure/presentation/adventure_hub_screen.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
@@ -33,6 +34,122 @@ import 'package:vocab_learning_app/features/learning/domain/session_configuratio
 import 'package:vocab_learning_app/features/research/domain/motivation_measurement.dart';
 
 void main() {
+  testWidgets(
+    'Standard contextual actions capture exact inputs without Adventure reads',
+    (tester) async {
+      final today = _today();
+      final loader = _Loader(today);
+      final journey = _Journey();
+      final rewards = _RewardAccounts(_rewardAccount());
+      final originalActions = _Actions();
+      final replacement = _Actions();
+      TodayHubSnapshot? capturedToday;
+      AdventureProductEntryDecision? capturedDecision;
+      bool Function()? current;
+      var ids = 0;
+      await tester.pumpWidget(
+        _app(
+          loader: loader,
+          journey: journey,
+          rewardAccounts: rewards,
+          actions: originalActions,
+          createId: () {
+            ids++;
+            return '11111111-1111-4111-8111-111111111111';
+          },
+          contextualStandardActions:
+              ({
+                required today,
+                required entryDecision,
+                required fallback,
+                required isCurrent,
+              }) {
+                capturedToday = today;
+                capturedDecision = entryDecision;
+                current = isCurrent;
+                expect(fallback, same(originalActions));
+                return replacement;
+              },
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(capturedToday, same(today));
+      expect(
+        capturedDecision!.entryAttemptId,
+        '11111111-1111-4111-8111-111111111111',
+      );
+      expect(current!(), isTrue);
+      expect(
+        tester.widget<TodayHubView>(find.byType(TodayHubView)).actions,
+        same(replacement),
+      );
+      expect(loader.calls, 1);
+      expect(ids, 1);
+      expect(journey.today, isNull);
+      expect(rewards.calls, 0);
+    },
+  );
+
+  testWidgets(
+    'Standard default preserves exact original delegate and avoids Adventure reads',
+    (tester) async {
+      final fallback = _Actions();
+      final journey = _Journey();
+      final rewards = _RewardAccounts(_rewardAccount());
+      await tester.pumpWidget(
+        _app(
+          loader: _Loader(_today()),
+          journey: journey,
+          rewardAccounts: rewards,
+          actions: fallback,
+          createId: () => '11111111-1111-4111-8111-111111111111',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TodayHubView>(find.byType(TodayHubView)).actions,
+        same(fallback),
+      );
+      expect(journey.today, isNull);
+      expect(rewards.calls, 0);
+    },
+  );
+
+  testWidgets('Standard captured action guard rejects refresh and disposal', (
+    tester,
+  ) async {
+    final guards = <bool Function()>[];
+    final loader = _Loader(_today());
+    await tester.pumpWidget(
+      _app(
+        loader: loader,
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        contextualStandardActions:
+            ({
+              required today,
+              required entryDecision,
+              required fallback,
+              required isCurrent,
+            }) {
+              guards.add(isCurrent);
+              return fallback;
+            },
+      ),
+    );
+    await tester.pumpAndSettle();
+    final original = guards.last;
+    expect(original(), isTrue);
+    await tester.tap(find.byKey(const ValueKey('adventure-refresh')));
+    await tester.pumpAndSettle();
+    expect(original(), isFalse);
+    expect(guards.last(), isTrue);
+    expect(loader.calls, 2);
+    final refreshed = guards.last;
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(refreshed(), isFalse);
+  });
+
   testWidgets('signed renewal replaces the open Host permit deadline', (
     tester,
   ) async {
@@ -1103,6 +1220,7 @@ void main() {
       sourceEvaluatedAtUtc: today.evaluatedAtUtc,
     );
     AdventureMissionLaunchContext? captured;
+    var launches = 0;
     final account = _rewardAccount();
     await tester.pumpWidget(
       _app(
@@ -1110,7 +1228,10 @@ void main() {
         journey: _Journey(mission: mission),
         createId: () => '11111111-1111-4111-8111-111111111111',
         rewardAccounts: _RewardAccounts(account),
-        onStartMission: (launch) async => captured = launch,
+        onStartMission: (launch) async {
+          launches++;
+          captured = launch;
+        },
       ),
     );
     await tester.pumpAndSettle();
@@ -1122,10 +1243,20 @@ void main() {
     expect(captured?.mission, same(mission));
     expect(captured?.today, same(today));
     expect(captured?.rewardOwnership, same(account));
+    expect(captured!.isCurrent!(), isTrue);
     expect(
       captured?.entryDecision.destination,
       AdventureEntryDestination.adventure,
     );
+    final oldCallback = tester
+        .widget<AdventureHubScreen>(find.byType(AdventureHubScreen))
+        .onStartMission;
+    final oldContext = captured!;
+    await tester.tap(find.byKey(const ValueKey('adventure-refresh')));
+    await tester.pumpAndSettle();
+    expect(oldContext.isCurrent!(), isFalse);
+    await oldCallback(mission);
+    expect(launches, 1);
   });
 
   testWidgets(
@@ -1179,6 +1310,8 @@ Widget _app({
       const NoActivePresentationPermitReader(),
   AdventureResearchRuntime? research,
   DateTime Function()? nowUtc,
+  TodayHubActionDelegate? actions,
+  ContextualTodayActionsFactory? contextualStandardActions,
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -1202,7 +1335,8 @@ Widget _app({
       rewardAccounts: rewardAccounts ?? _RewardAccounts(_rewardAccount()),
       createEntryAttemptId: createId,
       nowUtc: nowUtc ?? () => _now,
-      actions: _Actions(),
+      actions: actions ?? _Actions(),
+      contextualStandardActions: contextualStandardActions,
       features: const BuildFeatureRegistry.allEnabled(),
       assessmentAvailable: false,
       presentationPreferences: presentationPreferences,

@@ -25,18 +25,33 @@ import 'widgets/adventure_standard_switch.dart';
 
 typedef AdventureUtcNow = DateTime Function();
 
+/// Captures the resolved Standard inputs only; callers must defer navigation,
+/// queries and operation identity allocation until an actual action.
+typedef ContextualTodayActionsFactory =
+    TodayHubActionDelegate Function({
+      required TodayHubSnapshot today,
+      required AdventureProductEntryDecision entryDecision,
+      required TodayHubActionDelegate fallback,
+      required bool Function() isCurrent,
+    });
+
 final class AdventureMissionLaunchContext {
   const AdventureMissionLaunchContext({
     required this.mission,
     required this.today,
     required this.entryDecision,
     required this.rewardOwnership,
+    this.isCurrent,
   });
 
   final AdventureMissionRef mission;
   final TodayHubSnapshot today;
   final AdventureProductEntryDecision entryDecision;
   final RewardAccount rewardOwnership;
+
+  /// The originating Today opening owns this optional liveness check.
+  /// It authorizes only an unaccepted launch, never replaces session recovery.
+  final bool Function()? isCurrent;
 }
 
 final class TodayExperienceHost extends StatefulWidget {
@@ -57,6 +72,7 @@ final class TodayExperienceHost extends StatefulWidget {
     required this.onStartMission,
     this.presentationPreferences,
     this.research,
+    this.contextualStandardActions,
   });
 
   final String ownerId;
@@ -75,6 +91,7 @@ final class TodayExperienceHost extends StatefulWidget {
   onStartMission;
   final AdventurePresentationPreferenceWriter? presentationPreferences;
   final AdventureResearchRuntime? research;
+  final ContextualTodayActionsFactory? contextualStandardActions;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
@@ -777,6 +794,17 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost>
         );
       }
       _recordResearchPresentation(result.decision);
+      final refreshGeneration = _refreshGeneration;
+      final presentationGeneration = _presentationGeneration;
+      final capturedFuture = _loadFuture;
+      final capturedOwner = widget.ownerId;
+      bool isCurrent() =>
+          mounted &&
+          capturedOwner == widget.ownerId &&
+          today.ownerId == widget.ownerId &&
+          refreshGeneration == _refreshGeneration &&
+          presentationGeneration == _presentationGeneration &&
+          identical(capturedFuture, _loadFuture);
       if (result.decision.destination == AdventureEntryDestination.adventure &&
           journey != null &&
           rewardOwnership != null) {
@@ -794,14 +822,18 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost>
           reactionLanguage: widget.catalog.locale == 'th'
               ? AdventureReactionLanguage.th
               : AdventureReactionLanguage.en,
-          onStartMission: (mission) => widget.onStartMission(
-            AdventureMissionLaunchContext(
-              mission: mission,
-              today: today,
-              entryDecision: result.decision,
-              rewardOwnership: rewardOwnership,
-            ),
-          ),
+          onStartMission: (mission) async {
+            if (!isCurrent()) return;
+            await widget.onStartMission(
+              AdventureMissionLaunchContext(
+                mission: mission,
+                today: today,
+                entryDecision: result.decision,
+                rewardOwnership: rewardOwnership,
+                isCurrent: isCurrent,
+              ),
+            );
+          },
           onPresentationChanged: _switch,
           onRefresh: _refresh,
         );
@@ -821,7 +853,14 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost>
         body: _standardEscapeBody(
           TodayHubView(
             snapshot: today,
-            actions: widget.actions,
+            actions:
+                widget.contextualStandardActions?.call(
+                  today: today,
+                  entryDecision: result.decision,
+                  fallback: widget.actions,
+                  isCurrent: isCurrent,
+                ) ??
+                widget.actions,
             features: widget.features,
             assessmentAvailable: widget.assessmentAvailable,
           ),

@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/learning/application/matching_mode_a
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
@@ -21,9 +22,11 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import '../application/pair_matching_atomic_start.dart';
 import '../application/pair_matching_session_coordinator.dart';
+import '../application/pair_matching_unavailable_session.dart';
 import '../application/pair_matching_source_composer.dart';
 import '../application/pair_practice_replay.dart';
 import '../data/drift_pair_matching_session_purpose_reader.dart';
+import '../data/pair_matching_checkpoint_codec.dart';
 import '../domain/pair_active_clock.dart';
 import '../domain/pair_matching_engine.dart';
 import '../domain/pair_matching_history_projection.dart';
@@ -134,6 +137,8 @@ final class PairMatchingExperienceHost extends StatefulWidget {
     this.shuffleSeed = 42,
     this.onReview,
     this.decoration,
+    this.canAdmitLaunch,
+    this.onOwnerInvalidated,
   }) : recoveryOperation = null,
        historyReplaySource = null,
        historyReplayOperationId = null;
@@ -144,7 +149,9 @@ final class PairMatchingExperienceHost extends StatefulWidget {
     required this.onExit,
     this.onReview,
     this.decoration,
+    this.onOwnerInvalidated,
   }) : recoveryOperation = operation,
+       canAdmitLaunch = null,
        launch = null,
        source = null,
        preferences = null,
@@ -159,7 +166,9 @@ final class PairMatchingExperienceHost extends StatefulWidget {
     required this.onExit,
     this.onReview,
     this.decoration,
+    this.onOwnerInvalidated,
   }) : historyReplaySource = source,
+       canAdmitLaunch = null,
        historyReplayOperationId = launchOperationId,
        recoveryOperation = null,
        launch = null,
@@ -177,6 +186,13 @@ final class PairMatchingExperienceHost extends StatefulWidget {
   final VoidCallback onExit;
   final ValueChanged<List<ReviewQueueItem>>? onReview;
   final PairBoardDecoration? decoration;
+
+  /// Captured entry validity until a new exact start operation is reserved.
+  /// An accepted or uncertain start keeps its identity through later rebuilds.
+  final bool Function()? canAdmitLaunch;
+
+  /// Presentation cleanup only; canonical owner admission remains in this host.
+  final VoidCallback? onOwnerInvalidated;
   @override
   State<PairMatchingExperienceHost> createState() =>
       _PairMatchingExperienceHostState();
@@ -303,7 +319,8 @@ final class _PairMatchingExperienceHostState
     try {
       final runtime = widget.runtime;
       if (_pendingStart == null) {
-        if (!runtime.newStartsAllowed) {
+        if (!runtime.newStartsAllowed ||
+            widget.canAdmitLaunch?.call() == false) {
           throw StateError('Pair new starts unavailable');
         }
         final original = widget.launch!;
@@ -367,7 +384,8 @@ final class _PairMatchingExperienceHostState
             );
           }
         }
-        if (await runtime.requireOwner() != owner) {
+        if (await runtime.requireOwner() != owner ||
+            widget.canAdmitLaunch?.call() == false) {
           throw StateError('Pair owner changed');
         }
         _pendingStart = PairMatchingStartOperation(
@@ -504,6 +522,7 @@ final class _PairMatchingExperienceHostState
               if (mounted) setState(() => _attachmentRevision++);
             },
             decoration: widget.decoration,
+            onOwnerInvalidated: widget.onOwnerInvalidated,
             onExit: widget.onExit,
             onReview: widget.onReview,
             onReplay: widget.runtime.newStartsAllowed && !_busy
@@ -692,6 +711,7 @@ final class _PairSessionPane extends StatefulWidget
     this.onReview,
     this.onReplay,
     this.decoration,
+    this.onOwnerInvalidated,
     this.feedback,
     this.replayError = false,
   });
@@ -702,6 +722,7 @@ final class _PairSessionPane extends StatefulWidget
   final ValueChanged<List<ReviewQueueItem>>? onReview;
   final Future<void> Function()? onReplay;
   final PairBoardDecoration? decoration;
+  final VoidCallback? onOwnerInvalidated;
   final Widget? feedback;
   final bool replayError;
   @override
@@ -713,6 +734,7 @@ final class _PairSessionPane extends StatefulWidget
     onReview: onReview,
     onReplay: onReplay,
     decoration: decoration,
+    onOwnerInvalidated: onOwnerInvalidated,
     feedback: feedback,
     replayError: replayError,
   );
@@ -733,6 +755,8 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       _audioFailed = false,
       _decorationFailed = false;
   bool _limitEnded = false;
+  bool _configurationUnavailable = false, _unrecordedPending = false;
+  PairMatchingUnavailableSession? _unavailableSession;
   bool _attached = false;
   int? _responseStart;
   PairMatchingHistoryProjection? _result;
@@ -752,6 +776,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     final owner = await widget.runtime.requireOwner();
     if (owner != widget.operation.plan.ownerId) {
       _liveOwner = null;
+      widget.onOwnerInvalidated?.call();
       throw StateError('Pair owner changed');
     }
     _liveOwner = owner;
@@ -767,11 +792,16 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       );
       await _checkOwner();
       if (prior?.session.state == 'abandoned') {
-        await widget.runtime.reader.read(
+        final stopped = await widget.runtime.reader.read(
           ownerId: _liveOwner!,
           sessionId: widget.operation.plan.learningSessionId,
         );
-        if (mounted) setState(() => _limitEnded = true);
+        if (mounted) {
+          setState(() {
+            _limitEnded = true;
+            _unrecordedPending = stopped.snapshot?.frozenEvidence != null;
+          });
+        }
         return;
       }
       _ownerSubscription = widget.runtime.database
@@ -784,6 +814,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
               _liveOwner = owner == widget.operation.plan.ownerId
                   ? owner
                   : null;
+              if (_liveOwner == null) widget.onOwnerInvalidated?.call();
               if (mounted) setState(() => _error = _liveOwner == null);
             }
           });
@@ -871,8 +902,25 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
           setState(() {});
         }
       });
-    } catch (_) {
-      if (mounted) setState(() => _error = true);
+    } catch (error) {
+      if (error is SessionConfigurationResetRequired && !_attached) {
+        _configurationUnavailable = true;
+        try {
+          await _lifecycle?.detachPairPresentation();
+          final unavailable = _unavailableSession ??=
+              PairMatchingUnavailableSession(
+                operation: widget.operation,
+                learning: widget.runtime.learning,
+                requireOwner: widget.runtime.requireOwner,
+              );
+          final resolved = await unavailable.resolve(abandonIncomplete: false);
+          _showUnavailableResolution(resolved);
+        } catch (_) {
+          // Exact saved-session retry remains available. Corrupt/uncertain
+          // receipts never become permission to abandon or fabricate success.
+        }
+      }
+      if (mounted) setState(() => _error = _result == null && !_limitEnded);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -997,6 +1045,49 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     }
   }
 
+  void _showUnavailableResolution(PairAcceptedDispositionSnapshot resolved) {
+    if (!mounted) return;
+    final snapshot = PairMatchingCheckpointCodec.decode(
+      resolved.recovery.checkpoint!.state,
+    );
+    if (resolved.kind == PairAcceptedDispositionKind.stopped) {
+      setState(() {
+        _limitEnded = true;
+        _unrecordedPending = snapshot.frozenEvidence != null;
+      });
+    } else if (resolved.kind == PairAcceptedDispositionKind.complete &&
+        snapshot.terminal?.acknowledged == true) {
+      setState(() {
+        _result = PairMatchingHistoryProjection(snapshot);
+        _error = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _result != null) unawaited(_acknowledgeResult());
+      });
+    }
+  }
+
+  Future<void> _disposeUnavailable() async {
+    if (_busy || !_configurationUnavailable || _unavailableSession == null) {
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = false;
+    });
+    try {
+      await _checkOwner();
+      final result = await _unavailableSession!.resolve(
+        abandonIncomplete: true,
+      );
+      _showUnavailableResolution(result);
+    } catch (_) {
+      if (mounted) setState(() => _error = true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _retryAttachment() async {
     if (_busy || _attached) return;
     setState(() {
@@ -1065,19 +1156,46 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   Future<void> _acknowledgeResult() async {
     try {
       await _checkOwner();
-      await _coordinator!.markSummaryPresented();
+      final unavailable = _unavailableSession;
+      if (unavailable == null) {
+        await _coordinator!.markSummaryPresented();
+      } else {
+        await unavailable.markPresented();
+      }
+      if (mounted) setState(() => _error = false);
     } catch (_) {
       if (mounted) setState(() => _error = true);
     }
   }
 
-  Future<void> _review() => _run(() async {
-    final adapter = widget.runtime.reviewDeferral;
-    final rows = adapter == null
-        ? <ReviewQueueItem>[]
-        : await _coordinator!.deferredReview(adapter);
-    if (mounted) widget.onReview?.call(rows);
-  });
+  Future<void> _review() async {
+    final unavailable = _unavailableSession;
+    if (unavailable != null) {
+      if (_busy) return;
+      setState(() => _busy = true);
+      try {
+        await _checkOwner();
+        final adapter = widget.runtime.reviewDeferral;
+        final rows = adapter == null
+            ? <ReviewQueueItem>[]
+            : await unavailable.deferredReview(adapter);
+        if (mounted) widget.onReview?.call(rows);
+      } catch (_) {
+        if (mounted) setState(() => _error = true);
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+      return;
+    }
+    await _run(() async {
+      final adapter = widget.runtime.reviewDeferral;
+      final rows = adapter == null
+          ? <ReviewQueueItem>[]
+          : await _coordinator!.deferredReview(adapter);
+      if (mounted) widget.onReview?.call(rows);
+    });
+  }
+
   Future<void> _pronounce(PairTile tile) async {
     final session = routeVoiceSession, c = _coordinator;
     if (_busy || session == null || c == null) return;
@@ -1114,7 +1232,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   @override
   Future<void> onVoiceRouteCovered() async {
     final c = _coordinator;
-    if (c == null || _liveOwner == null) return;
+    if (!_attached || c == null || _liveOwner == null) return;
     _coverPause ??= c.pause(PairPauseReason.boardUnavailable);
     if (!_busy) await c.flush();
   }
@@ -1122,7 +1240,13 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   @override
   Future<void> onVoiceRouteResumed() async {
     final c = _coordinator, pause = _coverPause;
-    if (c == null || pause == null || _busy || _liveOwner == null) return;
+    if (!_attached ||
+        c == null ||
+        pause == null ||
+        _busy ||
+        _liveOwner == null) {
+      return;
+    }
     c.releasePause(pause);
     _coverPause = null;
   }
@@ -1130,6 +1254,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   @override
   void dispose() {
     _displayTick?.cancel();
+    _unavailableSession?.dispose();
     final handoff = _lifecycle?.detachPairPresentation();
     if (handoff == null) {
       unawaited(_ownerSubscription?.cancel());
@@ -1162,6 +1287,13 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
                     'This session ended before all pairs were matched. Saved answers are retained.',
                   ),
                 ),
+                if (_unrecordedPending)
+                  Text(
+                    copy(
+                      'คำตอบที่ค้างยังไม่ได้บันทึก และจะไม่ถูกส่งภายหลัง',
+                      'The pending answer was not recorded and will not be submitted later.',
+                    ),
+                  ),
                 TextButton(
                   onPressed: widget.onExit,
                   child: Text(copy('กลับจุดเดิม', 'Return')),
@@ -1212,7 +1344,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
         ),
       );
     }
-    if (c == null || !_attached) {
+    if ((c == null || !_attached) && _result == null) {
       return Center(
         child: _error
             ? SingleChildScrollView(
@@ -1232,8 +1364,27 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
                         copy('ลองเปิดชุดเดิมอีกครั้ง', 'Retry saved session'),
                       ),
                     ),
+                    if (_configurationUnavailable &&
+                        _unavailableSession != null) ...[
+                      Text(
+                        copy(
+                          'การตั้งค่าเดิมใช้ต่อไม่ได้ คุณเลือกจบรอบนี้โดยเก็บคำตอบที่บันทึกแล้วได้',
+                          'These saved settings are no longer available. You can end this session and retain recorded answers.',
+                        ),
+                      ),
+                      OutlinedButton(
+                        key: const ValueKey('pair-dispose-unavailable'),
+                        onPressed: _busy ? null : _disposeUnavailable,
+                        child: Text(
+                          copy(
+                            'จบรอบที่เปิดต่อไม่ได้',
+                            'End unavailable session',
+                          ),
+                        ),
+                      ),
+                    ],
                     TextButton(
-                      onPressed: widget.onExit,
+                      onPressed: _busy ? null : widget.onExit,
                       child: Text(copy('กลับจุดเดิม', 'Return')),
                     ),
                   ],
@@ -1278,7 +1429,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
         ),
       );
     }
-    final timer = c.timer;
+    final timer = c!.timer;
     final status = c.hostStatus;
     final model = PairBoardModel(
       state: c.state,

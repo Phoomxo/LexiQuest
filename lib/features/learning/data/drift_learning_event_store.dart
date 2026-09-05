@@ -347,6 +347,27 @@ final class DriftLearningEventStore {
   Future<LearningEvidenceDecisionSet> ensureDecisionSetForAttempt({
     required db.AnswerAttempt attempt,
     EventEnvelopeV2? sourceEvent,
+  }) => _decisionSetForAttempt(
+    attempt: attempt,
+    sourceEvent: sourceEvent,
+    requireExisting: false,
+  );
+
+  /// Historical recovery must not use receipt creation as proof that an answer
+  /// transaction previously committed.
+  Future<LearningEvidenceDecisionSet> requireExistingDecisionSetForAttempt({
+    required db.AnswerAttempt attempt,
+    required EventEnvelopeV2 sourceEvent,
+  }) => _decisionSetForAttempt(
+    attempt: attempt,
+    sourceEvent: sourceEvent,
+    requireExisting: true,
+  );
+
+  Future<LearningEvidenceDecisionSet> _decisionSetForAttempt({
+    required db.AnswerAttempt attempt,
+    required EventEnvelopeV2? sourceEvent,
+    required bool requireExisting,
   }) async {
     final context = _contextForAttempt(attempt);
     var validatedSource = sourceEvent;
@@ -385,6 +406,10 @@ final class DriftLearningEventStore {
         allowHistoricalEventlessActor: validatedSource == null,
       );
       return expected;
+    }
+
+    if (requireExisting) {
+      throw StateError('committed answer decision receipt is unavailable');
     }
 
     final configuredMode = await rolloutModeProvider.resolve(

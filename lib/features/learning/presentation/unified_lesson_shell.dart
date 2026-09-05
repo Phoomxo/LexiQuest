@@ -687,13 +687,13 @@ final class UnifiedLessonRouteLifecycle {
 
   Future<void> retire() {
     _accepting = false;
-    final pair = _pairSession;
-    if (pair != null) {
-      _pairRetirementPause ??= pair.pause(PairPauseReason.boardUnavailable);
-    }
     _ephemeralStates.clear();
     final existing = _terminal;
     if (existing != null) return existing;
+    final pair = _pairSession;
+    if (pair != null && pair.activeOwnerId() == pair.operation.plan.ownerId) {
+      _pairRetirementPause ??= pair.pause(PairPauseReason.boardUnavailable);
+    }
     final cutoff = _retirementCutoff ??= _controller.captureTerminalCutoff(
       _nowUtc(),
     );
@@ -733,6 +733,17 @@ final class UnifiedLessonRouteLifecycle {
     while (_acceptedOperations.isNotEmpty) {
       await Future.wait<void>(_acceptedOperations.toList(growable: false));
     }
+    if (preservePreacceptedSessionOnAttachmentFailure &&
+        _loadedSessionId != null &&
+        !_initializationAttached) {
+      // Restoration alone is not current configuration authorization. The
+      // reserved Pair has not captured new work before attachment, so preserve
+      // its durable pending bytes instead of retrying a denied first write.
+      await configurationClose;
+      await settledTimeClose;
+      _pairSession?.dispose();
+      return;
+    }
     if (_pairSession != null) {
       // The reserved coordinator settles under a bounded route lease. New
       // operations remain refused outside this exact preparation.
@@ -761,11 +772,6 @@ final class UnifiedLessonRouteLifecycle {
         close,
         _acceptedCloseCutoff ?? cutoff,
       );
-      return;
-    }
-    if (preservePreacceptedSessionOnAttachmentFailure &&
-        _loadedSessionId != null &&
-        !_initializationAttached) {
       return;
     }
     if (_pairSession != null) {

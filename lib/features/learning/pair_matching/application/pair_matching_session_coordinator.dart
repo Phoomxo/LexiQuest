@@ -515,7 +515,7 @@ final class PairMatchingSessionCoordinator {
     timer: timer,
     terminal: _snapshot.terminal,
   );
-  Future<void> _resumeEvidence() async {
+  Future<void> _resumeEvidence({bool committedOnly = false}) async {
     final pending = _pending;
     if (pending == null) {
       if (_pendingSnapshot != null) {
@@ -559,7 +559,13 @@ final class PairMatchingSessionCoordinator {
       await _append(_currentSnapshot(frozen: _frozen!.toJson()));
     }
     _requireLive();
-    if (!pending.isCommitted) {
+    if (committedOnly) {
+      await learning.replayAcceptedPairAnswer(
+        ownerId: operation.plan.ownerId,
+        startOperation: operation.stableSerialization,
+        sourceEvidenceId: pending.sourceEvidenceId,
+      );
+    } else if (!pending.isCommitted) {
       await (pending.requiresRetry ? pending.retry() : pending.record());
     }
     _requireLive();
@@ -582,6 +588,19 @@ final class PairMatchingSessionCoordinator {
   Future<void> retryPending() => _admit(() async {
     await _resumeEvidence();
     if (_close != null || _snapshot.terminal != null) await _finishRecovery();
+  }, recovery: true);
+
+  /// Exact historical acknowledgement only. This cannot turn a frozen but
+  /// never committed occurrence into a first write after authority withdrawal.
+  Future<void> retryCommittedPending() => _admit(() async {
+    if (_capturedState != null ||
+        _snapshot.engine.pending == null ||
+        _snapshot.frozenEvidence == null) {
+      throw StateError(
+        'Pair committed retry requires durable pending identity',
+      );
+    }
+    await _resumeEvidence(committedOnly: true);
   }, recovery: true);
   Future<List<ReviewQueueItem>> deferredReview(
     PairReviewDeferral adapter,
