@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -6,11 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_atomic_start.dart';
 import 'pair_matching_source_composer_test.dart' as f;
+import 'package:vocab_learning_app/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
 
 void main() {
   late AppDatabase db;
@@ -81,6 +85,81 @@ void main() {
         repository: repo,
         capability: capability,
       ).start(value ?? operation);
+  test(
+    'Pair initial rejects progressed codec and mismatched start build',
+    () async {
+      final progressed = PairMatchingCheckpointSnapshot(
+        engine: PairMatchingState.initial(plan),
+        startOperation: operation.stableSerialization,
+      ).toJson();
+      final changedStart =
+          jsonDecode(operation.stableSerialization) as Map<String, dynamic>;
+      changedStart['buildId'] = 'synthetic-other-build';
+      for (final state in [
+        progressed,
+        {
+          ...operation.initialCheckpoint.state,
+          'startOperation': jsonEncode(changedStart),
+        },
+      ]) {
+        await expectLater(
+          repo.startPinnedPairSession(
+            session: operation.session,
+            plan: plan,
+            launchOperationId: operation.launchOperationId,
+            checkpoint: LearningActivityCheckpoint(
+              sessionId: plan.learningSessionId,
+              activityType: 'matching',
+              revision: 1,
+              occurredAtUtc: plan.createdAtUtc,
+              state: state,
+            ),
+            capability: capability,
+          ),
+          throwsA(anyOf(isA<StateError>(), isA<ArgumentError>())),
+        );
+        expect(await db.select(db.learningSessions).get(), isEmpty);
+      }
+    },
+  );
+  test('generic learning start cannot bypass Pair capability', () async {
+    await expectLater(
+      repo.startSessionWithCheckpoint(
+        session: operation.session,
+        checkpoint: operation.initialCheckpoint,
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      () => repo.startExactPinnedSessionWithCheckpoint(
+        session: operation.session,
+        content: plan.orderedLexicalItems
+            .map(
+              (i) => PinnedQuizContent(
+                identity: ContentIdentity(
+                  type: ContentType.lexicalMetadata,
+                  id: i.wordId,
+                  revision: i.contentRevision,
+                ),
+                checksumSha256: i.checksum,
+              ),
+            )
+            .toList(),
+        checkpoint: operation.initialCheckpoint,
+      ),
+      throwsStateError,
+    );
+    expect(await db.select(db.learningSessions).get(), isEmpty);
+    await repo.startSession(operation.session);
+    await expectLater(
+      repo.appendActivityCheckpoint(
+        ownerId: plan.ownerId,
+        checkpoint: operation.initialCheckpoint,
+      ),
+      throwsStateError,
+    );
+    expect(await db.select(db.eventsV2).get(), isEmpty);
+  });
   test(
     'atomic start/restart lost ack uses identical session and initial checkpoint',
     () async {
@@ -307,7 +386,21 @@ void main() {
           activityType: 'matching',
           revision: 2,
           occurredAtUtc: plan.createdAtUtc.add(const Duration(seconds: 1)),
-          state: {...operation.initialCheckpoint.state, 'operationRevision': 1},
+          state: PairMatchingCheckpointSnapshot(
+            engine: PairMatchingEngine.reduce(
+              PairMatchingState.initial(plan),
+              PairSelectTile(
+                operationId: '0:select',
+                ownerId: plan.ownerId,
+                sessionId: plan.learningSessionId,
+                roundOrdinal: 0,
+                expectedRevision: 0,
+                tile: const PairTile(PairTileSide.prompt, 'synthetic-0'),
+                responseTimeMs: 0,
+              ),
+            ).state,
+            startOperation: operation.stableSerialization,
+          ).toJson(),
         ),
       );
       await start(

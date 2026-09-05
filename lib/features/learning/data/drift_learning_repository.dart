@@ -28,6 +28,11 @@ import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
 import '../pair_matching/domain/pair_matching_launch.dart';
+import '../pair_matching/domain/pair_matching_engine.dart';
+import '../domain/learning_activity_recovery_limits.dart';
+import '../pair_matching/data/pair_matching_checkpoint_codec.dart';
+import '../application/current_activity_evidence.dart'
+    show FrozenPendingCurrentActivityEvidence;
 
 final class DriftLearningRepository
     implements
@@ -41,8 +46,10 @@ final class DriftLearningRepository
         ExactPinnedLearningActivityRepository,
         PairPinnedLearningActivityRepository,
         ReviewSessionLearningRepository {
-  static const int maxActivityRecoveryCheckpoints = 64;
-  static const int maxActivityRecoveryAttempts = 128;
+  static const int maxActivityRecoveryCheckpoints =
+      LearningActivityRecoveryLimits.maximumCheckpoints;
+  static const int maxActivityRecoveryAttempts =
+      LearningActivityRecoveryLimits.maximumAttempts;
 
   DriftLearningRepository(
     this.database, {
@@ -442,6 +449,17 @@ final class DriftLearningRepository
     required LearningSessionDraft session,
     required List<PinnedQuizContent> content,
     required LearningActivityCheckpoint checkpoint,
+  }) => _startExactPinnedSessionWithCheckpoint(
+    session: session,
+    content: content,
+    checkpoint: checkpoint,
+  );
+
+  Future<void> _startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+    bool pairAdmission = false,
   }) {
     final frozenContent = List<PinnedQuizContent>.unmodifiable(content);
     if (checkpoint.sessionId != session.id ||
@@ -492,6 +510,7 @@ final class DriftLearningRepository
         checkpoint: canonicalCheckpoint,
         sessionId: sessionId,
         ownerId: ownerId,
+        pairAdmission: pairAdmission,
       );
     });
   }
@@ -559,6 +578,9 @@ final class DriftLearningRepository
         return;
       }
       capability.requireAllowed(plan);
+      PairMatchingCheckpointCodec.requireCompletionCapacity(
+        _decodePinnedPairCheckpoint(frozen.state),
+      );
       final ids = plan.orderedLexicalItems.map((i) => i.wordId).toList();
       final reports =
           await (database.select(database.contentQualityReports)
@@ -596,8 +618,9 @@ final class DriftLearningRepository
         }
       }
       capability.requireAllowed(plan);
-      await startExactPinnedSessionWithCheckpoint(
+      await _startExactPinnedSessionWithCheckpoint(
         session: session,
+        pairAdmission: true,
         content: plan.orderedLexicalItems
             .map(
               (i) => PinnedQuizContent(
@@ -622,6 +645,7 @@ final class DriftLearningRepository
     required LearningActivityCheckpoint checkpoint,
     required String sessionId,
     required String ownerId,
+    bool pairAdmission = false,
   }) async {
     var stored = await (database.select(
       database.learningSessions,
@@ -664,7 +688,11 @@ final class DriftLearningRepository
             session.sessionConfiguration?.stableSerialization) {
       throw StateError('learning activity session identity conflict');
     }
-    await _appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
+    await _appendActivityCheckpoint(
+      ownerId: ownerId,
+      checkpoint: checkpoint,
+      pairAdmission: pairAdmission,
+    );
   }
 
   @override
@@ -699,7 +727,7 @@ final class DriftLearningRepository
       );
     }
     final stateBytes = utf8.encode(jsonEncode(canonicalState)).length;
-    if (stateBytes > 65536) {
+    if (stateBytes > LearningActivityRecoveryLimits.maximumCheckpointBytes) {
       throw ArgumentError.value(
         stateBytes,
         'state',
@@ -720,6 +748,7 @@ final class DriftLearningRepository
   Future<void> _appendActivityCheckpoint({
     required String ownerId,
     required LearningActivityCheckpoint checkpoint,
+    bool pairAdmission = false,
   }) async {
     final requiredOwnerId = _required(ownerId, 'ownerId');
     final sessionId = _required(checkpoint.sessionId, 'sessionId');
@@ -779,6 +808,18 @@ final class DriftLearningRepository
       ownerId: requiredOwnerId,
       session: session,
     );
+    if (activityType == 'matching' &&
+        (canonicalState['schemaVersion'] == 6 ||
+            latest?.state['schemaVersion'] == 6)) {
+      if (latest == null && !pairAdmission) {
+        throw StateError('Pair initial requires authorized atomic admission');
+      }
+      await _validatePinnedPairCheckpoint(
+        session: session,
+        checkpoint: checkpoint,
+        latest: latest,
+      );
+    }
     if (latest != null && latest.revision >= checkpoint.revision) {
       if (latest.revision == checkpoint.revision &&
           jsonEncode(latest.state) == stateJson &&
@@ -835,6 +876,9 @@ final class DriftLearningRepository
           ),
           mode: InsertMode.insertOrIgnore,
         );
+    if (activityType == 'matching' && canonicalState['schemaVersion'] == 6) {
+      await _requireActivePairOwner(requiredOwnerId);
+    }
     final stored = await (database.select(
       database.eventsV2,
     )..where((row) => row.eventId.equals(key))).getSingleOrNull();
@@ -1447,7 +1491,18 @@ final class DriftLearningRepository
       if (word == null) {
         throw StateError('active vocabulary word not found');
       }
+      final pairCheckpoint = session.activityType == 'matching'
+          ? await _latestActivityCheckpoint(
+              ownerId: command.ownerId,
+              session: session,
+            )
+          : null;
+      final isPair = pairCheckpoint?.state['schemaVersion'] == 6;
+      if (isPair) {
+        await _validatePinnedPairAnswer(command, pairCheckpoint!);
+      }
       if (word.isDeleted &&
+          !isPair &&
           !await _isValidPinnedDeletedMatchingAnswer(
             command: command,
             session: session,
@@ -1515,12 +1570,207 @@ final class DriftLearningRepository
           occurredAtUtc: command.occurredAtUtc,
         );
       }
+      if (isPair) await _requireActivePairOwner(command.ownerId);
       return AnswerRecordResult(
         inserted: true,
         isCorrect: command.isCorrect,
         srs: decisionSet.allows(LearningProjection.masterySrs) ? next : null,
       );
     });
+  }
+
+  Future<void> _requireActivePairOwner(String ownerId) async {
+    final owners =
+        await (database.select(database.localOwners)
+              ..where((r) => r.isActive.equals(true))
+              ..limit(2))
+            .get();
+    if (owners.length != 1 || owners.single.id != ownerId) {
+      throw StateError('Pair canonical owner changed');
+    }
+  }
+
+  PairMatchingCheckpointSnapshot _decodePinnedPairCheckpoint(
+    Map<String, Object?> state,
+  ) {
+    try {
+      return PairMatchingCheckpointCodec.decode(state);
+    } on FormatException {
+      throw StateError('Pinned Pair checkpoint is invalid');
+    }
+  }
+
+  FrozenPendingCurrentActivityEvidence _pinnedPairOccurrence(
+    PairMatchingCheckpointSnapshot snapshot,
+  ) {
+    final frozen = FrozenPendingCurrentActivityEvidence.fromJson(
+      snapshot.frozenEvidence!,
+    );
+    final role = snapshot.engine.pending!;
+    final item = snapshot.engine.plan.orderedLexicalItems.singleWhere(
+      (i) => i.wordId == role.promptWordId,
+    );
+    final pin = LexicalPromptArtifactResolver.resolveForAdapter(
+      promptMode: 'matchingPair',
+      wordId: item.wordId,
+      coreRevision: item.contentRevision,
+      coreChecksumSha256: item.checksum,
+    );
+    if (pin == null ||
+        frozen.contentRevision != pin.evidenceContentRevision ||
+        frozen.declaredEvidenceClass !=
+            (role.role == PairAttemptRole.guidedCompletion
+                ? EvidenceClass.guidedPractice
+                : EvidenceClass.recognition) ||
+        frozen.contrastiveFeedback != null) {
+      throw StateError('Pair occurrence pin/classification changed');
+    }
+    return frozen;
+  }
+
+  Future<void> _validatePinnedPairAnswer(
+    RecordAnswerCommand command,
+    LearningActivityCheckpoint checkpoint,
+  ) async {
+    await _requireActivePairOwner(command.ownerId);
+    final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+    if (snapshot.frozenEvidence == null) {
+      throw StateError('Pair answer has no durable reservation');
+    }
+    final frozen = _pinnedPairOccurrence(snapshot);
+    final event = command.event;
+    if (event == null ||
+        command.ownerId != frozen.ownerId ||
+        command.sessionId != frozen.sessionId ||
+        command.id != frozen.sourceEvidenceId ||
+        command.wordId != frozen.wordId ||
+        command.promptMode != frozen.promptMode ||
+        command.isCorrect != frozen.isCorrect ||
+        command.responseTimeMs != frozen.responseTimeMs ||
+        command.attemptNumber != frozen.attemptNumber ||
+        command.occurredAtUtc != frozen.occurredAtUtc ||
+        command.providerProvenance != frozen.providerProvenance ||
+        event.actorIdentity != frozen.actorIdentity ||
+        jsonEncode(command.evidenceContext.toJson()) !=
+            jsonEncode(frozen.evidenceContext.toJson()) ||
+        jsonEncode(
+              LearningEventContext.fromEvidenceEnvelope(
+                envelope: event,
+                evidenceContext: command.evidenceContext,
+              ).toJson(),
+            ) !=
+            jsonEncode(frozen.eventContext.toJson())) {
+      throw StateError('Pair answer differs from reserved occurrence');
+    }
+  }
+
+  Future<void> _validatePinnedPairCheckpoint({
+    required db.LearningSession session,
+    required LearningActivityCheckpoint checkpoint,
+    required LearningActivityCheckpoint? latest,
+  }) async {
+    await _requireActivePairOwner(session.ownerId);
+    if (checkpoint.state['schemaVersion'] != 6) {
+      throw StateError('Pair writer cannot downgrade');
+    }
+    final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+    final plan = snapshot.engine.plan;
+    final start = jsonDecode(snapshot.startOperation) as Map<String, dynamic>;
+    if (plan.ownerId != session.ownerId ||
+        plan.learningSessionId != session.id ||
+        plan.createdAtUtc.millisecondsSinceEpoch != session.startedAtUtcMs ||
+        start['appVersion'] != session.appVersion ||
+        start['buildId'] != session.buildId) {
+      throw StateError('Pair checkpoint session changed');
+    }
+    if (latest == null &&
+        jsonEncode(checkpoint.state) !=
+            jsonEncode(
+              PairMatchingCheckpointCodec.initialState(
+                plan,
+                snapshot.startOperation,
+              ),
+            )) {
+      throw StateError('Pair initial checkpoint must be empty');
+    }
+    if (latest == null) {
+      PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
+    }
+    if (latest != null) {
+      final prior = _decodePinnedPairCheckpoint(latest.state);
+      if (prior.startOperation != snapshot.startOperation ||
+          prior.engine.plan.planFingerprint != plan.planFingerprint ||
+          snapshot.engine.operationRevision < prior.engine.operationRevision ||
+          snapshot.engine.attempts.length < prior.engine.attempts.length ||
+          !snapshot.engine.supportedWordIds.containsAll(
+            prior.engine.supportedWordIds,
+          )) {
+        throw StateError('Pair checkpoint lineage regressed');
+      }
+      for (var i = 0; i < prior.engine.attempts.length; i++) {
+        if (jsonEncode(snapshot.engine.attempts[i].toJson()) !=
+                jsonEncode(prior.engine.attempts[i].toJson()) ||
+            snapshot.evidenceIds[i] != prior.evidenceIds[i]) {
+          throw StateError('Pair committed ledger changed');
+        }
+      }
+      for (final entry in prior.engine.supportAtRevision.entries) {
+        if (snapshot.engine.supportAtRevision[entry.key] != entry.value) {
+          throw StateError('Pair support acquisition changed');
+        }
+      }
+      if (prior.engine.pending != null) {
+        final next =
+            snapshot.engine.pending ??
+            (snapshot.engine.attempts.length > prior.engine.attempts.length
+                ? snapshot.engine.attempts.last
+                : null);
+        if (next == null ||
+            jsonEncode(next.toJson()) !=
+                jsonEncode(prior.engine.pending!.toJson()) ||
+            (snapshot.engine.pending != null &&
+                jsonEncode(snapshot.frozenEvidence) !=
+                    jsonEncode(prior.frozenEvidence))) {
+          throw StateError('Pair pending reservation changed');
+        }
+      }
+    }
+    if (snapshot.frozenEvidence != null) _pinnedPairOccurrence(snapshot);
+    final answers =
+        await (database.select(database.answerAttempts)
+              ..where(
+                (r) =>
+                    r.ownerId.equals(session.ownerId) &
+                    r.sessionId.equals(session.id),
+              )
+              ..orderBy([(r) => OrderingTerm.asc(r.attemptNumber)])
+              ..limit(maxActivityRecoveryAttempts + 1))
+            .get();
+    final expected = [
+      ...snapshot.engine.attempts,
+      if (snapshot.engine.pending != null) snapshot.engine.pending!,
+    ];
+    if (answers.length < snapshot.engine.attempts.length ||
+        answers.length > expected.length) {
+      throw StateError('Pair checkpoint lost or invented attempts');
+    }
+    for (var i = 0; i < answers.length; i++) {
+      final a = answers[i], role = expected[i];
+      final id = i < snapshot.evidenceIds.length
+          ? snapshot.evidenceIds[i]
+          : snapshot.frozenEvidence!['sourceEvidenceId'];
+      if (a.id != id ||
+          a.wordId != role.promptWordId ||
+          a.isCorrect != role.isCorrect ||
+          a.attemptNumber != i + 1 ||
+          a.responseTimeMs != role.responseTimeMs ||
+          a.evidenceClass !=
+              (role.role == PairAttemptRole.guidedCompletion
+                  ? 'guidedPractice'
+                  : 'recognition')) {
+        throw StateError('Pair checkpoint does not match canonical attempts');
+      }
+    }
   }
 
   Future<bool> _isValidPinnedDeletedMatchingAnswer({

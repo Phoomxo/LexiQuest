@@ -3,6 +3,7 @@ import '../../domain/learning_models.dart';
 import '../../domain/learning_repository.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_matching_plan.dart';
+import '../data/pair_matching_checkpoint_codec.dart';
 import 'pair_matching_source_composer.dart';
 
 /// No production call site. The owner of internal delivery supplies a live
@@ -113,21 +114,10 @@ final class PairMatchingStartOperation {
         activityType: 'matching',
         revision: 1,
         occurredAtUtc: plan.createdAtUtc,
-        state: Map.unmodifiable({
-          'schemaVersion': 6,
-          'planFingerprint': plan.planFingerprint,
-          'plan': plan.toJson(),
-          'startOperation': stableSerialization,
-          'roundOrdinal': 0,
-          'operationRevision': 0,
-          'selectedTileId': null,
-          'matchedPairIds': const <String>[],
-          'firstOpportunityLedger': const <Object?>[],
-          'repairTickets': const <Object?>[],
-          'activeElapsedMs': 0,
-          'extensionUsed': false,
-          'pendingOperation': null,
-        }),
+        state: PairMatchingCheckpointCodec.initialState(
+          plan,
+          stableSerialization,
+        ),
       );
 }
 

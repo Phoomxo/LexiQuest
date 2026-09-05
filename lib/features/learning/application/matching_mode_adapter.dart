@@ -17,6 +17,8 @@ import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
+import '../pair_matching/application/pair_matching_atomic_start.dart';
+import '../pair_matching/application/pair_matching_session_coordinator.dart';
 
 typedef MatchingSessionCompleter =
     Future<LearningSessionSummary> Function(PendingLearningSessionClose close);
@@ -553,9 +555,32 @@ final class MatchingModeAdapter
     );
   }
 
-  /// Reconstructs the newest canonical Matching session, or atomically starts
-  /// a new checkpointed session. Vocabulary is snapshotted in the checkpoint
-  /// so later edits cannot change an interrupted board.
+  /// Restores an already admitted v6 Pair through the same M12 lifecycle
+  /// leases supplied by the host. This never launches or enables delivery.
+  Future<PairMatchingSessionCoordinator> preparePairSession({
+    required PairMatchingStartOperation operation,
+    required LearningUseCases learning,
+    required CurrentActivityEvidenceAdapter evidence,
+    required String? Function() activeOwnerId,
+    MatchingOperationAcceptance? acceptsOperation,
+    MatchingAdmittedOperation? runAdmittedOperation,
+    MatchingRecoveryOperation? runRecoveryOperation,
+  }) => PairMatchingSessionCoordinator.restore(
+    operation: operation,
+    learning: learning,
+    evidence: evidence,
+    activeOwnerId: activeOwnerId,
+    acceptsOperation: acceptsOperation,
+    runAdmittedOperation: runAdmittedOperation == null
+        ? null
+        : (action) => runAdmittedOperation<void>(action),
+    runRecoveryOperation: runRecoveryOperation == null
+        ? null
+        : (action) => runRecoveryOperation<void>(action),
+  );
+
+  /// Reconstructs the newest canonical legacy Matching session, or atomically
+  /// starts one. Vocabulary snapshots preserve an interrupted board.
   Future<MatchingPreparedSession> prepareSession({
     required LearningUseCases learning,
     required CurrentActivityEvidenceAdapter evidence,
