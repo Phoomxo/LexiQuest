@@ -100,6 +100,15 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 import '../support/inert_research_dependencies.dart';
 
 void main() {
+  test('feature-off Pair launch remains absent from production navigation', () {
+    final registration = buildLessonModeRegistry().find(LessonMode.matching)!;
+
+    expect(registration.productionEntryId, 'home/learn/quiz');
+    expect(registration.routeName, 'learning/matching');
+    expect(registration.isDeliverable, isFalse);
+    expect(buildLessonModeRegistry().resolve(LessonMode.matching), isNull);
+  });
+
   final productionEntries = <_ProductionEntryCase>[
     const _ProductionEntryCase(
       feature: Feature.vocabulary,

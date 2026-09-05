@@ -256,6 +256,24 @@ void main() {
     expect(sessions.single.activityType, MatchingModeAdapter.activityType);
   });
 
+  testWidgets('PM0 baseline renders the existing f10 board only', (
+    tester,
+  ) async {
+    await tester.pumpWidget(MaterialApp(home: _screen(learning)));
+    await _pumpUntilFound(tester, find.text('Matching'));
+    await _pumpUntilFound(
+      tester,
+      find.byKey(const ValueKey<String>('matching-word-word:airport')),
+    );
+
+    expect(find.text('Matching'), findsOneWidget);
+    expect(find.text('Words'), findsOneWidget);
+    expect(find.text('Meanings'), findsOneWidget);
+    expect(find.bySemanticsLabel('0 of 3 pairs matched'), findsOneWidget);
+    expect(find.textContaining('Time remaining:'), findsOneWidget);
+    expect(find.textContaining('star'), findsNothing);
+  });
+
   testWidgets('default implemented-off registry cannot initialize the screen', (
     tester,
   ) async {

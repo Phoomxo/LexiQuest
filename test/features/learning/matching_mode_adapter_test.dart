@@ -34,6 +34,26 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
+  test(
+    'PM0 boundary keeps matching on recognition evidence and bounded recovery',
+    () {
+      const adapter = MatchingModeAdapter();
+
+      expect(adapter.mode, LessonMode.matching);
+      expect(MatchingModeAdapter.activityType, 'matching');
+      expect(MatchingModeAdapter.maximumCheckpoints, 64);
+      expect(
+        adapter
+            .classifyResponse(
+              hint: const HintUsageSnapshot.known(0),
+              supportUsed: false,
+            )
+            .evidenceClass,
+        EvidenceClass.recognition,
+      );
+    },
+  );
+
   const adapter = MatchingModeAdapter();
 
   test('pins a deterministic ambiguity-safe pair set for restart', () {
