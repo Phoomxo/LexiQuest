@@ -710,6 +710,93 @@ void main() {
     expect(await database.select(database.answerAttempts).get(), hasLength(4));
   });
 
+  test('recovered flashcard skip cannot be replayed as an exposure', () async {
+    recovery = AdventureRecoveryUseCases(
+      learning: learning,
+      evidence: evidence,
+      canStartNewMission: () => true,
+      isRepairModeEligible: (_, mode, prompt) =>
+          mode == LessonMode.flashcard && prompt == 'flashcardExposure',
+      spacingForIdentity: (_) => 3,
+    );
+    final run = await recovery.startOrResume(
+      plan: plan,
+      activeOwnerId: ownerId,
+    );
+    for (var index = 0; index < plan.content.length; index += 1) {
+      await _recordOriginal(
+        recovery: recovery,
+        evidence: evidence,
+        plan: plan,
+        index: index,
+        isCorrect: index != 0,
+      );
+    }
+    await recovery.checkpointSkippedOccurrence(
+      identity: plan.content.first,
+      originalIndex: plan.content.length,
+      role: AdventureLearningItemRole.repair,
+      mode: LessonMode.flashcard,
+      promptVariant: 'flashcardExposure',
+    );
+
+    final restarted = AdventureRecoveryUseCases(
+      learning: learning,
+      evidence: evidence,
+      canStartNewMission: () => false,
+      isRepairModeEligible: (_, mode, prompt) =>
+          mode == LessonMode.flashcard && prompt == 'flashcardExposure',
+      spacingForIdentity: (_) => 3,
+    );
+    final restored = await restarted.recoverExact(
+      ownerId: ownerId,
+      sessionId: run.session.id,
+    );
+
+    expect(restored, isNotNull);
+    expect(
+      restored!.state.pendingOccurrence!.checkpointOnlyOutcome,
+      AdventureAttemptOutcome.skipped,
+    );
+    expect(
+      () => restarted.acceptPendingOccurrence(
+        AdventureRepairAttempt(
+          identity: plan.content.first,
+          mode: LessonMode.flashcard,
+          promptVariant: 'flashcardExposure',
+          outcome: AdventureAttemptOutcome.exposure,
+          evidenceClass: null,
+          canonicalEvidenceCommitted: false,
+          sourceEvidenceId: null,
+          isRepair: true,
+        ),
+        nextOriginalIndex: plan.content.length,
+        remainingOriginalItems: 0,
+      ),
+      throwsStateError,
+    );
+    final decision = restarted.acceptPendingOccurrence(
+      AdventureRepairAttempt(
+        identity: plan.content.first,
+        mode: LessonMode.flashcard,
+        promptVariant: 'flashcardExposure',
+        outcome: AdventureAttemptOutcome.skipped,
+        evidenceClass: null,
+        canonicalEvidenceCommitted: false,
+        sourceEvidenceId: null,
+        isRepair: true,
+      ),
+      nextOriginalIndex: plan.content.length,
+      remainingOriginalItems: 0,
+    );
+
+    expect(
+      decision.disposition,
+      AdventureRepairDisposition.deferredToCanonicalReview,
+    );
+    expect(restarted.currentRun!.state.pendingOccurrence, isNull);
+  });
+
   test(
     'skipped occurrence is checkpointed without evidence and advances only after acceptance',
     () async {

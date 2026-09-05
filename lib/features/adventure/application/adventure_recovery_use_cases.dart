@@ -31,7 +31,7 @@ final class AdventureLearningPendingOccurrence {
   factory AdventureLearningPendingOccurrence.fromJson(
     Map<String, Object?> json,
   ) {
-    const keys = <String>{
+    const legacyKeys = <String>{
       'identity',
       'role',
       'lessonMode',
@@ -39,30 +39,45 @@ final class AdventureLearningPendingOccurrence {
       'ordinal',
       'evidence',
     };
-    if (json.length != keys.length ||
-        !json.keys.every(keys.contains) ||
-        json['ordinal'] is! int) {
+    const keys = <String>{...legacyKeys, 'checkpointOnlyOutcome'};
+    final isLegacy =
+        json.length == legacyKeys.length &&
+        json.keys.every(legacyKeys.contains);
+    final isCurrent =
+        json.length == keys.length && json.keys.every(keys.contains);
+    if ((!isLegacy && !isCurrent) || json['ordinal'] is! int) {
       throw const FormatException(
         'invalid mixed-review pending occurrence schema',
       );
     }
     final evidenceJson = json['evidence'];
+    final role = AdventureLearningCheckpointState._enumByName(
+      AdventureLearningItemRole.values,
+      json['role'],
+      'pendingOccurrence.role',
+    );
+    final mode = AdventureLearningCheckpointState._enumByName(
+      LessonMode.values,
+      json['lessonMode'],
+      'pendingOccurrence.lessonMode',
+    );
+    final promptVariant = AdventureLearningCheckpointState._requiredString(
+      json,
+      'promptVariant',
+    );
+    final checkpointOnlyOutcome = isCurrent
+        ? _decodeCheckpointOnlyOutcome(json['checkpointOnlyOutcome'])
+        : _inferLegacyCheckpointOnlyOutcome(
+            role: role,
+            mode: mode,
+            promptVariant: promptVariant,
+            hasEvidence: evidenceJson != null,
+          );
     return AdventureLearningPendingOccurrence._validated(
       identity: _decodeLearningIdentity(json['identity']),
-      role: AdventureLearningCheckpointState._enumByName(
-        AdventureLearningItemRole.values,
-        json['role'],
-        'pendingOccurrence.role',
-      ),
-      mode: AdventureLearningCheckpointState._enumByName(
-        LessonMode.values,
-        json['lessonMode'],
-        'pendingOccurrence.lessonMode',
-      ),
-      promptVariant: AdventureLearningCheckpointState._requiredString(
-        json,
-        'promptVariant',
-      ),
+      role: role,
+      mode: mode,
+      promptVariant: promptVariant,
       ordinal: json['ordinal']! as int,
       evidence: evidenceJson == null
           ? null
@@ -72,7 +87,34 @@ final class AdventureLearningPendingOccurrence {
                 'pendingOccurrence.evidence',
               ),
             ),
+      checkpointOnlyOutcome: checkpointOnlyOutcome,
     );
+  }
+
+  static AdventureAttemptOutcome? _decodeCheckpointOnlyOutcome(Object? raw) =>
+      raw == null
+      ? null
+      : AdventureLearningCheckpointState._enumByName(
+          AdventureAttemptOutcome.values,
+          raw,
+          'pendingOccurrence.checkpointOnlyOutcome',
+        );
+
+  static AdventureAttemptOutcome? _inferLegacyCheckpointOnlyOutcome({
+    required AdventureLearningItemRole role,
+    required LessonMode mode,
+    required String promptVariant,
+    required bool hasEvidence,
+  }) {
+    if (hasEvidence) return null;
+    if (role == AdventureLearningItemRole.repair &&
+        mode == LessonMode.flashcard &&
+        promptVariant == 'flashcardExposure') {
+      throw const FormatException(
+        'legacy flashcard checkpoint has ambiguous completion intent',
+      );
+    }
+    return AdventureAttemptOutcome.skipped;
   }
 
   factory AdventureLearningPendingOccurrence._validated({
@@ -82,6 +124,7 @@ final class AdventureLearningPendingOccurrence {
     required String promptVariant,
     required int ordinal,
     required FrozenPendingCurrentActivityEvidence? evidence,
+    required AdventureAttemptOutcome? checkpointOnlyOutcome,
   }) {
     if (identity.type != ContentType.lexicalMetadata ||
         identity.id.isEmpty ||
@@ -100,6 +143,18 @@ final class AdventureLearningPendingOccurrence {
         'pending evidence conflicts with its mixed-review occurrence',
       );
     }
+    final validCheckpointOnlyOutcome = evidence != null
+        ? checkpointOnlyOutcome == null
+        : checkpointOnlyOutcome == AdventureAttemptOutcome.skipped ||
+              checkpointOnlyOutcome == AdventureAttemptOutcome.exposure &&
+                  role == AdventureLearningItemRole.repair &&
+                  mode == LessonMode.flashcard &&
+                  promptVariant == 'flashcardExposure';
+    if (!validCheckpointOnlyOutcome) {
+      throw const FormatException(
+        'invalid mixed-review checkpoint-only completion intent',
+      );
+    }
     return AdventureLearningPendingOccurrence._(
       identity: identity,
       role: role,
@@ -107,6 +162,7 @@ final class AdventureLearningPendingOccurrence {
       promptVariant: promptVariant,
       ordinal: ordinal,
       evidence: evidence,
+      checkpointOnlyOutcome: checkpointOnlyOutcome,
     );
   }
 
@@ -117,6 +173,7 @@ final class AdventureLearningPendingOccurrence {
     required this.promptVariant,
     required this.ordinal,
     required this.evidence,
+    required this.checkpointOnlyOutcome,
   });
 
   final ContentIdentity identity;
@@ -125,6 +182,7 @@ final class AdventureLearningPendingOccurrence {
   final String promptVariant;
   final int ordinal;
   final FrozenPendingCurrentActivityEvidence? evidence;
+  final AdventureAttemptOutcome? checkpointOnlyOutcome;
 
   Map<String, Object?> toJson() => _freezeJsonMap(<String, Object?>{
     'identity': _encodeLearningIdentity(identity),
@@ -133,6 +191,7 @@ final class AdventureLearningPendingOccurrence {
     'promptVariant': promptVariant,
     'ordinal': ordinal,
     'evidence': evidence?.toJson(),
+    'checkpointOnlyOutcome': checkpointOnlyOutcome?.name,
   });
 }
 
@@ -837,6 +896,7 @@ final class AdventureRecoveryUseCases {
       promptVariant: frozen.promptMode,
       ordinal: run.state.nextOccurrenceOrdinal,
       evidence: frozen,
+      checkpointOnlyOutcome: null,
     );
     final next = run.state.transition(
       currentOriginalIndex: originalIndex,
@@ -869,6 +929,7 @@ final class AdventureRecoveryUseCases {
       mode: LessonMode.flashcard,
       promptVariant: 'flashcardExposure',
       originalIndex: originalIndex,
+      outcome: AdventureAttemptOutcome.exposure,
     );
   }
 
@@ -888,6 +949,7 @@ final class AdventureRecoveryUseCases {
       role: role,
       mode: mode,
       promptVariant: promptVariant,
+      outcome: AdventureAttemptOutcome.skipped,
     );
   }
 
@@ -898,6 +960,7 @@ final class AdventureRecoveryUseCases {
     required AdventureLearningItemRole role,
     required LessonMode mode,
     required String promptVariant,
+    required AdventureAttemptOutcome outcome,
   }) async {
     if (run.state.phase != AdventureLearningCheckpointPhase.active ||
         originalIndex != run.state.currentOriginalIndex) {
@@ -910,6 +973,7 @@ final class AdventureRecoveryUseCases {
       promptVariant: promptVariant,
       ordinal: run.state.nextOccurrenceOrdinal,
       evidence: null,
+      checkpointOnlyOutcome: outcome,
     );
     final next = run.state.transition(
       currentOriginalIndex: originalIndex,
@@ -950,16 +1014,11 @@ final class AdventureRecoveryUseCases {
     }
     final frozen = occurrence.evidence;
     if (frozen == null) {
-      final acceptedSkip = attempt.outcome == AdventureAttemptOutcome.skipped;
-      final acceptedFlashcardExposure =
-          occurrence.role == AdventureLearningItemRole.repair &&
-          occurrence.mode == LessonMode.flashcard &&
-          occurrence.promptVariant == 'flashcardExposure' &&
-          attempt.outcome == AdventureAttemptOutcome.exposure;
       if (attempt.canonicalEvidenceCommitted ||
           attempt.sourceEvidenceId != null ||
           attempt.evidenceClass != null ||
-          (!acceptedSkip && !acceptedFlashcardExposure)) {
+          occurrence.checkpointOnlyOutcome == null ||
+          attempt.outcome != occurrence.checkpointOnlyOutcome) {
         throw StateError('Checkpoint-only repair semantics changed.');
       }
     } else {

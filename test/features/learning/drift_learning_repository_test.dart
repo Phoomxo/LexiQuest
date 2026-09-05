@@ -96,6 +96,46 @@ void main() {
     );
   });
 
+  test('exact pinned read freezes mutable content before its query', () async {
+    final words = await repository.listPinnedQuizWords(
+      ownerId: 'owner-1',
+      wordIds: const <String>['word-1', 'word-2'],
+    );
+    final mutablePins = <PinnedQuizContent>[
+      for (final word in words)
+        PinnedQuizContent(
+          identity: ContentIdentity(
+            type: ContentType.lexicalMetadata,
+            id: word.id,
+            revision: word.contentRevision!,
+          ),
+          checksumSha256: word.contentChecksumSha256!,
+        ),
+    ];
+
+    transactionSelectGate.arm();
+    final pendingRead = repository.listExactPinnedQuizWords(
+      ownerId: 'owner-1',
+      content: mutablePins,
+    );
+    await transactionSelectGate.blocked;
+    final originalSecondPin = mutablePins[1];
+    mutablePins[1] = PinnedQuizContent(
+      identity: ContentIdentity(
+        type: originalSecondPin.identity.type,
+        id: originalSecondPin.identity.id,
+        revision: originalSecondPin.identity.revision + 1,
+      ),
+      checksumSha256:
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    );
+    transactionSelectGate.release();
+
+    final exact = await pendingRead;
+
+    expect(exact.map((word) => word.id), const <String>['word-1', 'word-2']);
+  });
+
   test(
     'exact pinned start freezes mutable content before transaction validation',
     () async {

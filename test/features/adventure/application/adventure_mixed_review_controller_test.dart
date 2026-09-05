@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart'
 import 'package:vocab_learning_app/features/adventure/application/adventure_mixed_review_controller.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_mixed_review_prompt_catalog.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_recovery_use_cases.dart';
+import 'package:vocab_learning_app/features/adventure/application/adventure_repair_policy.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_session_plan.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
@@ -565,10 +566,7 @@ void main() {
             if (!checkpointEntered.isCompleted) checkpointEntered.complete();
             await checkpointGate.future;
           }
-          await learning.appendActivityCheckpoint(
-            checkpoint,
-            ownerId: ownerId,
-          );
+          await learning.appendActivityCheckpoint(checkpoint, ownerId: ownerId);
         },
       );
       final run = await recovery.startOrResume(
@@ -648,6 +646,86 @@ void main() {
       );
     },
   );
+
+  test('recovered flashcard skip returns to the exact skip retry', () async {
+    late AdventureMixedReviewPromptCatalog catalog;
+    final recovery = AdventureRecoveryUseCases(
+      learning: learning,
+      evidence: evidence,
+      canStartNewMission: () => true,
+      isRepairModeEligible: (identity, mode, variant) =>
+          catalog.supports(identity, mode, variant),
+      spacingForIdentity: (_) => 3,
+    );
+    final run = await recovery.startOrResume(
+      plan: plan,
+      activeOwnerId: ownerId,
+    );
+    catalog = AdventureMixedReviewPromptCatalog(
+      session: run.session,
+      lexicalWords: const <VocabularyWord>[],
+      registry: registry,
+      direction: plan.configuration.direction,
+    );
+    final controller = AdventureMixedReviewController(
+      recovery: recovery,
+      catalog: catalog,
+      registry: registry,
+      host: _FakeLessonHost(),
+    );
+    await controller.initialize();
+    await controller.submitTyped(response: 'wrong', responseTimeMs: 20);
+    for (var index = 1; index <= 3; index += 1) {
+      await controller.next();
+      await controller.submitTyped(
+        response: controller.prompt!.answer!,
+        responseTimeMs: 20,
+      );
+    }
+    await controller.next();
+    final repairPrompt = controller.prompt!;
+    expect(repairPrompt.mode, LessonMode.flashcard);
+    await recovery.checkpointSkippedOccurrence(
+      identity: repairPrompt.identity,
+      originalIndex: recovery.currentRun!.state.currentOriginalIndex,
+      role: AdventureLearningItemRole.repair,
+      mode: repairPrompt.mode,
+      promptVariant: repairPrompt.promptVariant,
+    );
+    controller.dispose();
+
+    final restarted = AdventureRecoveryUseCases(
+      learning: learning,
+      evidence: evidence,
+      canStartNewMission: () => false,
+      isRepairModeEligible: (identity, mode, variant) =>
+          catalog.supports(identity, mode, variant),
+      spacingForIdentity: (_) => 3,
+    );
+    final restored = await restarted.recoverExact(
+      ownerId: ownerId,
+      sessionId: run.session.id,
+    );
+    expect(restored, isNotNull);
+    final resumed = AdventureMixedReviewController(
+      recovery: restarted,
+      catalog: catalog,
+      registry: registry,
+      host: _FakeLessonHost(),
+    );
+    addTearDown(resumed.dispose);
+
+    await resumed.initialize();
+    expect(resumed.phase, AdventureMixedReviewPhase.skipRetryRequired);
+    await resumed.retrySkip();
+
+    expect(resumed.phase, AdventureMixedReviewPhase.answered);
+    expect(
+      restarted.currentRun!.repairPolicy.tickets.single.state,
+      AdventureRepairTicketState.deferred,
+    );
+    expect(await database.select(database.answerAttempts).get(), hasLength(4));
+  });
 
   test(
     'skip checkpoint and completion stay inside route recovery leases',

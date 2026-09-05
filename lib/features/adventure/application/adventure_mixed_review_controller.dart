@@ -743,12 +743,15 @@ final class AdventureMixedReviewController extends ChangeNotifier {
       _setPhase(AdventureMixedReviewPhase.evidenceRetryRequired);
       return;
     }
-    if (occurrence.role == AdventureLearningItemRole.repair &&
-        occurrence.mode == LessonMode.flashcard) {
+    if (occurrence.checkpointOnlyOutcome == AdventureAttemptOutcome.exposure) {
       _setPhase(AdventureMixedReviewPhase.awaitingFlashcardReveal);
       return;
     }
-    _setPhase(AdventureMixedReviewPhase.skipRetryRequired);
+    if (occurrence.checkpointOnlyOutcome == AdventureAttemptOutcome.skipped) {
+      _setPhase(AdventureMixedReviewPhase.skipRetryRequired);
+      return;
+    }
+    throw StateError('Pending checkpoint-only completion intent is invalid.');
   }
 
   void _showPrompt(

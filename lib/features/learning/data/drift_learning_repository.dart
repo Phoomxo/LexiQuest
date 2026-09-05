@@ -163,12 +163,13 @@ final class DriftLearningRepository
     required String ownerId,
     required List<PinnedQuizContent> content,
   }) async {
-    final wordIds = _requireExactPinnedQuizIds(content);
+    final frozenContent = List<PinnedQuizContent>.unmodifiable(content);
+    final wordIds = _requireExactPinnedQuizIds(frozenContent);
     final words = await listPinnedQuizWords(ownerId: ownerId, wordIds: wordIds);
-    if (words.length != content.length) return const <QuizWord>[];
+    if (words.length != frozenContent.length) return const <QuizWord>[];
     for (var index = 0; index < words.length; index += 1) {
       final word = words[index];
-      final pin = content[index];
+      final pin = frozenContent[index];
       if (word.id != pin.identity.id ||
           word.contentRevision != pin.identity.revision ||
           word.contentChecksumSha256 != pin.checksumSha256) {
