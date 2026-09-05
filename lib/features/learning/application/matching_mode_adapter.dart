@@ -438,6 +438,58 @@ final class MatchingModeAdapter
         SessionConfigurableLessonModeAdapter {
   const MatchingModeAdapter({this.maximumPairs = 6});
 
+  /// Read-only use of the actual supported legacy schema/timer decoder.
+  void validateLegacyCheckpointShape(
+    LearningActivityCheckpoint checkpoint,
+    DateTime startedAtUtc,
+    String ownerId,
+  ) {
+    _decodeCheckpointSession(checkpoint, startedAtUtc, ownerId, null);
+    _decodeTimeoutContract(checkpoint: checkpoint, startedAtUtc: startedAtUtc);
+    final close = checkpoint.state['pendingCloseAtUtc'];
+    if (close != null &&
+        (close is! String || DateTime.tryParse(close)?.isUtc != true)) {
+      throw StateError('Invalid legacy close');
+    }
+    final pending = checkpoint.state['pendingEvidence'];
+    if (pending != null) {
+      if (pending is! Map<String, Object?>) {
+        throw StateError('Invalid legacy pending');
+      }
+      final version = pending['schemaVersion'];
+      final keys = {
+        'sourceEvidenceId',
+        'occurredAtUtc',
+        'wordId',
+        'selectedMeaningWordId',
+        'isCorrect',
+        'responseTimeMs',
+        'attemptNumber',
+        'evidenceClass',
+        'hintLevel',
+        'contentRevision',
+        'canonicalCorrectAnswer',
+        'evidenceContext',
+        'eventContext',
+        if (version != null) ...['schemaVersion', 'actorIdentity'],
+        if (version == 3 || version == 4) 'providerProvenance',
+        if (version == 4) 'contrastiveFeedback',
+      };
+      if ((version != null && version != 2 && version != 3 && version != 4) ||
+          pending.length != keys.length ||
+          !pending.keys.every(keys.contains)) {
+        throw StateError('Invalid legacy pending shape');
+      }
+      final context = EvidenceContext.fromJson(
+        (pending['evidenceContext'] as Map).cast<String, Object?>(),
+      );
+      if (context.evidenceClass != EvidenceClass.recognition &&
+          context.evidenceClass != EvidenceClass.guidedPractice) {
+        throw StateError('Invalid legacy classification');
+      }
+    }
+  }
+
   final int maximumPairs;
 
   static const String activityType = 'matching';

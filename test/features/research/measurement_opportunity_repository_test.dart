@@ -11,6 +11,7 @@ import 'package:vocab_learning_app/features/research/domain/measurement_opportun
 import 'package:vocab_learning_app/features/research/domain/motivation_measurement.dart';
 
 import '../../support/motivation_research_fixture.dart';
+import '../../support/pair_purpose_fixture.dart';
 
 void main() {
   late MotivationResearchFixture f;
@@ -54,6 +55,86 @@ void main() {
     final o = await open();
     return repository.recordPresented('owner:a', o.id);
   }
+
+  test(
+    'direct seeded replay attachment is denied without consuming opportunity',
+    () async {
+      final o = await presented();
+      final id = await seedSyntheticReplayPurpose(
+        f.database,
+        owner: 'owner:a',
+        at: f.now,
+      );
+      await expectLater(
+        repository.attachAcceptedSession(
+          ownerId: 'owner:a',
+          opportunityId: o.id,
+          learningSessionId: id,
+          planId: 'plan:synthetic',
+          mode: LessonMode.matching,
+        ),
+        throwsA(isA<ResearchCaptureDenied>()),
+      );
+      expect(
+        (await repository.load('owner:a', o.id))!.learningSessionId,
+        isNull,
+      );
+      await f.database.customStatement(
+        'UPDATE measurement_opportunities SET learning_session_id=?,started_event_id=?,completed_event_id=?,closed_at_utc_ms=? WHERE id=?',
+        [
+          id,
+          o.presentedEventId,
+          o.presentedEventId,
+          f.now.millisecondsSinceEpoch,
+          o.id,
+        ],
+      );
+      Future<Object> snapshot() async => {
+        for (final table in [
+          'measurement_opportunities',
+          'motivation_measurement_runs',
+          'motivation_responses',
+          'events_v2',
+          'outbox_operations',
+        ])
+          table: [
+            for (final row
+                in await f.database
+                    .customSelect('SELECT * FROM $table ORDER BY 1')
+                    .get())
+              row.data,
+          ],
+      };
+      final before = await snapshot();
+      await expectLater(
+        repository.attachAcceptedSession(
+          ownerId: 'owner:a',
+          opportunityId: o.id,
+          learningSessionId: id,
+          planId: 'plan:synthetic',
+          mode: LessonMode.matching,
+        ),
+        throwsA(
+          isA<ResearchCaptureDenied>().having(
+            (e) => e.reason,
+            'reason',
+            ResearchCaptureReason.sessionUnavailable,
+          ),
+        ),
+      );
+      await expectLater(
+        repository.completeAcceptedSession('owner:a', o.id),
+        throwsA(
+          isA<ResearchCaptureDenied>().having(
+            (e) => e.reason,
+            'reason',
+            ResearchCaptureReason.sessionUnavailable,
+          ),
+        ),
+      );
+      expect(await snapshot(), before);
+    },
+  );
 
   Future<void> session(
     String id, {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../learning/pair_matching/domain/pair_matching_session_purpose.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -683,9 +684,32 @@ final class DriftResearchSyncAuthorizer {
         );
         final session = await reads.row('learning_sessions', e.aggregateId);
         _require(session != null && session['owner_id'] == p.ownerId);
+        final query = PairMatchingSessionPurpose.checkpointQuery(
+          p.ownerId,
+          e.aggregateId,
+        );
+        final checkpoints = session!['activity_type'] == 'matching'
+            ? await reads.all(query.sql, query.args)
+            : <Map<String, Object?>>[];
+        final actorsQuery = PairMatchingSessionPurpose.historicalOwnerQuery(
+          p.ownerId,
+          checkpoints,
+        );
+        final historicalOwners = await reads.all(
+          actorsQuery.sql,
+          actorsQuery.args,
+        );
+        _require(
+          PairMatchingSessionPurpose.decode(
+            ownerId: p.ownerId,
+            session: session,
+            checkpoints: checkpoints,
+            historicalOwners: historicalOwners,
+          ).allowsLearningAuthority,
+        );
         _require(
           occurred ==
-              session![complete ? 'ended_at_utc_ms' : 'started_at_utc_ms'],
+              session[complete ? 'ended_at_utc_ms' : 'started_at_utc_ms'],
         );
         if (complete) _require(session['state'] == 'completed');
       default:

@@ -1377,8 +1377,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
             Expanded(
               child: Listener(
                 behavior: HitTestBehavior.translucent,
-                onPointerDown: (_) =>
-                    controller.noteActiveLearningInteraction(_now()),
+                onPointerDown: controller.admitsLearningTime
+                    ? (_) => controller.noteActiveLearningInteraction(_now())
+                    : null,
                 child: Builder(
                   builder: (modeContext) {
                     final modeSurface = widget.builder(modeContext);

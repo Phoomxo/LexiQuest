@@ -16,6 +16,9 @@ import '../../learning/domain/session_configuration.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../time_tracking/domain/learning_time_repository.dart';
 import '../domain/learning_history_models.dart';
+import '../../learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
+import '../../learning/pair_matching/domain/pair_matching_history_projection.dart';
+import '../../learning/pair_matching/domain/pair_matching_session_purpose.dart';
 
 typedef LearningHistoryUtcNow = DateTime Function();
 
@@ -29,6 +32,40 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
   final AppDatabase database;
   final LearningTimeRepository learningTime;
   final LearningHistoryUtcNow nowUtc;
+
+  /// Historical evidence remains readable when matching metadata cannot grant
+  /// new learning authority. Canonical answer/event validation still applies.
+  Future<PairMatchingSessionPurpose?> _purpose(LearningSession session) async {
+    try {
+      return await DriftPairMatchingSessionPurposeReader(
+        database,
+      ).read(ownerId: session.ownerId, sessionId: session.id);
+    } on StateError {
+      if (session.activityType != 'matching') rethrow;
+      return null;
+    }
+  }
+
+  Future<PairMatchingHistoryOverview> pairOverview({required String ownerId}) =>
+      database.transaction(() async {
+        final owner = _canonicalText(ownerId, 'ownerId');
+        final rows =
+            await (database.select(database.learningSessions)..where(
+                  (row) =>
+                      row.ownerId.equals(owner) &
+                      row.activityType.equals('matching') &
+                      row.state.isIn(['completed', 'abandoned']),
+                ))
+                .get();
+        final results = <PairMatchingHistoryProjection>[];
+        for (final row in rows) {
+          final purpose = await _purpose(row);
+          if (purpose?.snapshot != null) {
+            results.add(PairMatchingHistoryProjection(purpose!.snapshot!));
+          }
+        }
+        return PairMatchingHistoryOverview(results);
+      });
 
   static String canonicalReplaySessionId({
     required String sourceSessionId,
@@ -50,61 +87,84 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
     if (filter.limit < 1 || filter.limit > 100) {
       throw RangeError.range(filter.limit, 1, 100, 'filter.limit');
     }
-    final terminalSessions =
-        await (database.select(database.learningSessions)
-              ..where(
-                (row) =>
-                    row.ownerId.equals(ownerId) &
-                    row.state.isIn(const <String>['completed', 'abandoned']),
-              )
-              ..orderBy(<OrderingTerm Function($LearningSessionsTable)>[
-                (row) => OrderingTerm.desc(row.endedAtUtcMs),
-                (row) => OrderingTerm.desc(row.startedAtUtcMs),
-                (row) => OrderingTerm.asc(row.id),
-              ])
-              ..limit(filter.limit))
+    return database.transaction(() async {
+      // Merge canonical terminal ordering in SQL before paging. Assessment
+      // completion can precede the generic session-close acknowledgement.
+      const candidates = '''
+WITH terminal_assessments AS (
+ SELECT learning_session_id AS id,
+ MAX(CASE state WHEN 'completed' THEN completed_at_utc_ms
+                ELSE abandoned_at_utc_ms END) AS terminal_at,
+ MAX(started_at_utc_ms) AS started_at
+ FROM assessment_runs
+ WHERE owner_id = ? AND state IN ('completed','abandoned')
+ GROUP BY learning_session_id
+), candidates AS (
+ SELECT s.*, COALESCE(a.terminal_at,s.ended_at_utc_ms,-1) AS history_end,
+ s.started_at_utc_ms AS history_start, s.id AS history_id
+ FROM learning_sessions s
+ LEFT JOIN terminal_assessments a ON a.id = s.id
+ WHERE s.owner_id = ? AND (s.state IN ('completed','abandoned') OR a.id IS NOT NULL)
+ UNION ALL
+ SELECT s.*, COALESCE(a.terminal_at,-1) AS history_end,
+ a.started_at AS history_start, a.id AS history_id
+ FROM terminal_assessments a
+ LEFT JOIN learning_sessions s ON s.id = a.id AND s.owner_id = ?
+ WHERE s.id IS NULL
+)
+SELECT * FROM candidates
+''';
+      final batchSize = filter.limit < 20 ? 20 : filter.limit;
+      QueryRow? cursor;
+      final result = <LearningHistoryEntry>[];
+      while (result.length < filter.limit) {
+        final rows = await database
+            .customSelect(
+              '$candidates ${cursor == null ? "" : "WHERE history_end < ? OR (history_end = ? AND history_start < ?) OR (history_end = ? AND history_start = ? AND history_id > ?)"} ORDER BY history_end DESC, history_start DESC, history_id ASC LIMIT $batchSize',
+              variables: [
+                Variable(ownerId),
+                Variable(ownerId),
+                Variable(ownerId),
+                if (cursor != null) ...[
+                  Variable(cursor.read<int>('history_end')),
+                  Variable(cursor.read<int>('history_end')),
+                  Variable(cursor.read<int>('history_start')),
+                  Variable(cursor.read<int>('history_end')),
+                  Variable(cursor.read<int>('history_start')),
+                  Variable(cursor.read<String>('history_id')),
+                ],
+              ],
+            )
             .get();
-    final assessmentRows = <AssessmentRunRow>[
-      ...await _terminalAssessmentRows(
-        ownerId: ownerId,
-        state: AssessmentRunState.completed,
-        limit: filter.limit,
-      ),
-      ...await _terminalAssessmentRows(
-        ownerId: ownerId,
-        state: AssessmentRunState.abandoned,
-        limit: filter.limit,
-      ),
-    ];
-    final sessions = <String, LearningSession>{
-      for (final session in terminalSessions) session.id: session,
-    };
-    for (final assessment in assessmentRows) {
-      if (sessions.containsKey(assessment.learningSessionId)) continue;
-      final session =
-          await (database.select(database.learningSessions)..where(
-                (row) =>
-                    row.id.equals(assessment.learningSessionId) &
-                    row.ownerId.equals(ownerId),
-              ))
-              .getSingleOrNull();
-      if (session == null) {
-        throw StateError('assessment history session is missing');
+        for (final row in rows) {
+          if (row.data['id'] == null) {
+            throw StateError('assessment history session is missing');
+          }
+          final session = database.learningSessions.map(row.data);
+          final filterMatching =
+              !filter.includePracticeReplay &&
+              session.activityType == 'matching';
+          final purpose = filterMatching ? await _purpose(session) : null;
+          if (filterMatching && purpose?.allowsLearningAuthority != true) {
+            continue;
+          }
+          // Only selected entries load answers/events/content/time. Reuse any
+          // purpose already resolved for filtering instead of reading it twice.
+          result.add(
+            await _entry(
+              session,
+              filterMatching ? purpose : await _purpose(session),
+            ),
+          );
+          if (result.length == filter.limit) {
+            return List<LearningHistoryEntry>.unmodifiable(result);
+          }
+        }
+        if (rows.length < batchSize) break;
+        cursor = rows.last;
       }
-      sessions[session.id] = session;
-    }
-    final result = <LearningHistoryEntry>[];
-    for (final session in sessions.values) {
-      result.add(await _entry(session));
-    }
-    result.sort((left, right) {
-      final terminalOrder = right.endedAtUtc.compareTo(left.endedAtUtc);
-      if (terminalOrder != 0) return terminalOrder;
-      final startOrder = right.startedAtUtc.compareTo(left.startedAtUtc);
-      if (startOrder != 0) return startOrder;
-      return left.sessionId.compareTo(right.sessionId);
+      return List<LearningHistoryEntry>.unmodifiable(result);
     });
-    return List<LearningHistoryEntry>.unmodifiable(result.take(filter.limit));
   }
 
   @override
@@ -166,7 +226,10 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
     );
   }
 
-  Future<LearningHistoryEntry> _entry(LearningSession session) async {
+  Future<LearningHistoryEntry> _entry(
+    LearningSession session,
+    PairMatchingSessionPurpose? purpose,
+  ) async {
     final assessmentRows =
         await (database.select(database.assessmentRuns)..where(
               (row) =>
@@ -395,27 +458,13 @@ final class DriftLearningHistoryReader implements LearningHistoryReader {
       sessionConfiguration: isAssessment ? null : configuration,
       evidence: isAssessment ? const <LearningHistoryEvidence>[] : evidence,
       assessmentSummary: assessmentSummary,
+      pairPurposeUnavailable:
+          session.activityType == 'matching' &&
+          (purpose == null || purpose.unknownMatching),
+      pairSummary: purpose?.snapshot == null
+          ? null
+          : PairMatchingHistoryProjection(purpose!.snapshot!),
     );
-  }
-
-  Future<List<AssessmentRunRow>> _terminalAssessmentRows({
-    required String ownerId,
-    required AssessmentRunState state,
-    required int limit,
-  }) {
-    final query = database.select(database.assessmentRuns)
-      ..where(
-        (row) => row.ownerId.equals(ownerId) & row.state.equals(state.name),
-      )
-      ..orderBy(<OrderingTerm Function($AssessmentRunsTable)>[
-        state == AssessmentRunState.completed
-            ? (row) => OrderingTerm.desc(row.completedAtUtcMs)
-            : (row) => OrderingTerm.desc(row.abandonedAtUtcMs),
-        (row) => OrderingTerm.desc(row.startedAtUtcMs),
-        (row) => OrderingTerm.asc(row.id),
-      ])
-      ..limit(limit);
-    return query.get();
   }
 
   SessionConfiguration? _configuration(LearningSession session) {

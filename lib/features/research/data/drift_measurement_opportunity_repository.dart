@@ -7,6 +7,7 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../events/domain/today_experience_event_payload_policy.dart';
 import '../../learning/domain/lesson_mode.dart';
 import '../../learning/domain/session_configuration.dart';
+import '../../learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import '../domain/measurement_opportunity.dart';
 import '../domain/motivation_instrument.dart';
 import '../domain/motivation_measurement.dart';
@@ -24,6 +25,19 @@ final class DriftMeasurementOpportunityRepository {
   final db.AppDatabase database;
   final DriftMotivationMeasurementRepository measurements;
   final DateTime Function() nowUtc;
+  Future<void> _requireLearningPurpose(String owner, String session) async {
+    try {
+      if (!(await DriftPairMatchingSessionPurposeReader(
+        database,
+      ).read(ownerId: owner, sessionId: session)).allowsLearningAuthority) {
+        throw StateError('Replay or unknown matching');
+      }
+    } catch (_) {
+      throw const ResearchCaptureDenied(
+        ResearchCaptureReason.sessionUnavailable,
+      );
+    }
+  }
 
   Future<MeasurementOpportunity> open({
     required String ownerId,
@@ -212,6 +226,7 @@ final class DriftMeasurementOpportunityRepository {
     requireResearchCode(learningSessionId);
     requireResearchCode(planId);
     final (o, context) = await _active(ownerId, opportunityId);
+    await _requireLearningPurpose(ownerId, learningSessionId);
     if (o.learningSessionId != null) {
       if (o.learningSessionId != learningSessionId) {
         throw const ResearchCaptureDenied(
@@ -312,6 +327,9 @@ final class DriftMeasurementOpportunityRepository {
     String opportunityId,
   ) => database.transaction(() async {
     final (o, context) = await _active(ownerId, opportunityId);
+    if (o.learningSessionId != null) {
+      await _requireLearningPurpose(ownerId, o.learningSessionId!);
+    }
     if (o.completedEventId != null) return o;
     if (o.closedAtUtc != null || o.learningSessionId == null) {
       throw const ResearchCaptureDenied(

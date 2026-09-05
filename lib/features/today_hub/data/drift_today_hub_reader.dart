@@ -5,6 +5,7 @@ import '../../assessment/data/drift_assessment_repository.dart';
 import '../../assessment/domain/assessment_models.dart';
 import '../../goals/domain/learning_goal.dart';
 import '../../learning/data/drift_learning_repository.dart';
+import '../../learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import '../../learning/domain/learning_models.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../motivation/domain/streak_policy.dart';
@@ -164,15 +165,23 @@ final class DriftTodayHubReader implements TodayHubReader {
                 ..orderBy([
                   (row) => OrderingTerm.desc(row.startedAtUtcMs),
                   (row) => OrderingTerm.asc(row.id),
-                ])
-                ..limit(1))
+                ]))
               .get();
       if (candidates.isEmpty) return const _ValueResult.empty();
-      final session = await DriftLearningRepository(database)
-          .loadSessionConfigurationState(
-            ownerId: ownerId,
-            sessionId: candidates.single.id,
-          );
+      db.LearningSession? selected;
+      for (final candidate in candidates) {
+        final purpose = await DriftPairMatchingSessionPurposeReader(
+          database,
+        ).read(ownerId: ownerId, sessionId: candidate.id);
+        if (purpose.allowsLearningAuthority) {
+          selected = candidate;
+          break;
+        }
+      }
+      if (selected == null) return const _ValueResult.empty();
+      final session = await DriftLearningRepository(
+        database,
+      ).loadSessionConfigurationState(ownerId: ownerId, sessionId: selected.id);
       if (session == null ||
           session.ownerId != ownerId ||
           session.state != 'active') {

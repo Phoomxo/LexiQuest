@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../../domain/learning_models.dart';
 import '../../domain/learning_repository.dart';
+import '../../domain/session_configuration.dart';
+import '../../domain/lesson_mode.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_matching_plan.dart';
 import '../data/pair_matching_checkpoint_codec.dart';
@@ -20,7 +22,6 @@ final class InternalPairMatchingCapability
   @override
   void requireAllowed(PairMatchingPlanV1 plan) {
     if (!_isEnabled() ||
-        plan.sessionPurpose != PairSessionPurpose.learning ||
         plan.allowlistVersion != allowlist.version ||
         plan.orderedLexicalItems.any(
           (i) =>
@@ -48,6 +49,7 @@ final class PairMatchingStartOperation {
     required this.launchOperationId,
     required this.appVersion,
     required this.buildId,
+    this.configuration,
   }) {
     for (final text in [launchOperationId, appVersion, buildId]) {
       if (text.isEmpty || text != text.trim() || text.length > 256) {
@@ -58,31 +60,48 @@ final class PairMatchingStartOperation {
         pairSessionId(plan.ownerId, launchOperationId)) {
       throw ArgumentError('Pair operation/session mismatch');
     }
+    final config = configuration;
+    if (config != null &&
+        (config.ownerId != plan.ownerId ||
+            config.mode != LessonMode.matching ||
+            config.itemCount != plan.orderedLexicalItems.length ||
+            config.packIdentity != null ||
+            config.direction !=
+                (plan.direction == PairDirection.enToTh
+                    ? SessionDirection.forward
+                    : SessionDirection.reverse))) {
+      throw ArgumentError('Pair configuration does not match exact plan');
+    }
   }
   final PairMatchingPlanV1 plan;
   final String launchOperationId;
   final String appVersion;
   final String buildId;
+  final SessionConfiguration? configuration;
   String get stableSerialization => jsonEncode({
-    'schemaVersion': 1,
+    'schemaVersion': configuration == null ? 1 : 2,
     'plan': plan.toJson(),
     'launchOperationId': launchOperationId,
     'appVersion': appVersion,
     'buildId': buildId,
+    if (configuration != null)
+      'sessionConfiguration': configuration!.stableSerialization,
   });
   static PairMatchingStartOperation fromStableSerialization(String source) {
     if (source.length > 40000) {
       throw const FormatException('Pair operation too large');
     }
     try {
-      final j = pairJson(jsonDecode(source), {
+      final decoded = jsonDecode(source) as Map;
+      final j = pairJson(decoded, {
         'schemaVersion',
         'plan',
         'launchOperationId',
         'appVersion',
         'buildId',
+        if (decoded['schemaVersion'] == 2) 'sessionConfiguration',
       });
-      if (j['schemaVersion'] != 1) {
+      if (j['schemaVersion'] != 1 && j['schemaVersion'] != 2) {
         throw const FormatException('Unknown Pair operation');
       }
       final o = PairMatchingStartOperation(
@@ -90,6 +109,11 @@ final class PairMatchingStartOperation {
         launchOperationId: j['launchOperationId'] as String,
         appVersion: j['appVersion'] as String,
         buildId: j['buildId'] as String,
+        configuration: j['schemaVersion'] == 2
+            ? SessionConfiguration.fromStableSerialization(
+                j['sessionConfiguration'] as String,
+              )
+            : null,
       );
       if (o.stableSerialization != source) {
         throw const FormatException('Noncanonical operation');
@@ -107,6 +131,7 @@ final class PairMatchingStartOperation {
     startedAtUtc: plan.createdAtUtc,
     appVersion: appVersion,
     buildId: buildId,
+    sessionConfiguration: configuration,
   );
   LearningActivityCheckpoint get initialCheckpoint =>
       LearningActivityCheckpoint(

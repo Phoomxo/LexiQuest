@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_m
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'pair_matching_source_composer_test.dart' as f;
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 
 /// Faults wrap real SQL persistence; no fake answer/evidence authority.
 class PairFaultRepository
@@ -110,6 +111,7 @@ class PairHarness {
     this.launchId = 'synthetic-operation',
     this.buildTag = 'synthetic',
     this.evidenceId,
+    this.configuration,
     QueryExecutor? executor,
   }) : db = AppDatabase(executor ?? NativeDatabase.memory());
   final AppDatabase db;
@@ -118,6 +120,7 @@ class PairHarness {
   final PairMatchingPlanV1? pinnedPlan;
   final String launchId, buildTag;
   final String Function()? evidenceId;
+  final SessionConfiguration? configuration;
   late DriftLearningRepository real;
   late PairFaultRepository repository;
   late LearningUseCases learning;
@@ -190,6 +193,7 @@ class PairHarness {
       launchOperationId: launchId,
       appVersion: buildTag,
       buildId: buildTag,
+      configuration: configuration,
     );
     await PairMatchingAtomicStartAdapter(
       repository: real,

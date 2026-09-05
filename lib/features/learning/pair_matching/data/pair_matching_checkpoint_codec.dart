@@ -85,6 +85,8 @@ Map<String, Object?> _compactStart(String operation) {
     'launchOperationId': j['launchOperationId'],
     'appVersion': j['appVersion'],
     'buildId': j['buildId'],
+    if (j['schemaVersion'] == 2)
+      'sessionConfiguration': j['sessionConfiguration'],
   };
 }
 
@@ -446,6 +448,8 @@ abstract final class PairMatchingCheckpointCodec {
               'launchOperationId',
               'appVersion',
               'buildId',
+              if ((source['startOperation'] as Map)['schemaVersion'] == 2)
+                'sessionConfiguration',
             })
           : null;
       final operation = compactStart == null
@@ -456,6 +460,8 @@ abstract final class PairMatchingCheckpointCodec {
               'launchOperationId': compactStart['launchOperationId'],
               'appVersion': compactStart['appVersion'],
               'buildId': compactStart['buildId'],
+              if (compactStart['schemaVersion'] == 2)
+                'sessionConfiguration': compactStart['sessionConfiguration'],
             });
       final start = pairJson(jsonDecode(operation), {
         'schemaVersion',
@@ -463,11 +469,13 @@ abstract final class PairMatchingCheckpointCodec {
         'launchOperationId',
         'appVersion',
         'buildId',
+        if ((jsonDecode(operation) as Map)['schemaVersion'] == 2)
+          'sessionConfiguration',
       });
       if (source['schemaVersion'] != 6 ||
           source['planFingerprint'] != plan.planFingerprint ||
-          plan.sessionPurpose != PairSessionPurpose.learning ||
-          start['schemaVersion'] != 1 ||
+          plan.sourceSessionId == plan.learningSessionId ||
+          (start['schemaVersion'] != 1 && start['schemaVersion'] != 2) ||
           jsonEncode(start['plan']) != plan.stableSerialization ||
           pairSessionId(plan.ownerId, start['launchOperationId'] as String) !=
               plan.learningSessionId ||
@@ -537,7 +545,10 @@ abstract final class PairMatchingCheckpointCodec {
             frozen['promptMode'] != 'matchingPair' ||
             frozen['providerProvenance'] != 'pinned-lexical-matching' ||
             frozen['input'] != 'matchingPair' ||
-            frozen['hintLevel'] != engine.classificationFor(a).hintLevel) {
+            frozen['hintLevel'] !=
+                (plan.sessionPurpose == PairSessionPurpose.practiceReplay
+                    ? 0
+                    : engine.classificationFor(a).hintLevel)) {
           throw const FormatException('Invalid Pair frozen occurrence');
         }
       }

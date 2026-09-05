@@ -20,6 +20,22 @@ import 'package:vocab_learning_app/features/learning/domain/session_configuratio
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
+import '../../support/pair_purpose_fixture.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
+
+final class _ObservedHistoryTime implements LearningTimeRepository {
+  _ObservedHistoryTime(this.delegate);
+  final LearningTimeRepository delegate;
+  final hydrated = <String>[];
+  @override
+  Future<void> append(LearningTimeSegment segment) => delegate.append(segment);
+  @override
+  Future<Duration> activeDuration(String sessionId) {
+    hydrated.add(sessionId);
+    return delegate.activeDuration(sessionId);
+  }
+}
 
 void main() {
   late AppDatabase database;
@@ -40,6 +56,184 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final state in ['completed', 'abandoned']) {
+    test(
+      'candidate page merges $state assessment terminal time and stable ties before hydration',
+      () async {
+        const assessment = 'session:m-assessment';
+        await database
+            .into(database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: assessment,
+                ownerId: 'owner:history',
+                activityType: 'assessment',
+                state: 'active',
+                startedAtUtcMs: DateTime.utc(
+                  2026,
+                  8,
+                  31,
+                  9,
+                ).millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'f43',
+              ),
+            );
+        await _seedAssessmentRun(database, sessionId: assessment);
+        if (state == 'abandoned') {
+          await database.customStatement(
+            "UPDATE assessment_runs SET state='abandoned',abandoned_at_utc_ms=completed_at_utc_ms,completed_at_utc_ms=NULL",
+          );
+        }
+        final configuration = _configuration(
+          mode: LessonMode.meaningQuiz,
+          itemCount: 1,
+        );
+        for (final item in [
+          ('session:newest', 0, 8),
+          ('session:newer-start', 1, 7),
+          ('session:a-before', 0, 7),
+          ('session:z-after', 0, 7),
+          ('session:older', 0, 6),
+        ]) {
+          await _seedTerminalSession(
+            database,
+            id: item.$1,
+            state: 'completed',
+            startedAtUtc: DateTime.utc(2026, 8, 31, 9, item.$2),
+            endedAtUtc: DateTime.utc(2026, 8, 31, 9, item.$3),
+            configuration: configuration,
+          );
+        }
+        final observed = _ObservedHistoryTime(
+          DriftLearningTimeRepository(
+            database,
+            owners: const _Owners('owner:history'),
+          ),
+        );
+        final bounded = DriftLearningHistoryReader(
+          database,
+          learningTime: observed,
+          nowUtc: () => DateTime.utc(2026, 8, 31, 12),
+        );
+        const ordered = [
+          'session:newest',
+          'session:newer-start',
+          'session:a-before',
+          assessment,
+          'session:z-after',
+          'session:older',
+        ];
+        for (final limit in [1, 3, 4, 6]) {
+          observed.hydrated.clear();
+          final entries = await bounded.list(
+            HistoryFilter(
+              ownerId: 'owner:history',
+              limit: limit,
+              includePracticeReplay: false,
+            ),
+          );
+          expect(entries.map((e) => e.sessionId), ordered.take(limit));
+          expect(observed.hydrated, ordered.take(limit));
+          if (limit >= 4) {
+            expect(entries[3].assessmentSummary!.state.name, state);
+          }
+        }
+      },
+    );
+  }
+
+  test(
+    'page hydrates only selected normal after newer replay batches and leaves old corruption off-page',
+    () async {
+      final configuration = _configuration(
+        mode: LessonMode.meaningQuiz,
+        itemCount: 1,
+      );
+      for (final name in ['old', 'recent']) {
+        await _seedTerminalSession(
+          database,
+          id: 'session:$name',
+          state: 'completed',
+          startedAtUtc: DateTime.utc(2026, 8, 31, name == 'old' ? 8 : 9),
+          endedAtUtc: DateTime.utc(2026, 8, 31, name == 'old' ? 8 : 9, 5),
+          configuration: configuration,
+        );
+      }
+      await _seedOrphanAnswerEvent(
+        database,
+        sessionId: 'session:old',
+        attemptId: 'attempt:orphan-old',
+        occurredAtUtc: DateTime.utc(2026, 8, 31, 8, 2),
+        evidence: EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'typed-recall',
+          hintLevel: 0,
+          contentRevision: 'pack:travel@1',
+          engagementAllowed: false,
+        ),
+      );
+      for (var i = 0; i < 21; i++) {
+        final id = await seedSyntheticReplayPurpose(
+          database,
+          owner: 'owner:history',
+          at: DateTime.utc(2026, 8, 31, 10, i),
+          operationId: 'synthetic-page-replay-$i',
+        );
+        await database.customStatement(
+          "UPDATE learning_sessions SET state='abandoned',ended_at_utc_ms=started_at_utc_ms WHERE id=?",
+          [id],
+        );
+      }
+      final observed = _ObservedHistoryTime(
+        DriftLearningTimeRepository(
+          database,
+          owners: const _Owners('owner:history'),
+        ),
+      );
+      final bounded = DriftLearningHistoryReader(
+        database,
+        learningTime: observed,
+        nowUtc: () => DateTime.utc(2026, 8, 31, 12),
+      );
+      expect(
+        (await bounded.list(
+          const HistoryFilter(
+            ownerId: 'owner:history',
+            limit: 1,
+            includePracticeReplay: false,
+          ),
+        )).single.sessionId,
+        'session:recent',
+      );
+      expect(observed.hydrated, ['session:recent']);
+      observed.hydrated.clear();
+      await expectLater(
+        bounded.list(
+          const HistoryFilter(
+            ownerId: 'owner:history',
+            limit: 2,
+            includePracticeReplay: false,
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(observed.hydrated, ['session:recent', 'session:old']);
+      observed.hydrated.clear();
+      expect(
+        await bounded.list(
+          const HistoryFilter(ownerId: 'owner:history', limit: 1),
+        ),
+        hasLength(1),
+      );
+      expect(
+        observed.hydrated,
+        hasLength(1),
+        reason: 'default page must not hydrate lifetime history',
+      );
+    },
+  );
 
   test(
     'f43 reader joins terminal sessions evidence events and active duration without mutation',
@@ -272,6 +466,18 @@ void main() {
 
       expect(entry.evidence, hasLength(1));
       expect(entry.evidence.single.attemptId, 'attempt:checkpointed:1');
+      expect(entry.pairPurposeUnavailable, true);
+      expect(entry.pairSummary, isNull);
+      expect(
+        await reader.list(
+          const HistoryFilter(
+            ownerId: 'owner:history',
+            limit: 1,
+            includePracticeReplay: false,
+          ),
+        ),
+        isEmpty,
+      );
 
       await _seedOrphanAnswerEvent(
         database,

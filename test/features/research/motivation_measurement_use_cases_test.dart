@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/research/application/motivation_meas
 import 'package:vocab_learning_app/features/research/data/drift_measurement_opportunity_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/motivation_measurement.dart';
 import '../../support/motivation_research_fixture.dart';
+import '../../support/pair_purpose_fixture.dart';
 
 void main() {
   late MotivationResearchFixture f;
@@ -99,6 +100,24 @@ void main() {
         );
   }
 
+  test(
+    'replay before genuine learning does not consume or block opportunity',
+    () async {
+      final runId = await opening(TodayExperiencePresentation.standard);
+      await seedSyntheticReplayPurpose(f.database, owner: 'owner:a', at: f.now);
+      f.now = f.now.add(const Duration(seconds: 1));
+      await accepted('session:next');
+      await service.reconcile('owner:a');
+      final ops = await f.database
+          .select(f.database.measurementOpportunities)
+          .get();
+      expect(ops.single.learningSessionId, 'session:next');
+      expect(
+        (await f.measurements.load('owner:a', runId))!.indexCompletionAtUtc,
+        isNull,
+      );
+    },
+  );
   test('missing permit is no-op; no rows, events or outbox created', () async {
     expect(
       await service.prepare(ownerId: 'owner:a', permitId: 'missing'),

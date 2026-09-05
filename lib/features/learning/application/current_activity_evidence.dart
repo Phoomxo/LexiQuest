@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../domain/evidence_context.dart';
@@ -9,6 +10,8 @@ import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/lexical_prompt_artifact_identity.dart';
 import 'learning_use_cases.dart';
+import '../pair_matching/domain/pair_matching_plan.dart';
+import '../pair_matching/domain/pair_matching_launch.dart';
 
 enum CurrentActivityInput {
   meaningMultipleChoice,
@@ -425,6 +428,24 @@ final class FrozenPendingCurrentActivityEvidence {
   final EvidenceContext evidenceContext;
   final LearningEventContext eventContext;
 
+  void requirePracticeReplayContext() {
+    final expected = EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.recreational,
+      skillId: 'matching-recognition',
+      hintLevel: 0,
+      contentRevision: contentRevision,
+      rolloutMode: EvidencePolicyRolloutMode.legacy,
+      engagementAllowed: false,
+    );
+    if (jsonEncode(evidenceContext.toJson()) != jsonEncode(expected.toJson()) ||
+        jsonEncode(eventContext.toJson()) !=
+            jsonEncode(LearningEventContext.noResearch(expected).toJson())) {
+      throw StateError(
+        'Pair replay requires exact recreational no-research context',
+      );
+    }
+  }
+
   Map<String, Object?> toJson() => _deepFreezeJsonMap(<String, Object?>{
     'schemaVersion': currentSchemaVersion,
     'ownerId': ownerId,
@@ -581,6 +602,7 @@ final class FrozenPendingCurrentActivityEvidence {
             oneOf(const <EvidenceClass>{
               EvidenceClass.recognition,
               EvidenceClass.guidedPractice,
+              EvidenceClass.recreational,
             }),
       CurrentActivityInput.srsRecall =>
         skillId == 'srs-recall' &&
@@ -1120,6 +1142,64 @@ final class CurrentActivityEvidenceAdapter {
     );
   }
 
+  PendingCurrentActivityEvidence capturePracticeReplayMatching({
+    required PairMatchingPlanV1 plan,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required String contentRevision,
+  }) {
+    if (plan.sessionPurpose != PairSessionPurpose.practiceReplay ||
+        plan.sourceSessionId == null ||
+        plan.sourceSessionId == plan.learningSessionId ||
+        !plan.orderedLexicalItems.any((i) => i.wordId == wordId) ||
+        responseTimeMs < 0) {
+      throw StateError(
+        'Pair replay capture requires source-linked accepted pins',
+      );
+    }
+    return _capture(
+      ownerId: plan.ownerId,
+      input: CurrentActivityInput.matchingPair,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: EvidenceClass.recreational,
+        skillId: 'matching-recognition',
+        promptMode: 'matchingPair',
+        contentRevision: contentRevision,
+      ),
+      sessionId: plan.learningSessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: 'pinned-lexical-matching',
+      hintLevel: 0,
+    );
+  }
+
+  PendingCurrentActivityEvidence restorePracticeReplayMatching(
+    FrozenPendingCurrentActivityEvidence frozen, {
+    required PairMatchingPlanV1 plan,
+  }) {
+    frozen.requirePracticeReplayContext();
+    if (plan.sessionPurpose != PairSessionPurpose.practiceReplay ||
+        plan.sourceSessionId == null ||
+        frozen.sessionId != plan.learningSessionId ||
+        frozen.ownerId != plan.ownerId ||
+        frozen.input != CurrentActivityInput.matchingPair ||
+        frozen.declaredEvidenceClass != EvidenceClass.recreational ||
+        frozen.evidenceContext.evidenceClass != EvidenceClass.recreational ||
+        frozen.hintLevel != 0 ||
+        frozen.evidenceContext.protocolId != null ||
+        frozen.eventContext.protocolId != null ||
+        frozen.evidenceContext.engagementAllowed ||
+        frozen.contrastiveFeedback != null) {
+      throw StateError('Pair replay frozen context changed');
+    }
+    return restore(frozen);
+  }
+
   /// Reconstructs a fully resolved occurrence without consulting mutable
   /// owner, rollout, or research providers. An explicit retry is mandatory.
   PendingCurrentActivityEvidence restore(
@@ -1513,6 +1593,21 @@ final class PendingCurrentActivityEvidence {
         basis: basis,
         resolveContexts: ({required ownerId, required command}) async {
           if (restoredContexts != null) return restoredContexts;
+          if (_input == CurrentActivityInput.matchingPair &&
+              _declaration.evidenceClass == EvidenceClass.recreational) {
+            final context = EvidenceContext.forNewEvidence(
+              evidenceClass: EvidenceClass.recreational,
+              skillId: 'matching-recognition',
+              hintLevel: 0,
+              contentRevision: _declaration.contentRevision,
+              rolloutMode: EvidencePolicyRolloutMode.legacy,
+              engagementAllowed: false,
+            );
+            return ResolvedLearningEvidenceContexts(
+              evidenceContext: context,
+              eventContext: LearningEventContext.noResearch(context),
+            );
+          }
           final rolloutMode = await _rolloutModeProvider.resolve(
             ownerId: ownerId,
             evidenceContext: null,

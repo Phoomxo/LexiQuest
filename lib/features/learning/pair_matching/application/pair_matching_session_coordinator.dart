@@ -6,6 +6,7 @@ import '../../domain/learning_models.dart';
 import '../../domain/lexical_prompt_artifact_identity.dart';
 import '../data/pair_matching_checkpoint_codec.dart';
 import '../domain/pair_matching_engine.dart';
+import '../domain/pair_matching_launch.dart';
 import '../domain/pair_active_clock.dart';
 import '../domain/pair_matching_checkpoint_budget.dart';
 import 'pair_matching_atomic_start.dart';
@@ -53,6 +54,8 @@ final class PairMatchingSessionCoordinator {
   PairMatchingCheckpointSnapshot _snapshot;
   PairMatchingState _state;
   PairMatchingState get state => _state;
+  bool get isPracticeReplay =>
+      operation.plan.sessionPurpose == PairSessionPurpose.practiceReplay;
   final PairActiveClock _clock;
   PairTimerState get timer => _clock.value;
   bool get timerPaused => _clock.isPaused;
@@ -131,7 +134,12 @@ final class PairMatchingSessionCoordinator {
     if (frozen != null) {
       c._frozen = FrozenPendingCurrentActivityEvidence.fromJson(frozen);
       c._validateFrozen(c._frozen!);
-      c._pending = evidence.restore(c._frozen!);
+      c._pending = c.isPracticeReplay
+          ? evidence.restorePracticeReplayMatching(
+              c._frozen!,
+              plan: operation.plan,
+            )
+          : evidence.restore(c._frozen!);
     }
     final terminal = snapshot.terminal;
     if (terminal?.atUtc != recovery.checkpoint!.terminalAtUtc ||
@@ -183,10 +191,13 @@ final class PairMatchingSessionCoordinator {
               _contentRevision(role.promptWordId) ||
           actual.evidenceContext.skillId != 'matching-recognition' ||
           actual.evidenceContext.evidenceClass !=
-              (guided
+              (isPracticeReplay
+                  ? EvidenceClass.recreational
+                  : guided
                   ? EvidenceClass.guidedPractice
                   : EvidenceClass.recognition) ||
-          actual.evidenceContext.hintLevel != (guided ? 1 : 0)) {
+          actual.evidenceContext.hintLevel !=
+              (!isPracticeReplay && guided ? 1 : 0)) {
         throw StateError('Pair authenticated attempt differs from ledger');
       }
       if (i == state.attempts.length) {
@@ -224,7 +235,11 @@ final class PairMatchingSessionCoordinator {
     final role = (capturedState ?? state).pending!;
     if (frozen.contentRevision != _contentRevision(role.promptWordId) ||
         frozen.declaredEvidenceClass !=
-            (capturedState ?? state).classificationFor(role).evidenceClass ||
+            (isPracticeReplay
+                ? EvidenceClass.recreational
+                : (capturedState ?? state)
+                      .classificationFor(role)
+                      .evidenceClass) ||
         frozen.contrastiveFeedback != null) {
       throw StateError('Pair frozen evidence pin/classification changed');
     }
@@ -315,16 +330,25 @@ final class PairMatchingSessionCoordinator {
       if (command is PairRevealMapping) await _append(_currentSnapshot());
       return;
     }
-    _pending = evidence.captureMatching(
-      ownerId: operation.plan.ownerId,
-      sessionId: operation.plan.learningSessionId,
-      wordId: attempt.promptWordId,
-      isCorrect: attempt.isCorrect,
-      responseTimeMs: attempt.responseTimeMs,
-      attemptNumber: state.attempts.length + 1,
-      contentRevision: _contentRevision(attempt.promptWordId),
-      classification: transition.state.classificationFor(attempt),
-    );
+    _pending = isPracticeReplay
+        ? evidence.capturePracticeReplayMatching(
+            plan: operation.plan,
+            wordId: attempt.promptWordId,
+            isCorrect: attempt.isCorrect,
+            responseTimeMs: attempt.responseTimeMs,
+            attemptNumber: state.attempts.length + 1,
+            contentRevision: _contentRevision(attempt.promptWordId),
+          )
+        : evidence.captureMatching(
+            ownerId: operation.plan.ownerId,
+            sessionId: operation.plan.learningSessionId,
+            wordId: attempt.promptWordId,
+            isCorrect: attempt.isCorrect,
+            responseTimeMs: attempt.responseTimeMs,
+            attemptNumber: state.attempts.length + 1,
+            contentRevision: _contentRevision(attempt.promptWordId),
+            classification: transition.state.classificationFor(attempt),
+          );
     _capturedState = transition.state;
     await _resumeEvidence();
   });

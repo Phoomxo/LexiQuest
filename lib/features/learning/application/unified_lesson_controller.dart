@@ -24,6 +24,7 @@ import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'hint_use_cases.dart';
 import 'learning_use_cases.dart';
+import '../pair_matching/domain/pair_matching_session_purpose.dart';
 
 typedef UnifiedLessonControllerFactory =
     UnifiedLessonController Function(LessonModeAdapter adapter);
@@ -61,6 +62,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     ActiveLearningTimeController? activeLearningTime,
     FocusTimerController? focusTimer,
     Feature? focusTimerFeature,
+    PairMatchingSessionPurposeReader? sessionPurposeReader,
     SessionConfigurationMonotonicMicros? configurationMonotonicMicros,
     Duration configurationIdleTimeout = const Duration(minutes: 5),
   }) {
@@ -128,6 +130,10 @@ final class UnifiedLessonController extends ChangeNotifier {
       focusTimerFeature,
       configurationMonotonicMicros ?? _SystemSessionMonotonicClock().read,
       configurationIdleTimeout,
+      sessionPurposeReader ??
+          (learning.repository is PairMatchingSessionPurposeReader
+              ? learning.repository as PairMatchingSessionPurposeReader
+              : null),
     );
   }
 
@@ -141,9 +147,13 @@ final class UnifiedLessonController extends ChangeNotifier {
     this._focusTimerFeature,
     this._configurationMonotonicMicros,
     this._configurationIdleTimeout,
+    this._sessionPurposeReader,
   ) : _state = LessonSessionState.planned(_adapter.mode);
 
   final LearningUseCases _learning;
+  final PairMatchingSessionPurposeReader? _sessionPurposeReader;
+  bool _practiceReplay = false;
+  bool get admitsLearningTime => !_practiceReplay;
   final LessonModeAdapter _adapter;
   final HintUseCases? _hints;
   final CompanionReactionUseCases _companion;
@@ -386,8 +396,19 @@ final class UnifiedLessonController extends ChangeNotifier {
           throw error;
         }
       }
+      if (_adapter.mode == LessonMode.matching &&
+          _sessionPurposeReader != null) {
+        if (ownerId == null) {
+          throw StateError('Matching purpose requires owner identity');
+        }
+        final purpose = await _sessionPurposeReader.read(
+          ownerId: ownerId,
+          sessionId: sessionId,
+        );
+        _practiceReplay = !purpose.allowsLearningAuthority;
+      }
       final activeTime = _activeLearningTime;
-      if (activeTime != null) {
+      if (activeTime != null && !_practiceReplay) {
         try {
           await activeTime.start(
             sessionId: sessionId,
@@ -1265,6 +1286,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   Future<void> recordActiveLearningInteraction(DateTime occurredAtUtc) {
+    if (_practiceReplay) return Future<void>.value();
     try {
       _requireNotDisposed();
       _requireConfigurationEffortAvailable();
@@ -1311,6 +1333,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     _FocusTimerAction action,
     DateTime occurredAtUtc,
   ) {
+    if (_practiceReplay) return Future<void>.value();
     try {
       _requireNotDisposed();
       _requireConfigurationEffortAvailable();
@@ -1540,6 +1563,7 @@ final class UnifiedLessonController extends ChangeNotifier {
       SessionTimingKind.untimedAlternative;
 
   void _beginConfigurationEffort(Duration restored) {
+    if (_practiceReplay) return;
     _invalidateConfigurationLimitTimer();
     _configurationEffortGeneration += 1;
     _configurationConsumedMicros = restored.inMicroseconds;
@@ -1580,6 +1604,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   void _resumeConfigurationEffort() {
+    if (_practiceReplay) return;
     if (_configurationLimitReached ||
         _configurationEffortLimit == null ||
         _configurationTerminalClose != null) {
@@ -1598,6 +1623,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   Future<void> _recordConfigurationInteraction() async {
+    if (_practiceReplay) return;
     if (_configurationEffortLimit == null ||
         _state.status != LessonSessionStatus.active ||
         _configurationTerminalClose != null) {

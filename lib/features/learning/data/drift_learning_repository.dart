@@ -30,6 +30,9 @@ import '../pair_matching/domain/pair_matching_plan.dart';
 import '../pair_matching/domain/pair_matching_launch.dart';
 import '../domain/learning_activity_recovery_limits.dart';
 import '../pair_matching/data/pair_matching_checkpoint_codec.dart';
+import '../pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
+import '../pair_matching/domain/pair_matching_session_purpose.dart';
+import '../pair_matching/application/pair_matching_atomic_start.dart';
 import '../application/current_activity_evidence.dart'
     show FrozenPendingCurrentActivityEvidence;
 
@@ -44,6 +47,7 @@ final class DriftLearningRepository
         PinnedLearningContentRepository,
         ExactPinnedLearningActivityRepository,
         PairPinnedLearningActivityRepository,
+        PairMatchingSessionPurposeReader,
         ReviewSessionLearningRepository {
   static const int maxActivityRecoveryCheckpoints =
       LearningActivityRecoveryLimits.maximumCheckpoints;
@@ -71,6 +75,13 @@ final class DriftLearningRepository
        );
 
   final db.AppDatabase database;
+  @override
+  Future<PairMatchingSessionPurpose> read({
+    required String ownerId,
+    required String sessionId,
+  }) => DriftPairMatchingSessionPurposeReader(
+    database,
+  ).read(ownerId: ownerId, sessionId: sessionId);
   final VocabularyRepository? lexicalVocabulary;
   final DriftLearningProjectionRebuilder projections;
   final DriftLearningEventStore events;
@@ -523,11 +534,18 @@ final class DriftLearningRepository
     required PairMatchingStartCapability capability,
   }) {
     final frozen = _canonicalizeActivityCheckpoint(checkpoint);
+    final acceptedOperation =
+        PairMatchingStartOperation.fromStableSerialization(
+          _decodePinnedPairCheckpoint(frozen.state).startOperation,
+        );
+    if (acceptedOperation.configuration?.stableSerialization !=
+        session.sessionConfiguration?.stableSerialization) {
+      throw ArgumentError('Pair configured start identity changed');
+    }
     if (session.id != plan.learningSessionId ||
         session.ownerId != plan.ownerId ||
         session.activityType != 'matching' ||
         session.startedAtUtc != plan.createdAtUtc ||
-        plan.sessionPurpose != PairSessionPurpose.learning ||
         session.id != pairSessionId(plan.ownerId, launchOperationId) ||
         frozen.sessionId != session.id ||
         frozen.activityType != 'matching' ||
@@ -565,6 +583,10 @@ final class DriftLearningRepository
             prior.startedAtUtcMs != plan.createdAtUtc.millisecondsSinceEpoch ||
             prior.appVersion != session.appVersion ||
             prior.buildId != session.buildId ||
+            prior.sessionConfigurationIdentity !=
+                session.sessionConfiguration?.contentIdentity ||
+            prior.sessionConfigurationJson !=
+                session.sessionConfiguration?.stableSerialization ||
             event == null ||
             event.ownerId != plan.ownerId ||
             event.aggregateId != session.id ||
@@ -577,6 +599,34 @@ final class DriftLearningRepository
         return;
       }
       capability.requireAllowed(plan);
+      if (plan.sessionPurpose == PairSessionPurpose.practiceReplay) {
+        final source = await DriftPairMatchingSessionPurposeReader(
+          database,
+        ).read(ownerId: plan.ownerId, sessionId: plan.sourceSessionId!);
+        final snapshot = source.snapshot;
+        final prior = snapshot?.engine.plan;
+        if (snapshot == null ||
+            snapshot.terminal?.acknowledged != true ||
+            !snapshot.engine.complete ||
+            prior!.learningSessionId == plan.learningSessionId ||
+            plan.createdAtUtc.isBefore(snapshot.terminal!.atUtc) ||
+            prior.shuffleSeed == plan.shuffleSeed ||
+            prior.direction != plan.direction ||
+            prior.density != plan.density ||
+            prior.allowlistVersion != plan.allowlistVersion ||
+            PairMatchingStartOperation.fromStableSerialization(
+                  snapshot.startOperation,
+                ).configuration?.stableSerialization !=
+                acceptedOperation.configuration?.stableSerialization ||
+            jsonEncode(
+                  prior.orderedLexicalItems.map((i) => i.toJson()).toList(),
+                ) !=
+                jsonEncode(
+                  plan.orderedLexicalItems.map((i) => i.toJson()).toList(),
+                )) {
+          throw StateError('Pair replay source or exact pins changed');
+        }
+      }
       PairMatchingCheckpointCodec.requireCompletionCapacity(
         _decodePinnedPairCheckpoint(frozen.state),
       );
@@ -1497,6 +1547,15 @@ final class DriftLearningRepository
             )
           : null;
       final isPair = pairCheckpoint?.state['schemaVersion'] == 6;
+      if (session.activityType == 'matching') {
+        final purpose = await read(
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+        );
+        if (purpose.unknownMatching) {
+          throw StateError('Matching checkpoint authority is unavailable');
+        }
+      }
       if (isPair) {
         await _validatePinnedPairAnswer(command, pairCheckpoint!);
       }
@@ -1605,6 +1664,10 @@ final class DriftLearningRepository
     final frozen = FrozenPendingCurrentActivityEvidence.fromJson(
       snapshot.frozenEvidence!,
     );
+    if (snapshot.engine.plan.sessionPurpose ==
+        PairSessionPurpose.practiceReplay) {
+      frozen.requirePracticeReplayContext();
+    }
     final role = snapshot.engine.pending!;
     final item = snapshot.engine.plan.orderedLexicalItems.singleWhere(
       (i) => i.wordId == role.promptWordId,
@@ -1618,7 +1681,10 @@ final class DriftLearningRepository
     if (pin == null ||
         frozen.contentRevision != pin.evidenceContentRevision ||
         frozen.declaredEvidenceClass !=
-            snapshot.engine.classificationFor(role).evidenceClass ||
+            (snapshot.engine.plan.sessionPurpose ==
+                    PairSessionPurpose.practiceReplay
+                ? EvidenceClass.recreational
+                : snapshot.engine.classificationFor(role).evidenceClass) ||
         frozen.contrastiveFeedback != null) {
       throw StateError('Pair occurrence pin/classification changed');
     }
@@ -1683,11 +1749,19 @@ final class DriftLearningRepository
     }
     final plan = snapshot.engine.plan;
     final start = jsonDecode(snapshot.startOperation) as Map<String, dynamic>;
+    final acceptedConfiguration =
+        PairMatchingStartOperation.fromStableSerialization(
+          snapshot.startOperation,
+        ).configuration;
     if (plan.ownerId != session.ownerId ||
         plan.learningSessionId != session.id ||
         plan.createdAtUtc.millisecondsSinceEpoch != session.startedAtUtcMs ||
         start['appVersion'] != session.appVersion ||
-        start['buildId'] != session.buildId) {
+        start['buildId'] != session.buildId ||
+        acceptedConfiguration?.contentIdentity !=
+            session.sessionConfigurationIdentity ||
+        acceptedConfiguration?.stableSerialization !=
+            session.sessionConfigurationJson) {
       throw StateError('Pair checkpoint session changed');
     }
     if (latest == null &&
@@ -1777,7 +1851,10 @@ final class DriftLearningRepository
           a.attemptNumber != i + 1 ||
           a.responseTimeMs != role.responseTimeMs ||
           a.evidenceClass !=
-              snapshot.engine.classificationFor(role).evidenceClass.name) {
+              (plan.sessionPurpose == PairSessionPurpose.practiceReplay
+                      ? EvidenceClass.recreational
+                      : snapshot.engine.classificationFor(role).evidenceClass)
+                  .name) {
         throw StateError('Pair checkpoint does not match canonical attempts');
       }
     }
@@ -2416,6 +2493,10 @@ final class DriftLearningRepository
       );
     }
     return database.transaction(() async {
+      final purpose = await read(ownerId: owner, sessionId: session);
+      if (!purpose.allowsLearningAuthority) {
+        throw StateError('Session purpose does not admit configuration effort');
+      }
       final updated = await database.customUpdate(
         'UPDATE learning_sessions SET configuration_active_effort_us = '
         'configuration_active_effort_us + ? WHERE id = ? AND owner_id = ? '

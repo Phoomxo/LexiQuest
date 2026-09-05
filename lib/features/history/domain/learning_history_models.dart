@@ -2,6 +2,7 @@ import '../../assessment/domain/assessment_models.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/lesson_mode.dart';
+import '../../learning/pair_matching/domain/pair_matching_history_projection.dart';
 import '../../learning/domain/lesson_session_state.dart';
 import '../../learning/domain/session_configuration.dart';
 import '../../learning_packs/domain/content_manifest.dart';
@@ -11,10 +12,15 @@ enum LearningHistoryTerminalState { completed, abandoned }
 enum LearningHistoryContentAvailability { available, unavailable }
 
 final class HistoryFilter {
-  const HistoryFilter({required this.ownerId, this.limit = 20});
+  const HistoryFilter({
+    required this.ownerId,
+    this.limit = 20,
+    this.includePracticeReplay = true,
+  });
 
   final String ownerId;
   final int limit;
+  final bool includePracticeReplay;
 }
 
 final class LearningHistoryEventSnapshot {
@@ -154,6 +160,8 @@ final class LearningHistoryEntry {
     required this.sessionConfiguration,
     required Iterable<LearningHistoryEvidence> evidence,
     this.assessmentSummary,
+    this.pairSummary,
+    this.pairPurposeUnavailable = false,
   }) : evidence = List<LearningHistoryEvidence>.unmodifiable(evidence) {
     _requireCanonicalText(sessionId, 'sessionId');
     _requireCanonicalText(ownerId, 'ownerId');
@@ -247,6 +255,8 @@ final class LearningHistoryEntry {
   final SessionConfiguration? sessionConfiguration;
   final List<LearningHistoryEvidence> evidence;
   final LearningHistoryAssessmentSummary? assessmentSummary;
+  final PairMatchingHistoryProjection? pairSummary;
+  final bool pairPurposeUnavailable;
 }
 
 abstract interface class LearningHistoryReader {

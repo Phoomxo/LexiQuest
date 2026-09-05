@@ -31,6 +31,7 @@ import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart
 import 'package:vocab_learning_app/features/today_hub/data/drift_today_hub_reader.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
+import '../../support/pair_purpose_fixture.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
@@ -45,6 +46,20 @@ void main() {
     });
 
     tearDown(() => database.close());
+    test(
+      'newest replay does not displace older normal resume session',
+      () async {
+        await _seedResumeSession(database);
+        final before = _stableShape(
+          await _reader(database).compose(_request()),
+        );
+        await seedSyntheticReplayPurpose(database, owner: _ownerId, at: _now);
+        expect(
+          _stableShape(await _reader(database).compose(_request())),
+          before,
+        );
+      },
+    );
 
     test(
       'orders canonical sections and work independently of insertion order',

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../../adventure/domain/adventure_entry.dart';
 import '../../learning/domain/session_configuration.dart';
+import '../../learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import '../data/drift_measurement_opportunity_repository.dart';
 import '../data/drift_motivation_measurement_repository.dart';
 import '../domain/measurement_opportunity.dart';
@@ -170,6 +171,17 @@ final class MotivationMeasurementUseCases {
           };
           final consumed = assigned.values.toSet();
           for (final session in sessions) {
+            try {
+              if (!(await DriftPairMatchingSessionPurposeReader(database).read(
+                ownerId: ownerId,
+                sessionId: session.id,
+              )).allowsLearningAuthority) {
+                continue;
+              }
+            } catch (_) {
+              // Ambiguous Pair authority cannot be promoted to research learning.
+              continue;
+            }
             var opportunityId = assigned[session.id];
             if (opportunityId == null) {
               final candidates = ops
@@ -232,6 +244,8 @@ final class MotivationMeasurementUseCases {
         '''SELECT 'learning' AS kind,id,state AS status,0 AS revision,0 AS cloud_revision,
       started_at_utc_ms AS occurred_at,ended_at_utc_ms AS ended_at,session_configuration_identity AS tag
       FROM learning_sessions WHERE owner_id=?
+      UNION ALL SELECT 'checkpoint',event_id,event_type,event_version,0,0,NULL,payload_json
+      FROM events_v2 WHERE owner_id=? AND event_type='LearningActivityCheckpoint'
       UNION ALL SELECT 'owner',id,CAST(is_active AS TEXT),0,0,0,NULL,firebase_uid FROM local_owners
       UNION ALL SELECT 'permit',id,CAST(is_deleted AS TEXT),local_revision,cloud_revision,
       expires_at_utc_ms,revoked_at_utc_ms,payload_sha256 || ':' || signature
@@ -243,9 +257,11 @@ final class MotivationMeasurementUseCases {
           Variable<String>(ownerId),
           Variable<String>(ownerId),
           Variable<String>(ownerId),
+          Variable<String>(ownerId),
         ],
         readsFrom: {
           database.learningSessions,
+          database.eventsV2,
           database.researchConsents,
           database.researchParticipationPermits,
           database.localOwners,

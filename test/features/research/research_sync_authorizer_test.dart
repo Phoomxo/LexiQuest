@@ -22,6 +22,8 @@ import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 
 import '../../support/motivation_research_fixture.dart';
+import '../../support/pair_purpose_fixture.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 
 void main() {
   late MotivationResearchFixture f;
@@ -1338,6 +1340,109 @@ void main() {
       isFalse,
     );
   });
+  for (final mutation in ['none', 'payload', 'insert', 'delete-all']) {
+    test(
+      'tracked normal Pair mission checkpoints across external await: $mutation',
+      () async {
+        await seedRun();
+        final base = event('TodayExperienceMissionStarted');
+        final id = await seedSyntheticReplayPurpose(
+          f.database,
+          owner: 'owner:a',
+          at: base.occurredAtUtc,
+          appVersion: f.study.appVersion,
+          buildId: f.study.buildId,
+          purpose: PairSessionPurpose.learning,
+        );
+        final e = EventEnvelopeV2.fromJson({
+          ...base.toJson(),
+          'aggregateId': id,
+        });
+        final presented = event('TodayExperiencePresented');
+        await seedOpportunity({
+          'presentedEventId': presented.eventId,
+          'learningSessionId': id,
+          'startedEventId': e.eventId,
+        });
+        await seedEvent(presented);
+        await seedEvent(e);
+        var observed = false;
+        receipts.onRead = () async {
+          receipts.onRead = null;
+          observed = true;
+          if (mutation == 'payload') {
+            await f.database.customStatement(
+              "UPDATE events_v2 SET payload_json='{}' WHERE event_type='LearningActivityCheckpoint'",
+            );
+          }
+          if (mutation == 'delete-all') {
+            await f.database.customStatement(
+              "DELETE FROM events_v2 WHERE event_type='LearningActivityCheckpoint'",
+            );
+          }
+          if (mutation == 'insert') {
+            await f.database.customStatement(
+              "INSERT INTO events_v2 (event_id,event_type,event_version,occurred_at_utc,recorded_at_utc,actor_identity,owner_id,aggregate_type,aggregate_id,idempotency_key,consent_context_json,app_version,build_id,privacy_classification,payload_json) SELECT 'learning-activity-checkpoint:synthetic-insertion',event_type,event_version,occurred_at_utc,recorded_at_utc,actor_identity,owner_id,aggregate_type,aggregate_id,'synthetic-insertion',consent_context_json,app_version,build_id,privacy_classification,payload_json FROM events_v2 WHERE event_type='LearningActivityCheckpoint'",
+            );
+          }
+        };
+        expect(
+          await authorizer.authorize(
+            request(
+              collection: SyncCollection.neutralEventsV2,
+              id: e.eventId,
+              payload: {
+                ...ResearchSyncContract.reference(permit),
+                'envelope': e.toJson(),
+              },
+            ),
+          ),
+          mutation == 'none',
+        );
+        expect(
+          observed,
+          true,
+          reason: 'must cross genuine external authority await',
+        );
+      },
+    );
+  }
+  test(
+    'seeded replay mission event cannot upload despite valid permit and linkage',
+    () async {
+      await seedRun();
+      final base = event('TodayExperienceMissionStarted');
+      final id = await seedSyntheticReplayPurpose(
+        f.database,
+        owner: 'owner:a',
+        at: base.occurredAtUtc,
+        appVersion: f.study.appVersion,
+        buildId: f.study.buildId,
+      );
+      final e = EventEnvelopeV2.fromJson({...base.toJson(), 'aggregateId': id});
+      final presented = event('TodayExperiencePresented');
+      await seedOpportunity({
+        'presentedEventId': presented.eventId,
+        'learningSessionId': id,
+        'startedEventId': e.eventId,
+      });
+      await seedEvent(presented);
+      await seedEvent(e);
+      expect(
+        await authorizer.authorize(
+          request(
+            collection: SyncCollection.neutralEventsV2,
+            id: e.eventId,
+            payload: {
+              ...ResearchSyncContract.reference(permit),
+              'envelope': e.toJson(),
+            },
+          ),
+        ),
+        isFalse,
+      );
+    },
+  );
   for (final type in ResearchSyncContract.eventTypes) {
     test(
       'actual neutral event $type uploads with UUIDv7 exact milliseconds',
