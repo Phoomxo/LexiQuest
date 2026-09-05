@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d",
+  "sourceCommit": "ed89efaf32a1090505a84d4b55b2cc60003068b3",
   "sourceFingerprint": "8e9ac9a8d74eba3cf2807ff6b02f6e57c4fa97ee6e3b49b8a8acb8f84a173988",
   "sources": [
     {
@@ -599,7 +599,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit ed89efaf32a1090505a84d4b55b2cc60003068b3",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

@@ -2,20 +2,21 @@
 
 Worktree: `.worktrees/research`; branch: `feature/adventure-research`.
 Implementation base: `6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d`.
+Verified implementation commit: `ed89efaf32a1090505a84d4b55b2cc60003068b3`.
 Plan: `docs/superpowers/plans/2026-09-05-adventure-research-implementation.md`.
 
 ## Status and release boundary
 
-Implementation and integration verification are in progress. This document is
-not a production signoff, enrollment authorization, validated-instrument claim,
+R1–R6 implementation and local integration acceptance checks are complete. This
+document is not a production signoff, enrollment authorization, validated-instrument claim,
 physical-device result, or evidence of research efficacy. The historical paused
 checkpoint is superseded by the user's authorization to continue development.
 
 Real enrollment and research upload remain default-off. Ordinary learning does
 not require participation, an instrument, an issuer, or a receipt provider.
 No production deployment, participant upload, or remote authority creation has
-been performed. A separate Pair Matching task is still conditional on completing
-the Research engineering checks below.
+been performed. The engineering condition for the user's separate Pair Matching
+task is satisfied; the source handoff is recorded below.
 
 ## Implemented boundaries
 
@@ -139,25 +140,27 @@ Pull provenance is process-local and bound
 to authenticated server reads; it is not a document field, signature, or authority
 to upload stale revisions. Current consent, signed permits, and all pins still apply.
 
-## Required before engineering completion
+## Engineering closure
 
 1. Component implementation and independent review are complete. The final
    integration pass also corrected Settings to use the typed navigation port
    (21 focused tests passed after the architecture failure was reproduced).
-2. Implementation writers are frozen. Finish whole-project analysis, current contract
-   and generated-plan checks, full default/serial test inventory, and required
-   Firebase/Auth/local policy checks on the final source.
-3. Run bounded Gitleaks/dependency checks with no implementation writers, build
-   and hash the Android artifact, and record exact results/source state.
-4. Complete the final review and source handoff. Only then create the requested
-   separate Pair Matching task from the completed Research source.
+2. All implementation agents are closed. Whole-project analysis, current contract
+   and generated-plan checks, default/serial full inventories, three host journeys
+   and Firebase Auth/Firestore policy checks passed on the final implementation.
+3. Bounded working-source Gitleaks and dependency checks passed under the documented
+   existing exceptions. Android debug build, SHA-256 and packaged native-library
+   integrity checks passed. Exact evidence is below.
+4. Final main diff review found no additional blocking defect. The source was
+   committed locally; no merge, push, deployment or unrelated worktree cleanup
+   occurred. The Pair task inherits this completed source, not the dirty root branch.
 
 Production rollout still requires the approved instrument/protocol and consent
 process, real trusted issuer/receipt provisioning, explicit deployment/enrollment
 authorization, and physical-device/UAT evidence. None can be inferred from these
 synthetic/emulator engineering results.
 
-## R6 integration verification in progress
+## Final R6 verification
 
 - Whole-project analyzer passed after bounded formatting/style corrections;
   the final repeat also reported no issues (7.6 seconds). Final tracked plus
@@ -172,8 +175,9 @@ synthetic/emulator engineering results.
   The final test-plan generator's stale database count was reproduced failing
   at 48, then updated for v24 and the research rules revision; its two contract
   suites passed 18/18. Generated source fingerprints are refreshed after final
-  formatting; the metadata source commit is the checkout base, not a claim that
-  uncommitted implementation is already in that commit.
+  formatting. After the verified implementation was committed, the metadata was
+  regenerated and checked against `ed89efaf32a1090505a84d4b55b2cc60003068b3`;
+  only source-commit metadata/command changed, not the source fingerprint.
 - `tool/cli/verify-osv-locks.ps1`: all six literal dependency inventories passed
   under the existing bounded uuid/optional GPU exceptions. No exception was
   extended and no excluded GPU/runtime capability was enabled.
@@ -204,6 +208,42 @@ synthetic/emulator engineering results.
   `flutter test -d flutter-tester --no-pub --timeout 90s --reporter failures-only`
   with its path under `integration_test/`. Core journey completed all 23 phases,
   including reopen, export and sign-out. These are not physical-device results.
-- APK and final source handoff remain pending. Machine-readable test outputs
-  are retained locally under `.superpowers/sdd/`; they contain synthetic test
-  evidence only.
+- Android debug build passed, exit 0, Gradle assemble 188.1 seconds. Packaged model
+  runtime integrity passed via `tool/cli/verify-apk-model-runtime.ps1 -BuildMode Debug`.
+  No GPU accelerator was enabled or packaged outside the existing integrity policy.
+  Final documentation Gitleaks rerun also passed, no leaks found.
+
+## Android artifact and source handoff
+
+- Implementation source: `ed89efaf32a1090505a84d4b55b2cc60003068b3`.
+- Build command: `flutter build apk --debug --no-pub --dart-define=LEXIQUEST_VERSION=1.0.0+1 --dart-define=LEXIQUEST_BUILD_ID=research-ed89efaf32a1090505a84d4b55b2cc60003068b3`.
+- Local artifact: `build/app/outputs/flutter-apk/app-debug.apk` in the Research worktree.
+- Size: 223,579,309 bytes.
+- SHA-256: `1623D8DA7FF886170F5A2086EC1B624A36E982638F22AF94BA925DE502B11898`.
+- Research runtime and upload are default-off in this APK. It contains no synthetic
+  approved questionnaire, issuer private key, receipt provisioning or enrollment authority.
+- Subsequent handoff commits change documentation/source metadata only. The generated
+  plan pins the verified implementation commit above; its fingerprint is unchanged.
+  Existing native registrant/learning-generated-file line-ending/stat noise was
+  preserved and excluded from the implementation commit because it has no Git content diff.
+- Pair Matching PM0–PM8 dispatch: ready after this engineering closure; record the
+  new task identifier after creation. Preserve the Research worktree and root user's edits.
+
+Machine-readable test logs and scoped independent review reports remain locally
+under `.superpowers/sdd/`; the committed evidence summary above is the portable
+handoff. These logs contain synthetic test evidence only.
+
+## Explicit non-results and follow-up boundaries
+
+The four existing `release-excluded` checks (one iOS notification-platform check
+and three physical LiteRT/model checks) were not run as part of the full inventory.
+No physical-device accessibility/performance/UAT, desktop release certification,
+research efficacy or participant-data result is claimed. Unchanged backend CPU
+and Supabase suites were not rerun for this scoped Research closure; older results
+are not counted as current evidence.
+
+The successful Android build emitted dependency KGP future-migration, Android SDK
+XML compatibility and Java deprecated/unchecked API warnings. These are recorded
+maintenance follow-ups, not a claim that those dependencies were upgraded here.
+Optional remote Voice/GPU remains outside this approval. Real research activation
+still requires the protocol/issuer/receipt and explicit rollout gates above.

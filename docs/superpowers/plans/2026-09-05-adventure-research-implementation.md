@@ -71,6 +71,6 @@
 ## R6 — Verification, evidence and Pair handoff
 
 - [x] Run touched research/domain/widget/integration/migration/lifecycle suites, analyzer, Firestore/Auth tests, exact feature map, generated plan check, full default/serial inventory and bounded Gitleaks/OSV after agents stop.
-- [ ] Build/hash Android APK; document research implementation, configurable external artifacts and local versus physical/UAT evidence. Do not claim actual efficacy or external acceptance.
-- [ ] Review the research diff and address blocking findings; retain precise source and verification evidence.
+- [x] Build/hash Android APK; document research implementation, configurable external artifacts and local versus physical/UAT evidence. Do not claim actual efficacy or external acceptance.
+- [x] Review the research diff and address blocking findings; retain precise source and verification evidence.
 - [ ] Only after research engineering completion: call `list_projects`, then `create_thread` for the existing LexiQuest project from the research branch. Prompt the new task to implement Pair PM0–PM8 with the user's explicit authorization, existing UX contracts and inherited verification guardrails. Report its created-thread directive.
