@@ -2929,6 +2929,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           protocolId: decoded.protocolId,
           protocolVersion: decoded.protocolVersion,
           protocolLimitsIdentity: decoded.protocolLimitsIdentity,
+          pairDensityPreference: decoded.pairDensityPreference,
         );
         await _database
             .into(_database.sessionConfigurations)
@@ -2987,6 +2988,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           protocolId: decoded.protocolId,
           protocolVersion: decoded.protocolVersion,
           protocolLimitsIdentity: decoded.protocolLimitsIdentity,
+          pairDensityPreference: decoded.pairDensityPreference,
         );
         await (_database.update(
           _database.learningSessions,

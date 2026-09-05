@@ -9,6 +9,8 @@ import 'package:vocab_learning_app/features/learning/application/typed_recall_mo
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
@@ -34,6 +36,52 @@ void main() {
   );
 
   group('SessionConfigurationPolicy', () {
+    test(
+      'Pair metadata survives real revalidation and ordinary draft edits',
+      () {
+        final registration = _registration(const MatchingModeAdapter());
+        const local = SessionConfigurationProtocolLimits.standard();
+        final original = policy
+            .validate(
+              draft: policy.defaultsFor(
+                registration: registration,
+                limits: local,
+              ),
+              registration: registration,
+              limits: local,
+              ownerId: 'synthetic-owner',
+              availablePackIdentities: const [],
+            )
+            .withPairDensityPreference(
+              PairDensityPreference(
+                density: PairDensity.compact4,
+                provenance: PairDensityProvenance.fallback,
+              ),
+            );
+        expect(
+          policy.revalidate(
+            configuration: original,
+            registration: registration,
+            limits: local,
+            ownerId: 'synthetic-owner',
+            availablePackIdentities: const [],
+          ),
+          original,
+        );
+        final edited = policy.validate(
+          draft: original.draft.copyWith(hintBudget: 0),
+          registration: registration,
+          limits: local,
+          ownerId: 'synthetic-owner',
+          availablePackIdentities: const [],
+        );
+        expect(
+          edited.pairDensityPreference!.provenance,
+          PairDensityProvenance.fallback,
+        );
+        expect(edited.pairDensityInputs.choiceHandled, isTrue);
+      },
+    );
     test('clamps numeric choices to adapter and persisted protocol bounds', () {
       final registration = _registration(const TypedRecallModeAdapter());
       final numericLimits = limits.copyWith(pinnedPackIdentities: const []);

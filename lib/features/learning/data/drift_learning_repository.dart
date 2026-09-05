@@ -26,6 +26,8 @@ import '../domain/learning_repository.dart';
 import '../domain/session_configuration.dart';
 import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
+import '../pair_matching/domain/pair_matching_plan.dart';
+import '../pair_matching/domain/pair_matching_launch.dart';
 
 final class DriftLearningRepository
     implements
@@ -37,6 +39,7 @@ final class DriftLearningRepository
         LearningActivitySessionHistoryRepository,
         PinnedLearningContentRepository,
         ExactPinnedLearningActivityRepository,
+        PairPinnedLearningActivityRepository,
         ReviewSessionLearningRepository {
   static const int maxActivityRecoveryCheckpoints = 64;
   static const int maxActivityRecoveryAttempts = 128;
@@ -490,6 +493,127 @@ final class DriftLearningRepository
         sessionId: sessionId,
         ownerId: ownerId,
       );
+    });
+  }
+
+  @override
+  Future<void> startPinnedPairSession({
+    required LearningSessionDraft session,
+    required PairMatchingPlanV1 plan,
+    required String launchOperationId,
+    required LearningActivityCheckpoint checkpoint,
+    required PairMatchingStartCapability capability,
+  }) {
+    final frozen = _canonicalizeActivityCheckpoint(checkpoint);
+    if (session.id != plan.learningSessionId ||
+        session.ownerId != plan.ownerId ||
+        session.activityType != 'matching' ||
+        session.startedAtUtc != plan.createdAtUtc ||
+        plan.sessionPurpose != PairSessionPurpose.learning ||
+        session.id != pairSessionId(plan.ownerId, launchOperationId) ||
+        frozen.sessionId != session.id ||
+        frozen.activityType != 'matching' ||
+        frozen.revision != 1 ||
+        frozen.occurredAtUtc != plan.createdAtUtc ||
+        frozen.state['schemaVersion'] != 6 ||
+        frozen.state['planFingerprint'] != plan.planFingerprint ||
+        jsonEncode(frozen.state['plan']) != plan.stableSerialization) {
+      throw ArgumentError('Pair start binding mismatch');
+    }
+    return database.transaction(() async {
+      final owners =
+          await (database.select(database.localOwners)
+                ..where((r) => r.isActive.equals(true))
+                ..limit(2))
+              .get();
+      if (owners.length != 1 || owners.single.id != plan.ownerId) {
+        throw StateError('Pair owner changed');
+      }
+      final prior = await (database.select(
+        database.learningSessions,
+      )..where((r) => r.id.equals(session.id))).getSingleOrNull();
+      if (prior != null) {
+        final key = _activityCheckpointKey(
+          ownerId: plan.ownerId,
+          sessionId: session.id,
+          activityType: 'matching',
+          revision: 1,
+        );
+        final event = await (database.select(
+          database.eventsV2,
+        )..where((r) => r.eventId.equals(key))).getSingleOrNull();
+        if (prior.ownerId != session.ownerId ||
+            prior.activityType != 'matching' ||
+            prior.startedAtUtcMs != plan.createdAtUtc.millisecondsSinceEpoch ||
+            prior.appVersion != session.appVersion ||
+            prior.buildId != session.buildId ||
+            event == null ||
+            event.ownerId != plan.ownerId ||
+            event.aggregateId != session.id ||
+            jsonEncode((jsonDecode(event.payloadJson) as Map)['state']) !=
+                jsonEncode(frozen.state)) {
+          throw StateError('Pair operation identity conflict');
+        }
+        // Acknowledgement can be lost even after later checkpoints commit.
+        // Reconcile the immutable initial event, never append revision 1 again.
+        return;
+      }
+      capability.requireAllowed(plan);
+      final ids = plan.orderedLexicalItems.map((i) => i.wordId).toList();
+      final reports =
+          await (database.select(database.contentQualityReports)
+                ..where(
+                  (r) =>
+                      r.ownerId.equals(plan.ownerId) &
+                      r.contentType.equals(ContentType.lexicalMetadata.name) &
+                      r.contentId.isIn(ids),
+                )
+                ..limit(1))
+              .get();
+      if (reports.isNotEmpty) throw StateError('Pair content is reported');
+      final rows = await (database.select(
+        database.vocabularyWords,
+      )..where((r) => r.ownerId.equals(plan.ownerId) & r.id.isIn(ids))).get();
+      final categories =
+          await (database.select(database.vocabularyCategories)..where(
+                (r) =>
+                    r.ownerId.equals(plan.ownerId) &
+                    r.isDeleted.equals(false) &
+                    r.id.isIn(rows.map((r) => r.categoryId).toSet()),
+              ))
+              .get();
+      final availableCategories = categories.map((r) => r.id).toSet();
+      for (final item in plan.orderedLexicalItems) {
+        final matches = rows.where((r) => r.id == item.wordId);
+        if (matches.length != 1 ||
+            matches.single.isDeleted ||
+            !availableCategories.contains(matches.single.categoryId) ||
+            matches.single.contentReviewState == 'rejected' ||
+            matches.single.contentPublicationState == 'retired' ||
+            matches.single.spelling != item.spelling ||
+            matches.single.meaning != item.meaning) {
+          throw StateError('Pair labels/content changed');
+        }
+      }
+      capability.requireAllowed(plan);
+      await startExactPinnedSessionWithCheckpoint(
+        session: session,
+        content: plan.orderedLexicalItems
+            .map(
+              (i) => PinnedQuizContent(
+                identity: ContentIdentity(
+                  type: ContentType.lexicalMetadata,
+                  id: i.wordId,
+                  revision: i.contentRevision,
+                ),
+                checksumSha256: i.checksum,
+              ),
+            )
+            .toList(),
+        checkpoint: frozen,
+      );
+      // A gate may change during asynchronous persistence; rollback if so.
+      capability.requireAllowed(plan);
     });
   }
 

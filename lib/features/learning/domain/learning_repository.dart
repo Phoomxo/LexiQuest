@@ -1,5 +1,16 @@
 import '../../learning_packs/domain/content_manifest.dart';
 import 'learning_models.dart';
+import '../pair_matching/domain/pair_matching_plan.dart';
+
+abstract interface class PairPinnedLearningActivityRepository {
+  Future<void> startPinnedPairSession({
+    required LearningSessionDraft session,
+    required PairMatchingPlanV1 plan,
+    required String launchOperationId,
+    required LearningActivityCheckpoint checkpoint,
+    required PairMatchingStartCapability capability,
+  });
+}
 
 /// A checkpointed Learning start found another accepted session for the same
 /// owner. Callers must resume or retire [activeSessionId] instead of creating

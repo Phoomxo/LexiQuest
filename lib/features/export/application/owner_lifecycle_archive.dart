@@ -1243,6 +1243,8 @@ Map<String, Object?>? _sessionConfigurationExport({
       'difficulty': configuration.difficulty.name,
       'hintBudget': configuration.hintBudget,
       'timing': configuration.timing.toJson(),
+      if (configuration.pairDensityPreference != null)
+        'pairDensityPreference': configuration.pairDensityPreference!.toJson(),
       'packIdentity': pack == null
           ? null
           : <String, Object?>{

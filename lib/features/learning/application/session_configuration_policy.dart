@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/session_configuration.dart';
+import '../domain/lesson_mode.dart';
+import '../pair_matching/domain/pair_matching_launch.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_policy_rollout.dart';
 import 'current_activity_evidence.dart';
@@ -256,8 +258,25 @@ final class SessionConfigurationPolicy {
         );
       }
     }
+    final pairPreference = draft.pairDensityPreference;
+    if (pairPreference != null) {
+      if (registration.mode != LessonMode.matching) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.modeDrift,
+        );
+      }
+      try {
+        PairDensityPreference.fromJson(pairPreference.toJson());
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+    }
     return SessionConfiguration.validated(
-      schemaVersion: sessionConfigurationSchemaVersion,
+      schemaVersion: pairPreference == null
+          ? sessionConfigurationSchemaVersion
+          : 2,
       policyVersion: sessionConfigurationPolicyVersion,
       ownerId: ownerId,
       mode: registration.mode,
@@ -270,6 +289,7 @@ final class SessionConfigurationPolicy {
       protocolId: limits.protocolId,
       protocolVersion: limits.protocolVersion,
       protocolLimitsIdentity: limits.contentIdentity,
+      pairDensityPreference: pairPreference,
     );
   }
 

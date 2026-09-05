@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
 import 'lesson_mode.dart';
+import '../pair_matching/domain/pair_matching_launch.dart';
 
 const int sessionConfigurationSchemaVersion = 1;
 const String sessionConfigurationPolicyVersion =
@@ -142,6 +143,7 @@ final class SessionConfigurationDraft {
     required this.hintBudget,
     required this.timing,
     this.packIdentity,
+    this.pairDensityPreference,
   });
 
   final int itemCount;
@@ -150,6 +152,7 @@ final class SessionConfigurationDraft {
   final int hintBudget;
   final SessionTiming timing;
   final ContentIdentity? packIdentity;
+  final PairDensityPreference? pairDensityPreference;
 
   SessionConfigurationDraft copyWith({
     int? itemCount,
@@ -166,6 +169,7 @@ final class SessionConfigurationDraft {
     hintBudget: hintBudget ?? this.hintBudget,
     timing: timing ?? this.timing,
     packIdentity: clearPackIdentity ? null : packIdentity ?? this.packIdentity,
+    pairDensityPreference: pairDensityPreference,
   );
 }
 
@@ -332,6 +336,7 @@ final class SessionConfiguration {
     required this.protocolId,
     required this.protocolVersion,
     required this.protocolLimitsIdentity,
+    this.pairDensityPreference,
   }) : contentIdentity = _identityFor(
          _payload(
            schemaVersion: schemaVersion,
@@ -347,6 +352,7 @@ final class SessionConfiguration {
            protocolId: protocolId,
            protocolVersion: protocolVersion,
            protocolLimitsIdentity: protocolLimitsIdentity,
+           pairDensityPreference: pairDensityPreference,
          ),
        );
 
@@ -365,6 +371,7 @@ final class SessionConfiguration {
     required this.protocolVersion,
     required this.protocolLimitsIdentity,
     required this.contentIdentity,
+    this.pairDensityPreference,
   });
 
   final int schemaVersion;
@@ -381,6 +388,37 @@ final class SessionConfiguration {
   final String protocolVersion;
   final String protocolLimitsIdentity;
   final String contentIdentity;
+  final PairDensityPreference? pairDensityPreference;
+
+  PairDensityPreferences get pairDensityInputs => PairDensityPreferences(
+    ownerId: ownerId,
+    learnerPreference: pairDensityPreference?.density,
+    choiceHandled: pairDensityPreference != null,
+  );
+
+  SessionConfiguration withPairDensityPreference(
+    PairDensityPreference preference,
+  ) {
+    if (mode != LessonMode.matching) {
+      throw _reset(SessionConfigurationResetReason.modeDrift);
+    }
+    return SessionConfiguration.validated(
+      schemaVersion: 2,
+      policyVersion: policyVersion,
+      ownerId: ownerId,
+      mode: mode,
+      itemCount: itemCount,
+      direction: direction,
+      difficulty: difficulty,
+      hintBudget: hintBudget,
+      timing: timing,
+      packIdentity: packIdentity,
+      protocolId: protocolId,
+      protocolVersion: protocolVersion,
+      protocolLimitsIdentity: protocolLimitsIdentity,
+      pairDensityPreference: preference,
+    );
+  }
 
   SessionConfigurationDraft get draft => SessionConfigurationDraft(
     itemCount: itemCount,
@@ -389,6 +427,7 @@ final class SessionConfiguration {
     hintBudget: hintBudget,
     timing: timing,
     packIdentity: packIdentity,
+    pairDensityPreference: pairDensityPreference,
   );
 
   Map<String, Object?> get _configurationPayload => _payload(
@@ -405,10 +444,11 @@ final class SessionConfiguration {
     protocolId: protocolId,
     protocolVersion: protocolVersion,
     protocolLimitsIdentity: protocolLimitsIdentity,
+    pairDensityPreference: pairDensityPreference,
   );
 
   String get stableSerialization => jsonEncode(<String, Object?>{
-    'schemaVersion': sessionConfigurationSchemaVersion,
+    'schemaVersion': schemaVersion,
     'contentIdentity': contentIdentity,
     'configuration': _configurationPayload,
   });
@@ -426,7 +466,8 @@ final class SessionConfiguration {
         'configuration',
       });
       final envelopeVersion = envelope['schemaVersion'];
-      if (envelopeVersion != sessionConfigurationSchemaVersion) {
+      if (envelopeVersion != sessionConfigurationSchemaVersion &&
+          envelopeVersion != 2) {
         throw _reset(SessionConfigurationResetReason.unknownVersion);
       }
       final identity = envelope['contentIdentity'];
@@ -435,7 +476,7 @@ final class SessionConfiguration {
         throw _reset(SessionConfigurationResetReason.tampered);
       }
       final json = rawConfiguration.cast<Object?, Object?>();
-      _requireExactKeys(json, const <String>{
+      _requireExactKeys(json, <String>{
         'schemaVersion',
         'policyVersion',
         'ownerId',
@@ -449,9 +490,10 @@ final class SessionConfiguration {
         'protocolId',
         'protocolVersion',
         'protocolLimitsIdentity',
+        if (envelopeVersion == 2) 'pairDensityPreference',
       });
       final schemaVersion = json['schemaVersion'];
-      if (schemaVersion != sessionConfigurationSchemaVersion) {
+      if (schemaVersion != envelopeVersion) {
         throw _reset(SessionConfigurationResetReason.unknownVersion);
       }
       final policyVersion = _string(json['policyVersion']);
@@ -485,7 +527,14 @@ final class SessionConfiguration {
         protocolVersion: _string(json['protocolVersion']),
         protocolLimitsIdentity: _string(json['protocolLimitsIdentity']),
         contentIdentity: identity,
+        pairDensityPreference: envelopeVersion == 2
+            ? PairDensityPreference.fromJson(json['pairDensityPreference'])
+            : null,
       );
+      if (configuration.pairDensityPreference != null &&
+          configuration.mode != LessonMode.matching) {
+        throw _reset(SessionConfigurationResetReason.modeDrift);
+      }
       if (configuration.contentIdentity !=
               _identityFor(configuration._configurationPayload) ||
           configuration.stableSerialization != source) {
@@ -523,6 +572,7 @@ Map<String, Object?> _payload({
   required String protocolId,
   required String protocolVersion,
   required String protocolLimitsIdentity,
+  PairDensityPreference? pairDensityPreference,
 }) => <String, Object?>{
   'schemaVersion': schemaVersion,
   'policyVersion': policyVersion,
@@ -537,6 +587,8 @@ Map<String, Object?> _payload({
   'protocolId': protocolId,
   'protocolVersion': protocolVersion,
   'protocolLimitsIdentity': protocolLimitsIdentity,
+  if (pairDensityPreference != null)
+    'pairDensityPreference': pairDensityPreference.toJson(),
 };
 
 String _identityFor(Map<String, Object?> payload) =>
