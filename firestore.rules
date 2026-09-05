@@ -871,7 +871,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && fieldAssessmentRunFeatureContractOk(payload)
@@ -960,6 +960,235 @@ service cloud.firestore {
       ).data;
     }
 
+    // R4b research-measurement-v1-r1. Clients never issue permits, receipts or
+    // instrument/consent authority. Only synthetic emulator authority exists
+    // until the separately authorized trusted server is deployed.
+    function researchCode(v) {
+      return v is string && v.matches('^[A-Za-z0-9_.:\\-]{1,128}$');
+    }
+    function researchOptionalCode(v) { return v == null || researchCode(v); }
+    function researchReceiptActive(uid, receiptId, ownerId, kind) {
+      let r = get(/databases/$(database)/documents/field_users/$(uid)/research_receipts/$(receiptId)).data;
+      return r.ownerId == ownerId && r.kind == kind && r.active == true
+        && r.expiresAtUtcMs is int && r.expiresAtUtcMs > request.time.toMillis();
+    }
+    function researchAuthority(uid, permitId) {
+      return get(/databases/$(database)/documents/field_users/$(uid)/research_sync_authorities/$(permitId)).data;
+    }
+    function researchPermitActive(uid, payload) {
+      let p = get(/databases/$(database)/documents/field_users/$(uid)/research_participation_permits/$(payload.permitId)).data;
+      let a = researchAuthority(uid, payload.permitId);
+      let receipt = get(/databases/$(database)/documents/field_users/$(uid)/research_receipts/$(p.payload.consentReceiptId)).data;
+      return researchCode(payload.permitId)
+        && !exists(/databases/$(database)/documents/field_users/$(uid)/research_withdrawals/$(payload.permitId))
+        && payload.permitPayloadSha256 is string
+        && payload.permitPayloadSha256.matches('^[0-9a-f]{64}$')
+        && payload.permitRevision is int && payload.permitRevision > 0
+        && p.schemaVersion == 1 && p.entityId == payload.permitId
+        && !p.isDeleted && p.revision == payload.permitRevision
+        && p.payload.schema == 'lexiquest.research-participation-permit.v1'
+        && p.payload.id == payload.permitId && p.payload.isDeleted == false
+        && p.payload.revokedAtUtc == null
+        && p.payload.localRevision == payload.permitRevision
+        && p.payload.cloudRevision == payload.permitRevision
+        && p.payload.payloadSha256 == payload.permitPayloadSha256
+        && a.active == true && a.rulesRevision == 'research-measurement-v1-r1'
+        && a.firebaseUid == uid && a.ownerId == p.payload.ownerId
+        && a.permitPayloadSha256 == payload.permitPayloadSha256
+        && a.permitRevision == payload.permitRevision
+        && a.assignmentId == p.payload.assignmentId
+        && a.protocolId == p.payload.protocolId && a.protocolVersion == p.payload.protocolVersion
+        && a.treatment == p.payload.assignedTreatment
+        && a.issuedAtUtc == p.payload.issuedAtUtc && a.expiresAtUtc == p.payload.expiresAtUtc
+        && a.issuedAtUtcMs <= request.time.toMillis() && a.expiresAtUtcMs > request.time.toMillis()
+        && receipt.ownerId == a.ownerId && receipt.kind == 'consent' && receipt.active == true
+        && receipt.consentVersion == a.consentVersion && receipt.decidedAtUtcMs == a.consentDecidedAtUtcMs
+        && receipt.expiresAtUtcMs > request.time.toMillis()
+        && (p.payload.participantClass == 'adult'
+          || (p.payload.participantClass == 'minor'
+            && researchReceiptActive(uid, p.payload.guardianPermissionReceiptRef, a.ownerId, 'guardianPermission')
+            && researchReceiptActive(uid, p.payload.learnerAssentReceiptRef, a.ownerId, 'learnerAssent')));
+    }
+    function researchRunPinsOk(uid, p) {
+      let a = researchAuthority(uid, p.permitId);
+      // Server publishes the exact immutable run pin map once. MapDiff checks
+      // all pins together without duplicating a large expression graph for
+      // response/opportunity/event references in one atomic entity+receipt.
+      return p.diff(a.runPins).affectedKeys().hasOnly(['id','permitId',
+          'permitPayloadSha256','permitRevision','state','startedAtUtcMs','closedAtUtcMs'])
+        && p.databaseSchemaVersion == 24
+        && p.startedAtUtcMs >= a.issuedAtUtcMs && p.startedAtUtcMs < a.expiresAtUtcMs;
+    }
+    function researchRunOk(uid, id) {
+      let p = request.resource.data.payload;
+      return p.keys().hasAll(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'assignmentId','consentVersion','consentDecidedAtUtcMs','protocolId','protocolVersion','treatment',
+          'instrumentId','instrumentVersion','formId','formVersion','appVersion','buildId','databaseSchemaVersion',
+          'contentRevision','evidencePolicyVersion','state','startedAtUtcMs','closedAtUtcMs'])
+        && p.keys().hasOnly(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'assignmentId','consentVersion','consentDecidedAtUtcMs','protocolId','protocolVersion','treatment',
+          'instrumentId','instrumentVersion','formId','formVersion','appVersion','buildId','databaseSchemaVersion',
+          'contentRevision','evidencePolicyVersion','state','startedAtUtcMs','closedAtUtcMs'])
+        // All immutable pins below must exactly equal the read-only issuer
+        // catalog in researchRunPinsOk; do not evaluate each pin twice.
+        && p.id == id && researchCode(p.id)
+        && p.treatment in ['standard','adventure']
+        && p.consentVersion is int && p.consentVersion > 0
+        && p.consentDecidedAtUtcMs is int && p.consentDecidedAtUtcMs >= 0
+        && p.startedAtUtcMs is int && p.startedAtUtcMs >= p.consentDecidedAtUtcMs
+        && ((p.state == 'started' && p.closedAtUtcMs == null)
+          || (p.state in ['completed','skipped','abandoned']
+            && p.closedAtUtcMs is int && p.closedAtUtcMs >= p.startedAtUtcMs))
+        && researchRunPinsOk(uid, p) && researchPermitActive(uid, p);
+    }
+    function researchRunReferenceOk(uid, p, runId) {
+      let run = get(/databases/$(database)/documents/field_users/$(uid)/motivation_measurement_runs/$(runId)).data;
+      return run.schemaVersion == 1 && !run.isDeleted && run.payload.state != 'withdrawn'
+        && run.payload.id == runId && run.payload.ownerId == p.ownerId
+        && run.payload.permitId == p.permitId
+        // A stored parent keeps its historical delivery wrapper. The new
+        // write separately proves CURRENT permit authority; immutable study
+        // pins and the permit identity must still match, without rewriting it.
+        && researchRunPinsOk(uid, run.payload);
+    }
+    function researchResponseOk(uid, id) {
+      let p = request.resource.data.payload;
+      let a = researchAuthority(uid, p.permitId);
+      return p.keys().hasAll(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'runId','itemId','itemCatalogVersion','responseCode','ordinalValue','answeredAtUtcMs'])
+        && p.keys().hasOnly(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'runId','itemId','itemCatalogVersion','responseCode','ordinalValue','answeredAtUtcMs'])
+        && p.id == id && researchCode(id) && p.ownerId == a.ownerId
+        && researchCode(p.runId) && researchCode(p.itemId) && researchCode(p.itemCatalogVersion)
+        && researchCode(p.responseCode) && p.itemCatalogVersion == a.itemCatalogVersion
+        && p.itemId in a.responseOptions && p.responseCode in a.responseOptions[p.itemId]
+        && p.ordinalValue == a.responseOptions[p.itemId][p.responseCode]
+        && (p.ordinalValue == null || (p.ordinalValue is int && p.ordinalValue >= 0 && p.ordinalValue <= 100))
+        && p.answeredAtUtcMs is int && p.answeredAtUtcMs >= a.issuedAtUtcMs
+        && p.answeredAtUtcMs < a.expiresAtUtcMs
+        && researchRunReferenceOk(uid, p, p.runId) && researchPermitActive(uid, p)
+        && request.resource.data.revision == 1;
+    }
+    function researchOpportunityOk(uid, id) {
+      let p = request.resource.data.payload;
+      let a = researchAuthority(uid, p.permitId);
+      return p.keys().hasAll(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'measurementRunId','entryAttemptId','assignedTreatment','effectivePresentation',
+          'presentedEventId','learningSessionId','startedEventId','completedEventId',
+          'lastSwitchOrdinal','suppressedSwitchCount','openedAtUtcMs','closedAtUtcMs'])
+        && p.keys().hasOnly(['id','ownerId','permitId','permitPayloadSha256','permitRevision',
+          'measurementRunId','entryAttemptId','assignedTreatment','effectivePresentation',
+          'presentedEventId','learningSessionId','startedEventId','completedEventId',
+          'lastSwitchOrdinal','suppressedSwitchCount','openedAtUtcMs','closedAtUtcMs'])
+        && p.id == id && researchCode(id) && p.ownerId == a.ownerId
+        && researchCode(p.measurementRunId) && p.entryAttemptId is string
+        && p.entryAttemptId.matches('^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$')
+        && p.assignedTreatment == a.treatment && p.effectivePresentation in ['standard','adventure']
+        && researchOptionalCode(p.presentedEventId) && researchOptionalCode(p.learningSessionId)
+        && researchOptionalCode(p.startedEventId) && researchOptionalCode(p.completedEventId)
+        && p.lastSwitchOrdinal is int && p.lastSwitchOrdinal >= 0 && p.lastSwitchOrdinal <= 10
+        && p.suppressedSwitchCount is int && p.suppressedSwitchCount >= 0 && p.suppressedSwitchCount <= 9007199254740991
+        && p.openedAtUtcMs is int && p.openedAtUtcMs >= a.issuedAtUtcMs && p.openedAtUtcMs < a.expiresAtUtcMs
+        && (p.closedAtUtcMs == null || (p.closedAtUtcMs is int && p.closedAtUtcMs >= p.openedAtUtcMs))
+        && (p.startedEventId == null || p.learningSessionId != null)
+        && (p.completedEventId == null || (p.startedEventId != null && p.closedAtUtcMs != null))
+        // Denominator opens before baseline. Its reciprocal operation checks
+        // current permit and run authority, with no response prerequisite.
+        ;
+    }
+    function researchOpportunityUpdateOk() {
+      let p = request.resource.data.payload;
+      let old = resource.data.payload;
+      return p.diff(old).affectedKeys().hasOnly(['effectivePresentation','presentedEventId',
+          'learningSessionId','startedEventId','completedEventId','lastSwitchOrdinal',
+          'suppressedSwitchCount','closedAtUtcMs','permitPayloadSha256','permitRevision'])
+        && p.permitRevision >= old.permitRevision
+        && p.lastSwitchOrdinal >= old.lastSwitchOrdinal
+        && p.suppressedSwitchCount >= old.suppressedSwitchCount
+        && (old.presentedEventId == null || p.presentedEventId == old.presentedEventId)
+        && (old.learningSessionId == null || p.learningSessionId == old.learningSessionId)
+        && (old.startedEventId == null || p.startedEventId == old.startedEventId)
+        && (old.completedEventId == null || p.completedEventId == old.completedEventId)
+        && (old.closedAtUtcMs == null || p.closedAtUtcMs == old.closedAtUtcMs);
+    }
+    function researchEventPayloadOk(e, opportunity) {
+      let p = e.payload;
+      return p.assignedTreatment == opportunity.assignedTreatment
+        && p.effectivePresentation in ['standard','adventure']
+        && (e.eventType == 'TodayExperiencePresented'
+          ? (p.keys().hasOnly(['assignedTreatment','effectivePresentation','entryAttemptId','catalogVersion'])
+            && p.entryAttemptId == opportunity.entryAttemptId && researchCode(p.catalogVersion)
+            && e.aggregateType == 'MeasurementOpportunity' && e.aggregateId == e.correlationId)
+          : e.eventType == 'TodayExperiencePresentationChanged'
+            ? (p.keys().hasOnly(['assignedTreatment','effectivePresentation','fromPresentation','switchOrdinal'])
+              && p.fromPresentation in ['standard','adventure'] && p.fromPresentation != p.effectivePresentation
+              && p.switchOrdinal is int && p.switchOrdinal >= 1 && p.switchOrdinal <= 10
+              && p.switchOrdinal <= opportunity.lastSwitchOrdinal
+              && e.aggregateType == 'MeasurementOpportunity' && e.aggregateId == e.correlationId)
+            : (p.opportunityId == e.correlationId && researchCode(p.planId)
+              && e.aggregateType == 'LearningSession' && e.aggregateId == opportunity.learningSessionId
+              && (e.eventType == 'TodayExperienceMissionStarted'
+                ? (p.keys().hasOnly(['assignedTreatment','effectivePresentation','opportunityId','planId','mode'])
+                  && p.mode in ['associative-reading','meaning-quiz','typed-recall','definition-quiz',
+                    'cloze','matching','flashcard','handwriting-scratchpad','dictation','speaking',
+                    'shadowing','cefr-reading','sentence-scramble','word-scramble'])
+                : (e.eventType == 'TodayExperienceMissionCompleted'
+                  && p.keys().hasOnly(['assignedTreatment','effectivePresentation','opportunityId','planId','terminalState'])
+                  && p.terminalState == 'completed'))));
+    }
+    function researchEventOk(uid, id) {
+      let p = request.resource.data.payload;
+      let e = p.envelope;
+      let a = researchAuthority(uid, p.permitId);
+      let opportunity = get(/databases/$(database)/documents/field_users/$(uid)/measurement_opportunities/$(e.correlationId)).data;
+      return p.keys().hasAll(['permitId','permitPayloadSha256','permitRevision','envelope'])
+        && p.keys().hasOnly(['permitId','permitPayloadSha256','permitRevision','envelope'])
+        && e.keys().hasAll(['schemaVersion','eventId','eventType','eventVersion','occurredAtUtc','recordedAtUtc',
+          'actorIdentity','ownerIdentity','aggregateType','aggregateId','correlationId','idempotencyKey',
+          'consentContext','experimentContext','contentRevision','policyVersion','appVersion','buildId',
+          'privacyClassification','payload'])
+        && e.keys().hasOnly(['schemaVersion','eventId','eventType','eventVersion','occurredAtUtc','recordedAtUtc',
+          'actorIdentity','ownerIdentity','aggregateType','aggregateId','correlationId','idempotencyKey',
+          'consentContext','experimentContext','contentRevision','policyVersion','appVersion','buildId',
+          'privacyClassification','payload'])
+        && e.diff(a.eventPins).affectedKeys().hasOnly(['eventId','eventType','occurredAtUtc',
+          'recordedAtUtc','aggregateType','aggregateId','correlationId','idempotencyKey','payload'])
+        && e.schemaVersion == 2 && e.eventVersion == 1 && e.eventId == id && researchCode(id)
+        && researchCode(e.aggregateId) && researchCode(e.correlationId) && researchCode(e.idempotencyKey)
+        && e.occurredAtUtc is string && e.occurredAtUtc.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$')
+        && e.recordedAtUtc is string && e.recordedAtUtc.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$')
+        && e.occurredAtUtc >= a.issuedAtUtc && e.occurredAtUtc < a.expiresAtUtc
+        && e.recordedAtUtc >= e.occurredAtUtc
+        && opportunity.schemaVersion == 1 && !opportunity.isDeleted
+        && opportunity.payload.ownerId == a.ownerId && opportunity.payload.permitId == p.permitId
+        && researchEventPayloadOk(e, opportunity.payload)
+        && request.resource.data.revision == 1;
+    }
+    // The event entity validates the frozen envelope and opportunity linkage.
+    // Its reciprocal atomic operation validates current authority. Splitting
+    // these predicates keeps both writes inside the evaluator's 1000 limit;
+    // neither write can succeed without the other in the same commit.
+    function researchEventAuthorityOk(uid, p) {
+      let opportunity = get(/databases/$(database)/documents/field_users/$(uid)/measurement_opportunities/$(p.envelope.correlationId)).data.payload;
+      return researchPermitActive(uid, p)
+        && researchRunReferenceOk(uid, opportunity, opportunity.measurementRunId);
+    }
+    function researchOperationMatches(uid, collectionName) {
+      let op = request.resource.data;
+      let path = /databases/$(database)/documents/field_users/$(uid)/$(collectionName)/$(op.entityId);
+      let entity = getAfter(path).data;
+      return op.schemaVersion == 1 && op.operationKind == 'upsert'
+        && ((!exists(path) && op.baseRevision == 0) ||
+          (exists(path) && op.baseRevision == get(path).data.revision))
+        && entity.schemaVersion == 1 && !entity.isDeleted
+        && entity.entityId == op.entityId && entity.lastOperationId == op.operationId
+        && entity.revision == op.resultingRevision && entity.serverUpdatedAt == op.acknowledgedAt
+        && (collectionName == 'neutral_events_v2' ? researchEventAuthorityOk(uid, entity.payload)
+          : collectionName == 'measurement_opportunities'
+            ? (researchRunReferenceOk(uid, entity.payload, entity.payload.measurementRunId)
+              && researchPermitActive(uid, entity.payload)) : true);
+    }
+
     function fieldOperationLinksEntity(uid, entityType, entityId) {
       let operation = fieldOperationAfter(
         uid,
@@ -1000,7 +1229,8 @@ service cloud.firestore {
              'rewardTransaction', 'srsState', 'achievementUnlock',
              'experimentAssignment', 'assessmentRun', 'savedLearningItem',
              'contentQualityReport', 'learningTimeSegment',
-             'learningGoal', 'learnerPreference'
+             'learningGoal', 'learnerPreference', 'motivationMeasurementRun',
+             'motivationResponse', 'measurementOpportunity', 'neutralEventV2'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -1295,7 +1525,15 @@ service cloud.firestore {
     // never evaluates legacy collection lookups (and vice versa).
     function fieldOperationMatchesEntity(uid) {
       let entityType = request.resource.data.entityType;
-      return entityType == 'assessmentRun'
+      return entityType == 'motivationMeasurementRun'
+        ? researchOperationMatches(uid, 'motivation_measurement_runs')
+        : entityType == 'motivationResponse'
+          ? researchOperationMatches(uid, 'motivation_responses')
+          : entityType == 'measurementOpportunity'
+            ? researchOperationMatches(uid, 'measurement_opportunities')
+            : entityType == 'neutralEventV2'
+              ? researchOperationMatches(uid, 'neutral_events_v2')
+              : entityType == 'assessmentRun'
         ? fieldOperationMatchesAssessmentRun(uid)
         : entityType == 'experimentAssignment'
           ? fieldOperationMatchesExperimentAssignment(uid)
@@ -1538,6 +1776,66 @@ service cloud.firestore {
           && fieldAssessmentRunTerminalUpdateOk(runId)
           && fieldAssessmentRunOperationLinkOk(uid, runId);
         allow delete: if false;
+      }
+
+      match /research_participation_permits/{permitId} {
+        allow read: if ownsFieldUser(uid);
+        allow write: if false;
+      }
+      match /research_sync_authorities/{permitId} {
+        allow read: if ownsFieldUser(uid);
+        allow write: if false;
+      }
+      match /research_receipts/{receiptId} {
+        allow read: if ownsFieldUser(uid);
+        allow write: if false;
+      }
+      match /research_withdrawals/{permitId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && request.resource.data.keys().hasAll(['schemaVersion','permitId','ownerId','withdrawnAt'])
+          && request.resource.data.keys().hasOnly(['schemaVersion','permitId','ownerId','withdrawnAt'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.permitId == permitId && researchCode(permitId)
+          && request.resource.data.ownerId == get(
+            /databases/$(database)/documents/field_users/$(uid)/research_participation_permits/$(permitId)
+          ).data.payload.ownerId
+          && request.resource.data.withdrawnAt == request.time;
+        allow update, delete: if false;
+      }
+      match /motivation_measurement_runs/{runId} {
+        allow read: if ownsFieldUser(uid);
+        allow create, update: if ownsFieldUser(uid) && fieldEntityEnvelopeOk(runId)
+          && !request.resource.data.isDeleted && researchRunOk(uid, runId)
+          && (resource == null || (!resource.data.isDeleted
+            && resource.data.payload.state == 'started'
+            && request.resource.data.payload.permitRevision >= resource.data.payload.permitRevision
+            && request.resource.data.payload.diff(resource.data.payload).affectedKeys().hasOnly(
+              ['state','closedAtUtcMs','permitPayloadSha256','permitRevision'])))
+          && fieldOperationLinksEntity(uid, 'motivationMeasurementRun', runId);
+        allow delete: if false;
+      }
+      match /motivation_responses/{responseId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid) && fieldEntityEnvelopeOk(responseId)
+          && !request.resource.data.isDeleted && researchResponseOk(uid, responseId)
+          && fieldOperationLinksEntity(uid, 'motivationResponse', responseId);
+        allow update, delete: if false;
+      }
+      match /measurement_opportunities/{opportunityId} {
+        allow read: if ownsFieldUser(uid);
+        allow create, update: if ownsFieldUser(uid) && fieldEntityEnvelopeOk(opportunityId)
+          && !request.resource.data.isDeleted && researchOpportunityOk(uid, opportunityId)
+          && (resource == null || (!resource.data.isDeleted && researchOpportunityUpdateOk()))
+          && fieldOperationLinksEntity(uid, 'measurementOpportunity', opportunityId);
+        allow delete: if false;
+      }
+      match /neutral_events_v2/{eventId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid) && fieldEntityEnvelopeOk(eventId)
+          && !request.resource.data.isDeleted && researchEventOk(uid, eventId)
+          && fieldOperationLinksEntity(uid, 'neutralEventV2', eventId);
+        allow update, delete: if false;
       }
 
       match /saved_learning_items/{itemId} {

@@ -294,6 +294,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ownerId: ownerId,
           entry: dependencies.adventureEntry! as AdventureEntryUseCases,
           activePermits: dependencies.adventurePresentationPermits!,
+          research: dependencies.adventureResearch,
           todayHub: dependencies.todayHub!,
           catalog: dependencies.adventureCatalog!,
           journey: dependencies.adventureJourney!,

@@ -2029,6 +2029,24 @@ void main() {
 
   test('moves every owner-scoped row and replays as a no-op', () async {
     await _seedEveryOwnerScopedTable(database);
+    const nontransferableResearchTables = <String>{
+      'motivation_measurement_runs',
+      'motivation_responses',
+      'research_participation_permits',
+      'measurement_opportunities',
+    };
+    expect(ownerUpgradeInventory, containsAll(nontransferableResearchTables));
+    // This fixture exercises ordinary migration. Pinned research blocks owner
+    // transfer; research_owner_upgrade_test.dart covers that typed conflict.
+    for (final table in nontransferableResearchTables) {
+      for (final ownerId in ['guest-owner', 'account-owner']) {
+        expect(
+          await _ownerCount(database, table, ownerId),
+          0,
+          reason: '$table must be absent from the ordinary upgrade fixture',
+        );
+      }
+    }
 
     final result = await repository.upgrade(
       activeOwnerId: 'guest-owner',
@@ -2049,11 +2067,19 @@ void main() {
         0,
         reason: '$table retained guest ownership',
       );
-      expect(
-        await _ownerCount(database, table, 'account-owner'),
-        greaterThanOrEqualTo(1),
-        reason: '$table did not reach the account owner',
-      );
+      if (nontransferableResearchTables.contains(table)) {
+        expect(
+          await _ownerCount(database, table, 'account-owner'),
+          0,
+          reason: '$table must not be created by ordinary upgrade or replay',
+        );
+      } else {
+        expect(
+          await _ownerCount(database, table, 'account-owner'),
+          greaterThanOrEqualTo(1),
+          reason: '$table did not reach the account owner',
+        );
+      }
     }
     expect(
       await database

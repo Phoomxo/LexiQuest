@@ -12,7 +12,7 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 23);
+    expect(AppDatabase.currentSchemaVersion, 24);
     expect(schemaEighteenInventory, hasLength(40));
     expect(schemaEighteenInventory.difference(schemaSeventeenInventory), const {
       'learning_time_segments',
@@ -70,6 +70,10 @@ final schemaSeventeenInventory = currentDatabaseTableInventory
       'study_reminders',
       'session_configurations',
       'learner_preferences',
+      'motivation_measurement_runs',
+      'motivation_responses',
+      'research_participation_permits',
+      'measurement_opportunities',
     });
 
 final schemaEighteenInventory = currentDatabaseTableInventory.difference(const {
@@ -77,6 +81,10 @@ final schemaEighteenInventory = currentDatabaseTableInventory.difference(const {
   'study_reminders',
   'session_configurations',
   'learner_preferences',
+  'motivation_measurement_runs',
+  'motivation_responses',
+  'research_participation_permits',
+  'measurement_opportunities',
 });
 
 void createSchemaSeventeenFixture(dynamic sqlite) {

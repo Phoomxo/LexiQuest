@@ -18,6 +18,9 @@ import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
 import '../config/research_runtime_config.dart';
+import '../config/adventure_research_runtime_config.dart';
+import '../features/research/data/drift_research_sync_authorizer.dart';
+import '../features/sync/domain/research_sync.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
@@ -130,6 +133,7 @@ import '../features/research/application/assigned_learning_event_context_provide
 import '../features/research/application/experiment_assignment_use_cases.dart';
 import '../features/research/domain/research_participation_permit.dart';
 import '../features/research/data/drift_experiment_assignment_repository.dart';
+import '../features/research/application/adventure_research_runtime.dart';
 import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/reminders/data/drift_study_reminder_repository.dart';
 import '../features/reminders/data/platform_reminder_scheduler.dart';
@@ -183,6 +187,11 @@ typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
+typedef ResearchSyncGatewayFactory =
+    SyncGateway Function(
+      ResearchMeasurementSyncRollout rollout,
+      ResearchSyncAuthorizer? authorizer,
+    );
 typedef SyncTriggerRequestObserver = void Function(SyncTriggerReason reason);
 typedef AccountGatewayFactory = AccountGateway Function();
 typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
@@ -390,6 +399,9 @@ final class AppBootstrap {
     required this.createEntryStateStore,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
+    this.researchSyncGatewayFactory,
+    this.researchMeasurementSyncRollout =
+        const ResearchMeasurementSyncRollout.off(),
     this.observeSyncTriggerRequest,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
@@ -405,6 +417,7 @@ final class AppBootstrap {
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
+    this.adventureResearchConfig = const AdventureResearchRuntimeConfig.off(),
     this.researchStateProvider,
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
     SessionConfigurationProtocolCatalog? sessionConfigurationProtocolCatalog,
@@ -458,6 +471,10 @@ final class AppBootstrap {
            loadContentArtifactBytes ?? _productionContentArtifactBytes;
 
   factory AppBootstrap.production({
+    AdventureResearchRuntimeConfig adventureResearchConfig =
+        const AdventureResearchRuntimeConfig.off(),
+    ResearchMeasurementSyncRollout researchMeasurementSyncRollout =
+        const ResearchMeasurementSyncRollout.off(),
     LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
     LearningGoalSyncRollout learningGoalSyncRollout =
@@ -470,16 +487,20 @@ final class AppBootstrap {
       initializeSupabase: _initializeSupabaseOptional,
       loadConfig: AppConfig.fromEnvironment,
       loadResearchRuntimeConfig: ResearchRuntimeConfig.fromEnvironment,
+      adventureResearchConfig: adventureResearchConfig,
+      researchMeasurementSyncRollout: researchMeasurementSyncRollout,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
       createEntryStateStore: createProductionEntryStateStore,
       bindGuestOwnership: true,
-      syncGatewayFactory: () => FirestoreSyncGateway(
+      researchSyncGatewayFactory: (rollout, authorizer) => FirestoreSyncGateway(
         firestore: FirebaseFirestore.instance,
         auth: FirebaseAuth.instance,
         learningTimeSegmentRollout: learningTimeSegmentSyncRollout,
         learningGoalRollout: learningGoalSyncRollout,
         learnerPreferenceRollout: learnerPreferenceSyncRollout,
+        researchMeasurementRollout: rollout,
+        researchAuthorizer: authorizer,
       ),
       accountGatewayFactory: () =>
           FirebaseAccountGateway(FirebaseAuth.instance),
@@ -495,6 +516,7 @@ final class AppBootstrap {
   final RuntimeInitializer initializeSupabase;
   final AppConfigLoader loadConfig;
   final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
+  final AdventureResearchRuntimeConfig adventureResearchConfig;
   final CurrentActivityResearchStateProvider? researchStateProvider;
   final ResearchProtocolModeCatalog researchProtocolModeCatalog;
   final SessionConfigurationProtocolCatalog sessionConfigurationProtocolCatalog;
@@ -506,6 +528,8 @@ final class AppBootstrap {
   final AppEntryStateStoreFactory createEntryStateStore;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
+  final ResearchSyncGatewayFactory? researchSyncGatewayFactory;
+  final ResearchMeasurementSyncRollout researchMeasurementSyncRollout;
   final SyncTriggerRequestObserver? observeSyncTriggerRequest;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
@@ -808,9 +832,67 @@ final class AppBootstrap {
     final config = _loadConfig();
     SyncEngine? syncEngine;
     SyncTrigger? syncTrigger;
-    final createGateway = syncGatewayFactory;
+    DriftSyncStore? researchSyncStore;
+    Future<void> notifyResearchMutation(String ownerId) async {
+      final store = researchSyncStore;
+      if (store == null || !researchMeasurementSyncRollout.allowsSync) return;
+      // Runs only after a capture/withdrawal transaction commits. Busy/offline
+      // enqueue is safe: the existing claim path also recovers durable changes.
+      await store.enqueueResearchForOwner(
+        ownerId: ownerId,
+        nowUtc: runtimeFeatureNowUtc(),
+      );
+      observeSyncTriggerRequest?.call(SyncTriggerReason.localMutation);
+      syncTrigger?.requestDetached(SyncTriggerReason.localMutation);
+    }
+
+    final adventureResearch = AdventureResearchRuntime.fromConfig(
+      database,
+      adventureResearchConfig,
+      nowUtc: runtimeFeatureNowUtc,
+      onLocalMutation: notifyResearchMutation,
+    );
+    if (researchMeasurementSyncRollout.enabled &&
+        (!researchMeasurementSyncRollout.allowsSync ||
+            adventureResearch == null)) {
+      throw StateError(
+        'Research sync requires an explicit study and exact rules revision.',
+      );
+    }
+    final ResearchSyncAuthorizer? researchAuthorizer = adventureResearch == null
+        ? null
+        : DriftResearchSyncAuthorizer(
+            database: database,
+            study: adventureResearch.participation.study,
+            validator: adventureResearch.participation.validator,
+            nowUtc: adventureResearch.participation.nowUtc,
+          ).authorize;
+    final configuredResearchGateway = researchSyncGatewayFactory;
+    final createGateway = configuredResearchGateway == null
+        ? syncGatewayFactory
+        : () => configuredResearchGateway(
+            researchMeasurementSyncRollout,
+            researchAuthorizer,
+          );
     if (firebase == RuntimeAvailability.ready && createGateway != null) {
       final gateway = createGateway();
+      if (researchMeasurementSyncRollout.enabled) {
+        if (gateway is! ResearchMeasurementSyncRolloutGateway) {
+          throw StateError(
+            'Research sync authority must be shared by store and gateway.',
+          );
+        }
+        final configured = gateway as ResearchMeasurementSyncRolloutGateway;
+        if (!identical(
+              configured.researchMeasurementSyncRollout,
+              researchMeasurementSyncRollout,
+            ) ||
+            !identical(configured.researchSyncAuthorizer, researchAuthorizer)) {
+          throw StateError(
+            'Research sync authority must be shared by store and gateway.',
+          );
+        }
+      }
       if (learningTimeSegmentSyncRollout.enabled) {
         if (gateway is! LearningTimeSegmentSyncRolloutGateway) {
           throw StateError(
@@ -865,19 +947,23 @@ final class AppBootstrap {
         gateway: gateway,
         nowUtc: () => DateTime.now().toUtc(),
       );
+      final store = DriftSyncStore(
+        database,
+        evidencePolicy: evidencePolicy,
+        rolloutModeProvider: evidenceRolloutModeProvider,
+        payloadRollout: researchRuntimeConfig.syncPayloadRollout,
+        consentRegistry: consentRegistry,
+        avatarProgressionEligibility: avatarProgressionEligibility,
+        learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
+        learningGoalSyncRollout: learningGoalSyncRollout,
+        learnerPreferenceSyncRollout: learnerPreferenceSyncRollout,
+        researchMeasurementRollout: researchMeasurementSyncRollout,
+        researchAuthorizer: researchAuthorizer,
+      );
+      researchSyncStore = store;
       syncEngine = SyncEngine(
         owners: localOwners,
-        store: DriftSyncStore(
-          database,
-          evidencePolicy: evidencePolicy,
-          rolloutModeProvider: evidenceRolloutModeProvider,
-          payloadRollout: researchRuntimeConfig.syncPayloadRollout,
-          consentRegistry: consentRegistry,
-          avatarProgressionEligibility: avatarProgressionEligibility,
-          learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
-          learningGoalSyncRollout: learningGoalSyncRollout,
-          learnerPreferenceSyncRollout: learnerPreferenceSyncRollout,
-        ),
+        store: store,
         gateway: gateway,
         policyProvider: policy.call,
         ownerGate: ownerOperationGate,
@@ -886,6 +972,8 @@ final class AppBootstrap {
         nowUtc: () => DateTime.now().toUtc(),
         generateLeaseToken: idGenerator.v4,
         optionalPullCollections: <SyncCollection>{
+          if (researchMeasurementSyncRollout.allowsSync)
+            ...ResearchSyncContract.collections,
           if (learningTimeSegmentSyncRollout.allowsClaims)
             SyncCollection.learningTimeSegments,
           if (learningGoalSyncRollout.allowsClaims)
@@ -1017,6 +1105,10 @@ final class AppBootstrap {
       owners: localOwners,
       repository: DriftResearchConsentRepository(database),
       nowUtc: () => DateTime.now().toUtc(),
+      consentVersion:
+          adventureResearchConfig.study?.consentVersion ??
+          ResearchConsentUseCases.currentVersion,
+      onLocalMutation: notifyResearchMutation,
     );
     final rewardRepository = DriftRewardRepository(
       database,
@@ -1304,7 +1396,9 @@ final class AppBootstrap {
       preferences: LearnerAdventurePresentationPreferences(learnerPreferences),
       diagnostics: adventureDiagnostics,
     );
-    const adventurePresentationPermits = NoActivePresentationPermitReader();
+    final ActivePresentationPermitReader adventurePresentationPermits =
+        adventureResearch?.participation ??
+        const NoActivePresentationPermitReader();
     final adventureJourney = AdventureJourneyUseCases(
       factReaders: [
         AdventureAchievementFactReader(loadForOwner: progress.loadForOwner),
@@ -1704,6 +1798,7 @@ final class AppBootstrap {
       adventureEntry: adventureEntry,
       adventureCatalog: adventureCatalog,
       adventurePresentationPermits: adventurePresentationPermits,
+      adventureResearch: adventureResearch,
       adventureJourney: adventureJourney,
       adventureSessionComposer: adventureSessionComposer,
       adventureMotivation: adventureMotivation,

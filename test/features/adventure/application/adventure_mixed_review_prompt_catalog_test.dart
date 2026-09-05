@@ -408,9 +408,9 @@ void main() {
         registry: buildLessonModeRegistry(),
         direction: SessionDirection.mixed,
       );
-      final sourceJson = (jsonDecode(
-        jsonEncode(original.snapshot.toJson()),
-      )! as Map).cast<String, Object?>();
+      final sourceJson =
+          (jsonDecode(jsonEncode(original.snapshot.toJson()))! as Map)
+              .cast<String, Object?>();
       final decoded = AdventureMixedReviewCatalogSnapshot.fromJson(sourceJson);
       final snapshotBeforeMutation = jsonEncode(decoded.toJson());
       final artifacts = sourceJson['artifacts']! as List<Object?>;

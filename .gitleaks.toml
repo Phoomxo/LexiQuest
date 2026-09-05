@@ -47,3 +47,31 @@ condition = "AND"
 regexTarget = "match"
 paths = ['''(?:^|/)test/features/sync/learner_preferences_sync_test\.dart$''']
 regexes = ['''v2-v1-replacement-lease''']
+
+[[allowlists]]
+description = "Fixed mock-client key; never sent to a live Gemini endpoint."
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/gemini/gemini_rest_gateway_test\.dart$''']
+regexes = ['''^test-key-that-is-long-enough-123456$''']
+
+[[allowlists]]
+description = "Synthetic missing-provenance event idempotency identity, not a credential."
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/learning/drift_learning_event_store_test\.dart$''']
+regexes = ['''^quest-v1-missing-provenance$''']
+
+[[allowlists]]
+description = "Fixed local sync lease identities in the SDK/store test harness."
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/sync/firestore_sync_gateway_test\.dart$''']
+regexes = ['''^f20-saved-rollout$''', '''^f20-saved-long-id-rollout$''', '''^f20-saved-long-id-lease$''']
+
+[[allowlists]]
+description = "Synthetic reward idempotency identities, not authentication secrets."
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/sync/reward_transaction_sync_test\.dart$''']
+regexes = ['''^exhausted-v2-purchase$''', '''^carried-v1-purchase$''', '''^carried-v1-funding$''', '''^eligible-v2-purchase$''', '''^tamper-evident-v2-purchase$''']

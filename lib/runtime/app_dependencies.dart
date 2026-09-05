@@ -45,6 +45,7 @@ import '../features/rewards/domain/reward_models.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
 import '../features/research/domain/research_participation_permit.dart';
+import '../features/research/application/adventure_research_runtime.dart';
 import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/content_quality_report_repository.dart';
 import '../features/review/domain/learner_intent.dart';
@@ -143,6 +144,7 @@ final class AppDependencies {
     this.adventureEntry,
     this.adventureCatalog,
     this.adventurePresentationPermits,
+    this.adventureResearch,
     this.adventureJourney,
     this.adventureSessionComposer,
     this.adventureMotivation,
@@ -229,6 +231,7 @@ final class AppDependencies {
   final AdventureProductEntryResolver? adventureEntry;
   final AdventureWorldCatalog? adventureCatalog;
   final ActivePresentationPermitReader? adventurePresentationPermits;
+  final AdventureResearchRuntime? adventureResearch;
   final AdventureJourneyReader? adventureJourney;
   final AdventureSessionComposer? adventureSessionComposer;
   final AdventureMotivationProjectionReader? adventureMotivation;

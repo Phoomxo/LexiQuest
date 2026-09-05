@@ -66,6 +66,15 @@ enum SyncCollection {
   /// Mutable owner-scoped editable learning defaults. This is deliberately
   /// separate from experiment assignment authority.
   learnerPreferences,
+
+  motivationMeasurementRuns,
+  motivationResponses,
+  researchParticipationPermits,
+  measurementOpportunities,
+  neutralEventsV2,
+
+  /// Owner-authorized create-once denial, never enrollment or capture data.
+  researchWithdrawals,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -84,6 +93,13 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learningTimeSegments => 'learning_time_segments',
     SyncCollection.learningGoals => 'learning_goals',
     SyncCollection.learnerPreferences => 'learner_preferences',
+    SyncCollection.motivationMeasurementRuns => 'motivation_measurement_runs',
+    SyncCollection.motivationResponses => 'motivation_responses',
+    SyncCollection.researchParticipationPermits =>
+      'research_participation_permits',
+    SyncCollection.measurementOpportunities => 'measurement_opportunities',
+    SyncCollection.neutralEventsV2 => 'neutral_events_v2',
+    SyncCollection.researchWithdrawals => 'research_withdrawals',
   };
 
   String get entityType => switch (this) {
@@ -101,6 +117,13 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learningTimeSegments => 'learningTimeSegment',
     SyncCollection.learningGoals => 'learningGoal',
     SyncCollection.learnerPreferences => 'learnerPreference',
+    SyncCollection.motivationMeasurementRuns => 'motivationMeasurementRun',
+    SyncCollection.motivationResponses => 'motivationResponse',
+    SyncCollection.researchParticipationPermits =>
+      'researchParticipationPermit',
+    SyncCollection.measurementOpportunities => 'measurementOpportunity',
+    SyncCollection.neutralEventsV2 => 'neutralEventV2',
+    SyncCollection.researchWithdrawals => 'researchWithdrawal',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -117,6 +140,12 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learningTimeSegments => const <int>{1},
     SyncCollection.learningGoals => const <int>{1},
     SyncCollection.learnerPreferences => const <int>{1, 2},
+    SyncCollection.motivationMeasurementRuns ||
+    SyncCollection.motivationResponses ||
+    SyncCollection.researchParticipationPermits ||
+    SyncCollection.measurementOpportunities ||
+    SyncCollection.neutralEventsV2 ||
+    SyncCollection.researchWithdrawals => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -165,6 +194,12 @@ final class SyncPayloadRollout {
       collection.defaultWritePayloadVersion,
     SyncCollection.learningGoals => collection.defaultWritePayloadVersion,
     SyncCollection.learnerPreferences => collection.defaultWritePayloadVersion,
+    SyncCollection.motivationMeasurementRuns ||
+    SyncCollection.motivationResponses ||
+    SyncCollection.researchParticipationPermits ||
+    SyncCollection.measurementOpportunities ||
+    SyncCollection.neutralEventsV2 ||
+    SyncCollection.researchWithdrawals => collection.defaultWritePayloadVersion,
   };
 }
 
@@ -1340,6 +1375,7 @@ abstract final class AssessmentRunSyncPayloadContract {
             21,
             22,
             23,
+            24,
           }.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
@@ -1580,6 +1616,7 @@ final class PushMutation {
     required this.localRevision,
     required this.clientUpdatedAtUtc,
     required Map<String, Object?> payload,
+    this.ownerGateToken,
   }) : operationId = _requiredId(operationId, 'operationId'),
        firebaseUid = _requiredId(firebaseUid, 'firebaseUid'),
        entityId = _requiredId(entityId, 'entityId'),
@@ -1609,6 +1646,9 @@ final class PushMutation {
   final int localRevision;
   final DateTime clientUpdatedAtUtc;
   final Map<String, Object?> payload;
+
+  /// Process-local fence context; codecs must never serialize this token.
+  final String? ownerGateToken;
 }
 
 final class SyncEntity {
@@ -1621,6 +1661,7 @@ final class SyncEntity {
     required this.clientUpdatedAtUtc,
     required this.serverUpdatedAtUtc,
     required Map<String, Object?> payload,
+    this.serverReadProvenance,
   }) : entityId = _requiredId(entityId, 'entityId'),
        payload = Map<String, Object?>.unmodifiable(payload) {
     collection.requireSupportedPayloadVersion(payloadVersion);
@@ -1639,6 +1680,88 @@ final class SyncEntity {
   final DateTime clientUpdatedAtUtc;
   final DateTime serverUpdatedAtUtc;
   final Map<String, Object?> payload;
+  final SyncServerReadProvenance? serverReadProvenance;
+
+  /// Only a gateway that completed an authenticated server read may call this.
+  /// This is process-local provenance, not a signature or upload authority.
+  /// JSON codecs and local queue construction must leave provenance absent.
+  SyncEntity withServerReadProvenance({required String firebaseUid}) =>
+      SyncEntity(
+        collection: collection,
+        entityId: entityId,
+        revision: revision,
+        isDeleted: isDeleted,
+        payloadVersion: payloadVersion,
+        clientUpdatedAtUtc: clientUpdatedAtUtc,
+        serverUpdatedAtUtc: serverUpdatedAtUtc,
+        payload: payload,
+        serverReadProvenance: SyncServerReadProvenance._(firebaseUid, this),
+      );
+}
+
+/// A typed, non-serializable server-read receipt. Trust is established by the
+/// authenticated gateway and server admission rules, not by a document field.
+/// Current research consent and signed permit validation remain mandatory.
+final class SyncServerReadProvenance {
+  SyncServerReadProvenance._(this.firebaseUid, SyncEntity entity)
+    : collection = entity.collection,
+      entityId = entity.entityId,
+      revision = entity.revision,
+      isDeleted = entity.isDeleted,
+      payloadVersion = entity.payloadVersion,
+      clientUpdatedAtUtc = entity.clientUpdatedAtUtc,
+      serverUpdatedAtUtc = entity.serverUpdatedAtUtc,
+      _payloadFingerprint = _serverReadFingerprint(entity.payload);
+
+  final String firebaseUid;
+  final SyncCollection collection;
+  final String entityId;
+  final int revision;
+  final bool isDeleted;
+  final int payloadVersion;
+  final DateTime clientUpdatedAtUtc;
+  final DateTime serverUpdatedAtUtc;
+  final String _payloadFingerprint;
+
+  bool matchesPayload({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required String entityId,
+    required Map<String, Object?> payload,
+  }) =>
+      firebaseUid == this.firebaseUid &&
+      collection == this.collection &&
+      entityId == this.entityId &&
+      _serverReadFingerprint(payload) == _payloadFingerprint;
+
+  bool matchesEntity({
+    required String firebaseUid,
+    required SyncEntity entity,
+  }) =>
+      matchesPayload(
+        firebaseUid: firebaseUid,
+        collection: entity.collection,
+        entityId: entity.entityId,
+        payload: entity.payload,
+      ) &&
+      revision == entity.revision &&
+      isDeleted == entity.isDeleted &&
+      payloadVersion == entity.payloadVersion &&
+      clientUpdatedAtUtc == entity.clientUpdatedAtUtc &&
+      serverUpdatedAtUtc == entity.serverUpdatedAtUtc;
+}
+
+String _serverReadFingerprint(Map<String, Object?> payload) {
+  Object? sorted(Object? value) {
+    if (value is Map) {
+      final keys = value.keys.cast<String>().toList()..sort();
+      return {for (final key in keys) key: sorted(value[key])};
+    }
+    if (value is List) return value.map(sorted).toList();
+    return value;
+  }
+
+  return sha256.convert(utf8.encode(jsonEncode(sorted(payload)))).toString();
 }
 
 void _requireRevision(int value, String field, {bool allowZero = false}) {

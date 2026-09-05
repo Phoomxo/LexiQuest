@@ -29,6 +29,26 @@ import 'package:vocab_learning_app/product/feature_contract/feature_contract_dig
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
+  for (var version = 15; version <= 24; version++) {
+    test('assessment payload preserves supported database schema $version', () {
+      final run = _run();
+      final payload = {
+        ..._cloudRunPayload(run),
+        'databaseSchemaVersion': version,
+      };
+      expect(
+        () => AssessmentRunSyncPayloadContract.requireCanonical(
+          payload: payload,
+          expectedEntityId: run.id,
+          expectedOwnerId: payload['ownerId'] as String,
+          revision: 1,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: run.startedAtUtc.millisecondsSinceEpoch,
+        ),
+        returnsNormally,
+      );
+    });
+  }
   test(
     'run id boundary keeps both canonical operation ids within 256 runes',
     () {

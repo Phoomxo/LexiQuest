@@ -10,6 +10,7 @@ import '../../../runtime/runtime_flag_namespaces.dart';
 import '../../ai_tutor/domain/ai_tutor_contracts.dart';
 import '../../device_model/domain/model_lifecycle.dart';
 import '../data/drift_export_reader.dart';
+import '../data/research_lifecycle_export_reader.dart';
 import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/session_configuration.dart';
@@ -55,14 +56,19 @@ final class OwnerLifecycleArchiveExporter {
       _requireExactManifestCoverage();
       final canonicalOwnerId = await _resolvePinnedActiveOwner();
       final documentAliases = await _documentAliases(canonicalOwnerId);
+      final researchRecords = await ResearchLifecycleExportReader(
+        database,
+      ).load(canonicalOwnerId);
       final tables = <Map<String, Object?>>[];
       for (final descriptor in ownerLifecycleManifest) {
-        final records = await _recordsFor(
-          descriptor,
-          ownerId: canonicalOwnerId,
-          nowUtc: generatedAtUtc,
-          documentAliases: documentAliases,
-        );
+        final records =
+            researchRecords[descriptor.tableName] ??
+            await _recordsFor(
+              descriptor,
+              ownerId: canonicalOwnerId,
+              nowUtc: generatedAtUtc,
+              documentAliases: documentAliases,
+            );
         _requireAllowedFields(descriptor, records);
         tables.add({
           'alias': descriptor.alias,

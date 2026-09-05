@@ -336,10 +336,7 @@ void main() {
 
       expect(decision.disposition, AdventureRepairDisposition.scheduled);
       expect(policy.tickets.single.repairMode, LessonMode.definitionQuiz);
-      expect(
-        policy.tickets.single.repairPromptVariant,
-        'definitionChoice',
-      );
+      expect(policy.tickets.single.repairPromptVariant, 'definitionChoice');
 
       final restored = AdventureRepairPolicy.restore(
         AdventureRepairPolicySnapshot.fromJson(snapshotJson),

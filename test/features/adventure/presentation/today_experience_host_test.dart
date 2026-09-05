@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,15 +13,525 @@ import 'package:vocab_learning_app/features/adventure/domain/adventure_entry.dar
 import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/recommendation/application/recommendation_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/domain/research_participation_permit.dart';
+import 'package:vocab_learning_app/features/research/domain/research_permit_document.dart';
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/today_hub_view.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/research/application/adventure_research_runtime.dart';
+import 'package:vocab_learning_app/features/research/data/drift_measurement_opportunity_repository.dart';
+import 'package:vocab_learning_app/features/research/presentation/motivation_measurement_form.dart';
+import 'package:vocab_learning_app/features/research/domain/motivation_instrument.dart';
+import '../../../support/motivation_research_fixture.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/research/domain/motivation_measurement.dart';
 
 void main() {
+  testWidgets('signed renewal replaces the open Host permit deadline', (
+    tester,
+  ) async {
+    final f = MotivationResearchFixture();
+    await tester.runAsync(f.initialize);
+    addTearDown(f.database.close);
+    final runtime = AdventureResearchRuntime(
+      participation: f.participation,
+      measurements: f.measurements,
+      opportunities: DriftMeasurementOpportunityRepository(
+        f.database,
+        measurements: f.measurements,
+        nowUtc: () => f.now,
+      ),
+      consent: DriftResearchConsentRepository(f.database),
+    );
+    final loader = _Loader(_today(ownerId: 'owner:a'));
+    await tester.pumpWidget(
+      _app(
+        ownerId: 'owner:a',
+        loader: loader,
+        journey: _Journey(),
+        createId: () => '11111111-1111-4111-8111-111111111111',
+        activePermits: f.participation,
+        research: runtime,
+        nowUtc: () => f.now,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(MotivationMeasurementForm), findsOneWidget);
+    final next = f.permit(expiresAtUtc: f.now.add(const Duration(minutes: 10)));
+    final payload = {
+      ...jsonDecode(next.canonicalPayload()) as Map<String, dynamic>,
+      'localRevision': 2,
+      'cloudRevision': 2,
+    };
+    final renewed = decodeResearchPermitDocument(
+      jsonEncode({
+        ...payload,
+        'payloadSha256': sha256
+            .convert(utf8.encode(jsonEncode(payload)))
+            .toString(),
+        'signature': next.signature,
+      }),
+    );
+    await tester.runAsync(() => f.participation.importPermit(renewed));
+    await tester.pumpAndSettle();
+    f.now = f.now.add(const Duration(minutes: 11));
+    await tester.pump(const Duration(minutes: 11));
+    await tester.pumpAndSettle();
+    expect(find.byType(MotivationMeasurementForm), findsNothing);
+    expect(find.byType(TodayHubView), findsOneWidget);
+    expect(loader.calls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+    'rendered switches drain in order while an earlier research queue hook is delayed',
+    (tester) async {
+      final f = MotivationResearchFixture();
+      await tester.runAsync(f.initialize);
+      addTearDown(f.database.close);
+      final release = Completer<void>();
+      addTearDown(() {
+        if (!release.isCompleted) release.complete();
+      });
+      var held = false;
+      final runtime = AdventureResearchRuntime(
+        participation: f.participation,
+        measurements: f.measurements,
+        opportunities: DriftMeasurementOpportunityRepository(
+          f.database,
+          measurements: f.measurements,
+          nowUtc: () => f.now,
+        ),
+        consent: DriftResearchConsentRepository(f.database),
+        onLocalMutation: (_) async {
+          if (!held &&
+              (await f.database.select(f.database.eventsV2).get()).any(
+                (e) => e.eventType == 'TodayExperiencePresented',
+              )) {
+            held = true;
+            await release.future;
+          }
+        },
+      );
+      final run = (await tester.runAsync(
+        () =>
+            runtime.useCases.prepare(ownerId: 'owner:a', permitId: 'permit:a'),
+      ))!;
+      await tester.runAsync(
+        () => f.measurements.record(
+          MotivationResponse(
+            ownerId: 'owner:a',
+            runId: run.id,
+            itemId: 'baseline',
+            responseCode: 'high',
+          ),
+        ),
+      );
+      final loader = _Loader(_today(ownerId: 'owner:a'));
+      var ids = 0;
+      await tester.pumpWidget(
+        _app(
+          ownerId: 'owner:a',
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            ids++;
+            return '11111111-1111-4111-8111-111111111111';
+          },
+          activePermits: f.participation,
+          research: runtime,
+          nowUtc: () => f.now,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(held, isTrue);
+      for (var change = 0; change < 12; change++) {
+        await tester.tap(find.text(change.isEven ? 'มาตรฐาน' : 'ผจญภัย'));
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(TodayHubView),
+          change.isEven ? findsOneWidget : findsNothing,
+        );
+      }
+      release.complete();
+      await tester.pumpAndSettle();
+      final events = (await tester.runAsync(
+        () => f.database.select(f.database.eventsV2).get(),
+      ))!;
+      expect(
+        events.where((e) => e.eventType == 'TodayExperiencePresented'),
+        hasLength(1),
+      );
+      expect(
+        events.where(
+          (e) => e.eventType == 'TodayExperiencePresentationChanged',
+        ),
+        hasLength(10),
+      );
+      final opportunities = (await tester.runAsync(
+        () => f.database.select(f.database.measurementOpportunities).get(),
+      ))!;
+      expect(opportunities, hasLength(1));
+      expect(opportunities.single.lastSwitchOrdinal, 10);
+      expect(opportunities.single.suppressedSwitchCount, 2);
+      expect(opportunities.single.effectivePresentation, 'adventure');
+      expect(loader.calls, 1);
+      expect(ids, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'owner change while Today is pending cannot reveal the old owner after load',
+    (tester) async {
+      final f = MotivationResearchFixture();
+      await tester.runAsync(f.initialize);
+      addTearDown(f.database.close);
+      final runtime = AdventureResearchRuntime(
+        participation: f.participation,
+        measurements: f.measurements,
+        opportunities: DriftMeasurementOpportunityRepository(
+          f.database,
+          measurements: f.measurements,
+          nowUtc: () => f.now,
+        ),
+        consent: DriftResearchConsentRepository(f.database),
+      );
+      final pending = Completer<TodayHubSnapshot>();
+      await tester.pumpWidget(
+        _app(
+          ownerId: 'owner:a',
+          loader: _PendingLoader(pending.future),
+          journey: _Journey(),
+          createId: () => '11111111-1111-4111-8111-111111111111',
+          activePermits: f.participation,
+          research: runtime,
+          nowUtc: () => f.now,
+        ),
+      );
+      await tester.pump();
+      await tester.runAsync(
+        () => f.database.transaction(() async {
+          await (f.database.update(f.database.localOwners)
+                ..where((o) => o.id.equals('owner:a')))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await f.database
+              .into(f.database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'owner:b',
+                  createdAtUtcMs: f.now.millisecondsSinceEpoch,
+                  isActive: const Value(true),
+                ),
+              );
+        }),
+      );
+      pending.complete(_today(ownerId: 'owner:a'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsNothing);
+      expect(find.byType(TodayHubView), findsNothing);
+      expect(find.text('ป่าแห่งคำศัพท์'), findsNothing);
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.motivationMeasurementRuns).get(),
+        ),
+        isEmpty,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'research post prompt follows canonical completion and owner change hides old snapshot',
+    (tester) async {
+      final f = MotivationResearchFixture();
+      await tester.runAsync(f.initialize);
+      addTearDown(f.database.close);
+      final runtime = AdventureResearchRuntime(
+        participation: f.participation,
+        measurements: f.measurements,
+        opportunities: DriftMeasurementOpportunityRepository(
+          f.database,
+          measurements: f.measurements,
+          nowUtc: () => f.now,
+        ),
+        consent: DriftResearchConsentRepository(f.database),
+      );
+      final run = (await tester.runAsync(
+        () =>
+            runtime.useCases.prepare(ownerId: 'owner:a', permitId: 'permit:a'),
+      ))!;
+      await tester.runAsync(
+        () => f.measurements.record(
+          MotivationResponse(
+            ownerId: 'owner:a',
+            runId: run.id,
+            itemId: 'baseline',
+            responseCode: 'high',
+          ),
+        ),
+      );
+      final loader = _Loader(_today(ownerId: 'owner:a'));
+      await tester.pumpWidget(
+        _app(
+          ownerId: 'owner:a',
+          loader: loader,
+          journey: _Journey(),
+          createId: () => '11111111-1111-4111-8111-111111111111',
+          activePermits: f.participation,
+          research: runtime,
+          nowUtc: () => f.now,
+        ),
+      );
+      await tester.pumpAndSettle();
+      final c = SessionConfiguration.validated(
+        schemaVersion: 1,
+        policyVersion: sessionConfigurationPolicyVersion,
+        ownerId: 'owner:a',
+        mode: LessonMode.meaningQuiz,
+        itemCount: 2,
+        direction: SessionDirection.forward,
+        difficulty: SessionDifficulty.standard,
+        hintBudget: 0,
+        timing: const SessionTiming.timed(Duration(minutes: 2)),
+        packIdentity: null,
+        protocolId: 'standard',
+        protocolVersion: '1',
+        protocolLimitsIdentity: 'standard',
+      );
+      await tester.runAsync(
+        () => f.database
+            .into(f.database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'session:one',
+                ownerId: 'owner:a',
+                activityType: 'quiz',
+                state: 'active',
+                startedAtUtcMs: f.now.millisecondsSinceEpoch,
+                appVersion: '1',
+                buildId: 'test',
+                sessionConfigurationIdentity: Value(c.contentIdentity),
+                sessionConfigurationJson: Value(c.stableSerialization),
+              ),
+            ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsNothing);
+      f.now = f.now.add(const Duration(minutes: 2));
+      await tester.runAsync(
+        () =>
+            (f.database.update(
+              f.database.learningSessions,
+            )..where((s) => s.id.equals('session:one'))).write(
+              LearningSessionsCompanion(
+                state: const Value('completed'),
+                endedAtUtcMs: Value(f.now.millisecondsSinceEpoch),
+              ),
+            ),
+      );
+      await tester.pumpAndSettle();
+      final post = tester.widget<MotivationMeasurementForm>(
+        find.byType(MotivationMeasurementForm),
+      );
+      expect(post.timepoint, MotivationTimepoint.post);
+      expect(loader.calls, 1);
+      f.now = f.now.add(const Duration(minutes: 30, milliseconds: 1));
+      await tester.pump(const Duration(minutes: 30, milliseconds: 1));
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(MotivationMeasurementForm),
+        findsNothing,
+        reason:
+            'an open post form must retire at its own deadline, before the permit expires',
+      );
+      expect(loader.calls, 1);
+      await tester.runAsync(
+        () => f.database.transaction(() async {
+          await f.database.customStatement(
+            'UPDATE local_owners SET is_active=0',
+          );
+          await f.database
+              .into(f.database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'owner:b',
+                  createdAtUtcMs: f.now.millisecondsSinceEpoch,
+                  isActive: const Value(true),
+                ),
+              );
+        }),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsNothing);
+      expect(find.byType(TodayHubView), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'research baseline precedes treatment; Skip retains denominator and learning',
+    (tester) async {
+      final f = MotivationResearchFixture();
+      await tester.runAsync(f.initialize);
+      addTearDown(f.database.close);
+      final runtime = AdventureResearchRuntime(
+        participation: f.participation,
+        measurements: f.measurements,
+        opportunities: DriftMeasurementOpportunityRepository(
+          f.database,
+          measurements: f.measurements,
+          nowUtc: () => f.now,
+        ),
+        consent: DriftResearchConsentRepository(f.database),
+      );
+      final loader = _Loader(_today(ownerId: 'owner:a'));
+      var ids = 0;
+      await tester.pumpWidget(
+        _app(
+          ownerId: 'owner:a',
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            ids++;
+            return '11111111-1111-4111-8111-111111111111';
+          },
+          activePermits: f.participation,
+          research: runtime,
+          nowUtc: () => f.now,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsOneWidget);
+      final form = tester.widget<MotivationMeasurementForm>(
+        find.byType(MotivationMeasurementForm),
+      );
+      expect(form.timepoint, MotivationTimepoint.baseline);
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.measurementOpportunities).get(),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.eventsV2).get(),
+        ),
+        isEmpty,
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('research-measurement-skip')),
+      );
+      await tester.tap(find.byKey(const ValueKey('research-measurement-skip')));
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsNothing);
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(loader.calls, 1);
+      expect(ids, 1);
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.measurementOpportunities).get(),
+        ),
+        hasLength(1),
+      );
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.eventsV2).get(),
+        ),
+        isEmpty,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'baseline completion and Standard switch keep one Today/opportunity',
+    (tester) async {
+      final f = MotivationResearchFixture();
+      await tester.runAsync(f.initialize);
+      addTearDown(f.database.close);
+      final runtime = AdventureResearchRuntime(
+        participation: f.participation,
+        measurements: f.measurements,
+        opportunities: DriftMeasurementOpportunityRepository(
+          f.database,
+          measurements: f.measurements,
+          nowUtc: () => f.now,
+        ),
+        consent: DriftResearchConsentRepository(f.database),
+      );
+      final loader = _Loader(_today(ownerId: 'owner:a'));
+      var ids = 0;
+      await tester.pumpWidget(
+        _app(
+          ownerId: 'owner:a',
+          loader: loader,
+          journey: _Journey(),
+          createId: () {
+            ids++;
+            return '11111111-1111-4111-8111-111111111111';
+          },
+          activePermits: f.participation,
+          research: runtime,
+          nowUtc: () => f.now,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('baseline-high')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('research-measurement-complete')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('research-measurement-complete')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MotivationMeasurementForm), findsNothing);
+      await tester.tap(find.text('มาตรฐาน'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(loader.calls, 1);
+      expect(ids, 1);
+      final events = await tester.runAsync(
+        () => f.database.select(f.database.eventsV2).get(),
+      );
+      expect(
+        events!.where((e) => e.eventType == 'TodayExperiencePresented'),
+        hasLength(1),
+      );
+      expect(
+        events.where(
+          (e) => e.eventType == 'TodayExperiencePresentationChanged',
+        ),
+        hasLength(1),
+      );
+      await tester.runAsync(() => runtime.withdraw('owner:a'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TodayHubView), findsOneWidget);
+      expect(
+        await tester.runAsync(
+          () => f.database.select(f.database.eventsV2).get(),
+        ),
+        hasLength(2),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('Standard escape is visible and usable while Today is loading', (
     tester,
   ) async {
@@ -664,6 +1177,8 @@ Widget _app({
   RewardAccountReader? rewardAccounts,
   ActivePresentationPermitReader activePermits =
       const NoActivePresentationPermitReader(),
+  AdventureResearchRuntime? research,
+  DateTime Function()? nowUtc,
 }) {
   final catalog = PackagedAdventureWorldCatalog.forLocale('th');
   final entry = AdventureEntryUseCases(
@@ -686,11 +1201,12 @@ Widget _app({
       journey: journey,
       rewardAccounts: rewardAccounts ?? _RewardAccounts(_rewardAccount()),
       createEntryAttemptId: createId,
-      nowUtc: () => _now,
+      nowUtc: nowUtc ?? () => _now,
       actions: _Actions(),
       features: const BuildFeatureRegistry.allEnabled(),
       assessmentAvailable: false,
       presentationPreferences: presentationPreferences,
+      research: research,
       onStartMission: onStartMission ?? (_) async {},
     ),
   );

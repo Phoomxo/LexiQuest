@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../domain/cloud_sync_policy.dart';
 import '../domain/sync_entity.dart';
+import '../domain/research_sync.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_gateway.dart';
 import '../domain/sync_result.dart';
@@ -17,7 +18,8 @@ final class FirestoreSyncGateway
         SyncGateway,
         LearningTimeSegmentSyncRolloutGateway,
         LearningGoalSyncRolloutGateway,
-        LearnerPreferenceSyncRolloutGateway {
+        LearnerPreferenceSyncRolloutGateway,
+        ResearchMeasurementSyncRolloutGateway {
   factory FirestoreSyncGateway({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
@@ -34,6 +36,9 @@ final class FirestoreSyncGateway
         const LearnerPreferenceSyncRollout.off(),
     ContentQualityReportPushAuthorizer contentQualityReportPushAuthorizer =
         _denyContentQualityReportPush,
+    ResearchMeasurementSyncRollout researchMeasurementRollout =
+        const ResearchMeasurementSyncRollout.off(),
+    ResearchSyncAuthorizer? researchAuthorizer,
   }) => FirestoreSyncGateway._(
     firestore,
     auth,
@@ -45,6 +50,8 @@ final class FirestoreSyncGateway
     learningGoalRollout,
     learnerPreferenceRollout,
     contentQualityReportPushAuthorizer,
+    researchMeasurementRollout,
+    researchAuthorizer,
   );
 
   FirestoreSyncGateway._(
@@ -58,6 +65,8 @@ final class FirestoreSyncGateway
     this._learningGoalRollout,
     this._learnerPreferenceRollout,
     this._contentQualityReportPushAuthorizer,
+    this._researchMeasurementRollout,
+    this._researchAuthorizer,
   );
 
   final FirebaseFirestore _firestore;
@@ -70,10 +79,64 @@ final class FirestoreSyncGateway
   final LearningGoalSyncRollout _learningGoalRollout;
   final LearnerPreferenceSyncRollout _learnerPreferenceRollout;
   final ContentQualityReportPushAuthorizer _contentQualityReportPushAuthorizer;
+  final ResearchMeasurementSyncRollout _researchMeasurementRollout;
+  final ResearchSyncAuthorizer? _researchAuthorizer;
+
+  bool get _researchEnabled =>
+      _researchMeasurementRollout.allowsSync &&
+      _researchAuthorizer != null &&
+      isResearchEmulatorHost(_firestore.settings.host);
+
+  Future<bool> _authorizeResearch(PushMutation mutation) async =>
+      _researchEnabled &&
+      await authorizeResearchSync(
+        _researchAuthorizer,
+        ResearchSyncRequest(
+          phase: ResearchSyncPhase.push,
+          ownerId: ResearchSyncContract.ownerOf(
+            mutation.collection,
+            mutation.payload,
+          ),
+          firebaseUid: mutation.firebaseUid,
+          collection: mutation.collection,
+          entityId: mutation.entityId,
+          payload: mutation.payload,
+          evaluatedAtUtc: _utcClock(),
+          ownerGateToken: mutation.ownerGateToken,
+        ),
+      );
 
   @override
   LearningTimeSegmentSyncRollout get learningTimeSegmentSyncRollout =>
       _learningTimeSegmentRollout;
+
+  Future<void> _requireResearchAuthority(PushMutation mutation) async {
+    if (!await _authorizeResearch(mutation)) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    // Receipt validation itself awaits external authority. Firebase can change
+    // independently of the local owner, so check it after that await as well.
+    if (_auth.currentUser?.uid != mutation.firebaseUid) {
+      throw const UnauthenticatedSyncFailure();
+    }
+  }
+
+  SyncEntity _withResearchServerRead(
+    SyncEntity entity,
+    String firebaseUid,
+    SnapshotMetadata metadata,
+  ) {
+    if (!ResearchSyncContract.collections.contains(entity.collection)) {
+      return entity;
+    }
+    if (_auth.currentUser?.uid != firebaseUid) {
+      throw const UnauthenticatedSyncFailure();
+    }
+    if (metadata.isFromCache || metadata.hasPendingWrites) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    return entity.withServerReadProvenance(firebaseUid: firebaseUid);
+  }
 
   @override
   LearningGoalSyncRollout get learningGoalSyncRollout => _learningGoalRollout;
@@ -83,9 +146,23 @@ final class FirestoreSyncGateway
       _learnerPreferenceRollout;
 
   @override
+  ResearchMeasurementSyncRollout get researchMeasurementSyncRollout =>
+      _researchMeasurementRollout;
+
+  @override
+  ResearchSyncAuthorizer? get researchSyncAuthorizer => _researchAuthorizer;
+
+  @override
   Future<PushResult> push(PushMutation mutation) async {
     if (_auth.currentUser?.uid != mutation.firebaseUid) {
       throw const UnauthenticatedSyncFailure();
+    }
+    if (mutation.collection == SyncCollection.researchWithdrawals) {
+      return _pushResearchWithdrawal(mutation);
+    }
+    if (ResearchSyncContract.collections.contains(mutation.collection) &&
+        !_researchEnabled) {
+      throw const PermissionDeniedSyncFailure();
     }
     if (mutation.collection == SyncCollection.savedLearningItems &&
         !_savedLearningItemRollout.allowsClaims) {
@@ -116,6 +193,29 @@ final class FirestoreSyncGateway
         .collection(mutation.collection.wireName)
         .doc(mutation.entityId);
 
+    if (mutation.collection == SyncCollection.researchParticipationPermits) {
+      // A client cannot create issuer authority, even with a valid-looking
+      // local signature. Delivery is a read-only comparison with server issue.
+      await _requireResearchAuthority(mutation);
+      final trusted = await entity.get(const GetOptions(source: Source.server));
+      if (!trusted.exists) throw const PermissionDeniedSyncFailure();
+      final decoded = FirestoreSyncCodec.decodeEntity(
+        collection: mutation.collection,
+        documentId: trusted.id,
+        data: trusted.data()!,
+        expectedFirebaseUid: mutation.firebaseUid,
+      );
+      await _requireResearchAuthority(mutation);
+      return acknowledgeTrustedResearchPermit(
+        mutation,
+        _withResearchServerRead(
+          decoded,
+          mutation.firebaseUid,
+          trusted.metadata,
+        ),
+      );
+    }
+
     try {
       final transactionResult = await _preflight
           .beforeTransaction<_TransactionPushResult>(
@@ -129,9 +229,17 @@ final class FirestoreSyncGateway
                 mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
             authorizeContentQualityReportPush: () =>
                 _contentQualityReportPushAuthorizer(mutation),
+            researchMeasurementRollout: _researchMeasurementRollout,
+            researchRevision: mutation.localRevision,
+            authorizeResearchPush: () => _authorizeResearch(mutation),
             beginTransaction: () => _firestore
                 .runTransaction<_TransactionPushResult>((transaction) async {
+                  final research = ResearchSyncContract.collections.contains(
+                    mutation.collection,
+                  );
+                  if (research) await _requireResearchAuthority(mutation);
                   final operationSnapshot = await transaction.get(operation);
+                  if (research) await _requireResearchAuthority(mutation);
                   if (operationSnapshot.exists) {
                     return _TransactionPushResult.acknowledged(
                       FirestoreSyncCodec.decodeAcknowledgement(
@@ -142,6 +250,10 @@ final class FirestoreSyncGateway
                   }
 
                   final entitySnapshot = await transaction.get(entity);
+                  // Reads can outlive local withdrawal or an owner transition.
+                  // Recheck inside every retry callback, with no asynchronous
+                  // gap between this final validation and staging the writes.
+                  if (research) await _requireResearchAuthority(mutation);
                   final currentRevision = entitySnapshot.exists
                       ? _requiredInt(entitySnapshot.data()!, 'revision')
                       : 0;
@@ -150,11 +262,15 @@ final class FirestoreSyncGateway
                       throw const InvalidSyncPayloadFailure();
                     }
                     return _TransactionPushResult.conflict(
-                      FirestoreSyncCodec.decodeEntity(
-                        collection: mutation.collection,
-                        documentId: entitySnapshot.id,
-                        data: entitySnapshot.data()!,
-                        expectedFirebaseUid: mutation.firebaseUid,
+                      _withResearchServerRead(
+                        FirestoreSyncCodec.decodeEntity(
+                          collection: mutation.collection,
+                          documentId: entitySnapshot.id,
+                          data: entitySnapshot.data()!,
+                          expectedFirebaseUid: mutation.firebaseUid,
+                        ),
+                        mutation.firebaseUid,
+                        entitySnapshot.metadata,
                       ),
                     );
                   }
@@ -199,6 +315,76 @@ final class FirestoreSyncGateway
     }
   }
 
+  Future<PushAcknowledged> _pushResearchWithdrawal(
+    PushMutation mutation,
+  ) async {
+    if (!_researchMeasurementRollout.allowsSync ||
+        !isResearchEmulatorHost(_firestore.settings.host)) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    ResearchSyncContract.validate(
+      collection: mutation.collection,
+      entityId: mutation.entityId,
+      payload: mutation.payload,
+      revision: mutation.localRevision,
+      isDeleted: mutation.operationKind == SyncOperationKind.delete,
+    );
+    if (mutation.payloadVersion != 1 ||
+        mutation.baseRevision != 0 ||
+        mutation.ownerGateToken == null ||
+        mutation.ownerGateToken!.isEmpty) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    // The store validates the live owner lease before this send. The backend
+    // binds the denial to current Firebase auth and its own read-only permit;
+    // this branch cannot issue or update any participation authority.
+    final user = _firestore.collection('field_users').doc(mutation.firebaseUid);
+    final marker = user
+        .collection('research_withdrawals')
+        .doc(mutation.entityId);
+    try {
+      final existing = await _firestore.runTransaction<PushAcknowledged?>((
+        tx,
+      ) async {
+        if (_auth.currentUser?.uid != mutation.firebaseUid) {
+          throw const UnauthenticatedSyncFailure();
+        }
+        final denial = await tx.get(marker);
+        if (denial.exists) {
+          return acknowledgeResearchWithdrawal(mutation, denial.data()!);
+        }
+        final permit = await tx.get(
+          user
+              .collection('research_participation_permits')
+              .doc(mutation.entityId),
+        );
+        if (!permit.exists) throw const ProviderUnavailableSyncFailure();
+        final signed = permit.data()?['payload'];
+        if (signed is! Map ||
+            signed['ownerId'] != mutation.payload['ownerId'] ||
+            signed['id'] != mutation.entityId) {
+          throw const PermissionDeniedSyncFailure();
+        }
+        tx.set(marker, {
+          'schemaVersion': 1,
+          ...mutation.payload,
+          'withdrawnAt': FieldValue.serverTimestamp(),
+        });
+        return null;
+      });
+      if (existing != null) return existing;
+      final committed = await marker.get(
+        const GetOptions(source: Source.server),
+      );
+      if (!committed.exists) throw const ProviderUnavailableSyncFailure();
+      return acknowledgeResearchWithdrawal(mutation, committed.data()!);
+    } on SyncFailure {
+      rethrow;
+    } on FirebaseException catch (e) {
+      throw FirestoreSyncErrorMapper.fromCode(e.code);
+    }
+  }
+
   @override
   Future<PullPage> pull({
     required String firebaseUid,
@@ -211,6 +397,13 @@ final class FirestoreSyncGateway
     }
     if (limit < 1 || limit > 100) {
       throw const InvalidSyncPayloadFailure();
+    }
+    if (collection == SyncCollection.researchWithdrawals) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+    if (ResearchSyncContract.collections.contains(collection) &&
+        !_researchEnabled) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
     }
     if (collection == SyncCollection.savedLearningItems &&
         !_savedLearningItemRollout.allowsClaims) {
@@ -269,13 +462,26 @@ final class FirestoreSyncGateway
 
     try {
       final snapshot = await query.get(const GetOptions(source: Source.server));
+      if (ResearchSyncContract.collections.contains(collection)) {
+        if (_auth.currentUser?.uid != firebaseUid) {
+          throw const UnauthenticatedSyncFailure();
+        }
+        if (snapshot.metadata.isFromCache ||
+            snapshot.metadata.hasPendingWrites) {
+          throw const PermissionDeniedSyncFailure();
+        }
+      }
       final changes = snapshot.docs
           .map(
-            (document) => FirestoreSyncCodec.decodeEntity(
-              collection: collection,
-              documentId: document.id,
-              data: document.data(),
-              expectedFirebaseUid: firebaseUid,
+            (document) => _withResearchServerRead(
+              FirestoreSyncCodec.decodeEntity(
+                collection: collection,
+                documentId: document.id,
+                data: document.data(),
+                expectedFirebaseUid: firebaseUid,
+              ),
+              firebaseUid,
+              document.metadata,
             ),
           )
           .toList(growable: false);
@@ -379,10 +585,40 @@ final class FirestoreSyncPreflight {
     String? firebaseUid,
     bool? isDeleted,
     int? clientUpdatedAtUtcMs,
+    int? researchRevision,
     Future<bool> Function()? authorizeContentQualityReportPush,
+    ResearchMeasurementSyncRollout researchMeasurementRollout =
+        const ResearchMeasurementSyncRollout.off(),
+    Future<bool> Function()? authorizeResearchPush,
     required Future<T> Function() beginTransaction,
   }) async {
     collection.requireSupportedPayloadVersion(payloadVersion);
+    if (ResearchSyncContract.collections.contains(collection)) {
+      if (!researchMeasurementRollout.allowsSync ||
+          authorizeResearchPush == null) {
+        throw const PermissionDeniedSyncFailure();
+      }
+      if (payload == null ||
+          entityId == null ||
+          isDeleted == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      ResearchSyncContract.validate(
+        collection: collection,
+        entityId: entityId,
+        payload: payload,
+        isDeleted: isDeleted,
+        revision:
+            researchRevision ??
+            (collection == SyncCollection.researchParticipationPermits
+                ? payload['localRevision'] as int? ?? 1
+                : 1),
+      );
+      if (!await authorizeResearchPush()) {
+        throw const PermissionDeniedSyncFailure();
+      }
+    }
     if (collection == SyncCollection.words) {
       final wordPayload = payload;
       final payloadIsDeleted = wordPayload?['isDeleted'];
@@ -522,6 +758,75 @@ final class FirestoreSyncPreflight {
 
 Future<bool> _denyContentQualityReportPush(PushMutation _) async => false;
 
+bool isResearchEmulatorHost(String? host) =>
+    host != null &&
+    RegExp(
+      r'^(localhost|127\.0\.0\.1|10\.0\.2\.2|\[::1\]):[0-9]{1,5}$',
+    ).hasMatch(host);
+
+PushAcknowledged acknowledgeTrustedResearchPermit(
+  PushMutation mutation,
+  SyncEntity trusted,
+) {
+  if (mutation.collection != SyncCollection.researchParticipationPermits ||
+      trusted.collection != mutation.collection ||
+      trusted.entityId != mutation.entityId ||
+      trusted.revision != mutation.localRevision ||
+      trusted.isDeleted ||
+      mutation.operationKind != SyncOperationKind.upsert ||
+      !ResearchSyncContract.same(trusted.payload, mutation.payload)) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  ResearchSyncContract.validate(
+    collection: trusted.collection,
+    entityId: trusted.entityId,
+    payload: trusted.payload,
+    revision: trusted.revision,
+    isDeleted: trusted.isDeleted,
+  );
+  return PushAcknowledged(
+    operationId: mutation.operationId,
+    resultingRevision: trusted.revision,
+    acknowledgedAtUtc: trusted.serverUpdatedAtUtc,
+  );
+}
+
+/// An identical create-once marker is the receipt, including after a lost ACK.
+/// Never refresh its server timestamp or issue a second cloud operation.
+PushAcknowledged acknowledgeResearchWithdrawal(
+  PushMutation mutation,
+  Map<String, Object?> marker,
+) {
+  ResearchSyncContract.validate(
+    collection: mutation.collection,
+    entityId: mutation.entityId,
+    payload: mutation.payload,
+    revision: mutation.localRevision,
+    isDeleted: mutation.operationKind == SyncOperationKind.delete,
+  );
+  ResearchSyncContract.exactKeys(marker, {
+    'schemaVersion',
+    'permitId',
+    'ownerId',
+    'withdrawnAt',
+  });
+  final at = marker['withdrawnAt'];
+  if (mutation.collection != SyncCollection.researchWithdrawals ||
+      mutation.baseRevision != 0 ||
+      mutation.payloadVersion != 1 ||
+      marker['schemaVersion'] != 1 ||
+      marker['permitId'] != mutation.entityId ||
+      marker['ownerId'] != mutation.payload['ownerId'] ||
+      at is! Timestamp) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  return PushAcknowledged(
+    operationId: mutation.operationId,
+    resultingRevision: 1,
+    acknowledgedAtUtc: at.toDate().toUtc(),
+  );
+}
+
 final class FirestoreSyncCodec {
   const FirestoreSyncCodec._();
 
@@ -580,6 +885,17 @@ final class FirestoreSyncCodec {
     }
     try {
       final canonicalPayload = Map<String, Object?>.from(payload);
+      if (ResearchSyncContract.collections.contains(collection)) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        ResearchSyncContract.validate(
+          collection: collection,
+          entityId: entityId,
+          payload: canonicalPayload,
+          revision: _requiredInt(data, 'revision'),
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          phase: ResearchSyncPhase.pull,
+        );
+      }
       if (collection == SyncCollection.words) {
         _requireExactKeys(data, _entityEnvelopeKeys);
         VocabularyWordSyncPayloadContract.requireCanonical(
@@ -712,7 +1028,10 @@ final class FirestoreSyncCodec {
     required PushMutation expectedMutation,
   }) {
     _requireValidPayload(expectedMutation);
-    if (expectedMutation.collection == SyncCollection.achievementUnlocks ||
+    if (ResearchSyncContract.collections.contains(
+          expectedMutation.collection,
+        ) ||
+        expectedMutation.collection == SyncCollection.achievementUnlocks ||
         expectedMutation.collection == SyncCollection.experimentAssignments ||
         expectedMutation.collection == SyncCollection.assessmentRuns ||
         expectedMutation.collection == SyncCollection.savedLearningItems ||
@@ -747,6 +1066,21 @@ final class FirestoreSyncCodec {
   }
 
   static void _requireValidPayload(PushMutation mutation) {
+    if (mutation.collection == SyncCollection.researchWithdrawals) {
+      // Denials have their own immutable marker contract, not entity/operation
+      // envelopes. The generic writer must never manufacture a mutable one.
+      throw const InvalidSyncPayloadFailure();
+    }
+    if (ResearchSyncContract.collections.contains(mutation.collection)) {
+      ResearchSyncContract.validate(
+        collection: mutation.collection,
+        entityId: mutation.entityId,
+        payload: mutation.payload,
+        revision: mutation.localRevision,
+        isDeleted: mutation.operationKind == SyncOperationKind.delete,
+      );
+      return;
+    }
     if (mutation.collection == SyncCollection.words) {
       VocabularyWordSyncPayloadContract.requireCanonical(
         payloadVersion: mutation.payloadVersion,

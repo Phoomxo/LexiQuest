@@ -39,6 +39,18 @@ typedef DeleteOwnerSecretsFencedForUpgrade =
     Future<void> Function(String ownerId, String operationToken);
 typedef OwnerUpgradeGateDelay = Future<void> Function(Duration delay);
 
+/// Research enrollment pins cannot be transferred or re-signed locally.
+final class ResearchOwnerUpgradeConflict implements Exception {
+  const ResearchOwnerUpgradeConflict();
+
+  String get code => 'researchReenrollmentRequired';
+
+  @override
+  String toString() =>
+      'ResearchOwnerUpgradeConflict: Explicit research-data '
+      'removal and re-enrollment are required before upgrading this owner.';
+}
+
 final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   DriftOwnerUpgradeRepository(
     this._database, {
@@ -91,6 +103,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             !sourceBeforeTransaction.isActive) {
           throw StateError('active local owner was not found');
         }
+        if (sourceBeforeTransaction.firebaseUid != uid) {
+          // Check under the owner gate before touching external credentials.
+          await _requireNoPinnedResearchRows(sourceId);
+        }
         final targetBeforeTransaction = await _ownerByFirebaseUid(uid);
         if (sourceBeforeTransaction.firebaseUid != uid &&
             targetBeforeTransaction != null) {
@@ -111,6 +127,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           final source = await _ownerById(sourceId);
           if (source == null || !source.isActive) {
             throw StateError('active local owner was not found');
+          }
+          if (source.firebaseUid != uid) {
+            // Revalidate in the fenced transaction before any owner mutation.
+            await _requireNoPinnedResearchRows(sourceId);
           }
           if (source.firebaseUid == uid) {
             final avatarEligibility = DriftAvatarProgressionEligibility(
@@ -3740,6 +3760,27 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       ],
       updates: {_database.syncConflicts},
     );
+  }
+
+  Future<void> _requireNoPinnedResearchRows(String ownerId) async {
+    // Tombstones also retain signed/versioned identity until explicitly erased.
+    final present = await _database
+        .customSelect(
+          'SELECT 1 AS present WHERE '
+          'EXISTS (SELECT 1 FROM motivation_measurement_runs WHERE owner_id = ?) OR '
+          'EXISTS (SELECT 1 FROM motivation_responses WHERE owner_id = ?) OR '
+          'EXISTS (SELECT 1 FROM research_participation_permits WHERE owner_id = ?) OR '
+          'EXISTS (SELECT 1 FROM measurement_opportunities WHERE owner_id = ?)',
+          variables: [for (var i = 0; i < 4; i++) Variable<String>(ownerId)],
+          readsFrom: {
+            _database.motivationMeasurementRuns,
+            _database.motivationResponses,
+            _database.researchParticipationPermits,
+            _database.measurementOpportunities,
+          },
+        )
+        .getSingleOrNull();
+    if (present != null) throw const ResearchOwnerUpgradeConflict();
   }
 
   Future<db.LocalOwner?> _ownerById(String id) {

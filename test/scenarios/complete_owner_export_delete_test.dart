@@ -24,10 +24,11 @@ import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate
 import 'package:vocab_learning_app/runtime/download_counter.dart';
 
 import '../support/current_database_contract.dart';
+import '../features/identity/research_lifecycle_fixtures.dart';
 
 void main() {
   test(
-    'current v23 lifecycle classifies owner and non-owner tables exactly once',
+    'current v24 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -48,7 +49,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(44),
+        hasLength(currentDatabaseTableInventory.length),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -60,7 +61,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(34),
+        hasLength(38),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -823,6 +824,19 @@ void main() {
       });
       await _seedCompleteOwnerA(database);
       await _cloneOwnerAAsB(database);
+      // Fixture issuance is owner-specific; never clone signed owner pins.
+      await seedLifecycleResearch(
+        database,
+        'owner-a',
+        reuseExistingConsent: true,
+        existingLearningSessionId: 'a:session',
+      );
+      await seedLifecycleResearch(
+        database,
+        'owner-b',
+        reuseExistingConsent: true,
+        existingLearningSessionId: 'b:a:session',
+      );
       await database.customUpdate(
         "UPDATE learner_preferences SET home_experience = 'standard' "
         "WHERE owner_id = 'owner-b'",
@@ -908,7 +922,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(44));
+      expect(archiveTables, hasLength(currentDatabaseTableInventory.length));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -1034,7 +1048,14 @@ void main() {
           .cast<Map<String, dynamic>>()
           .singleWhere((entry) => entry['alias'] == 'experimentAssignments');
       expect(assignmentArchive['records'], [
-        {'recordCount': 1},
+        {'recordCount': 2},
+        {
+          'experimentId': 'motivation',
+          'experimentVersion': 1,
+          'cohort': 'adventure',
+          'protocolVersion': '1',
+          'assignedAtUtc': '1970-01-01T00:00:00.010Z',
+        },
         {
           'experimentId': 'research-assessment',
           'experimentVersion': 1,
@@ -1249,12 +1270,12 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      // v23 also deletes the owner's durable learner/display preference.
-      expect(deleted, 37);
+      // v24 fixture includes the prior 37 rows, four research rows and their
+      // additional owner-specific motivation assignment.
+      expect(deleted, 42);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v22 retains exactly one row for every direct-owner lifecycle entry,
-      // including one immutable assignment and its assessment run.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 37);
+      // The other owner's complete fixture, including research, is unchanged.
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 42);
       expect(
         await database
             .customSelect(
@@ -1289,7 +1310,7 @@ void main() {
         },
       );
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
-      expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
+      expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 2);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
       expect(await _assessmentRunOwnerCount(database, 'owner-b'), 1);
       expect(await _ownerSnapshot(database, 'owner-b'), ownerBBefore);

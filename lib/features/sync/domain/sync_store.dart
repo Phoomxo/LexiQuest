@@ -1,8 +1,13 @@
 import 'sync_entity.dart';
+import 'research_sync.dart';
 import 'sync_failure.dart';
 import 'sync_result.dart';
 
 const int maxSyncSendReservations = 5;
+
+abstract interface class ResearchMeasurementSyncStore {
+  ResearchMeasurementSyncRollout get researchMeasurementRollout;
+}
 
 final class ClaimedSyncOperation {
   ClaimedSyncOperation({

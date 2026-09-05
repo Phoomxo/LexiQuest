@@ -29,6 +29,280 @@ const productId = 'wallpaper_neon';
 const purchaseId = `${alice}_${productId}`;
 let testEnv;
 
+// Synthetic R4b server-issued authority. Not a production receipt/issuer.
+function researchFixture() {
+  const issuedMs = Date.now() - 60000;
+  const expiresMs = issuedMs + 86400000;
+  const issuedAtUtc = new Date(issuedMs).toISOString();
+  const expiresAtUtc = new Date(expiresMs).toISOString();
+  const signed = {
+    schema: 'lexiquest.research-participation-permit.v1', id: 'permit:a', ownerId: 'owner:a',
+    participantClass: 'adult', ageBandCode: 'adult', assignmentId: 'assignment:a',
+    assignedTreatment: 'adventure', consentReceiptId: 'receipt:a',
+    guardianPermissionReceiptRef: null, learnerAssentReceiptRef: null,
+    protocolId: 'motivation', protocolVersion: '1', issuedAtUtc, expiresAtUtc,
+    revokedAtUtc: null, issuerKeyId: 'synthetic', localRevision: 1, cloudRevision: 1, isDeleted: false,
+  };
+  const digest = createHash('sha256').update(JSON.stringify(signed)).digest('hex');
+  const permit = {...signed, payloadSha256: digest, signature: 'synthetic-server-signature'};
+  const ref = {permitId: permit.id, permitPayloadSha256: digest, permitRevision: 1};
+  const authority = {
+    firebaseUid: alice, ownerId: 'owner:a', active: true, rulesRevision: 'research-measurement-v1-r1',
+    permitPayloadSha256: digest, permitRevision: 1,
+    assignmentId: 'assignment:a', protocolId: 'motivation', protocolVersion: '1', treatment: 'adventure',
+    issuedAtUtc, expiresAtUtc, issuedAtUtcMs: issuedMs, expiresAtUtcMs: expiresMs,
+    consentVersion: 1, consentDecidedAtUtcMs: issuedMs - 2000,
+    instrumentId: 'synthetic', instrumentVersion: '1', formId: 'paired', formVersion: '1',
+    appVersion: '1', buildId: 'test', databaseSchemaVersion: 24,
+    contentRevision: 'content1', evidencePolicyVersion: 'policy1', itemCatalogVersion: '1',
+    responseOptions: {baseline: {low: 1, high: 5}, post: {low: 1, high: 5}},
+    experimentId: 'motivation', assignedAtUtc: new Date(issuedMs - 1000).toISOString(),
+  };
+  const run = {
+    ...ref, id: 'run:a', ownerId: 'owner:a', assignmentId: 'assignment:a',
+    consentVersion: 1, consentDecidedAtUtcMs: issuedMs - 2000,
+    protocolId: 'motivation', protocolVersion: '1', treatment: 'adventure',
+    instrumentId: 'synthetic', instrumentVersion: '1', formId: 'paired', formVersion: '1',
+    appVersion: '1', buildId: 'test', databaseSchemaVersion: 24,
+    contentRevision: 'content1', evidencePolicyVersion: 'policy1', state: 'started',
+    startedAtUtcMs: issuedMs + 1000, closedAtUtcMs: null,
+  };
+  const response = {...ref, id: 'response:a', ownerId: 'owner:a', runId: run.id,
+    itemId: 'baseline', itemCatalogVersion: '1', responseCode: 'high', ordinalValue: 5,
+    answeredAtUtcMs: issuedMs + 2000};
+  authority.runPins = Object.fromEntries(Object.entries(run).filter(([key]) =>
+    !['id','permitId','permitPayloadSha256','permitRevision','state','startedAtUtcMs','closedAtUtcMs'].includes(key)));
+  const opportunity = {...ref, id: 'opportunity:a', ownerId: 'owner:a', measurementRunId: run.id,
+    entryAttemptId: '00000000-0000-4000-8000-000000000001', assignedTreatment: 'adventure',
+    effectivePresentation: 'adventure', presentedEventId: null, learningSessionId: null,
+    startedEventId: null, completedEventId: null, lastSwitchOrdinal: 0, suppressedSwitchCount: 0,
+    openedAtUtcMs: issuedMs + 1500, closedAtUtcMs: null};
+  authority.eventPins = {
+    schemaVersion: 2, eventVersion: 1, actorIdentity: 'owner:a', ownerIdentity: 'owner:a',
+    consentContext: {researchConsentVersion: 1, aiConsentGranted: false, voiceConsentGranted: false, socialConsentGranted: false},
+    experimentContext: {experimentId: 'motivation', variantId: 'adventure', assignedAtUtc: authority.assignedAtUtc},
+    contentRevision: 'content1', policyVersion: 'policy1', appVersion: '1', buildId: 'test', privacyClassification: 'ownerOnly',
+  };
+  return {permit, ref, authority, run, response, opportunity};
+}
+function researchEntity(id, payload, operationId = `research:${id}`, revision = 1) {
+  return {schemaVersion: 1, entityId: id, payload, revision, isDeleted: false,
+    clientUpdatedAtUtcMs: Date.now(), serverUpdatedAt: serverTimestamp(), lastOperationId: operationId};
+}
+async function seedResearch(f, {run = false, opportunity = false} = {}) {
+  await testEnv.withSecurityRulesDisabled(async context => {
+    const db = context.firestore();
+    await setDoc(doc(db, 'field_users', alice, 'research_participation_permits', f.permit.id),
+      researchEntity(f.permit.id, f.permit));
+    await setDoc(doc(db, 'field_users', alice, 'research_sync_authorities', f.permit.id), f.authority);
+    await setDoc(doc(db, 'field_users', alice, 'research_receipts', 'receipt:a'), {
+      kind: 'consent', ownerId: 'owner:a', active: true, consentVersion: 1,
+      decidedAtUtcMs: f.authority.consentDecidedAtUtcMs, expiresAtUtcMs: f.authority.expiresAtUtcMs,
+    });
+    if (run) await setDoc(doc(db, 'field_users', alice, 'motivation_measurement_runs', f.run.id), researchEntity(f.run.id, f.run));
+    if (opportunity) await setDoc(doc(db, 'field_users', alice, 'measurement_opportunities', f.opportunity.id), researchEntity(f.opportunity.id, f.opportunity));
+  });
+}
+function writeResearch(db, collectionName, entityType, payload, {uid = alice, revision = 1, baseRevision = 0, id = payload.id} = {}) {
+  const operationId = `research:${id}:${revision}`;
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, collectionName, id), researchEntity(id, payload, operationId, revision));
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1, operationId, entityType, entityId: id, operationKind: 'upsert',
+    baseRevision, resultingRevision: revision, acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+function researchEvent(f, type) {
+  const mission = type.startsWith('TodayExperienceMission');
+  const payload = {assignedTreatment: 'adventure', effectivePresentation: 'adventure',
+    ...(type === 'TodayExperiencePresented'
+      ? {entryAttemptId: f.opportunity.entryAttemptId, catalogVersion: '1'}
+      : type === 'TodayExperiencePresentationChanged'
+        ? {fromPresentation: 'standard', switchOrdinal: 1}
+        : type === 'TodayExperienceMissionStarted'
+          ? {opportunityId: f.opportunity.id, planId: 'plan:a', mode: 'meaning-quiz'}
+          : {opportunityId: f.opportunity.id, planId: 'plan:a', terminalState: 'completed'})};
+  return {...f.ref, envelope: {
+    schemaVersion: 2, eventId: `event:${type}`, eventType: type, eventVersion: 1,
+    occurredAtUtc: new Date(f.authority.issuedAtUtcMs + 3000).toISOString(),
+    recordedAtUtc: new Date(f.authority.issuedAtUtcMs + 3000).toISOString(),
+    actorIdentity: 'owner:a', ownerIdentity: 'owner:a',
+    aggregateType: mission ? 'LearningSession' : 'MeasurementOpportunity',
+    aggregateId: mission ? 'session:a' : f.opportunity.id, correlationId: f.opportunity.id,
+    idempotencyKey: `research:${type}`, consentContext: {researchConsentVersion: 1,
+      aiConsentGranted: false, voiceConsentGranted: false, socialConsentGranted: false},
+    experimentContext: {experimentId: 'motivation', variantId: 'adventure', assignedAtUtc: f.authority.assignedAtUtc},
+    contentRevision: 'content1', policyVersion: 'policy1', appVersion: '1', buildId: 'test',
+    privacyClassification: 'ownerOnly', payload,
+  }};
+}
+
+describe('R4b Research trusted sync boundary', () => {
+  it('withdrawal marker is one-way owner-authorized and blocks active remote receipts', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true, opportunity: true});
+    const marker = doc(authDb(), 'field_users', alice, 'research_withdrawals', f.permit.id);
+    const data = {schemaVersion: 1, permitId: f.permit.id, ownerId: 'owner:a', withdrawnAt: serverTimestamp()};
+    await assertFails(setDoc(doc(authDb(bob), 'field_users', alice, 'research_withdrawals', f.permit.id), data));
+    await assertSucceeds(setDoc(marker, data));
+    await assertFails(updateDoc(marker, {withdrawnAt: serverTimestamp()}));
+    await assertFails(deleteDoc(marker));
+    await assertFails(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', f.response));
+    const p = researchEvent(f, 'TodayExperiencePresented');
+    await assertFails(writeResearch(authDb(), 'neutral_events_v2', 'neutralEventV2', p, {id: p.envelope.eventId}));
+    await assertSucceeds(getDoc(doc(authDb(), 'field_users', alice, 'research_participation_permits', f.permit.id)));
+  });
+  it('withdrawal marker cannot invent ownership or grant authority', async () => {
+    const f = researchFixture(); await seedResearch(f);
+    for (const patch of [{ownerId: 'forged'}, {active: true}, {permitId: 'missing'}]) {
+      await assertFails(setDoc(doc(authDb(), 'field_users', alice, 'research_withdrawals', f.permit.id), {
+        schemaVersion: 1, permitId: f.permit.id, ownerId: 'owner:a', withdrawnAt: serverTimestamp(), ...patch,
+      }));
+    }
+  });
+  it('accepts a run only with current server-issued permit and consent', async () => {
+    const f = researchFixture(); await seedResearch(f);
+    await assertSucceeds(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+  });
+  it('rejects the same run without trusted issuer documents', async () => {
+    const f = researchFixture();
+    await assertFails(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+  });
+  it('cannot forge permit, receipt or rollout authority through any client write', async () => {
+    const f = researchFixture();
+    for (const [collectionName, id, payload] of [
+      ['research_participation_permits', f.permit.id, researchEntity(f.permit.id, f.permit)],
+      ['research_receipts', 'receipt:a', {ownerId: 'owner:a', active: true, kind: 'consent'}],
+      ['research_sync_authorities', f.permit.id, f.authority],
+    ]) await assertFails(setDoc(doc(authDb(), 'field_users', alice, collectionName, id), payload));
+    await seedResearch(f);
+    await assertFails(updateDoc(doc(authDb(), 'field_users', alice, 'research_participation_permits', f.permit.id), {'payload.signature': 'forged'}));
+    await assertFails(deleteDoc(doc(authDb(), 'field_users', alice, 'research_receipts', 'receipt:a')));
+  });
+  for (const [name, change] of [
+    ['inactive authority', f => {f.authority.active = false;}],
+    ['expired permit', f => {f.authority.expiresAtUtcMs = Date.now() - 1;}],
+    ['revoked permit', f => {f.permit.revokedAtUtc = f.permit.issuedAtUtc;}],
+    ['wrong rules revision', f => {f.authority.rulesRevision = 'research-measurement-v1-r0';}],
+    ['wrong auth binding', f => {f.authority.firebaseUid = bob;}],
+    ['wrong permit digest', f => {f.run.permitPayloadSha256 = 'b'.repeat(64);}],
+    ['stale signed revision', f => {f.run.permitRevision = 2;}],
+    ['instrument pin replacement', f => {f.run.instrumentVersion = '2';}],
+    ['owner replacement', f => {f.run.ownerId = 'owner:attacker';}],
+    ['unknown run key', f => {f.run.rawAnswer = 'private text';}],
+  ]) it(`rejects ${name}`, async () => {
+    const f = researchFixture(); change(f); await seedResearch(f);
+    await assertFails(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+  });
+  it('current consent withdrawal blocks all new measurement data', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    await testEnv.withSecurityRulesDisabled(async ctx => {
+      await updateDoc(doc(ctx.firestore(), 'field_users', alice, 'research_receipts', 'receipt:a'), {active: false});
+    });
+    await assertFails(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', f.response));
+    await assertFails(writeResearch(authDb(), 'measurement_opportunities', 'measurementOpportunity', f.opportunity));
+  });
+  it('minor requires separate current guardian and learner receipts', async () => {
+    const f = researchFixture(); f.permit.participantClass = 'minor';
+    f.permit.guardianPermissionReceiptRef = 'guardian:a'; f.permit.learnerAssentReceiptRef = 'assent:a';
+    await seedResearch(f);
+    await assertFails(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+    await testEnv.withSecurityRulesDisabled(async ctx => {
+      for (const [id, kind] of [['guardian:a', 'guardianPermission'], ['assent:a', 'learnerAssent']]) {
+        await setDoc(doc(ctx.firestore(), 'field_users', alice, 'research_receipts', id), {
+          ownerId: 'owner:a', kind, active: true, expiresAtUtcMs: f.authority.expiresAtUtcMs,
+        });
+      }
+    });
+    await assertSucceeds(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+  });
+  it('denominator opportunity uploads before baseline response or Presented exists', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    await assertSucceeds(writeResearch(authDb(), 'measurement_opportunities', 'measurementOpportunity', f.opportunity));
+  });
+  it('coded response must be declared by the trusted pinned instrument', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    await assertSucceeds(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', f.response));
+  });
+  for (const [field, value] of [['responseCode','unlisted'], ['responseCode','free text'],
+    ['ordinalValue',100], ['itemId','unknown'], ['itemCatalogVersion','2'], ['runId','missing']]) {
+    it(`rejects response ${field}=${value}`, async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true});
+      await assertFails(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', {...f.response, [field]: value}));
+    });
+  }
+  it('terminal run update cannot replace immutable pins', async () => {
+    const f = researchFixture(); await seedResearch(f);
+    await assertSucceeds(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run));
+    const terminal = {...f.run, state: 'skipped', closedAtUtcMs: Date.now()};
+    await assertFails(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun',
+      {...terminal, formVersion: '2'}, {revision: 2, baseRevision: 1}));
+    await assertSucceeds(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', terminal, {revision: 2, baseRevision: 1}));
+  });
+  it('active permit renewal delivers unacked facts against unchanged historical parents', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true, opportunity: true});
+    const captured = researchEvent(f, 'TodayExperiencePresented');
+    const oldEnvelope = JSON.stringify(captured.envelope);
+    const signed = {...f.permit}; delete signed.payloadSha256; delete signed.signature;
+    signed.localRevision = 2; signed.cloudRevision = 2;
+    signed.expiresAtUtc = new Date(f.authority.expiresAtUtcMs + 86400000).toISOString();
+    const digest = createHash('sha256').update(JSON.stringify(signed)).digest('hex');
+    const permit = {...signed, payloadSha256: digest, signature: 'synthetic-renewal-signature'};
+    const current = {permitId: f.permit.id, permitPayloadSha256: digest, permitRevision: 2};
+    await testEnv.withSecurityRulesDisabled(async ctx => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'field_users', alice, 'research_participation_permits', permit.id),
+        researchEntity(permit.id, permit, 'trusted-renewal:2', 2));
+      await updateDoc(doc(db, 'field_users', alice, 'research_sync_authorities', permit.id), {
+        permitPayloadSha256: digest, permitRevision: 2, expiresAtUtc: signed.expiresAtUtc,
+        expiresAtUtcMs: f.authority.expiresAtUtcMs + 86400000,
+      });
+    });
+    await assertFails(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', f.response));
+    await assertSucceeds(writeResearch(authDb(), 'motivation_responses', 'motivationResponse', {...f.response, ...current}));
+    await assertSucceeds(writeResearch(authDb(), 'neutral_events_v2', 'neutralEventV2',
+      {...captured, ...current}, {id: captured.envelope.eventId}));
+    if (JSON.stringify(captured.envelope) !== oldEnvelope) throw new Error('frozen event changed');
+    // Acknowledged event is immutable, even after legitimate authority renewal.
+    await assertFails(writeResearch(authDb(), 'neutral_events_v2', 'neutralEventV2',
+      {...captured, ...current}, {id: captured.envelope.eventId, revision: 2, baseRevision: 1}));
+    await assertSucceeds(writeResearch(authDb(), 'measurement_opportunities', 'measurementOpportunity',
+      {...f.opportunity, ...current, presentedEventId: captured.envelope.eventId}, {revision: 2, baseRevision: 1}));
+    await assertSucceeds(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun',
+      {...f.run, ...current, state: 'skipped', closedAtUtcMs: Date.now()}, {revision: 2, baseRevision: 1}));
+  });
+  for (const type of ['TodayExperiencePresented','TodayExperiencePresentationChanged',
+    'TodayExperienceMissionStarted','TodayExperienceMissionCompleted']) {
+    it(`delivers frozen participant-only ${type}`, async () => {
+      const f = researchFixture(); f.opportunity.lastSwitchOrdinal = 1;
+      f.opportunity.learningSessionId = 'session:a';
+      await seedResearch(f, {run: true, opportunity: true});
+      const p = researchEvent(f, type);
+      await assertSucceeds(writeResearch(authDb(), 'neutral_events_v2', 'neutralEventV2', p, {id: p.envelope.eventId}));
+    });
+  }
+  for (const change of [e => {e.eventType = 'QuizCompleted';}, e => {e.payload.rawAnswer = 'text';},
+    e => {e.permitId = 'illegal-envelope-field';}, e => {e.consentContext.researchConsentVersion = 0;},
+    e => {e.ownerIdentity = 'owner:other';}]) {
+    it('rejects mutated neutral event or extra envelope fields', async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true, opportunity: true});
+      const p = researchEvent(f, 'TodayExperiencePresented'); change(p.envelope);
+      await assertFails(writeResearch(authDb(), 'neutral_events_v2', 'neutralEventV2', p, {id: p.envelope.eventId}));
+    });
+  }
+  it('other owners cannot read or write participant records', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'research_participation_permits', f.permit.id)));
+    await assertFails(writeResearch(authDb(bob), 'motivation_responses', 'motivationResponse', f.response));
+  });
+  it('cannot mint an operation receipt without matching entity write', async () => {
+    await assertFails(setDoc(doc(authDb(), 'field_users', alice, 'operations', 'forged'), {
+      schemaVersion: 1, operationId: 'forged', entityType: 'motivationResponse', entityId: 'response:a',
+      operationKind: 'upsert', baseRevision: 0, resultingRevision: 1, acknowledgedAt: serverTimestamp(),
+    }));
+  });
+});
+
 function authDb(uid = alice, isAnon = false) {
   const token = isAnon ? { firebase: { sign_in_provider: 'anonymous' } } : {};
   return testEnv.authenticatedContext(uid, token).firestore();
@@ -2321,7 +2595,7 @@ describe('assessment_runs revisioned research contract', () => {
     }
   });
 
-  it('accepts assessment evidence pinned to supported database schemas through v23', async () => {
+  it('accepts assessment evidence pinned to supported database schemas through v24', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-schema';
     await assertSucceeds(
@@ -2334,7 +2608,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [19, 20, 21, 22, 23]) {
+    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -2348,7 +2622,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 24]) {
+    for (const databaseSchemaVersion of [14, 25]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

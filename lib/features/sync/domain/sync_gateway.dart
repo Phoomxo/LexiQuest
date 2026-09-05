@@ -1,4 +1,5 @@
 import 'cloud_sync_policy.dart';
+import 'research_sync.dart';
 import 'sync_entity.dart';
 import 'sync_result.dart';
 
@@ -25,4 +26,12 @@ abstract interface class LearningGoalSyncRolloutGateway {
 
 abstract interface class LearnerPreferenceSyncRolloutGateway {
   LearnerPreferenceSyncRollout get learnerPreferenceSyncRollout;
+}
+
+/// Composition can require the exact same rollout and authorizer instances
+/// for local claim and remote transport before enabling optional research.
+abstract interface class ResearchMeasurementSyncRolloutGateway {
+  ResearchMeasurementSyncRollout get researchMeasurementSyncRollout;
+
+  ResearchSyncAuthorizer? get researchSyncAuthorizer;
 }

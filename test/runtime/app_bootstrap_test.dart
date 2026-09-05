@@ -60,6 +60,9 @@ import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/config/adventure_research_runtime_config.dart';
+import 'package:vocab_learning_app/features/research/data/drift_research_participation_repository.dart';
+import '../support/motivation_research_fixture.dart';
 import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
@@ -73,6 +76,7 @@ import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
+import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
 import 'package:vocab_learning_app/runtime/runtime_flag_namespaces.dart';
@@ -4760,6 +4764,124 @@ void main() {
     });
 
     test(
+      'research sync composition shares exact authority and rollout without creating enrollment',
+      () async {
+        final fixture = MotivationResearchFixture();
+        final database = fixture.database;
+        const rollout = ResearchMeasurementSyncRollout.localEmulatorV1(
+          deployedRulesRevision: researchMeasurementV1RulesRevision,
+        );
+        ResearchSyncAuthorizer? received;
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          researchMeasurementSyncRollout: rollout,
+          researchSyncGatewayFactory: (r, a) {
+            expect(r, same(rollout));
+            received = a;
+            return _ResearchBootstrapSyncGateway(r, a);
+          },
+          adventureResearchConfig: AdventureResearchRuntimeConfig.configured(
+            study: fixture.study,
+            issuerPublicKeys: {'synthetic': '04${'0' * 128}'},
+            receipts: fixture.authority,
+          ),
+        );
+        final dependencies = await bootstrap.initialize();
+        addTearDown(dependencies.dispose);
+        final store = dependencies.syncEngine!.store as DriftSyncStore;
+        expect(received, isNotNull);
+        expect(store.researchAuthorizer, same(received));
+        expect(store.researchMeasurementRollout, same(rollout));
+        expect(
+          dependencies.syncEngine!.optionalPullCollections,
+          containsAll(ResearchSyncContract.collections),
+        );
+        expect(
+          await database.select(database.researchParticipationPermits).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.motivationMeasurementRuns).get(),
+          isEmpty,
+        );
+        expect(await database.select(database.outboxOperations).get(), isEmpty);
+      },
+    );
+    for (final mismatch in ['missing-study', 'missing-gateway-authority']) {
+      test('research sync rejects $mismatch during composition', () async {
+        final fixture = MotivationResearchFixture();
+        final database = fixture.database;
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          researchMeasurementSyncRollout:
+              const ResearchMeasurementSyncRollout.localEmulatorV1(
+                deployedRulesRevision: researchMeasurementV1RulesRevision,
+              ),
+          researchSyncGatewayFactory: (r, a) =>
+              _ResearchBootstrapSyncGateway(r, null),
+          adventureResearchConfig: mismatch == 'missing-study'
+              ? const AdventureResearchRuntimeConfig.off()
+              : AdventureResearchRuntimeConfig.configured(
+                  study: fixture.study,
+                  issuerPublicKeys: {'synthetic': '04${'0' * 128}'},
+                  receipts: fixture.authority,
+                ),
+        );
+        await expectLater(bootstrap.initialize(), throwsStateError);
+      });
+    }
+
+    test(
+      'configured motivation research composes real database-backed permit reader, not enrollment',
+      () async {
+        final fixture = MotivationResearchFixture();
+        final database = fixture.database;
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          adventureResearchConfig: AdventureResearchRuntimeConfig.configured(
+            study: fixture.study,
+            issuerPublicKeys: {'synthetic': '04${'0' * 128}'},
+            receipts: fixture.authority,
+          ),
+        );
+        final dependencies = await bootstrap.initialize();
+        addTearDown(dependencies.dispose);
+        expect(dependencies.adventureResearch, isNotNull);
+        expect(
+          dependencies.adventurePresentationPermits,
+          isA<DriftResearchParticipationRepository>(),
+        );
+        expect(
+          await database.select(database.researchParticipationPermits).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.motivationMeasurementRuns).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.measurementOpportunities).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
       'f42 bootstrap composes one read-only Today Hub and canonical child authorities',
       () async {
         final database = AppDatabase(NativeDatabase.memory());
@@ -4802,6 +4924,7 @@ void main() {
           expect(adventureEntry.learningIdentity, same(dependencies.learning));
           expect(adventureEntry.catalog, same(dependencies.adventureCatalog));
           expect(dependencies.adventurePresentationPermits, isNotNull);
+          expect(dependencies.adventureResearch, isNull);
           expect(
             dependencies.adventureJourney,
             isA<AdventureJourneyUseCases>(),
@@ -5671,6 +5794,35 @@ final class _BootstrapResearchStateProvider
       semanticHash: evidenceContext.featureContractHash,
     ),
   );
+}
+
+final class _ResearchBootstrapSyncGateway
+    implements SyncGateway, ResearchMeasurementSyncRolloutGateway {
+  _ResearchBootstrapSyncGateway(
+    this.researchMeasurementSyncRollout,
+    this.researchSyncAuthorizer,
+  );
+  final _delegate = _BootstrapSyncGateway();
+  @override
+  final ResearchMeasurementSyncRollout researchMeasurementSyncRollout;
+  @override
+  final ResearchSyncAuthorizer? researchSyncAuthorizer;
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() => _delegate.fetchPolicy();
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) => _delegate.pull(
+    firebaseUid: firebaseUid,
+    collection: collection,
+    after: after,
+    limit: limit,
+  );
+  @override
+  Future<PushResult> push(PushMutation mutation) => _delegate.push(mutation);
 }
 
 final class _BootstrapSyncGateway

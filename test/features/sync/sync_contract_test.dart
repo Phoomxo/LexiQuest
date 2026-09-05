@@ -61,6 +61,12 @@ void main() {
           SyncCollection.learningTimeSegments: <int>{1},
           SyncCollection.learningGoals: <int>{1},
           SyncCollection.learnerPreferences: <int>{1, 2},
+          SyncCollection.motivationMeasurementRuns: <int>{1},
+          SyncCollection.motivationResponses: <int>{1},
+          SyncCollection.researchParticipationPermits: <int>{1},
+          SyncCollection.measurementOpportunities: <int>{1},
+          SyncCollection.neutralEventsV2: <int>{1},
+          SyncCollection.researchWithdrawals: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());

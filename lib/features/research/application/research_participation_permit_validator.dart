@@ -41,41 +41,18 @@ final class ResearchParticipationPermitValidator {
     required String expectedAssignmentId,
     required DateTime evaluatedAtUtc,
   }) async {
-    if (!_canonical(expectedOwnerId) ||
-        !_canonical(expectedAssignmentId) ||
-        !_canonical(protocolId) ||
-        !_canonical(protocolVersion) ||
-        !_validUtc(evaluatedAtUtc) ||
-        !_permitFieldsAreCanonical(permit)) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.invalidInput,
-      );
-    }
-    if (permit.ownerId != expectedOwnerId) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.ownerMismatch,
-      );
-    }
-    if (permit.assignmentId != expectedAssignmentId) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.assignmentMismatch,
-      );
-    }
-    if (permit.protocolId != protocolId ||
-        permit.protocolVersion != protocolVersion) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.protocolMismatch,
-      );
+    final authenticity = validateAuthenticity(
+      permit,
+      expectedOwnerId: expectedOwnerId,
+      expectedAssignmentId: expectedAssignmentId,
+      evaluatedAtUtc: evaluatedAtUtc,
+    );
+    if (authenticity != ResearchPermitDenialReason.none) {
+      return ResearchPermitValidationResult.denied(authenticity);
     }
     if (permit.isDeleted) {
       return const ResearchPermitValidationResult.denied(
         ResearchPermitDenialReason.deleted,
-      );
-    }
-    if (permit.localRevision <= 0 ||
-        permit.localRevision != permit.cloudRevision) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.revisionMismatch,
       );
     }
     if (evaluatedAtUtc.isBefore(permit.issuedAtUtc)) {
@@ -94,57 +71,47 @@ final class ResearchParticipationPermitValidator {
         ResearchPermitDenialReason.revoked,
       );
     }
-    final canonicalPayload = permit.canonicalPayload();
-    final digest = sha256.convert(utf8.encode(canonicalPayload)).toString();
-    if (permit.payloadSha256 != digest) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.payloadMismatch,
-      );
-    }
-    if (!signatures.verify(
-      issuerKeyId: permit.issuerKeyId,
-      canonicalPayload: canonicalPayload,
-      signature: permit.signature,
-    )) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.invalidSignature,
-      );
-    }
-    if (!await _receiptIsActive(
-      permit,
-      permit.consentReceiptId,
-      ResearchReceiptKind.consent,
-      evaluatedAtUtc,
-    )) {
-      return const ResearchPermitValidationResult.denied(
-        ResearchPermitDenialReason.consentUnavailable,
-      );
-    }
-    if (permit.participantClass == ResearchParticipantClass.minor) {
-      final guardian = permit.guardianPermissionReceiptRef;
-      if (guardian == null ||
-          !await _receiptIsActive(
-            permit,
-            guardian,
+    // An authority may return a snapshot captured before its asynchronous lookup.
+    // Re-read every required receipt after the first lookup round has completed.
+    for (var pass = 0; pass < 2; pass++) {
+      for (final receipt in [
+        (
+          permit.consentReceiptId,
+          ResearchReceiptKind.consent,
+          ResearchPermitDenialReason.consentUnavailable,
+        ),
+        if (permit.participantClass == ResearchParticipantClass.minor) ...[
+          (
+            permit.guardianPermissionReceiptRef!,
             ResearchReceiptKind.guardianPermission,
-            evaluatedAtUtc,
-          )) {
-        return const ResearchPermitValidationResult.denied(
-          ResearchPermitDenialReason.guardianPermissionUnavailable,
-        );
-      }
-      final assent = permit.learnerAssentReceiptRef;
-      if (assent == null ||
-          !await _receiptIsActive(
-            permit,
-            assent,
+            ResearchPermitDenialReason.guardianPermissionUnavailable,
+          ),
+          (
+            permit.learnerAssentReceiptRef!,
             ResearchReceiptKind.learnerAssent,
-            evaluatedAtUtc,
-          )) {
-        return const ResearchPermitValidationResult.denied(
-          ResearchPermitDenialReason.learnerAssentUnavailable,
-        );
+            ResearchPermitDenialReason.learnerAssentUnavailable,
+          ),
+        ],
+      ]) {
+        if (!await _receiptIsActive(
+          permit,
+          receipt.$1,
+          receipt.$2,
+          evaluatedAtUtc,
+        )) {
+          return ResearchPermitValidationResult.denied(receipt.$3);
+        }
       }
+    }
+    // Signature authority may also have become unavailable while receipts awaited.
+    final current = validateAuthenticity(
+      permit,
+      expectedOwnerId: expectedOwnerId,
+      expectedAssignmentId: expectedAssignmentId,
+      evaluatedAtUtc: evaluatedAtUtc,
+    );
+    if (current != ResearchPermitDenialReason.none) {
+      return ResearchPermitValidationResult.denied(current);
     }
     return ResearchPermitValidationResult.active(
       ActivePresentationPermit(
@@ -159,17 +126,79 @@ final class ResearchParticipationPermitValidator {
     );
   }
 
+  /// Authenticates issuer-signed state without granting active participation.
+  /// Revocations must remain importable after expiry or withdrawal of receipts.
+  ResearchPermitDenialReason validateAuthenticity(
+    ResearchParticipationPermit permit, {
+    required String expectedOwnerId,
+    required String expectedAssignmentId,
+    required DateTime evaluatedAtUtc,
+  }) {
+    if (!_canonical(expectedOwnerId) ||
+        !_canonical(expectedAssignmentId) ||
+        !_canonical(protocolId) ||
+        !_canonical(protocolVersion) ||
+        !_validUtc(evaluatedAtUtc) ||
+        !_permitFieldsAreCanonical(permit)) {
+      return ResearchPermitDenialReason.invalidInput;
+    }
+    if (permit.ownerId != expectedOwnerId) {
+      return ResearchPermitDenialReason.ownerMismatch;
+    }
+    if (permit.assignmentId != expectedAssignmentId) {
+      return ResearchPermitDenialReason.assignmentMismatch;
+    }
+    if (permit.protocolId != protocolId ||
+        permit.protocolVersion != protocolVersion) {
+      return ResearchPermitDenialReason.protocolMismatch;
+    }
+    if (permit.localRevision <= 0 ||
+        permit.localRevision != permit.cloudRevision) {
+      return ResearchPermitDenialReason.revisionMismatch;
+    }
+    if (permit.participantClass == ResearchParticipantClass.minor) {
+      if (permit.guardianPermissionReceiptRef == null) {
+        return ResearchPermitDenialReason.guardianPermissionUnavailable;
+      }
+      if (permit.learnerAssentReceiptRef == null) {
+        return ResearchPermitDenialReason.learnerAssentUnavailable;
+      }
+    }
+    final canonicalPayload = permit.canonicalPayload();
+    final digest = sha256.convert(utf8.encode(canonicalPayload)).toString();
+    if (permit.payloadSha256 != digest) {
+      return ResearchPermitDenialReason.payloadMismatch;
+    }
+    try {
+      return signatures.verify(
+            issuerKeyId: permit.issuerKeyId,
+            canonicalPayload: canonicalPayload,
+            signature: permit.signature,
+          )
+          ? ResearchPermitDenialReason.none
+          : ResearchPermitDenialReason.invalidSignature;
+    } on Object {
+      return ResearchPermitDenialReason.invalidSignature;
+    }
+  }
+
   Future<bool> _receiptIsActive(
     ResearchParticipationPermit permit,
     String receiptId,
     ResearchReceiptKind kind,
     DateTime evaluatedAtUtc,
-  ) => receipts.isActive(
-    ownerId: permit.ownerId,
-    receiptId: receiptId,
-    kind: kind,
-    evaluatedAtUtc: evaluatedAtUtc,
-  );
+  ) async {
+    try {
+      return await receipts.isActive(
+        ownerId: permit.ownerId,
+        receiptId: receiptId,
+        kind: kind,
+        evaluatedAtUtc: evaluatedAtUtc,
+      );
+    } on Object {
+      return false;
+    }
+  }
 }
 
 bool _permitFieldsAreCanonical(ResearchParticipationPermit permit) {
@@ -193,7 +222,9 @@ bool _permitFieldsAreCanonical(ResearchParticipationPermit permit) {
       _validUtc(permit.issuedAtUtc) &&
       _validUtc(permit.expiresAtUtc) &&
       permit.expiresAtUtc.isAfter(permit.issuedAtUtc) &&
-      (permit.revokedAtUtc == null || _validUtc(permit.revokedAtUtc!));
+      (permit.revokedAtUtc == null ||
+          (_validUtc(permit.revokedAtUtc!) &&
+              !permit.revokedAtUtc!.isBefore(permit.issuedAtUtc)));
 }
 
 bool _canonical(String value) =>

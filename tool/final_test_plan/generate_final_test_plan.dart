@@ -3,6 +3,7 @@ import 'dart:io' as io;
 
 import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
@@ -27,6 +28,7 @@ const _baseSourcePaths = <String>[
   'lib/runtime/registries/feature.dart',
   'lib/runtime/registries/feature_registry.dart',
   'lib/features/sync/domain/sync_entity.dart',
+  'lib/features/sync/domain/research_sync.dart',
   'lib/features/learning_packs/domain/content_quality_policy.dart',
   'lib/features/assessment/domain/assessment_instrument_catalog.dart',
   'lib/features/companion/domain/companion_reaction_catalog.dart',
@@ -397,7 +399,8 @@ List<String> _readTableInventory(io.Directory root) {
           .map((match) => match.group(1)!)
           .toList(growable: false)
         ..sort();
-  if (tables.length != tables.toSet().length || tables.length != 44) {
+  // Schema v24 adds four research tables; the 8/44 product catalog is unchanged.
+  if (tables.length != tables.toSet().length || tables.length != 48) {
     throw FinalTestPlanContractFailure(
       'Current database table inventory is duplicate or stale: '
       '${tables.length}.',
@@ -475,6 +478,7 @@ Map<String, String> _runtimeStates(io.Directory root) {
 }
 
 const _rulesRevisions = <String, String>{
+  'researchMeasurementV1': researchMeasurementV1RulesRevision,
   'legacy': legacyFirestoreRulesRevision,
   'answerAttemptV2': answerAttemptV2RulesRevision,
   'vocabularyWordV2': vocabularyWordV2RulesRevision,

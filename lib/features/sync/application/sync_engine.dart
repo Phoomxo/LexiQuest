@@ -4,6 +4,7 @@ import '../../identity/domain/local_owner_repository.dart';
 import '../domain/cloud_sync_policy.dart';
 import '../domain/owner_operation_gate.dart';
 import '../domain/sync_entity.dart';
+import '../domain/research_sync.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_gateway.dart';
 import '../domain/sync_result.dart';
@@ -292,6 +293,11 @@ final class SyncEngine {
       if (!providerUnavailable && !permanentFailure && gateOwned) {
         for (final collection in <SyncCollection>{
           ..._pullOrder,
+          if (store is ResearchMeasurementSyncStore &&
+              (store as ResearchMeasurementSyncStore)
+                  .researchMeasurementRollout
+                  .allowsSync)
+            ...ResearchSyncContract.collections,
           ...optionalPullCollections,
         }) {
           if (!gateOwned) break;
@@ -324,6 +330,10 @@ final class SyncEngine {
             pulled += page.changes.length;
             retryRecommended = retryRecommended || page.hasMore;
             if (collection == SyncCollection.experimentAssignments &&
+                page.hasMore) {
+              break;
+            }
+            if (ResearchSyncContract.collections.contains(collection) &&
                 page.hasMore) {
               break;
             }

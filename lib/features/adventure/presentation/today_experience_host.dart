@@ -6,6 +6,11 @@ import '../../today_hub/application/today_hub_use_cases.dart';
 import '../../today_hub/domain/today_hub_models.dart';
 import '../../rewards/domain/reward_models.dart';
 import '../../research/domain/research_participation_permit.dart';
+import '../../research/application/adventure_research_runtime.dart';
+import '../../research/domain/measurement_opportunity.dart';
+import '../../research/domain/motivation_measurement.dart';
+import '../../research/domain/motivation_instrument.dart';
+import '../../research/presentation/motivation_measurement_form.dart';
 import '../../../screens/today_hub_view.dart';
 import '../../../runtime/registries/feature_registry.dart';
 import '../application/adventure_entry_use_cases.dart';
@@ -51,6 +56,7 @@ final class TodayExperienceHost extends StatefulWidget {
     required this.assessmentAvailable,
     required this.onStartMission,
     this.presentationPreferences,
+    this.research,
   });
 
   final String ownerId;
@@ -68,6 +74,7 @@ final class TodayExperienceHost extends StatefulWidget {
   final Future<void> Function(AdventureMissionLaunchContext launch)
   onStartMission;
   final AdventurePresentationPreferenceWriter? presentationPreferences;
+  final AdventureResearchRuntime? research;
 
   @override
   State<TodayExperienceHost> createState() => _TodayExperienceHostState();
@@ -85,7 +92,8 @@ final class _TodayExperienceModel {
   final RewardAccount? rewardOwnership;
 }
 
-final class _TodayExperienceHostState extends State<TodayExperienceHost> {
+final class _TodayExperienceHostState extends State<TodayExperienceHost>
+    with WidgetsBindingObserver {
   late AdventureEntryHost _entryHost;
   late Future<_TodayExperienceModel> _loadFuture;
   TodayExperiencePresentation? _sessionChoice;
@@ -98,11 +106,24 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
   _QueuedPresentationSave? _queuedPresentationSave;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>?
   _presentationSaveFailure;
+  MotivationMeasurementRun? _researchRun;
+  MeasurementOpportunity? _researchOpportunity;
+  StreamSubscription<void>? _researchChanges;
+  Timer? _researchExpiry;
+  Timer? _postPromptExpiry;
+  bool _researchSuppressed = false;
+  bool _researchRefreshing = false;
+  bool _recordingResearchPresentation = false;
+  int _recordedResearchGeneration = -1;
+  final _pendingResearchPresentations = <_ResearchPresentationRecord>[];
+  bool _researchCaptureFailed = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startNewOpening();
+    _observeResearch();
   }
 
   @override
@@ -124,13 +145,23 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
         !identical(oldWidget.activePermits, widget.activePermits) ||
         !identical(oldWidget.catalog, widget.catalog) ||
         !identical(oldWidget.journey, widget.journey) ||
-        !identical(oldWidget.rewardAccounts, widget.rewardAccounts)) {
+        !identical(oldWidget.rewardAccounts, widget.rewardAccounts) ||
+        !identical(oldWidget.research, widget.research)) {
       _sessionChoice = null;
       _startNewOpening();
+      _observeResearch();
     }
   }
 
   void _startNewOpening() {
+    _researchRun = null;
+    _researchOpportunity = null;
+    _researchSuppressed = false;
+    _recordedResearchGeneration = -1;
+    _pendingResearchPresentations.clear();
+    _researchCaptureFailed = false;
+    _researchExpiry?.cancel();
+    _postPromptExpiry?.cancel();
     _sessionChoice = null;
     _permitControlsPresentation = null;
     _queuedPresentationSave = null;
@@ -158,7 +189,11 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     AdventureEntryHost host,
     TodayExperiencePresentation? sessionChoice,
   ) async {
-    final result = await host.open(
+    if (widget.research != null &&
+        !await widget.research!.isCurrentOwner(widget.ownerId)) {
+      return const _TodayExperienceModel(result: null);
+    }
+    var result = await host.open(
       ownerId: widget.ownerId,
       occurredAtUtc: _occurredAtUtc,
       sessionChoice: sessionChoice,
@@ -169,6 +204,66 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     if (presentationGeneration != _presentationGeneration) {
       return _TodayExperienceModel(result: result);
     }
+    final research = widget.research;
+    if (research != null && !await research.isCurrentOwner(widget.ownerId)) {
+      return const _TodayExperienceModel(result: null);
+    }
+    if (research != null && result!.decision.permitId != null) {
+      if (!_researchSuppressed) {
+        try {
+          final run = await research.useCases.prepare(
+            ownerId: widget.ownerId,
+            permitId: result.decision.permitId!,
+          );
+          if (refreshGeneration != _refreshGeneration ||
+              presentationGeneration != _presentationGeneration) {
+            return const _TodayExperienceModel(result: null);
+          }
+          _researchRun = run;
+          _schedulePostPromptExpiry();
+          if (run != null) {
+            _researchOpportunity = await research.useCases.open(
+              ownerId: widget.ownerId,
+              runId: run.id,
+              entryAttemptId: result.decision.entryAttemptId,
+              presentation:
+                  result.decision.destination ==
+                      AdventureEntryDestination.adventure
+                  ? TodayExperiencePresentation.adventure
+                  : TodayExperiencePresentation.standard,
+            );
+            final permit = await research.currentPermit(widget.ownerId);
+            _schedulePermitExpiry(permit);
+          }
+          if (run == null || _researchOpportunity == null) {
+            _researchSuppressed = true;
+          }
+        } on Object {
+          _researchSuppressed = true;
+        }
+      }
+      if (refreshGeneration != _refreshGeneration ||
+          presentationGeneration != _presentationGeneration) {
+        return const _TodayExperienceModel(result: null);
+      }
+      if (_researchSuppressed) {
+        _researchRun = null;
+        _researchOpportunity = null;
+        final ordinary = await widget.entry.resolve(
+          AdventureEntryRequest(
+            ownerId: widget.ownerId,
+            entryAttemptId: result.decision.entryAttemptId,
+            occurredAtUtc: widget.nowUtc(),
+            sessionChoice:
+                sessionChoice ?? TodayExperiencePresentation.standard,
+          ),
+        );
+        result = AdventureEntryHostResult(
+          decision: ordinary,
+          today: result.today,
+        );
+      }
+    }
     _permitControlsPresentation = result!.decision.permitId != null;
     if (_permitControlsPresentation == false && sessionChoice != null) {
       _queuePresentationSave(
@@ -177,6 +272,7 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       );
     }
     final decision = result.decision;
+    if (_researchPrompt != null) return _TodayExperienceModel(result: result);
     if (decision.destination != AdventureEntryDestination.adventure) {
       return _TodayExperienceModel(result: result);
     }
@@ -316,8 +412,306 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
     setState(_startNewOpening);
   }
 
+  MotivationTimepoint? get _researchPrompt {
+    final run = _researchRun;
+    if (_researchSuppressed ||
+        run == null ||
+        run.state != MotivationMeasurementRunState.started) {
+      return null;
+    }
+    if (run.score(MotivationTimepoint.baseline) == null) {
+      return MotivationTimepoint.baseline;
+    }
+    final completion = run.indexCompletionAtUtc;
+    final now = widget.nowUtc();
+    if (completion != null &&
+        !now.isBefore(completion) &&
+        !now.isAfter(completion.add(const Duration(minutes: 30))) &&
+        run.score(MotivationTimepoint.post) == null) {
+      return MotivationTimepoint.post;
+    }
+    return null;
+  }
+
+  void _schedulePostPromptExpiry() {
+    _postPromptExpiry?.cancel();
+    final run = _researchRun;
+    final completion = run?.indexCompletionAtUtc;
+    if (run == null ||
+        completion == null ||
+        run.state != MotivationMeasurementRunState.started ||
+        run.score(MotivationTimepoint.post) != null) {
+      return;
+    }
+    // The response window includes its endpoint. Retire the optional form on
+    // the first millisecond after it without loading another Today snapshot.
+    final deadline = completion.add(
+      const Duration(minutes: 30, milliseconds: 1),
+    );
+    final remaining = deadline.difference(widget.nowUtc());
+    if (remaining.isNegative || remaining == Duration.zero) return;
+    final generation = _refreshGeneration;
+    _postPromptExpiry = Timer(remaining, () {
+      if (mounted && generation == _refreshGeneration) setState(() {});
+    });
+  }
+
+  void _schedulePermitExpiry(ResearchParticipationPermit? permit) {
+    _researchExpiry?.cancel();
+    if (permit == null) return;
+    final remaining = permit.expiresAtUtc.difference(widget.nowUtc());
+    if (remaining.isNegative || remaining == Duration.zero) return;
+    final generation = _refreshGeneration;
+    _researchExpiry = Timer(remaining, () {
+      if (mounted && generation == _refreshGeneration) {
+        unawaited(_refreshResearch());
+      }
+    });
+  }
+
+  void _observeResearch() {
+    unawaited(_researchChanges?.cancel());
+    _researchChanges = widget.research?.useCases
+        .watch(widget.ownerId)
+        .listen(
+          (_) => _refreshResearch(),
+          onError: (Object _, StackTrace _) {},
+        );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshResearch();
+  }
+
+  Future<void> _refreshResearch() async {
+    final research = widget.research;
+    final run = _researchRun;
+    if (!mounted || research == null || _researchRefreshing) return;
+    _researchRefreshing = true;
+    final generation = _refreshGeneration;
+    final ownerId = widget.ownerId;
+    try {
+      final currentOwner = await research.isCurrentOwner(ownerId);
+      if (!mounted ||
+          generation != _refreshGeneration ||
+          ownerId != widget.ownerId) {
+        return;
+      }
+      if (!currentOwner) {
+        setState(() {
+          _refreshGeneration++;
+          _researchRun = null;
+          _researchOpportunity = null;
+          _researchSuppressed = true;
+          _loadFuture = Future.value(const _TodayExperienceModel(result: null));
+        });
+        return;
+      }
+      if (run == null) return;
+      await research.useCases.reconcile(ownerId);
+      final current = await research.measurements.load(ownerId, run.id);
+      final permit = await research.currentPermit(ownerId);
+      if (!mounted ||
+          generation != _refreshGeneration ||
+          ownerId != widget.ownerId) {
+        return;
+      }
+      setState(() {
+        _researchRun = current;
+        _schedulePostPromptExpiry();
+        _schedulePermitExpiry(permit);
+        if (permit == null ||
+            current?.state != MotivationMeasurementRunState.started) {
+          _researchSuppressed = true;
+          _loadFuture = _load(
+            _refreshGeneration,
+            _presentationGeneration,
+            _entryHost,
+            _sessionChoice,
+          );
+        }
+      });
+    } on Object {
+      // Canonical learning remains available. No unbounded retry or raw errors.
+    } finally {
+      _researchRefreshing = false;
+    }
+  }
+
+  Future<void> _finishResearchPrompt({
+    bool skip = false,
+    bool withdraw = false,
+  }) async {
+    final research = widget.research;
+    final run = _researchRun;
+    if (research == null || run == null) return;
+    final ownerId = widget.ownerId;
+    final generation = _refreshGeneration;
+    if (withdraw) {
+      await research.withdraw(ownerId);
+    } else if (skip || _researchPrompt == MotivationTimepoint.post) {
+      await research.useCases.close(
+        MotivationMeasurementClose(
+          ownerId: ownerId,
+          runId: run.id,
+          state: skip
+              ? MotivationMeasurementRunState.skipped
+              : MotivationMeasurementRunState.completed,
+        ),
+      );
+    }
+    if (!mounted ||
+        generation != _refreshGeneration ||
+        ownerId != widget.ownerId) {
+      return;
+    }
+    setState(() {
+      if (skip || withdraw) _researchSuppressed = true;
+      _loadFuture = _load(
+        _refreshGeneration,
+        _presentationGeneration,
+        _entryHost,
+        _sessionChoice,
+      );
+    });
+    // The form's acknowledgement includes the transition, not just the write.
+    // Keep its callback alive until the new validated snapshot is available.
+    await _loadFuture;
+  }
+
+  void _recordResearchPresentation(AdventureProductEntryDecision decision) {
+    final research = widget.research;
+    final opportunity = _researchOpportunity;
+    final generation = _presentationGeneration;
+    if (research == null ||
+        opportunity == null ||
+        _researchSuppressed ||
+        _recordedResearchGeneration == generation) {
+      return;
+    }
+    _recordedResearchGeneration = generation;
+    final opening = _refreshGeneration;
+    final ownerId = widget.ownerId;
+    final presentation =
+        decision.destination == AdventureEntryDestination.adventure
+        ? TodayExperiencePresentation.adventure
+        : TodayExperiencePresentation.standard;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          opening != _refreshGeneration ||
+          generation != _presentationGeneration ||
+          ownerId != widget.ownerId) {
+        return;
+      }
+      // Queue every actually rendered transition. An earlier post-commit hook
+      // must not discard switches or coalesce the first ten observable facts.
+      _pendingResearchPresentations.add(
+        _ResearchPresentationRecord(
+          research: research,
+          ownerId: ownerId,
+          opportunityId: opportunity.id,
+          opening: opening,
+          presentation: presentation,
+        ),
+      );
+      unawaited(_drainResearchPresentations());
+    });
+  }
+
+  bool _isCurrentResearchRecord(_ResearchPresentationRecord record) =>
+      mounted &&
+      record.opening == _refreshGeneration &&
+      record.ownerId == widget.ownerId &&
+      identical(record.research, widget.research);
+
+  Future<void> _drainResearchPresentations() async {
+    if (_recordingResearchPresentation || _researchCaptureFailed) return;
+    _recordingResearchPresentation = true;
+    var changed = false;
+    try {
+      while (_pendingResearchPresentations.isNotEmpty) {
+        final record = _pendingResearchPresentations.first;
+        if (!_isCurrentResearchRecord(record)) {
+          _pendingResearchPresentations.remove(record);
+          continue;
+        }
+        try {
+          var current = await record.research.useCases.recordPresented(
+            record.ownerId,
+            record.opportunityId,
+          );
+          if (!_isCurrentResearchRecord(record)) {
+            _pendingResearchPresentations.remove(record);
+            continue;
+          }
+          if (current.effectivePresentation != record.presentation) {
+            current = await record.research.useCases.changePresentation(
+              ownerId: record.ownerId,
+              opportunityId: current.id,
+              presentation: record.presentation,
+              expectedRevision: current.localRevision,
+            );
+          }
+          _pendingResearchPresentations.remove(record);
+          if (_isCurrentResearchRecord(record)) {
+            _researchOpportunity = current;
+            changed = true;
+          }
+        } on ResearchCaptureDenied {
+          _pendingResearchPresentations.remove(record);
+          if (_isCurrentResearchRecord(record)) {
+            _pendingResearchPresentations.clear();
+            setState(() {
+              _researchSuppressed = true;
+              _loadFuture = _load(
+                _refreshGeneration,
+                _presentationGeneration,
+                _entryHost,
+                _sessionChoice,
+              );
+            });
+          }
+        } on Object {
+          if (!_isCurrentResearchRecord(record)) {
+            _pendingResearchPresentations.remove(record);
+            continue;
+          }
+          // Preserve the exact pending identity until an explicit retry. Never
+          // spin a build/error loop or let an old opening retry in a new owner.
+          _researchCaptureFailed = true;
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'บันทึกข้อมูลวิจัยยังไม่สำเร็จ คุณเรียนต่อได้ตามปกติ',
+              ),
+              action: SnackBarAction(
+                label: 'ลองอีกครั้ง',
+                onPressed: () {
+                  if (_isCurrentResearchRecord(record)) {
+                    _researchCaptureFailed = false;
+                    unawaited(_drainResearchPresentations());
+                  }
+                },
+              ),
+            ),
+          );
+          break;
+        }
+      }
+    } finally {
+      _recordingResearchPresentation = false;
+    }
+    if (changed) await _refreshResearch();
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _researchExpiry?.cancel();
+    _postPromptExpiry?.cancel();
+    unawaited(_researchChanges?.cancel());
     _preferenceGeneration += 1;
     _activePresentationSave = null;
     _queuedPresentationSave = null;
@@ -352,6 +746,37 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       }
       final journey = model?.journey;
       final rewardOwnership = model?.rewardOwnership;
+      final point = _researchPrompt;
+      if (point != null) {
+        final run = _researchRun!;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              widget.catalog.locale == 'th'
+                  ? 'แบบวัดแรงจูงใจ (สมัครใจ)'
+                  : 'Optional motivation questionnaire',
+            ),
+          ),
+          body: MotivationMeasurementForm(
+            key: ValueKey('motivation-prompt-${run.id}-${point.name}'),
+            run: run,
+            timepoint: point,
+            languageCode: widget.catalog.locale == 'th' ? 'th' : 'en',
+            onAnswer: (item, code) => widget.research!.useCases.record(
+              MotivationResponse(
+                ownerId: run.ownerId,
+                runId: run.id,
+                itemId: item,
+                responseCode: code,
+              ),
+            ),
+            onComplete: () => _finishResearchPrompt(),
+            onSkip: () => _finishResearchPrompt(skip: true),
+            onWithdraw: () => _finishResearchPrompt(withdraw: true),
+          ),
+        );
+      }
+      _recordResearchPresentation(result.decision);
       if (result.decision.destination == AdventureEntryDestination.adventure &&
           journey != null &&
           rewardOwnership != null) {
@@ -427,6 +852,21 @@ final class _TodayExperienceHostState extends State<TodayExperienceHost> {
       Expanded(child: child),
     ],
   );
+}
+
+final class _ResearchPresentationRecord {
+  const _ResearchPresentationRecord({
+    required this.research,
+    required this.ownerId,
+    required this.opportunityId,
+    required this.opening,
+    required this.presentation,
+  });
+  final AdventureResearchRuntime research;
+  final String ownerId;
+  final String opportunityId;
+  final int opening;
+  final TodayExperiencePresentation presentation;
 }
 
 final class _PresentationSaveRun {

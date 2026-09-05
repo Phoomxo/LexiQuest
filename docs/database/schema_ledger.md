@@ -451,6 +451,26 @@ must not open a v23 database.
 
 ---
 
+### v24 — Consented Motivation Measurement
+**Reserved:** 2026-09-05
+**Branch:** `feature/adventure-research`
+**Status:** RESERVED — implementation and lifecycle verification in progress
+
+The user's 2026-09-05 instruction authorizes implementation of Adventure
+research Tasks 5.1–5.4. Adds exactly `motivation_measurement_runs`,
+`motivation_responses`, `research_participation_permits` and
+`measurement_opportunities` from SDS §4.2. The inventory increases from 44 to
+48 tables. Baseline/post item identities belong to a pinned paired instrument
+form, and responses contain bounded codes rather than free text.
+
+**Migration safety:** v23→v24 creates four empty owner-scoped tables and their
+constraints. Existing preference, learning and reward data are retained. Owner
+and assignment references are checked on insert/update; rollback is forward-only.
+Previous binaries must not open a v24 database. Runtime capture still requires
+the configured protocol/instrument and active consented signed permit.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |

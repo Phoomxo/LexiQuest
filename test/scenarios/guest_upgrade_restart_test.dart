@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import '../features/identity/research_lifecycle_fixtures.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -843,7 +844,7 @@ void main() {
   );
 
   test(
-    'anonymous bind preserves complete inventory and replays once after reopen',
+    'anonymous nonparticipant bind preserves complete inventory and replays once after reopen',
     () async {
       final previousWarningSetting =
           driftRuntimeOptions.dontWarnAboutMultipleDatabases;
@@ -899,7 +900,23 @@ void main() {
         );
 
         expect(seededCounts.keys.toSet(), ownerUpgradeInventory);
-        expect(seededCounts.values, everyElement(greaterThanOrEqualTo(1)));
+        // Signed research pins intentionally prevent guest upgrades (covered
+        // by research_owner_upgrade_test). This success journey must be a
+        // nonparticipant, while retaining positive coverage of every ordinary
+        // owner table and explicit zero coverage of all four research tables.
+        for (final entry in seededCounts.entries) {
+          expect(
+            entry.value,
+            researchLifecycleTables.contains(entry.key)
+                ? equals(0)
+                : greaterThanOrEqualTo(1),
+            reason: entry.key,
+          );
+        }
+        expect(
+          _inventoryIdentityColumns.keys.toSet(),
+          containsAll(ownerUpgradeInventory),
+        );
         expect(seededGuestOperationIds, contains('operation:achievement'));
         expect(
           seededGuestOperationIds.intersection(seededForeignOperationIds),
@@ -2141,6 +2158,10 @@ const Map<String, String> _inventoryIdentityColumns = <String, String>{
   'research_consents': 'id',
   'experiment_assignments': 'id',
   'assessment_runs': 'id',
+  'motivation_measurement_runs': 'id',
+  'motivation_responses': 'id',
+  'research_participation_permits': 'id',
+  'measurement_opportunities': 'id',
   'saved_learning_items': 'id',
   'content_quality_reports': 'id',
   'vocabulary_categories': 'id',

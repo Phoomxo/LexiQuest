@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'research_schema_guards.dart';
+
 import 'tables/ai_usage_tables.dart';
 import 'tables/associative_tables.dart';
 import 'tables/content_download_tables.dart';
@@ -30,6 +32,10 @@ part 'app_database.g.dart';
     ResearchConsents,
     ExperimentAssignments,
     AssessmentRuns,
+    MotivationMeasurementRuns,
+    MotivationResponses,
+    ResearchParticipationPermits,
+    MeasurementOpportunities,
     VocabularyCategories,
     VocabularyWords,
     VocabularyImports,
@@ -73,7 +79,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 23;
+  static const int currentSchemaVersion = 24;
 
   AppDatabase(super.executor);
 
@@ -325,6 +331,12 @@ final class AppDatabase extends _$AppDatabase {
           WHERE preference_version = 1
         ''');
       }
+      if (from < 24) {
+        await migrator.createTable(motivationMeasurementRuns);
+        await migrator.createTable(motivationResponses);
+        await migrator.createTable(researchParticipationPermits);
+        await migrator.createTable(measurementOpportunities);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -333,6 +345,7 @@ final class AppDatabase extends _$AppDatabase {
       await _createAiUsageIndexes();
       await _createContentManifestImmutabilityTriggers();
       await _createLearningTimeGuards();
+      await installResearchSchemaGuards((sql) => customStatement(sql));
     },
   );
 

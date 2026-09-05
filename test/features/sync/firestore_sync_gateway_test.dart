@@ -16,11 +16,41 @@ import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
+  test(
+    'research gateway exposes the identical injected rollout and authorizer',
+    () {
+      final rollout = ResearchMeasurementSyncRollout.localEmulatorV1(
+        deployedRulesRevision: researchMeasurementV1RulesRevision,
+      );
+      Future<bool> authorizer(ResearchSyncRequest _) async => false;
+      final ResearchMeasurementSyncRolloutGateway gateway =
+          FirestoreSyncGateway(
+            firestore: _NeverTouchedFirestore(),
+            auth: _SignedInFirebaseAuth('uid'),
+            researchMeasurementRollout: rollout,
+            researchAuthorizer: authorizer,
+          );
+      expect(
+        identical(gateway.researchMeasurementSyncRollout, rollout),
+        isTrue,
+      );
+      expect(identical(gateway.researchSyncAuthorizer, authorizer), isTrue);
+      final ResearchMeasurementSyncRolloutGateway off = FirestoreSyncGateway(
+        firestore: _NeverTouchedFirestore(),
+        auth: _SignedInFirebaseAuth('uid'),
+      );
+      expect(off.researchMeasurementSyncRollout.allowsSync, isFalse);
+      expect(off.researchSyncAuthorizer, isNull);
+    },
+  );
+
   group('FirestoreSyncCodec', () {
     final clientUpdatedAt = DateTime.utc(2026, 7, 30, 8, 15);
     final serverUpdatedAt = DateTime.utc(2026, 7, 30, 8, 16);
@@ -111,135 +141,145 @@ void main() {
       },
     );
 
-    test('round-trips every declared collection generically at v1', () {
-      const expectedCollections = <SyncCollection>{
-        SyncCollection.categories,
-        SyncCollection.words,
-        SyncCollection.attempts,
-        SyncCollection.readingEvents,
-        SyncCollection.rewardTransactions,
-        SyncCollection.srsStates,
-        SyncCollection.achievementUnlocks,
-        SyncCollection.experimentAssignments,
-        SyncCollection.assessmentRuns,
-        SyncCollection.savedLearningItems,
-        SyncCollection.contentQualityReports,
-        SyncCollection.learningTimeSegments,
-        SyncCollection.learningGoals,
-        SyncCollection.learnerPreferences,
-      };
-      expect(SyncCollection.values.toSet(), expectedCollections);
+    test(
+      'round-trips ordinary collections at v1 with exhaustive separate research contracts',
+      () {
+        const expectedCollections = <SyncCollection>{
+          SyncCollection.categories,
+          SyncCollection.words,
+          SyncCollection.attempts,
+          SyncCollection.readingEvents,
+          SyncCollection.rewardTransactions,
+          SyncCollection.srsStates,
+          SyncCollection.achievementUnlocks,
+          SyncCollection.experimentAssignments,
+          SyncCollection.assessmentRuns,
+          SyncCollection.savedLearningItems,
+          SyncCollection.contentQualityReports,
+          SyncCollection.learningTimeSegments,
+          SyncCollection.learningGoals,
+          SyncCollection.learnerPreferences,
+        };
+        expect(SyncCollection.values.toSet(), {
+          ...expectedCollections,
+          ...ResearchSyncContract.collections,
+          SyncCollection.researchWithdrawals,
+        });
 
-      for (final collection in SyncCollection.values) {
-        final entityId = switch (collection) {
-          SyncCollection.achievementUnlocks =>
-            AchievementUnlockSyncPayloadContract.canonicalEntityId(
-              achievementId: 'first-answer',
-              definitionVersion: 1,
-            ),
-          SyncCollection.experimentAssignments => _canonicalAssignmentId(),
-          SyncCollection.assessmentRuns => 'assessment-run-pre',
-          SyncCollection.savedLearningItems =>
-            _savedLearningItemCloudEntityId(),
-          SyncCollection.contentQualityReports =>
-            _contentQualityReportCloudEntityId(),
-          SyncCollection.learningTimeSegments => _learningTimeSegmentId(),
-          SyncCollection.learningGoals => 'goal:generic',
-          SyncCollection.learnerPreferences => 'current',
-          _ => '${collection.entityType}-v1',
-        };
-        final payload = switch (collection) {
-          SyncCollection.words => _wordPayloadV1(
-            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.attempts => _attemptPayloadV1(),
-          SyncCollection.achievementUnlocks => <String, Object?>{
-            'achievementId': 'first-answer',
-            'definitionVersion': 1,
-            'sourceEventId': 'attempt-achievement-v1',
-            'unlockedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
-          },
-          SyncCollection.experimentAssignments => _assignmentPayload(
-            assignmentId: entityId,
-            assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.assessmentRuns => _assessmentRunPayload(
-            assignmentId: _canonicalAssignmentId(),
-            startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.savedLearningItems => _savedLearningItemPayload(
-            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.contentQualityReports => _contentQualityReportPayload(
-            submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.learningTimeSegments => _learningTimeSegmentPayload(
-            endedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.learningGoals => _learningGoalPayload(
-            goalId: entityId,
-            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          SyncCollection.learnerPreferences => _learnerPreferencePayload(
-            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
-          ),
-          _ => <String, Object?>{'collection': collection.wireName},
-        };
-        final mutation = PushMutation(
-          operationId: switch (collection) {
+        // Research has exact bounded capture fixtures in
+        // research_measurement_sync_test; withdrawal is not an entity envelope.
+        for (final collection in expectedCollections) {
+          final entityId = switch (collection) {
             SyncCollection.achievementUnlocks =>
-              AchievementUnlockSyncPayloadContract.canonicalOperationId(
-                achievementId: payload['achievementId']! as String,
-                definitionVersion: payload['definitionVersion']! as int,
-                sourceEventId: payload['sourceEventId']! as String,
-                unlockedAtUtcMs: payload['unlockedAtUtcMs']! as int,
+              AchievementUnlockSyncPayloadContract.canonicalEntityId(
+                achievementId: 'first-answer',
+                definitionVersion: 1,
               ),
+            SyncCollection.experimentAssignments => _canonicalAssignmentId(),
+            SyncCollection.assessmentRuns => 'assessment-run-pre',
+            SyncCollection.savedLearningItems =>
+              _savedLearningItemCloudEntityId(),
             SyncCollection.contentQualityReports =>
-              ContentQualityReportSyncPayloadContract.canonicalOperationId(
-                localOperationId: 'contentQualityReport:generic:v1',
-                reportId: payload['reportId']! as String,
-                submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
+              _contentQualityReportCloudEntityId(),
+            SyncCollection.learningTimeSegments => _learningTimeSegmentId(),
+            SyncCollection.learningGoals => 'goal:generic',
+            SyncCollection.learnerPreferences => 'current',
+            _ => '${collection.entityType}-v1',
+          };
+          final payload = switch (collection) {
+            SyncCollection.words => _wordPayloadV1(
+              updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.attempts => _attemptPayloadV1(),
+            SyncCollection.achievementUnlocks => <String, Object?>{
+              'achievementId': 'first-answer',
+              'definitionVersion': 1,
+              'sourceEventId': 'attempt-achievement-v1',
+              'unlockedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+            },
+            SyncCollection.experimentAssignments => _assignmentPayload(
+              assignmentId: entityId,
+              assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.assessmentRuns => _assessmentRunPayload(
+              assignmentId: _canonicalAssignmentId(),
+              startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.savedLearningItems => _savedLearningItemPayload(
+              updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.contentQualityReports =>
+              _contentQualityReportPayload(
+                submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
               ),
-            SyncCollection.learningTimeSegments =>
-              LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
-                entityId,
-              ),
-            SyncCollection.learnerPreferences =>
-              LearnerPreferenceSyncPayloadContract.canonicalOperationId(
-                payload: payload,
-                baseRevision: 0,
-                resultingRevision: 1,
-              ),
-            _ => 'operation:${collection.entityType}:v1',
-          },
-          firebaseUid: 'firebase-user-1',
-          collection: collection,
-          entityId: entityId,
-          operationKind: SyncOperationKind.upsert,
-          payloadVersion: 1,
-          baseRevision: 0,
-          localRevision: 1,
-          clientUpdatedAtUtc: clientUpdatedAt,
-          payload: payload,
-        );
+            SyncCollection.learningTimeSegments => _learningTimeSegmentPayload(
+              endedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.learningGoals => _learningGoalPayload(
+              goalId: entityId,
+              updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            SyncCollection.learnerPreferences => _learnerPreferencePayload(
+              updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+            _ => <String, Object?>{'collection': collection.wireName},
+          };
+          final mutation = PushMutation(
+            operationId: switch (collection) {
+              SyncCollection.achievementUnlocks =>
+                AchievementUnlockSyncPayloadContract.canonicalOperationId(
+                  achievementId: payload['achievementId']! as String,
+                  definitionVersion: payload['definitionVersion']! as int,
+                  sourceEventId: payload['sourceEventId']! as String,
+                  unlockedAtUtcMs: payload['unlockedAtUtcMs']! as int,
+                ),
+              SyncCollection.contentQualityReports =>
+                ContentQualityReportSyncPayloadContract.canonicalOperationId(
+                  localOperationId: 'contentQualityReport:generic:v1',
+                  reportId: payload['reportId']! as String,
+                  submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
+                ),
+              SyncCollection.learningTimeSegments =>
+                LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+                  entityId,
+                ),
+              SyncCollection.learnerPreferences =>
+                LearnerPreferenceSyncPayloadContract.canonicalOperationId(
+                  payload: payload,
+                  baseRevision: 0,
+                  resultingRevision: 1,
+                ),
+              _ => 'operation:${collection.entityType}:v1',
+            },
+            firebaseUid: 'firebase-user-1',
+            collection: collection,
+            entityId: entityId,
+            operationKind: SyncOperationKind.upsert,
+            payloadVersion: 1,
+            baseRevision: 0,
+            localRevision: 1,
+            clientUpdatedAtUtc: clientUpdatedAt,
+            payload: payload,
+          );
 
-        final encoded = FirestoreSyncCodec.encodeEntity(
-          mutation,
-          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
-        );
-        final decoded = FirestoreSyncCodec.decodeEntity(
-          collection: collection,
-          documentId: entityId,
-          data: encoded,
-          expectedFirebaseUid: mutation.firebaseUid,
-        );
+          final encoded = FirestoreSyncCodec.encodeEntity(
+            mutation,
+            serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+          );
+          final decoded = FirestoreSyncCodec.decodeEntity(
+            collection: collection,
+            documentId: entityId,
+            data: encoded,
+            expectedFirebaseUid: mutation.firebaseUid,
+          );
 
-        expect(decoded.collection, collection, reason: collection.name);
-        expect(decoded.entityId, entityId, reason: collection.name);
-        expect(decoded.payloadVersion, 1, reason: collection.name);
-        expect(decoded.payload, payload, reason: collection.name);
-      }
-    });
+          expect(decoded.collection, collection, reason: collection.name);
+          expect(decoded.entityId, entityId, reason: collection.name);
+          expect(decoded.payloadVersion, 1, reason: collection.name);
+          expect(decoded.payload, payload, reason: collection.name);
+        }
+      },
+    );
 
     test('learner preference v2 round-trips exact home experience payload', () {
       final payload = _learnerPreferencePayload(

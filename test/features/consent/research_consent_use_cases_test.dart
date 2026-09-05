@@ -26,6 +26,42 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'configured consent version and committed withdrawal notify sync without making a queue error a consent failure',
+    () async {
+      final states = <bool>[];
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'owner',
+        nowUtc: () => DateTime.utc(2026, 7, 30),
+      );
+      final repository = DriftResearchConsentRepository(database);
+      consent = ResearchConsentUseCases(
+        owners: owners,
+        repository: repository,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+        consentVersion: 2,
+        onLocalMutation: (ownerId) async {
+          states.add(
+            (await repository.load(ownerId: ownerId, version: 2)).accepted,
+          );
+          throw StateError('synthetic queue unavailable');
+        },
+      );
+      await consent.accept();
+      expect((await consent.load()).version, 2);
+      await consent.withdraw();
+      expect((await consent.load()).accepted, isFalse);
+      expect(states, [true, false]);
+      expect(
+        (await database.select(database.researchConsents).get())
+            .single
+            .consentVersion,
+        2,
+      );
+    },
+  );
+
+  test(
     'acceptance and withdrawal are versioned owner-scoped evidence',
     () async {
       expect((await consent.load()).accepted, isFalse);

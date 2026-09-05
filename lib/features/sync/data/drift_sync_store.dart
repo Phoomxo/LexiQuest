@@ -28,12 +28,14 @@ import '../../rewards/domain/avatar_progression_policy.dart';
 import '../../rewards/domain/economy_transaction_policy.dart';
 import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
+import '../domain/research_sync.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_result.dart';
 import '../domain/sync_store.dart';
 import 'drift_owner_operation_gate.dart';
+import 'drift_research_sync_adapter.dart';
 
-final class DriftSyncStore implements SyncStore {
+final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
   DriftSyncStore(
     this.database, {
     EvidenceEligibilityPolicy evidencePolicy =
@@ -42,6 +44,9 @@ final class DriftSyncStore implements SyncStore {
         const FixedEvidencePolicyRolloutModeProvider.legacy(),
     this.payloadRollout = const SyncPayloadRollout.productionDefault(),
     this.researchSyncRollout = const ResearchCollectionSyncRollout.off(),
+    this.researchMeasurementRollout =
+        const ResearchMeasurementSyncRollout.off(),
+    this.researchAuthorizer,
     this.savedLearningItemSyncRollout =
         const SavedLearningItemSyncRollout.off(),
     this.contentQualityReportSyncRollout =
@@ -78,6 +83,14 @@ final class DriftSyncStore implements SyncStore {
   final db.AppDatabase database;
   final SyncPayloadRollout payloadRollout;
   final ResearchCollectionSyncRollout researchSyncRollout;
+  @override
+  final ResearchMeasurementSyncRollout researchMeasurementRollout;
+  final ResearchSyncAuthorizer? researchAuthorizer;
+  late final _research = DriftResearchSyncAdapter(
+    database,
+    rollout: researchMeasurementRollout,
+    authorizer: researchAuthorizer,
+  );
   final SavedLearningItemSyncRollout savedLearningItemSyncRollout;
   final ContentQualityReportSyncRollout contentQualityReportSyncRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
@@ -89,6 +102,60 @@ final class DriftSyncStore implements SyncStore {
   final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
   var _standalonePullSequence = 0;
+
+  /// Invoke after capture or withdrawal commits. Enqueues locally only; the
+  /// claim path repeats recovery. Withdrawal never requires active consent.
+  Future<int> enqueueResearchForOwner({
+    required String ownerId,
+    required DateTime nowUtc,
+    int limit = 50,
+  }) async {
+    _requireUtc(nowUtc, 'nowUtc');
+    if (!researchMeasurementRollout.allowsSync) return 0;
+    final owner =
+        await (database.select(database.localOwners)
+              ..where((r) => r.id.equals(ownerId) & r.isActive.equals(true)))
+            .getSingleOrNull();
+    final uid = owner?.firebaseUid;
+    if (uid == null || uid.isEmpty) return 0;
+    final token =
+        'research-enqueue:${identityHashCode(this)}:${_standalonePullSequence++}';
+    final gate = DriftOwnerOperationGate(database);
+    if (!await gate.tryAcquire(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: const Duration(minutes: 1),
+    )) {
+      return 0;
+    }
+    try {
+      return await enqueueResearchChanges(
+        ownerId: ownerId,
+        firebaseUid: uid,
+        ownerGateToken: token,
+        nowUtc: nowUtc,
+        limit: limit,
+      );
+    } finally {
+      await gate.release(token: token);
+    }
+  }
+
+  Future<int> enqueueResearchChanges({
+    required String ownerId,
+    required String firebaseUid,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+    int limit = 50,
+  }) => database.transaction(
+    () => _research.enqueue(
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      ownerGateToken: ownerGateToken,
+      nowUtc: nowUtc,
+      limit: limit,
+    ),
+  );
 
   Future<bool> tryAcquireRunLease({
     required String ownerId,
@@ -277,6 +344,13 @@ final class DriftSyncStore implements SyncStore {
           updates: {database.runtimeFlags},
         );
         if (fenced != 1) return const <ClaimedSyncOperation>[];
+        await _research.enqueue(
+          ownerId: canonicalOwnerId,
+          firebaseUid: canonicalUid,
+          ownerGateToken: canonicalOwnerGateToken,
+          nowUtc: nowUtc,
+          limit: limit,
+        );
         await _requeueLegacyAvatarPermissionDeniedFailures(
           ownerId: canonicalOwnerId,
           nowUtcMs: nowMs,
@@ -313,11 +387,22 @@ final class DriftSyncStore implements SyncStore {
         final eligibleGroups = <String>{};
         var cursorCreatedAtUtcMs = -1;
         var cursorOperationId = '';
+        var cursorPriority = -2;
         while (eligibleGroups.length < limit) {
           final candidateRows = await database
               .customSelect(
                 '''
-          SELECT candidate.*
+          SELECT candidate.*, CASE
+            WHEN candidate.entity_type = 'researchWithdrawal' THEN -1
+            WHEN candidate.operation_kind <> 'upsert' THEN 0
+            WHEN candidate.entity_type = 'researchParticipationPermit' THEN 1
+            WHEN candidate.entity_type = 'motivationMeasurementRun' THEN 2
+            WHEN candidate.entity_type = 'motivationResponse' THEN 3
+            WHEN candidate.entity_type = 'measurementOpportunity' THEN 4
+            WHEN candidate.entity_type IN ('TodayExperiencePresented',
+              'TodayExperiencePresentationChanged','TodayExperienceMissionStarted',
+              'TodayExperienceMissionCompleted') THEN 5
+            ELSE 0 END AS sync_priority
           FROM outbox_operations AS candidate
           WHERE candidate.owner_id = ?
             AND candidate.attempt_count < ?
@@ -352,14 +437,19 @@ final class DriftSyncStore implements SyncStore {
                   )
                 )
           )
-            AND (
+            AND (sync_priority > ? OR (sync_priority = ? AND (
               candidate.created_at_utc_ms > ?
               OR (
                 candidate.created_at_utc_ms = ?
                 AND candidate.operation_id > ?
               )
-            )
-          ORDER BY candidate.created_at_utc_ms, candidate.operation_id
+            )))
+            AND NOT (sync_priority > 0 AND EXISTS (
+              SELECT 1 FROM outbox_operations denial
+              WHERE denial.owner_id = candidate.owner_id
+                AND denial.entity_type = 'researchWithdrawal'
+                AND denial.state NOT IN ('acknowledged','superseded')))
+          ORDER BY sync_priority, candidate.created_at_utc_ms, candidate.operation_id
           LIMIT ?
           ''',
                 variables: [
@@ -368,6 +458,8 @@ final class DriftSyncStore implements SyncStore {
                   Variable<int>(nowMs),
                   Variable<int>(nowMs),
                   const Variable<int>(maxSendReservations),
+                  Variable<int>(cursorPriority),
+                  Variable<int>(cursorPriority),
                   Variable<int>(cursorCreatedAtUtcMs),
                   Variable<int>(cursorCreatedAtUtcMs),
                   Variable<String>(cursorOperationId),
@@ -381,17 +473,26 @@ final class DriftSyncStore implements SyncStore {
               .map((row) => database.outboxOperations.map(row.data))
               .toList(growable: false);
           final last = mappedRows.last;
+          final lastPriority = candidateRows.last.read<int>('sync_priority');
           final cursorAdvanced =
-              last.createdAtUtcMs > cursorCreatedAtUtcMs ||
-              (last.createdAtUtcMs == cursorCreatedAtUtcMs &&
-                  last.operationId.compareTo(cursorOperationId) > 0);
+              lastPriority > cursorPriority ||
+              (lastPriority == cursorPriority &&
+                  (last.createdAtUtcMs > cursorCreatedAtUtcMs ||
+                      (last.createdAtUtcMs == cursorCreatedAtUtcMs &&
+                          last.operationId.compareTo(cursorOperationId) > 0)));
           if (!cursorAdvanced) {
             throw StateError('sync claim candidate cursor did not advance');
           }
+          cursorPriority = lastPriority;
           cursorCreatedAtUtcMs = last.createdAtUtcMs;
           cursorOperationId = last.operationId;
           for (final candidate in mappedRows) {
-            if (await _claimAllowed(candidate, firebaseUid: canonicalUid)) {
+            if (await _claimAllowed(
+              candidate,
+              firebaseUid: canonicalUid,
+              ownerGateToken: canonicalOwnerGateToken,
+              nowUtc: nowUtc,
+            )) {
               candidates.add(candidate);
               eligibleGroups.add(
                 '${candidate.entityType}\u001f${candidate.entityId}',
@@ -417,7 +518,11 @@ final class DriftSyncStore implements SyncStore {
           );
           final preservesAssessmentRevisions =
               group.first.entityType ==
-              SyncCollection.assessmentRuns.entityType;
+                  SyncCollection.assessmentRuns.entityType ||
+              ResearchSyncContract.collectionForEntityType(
+                    group.first.entityType,
+                  ) !=
+                  null;
           final selected = preservesAssessmentRevisions
               ? group.first
               : attemptedIndex < 0
@@ -480,6 +585,7 @@ final class DriftSyncStore implements SyncStore {
                 selected,
                 firebaseUid: canonicalUid,
                 baseRevision: baseRevision,
+                ownerGateToken: canonicalOwnerGateToken,
               ),
             ),
           );
@@ -510,6 +616,22 @@ final class DriftSyncStore implements SyncStore {
           operation.state != 'inFlight' ||
           operation.leaseToken != claim.leaseToken ||
           operation.attemptCount >= maxSendReservations) {
+        return null;
+      }
+      if (ResearchSyncContract.collectionForEntityType(operation.entityType) !=
+              null &&
+          !await _research.claimAllowed(
+            operation,
+            firebaseUid: claim.mutation.firebaseUid,
+            token: canonicalOwnerGateToken,
+            now: nowUtc,
+            claimed: claim.mutation,
+          )) {
+        await releaseClaim(
+          claim: claim,
+          ownerGateToken: canonicalOwnerGateToken,
+          nowUtc: nowUtc,
+        );
         return null;
       }
       if (operation.entityType ==
@@ -762,7 +884,13 @@ final class DriftSyncStore implements SyncStore {
       );
       if (changed != 1) return false;
       await _acknowledgeEntity(operation, acknowledgement);
-      await _reconcileLaterNeverAttemptedOperations(operation, acknowledgement);
+      if (ResearchSyncContract.collectionForEntityType(operation.entityType) ==
+          null) {
+        await _reconcileLaterNeverAttemptedOperations(
+          operation,
+          acknowledgement,
+        );
+      }
       return true;
     });
   }
@@ -1080,6 +1208,57 @@ final class DriftSyncStore implements SyncStore {
           operation.leaseToken != claim.leaseToken) {
         return false;
       }
+      if (ResearchSyncContract.collections.contains(cloudEntity.collection)) {
+        await _research.apply(
+          operation.ownerId,
+          cloudEntity,
+          mutation.firebaseUid,
+          canonicalOwnerGateToken,
+          resolvedAtUtc,
+        );
+        final reconciled =
+            await (database.select(database.outboxOperations)
+                  ..where((r) => r.operationId.equals(operation.operationId)))
+                .getSingle();
+        if (reconciled.state == 'acknowledged') {
+          // The adapter may reconcile an older admitted authority wrapper with
+          // this claim. ACK is delivery only when the entire claimed fact is
+          // identical; never turn a conflicting answer/event into delivery.
+          final wrapperKeys =
+              cloudEntity.collection ==
+                  SyncCollection.researchParticipationPermits
+              ? const <String>{}
+              : ResearchSyncContract.referenceKeys;
+          if (cloudEntity.revision != mutation.localRevision ||
+              !ResearchSyncContract.same(
+                {
+                  for (final e in mutation.payload.entries)
+                    if (!wrapperKeys.contains(e.key)) e.key: e.value,
+                },
+                {
+                  for (final e in cloudEntity.payload.entries)
+                    if (!wrapperKeys.contains(e.key)) e.key: e.value,
+                },
+              )) {
+            throw const InvalidSyncPayloadFailure();
+          }
+          return true;
+        }
+        await (database.update(database.outboxOperations)..where(
+              (r) =>
+                  r.operationId.equals(operation.operationId) &
+                  r.state.equals('inFlight'),
+            ))
+            .write(
+              const db.OutboxOperationsCompanion(
+                state: Value('conflictResolved'),
+                leaseToken: Value(null),
+                leaseExpiresAtUtcMs: Value(null),
+                failureCode: Value('researchPreserveLocal'),
+              ),
+            );
+        return true;
+      }
       if (cloudEntity.collection == SyncCollection.achievementUnlocks) {
         await _resolveAchievementUnlockConflict(
           operation: operation,
@@ -1187,6 +1366,12 @@ final class DriftSyncStore implements SyncStore {
         case SyncCollection.assessmentRuns:
         case SyncCollection.contentQualityReports:
         case SyncCollection.learningTimeSegments:
+        case SyncCollection.motivationMeasurementRuns:
+        case SyncCollection.motivationResponses:
+        case SyncCollection.researchParticipationPermits:
+        case SyncCollection.measurementOpportunities:
+        case SyncCollection.neutralEventsV2:
+        case SyncCollection.researchWithdrawals:
           throw const InvalidSyncPayloadFailure();
         case SyncCollection.srsStates:
           // Resolve mutable cache state without overriding local answer evidence.
@@ -1331,6 +1516,20 @@ final class DriftSyncStore implements SyncStore {
 
         for (final entity in page.changes) {
           switch (collection) {
+            case SyncCollection.researchWithdrawals:
+              throw const InvalidSyncPayloadFailure();
+            case SyncCollection.motivationMeasurementRuns:
+            case SyncCollection.motivationResponses:
+            case SyncCollection.researchParticipationPermits:
+            case SyncCollection.measurementOpportunities:
+            case SyncCollection.neutralEventsV2:
+              await _research.apply(
+                canonicalOwnerId,
+                entity,
+                await _boundFirebaseUid(canonicalOwnerId),
+                canonicalOwnerGateToken,
+                effectiveNowUtc,
+              );
             case SyncCollection.categories:
               await _applyCategory(canonicalOwnerId, entity);
             case SyncCollection.words:
@@ -1399,7 +1598,18 @@ final class DriftSyncStore implements SyncStore {
   Future<bool> _claimAllowed(
     db.OutboxOperation operation, {
     required String firebaseUid,
+    required String ownerGateToken,
+    required DateTime nowUtc,
   }) async {
+    if (ResearchSyncContract.collectionForEntityType(operation.entityType) !=
+        null) {
+      return _research.claimAllowed(
+        operation,
+        firebaseUid: firebaseUid,
+        token: ownerGateToken,
+        now: nowUtc,
+      );
+    }
     if (operation.entityType == SyncCollection.rewardTransactions.entityType) {
       final transaction =
           await (database.select(database.rewardTransactions)..where(
@@ -1843,7 +2053,17 @@ final class DriftSyncStore implements SyncStore {
     db.OutboxOperation operation, {
     required String firebaseUid,
     required int baseRevision,
+    String? ownerGateToken,
   }) async {
+    if (ResearchSyncContract.collectionForEntityType(operation.entityType) !=
+        null) {
+      return _research.mutation(
+        operation,
+        uid: firebaseUid,
+        baseRevision: baseRevision,
+        token: ownerGateToken,
+      );
+    }
     switch (operation.entityType) {
       case 'category':
         final category =
@@ -2464,6 +2684,10 @@ final class DriftSyncStore implements SyncStore {
     db.OutboxOperation operation,
     PushAcknowledged acknowledgement,
   ) async {
+    if (ResearchSyncContract.collectionForEntityType(operation.entityType) !=
+        null) {
+      return _research.acknowledge(operation, acknowledgement);
+    }
     final acknowledgedMs =
         acknowledgement.acknowledgedAtUtc.millisecondsSinceEpoch;
     switch (operation.entityType) {
@@ -5273,6 +5497,12 @@ final class DriftSyncStore implements SyncStore {
       case SyncCollection.assessmentRuns:
       case SyncCollection.contentQualityReports:
       case SyncCollection.learningTimeSegments:
+      case SyncCollection.motivationMeasurementRuns:
+      case SyncCollection.motivationResponses:
+      case SyncCollection.researchParticipationPermits:
+      case SyncCollection.measurementOpportunities:
+      case SyncCollection.neutralEventsV2:
+      case SyncCollection.researchWithdrawals:
         throw const InvalidSyncPayloadFailure();
     }
 

@@ -7,6 +7,7 @@ import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/offline_content/application/offline_content_manager.dart';
 import '../features/preferences/application/display_preferences_controller.dart';
+import '../features/research/presentation/research_participation_screen.dart';
 import '../navigation/navigation_glossary.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
@@ -552,6 +553,37 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                 );
               },
+            ),
+          if (AppDependenciesScope.maybeOf(context)?.adventureResearch
+              case final research?)
+            Card(
+              child: ListTile(
+                key: const ValueKey('settings/research-participation'),
+                minTileHeight: 64,
+                leading: const Icon(Icons.science_outlined),
+                title: const Text('การเข้าร่วมวิจัยแรงจูงใจ'),
+                subtitle: const Text(
+                  'นำเข้าสิทธิ์ที่ลงนามแล้ว ตรวจสถานะ หรือถอนการเข้าร่วม',
+                ),
+                onTap: () async {
+                  final identities = AppDependenciesScope.maybeOf(
+                    context,
+                  )?.activeOwnerIdentities;
+                  if (identities == null) return;
+                  final ownerId = await identities.requireSingleActiveOwnerId();
+                  if (!context.mounted) return;
+                  await AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'settings/research-participation',
+                      builder: (_) => ResearchParticipationScreen(
+                        runtime: research,
+                        ownerId: ownerId,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           Tooltip(
             message: cloudStatusEntry.tooltip,

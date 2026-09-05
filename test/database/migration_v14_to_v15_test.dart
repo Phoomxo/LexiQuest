@@ -28,7 +28,7 @@ void main() {
       expect(v14Inventory, hasLength(32));
       expect(v15Inventory, hasLength(33));
       expect(v15Inventory.difference(v14Inventory), {'assessment_runs'});
-      expect(currentInventory, hasLength(44));
+      expect(currentInventory, hasLength(48));
       expect(currentInventory.difference(v15Inventory), {
         'learning_packs',
         'learning_pack_items',
@@ -41,6 +41,10 @@ void main() {
         'study_reminders',
         'session_configurations',
         'learner_preferences',
+        'motivation_measurement_runs',
+        'motivation_responses',
+        'research_participation_permits',
+        'measurement_opportunities',
       });
       expect(await _tableNames(database), currentInventory);
       expect(

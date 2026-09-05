@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "703aabe4d8c38343f53bc72ecdc264097fd2180c",
-  "sourceFingerprint": "70bbd0877b9ab465b85fa0ec07b049cd1d9baca27c201444421833cad72392d2",
+  "sourceCommit": "6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d",
+  "sourceFingerprint": "8e9ac9a8d74eba3cf2807ff6b02f6e57c4fa97ee6e3b49b8a8acb8f84a173988",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -25,7 +25,7 @@
     },
     {
       "path": "docs/database/schema_ledger.md",
-      "sha256": "b042587768838af5fb1823b0c4a57048b7964141a49ae8a2f919b5dcb6a99255"
+      "sha256": "d355a69e9474351e8a395886cf2c643f92caa1705f3b37b1bc6074ea3c26ab8f"
     },
     {
       "path": "docs/field/2026-08-09-runtime-feature-ledger.md",
@@ -57,7 +57,7 @@
     },
     {
       "path": "firestore.rules",
-      "sha256": "e1d406b560b77f9b724397c3fa4aeb5ac374d325e11c33f2c19cd37bf17c2707"
+      "sha256": "90d7e02039ebb42094509939875113fa96587ced5b048fd7764b90ff5b8865a5"
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
@@ -73,11 +73,11 @@
     },
     {
       "path": "lib",
-      "sha256": "908ac39df35ce2a2b6b1b02e61c7fd48b88141488b22aeb4c0ff9d32aebd5786"
+      "sha256": "66d0cc75d4c784ed373f03035d083cc6909a738108566bfbac469e31dd2c42ef"
     },
     {
       "path": "lib/data/local/app_database.dart",
-      "sha256": "cb6984bbeabf94edf8bb2821511ecd7343f432fe50bc2c9443bd87da9f22b6b2"
+      "sha256": "d660cd4f7acd848e85e64dab8ddb600987647e70efc0ae42206a6d43d264e2fe"
     },
     {
       "path": "lib/features/assessment/domain/assessment_instrument_catalog.dart",
@@ -92,8 +92,12 @@
       "sha256": "8dfd36b97197fd88113de59a61fbad8572a821dec72c72c548a47e4501e0db18"
     },
     {
+      "path": "lib/features/sync/domain/research_sync.dart",
+      "sha256": "ff091a27433721ac47f7f055df00a7e2c34bd9518523ae963c37a99be6d53f5a"
+    },
+    {
       "path": "lib/features/sync/domain/sync_entity.dart",
-      "sha256": "fa01a63e9f98b4dc173948007e864bda2d0c16f1370afd8d8906d6c7810dd05f"
+      "sha256": "9c5b60e90d8bca4a213ee7a67ce23bc3779fa8cfa3404a40b105986a59dd34f5"
     },
     {
       "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
@@ -113,23 +117,23 @@
     },
     {
       "path": "pubspec.lock",
-      "sha256": "a52e6ea2c1a876a7bdc184ac3ccfafcaf24013a45179b25ec40875edf1fec5c6"
+      "sha256": "4d8897448a3db4f817cbd8d82e01fdce8e0a1c22279883a2a6574d658218f7a7"
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "04625cbbcd801380ddd29d3375d87efa5b96371eea90cac350406886a4b95d3d"
+      "sha256": "fbca41f888a9f674a6a7e273e3d4c1c26a5700414a0315e485e085aaf5672964"
     },
     {
       "path": "test",
-      "sha256": "dfc61affc2df82941f5d67922546cec7c8e973158795eeaa088fd370002aabd1"
+      "sha256": "e4911bb88aeb082dbcd7de52e3e5698bf7c354230428bfbeb18c5ada42268992"
     },
     {
       "path": "test/architecture",
-      "sha256": "4be5f21673da066a141525021360af7367556d3c9469a8ae7c6ce8b218c73bf9"
+      "sha256": "016714fdab7206fe116d9cc03fd5e1a3ab81838fc4f0e2616ab855f57ed69a0a"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
-      "sha256": "bdf9a7ce5959cc9a8834576d0d307dbeff58f545a7f627217d2b81ed4181d559"
+      "sha256": "b3303bfceabc4a5313d399ddb10181f8471810849bf92b6af62b4f0481cceb4d"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_review_contract_test.dart",
@@ -153,23 +157,23 @@
     },
     {
       "path": "test/database/migration_v14_to_v15_test.dart",
-      "sha256": "489151d84b7d0562937a0b8744d5e0d0f65345eeced06470d9de899ac04edf54"
+      "sha256": "fc10d4890f01a32c4675167a6386ff25a05fdce668128e722db1d5e0b80cd486"
     },
     {
       "path": "test/database/migration_v15_to_v16_test.dart",
-      "sha256": "fed74ec2b296c9aee3c5c4664fa77e15d94f3652bf2fac8a042ab58da2b7a4bb"
+      "sha256": "abcba1f90f14cb52bb66e1fba7c65430e492f13b064fd291c038c8e4ee8aec6a"
     },
     {
       "path": "test/database/migration_v16_to_v17_test.dart",
-      "sha256": "c7ff09e9e884c5e60882300329ff85821271b10f9995936a9a10fd1ac998adbd"
+      "sha256": "8a5ee2d552b61dfd6fd2d8efd70a7467d968782bcbd107b730f75864d7c5ee6d"
     },
     {
       "path": "test/database/migration_v17_to_v18_test.dart",
-      "sha256": "f46c2803eaf39a72de65f90bfa139a58c1e24da962a00fc78ea88d7f90d32570"
+      "sha256": "b7abe77327d441626b1f0132a7f1e3534ee67fdcf084846d66bee52594dab874"
     },
     {
       "path": "test/database/migration_v18_to_v19_test.dart",
-      "sha256": "6d937e8c649ce2d784dc0a097d785c0180e33ba5289a26b87b33cacd9494deec"
+      "sha256": "8c0b39738dce55354510d3471107f47bee7d600f4e37ffaddcd357fe6e949f5b"
     },
     {
       "path": "test/database/migration_v19_to_v20_test.dart",
@@ -181,15 +185,19 @@
     },
     {
       "path": "test/database/migration_v20_to_v21_test.dart",
-      "sha256": "9708ab0e4672ba478570cbcdfa7d4c5989bc9842b102de716602a1c957fa1af2"
+      "sha256": "8b9c2bd7e3f0cbbb1a1b8bfd640bd8a6cf29eded612e376f5e9404798e190bf4"
     },
     {
       "path": "test/database/migration_v21_to_v22_test.dart",
-      "sha256": "b8426dc54400f728467c79c48d89fa0cd4f0b62ba7a77a9299f83faef7c5c750"
+      "sha256": "0dfb4a4494add8b3071cad244661f37d76e991bdcef730e67ba7c66137b79a6a"
     },
     {
       "path": "test/database/migration_v22_to_v23_test.dart",
-      "sha256": "80cbe8dbda7b2724e8dd05050ff1d22f8a2f73fa5ba3bc1928869452c8490732"
+      "sha256": "c6f8a742b5e5102311fccfb25f1b2bc68ee940b6073deeddcf5980f8539dce7d"
+    },
+    {
+      "path": "test/database/migration_v23_to_v24_test.dart",
+      "sha256": "592a23ba5e96ac310934e20c94f611e6840223af6ff5aadf7b7d0e18cb804cfa"
     },
     {
       "path": "test/database/migration_v6_to_v7_test.dart",
@@ -233,7 +241,7 @@
     },
     {
       "path": "test/features/consent",
-      "sha256": "3cdaf35bd9e7d19eead12d13774d29b7ad0e8b48e86654bd9ddf450951f2747c"
+      "sha256": "312a38cb7e89781e03fd734566ac2c9d112a65090909bb3ff60b7218f120c520"
     },
     {
       "path": "test/features/device_model",
@@ -245,7 +253,7 @@
     },
     {
       "path": "test/features/export",
-      "sha256": "baf444e025cdb6ac2bd25f47fa957147b3b0d7f9242ca4f9ec7b44e6e9760d6c"
+      "sha256": "6d0d10992afa1d3f130d3ccf670190e19d4a291b4aa9e1c4d8aad86fe58ef39a"
     },
     {
       "path": "test/features/gemini",
@@ -261,7 +269,7 @@
     },
     {
       "path": "test/features/identity",
-      "sha256": "9f0496d993e2a446f673c75149f2e6d4071312819207224ef9bc67366ba944f4"
+      "sha256": "f89ffabc53266f395b31b841c1ef260ba8fef2d18413e3c28b2bb0ab9cfa9e7d"
     },
     {
       "path": "test/features/learning",
@@ -305,7 +313,7 @@
     },
     {
       "path": "test/features/research",
-      "sha256": "d6e927bbcca617d62a91b1435029f46b2e78073ee6fbe39975156142cb037aa5"
+      "sha256": "4f79fd9878f5bf5feb6b87c4eaf99c11176c1316224a3835499ca6aba0607957"
     },
     {
       "path": "test/features/review",
@@ -321,7 +329,7 @@
     },
     {
       "path": "test/features/sync",
-      "sha256": "a07b16c9c7a8811d9ec0609d2c9f287265d414e13c17a1b40e045e394ca7b402"
+      "sha256": "772459c2e31c4470d3b7c93b06c910d279b0fcaae2e08c9540812e0d7fa4c8f0"
     },
     {
       "path": "test/features/time_tracking",
@@ -345,7 +353,7 @@
     },
     {
       "path": "test/scenarios/complete_owner_export_delete_test.dart",
-      "sha256": "c4ece96ffafcf14a602ccf22ef29d52f74bc429d3cd117cc9e83d21780310aa0"
+      "sha256": "2118dfdacb4d001f8698cf3cac763c423b1d08c6ca9b72fe726780209a44c45f"
     },
     {
       "path": "test/scenarios/file_backed_sync_recovery_test.dart",
@@ -353,7 +361,7 @@
     },
     {
       "path": "test/scenarios/guest_upgrade_restart_test.dart",
-      "sha256": "54dbd37b2c2b19d1897a6bbaebabd2afa07dadae55cba05012ab1ed1e15c2bdb"
+      "sha256": "5cc1e7ec852d9efe9063d5492e400a67bc916c5df67d0a5d26a8e068c147688f"
     },
     {
       "path": "test/scenarios/production_learning_restart_test.dart",
@@ -373,11 +381,11 @@
     },
     {
       "path": "test/security/firestore-rules.test.cjs",
-      "sha256": "c42044085603847f4ac4ca8396d7106dcef1ed8a09fc393b2bc0b788bd1f2165"
+      "sha256": "1d9cf2fb17e1b0eb4c4783b7985f3750ef4e827fd12fcd28a8778f37a785ccc5"
     },
     {
       "path": "test/support/current_database_contract.dart",
-      "sha256": "00b423a0de974232422585df2aecfd7804735f99a96494717b2dc7388e9edd46"
+      "sha256": "b2cd7e9f136061b50cbc59b403d029bd06ef6ffcc81f5c86b0ee72b5f8bc26ca"
     },
     {
       "path": "test/widgets",
@@ -385,7 +393,7 @@
     },
     {
       "path": "tool",
-      "sha256": "6751ab1bd49613936447b681c9a71cfc8539ee8930f4b2e564b453ead9ddde4a"
+      "sha256": "c8094c11e738a45fe46f575768793dbf05dc97a02b3f8bfb55d83b70d32bd857"
     },
     {
       "path": "tool/cli/run-android-smoke.ps1",
@@ -409,7 +417,7 @@
     },
     {
       "path": "tool/final_test_plan/generate_final_test_plan.dart",
-      "sha256": "260630f11fe9d109ec1ddc6665b6c8c230d6b320c4d3e2b764cfbef3f6dce4c8"
+      "sha256": "a79270c627f82cf81e829a970c65ebe2299271378665fa9198abeb9ad4044580"
     }
   ],
   "productContract": {
@@ -419,8 +427,8 @@
     "completionContractCount": 8
   },
   "database": {
-    "schemaVersion": 23,
-    "tableCount": 44,
+    "schemaVersion": 24,
+    "tableCount": 48,
     "tables": [
       "achievement_unlocks",
       "ai_usage_events",
@@ -442,7 +450,10 @@
       "learning_sessions",
       "learning_time_segments",
       "local_owners",
+      "measurement_opportunities",
       "model_downloads",
+      "motivation_measurement_runs",
+      "motivation_responses",
       "outbox_operations",
       "owned_reward_items",
       "points_ledger_entries",
@@ -452,6 +463,7 @@
       "reading_events",
       "reading_progress_entries",
       "research_consents",
+      "research_participation_permits",
       "reward_transactions",
       "runtime_flags",
       "saved_learning_items",
@@ -489,7 +501,8 @@
       "v19-to-v20",
       "v20-to-v21",
       "v21-to-v22",
-      "v22-to-v23"
+      "v22-to-v23",
+      "v23-to-v24"
     ]
   },
   "runtime": {
@@ -522,6 +535,7 @@
     "missingDependencyFailsClosed": true
   },
   "rulesRevisions": {
+    "researchMeasurementV1": "research-measurement-v1-r1",
     "legacy": "legacy-v1",
     "answerAttemptV2": "answer-attempt-v2-r1",
     "vocabularyWordV2": "vocabulary-word-v2-r1",
@@ -585,7 +599,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 703aabe4d8c38343f53bc72ecdc264097fd2180c",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"
@@ -939,6 +953,18 @@
         "docs/database/schema_ledger.md"
       ],
       "transition": "v22-to-v23",
+      "coverage": "dedicatedTransitionTest"
+    },
+    {
+      "id": "migration-v23-to-v24",
+      "category": "migrationTransition",
+      "command": "flutter test --no-pub test/database/migration_v23_to_v24_test.dart --reporter compact",
+      "expectedExitCode": 0,
+      "sourceRefs": [
+        "test/database/migration_v23_to_v24_test.dart",
+        "docs/database/schema_ledger.md"
+      ],
+      "transition": "v23-to-v24",
       "coverage": "dedicatedTransitionTest"
     },
     {
