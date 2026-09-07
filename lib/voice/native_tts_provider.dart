@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'voice_models.dart';
@@ -30,13 +32,27 @@ abstract interface class NativeTtsLocalVoiceAdapter {
   Future<Object?> selectVoice({required String name, required String locale});
 }
 
+/// Optional natural-end proof for the most recently acknowledged utterance.
+abstract interface class NativeTtsPlaybackAdapter {
+  Future<void>? get playbackCompleted;
+}
+
 /// Production [NativeTtsAdapter] backed by an injected-or-default [FlutterTts].
 final class FlutterTtsAdapter
-    implements NativeTtsAdapter, NativeTtsLocalVoiceAdapter {
+    implements
+        NativeTtsAdapter,
+        NativeTtsLocalVoiceAdapter,
+        NativeTtsPlaybackAdapter {
   FlutterTtsAdapter({FlutterTts? flutterTts})
     : _flutterTts = _retainFlutterTts(flutterTts);
 
   FlutterTts? _flutterTts;
+  Completer<void>? _activePlayback;
+  Future<void>? _lastPlaybackCompleted;
+  bool _completionTrusted = true;
+
+  @override
+  Future<void>? get playbackCompleted => _lastPlaybackCompleted;
 
   // Plugin construction is deliberately deferred until the first native
   // request. Bootstrap can therefore expose native speech even when a
@@ -87,14 +103,69 @@ final class FlutterTtsAdapter
 
   @override
   Future<void> speak(String text) async {
-    await _resolved.speak(text);
+    if (_activePlayback != null) await stop();
+    final playback = _completionTrusted ? Completer<void>() : null;
+    _activePlayback = playback;
+    _lastPlaybackCompleted = playback?.future;
+    if (playback != null) {
+      // Observe errors even for callers that only request a start acknowledgement.
+      unawaited(playback.future.then<void>((_) {}, onError: (_, _) {}));
+      _resolved.setCompletionHandler(() {
+        if (!identical(_activePlayback, playback)) return;
+        _activePlayback = null;
+        if (!playback.isCompleted) playback.complete();
+      });
+      void interrupted() {
+        if (!identical(_activePlayback, playback)) return;
+        _completionTrusted = false;
+        if (!playback.isCompleted) {
+          playback.completeError(_nativePlaybackFailure);
+        }
+      }
+
+      _resolved.setCancelHandler(interrupted);
+      _resolved.setErrorHandler((_) => interrupted());
+    }
+    try {
+      await _resolved.speak(text);
+    } on Object {
+      if (playback != null && !playback.isCompleted) {
+        _completionTrusted = false;
+        playback.completeError(_nativeSynthesisFailure);
+      }
+      rethrow;
+    }
   }
 
   @override
   Future<void> stop() async {
     final flutterTts = _flutterTts;
+    final playback = _activePlayback;
+    if (playback != null) {
+      // flutter_tts terminal callbacks carry no utterance ID. After interruption
+      // a late callback cannot authenticate a replacement's natural end. Keep
+      // ordinary speech available, but withhold completion proof until this
+      // runtime adapter is replaced. Never infer completion from a delay.
+      _completionTrusted = false;
+      _activePlayback = null;
+    }
     if (flutterTts != null) {
-      await flutterTts.stop();
+      try {
+        await flutterTts.stop();
+      } on Object {
+        if (playback != null && !playback.isCompleted) {
+          playback.completeError(_nativePlaybackFailure);
+        }
+        rethrow;
+      }
+    }
+    if (playback != null && !playback.isCompleted) {
+      playback.completeError(
+        const VoiceFailure(
+          category: VoiceFailureCategory.cancelled,
+          message: 'On-device speech was stopped.',
+        ),
+      );
     }
   }
 }
@@ -145,6 +216,9 @@ final class NativeTtsProvider implements VoiceProvider {
         actualEngine: VoiceEngine.nativeTts,
         usedFallback: false,
         cacheHit: false,
+        playbackCompleted: _adapter is NativeTtsPlaybackAdapter
+            ? (_adapter as NativeTtsPlaybackAdapter).playbackCompleted
+            : null,
       );
     } on Object {
       throw _nativeSynthesisFailure;

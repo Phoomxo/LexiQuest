@@ -4,7 +4,11 @@ import '../application/pair_matching_atomic_start.dart';
 import 'pair_matching_launch.dart';
 import 'pair_matching_plan.dart';
 import '../../application/matching_mode_adapter.dart';
+import '../../application/current_activity_evidence.dart';
 import '../../domain/learning_models.dart';
+import '../../domain/evidence_context.dart';
+import '../../domain/lexical_prompt_artifact_identity.dart';
+import '../../domain/session_configuration.dart';
 
 abstract interface class PairMatchingSessionPurposeReader {
   Future<PairMatchingSessionPurpose> read({
@@ -19,9 +23,14 @@ final class PairMatchingSessionPurpose {
   const PairMatchingSessionPurpose._(
     this.snapshot, {
     this.unknownMatching = false,
+    this.reservations = const {},
   });
   final bool unknownMatching;
   final PairMatchingCheckpointSnapshot? snapshot;
+
+  /// Exact durable pending bytes from the entire authenticated prefix, including
+  /// occurrences that the latest snapshot has already acknowledged.
+  final Map<String, Map<String, Object?>> reservations;
   PairSessionPurpose? get purpose => unknownMatching
       ? null
       : snapshot?.engine.plan.sessionPurpose ?? PairSessionPurpose.learning;
@@ -60,6 +69,7 @@ final class PairMatchingSessionPurpose {
       final byRevision = <int, PairMatchingCheckpointSnapshot>{};
       final occurredByRevision = <int, int>{};
       final legacyRevisions = <int>{};
+      final reservations = <String, Map<String, Object?>>{};
       for (var index = 0; index < checkpoints.length; index++) {
         final row = checkpoints[index], p = payloads[index];
         final version = p['schemaVersion'];
@@ -75,7 +85,7 @@ final class PairMatchingSessionPurpose {
         final actor = row['actor_identity'];
         final authorizedActor =
             actor == ownerId ||
-            (legacy &&
+            (!legacy ||
                 historicalOwners.any(
                   (owner) =>
                       owner['id'] == actor &&
@@ -168,17 +178,23 @@ final class PairMatchingSessionPurpose {
           snapshot.startOperation,
         );
         final plan = snapshot.engine.plan;
-        if (plan.ownerId != ownerId ||
-            plan.learningSessionId != session['id'] ||
-            plan.sourceSessionId == plan.learningSessionId ||
-            plan.createdAtUtc.millisecondsSinceEpoch !=
-                session['started_at_utc_ms'] ||
-            start.appVersion != session['app_version'] ||
-            start.buildId != session['build_id'] ||
-            start.configuration?.contentIdentity !=
-                session['session_configuration_identity'] ||
-            start.configuration?.stableSerialization !=
-                session['session_configuration_json'] ||
+        authorizeSnapshot(
+          ownerId: ownerId,
+          session: session,
+          snapshot: snapshot,
+          historicalOwners: historicalOwners,
+        );
+        authorizeActor(
+          ownerId: ownerId,
+          actorId: actor,
+          occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            (row['occurred_at_utc'] as int) * 1000,
+            isUtc: true,
+          ),
+          historicalOwners: historicalOwners,
+          secondPrecision: true,
+        );
+        if ((revision == 1 && actor != plan.ownerId) ||
             snapshot.terminal?.atUtc.toIso8601String() != p['terminalAtUtc'] ||
             (snapshot.terminal?.acknowledged ?? false) !=
                 (p['terminalAcknowledged'] ?? false)) {
@@ -187,6 +203,15 @@ final class PairMatchingSessionPurpose {
         if (revision == 1 &&
             jsonEncode(state) != jsonEncode(start.initialCheckpoint.state)) {
           throw const FormatException();
+        }
+        final frozen = snapshot.frozenEvidence;
+        if (frozen != null) {
+          final id = frozen['sourceEvidenceId'] as String;
+          final previous = reservations[id];
+          if (previous != null && jsonEncode(previous) != jsonEncode(frozen)) {
+            throw const FormatException('Pair reserved occurrence changed');
+          }
+          reservations[id] = frozen;
         }
         byRevision[revision] = snapshot;
         occurredByRevision[revision] = row['occurred_at_utc'] as int;
@@ -226,9 +251,157 @@ final class PairMatchingSessionPurpose {
                   latest.terminal!.atUtc.millisecondsSinceEpoch)) {
         throw const FormatException();
       }
-      return PairMatchingSessionPurpose._(latest);
+      if (latest.evidenceIds.any((id) => !reservations.containsKey(id))) {
+        throw const FormatException('Pair committed reservation is missing');
+      }
+      return PairMatchingSessionPurpose._(
+        latest,
+        reservations: Map.unmodifiable(reservations),
+      );
     } catch (_) {
       throw StateError('Persisted Pair purpose is unavailable or corrupt');
+    }
+  }
+
+  /// Read-only canonical lineage authentication. Write callers must additionally
+  /// require that [ownerId] is the sole active owner inside their transaction.
+  static void authorizeActor({
+    required String ownerId,
+    required String actorId,
+    required DateTime occurredAtUtc,
+    required List<Map<String, Object?>> historicalOwners,
+    bool secondPrecision = false,
+  }) {
+    final current = _ownerRow(ownerId, historicalOwners);
+    final currentCreated = _utcMilliseconds(current['created_at_utc_ms']);
+    if (!occurredAtUtc.isUtc) {
+      throw StateError('Pair actor occurrence is invalid');
+    }
+    final occurred = _utcMilliseconds(occurredAtUtc.millisecondsSinceEpoch);
+    final upper = occurred + (secondPrecision ? 999 : 0);
+    if (actorId == ownerId) {
+      if (upper < currentCreated) {
+        throw StateError('Pair actor predates owner');
+      }
+      return;
+    }
+    final historical = _ownerRow(actorId, historicalOwners);
+    final created = _utcMilliseconds(historical['created_at_utc_ms']);
+    final upgraded = _utcMilliseconds(historical['upgraded_at_utc_ms']);
+    final destinationUpgraded = _utcMilliseconds(current['upgraded_at_utc_ms']);
+    if (historical['is_active'] != 0 ||
+        historical['account_state'] != 'mergedInto:$ownerId' ||
+        created > upgraded ||
+        currentCreated > upgraded ||
+        currentCreated > destinationUpgraded ||
+        upgraded > destinationUpgraded ||
+        upper < created ||
+        occurred > upgraded) {
+      throw StateError('Pair actor lineage is unavailable or corrupt');
+    }
+  }
+
+  static Map<String, Object?> _ownerRow(
+    String id,
+    List<Map<String, Object?>> owners,
+  ) {
+    final found = owners.where((row) => row['id'] == id).toList();
+    if (found.length != 1) {
+      throw StateError('Pair canonical owner is unavailable');
+    }
+    return found.single;
+  }
+
+  static int _utcMilliseconds(Object? value) {
+    if (value is! int || value < 0 || value > 8640000000000000) {
+      throw StateError('Pair owner timestamp is invalid');
+    }
+    return value;
+  }
+
+  static SessionConfiguration? projectConfigurationOwner(
+    SessionConfiguration? accepted,
+    String ownerId,
+  ) => accepted == null
+      ? null
+      : SessionConfiguration.validated(
+          schemaVersion: accepted.schemaVersion,
+          policyVersion: accepted.policyVersion,
+          ownerId: ownerId,
+          mode: accepted.mode,
+          itemCount: accepted.itemCount,
+          direction: accepted.direction,
+          difficulty: accepted.difficulty,
+          hintBudget: accepted.hintBudget,
+          timing: accepted.timing,
+          packIdentity: accepted.packIdentity,
+          protocolId: accepted.protocolId,
+          protocolVersion: accepted.protocolVersion,
+          protocolLimitsIdentity: accepted.protocolLimitsIdentity,
+          pairDensityPreference: accepted.pairDensityPreference,
+        );
+
+  /// Authenticates accepted P against canonical R without changing the start,
+  /// configuration, lexical pins, frozen occurrence, or command namespace.
+  static void authorizeSnapshot({
+    required String ownerId,
+    required Map<String, Object?> session,
+    required PairMatchingCheckpointSnapshot snapshot,
+    required List<Map<String, Object?>> historicalOwners,
+  }) {
+    final plan = snapshot.engine.plan;
+    final start = PairMatchingStartOperation.fromStableSerialization(
+      snapshot.startOperation,
+    );
+    authorizeActor(
+      ownerId: ownerId,
+      actorId: plan.ownerId,
+      occurredAtUtc: plan.createdAtUtc,
+      historicalOwners: historicalOwners,
+    );
+    final projected = projectConfigurationOwner(start.configuration, ownerId);
+    if (session['owner_id'] != ownerId ||
+        session['activity_type'] != 'matching' ||
+        plan.learningSessionId != session['id'] ||
+        plan.sourceSessionId == plan.learningSessionId ||
+        plan.createdAtUtc.millisecondsSinceEpoch !=
+            session['started_at_utc_ms'] ||
+        start.appVersion != session['app_version'] ||
+        start.buildId != session['build_id'] ||
+        projected?.contentIdentity !=
+            session['session_configuration_identity'] ||
+        projected?.stableSerialization !=
+            session['session_configuration_json']) {
+      throw StateError('Pair checkpoint session or configuration changed');
+    }
+    final frozenJson = snapshot.frozenEvidence;
+    if (frozenJson != null) {
+      final frozen = FrozenPendingCurrentActivityEvidence.fromJson(frozenJson);
+      final pending = snapshot.engine.pending!;
+      final item = plan.orderedLexicalItems.singleWhere(
+        (item) => item.wordId == pending.promptWordId,
+      );
+      final content = LexicalPromptArtifactResolver.resolveForAdapter(
+        promptMode: 'matchingPair',
+        wordId: item.wordId,
+        coreRevision: item.contentRevision,
+        coreChecksumSha256: item.checksum,
+      );
+      if (frozen.ownerId != frozen.actorIdentity ||
+          frozen.contentRevision != content?.evidenceContentRevision ||
+          frozen.declaredEvidenceClass !=
+              (plan.sessionPurpose == PairSessionPurpose.practiceReplay
+                  ? EvidenceClass.recreational
+                  : snapshot.engine.classificationFor(pending).evidenceClass) ||
+          frozen.contrastiveFeedback != null) {
+        throw StateError('Pair frozen actor is inconsistent');
+      }
+      authorizeActor(
+        ownerId: ownerId,
+        actorId: frozen.actorIdentity,
+        occurredAtUtc: frozen.occurredAtUtc,
+        historicalOwners: historicalOwners,
+      );
     }
   }
 
@@ -253,14 +426,31 @@ final class PairMatchingSessionPurpose {
     String owner,
     List<Map<String, Object?>> checkpoints,
   ) {
-    final actors =
-        checkpoints
-            .map((row) => row['actor_identity'])
-            .whereType<String>()
-            .where((actor) => actor != owner)
-            .toSet()
-            .toList()
-          ..sort();
+    // This query is also consumed by research's tracked _Reads snapshot. Keep
+    // absent identities in its parameters so insertion/removal invalidates an
+    // authorization that awaited external policy or signature work.
+    final identities = <String>{owner};
+    for (final row in checkpoints) {
+      final actor = row['actor_identity'];
+      if (actor is String) identities.add(actor);
+      try {
+        final payload = jsonDecode(row['payload_json'] as String) as Map;
+        final state = payload['state'] as Map;
+        if (state['schemaVersion'] != 6) continue;
+        final planOwner = (state['plan'] as Map)['ownerId'];
+        if (planOwner is String) identities.add(planOwner);
+        final frozen = state['frozenEvidence'];
+        if (frozen is Map) {
+          for (final key in ['ownerId', 'actorIdentity']) {
+            final id = frozen[key];
+            if (id is String) identities.add(id);
+          }
+        }
+      } catch (_) {
+        // Extraction grants no authority; decode rejects malformed payloads.
+      }
+    }
+    final actors = identities.toList()..sort();
     return (
       sql:
           'SELECT * FROM local_owners WHERE id IN (${actors.isEmpty ? "NULL" : List.filled(actors.length, "?").join(",")}) ORDER BY id',

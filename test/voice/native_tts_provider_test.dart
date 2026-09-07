@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/native_tts_provider.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -72,6 +76,124 @@ Future<VoiceFailure> _captureStopFailure(Object failure) async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('native playback completion proof', () {
+    test(
+      'native cancellation stays cancelled through completion-owned facade',
+      () async {
+        final plugin = _CompletionFlutterTts()..stopBarrier = Completer<void>();
+        final provider = NativeTtsProvider(
+          FlutterTtsAdapter(flutterTts: plugin),
+        );
+        final useCases = VoiceUseCases(
+          provider: provider,
+          disposeProvider: provider.stop,
+        );
+        final session = useCases.acquireSession();
+        var settled = false;
+        final expectation = expectLater(
+          session.speakUntilCompleted(_validRequest()),
+          throwsA(
+            isA<VoiceFailure>().having(
+              (e) => e.category,
+              'category',
+              VoiceFailureCategory.cancelled,
+            ),
+          ),
+        ).then((_) => settled = true);
+        await Future<void>.delayed(Duration.zero);
+        final stopping = session.stop();
+        await Future<void>.delayed(Duration.zero);
+        expect(settled, isFalse);
+        plugin.stopBarrier!.complete();
+        await stopping;
+        await expectation;
+        await useCases.dispose();
+      },
+    );
+    test('actual adapter start acknowledgement precedes natural end', () async {
+      final plugin = _CompletionFlutterTts();
+      final provider = NativeTtsProvider(FlutterTtsAdapter(flutterTts: plugin));
+      final result = await provider.speak(_validRequest());
+      var ended = false;
+      final completion = result.playbackCompleted!;
+      completion.then((_) => ended = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(plugin.speakCalls, 1);
+      expect(ended, isFalse);
+      plugin.completionHandler!();
+      await completion;
+      expect(ended, isTrue);
+      await provider.stop();
+    });
+
+    test(
+      'stop requires acknowledgement and quarantines untagged late events',
+      () async {
+        final plugin = _CompletionFlutterTts()..stopBarrier = Completer<void>();
+        final provider = NativeTtsProvider(
+          FlutterTtsAdapter(flutterTts: plugin),
+        );
+        final first = await provider.speak(_validRequest());
+        final oldEnd = plugin.completionHandler!;
+        var ended = false;
+        final stoppedExpectation = expectLater(
+          first.playbackCompleted,
+          throwsA(
+            isA<VoiceFailure>().having(
+              (e) => e.category,
+              'category',
+              VoiceFailureCategory.cancelled,
+            ),
+          ),
+        ).then((_) => ended = true);
+        final stopping = provider.stop();
+        oldEnd();
+        await Future<void>.delayed(Duration.zero);
+        expect(ended, isFalse);
+        plugin.stopBarrier!.complete();
+        await stopping;
+        await stoppedExpectation;
+        final replacement = await provider.speak(
+          _validRequest(text: 'Replacement.'),
+        );
+        expect(plugin.speakCalls, 2);
+        expect(
+          replacement.playbackCompleted,
+          isNull,
+          reason:
+              'Untagged interrupted native completion stays unavailable for this adapter lifetime.',
+        );
+        oldEnd();
+        await provider.stop();
+      },
+    );
+
+    test(
+      'retired natural-end closure cannot settle a fresh utterance',
+      () async {
+        final plugin = _CompletionFlutterTts();
+        final provider = NativeTtsProvider(
+          FlutterTtsAdapter(flutterTts: plugin),
+        );
+        final first = await provider.speak(_validRequest());
+        final oldEnd = plugin.completionHandler!;
+        oldEnd();
+        await first.playbackCompleted;
+        final second = await provider.speak(_validRequest(text: 'Second.'));
+        var ended = false;
+        second.playbackCompleted!.then((_) => ended = true);
+        oldEnd();
+        await Future<void>.delayed(Duration.zero);
+        expect(ended, isFalse);
+        plugin.completionHandler!();
+        await second.playbackCompleted;
+        expect(ended, isTrue);
+        await provider.stop();
+      },
+    );
+  });
   group('language mapping', () {
     test('maps English to en-US', () async {
       final adapter = _RecordingTtsAdapter();
@@ -395,6 +517,31 @@ enum _TtsCall {
   setPitch,
   speak,
   stop,
+}
+
+final class _CompletionFlutterTts extends FlutterTts {
+  Completer<void>? stopBarrier;
+  int speakCalls = 0;
+
+  @override
+  Future<dynamic> setLanguage(String language) async => 1;
+  @override
+  Future<dynamic> setSpeechRate(double rate) async => 1;
+  @override
+  Future<dynamic> setVolume(double volume) async => 1;
+  @override
+  Future<dynamic> setPitch(double pitch) async => 1;
+  @override
+  Future<dynamic> speak(String text, {bool focus = false}) async {
+    speakCalls++;
+    return 1;
+  }
+
+  @override
+  Future<dynamic> stop() async {
+    await stopBarrier?.future;
+    return 1;
+  }
 }
 
 class _TtsInvocation {

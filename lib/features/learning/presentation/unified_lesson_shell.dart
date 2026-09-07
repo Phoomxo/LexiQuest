@@ -372,7 +372,7 @@ final class UnifiedLessonRouteLifecycle {
     if (!_accepting ||
         _controller.state.mode != LessonMode.matching ||
         !identical(coordinator.learning, _learning) ||
-        coordinator.activeOwnerId() != coordinator.operation.plan.ownerId ||
+        coordinator.activeOwnerId() != coordinator.runtimeOwnerId ||
         (_pairSession != null && !identical(_pairSession, coordinator)) ||
         (_loadedSessionId != null &&
             _loadedSessionId != coordinator.operation.plan.learningSessionId)) {
@@ -504,7 +504,7 @@ final class UnifiedLessonRouteLifecycle {
     final pair = _pairSession;
     if (pair != null &&
         (pair.operation.plan.learningSessionId != session.id ||
-            pair.operation.plan.ownerId != pinnedOwnerId)) {
+            pair.runtimeOwnerId != pinnedOwnerId)) {
       throw StateError('Loaded Pair differs from reserved session');
     }
     final restoredClose = recoveredClose?.call();
@@ -691,7 +691,7 @@ final class UnifiedLessonRouteLifecycle {
     final existing = _terminal;
     if (existing != null) return existing;
     final pair = _pairSession;
-    if (pair != null && pair.activeOwnerId() == pair.operation.plan.ownerId) {
+    if (pair != null && pair.activeOwnerId() == pair.runtimeOwnerId) {
       _pairRetirementPause ??= pair.pause(PairPauseReason.boardUnavailable);
     }
     final cutoff = _retirementCutoff ??= _controller.captureTerminalCutoff(

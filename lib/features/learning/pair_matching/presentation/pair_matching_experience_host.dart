@@ -201,6 +201,9 @@ final class PairMatchingExperienceHost extends StatefulWidget {
 final class _PairMatchingExperienceHostState
     extends State<PairMatchingExperienceHost> {
   PairMatchingStartOperation? _operation, _pendingStart;
+  SessionConfiguration? _recoveredConfiguration;
+  String? _recoveryOwner;
+  bool _preparingRecovery = false, _recoveryBindingFailed = false;
   int _attachmentRevision = 0;
   late PairDirection _direction =
       widget.launch?.requestedDirection ?? PairDirection.enToTh;
@@ -217,6 +220,7 @@ final class _PairMatchingExperienceHostState
     super.initState();
     _operation = widget.recoveryOperation;
     _recoveryOnly = _operation != null;
+    if (_recoveryOnly) unawaited(_prepareRecoveryBinding());
     _density = widget.preferences?.resolve(
       requested: widget.launch?.requestedDensity,
       canPrompt: true,
@@ -233,6 +237,35 @@ final class _PairMatchingExperienceHostState
 
   String copy(String th, String en) =>
       Localizations.localeOf(context).languageCode == 'en' ? en : th;
+
+  Future<void> _prepareRecoveryBinding() async {
+    _preparingRecovery = true;
+    try {
+      final owner = await widget.runtime.requireOwner();
+      _recoveryOwner ??= owner;
+      if (_recoveryOwner != owner) throw StateError('Pair owner changed');
+      final accepted = await widget.runtime.reader.read(
+        ownerId: owner,
+        sessionId: _operation!.plan.learningSessionId,
+      );
+      if (await widget.runtime.requireOwner() != owner ||
+          accepted.snapshot?.startOperation !=
+              _operation!.stableSerialization) {
+        throw StateError('Pair accepted recovery changed');
+      }
+      _recoveredConfiguration =
+          PairMatchingSessionPurpose.projectConfigurationOwner(
+            _operation!.configuration,
+            owner,
+          );
+      _recoveryBindingFailed = false;
+    } catch (_) {
+      _recoveryBindingFailed = true;
+    } finally {
+      if (mounted) setState(() => _preparingRecovery = false);
+    }
+  }
+
   Future<void> _loadPreference() async {
     final store = widget.runtime.configurations;
     if (store == null) return;
@@ -456,6 +489,35 @@ final class _PairMatchingExperienceHostState
   @override
   Widget build(BuildContext context) {
     final operation = _operation;
+    if (_preparingRecovery || _recoveryBindingFailed) {
+      return Scaffold(
+        body: Center(
+          child: _preparingRecovery
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      copy(
+                        'ไม่สามารถเปิดเซสชันที่บันทึกไว้ได้',
+                        'Saved session is unavailable',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        unawaited(_prepareRecoveryBinding());
+                      }),
+                      child: Text(copy('ลองอีกครั้ง', 'Retry')),
+                    ),
+                    TextButton(
+                      onPressed: widget.onExit,
+                      child: Text(copy('กลับจุดเดิม', 'Return')),
+                    ),
+                  ],
+                ),
+        ),
+      );
+    }
     if (operation == null && widget.historyReplaySource != null) {
       return Scaffold(
         body: Center(
@@ -510,7 +572,9 @@ final class _PairMatchingExperienceHostState
           feature: _recoveryOnly ? null : Feature.quiz,
           featureRegistry: widget.runtime.features,
           nowUtc: widget.runtime.learning.nowUtc,
-          configuration: operation.configuration,
+          configuration: _recoveryOnly
+              ? _recoveredConfiguration
+              : operation.configuration,
           revalidateConfiguration: operation.configuration == null
               ? null
               : widget.runtime.revalidate,
@@ -518,6 +582,9 @@ final class _PairMatchingExperienceHostState
           builder: (_) => _PairSessionPane(
             runtime: widget.runtime,
             operation: operation,
+            runtimeOwnerId: _recoveryOnly
+                ? _recoveryOwner!
+                : operation.plan.ownerId,
             onRetryAttachment: () {
               if (mounted) setState(() => _attachmentRevision++);
             },
@@ -706,6 +773,7 @@ final class _PairSessionPane extends StatefulWidget
   const _PairSessionPane({
     required this.runtime,
     required this.operation,
+    required this.runtimeOwnerId,
     required this.onExit,
     required this.onRetryAttachment,
     this.onReview,
@@ -717,6 +785,7 @@ final class _PairSessionPane extends StatefulWidget
   });
   final PairMatchingExperienceRuntime runtime;
   final PairMatchingStartOperation operation;
+  final String runtimeOwnerId;
   final VoidCallback onExit;
   final VoidCallback onRetryAttachment;
   final ValueChanged<List<ReviewQueueItem>>? onReview;
@@ -730,6 +799,7 @@ final class _PairSessionPane extends StatefulWidget
     runtime: runtime,
     onRetryAttachment: onRetryAttachment,
     operation: operation,
+    runtimeOwnerId: runtimeOwnerId,
     onExit: onExit,
     onReview: onReview,
     onReplay: onReplay,
@@ -750,6 +820,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   StreamSubscription<Object?>? _ownerSubscription;
   Timer? _displayTick;
   String? _liveOwner;
+  bool _ownerInvalidated = false;
   bool _busy = true,
       _error = false,
       _audioFailed = false,
@@ -761,6 +832,8 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   int? _responseStart;
   PairMatchingHistoryProjection? _result;
   PairPauseLease? _coverPause;
+  PairPauseLease? _narrationPause;
+  bool _routeWantsInteraction = true;
   @override
   VoiceUseCases? get routeVoiceUseCases => widget.runtime.voice;
   String copy(String th, String en) =>
@@ -774,8 +847,9 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
 
   Future<void> _checkOwner() async {
     final owner = await widget.runtime.requireOwner();
-    if (owner != widget.operation.plan.ownerId) {
+    if (_ownerInvalidated || owner != widget.runtimeOwnerId) {
       _liveOwner = null;
+      _ownerInvalidated = true;
       widget.onOwnerInvalidated?.call();
       throw StateError('Pair owner changed');
     }
@@ -811,9 +885,9 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
             final active = rows.where((r) => r.isActive).toList();
             final owner = active.length == 1 ? active.single.id : null;
             if (_liveOwner != owner) {
-              _liveOwner = owner == widget.operation.plan.ownerId
-                  ? owner
-                  : null;
+              _ownerInvalidated =
+                  _ownerInvalidated || owner != widget.runtimeOwnerId;
+              _liveOwner = _ownerInvalidated ? null : owner;
               if (_liveOwner == null) widget.onOwnerInvalidated?.call();
               if (mounted) setState(() => _error = _liveOwner == null);
             }
@@ -911,7 +985,10 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
               PairMatchingUnavailableSession(
                 operation: widget.operation,
                 learning: widget.runtime.learning,
-                requireOwner: widget.runtime.requireOwner,
+                requireOwner: () async {
+                  await _checkOwner();
+                  return widget.runtimeOwnerId;
+                },
               );
           final resolved = await unavailable.resolve(abandonIncomplete: false);
           _showUnavailableResolution(resolved);
@@ -922,12 +999,22 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       }
       if (mounted) setState(() => _error = _result == null && !_limitEnded);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        _reconcileRoutePause();
+      }
     }
   }
 
-  Future<void> _run(Future<void> Function() action) async {
-    if (_busy || _coordinator == null) return;
+  Future<void> _run(
+    Future<void> Function() action, {
+    bool recoveringNarration = false,
+  }) async {
+    if (_busy ||
+        _coordinator == null ||
+        (_narrationPause != null && !recoveringNarration)) {
+      return;
+    }
     setState(() {
       _busy = true;
       _error = false;
@@ -940,7 +1027,10 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     } catch (_) {
       if (mounted) setState(() => _error = true);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        _reconcileRoutePause();
+      }
     }
   }
 
@@ -1205,11 +1295,12 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     final english =
         (widget.operation.plan.direction == PairDirection.enToTh) ==
         (tile.side == PairTileSide.prompt);
-    final pause = c.pause(PairPauseReason.narration);
     await _run(() async {
+      final pause = _narrationPause = c.pause(PairPauseReason.narration);
+      var playbackEnded = true;
       try {
         await c.flush();
-        await session.speak(
+        await session.speakUntilCompleted(
           VoiceRequest.create(
             text: english ? item.spelling : item.meaning,
             language: english ? 'en' : 'th',
@@ -1221,16 +1312,38 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
             localOnly: true,
           ),
         );
-      } on VoiceFailure {
+      } on VoiceFailure catch (error) {
+        playbackEnded =
+            error.category != VoiceFailureCategory.cleanupIncomplete;
         if (mounted) setState(() => _audioFailed = true);
       } finally {
-        if (mounted && _liveOwner != null) c.releasePause(pause);
+        if (playbackEnded && mounted && _liveOwner != null) {
+          c.releasePause(pause);
+          if (identical(_narrationPause, pause)) _narrationPause = null;
+        }
       }
     });
   }
 
+  Future<void> _recoverNarrationStop() async {
+    final session = routeVoiceSession, pause = _narrationPause;
+    if (session == null || !session.isCurrent || pause == null) return;
+    await _run(() async {
+      await session.stop();
+      await _checkOwner();
+      // A stale handle's stop deliberately does nothing. Only the still-current
+      // route can attest that this stop completed for its playback ownership.
+      if (!session.isCurrent) {
+        throw StateError('Voice route changed during stop');
+      }
+      _coordinator!.releasePause(pause);
+      if (identical(_narrationPause, pause)) _narrationPause = null;
+    }, recoveringNarration: true);
+  }
+
   @override
   Future<void> onVoiceRouteCovered() async {
+    _routeWantsInteraction = false;
     final c = _coordinator;
     if (!_attached || c == null || _liveOwner == null) return;
     _coverPause ??= c.pause(PairPauseReason.boardUnavailable);
@@ -1239,8 +1352,15 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
 
   @override
   Future<void> onVoiceRouteResumed() async {
+    _routeWantsInteraction = true;
+    _reconcileRoutePause();
+  }
+
+  void _reconcileRoutePause() {
     final c = _coordinator, pause = _coverPause;
-    if (!_attached ||
+    if (!mounted ||
+        !_routeWantsInteraction ||
+        !_attached ||
         c == null ||
         pause == null ||
         _busy ||
@@ -1436,10 +1556,16 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       timer: timer,
       busy:
           _busy ||
+          _narrationPause != null ||
           !status.canDispatch ||
           timer.mode == PairTimerMode.timeoutDecision,
       audioAvailable: widget.runtime.voice != null && !_audioFailed,
-      audioFallback: widget.runtime.voice == null || _audioFailed
+      audioFallback: _narrationPause != null && !_busy
+          ? copy(
+              'ยังยืนยันการหยุดเสียงไม่ได้ ลองหยุดเสียงอีกครั้ง',
+              'Audio stop is unconfirmed. Retry stopping audio.',
+            )
+          : widget.runtime.voice == null || _audioFailed
           ? copy(
               'ใช้ข้อความที่แสดงเพื่อฝึกต่อได้',
               'Continue using the visible text.',
@@ -1488,6 +1614,14 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       ),
       body: Column(
         children: [
+          if (_narrationPause != null && !_busy)
+            FilledButton(
+              key: const ValueKey('pair-retry-audio-stop'),
+              onPressed: _recoverNarrationStop,
+              child: Text(
+                copy('หยุดเสียงแล้วทำต่อ', 'Stop audio and continue'),
+              ),
+            ),
           if (_error &&
               !status.unavailable &&
               status.recovery != PairHostRecovery.none)

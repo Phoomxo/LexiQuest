@@ -4,6 +4,8 @@
 //
 // Scope: fallback ordering, mirror gating, and the mirror operational-fallback
 // request rewrite. Cancellation and telemetry recording are covered elsewhere.
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -64,13 +66,19 @@ Matcher _failure(VoiceFailureCategory category) {
 /// Minimal deterministic handler: optionally throws a [VoiceFailure] on speak
 /// and records the engine call order plus every request handed to native.
 class _FakeHandler implements VoiceRouteHandler {
-  _FakeHandler(this.descriptor, {this.speakFailure, this.stopFailure});
+  _FakeHandler(
+    this.descriptor, {
+    this.speakFailure,
+    this.stopFailure,
+    this.playbackCompleted,
+  });
 
   @override
   final VoiceProviderDescriptor descriptor;
 
   final VoiceFailure? speakFailure;
   final VoiceFailure? stopFailure;
+  final Future<void>? playbackCompleted;
 
   final List<VoiceEngine> calls = <VoiceEngine>[];
   final List<VoiceRequest> requests = <VoiceRequest>[];
@@ -92,6 +100,7 @@ class _FakeHandler implements VoiceRouteHandler {
       actualEngine: descriptor.engine,
       usedFallback: false,
       cacheHit: false,
+      playbackCompleted: playbackCompleted,
     );
   }
 
@@ -121,6 +130,38 @@ VoiceProviderRegistry<VoiceRouteHandler> _registry(
 
 void main() {
   const resolver = VoicePolicyResolver();
+
+  test(
+    'preserves exact native playback completion through local routing',
+    () async {
+      final ended = Completer<void>();
+      final native = _FakeHandler(
+        VoiceProviderDescriptor(
+          engine: VoiceEngine.nativeTts,
+          capabilities: const {VoiceCapability.standardTargetSpeech},
+          privacyScope: VoicePrivacyScope.standardContent,
+          allowsStandardCache: false,
+        ),
+        playbackCompleted: ended.future,
+      );
+      final orchestrator = VoiceOrchestrator(
+        policySource: const StaticVoicePolicySource(_online),
+        policyResolver: resolver,
+        handlerRegistry: _registry([native]),
+      );
+      final result = await orchestrator.speak(_request(localOnly: true));
+      expect(result.playbackCompleted, same(ended.future));
+      expect(native.requests.single.localOnly, isTrue);
+      var completed = false;
+      result.playbackCompleted!.then((_) => completed = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(completed, isFalse);
+      ended.complete();
+      await result.playbackCompleted;
+      expect(completed, isTrue);
+      await orchestrator.stop();
+    },
+  );
 
   group('cleanup exhaustiveness', () {
     const firstFailure = VoiceFailure(

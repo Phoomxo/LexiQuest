@@ -76,6 +76,7 @@ final class PairMatchingSessionCoordinator {
     required this.learning,
     required this.evidence,
     required this.activeOwnerId,
+    required this.runtimeOwnerId,
     required this.acceptsOperation,
     required this.runAdmittedOperation,
     required this.runRecoveryOperation,
@@ -93,6 +94,9 @@ final class PairMatchingSessionCoordinator {
   final LearningUseCases learning;
   final CurrentActivityEvidenceAdapter evidence;
   final String? Function() activeOwnerId;
+
+  /// Authenticated canonical owner; the immutable plan remains the command namespace.
+  final String runtimeOwnerId;
   final bool Function()? acceptsOperation;
   final PairSessionOperation? runAdmittedOperation, runRecoveryOperation;
   final Future<LearningSessionSummary> Function(PendingLearningSessionClose)?
@@ -136,7 +140,7 @@ final class PairMatchingSessionCoordinator {
   PairMatchingHostStatus get hostStatus {
     final unavailable =
         _disposed ||
-        activeOwnerId() != operation.plan.ownerId ||
+        activeOwnerId() != runtimeOwnerId ||
         acceptsOperation?.call() == false;
     final retained = _retainedPending;
     final terminal = _snapshot.terminal;
@@ -217,6 +221,7 @@ final class PairMatchingSessionCoordinator {
           evidenceIds: _snapshot.evidenceIds,
           timer: next,
         ),
+        runtimeOwnerId: runtimeOwnerId,
       );
     } on StateError {
       return const PairActionAvailability(PairActionUnavailable.capacity);
@@ -238,19 +243,19 @@ final class PairMatchingSessionCoordinator {
     void Function(PendingLearningSessionClose, Future<void> Function())?
     ownClose,
   }) async {
-    if (!identical(evidence.learning, learning) ||
-        activeOwnerId() != operation.plan.ownerId) {
+    final runtimeOwner = activeOwnerId();
+    if (!identical(evidence.learning, learning) || runtimeOwner == null) {
       throw StateError('Pair learning authority/owner changed');
     }
     final recovery = await learning.loadExactActivityRecovery(
-      ownerId: operation.plan.ownerId,
+      ownerId: runtimeOwner,
       sessionId: operation.plan.learningSessionId,
       activityType: 'matching',
     );
-    if (activeOwnerId() != operation.plan.ownerId ||
+    if (activeOwnerId() != runtimeOwner ||
         recovery == null ||
         recovery.checkpoint == null ||
-        recovery.session.ownerId != operation.plan.ownerId ||
+        recovery.session.ownerId != runtimeOwner ||
         recovery.session.startedAtUtc != operation.plan.createdAtUtc ||
         recovery.session.appVersion != operation.appVersion ||
         recovery.session.buildId != operation.buildId) {
@@ -270,6 +275,7 @@ final class PairMatchingSessionCoordinator {
       learning: learning,
       evidence: evidence,
       activeOwnerId: activeOwnerId,
+      runtimeOwnerId: runtimeOwner,
       acceptsOperation: acceptsOperation,
       runAdmittedOperation: runAdmittedOperation,
       runRecoveryOperation: runRecoveryOperation,
@@ -288,8 +294,9 @@ final class PairMatchingSessionCoordinator {
           ? evidence.restorePracticeReplayMatching(
               c._frozen!,
               plan: operation.plan,
+              ownerId: runtimeOwner,
             )
-          : evidence.restore(c._frozen!);
+          : evidence.restore(c._frozen!, ownerId: runtimeOwner);
     }
     final terminal = snapshot.terminal;
     if (terminal?.atUtc != recovery.checkpoint!.terminalAtUtc ||
@@ -305,7 +312,7 @@ final class PairMatchingSessionCoordinator {
     if (terminal != null) {
       c._close = learning.restoreSessionClose(
         sessionId: operation.plan.learningSessionId,
-        ownerId: operation.plan.ownerId,
+        ownerId: runtimeOwner,
         completedAtUtc: terminal.atUtc,
       );
       if (recovery.session.state == 'completed') c._summary = recovery.session;
@@ -329,7 +336,7 @@ final class PairMatchingSessionCoordinator {
           : _snapshot.frozenEvidence!['sourceEvidenceId'];
       final guided = state.classificationFor(role).hintLevel > 0;
       if (actual.id != id ||
-          actual.ownerId != operation.plan.ownerId ||
+          actual.ownerId != runtimeOwnerId ||
           actual.sessionId != operation.plan.learningSessionId ||
           actual.wordId != role.promptWordId ||
           actual.isCorrect != role.isCorrect ||
@@ -354,7 +361,8 @@ final class PairMatchingSessionCoordinator {
         final frozen = FrozenPendingCurrentActivityEvidence.fromJson(
           _snapshot.frozenEvidence!,
         );
-        if (actual.occurredAtUtc != frozen.occurredAtUtc ||
+        if (actual.occurredAtUtc.millisecondsSinceEpoch !=
+                frozen.occurredAtUtc.millisecondsSinceEpoch ||
             actual.actorIdentity != frozen.actorIdentity ||
             jsonEncode(actual.evidenceContext.toJson()) !=
                 jsonEncode(frozen.evidenceContext.toJson()) ||
@@ -397,7 +405,7 @@ final class PairMatchingSessionCoordinator {
 
   void _requireLive({bool checkLease = true}) {
     if (_disposed ||
-        activeOwnerId() != operation.plan.ownerId ||
+        activeOwnerId() != runtimeOwnerId ||
         (checkLease && acceptsOperation?.call() == false)) {
       throw StateError('Stale Pair coordinator owner/lifecycle');
     }
@@ -473,6 +481,7 @@ final class PairMatchingSessionCoordinator {
     }
     PairMatchingCheckpointCodec.requireCompletionCapacity(
       _currentSnapshot(engine: transition.state),
+      runtimeOwnerId: runtimeOwnerId,
     );
     final attempt = transition.attempt;
     if (attempt == null) {
@@ -483,6 +492,7 @@ final class PairMatchingSessionCoordinator {
     _pending = isPracticeReplay
         ? evidence.capturePracticeReplayMatching(
             plan: operation.plan,
+            ownerId: runtimeOwnerId,
             wordId: attempt.promptWordId,
             isCorrect: attempt.isCorrect,
             responseTimeMs: attempt.responseTimeMs,
@@ -490,7 +500,7 @@ final class PairMatchingSessionCoordinator {
             contentRevision: _contentRevision(attempt.promptWordId),
           )
         : evidence.captureMatching(
-            ownerId: operation.plan.ownerId,
+            ownerId: runtimeOwnerId,
             sessionId: operation.plan.learningSessionId,
             wordId: attempt.promptWordId,
             isCorrect: attempt.isCorrect,
@@ -541,7 +551,10 @@ final class PairMatchingSessionCoordinator {
       frozen: _frozen!.toJson(),
     );
     try {
-      PairMatchingCheckpointCodec.requireCompletionCapacity(candidateSnapshot);
+      PairMatchingCheckpointCodec.requireCompletionCapacity(
+        candidateSnapshot,
+        runtimeOwnerId: runtimeOwnerId,
+      );
     } on StateError {
       // No persistence has been attempted for a captured-only candidate. A
       // newly unsupported metadata schema is rejected before admission.
@@ -561,7 +574,7 @@ final class PairMatchingSessionCoordinator {
     _requireLive();
     if (committedOnly) {
       await learning.replayAcceptedPairAnswer(
-        ownerId: operation.plan.ownerId,
+        ownerId: runtimeOwnerId,
         startOperation: operation.stableSerialization,
         sourceEvidenceId: pending.sourceEvidenceId,
       );
@@ -615,7 +628,7 @@ final class PairMatchingSessionCoordinator {
         (i) => i.wordId == ticket.wordId,
       );
       final need = await adapter.expose(
-        ownerId: operation.plan.ownerId,
+        ownerId: runtimeOwnerId,
         sessionId: operation.plan.learningSessionId,
         wordId: ticket.wordId,
         contentRevision: item.contentRevision,
@@ -651,7 +664,10 @@ final class PairMatchingSessionCoordinator {
       }
     }
     _requireFlushCapacity();
-    PairMatchingCheckpointCodec.requireCompletionCapacity(_currentSnapshot());
+    PairMatchingCheckpointCodec.requireCompletionCapacity(
+      _currentSnapshot(),
+      runtimeOwnerId: runtimeOwnerId,
+    );
     await _append(_currentSnapshot());
   });
   Future<void> _append(PairMatchingCheckpointSnapshot snapshot) async {
@@ -674,7 +690,7 @@ final class PairMatchingSessionCoordinator {
     );
     await learning.appendActivityCheckpoint(
       _pendingAppend!,
-      ownerId: operation.plan.ownerId,
+      ownerId: runtimeOwnerId,
     );
     _requireLive();
     _checkpoint = _pendingAppend!;
@@ -805,7 +821,10 @@ final class PairMatchingSessionCoordinator {
       evidenceIds: _snapshot.evidenceIds,
       timer: next,
     );
-    PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
+    PairMatchingCheckpointCodec.requireCompletionCapacity(
+      snapshot,
+      runtimeOwnerId: runtimeOwnerId,
+    );
     await _append(snapshot);
     _state = candidate;
   }
@@ -874,7 +893,7 @@ final class PairMatchingSessionCoordinator {
     if (_snapshot.terminal?.acknowledged == true) return;
     final close = _close ??= learning.captureSessionClose(
       sessionId: operation.plan.learningSessionId,
-      ownerId: operation.plan.ownerId,
+      ownerId: runtimeOwnerId,
     );
     if (!_closeOwned) {
       ownClose?.call(close, _ensureCloseCheckpoint);
@@ -886,7 +905,7 @@ final class PairMatchingSessionCoordinator {
             (close.requiresRetry ? close.retry() : close.finish()));
     _requireLive();
     if (summary.id != operation.plan.learningSessionId ||
-        summary.ownerId != operation.plan.ownerId ||
+        summary.ownerId != runtimeOwnerId ||
         summary.state != 'completed' ||
         summary.endedAtUtc != close.completedAtUtc ||
         summary.correctCount !=

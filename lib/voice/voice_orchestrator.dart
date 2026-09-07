@@ -89,6 +89,7 @@ final class VoiceOrchestrator implements VoiceProvider {
             cacheHit: handlerResult.cacheHit,
             requestId: handlerResult.requestId,
             modelVersion: handlerResult.modelVersion,
+            playbackCompleted: handlerResult.playbackCompleted,
           );
           final event = VoiceTelemetryEvent.succeeded(
             request: request,

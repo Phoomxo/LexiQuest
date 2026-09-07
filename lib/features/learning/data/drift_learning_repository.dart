@@ -649,9 +649,12 @@ final class DriftLearningRepository
             prior.direction != plan.direction ||
             prior.density != plan.density ||
             prior.allowlistVersion != plan.allowlistVersion ||
-            PairMatchingStartOperation.fromStableSerialization(
-                  snapshot.startOperation,
-                ).configuration?.stableSerialization !=
+            PairMatchingSessionPurpose.projectConfigurationOwner(
+                  PairMatchingStartOperation.fromStableSerialization(
+                    snapshot.startOperation,
+                  ).configuration,
+                  plan.ownerId,
+                )?.stableSerialization !=
                 acceptedOperation.configuration?.stableSerialization ||
             jsonEncode(
                   prior.orderedLexicalItems.map((i) => i.toJson()).toList(),
@@ -1071,20 +1074,22 @@ final class DriftLearningRepository
     final requiredOwnerId = _required(ownerId, 'ownerId');
     final requiredSessionId = _required(sessionId, 'sessionId');
     final requiredActivityType = _required(activityType, 'activityType');
-    final session =
-        await (database.select(database.learningSessions)..where(
-              (row) =>
-                  row.id.equals(requiredSessionId) &
-                  row.ownerId.equals(requiredOwnerId) &
-                  row.activityType.equals(requiredActivityType),
-            ))
-            .getSingleOrNull();
-    if (session == null) return null;
-    return _loadActivityRecoveryForSession(
-      ownerId: requiredOwnerId,
-      session: session,
-      strictExactIdentity: true,
-    );
+    return database.transaction(() async {
+      final session =
+          await (database.select(database.learningSessions)..where(
+                (row) =>
+                    row.id.equals(requiredSessionId) &
+                    row.ownerId.equals(requiredOwnerId) &
+                    row.activityType.equals(requiredActivityType),
+              ))
+              .getSingleOrNull();
+      if (session == null) return null;
+      return _loadActivityRecoveryForSession(
+        ownerId: requiredOwnerId,
+        session: session,
+        strictExactIdentity: true,
+      );
+    });
   }
 
   Future<LearningActivityRecovery?> _loadActivityRecoveryForSession({
@@ -1174,6 +1179,13 @@ final class DriftLearningRepository
             evidenceContext: context,
           ),
         ),
+      );
+    }
+    if (checkpoint.state['schemaVersion'] == 6) {
+      await _validatePinnedPairCheckpoint(
+        session: recoverySession,
+        checkpoint: checkpoint,
+        latest: checkpoint,
       );
     }
     return LearningActivityRecovery(
@@ -1463,6 +1475,14 @@ final class DriftLearningRepository
   ) {
     _validateCandidate(candidate, requireSourceIdentity: true);
     return database.transaction(() async {
+      final pairPurpose = await _pairPurposeForAnswer(
+        candidate.ownerId,
+        candidate.sessionId,
+        candidate.promptMode,
+      );
+      if (pairPurpose != null) {
+        _validateReservedPairCandidate(candidate, pairPurpose);
+      }
       final existing = await (database.select(
         database.answerAttempts,
       )..where((row) => row.id.equals(candidate.id))).getSingleOrNull();
@@ -1510,6 +1530,7 @@ final class DriftLearningRepository
         attempt: existing,
         sourceEvent: event,
       );
+      if (pairPurpose != null) await _requireActivePairOwner(candidate.ownerId);
       return CommittedAnswerReplay(
         result: AnswerRecordResult(
           inserted: false,
@@ -1531,6 +1552,14 @@ final class DriftLearningRepository
     _validateAnswer(command);
     return database.transaction(() async {
       final event = command.event;
+      final pairPurpose = await _pairPurposeForAnswer(
+        command.ownerId,
+        command.sessionId,
+        command.promptMode,
+      );
+      if (pairPurpose != null) {
+        _validateReservedPairCandidate(command.candidate, pairPurpose);
+      }
       if (event != null &&
           !await _isAuthorizedCheckpointActor(
             actorIdentity: event.actorIdentity,
@@ -1579,6 +1608,9 @@ final class DriftLearningRepository
             sourceEvent: storedEvent,
           );
         }
+        if (pairPurpose != null) {
+          await _requireActivePairOwner(command.ownerId);
+        }
         return AnswerRecordResult(
           inserted: false,
           isCorrect: existing.isCorrect,
@@ -1591,7 +1623,9 @@ final class DriftLearningRepository
         );
       }
 
-      if (event != null && event.actorIdentity != command.ownerId) {
+      if (event != null &&
+          event.actorIdentity != command.ownerId &&
+          pairPurpose == null) {
         throw ArgumentError.value(
           command,
           'command',
@@ -1728,6 +1762,92 @@ final class DriftLearningRepository
     }
   }
 
+  Future<PairMatchingSessionPurpose?> _pairPurposeForAnswer(
+    String ownerId,
+    String sessionId,
+    String promptMode,
+  ) async {
+    if (promptMode != 'matchingPair') return null;
+    final purpose = await read(ownerId: ownerId, sessionId: sessionId);
+    if (purpose.unknownMatching) {
+      throw StateError('Matching checkpoint authority is unavailable');
+    }
+    if (purpose.snapshot != null) await _requireActivePairOwner(ownerId);
+    return purpose.snapshot == null ? null : purpose;
+  }
+
+  void _validateReservedPairCandidate(
+    RecordAnswerCandidate candidate,
+    PairMatchingSessionPurpose purpose, {
+    bool storedMilliseconds = false,
+  }) {
+    final reservation = purpose.reservations[candidate.id];
+    if (reservation == null) {
+      throw StateError('Pair answer has no accepted reservation');
+    }
+    final frozen = FrozenPendingCurrentActivityEvidence.fromJson(reservation);
+    if (candidate.sessionId != frozen.sessionId ||
+        candidate.wordId != frozen.wordId ||
+        candidate.promptMode != frozen.promptMode ||
+        candidate.isCorrect != frozen.isCorrect ||
+        candidate.responseTimeMs != frozen.responseTimeMs ||
+        candidate.attemptNumber != frozen.attemptNumber ||
+        (storedMilliseconds
+            ? candidate.occurredAtUtc.millisecondsSinceEpoch !=
+                  frozen.occurredAtUtc.millisecondsSinceEpoch
+            : candidate.occurredAtUtc != frozen.occurredAtUtc) ||
+        candidate.providerProvenance != frozen.providerProvenance ||
+        candidate.actorIdentity != frozen.actorIdentity ||
+        jsonEncode(candidate.evidenceContext.toJson()) !=
+            jsonEncode(frozen.evidenceContext.toJson()) ||
+        jsonEncode(candidate.eventContext?.toJson()) !=
+            jsonEncode(frozen.eventContext.toJson())) {
+      throw StateError('Pair candidate differs from exact durable reservation');
+    }
+  }
+
+  Future<PairMatchingSessionPurpose?> _authenticatePairSnapshot(
+    db.LearningSession session,
+    PairMatchingCheckpointSnapshot snapshot, {
+    bool requireAccepted = true,
+  }) async {
+    PairMatchingSessionPurpose? accepted;
+    if (requireAccepted) {
+      accepted = await read(ownerId: session.ownerId, sessionId: session.id);
+      if (accepted.snapshot == null ||
+          accepted.snapshot!.startOperation != snapshot.startOperation) {
+        throw StateError('Pair checkpoint has no authenticated accepted plan');
+      }
+    }
+    final row = await database
+        .customSelect(
+          'SELECT * FROM learning_sessions WHERE id = ?',
+          variables: [Variable(session.id)],
+        )
+        .getSingle();
+    final query = PairMatchingSessionPurpose.historicalOwnerQuery(
+      session.ownerId,
+      [
+        {
+          'payload_json': jsonEncode({'state': snapshot.toJson()}),
+        },
+      ],
+    );
+    final owners = await database
+        .customSelect(
+          query.sql,
+          variables: [for (final arg in query.args) Variable(arg as String)],
+        )
+        .get();
+    PairMatchingSessionPurpose.authorizeSnapshot(
+      ownerId: session.ownerId,
+      session: row.data,
+      snapshot: snapshot,
+      historicalOwners: [for (final owner in owners) owner.data],
+    );
+    return accepted;
+  }
+
   PairMatchingCheckpointSnapshot _decodePinnedPairCheckpoint(
     Map<String, Object?> state,
   ) {
@@ -1777,6 +1897,15 @@ final class DriftLearningRepository
   ) async {
     await _requireActivePairOwner(command.ownerId);
     final snapshot = _decodePinnedPairCheckpoint(checkpoint.state);
+    final purpose = await read(
+      ownerId: command.ownerId,
+      sessionId: command.sessionId,
+    );
+    if (purpose.snapshot == null ||
+        jsonEncode(purpose.snapshot!.toJson()) !=
+            jsonEncode(snapshot.toJson())) {
+      throw StateError('Pair answer reservation is not canonical');
+    }
     if (snapshot.terminal?.atUtc != checkpoint.terminalAtUtc ||
         (snapshot.terminal?.acknowledged ?? false) !=
             checkpoint.terminalAcknowledged) {
@@ -1788,7 +1917,6 @@ final class DriftLearningRepository
     final frozen = _pinnedPairOccurrence(snapshot);
     final event = command.event;
     if (event == null ||
-        command.ownerId != frozen.ownerId ||
         command.sessionId != frozen.sessionId ||
         command.id != frozen.sourceEvidenceId ||
         command.wordId != frozen.wordId ||
@@ -1829,22 +1957,11 @@ final class DriftLearningRepository
       throw StateError('Pair terminal envelope changed');
     }
     final plan = snapshot.engine.plan;
-    final start = jsonDecode(snapshot.startOperation) as Map<String, dynamic>;
-    final acceptedConfiguration =
-        PairMatchingStartOperation.fromStableSerialization(
-          snapshot.startOperation,
-        ).configuration;
-    if (plan.ownerId != session.ownerId ||
-        plan.learningSessionId != session.id ||
-        plan.createdAtUtc.millisecondsSinceEpoch != session.startedAtUtcMs ||
-        start['appVersion'] != session.appVersion ||
-        start['buildId'] != session.buildId ||
-        acceptedConfiguration?.contentIdentity !=
-            session.sessionConfigurationIdentity ||
-        acceptedConfiguration?.stableSerialization !=
-            session.sessionConfigurationJson) {
-      throw StateError('Pair checkpoint session changed');
-    }
+    final accepted = await _authenticatePairSnapshot(
+      session,
+      snapshot,
+      requireAccepted: latest != null,
+    );
     if (latest == null &&
         jsonEncode(checkpoint.state) !=
             jsonEncode(
@@ -1855,11 +1972,17 @@ final class DriftLearningRepository
             )) {
       throw StateError('Pair initial checkpoint must be empty');
     }
-    if (latest == null) {
-      PairMatchingCheckpointCodec.requireCompletionCapacity(snapshot);
-    }
+    PairMatchingCheckpointCodec.requireCompletionCapacity(
+      snapshot,
+      runtimeOwnerId: session.ownerId,
+    );
     if (latest != null) {
       final prior = _decodePinnedPairCheckpoint(latest.state);
+      if (snapshot.frozenEvidence != null &&
+          prior.frozenEvidence == null &&
+          snapshot.frozenEvidence!['ownerId'] != session.ownerId) {
+        throw StateError('New Pair occurrence must use current owner');
+      }
       // An exact immutable replay is validated by the ordinary repository
       // identity comparison below; it is not another lifecycle transition.
       if (checkpoint.revision != latest.revision) {
@@ -1946,6 +2069,38 @@ final class DriftLearningRepository
                   .name) {
         throw StateError('Pair checkpoint does not match canonical attempts');
       }
+      final frozenJson = accepted?.reservations[a.id];
+      final source = await events.readValidatedSourceForAttempt(attempt: a);
+      if (frozenJson == null || source == null) {
+        throw StateError(
+          'Pair canonical answer has no authenticated reservation',
+        );
+      }
+      final context = EvidenceContext.fromJson(
+        (jsonDecode(a.evidenceContextJson) as Map).cast<String, Object?>(),
+      );
+      _validateReservedPairCandidate(
+        RecordAnswerCandidate(
+          id: a.id,
+          ownerId: a.ownerId,
+          sessionId: a.sessionId,
+          wordId: a.wordId,
+          promptMode: a.promptMode,
+          isCorrect: a.isCorrect,
+          responseTimeMs: a.responseTimeMs,
+          attemptNumber: a.attemptNumber,
+          occurredAtUtc: _fromEpoch(a.occurredAtUtcMs)!,
+          evidenceContext: context,
+          providerProvenance: a.providerProvenance,
+          actorIdentity: source.actorIdentity,
+          eventContext: LearningEventContext.fromEvidenceEnvelope(
+            envelope: source,
+            evidenceContext: context,
+          ),
+        ),
+        accepted!,
+        storedMilliseconds: true,
+      );
     }
   }
 
@@ -2180,6 +2335,26 @@ final class DriftLearningRepository
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      // A captured close can outlive the pane's owner binding. Authenticate
+      // strict Pair work inside the canonical transaction, including retries.
+      PairMatchingCheckpointSnapshot? pair;
+      if (await _requiresPairCloseAuthentication(row)) {
+        pair = (await read(ownerId: ownerId, sessionId: sessionId)).snapshot;
+        if (pair == null) {
+          throw StateError('Pair completion authority is unavailable');
+        }
+        final accepted = await _inspectPairDisposition(
+          ownerId: ownerId,
+          startOperation: pair.startOperation,
+          requireConfiguration: false,
+        );
+        if (accepted.kind != PairAcceptedDispositionKind.complete ||
+            accepted.recovery.checkpoint!.terminalAtUtc != endedAtUtc) {
+          throw StateError(
+            'Pair completion requires exact accepted terminal intent',
+          );
+        }
+      }
       final total = row.correctCount + row.wrongCount;
       final score = total == 0 ? 0 : ((row.correctCount * 100) / total).round();
       if (row.state == 'completed') {
@@ -2205,11 +2380,51 @@ final class DriftLearningRepository
         );
         await projections.rebuildAchievements(ownerId);
       }
+      if (pair != null) await _requireActivePairOwner(ownerId);
       final completed = await (database.select(
         database.learningSessions,
       )..where((candidate) => candidate.id.equals(sessionId))).getSingle();
       return _rowToSummary(completed);
     });
+  }
+
+  Future<bool> _requiresPairCloseAuthentication(
+    db.LearningSession session,
+  ) async {
+    // Atomic Pair admission reserves this namespace, including after rehome.
+    // Missing or downgraded checkpoints must not turn it into a generic close.
+    if (session.id.startsWith('pair:')) return true;
+    if (session.activityType != 'matching') return false;
+    final query = PairMatchingSessionPurpose.checkpointQuery(
+      session.ownerId,
+      session.id,
+    );
+    final candidates = await database
+        .customSelect(
+          query.sql,
+          variables: [for (final arg in query.args) Variable(arg as String)],
+        )
+        .get();
+    if (candidates.length > maxActivityRecoveryCheckpoints) {
+      throw StateError('Matching completion checkpoint bound exceeded');
+    }
+    var pair = false;
+    // Generic checkpoints may contain arbitrary valid map state. Inspect the
+    // entire canonical candidate set for Pair evidence; never catch corruption
+    // and reinterpret it as a legacy adapter checkpoint.
+    for (final candidate in candidates) {
+      final payload = jsonDecode(candidate.data['payload_json'] as String);
+      if (payload is! Map || payload['state'] is! Map) {
+        throw StateError('Matching completion checkpoint is malformed');
+      }
+      final state = payload['state'] as Map;
+      pair =
+          pair ||
+          state['schemaVersion'] == 6 ||
+          state.containsKey('startOperation') ||
+          state.containsKey('plan');
+    }
+    return pair;
   }
 
   @override
@@ -2641,12 +2856,13 @@ final class DriftLearningRepository
   Future<PairAcceptedDispositionSnapshot> _inspectPairDisposition({
     required String ownerId,
     required String startOperation,
+    bool requireConfiguration = true,
   }) async {
     await _requireActivePairOwner(ownerId);
     final operation = PairMatchingStartOperation.fromStableSerialization(
       startOperation,
     );
-    if (operation.plan.ownerId != ownerId || operation.configuration == null) {
+    if (requireConfiguration && operation.configuration == null) {
       throw StateError(
         'unavailable Pair requires its accepted owner and configuration',
       );

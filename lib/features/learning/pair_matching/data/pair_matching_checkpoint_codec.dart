@@ -341,11 +341,14 @@ abstract final class PairMatchingCheckpointCodec {
   /// 64-bit numeric fields; matching capture emits no assessment or contrastive
   /// payload. The actual frozen envelope is checked against this bound before
   /// admission, so a future schema expansion cannot silently consume reserve.
-  static int frozenOccurrenceByteBound(PairMatchingPlanV1 plan) =>
+  static int frozenOccurrenceByteBound(
+    PairMatchingPlanV1 plan, {
+    String? runtimeOwnerId,
+  }) =>
       4096 +
       10 * 6 * LearningEvidenceContract.maxIdentifierLength +
       6 * LearningEvidenceContract.maxSourceEvidenceIdLength +
-      2 * encodedBytes(plan.ownerId) +
+      2 * encodedBytes(runtimeOwnerId ?? plan.ownerId) +
       encodedBytes(plan.learningSessionId) +
       plan.orderedLexicalItems
           .map((i) => encodedBytes(i.wordId))
@@ -355,7 +358,10 @@ abstract final class PairMatchingCheckpointCodec {
   /// existing row and budgets maximum JSON encodings for each remaining
   /// mandatory correct answer. The final pending envelope and 1024 bytes for
   /// terminal receipt metadata remain available in addition to those rows.
-  static int reservedCompletionBytes(PairMatchingCheckpointSnapshot snapshot) {
+  static int reservedCompletionBytes(
+    PairMatchingCheckpointSnapshot snapshot, {
+    String? runtimeOwnerId,
+  }) {
     final state = snapshot.engine;
     final map =
         jsonDecode(jsonEncode(snapshot.toJson())) as Map<String, dynamic>;
@@ -424,23 +430,35 @@ abstract final class PairMatchingCheckpointCodec {
         )
         .toJson();
     map['roundSeed'] = 2147483647;
+    final futureFrozenBound = frozenOccurrenceByteBound(
+      state.plan,
+      runtimeOwnerId: runtimeOwnerId,
+    );
+    final existingFrozenBytes = snapshot.frozenEvidence == null
+        ? 0
+        : encodedBytes(snapshot.frozenEvidence);
+    final frozenBound = existingFrozenBytes > futureFrozenBound
+        ? existingFrozenBytes
+        : futureFrozenBound;
     return encodedBytes(map) +
-        ((remaining > 0 || pending != null)
-            ? frozenOccurrenceByteBound(state.plan)
-            : 0) +
+        ((remaining > 0 || pending != null) ? frozenBound : 0) +
         1024;
   }
 
   static void requireCompletionCapacity(
-    PairMatchingCheckpointSnapshot snapshot,
-  ) {
-    if (reservedCompletionBytes(snapshot) >
+    PairMatchingCheckpointSnapshot snapshot, {
+    String? runtimeOwnerId,
+  }) {
+    if (reservedCompletionBytes(snapshot, runtimeOwnerId: runtimeOwnerId) >
         PairMatchingCheckpointBudget.maximumBytes) {
       throw StateError('Pair byte capacity reserved for remaining completion');
     }
     if (snapshot.frozenEvidence != null &&
         encodedBytes(snapshot.frozenEvidence) >
-            frozenOccurrenceByteBound(snapshot.engine.plan)) {
+            frozenOccurrenceByteBound(
+              snapshot.engine.plan,
+              runtimeOwnerId: snapshot.frozenEvidence!['ownerId'] as String,
+            )) {
       throw StateError(
         'Pair frozen occurrence exceeds supported schema budget',
       );
@@ -572,8 +590,7 @@ abstract final class PairMatchingCheckpointCodec {
       }
       if (frozen != null) {
         final a = engine.pending!;
-        if (frozen['ownerId'] != plan.ownerId ||
-            frozen['actorIdentity'] != plan.ownerId ||
+        if (frozen['ownerId'] != frozen['actorIdentity'] ||
             frozen['sessionId'] != plan.learningSessionId ||
             frozen['wordId'] != a.promptWordId ||
             frozen['isCorrect'] != a.isCorrect ||

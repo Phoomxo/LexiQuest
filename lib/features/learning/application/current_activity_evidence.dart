@@ -1144,6 +1144,7 @@ final class CurrentActivityEvidenceAdapter {
 
   PendingCurrentActivityEvidence capturePracticeReplayMatching({
     required PairMatchingPlanV1 plan,
+    String? ownerId,
     required String wordId,
     required bool isCorrect,
     required int responseTimeMs,
@@ -1160,7 +1161,7 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     return _capture(
-      ownerId: plan.ownerId,
+      ownerId: ownerId ?? plan.ownerId,
       input: CurrentActivityInput.matchingPair,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: EvidenceClass.recreational,
@@ -1181,12 +1182,13 @@ final class CurrentActivityEvidenceAdapter {
   PendingCurrentActivityEvidence restorePracticeReplayMatching(
     FrozenPendingCurrentActivityEvidence frozen, {
     required PairMatchingPlanV1 plan,
+    String? ownerId,
   }) {
     frozen.requirePracticeReplayContext();
     if (plan.sessionPurpose != PairSessionPurpose.practiceReplay ||
         plan.sourceSessionId == null ||
         frozen.sessionId != plan.learningSessionId ||
-        frozen.ownerId != plan.ownerId ||
+        (ownerId == null && frozen.ownerId != plan.ownerId) ||
         frozen.input != CurrentActivityInput.matchingPair ||
         frozen.declaredEvidenceClass != EvidenceClass.recreational ||
         frozen.evidenceContext.evidenceClass != EvidenceClass.recreational ||
@@ -1197,7 +1199,7 @@ final class CurrentActivityEvidenceAdapter {
         frozen.contrastiveFeedback != null) {
       throw StateError('Pair replay frozen context changed');
     }
-    return restore(frozen);
+    return restore(frozen, ownerId: ownerId);
   }
 
   /// Reconstructs a fully resolved occurrence without consulting mutable

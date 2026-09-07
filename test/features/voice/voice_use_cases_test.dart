@@ -6,6 +6,262 @@ import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  group('completion-owned narration', () {
+    test('provider failure retains cleanup until stop acknowledges', () async {
+      final stopped = Completer<void>();
+      final failed = Future<VoicePlaybackResult>.error(
+        const VoiceFailure(
+          category: VoiceFailureCategory.synthesis,
+          message: 'Synthetic failure.',
+        ),
+      );
+      // The provider is reached after an ownership barrier. Observe the eagerly
+      // constructed fixture now, while preserving its error for that caller.
+      unawaited(failed.then<void>((_) {}, onError: (_, _) {}));
+      final provider = _RecordingVoiceProvider(
+        responses: [failed],
+        stopResponses: [stopped.future],
+      );
+      final useCases = _useCases(provider);
+      final session = useCases.acquireSession();
+      var settled = false;
+      final expectation = expectLater(
+        session.speakUntilCompleted(_request('a')),
+        throwsA(_voiceFailure(VoiceFailureCategory.synthesis)),
+      ).then((_) => settled = true);
+      await _flush();
+      expect(provider.events, ['speak:a', 'stop']);
+      expect(settled, isFalse);
+      stopped.complete();
+      await expectation;
+      await useCases.dispose();
+    });
+    test(
+      'ordinary speak still acknowledges start without awaiting end',
+      () async {
+        final ended = Completer<void>();
+        final result = _CompletingPlayback(ended.future);
+        final provider = _RecordingVoiceProvider(
+          responses: [Future.value(result)],
+        );
+        final useCases = _useCases(provider);
+        final session = useCases.acquireSession();
+        expect(await session.speak(_request('a')), same(result));
+        expect(ended.isCompleted, isFalse);
+        ended.complete();
+        await session.release();
+        await useCases.dispose();
+      },
+    );
+
+    test(
+      'start acknowledgement is separate from natural playback end',
+      () async {
+        final ended = Completer<void>();
+        final result = _CompletingPlayback(ended.future);
+        final provider = _RecordingVoiceProvider(
+          responses: [Future.value(result)],
+        );
+        final useCases = _useCases(provider);
+        final session = useCases.acquireSession();
+        var completed = false;
+        final playing =
+            (session as dynamic).speakUntilCompleted(_request('a'))
+                as Future<VoicePlaybackResult>;
+        playing.then((_) => completed = true);
+        await _flush();
+        expect(provider.events, ['speak:a']);
+        expect(completed, isFalse);
+        ended.complete();
+        expect(await playing, same(result));
+        await session.release();
+        await useCases.dispose();
+      },
+    );
+
+    test('takeover waits for confirmed stop and ignores stale end', () async {
+      final endedA = Completer<void>();
+      final endedB = Completer<void>();
+      final stopped = Completer<void>();
+      final provider = _RecordingVoiceProvider(
+        responses: [
+          Future.value(_CompletingPlayback(endedA.future)),
+          Future.value(_CompletingPlayback(endedB.future)),
+        ],
+        stopResponses: [stopped.future],
+      );
+      final useCases = _useCases(provider);
+      final first = useCases.acquireSession();
+      var cancelled = false;
+      final playingA =
+          (first as dynamic).speakUntilCompleted(_request('a'))
+              as Future<VoicePlaybackResult>;
+      final expectationA = expectLater(
+        playingA,
+        throwsA(_voiceFailure(VoiceFailureCategory.cancelled)),
+      ).then((_) => cancelled = true);
+      await _flush();
+      final second = useCases.acquireSession();
+      var completedB = false;
+      final playingB =
+          (second as dynamic).speakUntilCompleted(_request('b'))
+              as Future<VoicePlaybackResult>;
+      playingB.then((_) => completedB = true);
+      await _flush();
+      expect(cancelled, isFalse);
+      expect(provider.events, ['speak:a', 'stop']);
+      stopped.complete();
+      await expectationA;
+      await _flush();
+      endedA.complete();
+      await _flush();
+      expect(completedB, isFalse);
+      endedB.complete();
+      await playingB;
+      await second.release();
+      await useCases.dispose();
+    });
+
+    test(
+      'missing completion proof waits for stop then reports unavailable',
+      () async {
+        final stopped = Completer<void>();
+        final provider = _RecordingVoiceProvider(
+          responses: [Future.value(_playback)],
+          stopResponses: [stopped.future],
+        );
+        final useCases = _useCases(provider);
+        final session = useCases.acquireSession();
+        var settled = false;
+        final playing =
+            (session as dynamic).speakUntilCompleted(_request('a'))
+                as Future<VoicePlaybackResult>;
+        final expectation = expectLater(
+          playing,
+          throwsA(_voiceFailure(VoiceFailureCategory.unsupportedCapability)),
+        ).then((_) => settled = true);
+        await _flush();
+        expect(provider.events, ['speak:a', 'stop']);
+        expect(settled, isFalse);
+        stopped.complete();
+        await expectation;
+        await useCases.dispose();
+      },
+    );
+
+    test(
+      'failed stop reports uncertain cleanup rather than cancellation',
+      () async {
+        final ended = Completer<void>();
+        final provider = _RecordingVoiceProvider(
+          responses: [Future.value(_CompletingPlayback(ended.future))],
+          stopError: StateError('synthetic stop failure'),
+        );
+        final useCases = _useCases(provider);
+        final session = useCases.acquireSession();
+        final playing =
+            (session as dynamic).speakUntilCompleted(_request('a'))
+                as Future<VoicePlaybackResult>;
+        final expectation = expectLater(
+          playing,
+          throwsA(_voiceFailure(VoiceFailureCategory.cleanupIncomplete)),
+        );
+        await _flush();
+        await expectLater(
+          session.stop(),
+          throwsA(_voiceFailure(VoiceFailureCategory.cleanupIncomplete)),
+        );
+        await expectation;
+        ended.complete();
+        await useCases.dispose();
+      },
+    );
+
+    test('playback deadline waits for stop before reporting timeout', () async {
+      final ended = Completer<void>();
+      final stopped = Completer<void>();
+      final provider = _RecordingVoiceProvider(
+        responses: [Future.value(_CompletingPlayback(ended.future))],
+        stopResponses: [stopped.future],
+      );
+      final useCases = VoiceUseCases(
+        provider: provider,
+        disposeProvider: provider.dispose,
+        operationTimeout: const Duration(milliseconds: 20),
+        cleanupTimeout: const Duration(seconds: 1),
+      );
+      final session = useCases.acquireSession();
+      var settled = false;
+      final expectation = expectLater(
+        session.speakUntilCompleted(_request('a')),
+        throwsA(_voiceFailure(VoiceFailureCategory.timeout)),
+      ).then((_) => settled = true);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(provider.events, ['speak:a', 'stop']);
+      expect(settled, isFalse);
+      stopped.complete();
+      await expectation;
+      ended.complete();
+      await useCases.dispose();
+    });
+
+    test(
+      'disposal does not release completion wait before managed cleanup',
+      () async {
+        final ended = Completer<void>();
+        final disposed = Completer<void>();
+        final provider = _RecordingVoiceProvider(
+          responses: [Future.value(_CompletingPlayback(ended.future))],
+        );
+        final useCases = VoiceUseCases(
+          provider: provider,
+          disposeProvider: () => disposed.future,
+        );
+        final session = useCases.acquireSession();
+        var settled = false;
+        final expectation = expectLater(
+          session.speakUntilCompleted(_request('a')),
+          throwsA(_voiceFailure(VoiceFailureCategory.cancelled)),
+        ).then((_) => settled = true);
+        await _flush();
+        final disposing = useCases.dispose();
+        ended.complete();
+        await _flush();
+        expect(settled, isFalse);
+        disposed.complete();
+        await disposing;
+        await expectation;
+      },
+    );
+
+    test(
+      'takeover of unacknowledged playback requires stop before cancellation',
+      () async {
+        final started = Completer<VoicePlaybackResult>();
+        final stopped = Completer<void>();
+        final provider = _RecordingVoiceProvider(
+          responses: [started.future],
+          stopResponses: [stopped.future],
+        );
+        final useCases = _useCases(provider);
+        final session = useCases.acquireSession();
+        var settled = false;
+        final expectation = expectLater(
+          session.speakUntilCompleted(_request('a')),
+          throwsA(_voiceFailure(VoiceFailureCategory.cancelled)),
+        ).then((_) => settled = true);
+        await _flush();
+        useCases.acquireSession();
+        await _flush();
+        expect(settled, isFalse);
+        stopped.complete();
+        await expectation;
+        started.complete(_playback);
+        await _flush();
+        await useCases.dispose();
+      },
+    );
+  });
   group('VoiceUseCases session ownership', () {
     test('replacement stops blocked predecessor before speaking', () async {
       final first = Completer<VoicePlaybackResult>();
@@ -366,6 +622,17 @@ void main() {
       },
     );
   });
+}
+
+final class _CompletingPlayback extends VoicePlaybackResult {
+  _CompletingPlayback(Future<void> playbackCompleted)
+    : super(
+        requestedEngine: VoiceEngine.nativeTts,
+        actualEngine: VoiceEngine.nativeTts,
+        usedFallback: false,
+        cacheHit: false,
+        playbackCompleted: playbackCompleted,
+      );
 }
 
 VoiceUseCases _useCases(_RecordingVoiceProvider provider) => VoiceUseCases(

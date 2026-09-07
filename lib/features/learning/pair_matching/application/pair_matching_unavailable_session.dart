@@ -27,8 +27,8 @@ final class PairMatchingUnavailableSession {
   Future<void> _checkOwner() async {
     if (_disposed) throw StateError('Pair disposition is disposed');
     final owner = await requireOwner();
-    _owner = owner == operation.plan.ownerId ? owner : null;
-    if (_owner == null) throw StateError('Pair disposition owner changed');
+    _owner ??= owner;
+    if (_owner != owner) throw StateError('Pair disposition owner changed');
   }
 
   Future<PairAcceptedDispositionSnapshot> _inspect() async {
@@ -56,7 +56,7 @@ final class PairMatchingUnavailableSession {
         await _checkOwner();
       },
       completeSession: (close) => learning.completeUnavailablePairSession(
-        ownerId: operation.plan.ownerId,
+        ownerId: _owner!,
         startOperation: operation.stableSerialization,
         completedAtUtc: close.completedAtUtc,
       ),

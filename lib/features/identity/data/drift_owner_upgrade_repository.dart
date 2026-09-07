@@ -10,12 +10,16 @@ import '../../assessment/domain/assessment_models.dart';
 import '../../assessment/domain/assessment_repository.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/data/drift_learning_event_store.dart';
+import '../../learning/application/current_activity_evidence.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/evidence_policy_rollout.dart' as evidence_rollout;
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/learning_event_context.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning/domain/session_configuration.dart';
+import '../../learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
+import '../../learning/pair_matching/domain/pair_matching_session_purpose.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../motivation/data/drift_streak_repository.dart';
 import '../../rewards/data/drift_avatar_progression_eligibility.dart';
@@ -38,6 +42,11 @@ typedef DeleteOwnerSecretsForUpgrade = Future<void> Function(String ownerId);
 typedef DeleteOwnerSecretsFencedForUpgrade =
     Future<void> Function(String ownerId, String operationToken);
 typedef OwnerUpgradeGateDelay = Future<void> Function(Duration delay);
+
+final class _PairUpgradePins {
+  const _PairUpgradePins(this.sessionIds, this.wordIds);
+  final Set<String> sessionIds, wordIds;
+}
 
 /// Research enrollment pins cannot be transferred or re-signed locally.
 final class ResearchOwnerUpgradeConflict implements Exception {
@@ -132,6 +141,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             // Revalidate in the fenced transaction before any owner mutation.
             await _requireNoPinnedResearchRows(sourceId);
           }
+          final pairPins = await _preflightPairUpgrade(source.id);
           if (source.firebaseUid == uid) {
             final avatarEligibility = DriftAvatarProgressionEligibility(
               _database,
@@ -202,6 +212,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             );
           }
 
+          await _requirePairUpgradeDestinationCapacity(
+            ownerId: source.id,
+            destinationOwnerId: target.id,
+            sessionIds: pairPins.sessionIds,
+          );
           await DriftStreakRepository(_database).mergeCutovers(
             sourceId: source.id,
             targetId: target.id,
@@ -229,7 +244,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           }
           var conflicts = 0;
           conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
-          conflicts += await _mergeWords(source.id, target.id, upgradedAt);
+          conflicts += await _mergeWords(
+            source.id,
+            target.id,
+            upgradedAt,
+            pairPins: pairPins,
+          );
           conflicts += await _mergeSrsStates(source.id, target.id, upgradedAt);
           conflicts += await _mergeStreakState(
             source.id,
@@ -335,6 +355,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
               Variable<String>('mergedInto:${source.id}'),
             ],
             updates: {_database.localOwners},
+          );
+          await _requirePairUpgradeDestinationCapacity(
+            ownerId: target.id,
+            destinationOwnerId: target.id,
+            sessionIds: pairPins.sessionIds,
           );
           await _rebuildLearningProjections(target.id);
           await DriftEconomyCutover(_database).ensureSeparated(target.id);
@@ -472,6 +497,214 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     )..where((row) => row.ownerId.equals(ownerId))).go();
   }
 
+  Future<_PairUpgradePins> _preflightPairUpgrade(String ownerId) async {
+    final activeOwners = await _database
+        .customSelect('SELECT id FROM local_owners WHERE is_active = 1 LIMIT 2')
+        .get();
+    if (activeOwners.length != 1 || activeOwners.single.data['id'] != ownerId) {
+      throw StateError('Pair owner upgrade requires the sole active owner');
+    }
+    final activeSessions = await _database
+        .customSelect(
+          "SELECT id FROM learning_sessions WHERE owner_id = ? AND activity_type = 'matching' AND state = 'active' LIMIT 17",
+          variables: [Variable<String>(ownerId)],
+        )
+        .get();
+    if (activeSessions.length > 16) {
+      throw StateError('active Matching owner-upgrade fence bound exceeded');
+    }
+    final sessionIds = <String>{}, wordIds = <String>{};
+    String? afterId;
+    while (true) {
+      // Terminal history is paged, not given an invented lifetime-session cap.
+      // Only transaction-local IDs survive each bounded checkpoint validation.
+      final page = await _database
+          .customSelect(
+            "SELECT * FROM learning_sessions WHERE owner_id = ? AND activity_type = 'matching' ${afterId == null ? '' : 'AND id > ?'} ORDER BY id LIMIT 32",
+            variables: [
+              Variable<String>(ownerId),
+              if (afterId != null) Variable<String>(afterId),
+            ],
+          )
+          .get();
+      for (final session in page) {
+        final purpose = await _authenticatePairUpgradeSession(
+          ownerId,
+          session.data,
+        );
+        if (purpose == null) continue;
+        sessionIds.add(session.data['id'] as String);
+        wordIds.addAll(
+          purpose.snapshot!.engine.plan.orderedLexicalItems.map(
+            (item) => item.wordId,
+          ),
+        );
+      }
+      if (page.length < 32) break;
+      afterId = page.last.data['id'] as String;
+    }
+    return _PairUpgradePins(sessionIds, wordIds);
+  }
+
+  Future<PairMatchingSessionPurpose?> _authenticatePairUpgradeSession(
+    String ownerId,
+    Map<String, Object?> session,
+  ) async {
+    final query = PairMatchingSessionPurpose.checkpointQuery(
+      ownerId,
+      session['id'] as String,
+    );
+    final rows = await _database
+        .customSelect(
+          query.sql,
+          variables: [
+            for (final arg in query.args) Variable<String>(arg as String),
+          ],
+        )
+        .get();
+    final checkpoints = [for (final row in rows) row.data];
+    // Preserve the existing no-checkpoint policy. Every present chain must pass
+    // the shared envelope and legacy/Pair state decoder before classification;
+    // a supported schema marker alone cannot bypass category-only preflight.
+    if (checkpoints.isEmpty) return null;
+    final ownerQuery = PairMatchingSessionPurpose.historicalOwnerQuery(
+      ownerId,
+      checkpoints,
+    );
+    final ownerRows = await _database
+        .customSelect(
+          ownerQuery.sql,
+          variables: [
+            for (final arg in ownerQuery.args) Variable<String>(arg as String),
+          ],
+        )
+        .get();
+    final owners = [for (final row in ownerRows) row.data];
+    final purpose = PairMatchingSessionPurpose.decode(
+      ownerId: ownerId,
+      session: session,
+      checkpoints: checkpoints,
+      historicalOwners: owners,
+    );
+    final snapshot = purpose.snapshot;
+    if (snapshot == null) return null; // Successfully validated legacy chain.
+    for (final item in snapshot.engine.plan.orderedLexicalItems) {
+      final word = await (_database.select(
+        _database.vocabularyWords,
+      )..where((row) => row.id.equals(item.wordId))).getSingleOrNull();
+      if (word == null ||
+          word.ownerId != ownerId ||
+          word.spelling != item.spelling ||
+          word.meaning != item.meaning ||
+          word.contentRevision != item.contentRevision) {
+        throw StateError('Pair historical lexical identity is unavailable');
+      }
+    }
+    final expectedIds = [
+      ...snapshot.evidenceIds,
+      if (snapshot.frozenEvidence != null)
+        snapshot.frozenEvidence!['sourceEvidenceId'] as String,
+    ];
+    final attempts =
+        await (_database.select(_database.answerAttempts)
+              ..where((row) => row.sessionId.equals(session['id'] as String))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.attemptNumber),
+                (row) => OrderingTerm.asc(row.id),
+              ])
+              ..limit(expectedIds.length + 1))
+            .get();
+    if (attempts.length < snapshot.evidenceIds.length ||
+        attempts.length > expectedIds.length) {
+      throw StateError(
+        'Pair owner upgrade lost or invented canonical attempts',
+      );
+    }
+    final eventStore = DriftLearningEventStore(
+      _database,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: rolloutModeProvider,
+    );
+    for (var i = 0; i < attempts.length; i++) {
+      final attempt = attempts[i];
+      final frozenJson = purpose.reservations[expectedIds[i]];
+      if (frozenJson == null) {
+        throw StateError('Pair accepted reservation is missing');
+      }
+      final frozen = FrozenPendingCurrentActivityEvidence.fromJson(frozenJson);
+      final source = await eventStore.readValidatedSourceForAttempt(
+        attempt: attempt,
+      );
+      if (attempt.ownerId != ownerId ||
+          attempt.id != frozen.sourceEvidenceId ||
+          attempt.sessionId != frozen.sessionId ||
+          attempt.wordId != frozen.wordId ||
+          attempt.promptMode != frozen.promptMode ||
+          attempt.isCorrect != frozen.isCorrect ||
+          attempt.responseTimeMs != frozen.responseTimeMs ||
+          attempt.attemptNumber != frozen.attemptNumber ||
+          attempt.occurredAtUtcMs !=
+              frozen.occurredAtUtc.millisecondsSinceEpoch ||
+          attempt.providerProvenance != frozen.providerProvenance ||
+          attempt.evidenceContextJson !=
+              jsonEncode(frozen.evidenceContext.toJson()) ||
+          source == null ||
+          source.ownerIdentity != ownerId ||
+          source.actorIdentity != frozen.actorIdentity ||
+          jsonEncode(
+                LearningEventContext.fromEvidenceEnvelope(
+                  envelope: source,
+                  evidenceContext: frozen.evidenceContext,
+                ).toJson(),
+              ) !=
+              jsonEncode(frozen.eventContext.toJson())) {
+        throw StateError('Pair owner upgrade canonical occurrence changed');
+      }
+      PairMatchingSessionPurpose.authorizeActor(
+        ownerId: ownerId,
+        actorId: source.actorIdentity,
+        occurredAtUtc: source.occurredAtUtc,
+        historicalOwners: owners,
+        secondPrecision: true,
+      );
+    }
+    if (attempts.length < expectedIds.length) {
+      final orphan = await eventStore.readBySourceEvidenceId(expectedIds.last);
+      if (orphan != null) {
+        throw StateError('Pair pending source has no canonical attempt');
+      }
+    }
+    return purpose;
+  }
+
+  Future<void> _requirePairUpgradeDestinationCapacity({
+    required String ownerId,
+    required String destinationOwnerId,
+    required Set<String> sessionIds,
+  }) async {
+    for (final sessionId in sessionIds) {
+      final session = await _database
+          .customSelect(
+            'SELECT * FROM learning_sessions WHERE id = ?',
+            variables: [Variable<String>(sessionId)],
+          )
+          .getSingleOrNull();
+      final purpose = session == null
+          ? null
+          : await _authenticatePairUpgradeSession(ownerId, session.data);
+      if (purpose == null) {
+        throw StateError('Pair owner upgrade lost accepted session');
+      }
+      // Future captures use canonical destination R. P and already frozen bytes
+      // stay immutable; the codec reserves the larger accepted/future envelope.
+      // This runs before merge writes, then rechecks the moved rows before commit.
+      PairMatchingCheckpointCodec.requireCompletionCapacity(
+        purpose.snapshot!,
+        runtimeOwnerId: destinationOwnerId,
+      );
+    }
+  }
+
   Future<int> _mergeCategories(
     String sourceId,
     String targetId,
@@ -579,8 +812,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   Future<int> _mergeWords(
     String sourceId,
     String targetId,
-    int resolvedAt,
-  ) async {
+    int resolvedAt, {
+    required _PairUpgradePins pairPins,
+  }) async {
     final collisions = await _database
         .customSelect(
           '''
@@ -622,10 +856,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         sourceId: sourceId,
         guestWordId: guestId,
         resolvedAtUtcMs: resolvedAt,
+        acceptedPairSessionIds: pairPins.sessionIds,
       );
       final preserveHistoricalWord = await _mustPreserveHistoricalWordIdentity(
         sourceId: sourceId,
         guestWordId: guestId,
+        acceptedPairWordIds: pairPins.wordIds,
       );
       if (!preserveHistoricalWord) {
         await _database.customUpdate(
@@ -779,6 +1015,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   Future<bool> _mustPreserveHistoricalWordIdentity({
     required String sourceId,
     required String guestWordId,
+    required Set<String> acceptedPairWordIds,
   }) async {
     final eventStore = DriftLearningEventStore(
       _database,
@@ -791,7 +1028,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
                   row.ownerId.equals(sourceId) & row.wordId.equals(guestWordId),
             ))
             .get();
-    var mustPreserve = false;
+    var mustPreserve = acceptedPairWordIds.contains(guestWordId);
     for (final attempt in attempts) {
       final evidenceContext = EvidenceContext.fromJson(
         (jsonDecode(attempt.evidenceContextJson) as Map)
@@ -823,6 +1060,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required String sourceId,
     required String guestWordId,
     required int resolvedAtUtcMs,
+    required Set<String> acceptedPairSessionIds,
   }) async {
     const maximumActiveMatchingSessions = 16;
     const maximumMatchingCheckpointsPerSession = 64;
@@ -841,6 +1079,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       throw StateError('active Matching owner-upgrade fence bound exceeded');
     }
     for (final session in sessions) {
+      // Strict v6 was authenticated before category or word remapping. It keeps
+      // its accepted plan and resumes using preserved historical lexical IDs.
+      if (acceptedPairSessionIds.contains(session.id)) continue;
       final checkpoints =
           await (_database.select(_database.eventsV2)
                 ..where(

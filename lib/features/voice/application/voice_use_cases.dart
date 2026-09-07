@@ -37,6 +37,7 @@ final class VoiceUseCases {
   final Duration cleanupTimeout;
 
   final Set<Future<void>> _providerOperations = <Future<void>>{};
+  final Set<_VoiceCompletion> _completionWaits = <_VoiceCompletion>{};
   Future<void> _controlTail = Future<void>.value();
   VoiceSession? _activeSession;
   int _nextSessionId = 0;
@@ -113,6 +114,7 @@ final class VoiceUseCases {
 
     final providerGeneration = ++_providerGeneration;
     attempt.providerGeneration = providerGeneration;
+    attempt.completion?.providerGeneration = providerGeneration;
     _providerMayNeedStop = true;
 
     final providerFuture = Future<VoicePlaybackResult>.sync(
@@ -149,6 +151,41 @@ final class VoiceUseCases {
     // A successful speak Future means playback has started, not that playback
     // is over. Keep provider ownership until stop/release/takeover.
     _providerMayNeedStop = true;
+    final completion = attempt.completion;
+    if (completion != null) {
+      final ended = result.playbackCompleted;
+      if (ended == null) {
+        unawaited(
+          _stopForCompletion(completion, _completionUnavailableFailure),
+        );
+      } else {
+        unawaited(
+          ended.then<void>(
+            (_) {
+              if (!completion.session.isCurrent ||
+                  completion.session._activityEpoch !=
+                      completion.activityEpoch ||
+                  completion.providerGeneration != _providerGeneration ||
+                  completion.failure != null) {
+                return;
+              }
+              _finishCompletion(completion, result: result);
+            },
+            onError: (Object error, StackTrace _) {
+              unawaited(
+                _stopForCompletion(
+                  completion,
+                  error is VoiceFailure &&
+                          error.category == VoiceFailureCategory.cancelled
+                      ? _cancelledFailure
+                      : _playbackFailure,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    }
     _settleValue(session, attempt, result);
   }
 
@@ -162,7 +199,7 @@ final class VoiceUseCases {
     final accepted = session._accepts(attempt);
     if (!accepted || providerGeneration != _providerGeneration) return;
 
-    _providerMayNeedStop = false;
+    _providerMayNeedStop = attempt.completion != null;
     _settleError(
       session,
       attempt,
@@ -225,7 +262,7 @@ final class VoiceUseCases {
             _providerGeneration != providerGeneration) {
           return;
         }
-        await _provider.stop();
+        await _stopProviderGeneration(providerGeneration);
         if (!_disposed &&
             _ownershipEpoch == releasedOwnershipEpoch &&
             _activeSession == null &&
@@ -250,7 +287,7 @@ final class VoiceUseCases {
         (activityEpoch != null && session._activityEpoch != activityEpoch)) {
       return;
     }
-    await _provider.stop();
+    await _stopProviderGeneration(providerGeneration);
     if (!_disposed &&
         _ownershipEpoch == ownershipEpoch &&
         identical(_activeSession, session) &&
@@ -267,6 +304,66 @@ final class VoiceUseCases {
     );
     _controlTail = result.then<void>((_) {}, onError: (_) {});
     return result;
+  }
+
+  Future<void> _stopProviderGeneration(int generation) async {
+    try {
+      await _provider.stop();
+      for (final wait in _completionWaits.toList()) {
+        if (wait.providerGeneration == generation) {
+          _finishCompletion(wait, failure: wait.failure ?? _cancelledFailure);
+        }
+      }
+    } on Object {
+      for (final wait in _completionWaits.toList()) {
+        if (wait.providerGeneration == generation) {
+          _finishCompletion(wait, failure: _cleanupFailure);
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _stopForCompletion(
+    _VoiceCompletion completion,
+    VoiceFailure failure,
+  ) async {
+    if (completion.completer.isCompleted) return;
+    completion.failure ??= failure;
+    final generation = completion.providerGeneration;
+    if (generation == null) {
+      _finishCompletion(completion, failure: failure);
+      return;
+    }
+    try {
+      await _normalizeControlFailure(
+        _enqueueConditionalStop(
+          session: completion.session,
+          ownershipEpoch: completion.session._ownershipEpoch,
+          providerGeneration: generation,
+          activityEpoch: completion.activityEpoch,
+        ),
+      );
+      // A stale conditional stop is a no-op, never proof of silence. A queued
+      // takeover/release can still settle this wait through its confirmed stop.
+    } on Object {
+      _finishCompletion(completion, failure: _cleanupFailure);
+    }
+  }
+
+  void _finishCompletion(
+    _VoiceCompletion completion, {
+    VoicePlaybackResult? result,
+    VoiceFailure? failure,
+  }) {
+    if (completion.completer.isCompleted) return;
+    _completionWaits.remove(completion);
+    completion.timer?.cancel();
+    if (failure != null) {
+      completion.completer.completeError(failure, StackTrace.current);
+    } else {
+      completion.completer.complete(result!);
+    }
   }
 
   Future<void> _normalizeControlFailure(Future<void> operation) async {
@@ -316,6 +413,10 @@ final class VoiceUseCases {
     if (!session._detach(attempt)) return;
     attempt.timeoutTimer?.cancel();
     attempt.completer.completeError(failure, stackTrace);
+    final completion = attempt.completion;
+    if (completion != null) {
+      unawaited(_stopForCompletion(completion, failure));
+    }
   }
 
   void _settleCancelled(
@@ -357,6 +458,12 @@ final class VoiceUseCases {
     // The composition-owned disposer is always invoked even when a queued
     // provider stop is stuck. Its own resource stack receives the same bound.
     await awaitCleanup(Future<void>.sync(_disposeProvider));
+    for (final wait in _completionWaits.toList()) {
+      _finishCompletion(
+        wait,
+        failure: firstError == null ? _cancelledFailure : _cleanupFailure,
+      );
+    }
 
     final operations = _providerOperations.toList(growable: false);
     if (operations.isNotEmpty) {
@@ -390,6 +497,21 @@ final class VoiceSession {
   bool get isCurrent => !_released && _owner._isCurrent(this);
 
   Future<VoicePlaybackResult> speak(VoiceRequest request) {
+    return _beginSpeak(request);
+  }
+
+  /// Wait for explicit natural end while retaining route ownership. Cancellation
+  /// is reported only after confirmed stop. [VoiceFailureCategory.cleanupIncomplete]
+  /// means silence is unknown: a timing-sensitive caller must keep its pause
+  /// until a later successful owned stop or disposal.
+  Future<VoicePlaybackResult> speakUntilCompleted(VoiceRequest request) {
+    return _beginSpeak(request, requireCompletion: true);
+  }
+
+  Future<VoicePlaybackResult> _beginSpeak(
+    VoiceRequest request, {
+    bool requireCompletion = false,
+  }) {
     if (!isCurrent) return Future<VoicePlaybackResult>.error(_cancelledFailure);
 
     _cancelAttempt();
@@ -398,6 +520,19 @@ final class VoiceSession {
       id: ++_nextAttemptId,
       activityEpoch: activityEpoch,
     );
+    final completion = requireCompletion
+        ? _VoiceCompletion(session: this, activityEpoch: activityEpoch)
+        : null;
+    attempt.completion = completion;
+    if (completion != null) {
+      _owner._completionWaits.add(completion);
+      completion.timer = Timer(_owner.operationTimeout, () async {
+        await _owner._stopForCompletion(completion, _timeoutFailure);
+        if (!completion.completer.isCompleted) {
+          _owner._finishCompletion(completion, failure: _cleanupFailure);
+        }
+      });
+    }
     final rawBarrier = _owner._barrierForAttempt(
       this,
       activityEpoch,
@@ -410,7 +545,22 @@ final class VoiceSession {
       },
     );
     _activeAttempt = attempt;
-    return _owner._speak(this, attempt, request);
+    final started = _owner._speak(this, attempt, request);
+    if (completion == null) return started;
+    unawaited(
+      started.then<void>(
+        (_) {},
+        onError: (Object error, StackTrace _) {
+          if (completion.providerGeneration == null) {
+            _owner._finishCompletion(
+              completion,
+              failure: error is VoiceFailure ? error : _unknownFailure,
+            );
+          }
+        },
+      ),
+    );
+    return completion.completer.future;
   }
 
   Future<void> stop() => _owner._stopSession(this);
@@ -473,7 +623,28 @@ final class _VoiceAttempt {
   int? providerGeneration;
   late Future<void> barrier;
   bool cleanupFailed = false;
+  _VoiceCompletion? completion;
 }
+
+final class _VoiceCompletion {
+  _VoiceCompletion({required this.session, required this.activityEpoch});
+  final VoiceSession session;
+  final int activityEpoch;
+  final completer = Completer<VoicePlaybackResult>();
+  int? providerGeneration;
+  VoiceFailure? failure;
+  Timer? timer;
+}
+
+const _completionUnavailableFailure = VoiceFailure(
+  category: VoiceFailureCategory.unsupportedCapability,
+  message: 'This voice provider cannot confirm playback completion.',
+);
+
+const _playbackFailure = VoiceFailure(
+  category: VoiceFailureCategory.playback,
+  message: 'Voice playback completion failed.',
+);
 
 const _cancelledFailure = VoiceFailure(
   category: VoiceFailureCategory.cancelled,

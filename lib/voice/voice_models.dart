@@ -181,6 +181,7 @@ class VoicePlaybackResult {
     required this.cacheHit,
     this.requestId,
     this.modelVersion,
+    this.playbackCompleted,
   });
 
   final VoiceEngine requestedEngine;
@@ -189,4 +190,9 @@ class VoicePlaybackResult {
   final bool cacheHit;
   final String? requestId;
   final String? modelVersion;
+
+  /// Per-playback natural-end proof. A successful provider speak start
+  /// acknowledgement alone does not supply this capability. Errors do not
+  /// establish silence: callers must confirm stop before resuming interaction.
+  final Future<void>? playbackCompleted;
 }

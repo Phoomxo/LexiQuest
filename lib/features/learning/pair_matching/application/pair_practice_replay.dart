@@ -1,6 +1,7 @@
 import '../data/drift_pair_matching_session_purpose_reader.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_matching_plan.dart';
+import '../domain/pair_matching_session_purpose.dart';
 import 'pair_matching_atomic_start.dart';
 
 /// Explicit new-session operation; callers retain its exact bytes for retry.
@@ -53,9 +54,12 @@ final class PairPracticeReplay {
       launchOperationId: launchOperationId,
       appVersion: appVersion,
       buildId: buildId,
-      configuration: PairMatchingStartOperation.fromStableSerialization(
-        source.startOperation,
-      ).configuration,
+      configuration: PairMatchingSessionPurpose.projectConfigurationOwner(
+        PairMatchingStartOperation.fromStableSerialization(
+          source.startOperation,
+        ).configuration,
+        ownerId,
+      ),
     );
   }
 }

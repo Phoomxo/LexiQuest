@@ -1061,13 +1061,34 @@ final class LearningUseCases {
         evidenceContext: evidenceContext,
         occurredAtUtc: command.occurredAtUtc,
       );
+      var firstWriteActor = ownerId;
+      final recoveryRepository = repository;
+      if (command.actorIdentity != null &&
+          command.actorIdentity != ownerId &&
+          command.promptMode == 'matchingPair' &&
+          recoveryRepository is LearningActivityRecoveryRepository) {
+        final accepted =
+            await (recoveryRepository as LearningActivityRecoveryRepository)
+                .loadExactActivityRecovery(
+                  ownerId: ownerId,
+                  sessionId: command.sessionId,
+                  activityType: 'matching',
+                );
+        final state = accepted?.checkpoint?.state;
+        final frozen = state?['frozenEvidence'];
+        if (state?['schemaVersion'] == 6 &&
+            frozen is Map &&
+            frozen['sourceEvidenceId'] == command.sourceEvidenceId &&
+            frozen['actorIdentity'] == command.actorIdentity) {
+          firstWriteActor = command.actorIdentity!;
+        }
+      }
       durableEvent = eventAdapter.adaptFromCommand(
         sourceEvidenceId: command.sourceEvidenceId,
         ownerId: ownerId,
-        // Historical actors are replay identity only. If no canonical attempt
-        // exists, this is a first write and both identities belong to the
-        // current owner even when the frozen checkpoint originated pre-merge.
-        actorIdentity: ownerId,
+        // Pair's repository authenticates this exact durable reservation and
+        // canonical retired-owner lineage before a recovered first write.
+        actorIdentity: firstWriteActor,
         sessionId: command.sessionId,
         wordId: command.wordId,
         promptMode: command.promptMode,

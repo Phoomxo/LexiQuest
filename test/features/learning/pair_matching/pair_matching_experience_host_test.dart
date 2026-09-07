@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart' show BooleanExpressionOperators;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, Variable;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_matching_experience_host.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_board_view.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
@@ -209,7 +210,9 @@ final class _ShortProtocols implements SessionConfigurationProtocolProvider {
 
 final class _HostVoice implements VoiceProvider {
   final requests = <VoiceRequest>[];
-  bool fail = false;
+  bool fail = false, failStop = false;
+  Completer<void>? playback;
+  Completer<void>? stopEntered, stopRelease;
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     requests.add(request);
@@ -219,6 +222,8 @@ final class _HostVoice implements VoiceProvider {
         message: 'synthetic local voice unavailable',
       );
     }
+    final completion = playback;
+    if (completion != null) return _HostCompletionResult(completion.future);
     return const VoicePlaybackResult(
       requestedEngine: VoiceEngine.nativeTts,
       actualEngine: VoiceEngine.nativeTts,
@@ -228,7 +233,24 @@ final class _HostVoice implements VoiceProvider {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    if (stopEntered?.isCompleted == false) stopEntered!.complete();
+    await stopRelease?.future;
+    if (failStop) {
+      throw StateError('synthetic stop acknowledgement unavailable');
+    }
+  }
+}
+
+final class _HostCompletionResult extends VoicePlaybackResult {
+  const _HostCompletionResult(Future<void> completion)
+    : super(
+        requestedEngine: VoiceEngine.nativeTts,
+        actualEngine: VoiceEngine.nativeTts,
+        usedFallback: false,
+        cacheHit: false,
+        playbackCompleted: completion,
+      );
 }
 
 final class _GuestSession implements GuestSessionService {
@@ -319,6 +341,417 @@ PairMatchingExperienceRuntime _runtime(
 }
 
 void main() {
+  test(
+    'Pair normal close rejects overflow before a hidden Pair marker',
+    () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      const sessionId = 'synthetic-generic-overflow';
+      await h.db.customStatement(
+        'UPDATE learning_sessions SET id=? WHERE id=?',
+        [sessionId, h.operation.plan.learningSessionId],
+      );
+      await h.db.customStatement(
+        'UPDATE events_v2 SET aggregate_id=? WHERE aggregate_id=?',
+        [sessionId, h.operation.plan.learningSessionId],
+      );
+      final original =
+          (await h.db.customSelect('SELECT * FROM events_v2').getSingle()).data;
+      for (var i = 0; i < 65; i++) {
+        final payload =
+            jsonDecode(original['payload_json'] as String)
+                as Map<String, dynamic>;
+        payload['sessionId'] = sessionId;
+        payload['state'] = <String, Object?>{'identity': 'accepted'};
+        final candidate = <String, Object?>{
+          ...original,
+          'event_id': '000-generic-${i.toString().padLeft(3, '0')}',
+          'idempotency_key': '000-generic-${i.toString().padLeft(3, '0')}',
+          'payload_json': jsonEncode(payload),
+        };
+        await h.db.customStatement(
+          'INSERT INTO events_v2 (${candidate.keys.join(',')}) VALUES (${List.filled(candidate.length, '?').join(',')})',
+          candidate.values.toList(),
+        );
+      }
+      final query = PairMatchingSessionPurpose.checkpointQuery(
+        h.owner,
+        sessionId,
+      );
+      final window = await h.db
+          .customSelect(
+            query.sql,
+            variables: [for (final arg in query.args) Variable(arg as String)],
+          )
+          .get();
+      expect(window, hasLength(65));
+      expect(
+        window.every(
+          (r) =>
+              ((jsonDecode(r.data['payload_json'] as String) as Map)['state']
+                  as Map)['schemaVersion'] !=
+              6,
+        ),
+        true,
+      );
+      expect(await h.db.select(h.db.eventsV2).get(), hasLength(66));
+      final before = await h.db.select(h.db.learningSessions).getSingle();
+      await expectLater(
+        h.real.finishSession(
+          ownerId: h.owner,
+          sessionId: sessionId,
+          endedAtUtc: h.learning.nowUtc(),
+        ),
+        throwsStateError,
+      );
+      expect(await h.db.select(h.db.learningSessions).getSingle(), before);
+      expect(await h.db.select(h.db.achievementUnlocks).get(), isEmpty);
+    },
+  );
+  for (final corruption in [
+    'missing',
+    'generic',
+    'legacyMarker',
+    'nonReservedId',
+  ]) {
+    test('Pair normal close cannot downgrade authority $corruption', () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize(measured: corruption == 'nonReservedId');
+      var sessionId = h.operation.plan.learningSessionId;
+      if (corruption == 'missing') {
+        await h.db.customStatement(
+          'DELETE FROM events_v2 WHERE aggregate_id=?',
+          [sessionId],
+        );
+      } else if (corruption == 'nonReservedId') {
+        const renamed = 'synthetic-generic-close';
+        await h.db.customStatement(
+          'UPDATE learning_sessions SET id=? WHERE id=?',
+          [renamed, sessionId],
+        );
+        await h.db.customStatement(
+          'UPDATE events_v2 SET aggregate_id=? WHERE aggregate_id=?',
+          [renamed, sessionId],
+        );
+        final latest = (await h.db.select(h.db.eventsV2).get()).singleWhere(
+          (r) => (jsonDecode(r.payloadJson) as Map)['revision'] == 2,
+        );
+        final payload = jsonDecode(latest.payloadJson) as Map<String, dynamic>;
+        payload['state'] = <String, Object?>{'identity': 'accepted'};
+        await h.db.customStatement(
+          'UPDATE events_v2 SET payload_json=? WHERE event_id=?',
+          [jsonEncode(payload), latest.eventId],
+        );
+        sessionId = renamed;
+      } else {
+        final rows = await h.db.select(h.db.eventsV2).get();
+        for (final row in rows.where((r) => r.aggregateId == sessionId)) {
+          final payload = jsonDecode(row.payloadJson) as Map<String, dynamic>;
+          payload['state'] = corruption == 'generic'
+              ? <String, Object?>{'identity': 'accepted'}
+              : <String, Object?>{'schemaVersion': 5};
+          await h.db.customStatement(
+            'UPDATE events_v2 SET payload_json=? WHERE event_id=?',
+            [jsonEncode(payload), row.eventId],
+          );
+        }
+      }
+      final before = await h.db.select(h.db.learningSessions).getSingle();
+      await expectLater(
+        h.real.finishSession(
+          ownerId: h.owner,
+          sessionId: sessionId,
+          endedAtUtc: h.learning.nowUtc(),
+        ),
+        throwsStateError,
+      );
+      expect(await h.db.select(h.db.learningSessions).getSingle(), before);
+      expect(await h.db.select(h.db.achievementUnlocks).get(), isEmpty);
+    });
+  }
+  test(
+    'normal Pair close rejects incomplete accepted board without mutation',
+    () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      final before = await h.db.select(h.db.learningSessions).getSingle();
+      await expectLater(
+        h.real.finishSession(
+          ownerId: h.owner,
+          sessionId: h.operation.plan.learningSessionId,
+          endedAtUtc: h.learning.nowUtc(),
+        ),
+        throwsStateError,
+      );
+      expect(await h.db.select(h.db.learningSessions).getSingle(), before);
+      expect(await h.db.select(h.db.achievementUnlocks).get(), isEmpty);
+    },
+  );
+  for (final ending in ['natural', 'routeStop', 'takeover', 'failedStop']) {
+    testWidgets(
+      'Pair narration counts no listening time before actual end $ending',
+      (tester) async {
+        var micros = 0;
+        final h = PairHarness(pinnedPlan: timedPlan());
+        addTearDown(h.db.close);
+        await h.initialize(measured: true);
+        final provider = _HostVoice()..playback = Completer<void>();
+        final voice = VoiceUseCases(
+          provider: provider,
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
+        final navigator = GlobalKey<NavigatorState>();
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigator,
+            navigatorObservers: [appRouteObserver],
+            home: PairMatchingExperienceHost.recover(
+              runtime: _runtime(h, clock: () => micros, voice: voice),
+              operation: h.operation,
+              onExit: () {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        micros = 1000000;
+        await tester.tap(
+          find.byKey(const ValueKey('pair-tile:prompt:synthetic-0')),
+        );
+        await tester.pumpAndSettle();
+        final pronounce = find.byKey(
+          const ValueKey('pair-pronounce:prompt:synthetic-0'),
+        );
+        await tester.ensureVisible(pronounce);
+        await tester.tap(pronounce);
+        await tester.pumpAndSettle();
+        expect(provider.requests, hasLength(1));
+        micros = 9000000;
+        await tester.pump(const Duration(milliseconds: 300));
+        final during = tester
+            .widget<PairBoardView>(find.byType(PairBoardView))
+            .model;
+        expect(during.timer.reasons, contains(PairPauseReason.narration));
+        expect(during.timer.interactiveElapsedMs, 1000);
+        expect(during.timer.remainingActiveMs, 59000);
+        if (ending == 'natural') {
+          provider.playback!.complete();
+        } else {
+          provider.stopEntered = Completer<void>();
+          provider.stopRelease = Completer<void>();
+          provider.failStop = ending == 'failedStop';
+          if (ending == 'routeStop' || ending == 'failedStop') {
+            unawaited(
+              navigator.currentState!.push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      const Scaffold(body: Text('synthetic voice cover')),
+                ),
+              ),
+            );
+          } else {
+            voice.acquireSession();
+          }
+          for (var i = 0; i < 40 && !provider.stopEntered!.isCompleted; i++) {
+            await tester.pump(const Duration(milliseconds: 10));
+          }
+          expect(provider.stopEntered!.isCompleted, true);
+          final stopping = tester
+              .widget<PairBoardView>(
+                find.byType(PairBoardView, skipOffstage: false),
+              )
+              .model;
+          expect(stopping.timer.reasons, contains(PairPauseReason.narration));
+          provider.stopRelease!.complete();
+          await tester.pumpAndSettle();
+          provider.playback!
+              .complete(); // late old end cannot resume a covered route
+          if (ending == 'routeStop' || ending == 'failedStop') {
+            navigator.currentState!.pop();
+          }
+        }
+        await tester.pumpAndSettle();
+        micros = 10000000;
+        await tester.pump(const Duration(milliseconds: 300));
+        if (ending == 'failedStop') {
+          final blockedBoard = tester.widget<PairBoardView>(
+            find.byType(PairBoardView),
+          );
+          final uncertain = blockedBoard.model.timer;
+          expect(uncertain.reasons, contains(PairPauseReason.narration));
+          expect(uncertain.interactiveElapsedMs, 1000);
+          expect(blockedBoard.model.busy, true);
+          blockedBoard.onSelectTile(
+            const PairTile(PairTileSide.target, 'synthetic-0'),
+          );
+          await tester.pumpAndSettle();
+          expect(await h.db.select(h.db.answerAttempts).get(), isEmpty);
+          provider.failStop = false;
+          final retryStop = find.byKey(const ValueKey('pair-retry-audio-stop'));
+          await tester.ensureVisible(retryStop);
+          await tester.tap(retryStop);
+          await tester.pumpAndSettle();
+          micros = 11000000;
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+        final after = tester
+            .widget<PairBoardView>(find.byType(PairBoardView))
+            .model
+            .timer;
+        expect(after.reasons, isNot(contains(PairPauseReason.narration)));
+        expect(after.interactiveElapsedMs, 2000);
+        expect(after.remainingActiveMs, 58000);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+  for (final ownerChange in ['logout', 'switch', 'insideClose']) {
+    testWidgets('queued normal Pair close rejects owner change $ownerChange', (
+      tester,
+    ) async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize(measured: true);
+      final repository = _HeldHostRepository(h.real)..heldStage = 'close';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PairMatchingExperienceHost.recover(
+            runtime: _runtime(h, repository: repository),
+            operation: h.operation,
+            onExit: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.byKey(ValueKey('pair-tile:prompt:synthetic-$i')));
+        await tester.pumpAndSettle();
+        if (i == 3) {
+          repository.entered = Completer<void>();
+          repository.release = Completer<void>();
+        }
+        await tester.tap(find.byKey(ValueKey('pair-tile:target:synthetic-$i')));
+        if (i < 3) await tester.pumpAndSettle();
+      }
+      for (var i = 0; i < 40 && !repository.entered!.isCompleted; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      expect(repository.entered!.isCompleted, true);
+      if (ownerChange == 'insideClose') {
+        await h.db.customStatement(
+          "CREATE TRIGGER pm8_close_owner AFTER UPDATE OF state ON learning_sessions WHEN NEW.state='completed' BEGIN UPDATE local_owners SET is_active=0 WHERE id=NEW.owner_id; END",
+        );
+      } else {
+        await h.db.customStatement('UPDATE local_owners SET is_active=0');
+        if (ownerChange == 'switch') {
+          await h.db.customStatement(
+            "INSERT INTO local_owners (id,is_active,created_at_utc_ms) VALUES ('synthetic-other-active',1,1)",
+          );
+        }
+      }
+      Future<String> durable() async => jsonEncode({
+        for (final table in [
+          'learning_sessions',
+          'events_v2',
+          'answer_attempts',
+          'achievement_unlocks',
+          'outbox_operations',
+          'local_owners',
+        ])
+          table:
+              (await h.db
+                      .customSelect('SELECT * FROM $table ORDER BY rowid')
+                      .get())
+                  .map((r) => r.data)
+                  .toList(),
+      });
+      final before = await durable();
+      repository.release!.complete();
+      await tester.pumpAndSettle();
+      expect(await durable(), before);
+      expect(find.byKey(const ValueKey('pair-result')), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(await durable(), before);
+    });
+  }
+  testWidgets(
+    'covered and returned during accepted write resumes visible Pair clocks',
+    (tester) async {
+      var micros = 0;
+      final h = PairHarness(pinnedPlan: timedPlan());
+      addTearDown(h.db.close);
+      await h.initialize(measured: true);
+      final repository = _HeldHostRepository(h.real);
+      final navigator = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigator,
+          navigatorObservers: [appRouteObserver],
+          home: PairMatchingExperienceHost.recover(
+            runtime: _runtime(h, clock: () => micros, repository: repository),
+            operation: h.operation,
+            onExit: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      micros = 1000000;
+      await tester.tap(
+        find.byKey(const ValueKey('pair-tile:prompt:synthetic-0')),
+      );
+      await tester.pumpAndSettle();
+      repository.entered = Completer<void>();
+      repository.release = Completer<void>();
+      await tester.tap(
+        find.byKey(const ValueKey('pair-tile:target:synthetic-0')),
+      );
+      for (var i = 0; i < 40 && !repository.entered!.isCompleted; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
+      expect(repository.entered!.isCompleted, true);
+      unawaited(
+        navigator.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('synthetic cover')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      micros = 9000000;
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<PairBoardView>(find.byType(PairBoardView)).model.busy,
+        true,
+      );
+      repository.release!.complete();
+      await tester.pumpAndSettle();
+      final resumed = tester
+          .widget<PairBoardView>(find.byType(PairBoardView))
+          .model
+          .timer;
+      expect(
+        resumed.reasons,
+        isNot(contains(PairPauseReason.boardUnavailable)),
+      );
+      micros = 10000000;
+      await tester.pump(const Duration(milliseconds: 300));
+      final advanced = tester
+          .widget<PairBoardView>(find.byType(PairBoardView))
+          .model
+          .timer;
+      expect(advanced.interactiveElapsedMs, 2000);
+      expect(advanced.elapsedActiveMs, 2000);
+      expect(advanced.remainingActiveMs, 58000);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
   for (final fault in ['closeBefore', 'closeAfter', 'resultRead']) {
     testWidgets('same host retries exact canonical completion fault=$fault', (
       tester,
