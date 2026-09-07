@@ -75,3 +75,19 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''(?:^|/)test/features/sync/reward_transaction_sync_test\.dart$''']
 regexes = ['''^exhausted-v2-purchase$''', '''^carried-v1-purchase$''', '''^carried-v1-funding$''', '''^eligible-v2-purchase$''', '''^tamper-evident-v2-purchase$''']
+
+[[allowlists]]
+description = "Pair compatibility uses a fixed local owner-gate lease, not an authentication credential."
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/learning/pair_matching/pair_matching_compatibility_rollout_test\.dart$''']
+regexes = ['''^pm8-synthetic-owner-gate$''']
+
+[[allowlists]]
+description = "Pair measurement tests use fixed local owner-gate and claim lease identities."
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(?:^|/)test/features/learning/pair_matching/pair_measurement_boundary_test\.dart$''']
+regexes = ['''^pm7-synthetic-claim-gate$''', '''^pm7-synthetic-claim$''']

@@ -2,10 +2,11 @@
 
 **Document ID:** LQ-AMM-UAT-001
 **Version:** 1.3
-**Status:** Product engineering preflight ready; research/Pair prerequisites and external acceptance pending
-**Date:** 2026-09-04; evidence update 2026-09-05
+**Status:** Research and Pair PM0–PM8 local engineering verified; external acceptance pending
+**Date:** 2026-09-04; evidence update 2026-09-07
 **References:** `AMM-AUDIT-001 v1.0`; SDS v1.3; TOR, SRS, WBS, UI/UX, ADR, MDS และ Test Plan v1.2
-**Build baseline:** Adventure product source `f8a5f8bb` + hardening `703aabe4`; performance rehearsal source `85b17755`; local verification evidence `3c698cdd`; Drift schema v23; Pair Matching design source closure `f56e2eb`
+**Current source baseline:** Research `ed89efaf`, Pair PM0–PM8 `1875a618`, Drift schema v24 / 48 tables. The [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md) tracks current-source checks, APK and compatibility evidence; external UAT remains Not Run.
+**Historical product build:** Adventure `f8a5f8bb` + hardening `703aabe4`; performance `85b17755`; local evidence `3c698cdd`; then schema v23; Pair design closure `f56e2eb`
 **Release warning:** Android/shared local BG-01–BG-12 ผ่านโดยไม่มี unclassified failure และ source-gated Android host-GPU emulator performance rehearsal ผ่านทุก budget แต่ยังเป็น `not_certified`; ห้าม sign-off Pilot/Production จนกว่าจะมี physical-device accessibility/performance certification, participant UAT, approved research package และ signed MS-08A/MS-08B decision ตาม applicability
 
 ## 1. วัตถุประสงค์
@@ -34,18 +35,18 @@ MS-08B และ Pair scripts ยังติด prerequisite ของตนเ
 
 | Scope | Current status | Evidence/blocker |
 |---|---|---|
-| Android/shared engineering preflight | Ready | Product source `703aabe4`; BG-01–BG-12 local scope ผ่าน; 3,542 Flutter tests ผ่านทั้ง default/serial; source-gated host-GPU emulator rehearsal ที่ source `85b17755` ผ่าน 20/20 transitions ที่มีเฟรมจริง (p95 4.290 ms, max 7.031 ms) แต่ไม่ใช่ physical certification; APK SHA-256 `951F53BC5551E0DCDA631346F89015F31EDA52BAB01A48F9C9C2691BAFE7E64A`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
+| Historical Android/shared engineering preflight | Passed at recorded historical source | Product source `703aabe4`; BG-01–BG-12 local scope ผ่าน; 3,542 Flutter tests ผ่านทั้ง default/serial; source-gated host-GPU emulator rehearsal ที่ source `85b17755` ผ่าน 20/20 transitions ที่มีเฟรมจริง (p95 4.290 ms, max 7.031 ms) แต่ไม่ใช่ physical certification หรือ current Pair build; APK SHA-256 `951F53BC5551E0DCDA631346F89015F31EDA52BAB01A48F9C9C2691BAFE7E64A`; ดู `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` |
 | Internal UAT UAT-001–024, 030–032 | Not Run | ต้องใช้ learner representatives ≥12, accessibility moderated sessions ≥4, certified profiles และผู้ sign-off ที่เป็นอิสระจากผู้พัฒนา |
-| Research/permit UAT-025–037 | Blocked | ยังไม่มี approved protocol/instruments/response-code catalog/power plan/privacy-ethics package หรือ signed runtime permit fixtures; ระบบจงใจไม่มี research schema/capture |
+| Research/permit UAT-025–037 | External UAT Not Run | Research R1–R6/schema v24 implemented at `ed89efaf`; synthetic signed P256 fixtures and collection/upload rejection checks exist, including actual Pair rehearsal at `631b518b`. Real UAT still requires approved protocol/instruments/response-code catalog/power plan/privacy-ethics package and provisioned issuer/receipt authority; synthetic signatures do not supply those approvals. See [Research engineering record](../development/2026-09-05-research-engineering-status.md) |
 | MS-08B UAT-038 | Blocked | ต้องรอ MS-08A, powered adult/minor samples, frozen windows และ approved ANCOVA/MI/tipping-point evidence |
-| Pair UAT-039–050 | PM0–PM7 engineering complete; PM8 pending; external UAT Not Run | แผน PM0–PM8 และ design B — Playful Quest ได้รับอนุมัติแล้ว; PM7 source `631b518b` ผ่าน 1,550 integrated + 17 measurement checks และเทียบ golden 15 ภาพ โดย independent review ผ่าน; PM8 ยังต้องตรวจ owner rehome/compatibility/release ดู `docs/development/2026-09-05-pair-matching-engineering-status.md`; synthetic UI/semantics/measurement rehearsal ไม่ใช่ external UAT, efficacy หรือ G4P sign-off |
+| Pair UAT-039–050 | PM0–PM8 local engineering verified; external UAT Not Run | source `1875a618` ผ่าน full tests 4,852 ทั้ง default/serial โดยรายชื่อตรงกัน, local policies และ debug APK integrity; owner rehome/compatibility, close/route/Voice และ composed evidence providers ตรวจแล้ว หลักฐานและข้อยกเว้นอยู่ใน [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md); ประวัติ PM0–PM7 และ golden 15 ภาพอยู่ใน [Pair engineering record](../development/2026-09-05-pair-matching-engineering-status.md) ผลสังเคราะห์เหล่านี้ไม่ใช่ external UAT, efficacy หรือ G4P sign-off |
 | Defect/sign-off records | Empty by design | ยังไม่มี external attempt จึงไม่มี defect disposition หรือลายเซ็นที่สามารถบันทึกอย่างถูกต้อง |
 
-APK ที่ตรวจ hash แล้วเก็บไว้ใน development worktree ที่
+APK ในบันทึก historical product ถูกเก็บไว้ใน development worktree เดิมที่
 `build/deliverables/adventure-703aabe4-debug.apk` (ignored build artifact,
 223,102,333 bytes) โดยยังใช้ feature configuration ที่ hidden/default-off
 เช่นเดียวกับ source ที่ตรวจแล้ว รอบตรวจสถานะวันที่ 2026-09-05 ไม่พบอุปกรณ์
-Android เชื่อมต่อจาก `adb devices -l`; ยังไม่มี physical-device session ใหม่
+Android เชื่อมต่อจาก `adb devices -l` ในรอบนั้น ข้อมูลนี้ไม่ใช่การตรวจอุปกรณ์ของ PM8 และยังไม่มีผล physical-device UAT ของ Pair
 
 ## 2. ขอบเขตและรอบ UAT
 
@@ -881,3 +882,22 @@ S0/S1 ต้องแก้และ rerun affected scripts + regression ก่�
 Accessibility, UAT, QA, Research/Privacy, Product หรือ Release owner การลงชื่อ
 ก่อนครบ external evidence และ gate ที่เกี่ยวข้องไม่ถือเป็น Pilot/Production
 approval
+
+### 18.6 Pair G4P decision record
+
+Local engineering evidence supports review of the prototype. G4P requires the
+five role decisions below plus the applicable PMT/UAT evidence in MDS §16.7.
+The learner comprehension requirement is at least 11/12; its observed numerator
+and denominator are both unrecorded because no learner session has run.
+Physical TalkBack/Switch Access, native Voice and certified performance are
+Not Run. Automated semantics/goldens and synthetic measurement do not supply
+these outcomes. Local engineering evidence does not supply these external
+decisions; no signed Accept or production authorization exists.
+
+| Required G4P role | Status | Decision | Name | Date | Build/config/evidence and conditions |
+|---|---|---|---|---|---|
+| Product | Pending external review | Unrecorded |  |  | Current local evidence plus learner UAT required |
+| Learning/Data | Pending external review | Unrecorded |  |  | Recognition/Replay boundaries and comprehension evidence required |
+| UX/Accessibility | Not Run | Unrecorded |  |  | Moderated and physical assistive-technology results required |
+| QA | Pending external review | Unrecorded |  |  | Current-source release package and applicable UAT required |
+| Tech | Pending external review | Unrecorded |  |  | Current-source compatibility/rollback and artifact evidence required |

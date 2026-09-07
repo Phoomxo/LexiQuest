@@ -2,16 +2,17 @@
 
 **Document ID:** LQ-AMM-SDS-001
 **Version:** 1.3
-**Status:** Product as-built overlay complete; owner review and external gates pending
-**Date:** 2026-09-04; evidence update 2026-09-05
+**Status:** As-built local engineering verified; external device/UAT/research gates pending
+**Date:** 2026-09-04; evidence update 2026-09-07
 **SRS reference:** `LQ-AMM-SRS-001 v1.2`
-**As-built baseline:** product source `f8a5f8bb`, recovery/pinned-read hardening `703aabe4`, performance source `85b17755`, local evidence `3c698cdd`, schema v23
+**As-built baseline:** Research `ed89efaf`, locally verified Pair PM0–PM8 implementation `1875a618`, schema v24 / 48 tables; scoped local release checks and debug APK passed
+**Historical product baseline:** product `f8a5f8bb`, hardening `703aabe4`, performance `85b17755`, local evidence `3c698cdd`, then schema v23
 **Audit reference:** `AMM-AUDIT-001 v1.0`; local BG-01–BG-12 evidence has zero unclassified failure and retains explicit excluded/pending gates
 **Decision references:** `LQ-AMM-ADR-001 v1.2`, `LQ-AMM-MDS-001 v1.2`
 
 ## 0. As-built scope and authority boundary
 
-The production branch now implements M01–M09 and M11 for the approved
+The historical product baseline implements M01–M09 and M11 for the approved
 Adventure product extension. The as-built surface includes typed entry and
 fallback, one canonical Today snapshot, deterministic Map/List projection,
 session composition, the unchanged Unified Learning evidence bridge, repair
@@ -26,7 +27,7 @@ fail closed. Session pins and exact pinned-query inputs are copied before
 asynchronous work, owner configuration is persisted atomically, and cached
 terminal results are checked against the canonical session summary before use.
 
-Schema v23 is live for owner-scoped `homeExperience` and has migration,
+Schema v23 introduced owner-scoped `homeExperience` and has migration,
 lifecycle, sync, export, owner-merge and Firestore policy evidence. Adventure
 adds no learning, reward, mastery, relationship or journey-progress authority.
 The primary implementation and verification locations are
@@ -37,23 +38,33 @@ The primary implementation and verification locations are
 and
 `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md`.
 
-The hardened source passes 658 related regression tests and 3,542 complete
+That historical hardened source passed 658 related regression tests and 3,542 complete
 Flutter tests in each of default and serial modes. Four visually inspected
 golden scenes cover typed recall, flashcard reveal at 200% text/reduced motion,
 dark/high-contrast support and recovered Standard presentation. These are local
 engineering results; the acceptance boundaries below still apply.
 
-M10 research storage/capture and planned schema v24 are not implemented
-because their protocol, measurement, privacy and ethics prerequisites are not
-approved. M12 Pair Matching remains design-only and PM0–PM8 are not
-authorized. Automated accessibility/responsive scope and the source-gated
-Android host-GPU emulator performance rehearsal are green. Physical
-assistive-technology and certified-device performance, UAT and rollout
-evidence remain external acceptance gates.
+M10 research engineering is implemented at `ed89efaf`: schema v24 contains
+48 tables, including four research lifecycle tables. Real enrollment/upload
+remain default-off; supplied protocols, trusted issuers and valid receipts are
+required at the collection/upload boundaries. See the
+[Research engineering record](../development/2026-09-05-research-engineering-status.md).
+
+M12 Pair Matching PM0–PM8 and design B — Playful Quest are authorized. The
+implementation is independently reviewed at `1875a618`, including owner rehome,
+compatibility, canonical close and composed evidence providers. Pair reuses f10 and
+the existing canonical learning authorities. It adds no database migration,
+main destination, reward balance or research authority. The
+[Pair engineering record](../development/2026-09-05-pair-matching-engineering-status.md)
+records phase evidence; the [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md)
+tracks current release checks and artifact identity. Historical product
+test totals and emulator results above do not verify the current Pair source.
+Physical assistive technology, certified-device performance, learner UAT,
+external G4P signatures and research efficacy remain separate acceptance gates.
 
 ## 1. Design Decision Summary
 
-Adventure เป็น bounded context ใหม่ที่ไม่มี write authority ต่อ learning/progress เดิม ประกอบด้วย M01–M11 และเพิ่ม M12 Pair Matching Prototype Integration ซึ่งเป็น planning module ของ `f10` เดิม ไม่ใช่ capability ใหม่ การเชื่อมระบบเดิมทำผ่าน application ports และ canonical use cases เท่านั้น
+Adventure เป็น bounded context ที่ไม่มี write authority ต่อ learning/progress เดิม ประกอบด้วย M01–M11 และ M12 Pair Matching Prototype Integration ของ `f10` เดิม การเชื่อมระบบเดิมทำผ่าน application ports และ canonical use cases เท่านั้น สถานะ implementation และ external acceptance แยกตาม §0
 
 การตัดสินใจที่ลดผลกระทบต่อ 8/44:
 
@@ -61,7 +72,7 @@ Adventure เป็น bounded context ใหม่ที่ไม่มี writ
 2. Journey เป็น pure/rebuildable projection; ไม่มี Adventure progress table
 3. Phase 1 shipped without schema migration
 4. Preference v2 was subsequently implemented on the reserved schema v23 after shell/learning bridge acceptance
-5. Research tables remain planned for a future reserved ledger version only after the independent research gate is approved
+5. Research engineering uses the implemented schema v24; real enrollment/upload still require the independent research rollout gate
 6. `EvidenceContext` และ learning-answer event ไม่เพิ่ม Adventure field
 7. `AdventureOriginContextV1` เป็น transient launch context
 8. Participant ทุก treatment ใช้ neutral events และ `MeasurementOpportunity`; nonparticipant zero-row ตาม ADR-003
@@ -103,7 +114,7 @@ flowchart TD
   VALIDATE --> PERMIT
   VALIDATE --> CAPTURE[M10 Research Capture Decision]
   CAPTURE -->|eligible only| RESEARCH[M10 Measurement]
-  RESEARCH -.consented only.-> EVENTS[EventsV2 + planned Research v24]
+  RESEARCH -.validated authority only.-> EVENTS[EventsV2 + Research v24]
   OPS[M11 Operations] -.gates.-> ENTRY
 ```
 
@@ -142,9 +153,9 @@ Forbidden dependencies:
 | Experiment cohort | Experiment Registry | Permit issuer/validator reads exact assignment; Product Entry sees assignment only through active projection |
 | Consent/guardian/assent | Existing authorities + approved enrollment | Validate signed participation permit; never exposed raw to Product Entry |
 | Protocol treatment presentation | Active Presentation Permit projection | Product Entry read-only |
-| Research opportunity denominator | Planned research v24 or reserved successor | Participant-only transactional lifecycle |
+| Research opportunity denominator | Research schema v24 | Authority-gated transactional lifecycle |
 | Journey position | Adventure Projection | Derived, never directly written |
-| Motivation responses | Planned research v24 or reserved successor | Consent-aware use case |
+| Motivation responses | Research schema v24 | Consent-aware use case |
 
 ## 3. Module Design
 
@@ -816,11 +827,16 @@ Migration rules:
 - v1 cloud payload is upgraded to Standard in memory, then persisted as v2 only through normal conflict policy
 - old clients must not be allowed to overwrite v2 with a v1 mutation after server compatibility cutoff
 
-### 4.2 Planned schema v24 — research measurement
+### 4.2 Implemented schema v24 — research measurement
 
-`v24` is a planning label. It must be rebased to the next free ledger number if any approved migration lands before it.
+Schema v24 is implemented at Research source `ed89efaf`. The executable
+definitions in `lib/data/local/tables/research_tables.dart` and migrations in
+`lib/data/local/app_database.dart` are authoritative. The original design
+sketch below describes responsibilities; it is not executable DDL or a complete
+replacement for the current field/constraint definitions. No version is newly
+reserved for Pair Matching.
 
-Append to `research_tables.dart`:
+Original four-table design sketch:
 
 ```text
 motivation_measurement_runs
@@ -925,9 +941,9 @@ No table named or semantically equivalent to `adventure_progress`, node completi
 
 ### 4.4 Lifecycle integration
 
-Schema v23 updates the applicable preference paths in these cross-cutting
-authorities. The listed v24 research integrations remain planned and must not
-be inferred from the product implementation:
+Schema v23 updated preference paths and Research schema v24 implemented the
+four-table lifecycle in these cross-cutting authorities. Research engineering
+evidence is recorded separately from the historical product implementation:
 
 - `lib/features/identity/domain/owner_lifecycle_manifest.dart`
 - `lib/features/identity/data/drift_owner_upgrade_repository.dart`
@@ -1289,7 +1305,7 @@ Rollback is feature-state based. Database remains forward-compatible; no destruc
 - Every SRS requirement has one owning component
 - No Adventure progress authority exists
 - No change to learning correctness/evidence payload is required
-- Schema changes occur only in the preference/research phases using ledger-reserved numbers (planned v23/v24)
+- Schema changes use ledger-reserved numbers: preference v23 and Research v24 are implemented; Pair adds no migration
 - Feature/preference/assignment/raw consent/participation permit are separate; Product Entry sees only active projection
 - Offline and error cases preserve Standard
 - UI has map/list/reduced-motion parity
@@ -1302,6 +1318,40 @@ Rollback is feature-state based. Database remains forward-compatible; no destruc
 - Audit findings are linked to owners and no Pilot/release gate is bypassed
 
 ## 15. M12 Pair Matching Prototype Integration Design
+
+Reviewed PM0–PM8 implementation source is `1875a618`. The activity checkpoint is
+schema6; legacy matching schemas1–5 retain their own reader/behavior. Progressed
+Pair codecs1–4 are a separate version axis: codec4 preserves full interactive
+elapsed coverage, while historical unmeasured coverage stays null. Challenge
+elapsed remains separate. Start envelopes1/2 distinguish unconfigured/configured
+starts. Declared answer sync requires the existing attempts payload2 writer;
+the default payload1 writer fails closed for those answers. None of these
+versions is a database schema number.
+
+The configured host, accessible board, local-only pronunciation boundary,
+result/History/Practice Replay and actual Standard/Adventure Today composition
+are implemented. Both presentations retain one canonical host through fallback;
+withdrawn/unavailable configuration uses authenticated explicit disposition.
+Recognition does not authorize recall SRS; stars and full interactive elapsed
+are descriptive. Practice Replay preserves the existing learning/reward and
+research-primary authority exclusions. Authenticated owner rehome preserves
+immutable plan/command identity and exact pending evidence while new captures
+use the active runtime owner. Normal close validates owner and accepted terminal
+intent inside the canonical transaction. Both host and unavailable-session
+recovery receive the caller-composed evidence adapter for the same Learning
+instance; they do not construct a replacement with default providers.
+
+Route return reconciles its pause after an accepted write settles. Pronunciation
+waits for actual playback completion or confirmed stop; uncertain cleanup keeps
+interaction paused and exposes a stop-and-continue retry. Ordinary recognition
+uses the existing protocol-controlled engagement policy and always denies recall
+SRS advancement. Practice Replay retains exact zero change to the existing
+learning/reward/research-primary projections. Motivation collection permission
+is distinct from an already valid evidence-protocol assignment.
+
+The [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md)
+records actual compatibility/rollback and release evidence. Section15.9 states
+the required rollout order; it does not describe a deployed fleet.
 
 ### 15.1 Boundary and dependency rule
 
@@ -1514,9 +1564,9 @@ Checkpoint codec ใช้ next available version ณ implementation time (ค�
 5. old session resume ด้วย legacy Standard behavior; ห้าม infer stars, repair ticket หรือ replay readiness
 6. emergency-off block new starts แต่ accepted session resume/retire ได้
 
-### 15.10 Planned file map
+### 15.10 Implemented file map through PM7
 
-| Responsibility | Planned path |
+| Responsibility | Path |
 |---|---|
 | launch contracts | `lib/features/learning/pair_matching/domain/pair_matching_launch.dart` |
 | immutable plan | `lib/features/learning/pair_matching/domain/pair_matching_plan.dart` |
@@ -1532,7 +1582,10 @@ Checkpoint codec ใช้ next available version ณ implementation time (ค�
 | Standard entry bridge | existing `lib/screens/matching_mode_screen.dart` and Learn/Review/Today routes |
 | Adventure renderer | `lib/features/adventure/presentation/adventure_pair_renderer.dart` |
 
-Actual paths must be revalidated against implementation base before code; existing large adapter is split only after characterization tests and behavior-preserving review
+These paths exist in accepted PM7 source. The original Matching screen
+constructor delegates to the characterized legacy screen; its explicit
+`.pair(experience)` path uses the Pair host. Internal Pair registration is
+separately gated; default production navigation remains unchanged.
 
 ### 15.11 Pair design acceptance
 

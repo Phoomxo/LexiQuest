@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceCommit": "ed89efaf32a1090505a84d4b55b2cc60003068b3",
-  "sourceFingerprint": "8e9ac9a8d74eba3cf2807ff6b02f6e57c4fa97ee6e3b49b8a8acb8f84a173988",
+  "sourceCommit": "1875a61854490e0493cc084bffb705f5d3bd4b0b",
+  "sourceFingerprint": "50ddab9318080e5dd7cd4b640cfb63dbbf52fb9613d7d61fa8064a59132d22fc",
   "sources": [
     {
       "path": "android/app/build.gradle.kts",
@@ -25,7 +25,7 @@
     },
     {
       "path": "docs/database/schema_ledger.md",
-      "sha256": "d355a69e9474351e8a395886cf2c643f92caa1705f3b37b1bc6074ea3c26ab8f"
+      "sha256": "eaebf5e66bf3ce4f371e58e77c2be168015658bcd694e2068484c57fae7e0df2"
     },
     {
       "path": "docs/field/2026-08-09-runtime-feature-ledger.md",
@@ -57,7 +57,7 @@
     },
     {
       "path": "firestore.rules",
-      "sha256": "90d7e02039ebb42094509939875113fa96587ced5b048fd7764b90ff5b8865a5"
+      "sha256": "f0ac4146278f84d277febadf85ea04d79a678567ebc9916423af59bf2cc67646"
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
@@ -73,7 +73,7 @@
     },
     {
       "path": "lib",
-      "sha256": "66d0cc75d4c784ed373f03035d083cc6909a738108566bfbac469e31dd2c42ef"
+      "sha256": "4f2e267ee9145432c64bafe6865db9504e98df2a1bf4b87a8a44b761bbcaec14"
     },
     {
       "path": "lib/data/local/app_database.dart",
@@ -93,7 +93,7 @@
     },
     {
       "path": "lib/features/sync/domain/research_sync.dart",
-      "sha256": "ff091a27433721ac47f7f055df00a7e2c34bd9518523ae963c37a99be6d53f5a"
+      "sha256": "587354ae5204baec6f28a5efccd8bf1ee77d089ee4287d24a35035947fc9d7db"
     },
     {
       "path": "lib/features/sync/domain/sync_entity.dart",
@@ -121,15 +121,15 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "fbca41f888a9f674a6a7e273e3d4c1c26a5700414a0315e485e085aaf5672964"
+      "sha256": "6d198d902b2803c9b280e69ea79e8cf73544354e876eb5699b1976175cf9aa7a"
     },
     {
       "path": "test",
-      "sha256": "e4911bb88aeb082dbcd7de52e3e5698bf7c354230428bfbeb18c5ada42268992"
+      "sha256": "d923aecbad62a86dc3ed7b435cc34b15b7642e1a8faf99194a2c24d77648c381"
     },
     {
       "path": "test/architecture",
-      "sha256": "016714fdab7206fe116d9cc03fd5e1a3ab81838fc4f0e2616ab855f57ed69a0a"
+      "sha256": "4fc236fa7e07500a446075b9476b9928888656b4787cfa599f4eed725ed688c4"
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
@@ -197,7 +197,7 @@
     },
     {
       "path": "test/database/migration_v23_to_v24_test.dart",
-      "sha256": "592a23ba5e96ac310934e20c94f611e6840223af6ff5aadf7b7d0e18cb804cfa"
+      "sha256": "881ebe05359c72b0d994b9ceb31e9fc35b9b7e44d01e66dd09853ec8254ef7e5"
     },
     {
       "path": "test/database/migration_v6_to_v7_test.dart",
@@ -253,7 +253,7 @@
     },
     {
       "path": "test/features/export",
-      "sha256": "6d0d10992afa1d3f130d3ccf670190e19d4a291b4aa9e1c4d8aad86fe58ef39a"
+      "sha256": "9c9243b97fcae5a3e6bf52d28d6a6834624404d591f2a2dc445139c4e398b6af"
     },
     {
       "path": "test/features/gemini",
@@ -265,15 +265,15 @@
     },
     {
       "path": "test/features/history",
-      "sha256": "76498e4d0e21c99f54c1e3eaf9f1490c9cf4580048713ef95f29abcb0338adad"
+      "sha256": "1d055ebd61b4b105d9247b11c3b2dc005c41625da0fcd35e9ce85f80fc9fc6b6"
     },
     {
       "path": "test/features/identity",
-      "sha256": "f89ffabc53266f395b31b841c1ef260ba8fef2d18413e3c28b2bb0ab9cfa9e7d"
+      "sha256": "243bf842bc6411094dcabfd381e8b29aba8db83c47708a9130bc145e60db2b9f"
     },
     {
       "path": "test/features/learning",
-      "sha256": "291f01d2606b5cf4823443163a38d8100e88e23fe21c0225aa6da94b83bdecd4"
+      "sha256": "4f8d7fe1a2357e7951bcf39840a5637a15f92d450cb923b3f67d6db3eb183733"
     },
     {
       "path": "test/features/learning_packs",
@@ -313,7 +313,7 @@
     },
     {
       "path": "test/features/research",
-      "sha256": "4f79fd9878f5bf5feb6b87c4eaf99c11176c1316224a3835499ca6aba0607957"
+      "sha256": "5ca0b9d9c4bc741ccf58008d536da20757850063ae8507db8f4becfd95e45d61"
     },
     {
       "path": "test/features/review",
@@ -329,7 +329,7 @@
     },
     {
       "path": "test/features/sync",
-      "sha256": "772459c2e31c4470d3b7c93b06c910d279b0fcaae2e08c9540812e0d7fa4c8f0"
+      "sha256": "bb69ef9e1626ec85415694b05d128cc00e61bed4bd4961ae263941b9ffb75fd3"
     },
     {
       "path": "test/features/time_tracking",
@@ -337,7 +337,7 @@
     },
     {
       "path": "test/features/today_hub",
-      "sha256": "72da1978491e6777e28adeea16e3d16cabf6571e817ede42de70d015b9cbf4bc"
+      "sha256": "35762dab5917e32de5aa128439d81087952a8e83843b9b657cbc8be87785a284"
     },
     {
       "path": "test/features/vocabulary",
@@ -345,7 +345,7 @@
     },
     {
       "path": "test/features/voice",
-      "sha256": "d5b4908103ab5182e89dccbfffa717ab5eecece8f093e28b31d948978b81b5ea"
+      "sha256": "a3017de62ee3353b24d1c17f3ea428f3bfc73f951308e2f5b412dbbec52257eb"
     },
     {
       "path": "test/runtime/runtime_feature_controls_test.dart",
@@ -373,7 +373,7 @@
     },
     {
       "path": "test/screens",
-      "sha256": "7f3ce32b566d33c2c320ca65f9ef88b6834c4933b57ec15259031ddaed722ad5"
+      "sha256": "e4ef8d803eba706fed3b2cc42604d46bd6df3c996ccd172bf78fbe446e301a22"
     },
     {
       "path": "test/security/firebase-auth-emulator.test.cjs",
@@ -381,7 +381,7 @@
     },
     {
       "path": "test/security/firestore-rules.test.cjs",
-      "sha256": "1d9cf2fb17e1b0eb4c4783b7985f3750ef4e827fd12fcd28a8778f37a785ccc5"
+      "sha256": "6493f3acaba7f514e70ebdd675407ac89abf239babd6ee71d4b4331f7aa5aa05"
     },
     {
       "path": "test/support/current_database_contract.dart",
@@ -599,7 +599,7 @@
     {
       "id": "contract-final-plan-drift",
       "category": "contractDrift",
-      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit ed89efaf32a1090505a84d4b55b2cc60003068b3",
+      "command": "dart run tool/final_test_plan/generate_final_test_plan.dart --check --source-commit 1875a61854490e0493cc084bffb705f5d3bd4b0b",
       "expectedExitCode": 0,
       "sourceRefs": [
         "tool/final_test_plan/generate_final_test_plan.dart"

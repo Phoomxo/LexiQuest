@@ -3,10 +3,10 @@
 **Document ID:** LQ-AMM-TP-001
 **Version:** 1.2
 **Status:** Draft for QA/Owner Review
-**Date:** 2026-09-04
+**Date:** 2026-09-04; evidence update 2026-09-07
 **References:** `AMM-AUDIT-001 v1.0`; TOR/SRS/SDS/UI/ADR/MDS/RTM v1.2
-**Baseline:** commit `99f7fb21`, Drift schema v22
-**Current baseline evidence:** 3,202 Flutter tests pass / 15 fail; no Pilot or release pass claim is permitted
+**Historical characterization:** commit `99f7fb21`, then Drift schema v22; 3,202 Flutter tests passed / 15 failed at that source. Those failures/results are retained as history, not current-source evidence.
+**Current engineering baseline:** Research `ed89efaf`, reviewed Pair PM0–PM8 implementation `1875a618`, Drift schema v24 / 48 tables. Current source, exact full-suite inventories, exclusions, policy checks and APK identity are recorded in the [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md); phase history remains in the [Pair engineering record](../development/2026-09-05-pair-matching-engineering-status.md). No Pilot/production acceptance is inferred.
 
 ## 1. Test Objectives
 
@@ -32,13 +32,13 @@ The test program proves that Adventure:
 
 ### 2.1 In scope
 
-- M01–M12; M12 is an `f10` planning module, not `f45`;
+- M01–M12; M12 is the existing `f10` Pair integration;
 - new runtime feature and exact production contract;
 - world/story/asset catalog and journey projection;
 - session composer and Unified Lesson bridge;
 - canonical side-effect receipt projection;
 - scripted companion and result/recovery;
-- preference v2 and planned research migrations on actual reserved schema numbers;
+- preference v2/schema v23 and Research/schema v24 lifecycle;
 - sync/rules/lifecycle/export/deletion;
 - Thai/English UI, map/list parity and accessibility;
 - offline/restart/emergency-off/platform/device behavior;
@@ -210,7 +210,7 @@ The test program proves that Adventure:
 
 ## 8. Detailed Test Cases
 
-Controlled inventory รวม **188 test cases**: เดิม 144 cases (ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20, OPS 18) และ Pair Matching Prototype PMT 44 cases ทุกกรณียังมีสถานะ planned จนกว่าจะมี implementation และ fresh execution evidence
+Controlled inventory รวม **188 test cases**: เดิม 144 cases (ENT 15, JRN 12, LRN 15, REC 15, DAT 22, RSH 27, UX 20, OPS 18) และ Pair Matching Prototype PMT 44 cases ตารางนี้เก็บข้อกำหนดการทดสอบ สถานะ execution ใช้ source/คำสั่ง/ผลจริงใน engineering record และ RTM §12.1 จำนวน cases ไม่ใช่จำนวน automated tests ที่ผ่าน และไม่แทน UAT
 
 In every case, “no write” means no new/changed row in learning, SRS, progress, quest, streak, reward, achievement, research or preference authorities unless the case explicitly requires it.
 

@@ -303,7 +303,7 @@ Session `purpose=practiceReplay`:
 
 - participant ใช้ neutral events เดิม `TodayExperienceMissionStarted` และ `TodayExperienceMissionCompleted` พร้อม pinned `assignedTreatment`, `effectivePresentation`, plan/policy fingerprints และ bounded Pair summary; Standard/Adventure ห้ามใช้ชื่อ event คนละชุด;
 - `MeasurementOpportunity` ยังคงเป็น denominator ของ research exposure; Pair activity/restart/rebuild ห้ามสร้าง opportunity ใหม่;
-- Timeout Restart เป็น round เดิมใน Learning Session เดิม; Practice Replay เป็น session ใหม่แต่ excluded ตาม §16.4;
+- Timeout Restart เป็น round ใหม่ใน Learning Session เดิม โดยคงชุดคำศัพท์ หลักฐานที่บันทึกแล้ว และสิทธิ์ต่อเวลาที่ใช้ไป; Practice Replay เป็น session ใหม่แต่ excluded ตาม §16.4;
 - nonparticipant สร้าง research row/event/outbox/upload เท่ากับศูนย์; operational diagnostics ต้อง bounded/local-or-approved และไม่มี raw word/meaning;
 - ห้ามส่ง private vocabulary ไป remote TTS/analytics โดยไม่มี policy และ consent ที่อนุมัติ;
 - payload ต้องมี schema/policy version และผ่าน export/withdrawal/deletion/retention lifecycle เมื่ออยู่ใน research scope

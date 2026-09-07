@@ -3,7 +3,7 @@
 **Document ID:** LQ-AMM-RTM-001
 **Version:** 1.3
 **Status:** As-built engineering overlay recorded; external acceptance pending
-**Date:** 2026-09-04; evidence update 2026-09-05
+**Date:** 2026-09-04; evidence update 2026-09-07
 **Requirements source:** `02-srs.md` v1.2
 **Design source:** `03-sds.md` v1.3
 **Delivery source:** `04-project-plan-wbs.md` v1.2
@@ -370,14 +370,22 @@ authoritative สำหรับ implementation รอบปัจจุบั�
 
 | Requirement family | Count | Design mapped | WBS mapped | Verification mapped | Current verified |
 |---|---:|---:|---:|---:|---:|
-| Functional | 130 | 130 | 130 | 130 | Local product portions of FR-001–047, FR-049–075, FR-089–093, FR-095–096 and FR-101–102 have I/V-AUTO evidence; FR-048 participant opportunity/events remain BLOCKED. Research-dependent portions of mixed product/research requirements, signed-permit behavior, participant execution, rollout and Pair remain unverified/BLOCKED |
-| Data | 21 | 21 | 21 | 21 | DATA-002–006 are I/V-AUTO on schema v23; research DATA-007–015 and Pair DATA-016–021 remain BLOCKED |
-| UI/UX | 27 | 27 | 27 | 27 | UI-001–013 have automated implementation evidence; physical assistive-tech/UAT remains pending; research and Pair UI remain BLOCKED |
-| Non-functional | 46 | 46 | 46 | 46 | Product invariants and source-gated host-GPU emulator performance have local evidence; certified physical-device performance/manual accessibility, research efficacy and Pair gates remain pending/BLOCKED |
-| Business rules | 34 | 34 | 34 | 34 | Product authority/repair/reward rules have local evidence; research decisions and Pair rules remain Planned/BLOCKED |
+| Functional | 130 | 130 | 130 | 130 | Product, Research R1–R6 and Pair PM0–PM8 have the bounded implementation/review evidence below; current local release results are recorded separately. Participant execution, efficacy and rollout decisions remain external |
+| Data | 21 | 21 | 21 | 21 | Preference v23 and Research v24 lifecycle are implemented; Pair immutable plan/recovery/purpose/elapsed and real owner rehome/export/delete checks are recorded in the PM8 verification record |
+| UI/UX | 27 | 27 | 27 | 27 | Standard/Adventure/Research and Pair hosts have synthetic automated evidence. Pair PM6/PM7 includes 15 inspected/compared goldens; physical assistive technology and learner UAT remain Not Run |
+| Non-functional | 46 | 46 | 46 | 46 | Current phase evidence covers deterministic recovery, authority boundaries and normalized parity; the PM8 verification record tracks source-frozen release gates. Historical emulator performance does not certify current Pair or physical devices; efficacy remains unverified |
+| Business rules | 34 | 34 | 34 | 34 | Canonical learning/reward isolation, recognition/guided semantics, Pair repair/timer/stars/Replay and optional measurement have local evidence; external G4P/research decisions remain unsigned |
 | **Total** | **258** | **258** | **258** | **258** | **No requirement is marked A; local verification cannot substitute for owner/UAT acceptance** |
 
 ### 12.1 As-built execution overlay
+
+Current reviewed implementation: Research `ed89efaf` and Pair PM0–PM8 `1875a618`,
+schema v24 / 48 tables, catalog 8/44. Current release-gate outcomes are recorded
+in the [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md).
+Rows naming older product sources retain their historical evidence only.
+The 258 rows/unique IDs establish complete requirements inventory and mapping;
+they do not establish 258 executed/accepted requirements. Mixed automated/manual
+requirements remain subject to their external gates.
 
 | Scope | Status | Actual evidence |
 |---|---|---|
@@ -387,16 +395,26 @@ authoritative สำหรับ implementation รอบปัจจุบั�
 | Task 6.2 Android performance rehearsal | V-AUTO | Source `85b17755`; 187/187 runner contracts; pre/post source clean; Android 15 Pixel 6 host-GPU emulator passed all budgets with 20/20 real-frame transitions, frame p95 4.290 ms and maximum 7.031 ms; evidence remains `emulator_rehearsal` / `not_certified` |
 | Task 6.2 physical accessibility/performance | Pending external | TalkBack, Switch Access, keyboard traversal and approved physical-device profiles are not yet signed; emulator evidence cannot satisfy this gate |
 | Task 6.3 BG-01–BG-12 Android/shared scope | V-AUTO | `docs/development/2026-09-04-adventure-motivation-checkpoint-6-local-verification.md` at `3c698cdd`; 3,542 full Flutter tests pass in each of default and serial modes with four explicit release exclusions; analyzer, bounded secret/dependency gates and hardened-source Android APK pass |
-| Task 6.4 UAT/MS-08A/MS-08B | BLOCKED/Not Run | `07-uat-script.md` v1.3 records required cohorts, denominators, signatures and the missing research/device prerequisites; no UAT result is fabricated |
-| M10 research implementation | BLOCKED | No approved MDS/protocol/instrument/form/response-code/power/analysis/privacy-ethics package; schema/capture intentionally absent |
-| M12 Pair PM0–PM8 | BLOCKED | Pair ADR/SRS/SDS/RTM v1.2 and separate delivery authorization are not approved |
+| Task 6.4 UAT/MS-08A/MS-08B | External Not Run | `07-uat-script.md` records required cohorts, denominators, signatures and outstanding approved research/device prerequisites; synthetic engineering fixtures do not satisfy them |
+| M10 research implementation | I/V-AUTO at `ed89efaf` | R1–R6 includes schema24/four research lifecycle tables, real P256 verification, capture/upload authority, withdrawal, owner isolation and curated export/delete. [Research engineering record](../development/2026-09-05-research-engineering-status.md) contains its own source/fingerprint and full gates. Enrollment/upload remain default-off |
+| M12 Pair PM0–PM7 | I/V-AUTO at `631b518b` | Approved PM0–PM8/design B. Final PM7: 1,550 integrated + 17 measurement tests, analyzer clean, 15 golden comparisons; independent spec/quality review approved. [Pair engineering record](../development/2026-09-05-pair-matching-engineering-status.md) records phase evidence, inherited warnings and boundaries |
+| M12 Pair PM8 | I/V-AUTO at `1875a618`; external G4P pending | Both full runs passed4,852 with identical named inventories; local policies/scans and debug APK integrity passed. Owner rehome/collision/recovery, compatibility/rollback, transactional close and composed evidence providers have current automated evidence. The [PM8 verification record](../development/2026-09-07-pair-matching-pm8-local-verification.md) contains actual outcomes, exclusions and all44 mapped cases. External UAT-039–050, physical checks and all five G4P role signatures remain Not Run/pending |
 
-The executable feature map remains revision 1.3.0 with exactly 44 product
+The inspected executable feature map remains revision 1.3.0 with exactly 44 product
 capabilities and hash
 `41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4`.
-The schema-v23 Final 8/44 Test Plan fingerprint is
+The historical schema-v23 Final 8/44 Test Plan fingerprint was
 `70bbd0877b9ab465b85fa0ec07b049cd1d9baca27c201444421833cad72392d2`,
 source-pinned to `703aabe4d8c38343f53bc72ecdc264097fd2180c`.
+The historical Research generated plan pins
+`ed89efaf32a1090505a84d4b55b2cc60003068b3` and fingerprint
+`8e9ac9a8d74eba3cf2807ff6b02f6e57c4fa97ee6e3b49b8a8acb8f84a173988`.
+The current Pair generated plan pins implementation
+`1875a61854490e0493cc084bffb705f5d3bd4b0b` and raw source fingerprint
+`50ddab9318080e5dd7cd4b640cfb63dbbf52fb9613d7d61fa8064a59132d22fc`.
+Its104 canonical source entries are checked before/after each captured release
+gate. A later documentation/scanner-policy commit does not replace that verified source
+identity; final gate outcomes remain explicit in the PM8 record.
 
 ## 13. Gate Traceability
 
