@@ -15,6 +15,8 @@ import 'package:vocab_learning_app/features/adventure/domain/adventure_journey.d
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_pair_experience.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/today_experience_host.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
@@ -318,15 +320,22 @@ void main() {
           final beforeReplay = await _io(tester, () => _primaryEffects(f));
           final primaryBaseline =
               jsonDecode(beforeReplay!) as Map<String, dynamic>;
-          for (final table in ['srs_states', 'points_ledger_entries']) {
-            expect(primaryBaseline[table], isNotEmpty);
-            expect(
-              primaryBaseline[table],
-              priorLearning[table],
-              reason:
-                  'Pair recognition must preserve the prior recall $table baseline',
-            );
-          }
+          expect(primaryBaseline['srs_states'], isNotEmpty);
+          expect(
+            primaryBaseline['srs_states'],
+            priorLearning['srs_states'],
+            reason:
+                'Pair recognition must preserve the prior recall SRS baseline',
+          );
+          await _io(
+            tester,
+            () => _expectProtocolPoints(
+              f,
+              sessionId,
+              priorLearning['points_ledger_entries'] as List,
+              primaryBaseline['points_ledger_entries'] as List,
+            ),
+          );
           final opportunitiesBefore = await _io(
             tester,
             () => f.database.select(f.database.measurementOpportunities).get(),
@@ -569,7 +578,7 @@ void main() {
               (jsonDecode(attempt.evidenceContextJson) as Map)
                   .cast<String, Object?>(),
             );
-            expect(evidence.rolloutMode, EvidencePolicyRolloutMode.legacy);
+            _expectProtocolEvidence(f, evidence);
             expect(evidence.evidenceClass, EvidenceClass.recognition);
           }
           await _tap(tester, 'pair-result-return');
@@ -789,6 +798,90 @@ Future<String> _researchEffects(PairMeasurementFixture f) async => jsonEncode({
       .map((e) => [e.eventId, e.payloadJson])
       .toList(),
 });
+
+void _expectProtocolEvidence(
+  PairMeasurementFixture f,
+  EvidenceContext evidence,
+) {
+  expect(evidence.rolloutMode, EvidencePolicyRolloutMode.enforced);
+  expect(evidence.classificationSource, EvidenceClassificationSource.declared);
+  expect(evidence.protocolId, 'motivation');
+  expect(evidence.protocolVersion, '1');
+  expect(evidence.experimentId, 'motivation');
+  expect(evidence.experimentVersion, 1);
+  expect(evidence.assignmentId, f.permit.assignmentId);
+  expect(evidence.cohort, f.permit.assignedTreatment.name);
+  expect(evidence.researchConsentVersion, 1);
+  expect(evidence.engagementAllowed, true);
+  // Pair answers are learning evidence, not responses to a Motivation form.
+  expect(evidence.instrumentId, isNull);
+  expect(evidence.instrumentVersion, isNull);
+  expect(evidence.formId, isNull);
+  expect(evidence.formVersion, isNull);
+}
+
+Future<void> _expectProtocolPoints(
+  PairMeasurementFixture f,
+  String sessionId,
+  List prior,
+  List actual,
+) async {
+  final attempts = await (f.database.select(
+    f.database.answerAttempts,
+  )..where((row) => row.sessionId.equals(sessionId))).get();
+  final expected = <Object?>[...prior];
+  final receipts = DriftLearningEventStore(f.database);
+  var eligibleCorrect = 0;
+  for (final attempt in attempts) {
+    final evidence = EvidenceContext.fromJson(
+      (jsonDecode(attempt.evidenceContextJson) as Map).cast<String, Object?>(),
+    );
+    _expectProtocolEvidence(f, evidence);
+    expect(
+      evidence.evidenceClass,
+      isIn([EvidenceClass.recognition, EvidenceClass.guidedPractice]),
+    );
+    final isRecognition = evidence.evidenceClass == EvidenceClass.recognition;
+    final source = await receipts.readValidatedSourceForAttempt(
+      attempt: attempt,
+    );
+    expect(source, isNotNull);
+    // Require the already committed canonical decision receipt. This read
+    // cannot create a missing receipt to make the assertion pass.
+    final decision = await receipts.requireExistingDecisionSetForAttempt(
+      attempt: attempt,
+      sourceEvent: source!,
+    );
+    expect(decision.sourceEvidenceId, attempt.id);
+    expect(
+      decision.decisionFor(LearningProjection.xp).effectiveDecision,
+      isRecognition
+          ? ProjectionDisposition.protocolControlled
+          : ProjectionDisposition.deny,
+    );
+    expect(decision.allows(LearningProjection.xp), isRecognition);
+    expect(decision.allows(LearningProjection.masterySrs), false);
+    if (!attempt.isCorrect || !isRecognition) continue;
+    eligibleCorrect++;
+    expected.add(<String, Object?>{
+      'id': 'points:${attempt.id}',
+      'owner_id': attempt.ownerId,
+      'idempotency_key': 'correct-answer:${attempt.id}',
+      'entry_type': 'quizCorrect',
+      'amount': 1,
+      'source_event_id': attempt.id,
+      'occurred_at_utc_ms': attempt.occurredAtUtcMs,
+    });
+  }
+  expect(eligibleCorrect, greaterThan(0));
+  expect(
+    actual,
+    unorderedEquals(expected),
+    reason:
+        'Preserve every prior row and grant exactly one canonical point '
+        'per protocol-eligible correct recognition; wrong/guided answers grant none',
+  );
+}
 
 Future<String> _primaryEffects(PairMeasurementFixture f) async => jsonEncode({
   for (final table in [

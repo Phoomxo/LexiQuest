@@ -496,9 +496,24 @@ final interpolated = '${PendingCapability.interpolated()}';
   test(
     'learning screens resolve the composed adapter and never create Legacy',
     () {
+      final production = _productionDartSources();
+      const matchingWrapper = 'lib/screens/matching_mode_screen.dart';
+      const matchingRenderer =
+          'lib/features/learning/presentation/legacy_matching_mode_screen.dart';
+      final wrapper = production[matchingWrapper]!;
+      expect(
+        wrapper,
+        contains(
+          "import '../features/learning/presentation/legacy_matching_mode_screen.dart'",
+        ),
+      );
+      expect(wrapper, contains('pairExperience ??'));
+      expect(wrapper, contains('LegacyMatchingModeScreen('));
+      expect(wrapper, contains('evidenceAdapter: evidenceAdapter'));
       final screens = <String, String>{
-        for (final entry in _productionDartSources().entries)
+        for (final entry in production.entries)
           if (entry.key.startsWith('lib/screens/')) entry.key: entry.value,
+        matchingRenderer: production[matchingRenderer]!,
       };
       expect(screens, isNotEmpty);
       for (final entry in screens.entries) {
@@ -506,7 +521,7 @@ final interpolated = '${PendingCapability.interpolated()}';
         final source = entry.value;
         if (!source.contains('CurrentActivityEvidenceAdapter')) continue;
         expect(
-          source,
+          path == matchingWrapper ? screens[matchingRenderer]! : source,
           contains('currentActivityEvidence'),
           reason: '$path must resolve the bootstrap-owned adapter',
         );

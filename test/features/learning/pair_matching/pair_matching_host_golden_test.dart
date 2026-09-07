@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
@@ -37,6 +38,7 @@ PairMatchingExperienceRuntime _runtime(PairHarness h, int Function() clock) {
   return PairMatchingExperienceRuntime(
     database: h.db,
     learning: learning,
+    currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
     registry: buildLessonModeRegistry(
       internalPairMatching: true,
       matchingDeliveryState: LessonModeDeliveryState.enabled,

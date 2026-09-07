@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/adventure/application/adventure_diagnostics.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_pair_renderer.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
@@ -625,6 +626,9 @@ final class _ParityFixture {
     final runtime = PairMatchingExperienceRuntime(
       database: h.db,
       learning: learning,
+      currentActivityEvidence: CurrentActivityEvidenceAdapter(
+        learning: learning,
+      ),
       registry: registry,
       createController: (adapter) => UnifiedLessonController(
         learning: learning,

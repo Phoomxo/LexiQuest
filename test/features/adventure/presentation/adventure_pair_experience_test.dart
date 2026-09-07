@@ -66,9 +66,7 @@ void main() {
             quest: testQuestUseCases(),
             features: f.features,
             learning: f.runtime.learning,
-            currentActivityEvidence: CurrentActivityEvidenceAdapter(
-              learning: f.runtime.learning,
-            ),
+            currentActivityEvidence: f.runtime.currentActivityEvidence,
             experiments: research.experiments,
             consents: research.consents,
             experimentAssignments: research.experimentAssignments,
@@ -466,6 +464,9 @@ class _Fixture {
     f.runtime = PairMatchingExperienceRuntime(
       database: h.db,
       learning: learning,
+      currentActivityEvidence: CurrentActivityEvidenceAdapter(
+        learning: learning,
+      ),
       registry: buildLessonModeRegistry(
         internalPairMatching: true,
         matchingDeliveryState: LessonModeDeliveryState.enabled,

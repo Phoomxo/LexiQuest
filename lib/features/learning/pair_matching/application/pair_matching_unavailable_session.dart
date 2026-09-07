@@ -13,11 +13,19 @@ final class PairMatchingUnavailableSession {
   PairMatchingUnavailableSession({
     required this.operation,
     required this.learning,
+    required this.currentActivityEvidence,
     required this.requireOwner,
-  });
+  }) {
+    if (!identical(currentActivityEvidence.learning, learning)) {
+      throw ArgumentError(
+        'Pair evidence must use the composed learning authority',
+      );
+    }
+  }
 
   final PairMatchingStartOperation operation;
   final LearningUseCases learning;
+  final CurrentActivityEvidenceAdapter currentActivityEvidence;
   final Future<String> Function() requireOwner;
   PairMatchingSessionCoordinator? _coordinator;
   DateTime? _cutoff;
@@ -45,7 +53,7 @@ final class PairMatchingUnavailableSession {
     return _coordinator ??= await PairMatchingSessionCoordinator.restore(
       operation: operation,
       learning: learning,
-      evidence: CurrentActivityEvidenceAdapter(learning: learning),
+      evidence: currentActivityEvidence,
       activeOwnerId: () => _disposed ? null : _owner,
       monotonicMicros: () => 0,
       runAdmittedOperation: (_) async =>

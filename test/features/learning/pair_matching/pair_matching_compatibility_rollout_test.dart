@@ -773,6 +773,7 @@ PairMatchingExperienceRuntime _runtime(
   return PairMatchingExperienceRuntime(
     database: h.db,
     learning: learning,
+    currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
     registry: buildLessonModeRegistry(
       internalPairMatching: true,
       matchingDeliveryState: LessonModeDeliveryState.enabled,
@@ -815,9 +816,7 @@ AppDependencies _dependencies(
     quest: testQuestUseCases(),
     features: features,
     learning: runtime.learning,
-    currentActivityEvidence: CurrentActivityEvidenceAdapter(
-      learning: runtime.learning,
-    ),
+    currentActivityEvidence: runtime.currentActivityEvidence,
     experiments: research.experiments,
     consents: research.consents,
     experimentAssignments: research.experimentAssignments,

@@ -41,6 +41,7 @@ final class PairMatchingExperienceRuntime {
   PairMatchingExperienceRuntime({
     required this.database,
     required this.learning,
+    required this.currentActivityEvidence,
     required this.registry,
     required this.createController,
     required this.composer,
@@ -54,6 +55,11 @@ final class PairMatchingExperienceRuntime {
     this.resultReader,
     bool Function()? canStart,
   }) : canStart = canStart ?? _disabled {
+    if (!identical(currentActivityEvidence.learning, learning)) {
+      throw ArgumentError(
+        'Pair evidence must use the composed learning authority',
+      );
+    }
     final registration = registry.resolve(LessonMode.matching);
     if (registration?.adapter is! MatchingModeAdapter ||
         !(registration!.adapter as MatchingModeAdapter).internalPairMatching) {
@@ -65,6 +71,7 @@ final class PairMatchingExperienceRuntime {
   static bool _disabled() => false;
   final AppDatabase database;
   final LearningUseCases learning;
+  final CurrentActivityEvidenceAdapter currentActivityEvidence;
   final LessonModeRegistry registry;
   final UnifiedLessonControllerFactory createController;
   final PairMatchingSourceComposer composer;
@@ -899,9 +906,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
           .preparePairSession(
             operation: widget.operation,
             learning: runtime.learning,
-            evidence: CurrentActivityEvidenceAdapter(
-              learning: runtime.learning,
-            ),
+            evidence: runtime.currentActivityEvidence,
             activeOwnerId: () => _liveOwner,
             acceptsOperation: () => lifecycle.acceptsPairContinuation,
             runAdmittedOperation: lifecycle.runPairAdmittedOperation,
@@ -985,6 +990,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
               PairMatchingUnavailableSession(
                 operation: widget.operation,
                 learning: widget.runtime.learning,
+                currentActivityEvidence: widget.runtime.currentActivityEvidence,
                 requireOwner: () async {
                   await _checkOwner();
                   return widget.runtimeOwnerId;

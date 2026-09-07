@@ -63,6 +63,7 @@ final class PairMeasurementFixture {
   late DriftLearningRepository real;
   PairMeasurementCloseFaultRepository? closeFaults;
   late LearningUseCases learning;
+  late CurrentActivityEvidenceAdapter currentActivityEvidence;
   late PersistedEvidencePolicyRolloutModeProvider rollout;
   late PersistedSessionConfigurationProtocolProvider protocols;
   late PairMatchingExperienceRuntime runtime;
@@ -220,9 +221,15 @@ final class PairMeasurementFixture {
       buildInfo: const AppBuildInfo(version: '1', buildId: 'test'),
       eventContextProvider: assigned,
     );
+    currentActivityEvidence = CurrentActivityEvidenceAdapter(
+      learning: learning,
+      rolloutModeProvider: rollout,
+      researchStateProvider: rollout.currentActivityResearchStateProvider!,
+    );
     runtime = PairMatchingExperienceRuntime(
       database: database,
       learning: learning,
+      currentActivityEvidence: currentActivityEvidence,
       registry: buildLessonModeRegistry(
         internalPairMatching: true,
         matchingDeliveryState: LessonModeDeliveryState.enabled,

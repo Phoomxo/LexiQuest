@@ -180,6 +180,7 @@ PairMatchingExperienceRuntime ownerRuntime(
   return PairMatchingExperienceRuntime(
     database: h.db,
     learning: learning,
+    currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
     registry: buildLessonModeRegistry(
       internalPairMatching: true,
       matchingDeliveryState: LessonModeDeliveryState.enabled,
@@ -268,17 +269,25 @@ void main() {
       final h = PairHarness(configuration: ownerConfiguration());
       addTearDown(h.db.close);
       await h.initialize();
+      final oldLearning = realLearning(h);
       final old = PairMatchingUnavailableSession(
         operation: h.operation,
-        learning: realLearning(h),
+        learning: oldLearning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: oldLearning,
+        ),
         requireOwner: () async => h.owner,
       );
       await old.resolve(abandonIncomplete: false);
       await mergePairOwner(h);
       await expectLater(old.resolve(abandonIncomplete: true), throwsStateError);
+      final freshLearning = realLearning(h);
       final fresh = PairMatchingUnavailableSession(
         operation: h.operation,
-        learning: realLearning(h),
+        learning: freshLearning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: freshLearning,
+        ),
         requireOwner: () async => h.owner,
       );
       final result = await fresh.resolve(abandonIncomplete: true);

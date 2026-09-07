@@ -9,6 +9,10 @@ import 'package:vocab_learning_app/features/learning/application/matching_mode_a
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_unavailable_session.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_atomic_start.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
@@ -44,6 +48,48 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'pair_matching_evidence_contract_test.dart'
     show PairHarness, PairFaultRepository;
 import 'pair_timeout_recovery_test.dart' show timedPlan, clocked;
+
+final class _ComposedRollout implements EvidencePolicyRolloutModeProvider {
+  final owners = <String>[];
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext? evidenceContext,
+  }) async {
+    owners.add(ownerId);
+    return EvidencePolicyRolloutMode.legacy;
+  }
+}
+
+final class _ComposedResearch implements CurrentActivityResearchStateProvider {
+  final calls = <({String owner, CurrentActivityInput input, DateTime time})>[];
+  @override
+  Future<CurrentActivityResearchSnapshot> resolveActivity({
+    required String ownerId,
+    required CurrentActivityInput input,
+    required DateTime occurredAtUtc,
+    required EvidencePolicyRolloutMode rolloutMode,
+  }) {
+    calls.add((owner: ownerId, input: input, time: occurredAtUtc));
+    return const BaselineCurrentActivityResearchStateProvider().resolveActivity(
+      ownerId: ownerId,
+      input: input,
+      occurredAtUtc: occurredAtUtc,
+      rolloutMode: rolloutMode,
+    );
+  }
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) => const BaselineCurrentActivityResearchStateProvider().resolve(
+    ownerId: ownerId,
+    evidenceContext: evidenceContext,
+    occurredAtUtc: occurredAtUtc,
+  );
+}
 
 final class _HeldHostRepository extends PairFaultRepository
     implements
@@ -278,9 +324,7 @@ AppDependencies _dependencies(
     quest: testQuestUseCases(),
     features: features,
     learning: runtime.learning,
-    currentActivityEvidence: CurrentActivityEvidenceAdapter(
-      learning: runtime.learning,
-    ),
+    currentActivityEvidence: runtime.currentActivityEvidence,
     experiments: research.experiments,
     consents: research.consents,
     experimentAssignments: research.experimentAssignments,
@@ -298,6 +342,7 @@ PairMatchingExperienceRuntime _runtime(
   SessionConfigurationProtocolProvider? protocols,
   VoiceUseCases? voice,
   PairMatchingSessionPurposeReader? resultReader,
+  CurrentActivityEvidenceAdapter Function(LearningUseCases)? evidenceBuilder,
 }) {
   final repo = repository ?? _HeldHostRepository(h.real);
   final learning = LearningUseCases(
@@ -315,6 +360,9 @@ PairMatchingExperienceRuntime _runtime(
     database: h.db,
     resultReader: resultReader,
     learning: learning,
+    currentActivityEvidence:
+        evidenceBuilder?.call(learning) ??
+        CurrentActivityEvidenceAdapter(learning: learning),
     registry: buildLessonModeRegistry(
       internalPairMatching: true,
       matchingDeliveryState: LessonModeDeliveryState.enabled,
@@ -341,6 +389,100 @@ PairMatchingExperienceRuntime _runtime(
 }
 
 void main() {
+  test(
+    'Pair composition rejects a different learning authority before use',
+    () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      final foreign = CurrentActivityEvidenceAdapter(learning: h.learning);
+      expect(
+        () => _runtime(h, evidenceBuilder: (_) => foreign),
+        throwsArgumentError,
+      );
+      final runtime = _runtime(h);
+      expect(
+        () => PairMatchingUnavailableSession(
+          operation: h.operation,
+          learning: runtime.learning,
+          currentActivityEvidence: foreign,
+          requireOwner: runtime.requireOwner,
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  testWidgets(
+    'Pair host records with the composed providers and evidence identity',
+    (tester) async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      final rollout = _ComposedRollout();
+      final research = _ComposedResearch();
+      final occurredAt = h.learning.nowUtc().add(const Duration(seconds: 1));
+      final runtime = _runtime(
+        h,
+        evidenceBuilder: (learning) => CurrentActivityEvidenceAdapter(
+          learning: learning,
+          rolloutModeProvider: rollout,
+          researchStateProvider: research,
+          generateId: () => 'synthetic-composed-evidence',
+          nowUtc: () => occurredAt,
+        ),
+      );
+      expect(
+        identical(
+          _dependencies(
+            h,
+            runtime,
+            const BuildFeatureRegistry({}),
+          ).currentActivityEvidence,
+          runtime.currentActivityEvidence,
+        ),
+        isTrue,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PairMatchingExperienceHost.recover(
+            runtime: runtime,
+            operation: h.operation,
+            onExit: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('pair-tile:prompt:synthetic-0')),
+      );
+      await tester.pumpAndSettle();
+      final target = find.byKey(const ValueKey('pair-tile:target:synthetic-0'));
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      final recovery = await h.real.loadExactActivityRecovery(
+        ownerId: h.owner,
+        sessionId: h.operation.plan.learningSessionId,
+        activityType: 'matching',
+      );
+      expect(
+        recovery!.attempts.single.id,
+        'attempt:synthetic-composed-evidence',
+      );
+      expect(rollout.owners, [h.owner]);
+      expect(research.calls, [
+        (
+          owner: h.owner,
+          input: CurrentActivityInput.matchingPair,
+          time: occurredAt,
+        ),
+      ]);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    },
+  );
+
   test(
     'Pair normal close rejects overflow before a hidden Pair marker',
     () async {
@@ -2064,6 +2206,9 @@ void main() {
       final runtime = PairMatchingExperienceRuntime(
         database: h.db,
         learning: learning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: learning,
+        ),
         registry: buildLessonModeRegistry(
           internalPairMatching: true,
           matchingDeliveryState: LessonModeDeliveryState.enabled,

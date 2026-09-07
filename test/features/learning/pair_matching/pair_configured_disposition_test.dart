@@ -74,6 +74,7 @@ void main() {
         final service = PairMatchingUnavailableSession(
           operation: operation,
           learning: learning,
+          currentActivityEvidence: _researchEvidence(f, learning),
           requireOwner: () async => owner,
         );
         final pending = service.resolve(abandonIncomplete: true);
@@ -141,6 +142,7 @@ void main() {
       final service = PairMatchingUnavailableSession(
         operation: operation,
         learning: learning,
+        currentActivityEvidence: _researchEvidence(f, learning),
         requireOwner: f.runtime.requireOwner,
       );
       final cutoff = f.now;
@@ -253,6 +255,7 @@ void main() {
           final service = PairMatchingUnavailableSession(
             operation: operation,
             learning: learning,
+            currentActivityEvidence: _researchEvidence(f, learning),
             requireOwner: f.runtime.requireOwner,
           );
           final firstCutoff = f.now;
@@ -292,6 +295,7 @@ void main() {
       final runtime = PairMatchingExperienceRuntime(
         database: source.database,
         learning: source.learning,
+        currentActivityEvidence: source.currentActivityEvidence,
         registry: source.registry,
         createController: source.createController,
         composer: source.composer,
@@ -527,6 +531,7 @@ void main() {
         final service = PairMatchingUnavailableSession(
           operation: operation,
           learning: f.learning,
+          currentActivityEvidence: f.currentActivityEvidence,
           requireOwner: f.runtime.requireOwner,
         );
         final result = await service.resolve(abandonIncomplete: true);
@@ -581,6 +586,7 @@ void main() {
       final service = PairMatchingUnavailableSession(
         operation: operation,
         learning: f.learning,
+        currentActivityEvidence: f.currentActivityEvidence,
         requireOwner: f.runtime.requireOwner,
       );
       final resolved = await service.resolve(abandonIncomplete: true);
@@ -628,6 +634,7 @@ void main() {
       final service = PairMatchingUnavailableSession(
         operation: operation,
         learning: f.learning,
+        currentActivityEvidence: f.currentActivityEvidence,
         requireOwner: f.runtime.requireOwner,
       );
       await expectLater(
@@ -740,6 +747,9 @@ void main() {
       final recovery = PairMatchingUnavailableSession(
         operation: h.operation,
         learning: learning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: learning,
+        ),
         requireOwner: () async => h.owner,
       );
       final resolved = await recovery.resolve(abandonIncomplete: false);
@@ -961,6 +971,17 @@ Future<PairMatchingStartOperation> _admitConfigured(
   return operation;
 }
 
+CurrentActivityEvidenceAdapter _researchEvidence(
+  PairMeasurementFixture f,
+  LearningUseCases learning,
+) => identical(learning, f.learning)
+    ? f.currentActivityEvidence
+    : CurrentActivityEvidenceAdapter(
+        learning: learning,
+        rolloutModeProvider: f.rollout,
+        researchStateProvider: f.rollout.currentActivityResearchStateProvider!,
+      );
+
 Future<PairMatchingSessionCoordinator> _researchCoordinator(
   PairMeasurementFixture f,
   PairMatchingStartOperation operation, {
@@ -968,11 +989,7 @@ Future<PairMatchingSessionCoordinator> _researchCoordinator(
 }) => PairMatchingSessionCoordinator.restore(
   operation: operation,
   learning: learning ?? f.learning,
-  evidence: CurrentActivityEvidenceAdapter(
-    learning: learning ?? f.learning,
-    rolloutModeProvider: f.rollout,
-    researchStateProvider: f.rollout.currentActivityResearchStateProvider!,
-  ),
+  evidence: _researchEvidence(f, learning ?? f.learning),
   activeOwnerId: () => PairMeasurementFixture.owner,
   monotonicMicros: () => 0,
 );
