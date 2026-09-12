@@ -6,35 +6,31 @@ Accept/commit current package then create next immediately from exact accepted
 SHA. No approval restart, subagents, background writers or overlap.
 Follow AGENTS.md/r15-package-workflow.md; read only current package requirements.
 
-- Worktree:C:/Users/Phet/.codex/worktrees/1296/LexiQuest
-- Branch:feature/r15-model-continuation
-- Starting HEAD:48c330e71be73965f9bb2504fbb87e699a76ebc4 (accepted R15.0–6).
-- This checkpoint accompanies accepted R15.7; resolve HEAD before dispatch.
+- Worktree:C:/Users/Phet/.codex/worktrees/f9b7/LexiQuest
+- Branch:feature/r15-motivation-continuation
+- Starting HEAD:74099324671cafc5c1160c49e059dab8bf56c958 (accepted R15.0–7).
+- This checkpoint accompanies accepted R15.8; resolve HEAD before dispatch.
 - No task-owned test/build process remains. Source writes finished at handoff.
 - Generated registrants EOL-only/no content diff excluded; do not import.
 
 ## Current package result
-R15.7 local accepted: insufficient-coverage/retain-baseline. Audit source/license,
-hash/group leakage and fresh natural-frame coverage. Validation/config freeze,
-single test-opening receipt, paired IDs/preprocess and Wilson95% metrics.
-Four-class softmax threshold<=0.25 rejected. Legacy crop trainer preflight stops
-before TensorFlow/output/download; unknown-aware trainer needs protocol revision.
-No candidate trained/exported or shipped. Manifest/classifier unchanged.
-
-Historical175image hashes verified read-only in referenced02fa dataset.
-Train100/legacy validation35/regression40/fresh test0. No fresh qualifying data.
-Evidence:2026-09-13-r15-model-verification.md. Python15/15; runtime manifest2/2
-and classifier2/2. Initial missing fixture repaired with pinned repo preparer;
-only failed target rerun. Python fingerprint:
-46d2e897b370574bbcccabdcc18d874212c5c5a90f33d4403ae0b8bd193f0cbb.
-No unresolved local debugging. Physical/fresh-data/resource/release acceptance
-not established; this is the approved retained-baseline closure.
+R15.8 local accepted. Existing result has static Material face reaction,
+explicit effort/knowledge separation, confirmed nonempty quest-goal feedback
+and optional known canonical reward amount. Runtime receipts without amount
+remain status-only. No animation/audio/writer/timer/modal/storage added.
+Evidence:2026-09-13-r15-motivation-verification.md.119 distinct tests across7
+targets passed through retained results/focused recovery; not full integration.
+Analyzer3files:no issues. Real-font light390px/dark320px/200%/reduced-motion
+screenshots reviewed. ListView offscreen assertion and button ink settling
+recoveries resolved. No unresolved debugging. Final scope fingerprint:
+cfb185206ff1e9e8631ad93c23360b4828c0332f35ae6918bdbf39261c8f9076.
+R15.7 retained baseline unchanged; no fresh qualifying data/candidate shipped.
 
 ## Next executable work
-Create R15.8 immediately from accepted R15.7 SHA; never default branch/import
-pending work. Read ONLY R15.8 roadmap/spec/A-MOT acceptance. If detached/codex
-branch create task-owned feature/r15-motivation-continuation. Do not begin R15.8
-in R15.7 task. Accept/commit before creating R15.9 then R15.10 under same rules.
+Create R15.9 immediately from accepted R15.8 SHA; never default branch/import
+pending work. Read ONLY R15.9 roadmap/spec/A-AI acceptance. If detached/codex
+branch create task-owned feature/r15-ai-tutor-continuation. Do not begin R15.9
+in R15.8 task. Accept/commit before creating R15.10 under same rules.
 Finish coupled debugging before handoff; no full-history fork/writer overlap.
 
 ## Immutable boundaries and device
@@ -44,14 +40,14 @@ enrollment/upload, paid services, deploy/push/merge or destructive cleanup.
 No Codex Security/worker workflows. Serialize Flutter/test/build/codegen.
 Authorized Vivo9582188822004C6, V2041/API33, com.lexiquest.app debug v23; preserve
 identity/data; use serial explicitly. Device build at combined UI source freeze.
-R15.7 performed no device operation. Token/credit usage unavailable.
+R15.8 performed no device operation. Token/credit usage unavailable.
 
 ## Read on demand
 - ../superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md
 - ../superpowers/specs/2026-09-12-r15-engineering-spec.md
 - ../superpowers/plans/2026-09-12-r15-acceptance-contract.md
-- 2026-09-13-r15-model-verification.md
-- 2026-09-13-r15-camera-verification.md (R15.6 history)
+- 2026-09-13-r15-motivation-verification.md
+- 2026-09-13-r15-model-verification.md (R15.7 history)
 - lexiquest-guardrails-reference.md
-R15.7 logs untracked in1296/build/verification/r15-model and base-SHA runtime
-directory referenced by evidence. Do not inventory other worktrees.
+R15.8 logs/screenshots untracked in f9b7/build/verification; evidence has exact
+paths. Do not inventory other worktrees or import generated registrants.

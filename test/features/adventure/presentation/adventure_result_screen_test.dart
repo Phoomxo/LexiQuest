@@ -1,9 +1,126 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/adventure/domain/adventure_result.dart';
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_result_screen.dart';
 
 void main() {
+  testWidgets('R15.8 empty committed quest does not announce goal success', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AdventureResultScreen(
+          result: _result(questCodes: const [], completedMission: false),
+          onNextAction: () {},
+        ),
+      ),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('adventure-result-engagement')),
+      120,
+    );
+    expect(find.byIcon(Icons.sentiment_satisfied_outlined), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('adventure-result-motivation')),
+      120,
+    );
+    expect(find.text('ทำกิจกรรมตามเป้าหมายแล้ว'), findsNothing);
+  });
+
+  testWidgets(
+    'R15.8 receipt amount survives rebuild and reopen without motion',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final transaction = await tester.runAsync(() async {
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(id: 'owner:one', createdAtUtcMs: 1),
+            );
+        await database
+            .into(database.rewardTransactions)
+            .insert(
+              RewardTransactionsCompanion.insert(
+                id: 'synthetic-terminal-reward',
+                ownerId: 'owner:one',
+                idempotencyKey: 'synthetic-terminal-reward',
+                transactionType: 'coinGrant',
+                amount: 12,
+                catalogVersion: 1,
+                occurredAtUtcMs: 1,
+              ),
+            );
+        return database.select(database.rewardTransactions).getSingle();
+      });
+      final result = _result(
+        reward: AdventureRewardReceiptView(
+          state: AdventureCanonicalRewardState.accepted,
+          receiptId: transaction!.id,
+          canonicalAmount: transaction.amount,
+        ),
+      );
+      Widget screen() => MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: AdventureResultScreen(result: result, onNextAction: () {}),
+        ),
+      );
+      for (var opening = 0; opening < 2; opening++) {
+        await tester.pumpWidget(screen());
+        await tester.pump();
+        expect(find.text('รางวัลที่ยืนยันแล้ว 12'), findsOneWidget);
+        await tester.pumpWidget(screen());
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.text('รางวัลที่ยืนยันแล้ว 12'), findsOneWidget);
+        expect(find.byType(AlertDialog), findsNothing);
+        final action = find.byKey(
+          const ValueKey('adventure-result-next-action'),
+        );
+        await tester.ensureVisible(action);
+        await tester.tap(action);
+        await tester.pumpWidget(const SizedBox.shrink());
+        final rows = await tester.runAsync(
+          () => database.select(database.rewardTransactions).get(),
+        );
+        expect(rows, hasLength(1));
+        expect(rows!.single, transaction);
+        expect(tester.binding.transientCallbackCount, 0);
+      }
+    },
+  );
+
+  testWidgets(
+    'R15.8 effort reaction and goal completion do not claim mastery',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AdventureResultScreen(result: _result(), onNextAction: () {}),
+        ),
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-engagement')),
+        120,
+      );
+      expect(
+        find.byIcon(Icons.sentiment_very_satisfied_outlined),
+        findsOneWidget,
+      );
+      expect(
+        find.text('เวลาและกิจกรรมสะท้อนความพยายาม ไม่ใช่ระดับความรู้'),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-motivation')),
+        120,
+      );
+      expect(find.text('ทำกิจกรรมตามเป้าหมายแล้ว'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final state in AdventureCanonicalRewardState.values) {
     testWidgets(
       'receipt state $state preserves next action and hides technical IDs',
@@ -24,6 +141,13 @@ void main() {
         await tester.pump();
         await tester.tap(action);
         expect(calls, 1);
+        // ListView may evict the receipt after aligning the next action at
+        // the top; return to the receipt before asserting its visible copy.
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey('adventure-result-reward')),
+          -120,
+        );
+        await tester.pump();
         expect(find.textContaining('synthetic-receipt'), findsNothing);
         expect(
           find.text('รางวัลหลักได้รับการยืนยันแล้ว'),
@@ -197,6 +321,9 @@ void main() {
 
 AdventureResult _result({
   String? technicalMessage,
+  AdventureRewardReceiptView? reward,
+  List<String> questCodes = const ['daily-quest'],
+  bool completedMission = true,
   AdventureCanonicalRewardState rewardState =
       AdventureCanonicalRewardState.pending,
 }) => AdventureResult(
@@ -211,23 +338,28 @@ AdventureResult _result({
     activeDuration: Duration(minutes: 5),
     completedItems: 4,
   ),
-  engagement: const AdventureEngagementResult(
-    completedMission: true,
+  engagement: AdventureEngagementResult(
+    completedMission: completedMission,
     returnedAfterBreak: false,
   ),
   motivation: AdventureMotivationReceiptView(
     questState: AdventureCanonicalReceiptState.committed,
     streakState: AdventureCanonicalReceiptState.committed,
     achievementState: AdventureCanonicalReceiptState.notEligible,
-    questCodes: const <String>['daily-quest'],
+    questCodes: questCodes,
     streakCodes: const <String>['daily-streak'],
   ),
-  reward: AdventureRewardReceiptView(
-    state: rewardState,
-    receiptId: rewardState == AdventureCanonicalRewardState.accepted
-        ? 'synthetic-receipt'
-        : null,
-  ),
+  reward:
+      reward ??
+      AdventureRewardReceiptView(
+        state: rewardState,
+        canonicalAmount: rewardState == AdventureCanonicalRewardState.accepted
+            ? 12
+            : null,
+        receiptId: rewardState == AdventureCanonicalRewardState.accepted
+            ? 'synthetic-receipt'
+            : null,
+      ),
   nextAction: AdventureNextAction.reviewCenter,
   technicalMessage: technicalMessage,
 );

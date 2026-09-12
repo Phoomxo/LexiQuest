@@ -55,11 +55,16 @@ final class AdventureResultScreen extends StatelessWidget {
           lines: <String>[
             'ลงมือทำ ${result.effort.completedItems} รายการ',
             'เวลาเรียนจริง ${result.effort.activeDuration.inMinutes} นาที ${result.effort.activeDuration.inSeconds.remainder(60)} วินาที',
+            'เวลาและกิจกรรมสะท้อนความพยายาม ไม่ใช่ระดับความรู้',
           ],
         ),
         _Section(
           key: const ValueKey('adventure-result-engagement'),
-          icon: Icons.favorite_outline,
+          // Static reaction follows the recorded outcome. It remains readable
+          // without motion/audio and cannot replay a reward or delay navigation.
+          icon: result.engagement.completedMission
+              ? Icons.sentiment_very_satisfied_outlined
+              : Icons.sentiment_satisfied_outlined,
           title: 'การลงมือเรียน',
           lines: <String>[
             result.engagement.completedMission
@@ -110,7 +115,13 @@ final class AdventureResultScreen extends StatelessWidget {
       key: const ValueKey('adventure-result-reward'),
       icon: icon,
       title: 'สถานะรางวัล',
-      lines: <String>[message],
+      lines: <String>[
+        message,
+        if (reward.state == AdventureCanonicalRewardState.accepted &&
+            reward.receiptId != null &&
+            reward.canonicalAmount != null)
+          'รางวัลที่ยืนยันแล้ว ${reward.canonicalAmount}',
+      ],
     );
   }
 
@@ -119,6 +130,9 @@ final class AdventureResultScreen extends StatelessWidget {
     icon: Icons.flag_outlined,
     title: 'ความคืบหน้าที่ตรวจสอบแล้ว',
     lines: <String>[
+      if (motivation.questState == AdventureCanonicalReceiptState.committed &&
+          motivation.questCodes.isNotEmpty)
+        'ทำกิจกรรมตามเป้าหมายแล้ว',
       _receiptLine('ภารกิจ', motivation.questState, motivation.questCodes),
       _receiptLine(
         'ความต่อเนื่อง',
