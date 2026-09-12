@@ -60,6 +60,45 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'R15 due review crosses Bangkok midnight without shifting on restart',
+    () async {
+      final due = DateTime.utc(2026, 9, 12, 17); // 00:00 in Bangkok.
+      var clock = due.subtract(const Duration(milliseconds: 1));
+      await _insertWord(database, id: 'midnight-word', spelling: 'midnight');
+      await _insertSrs(
+        database,
+        id: 'midnight-srs',
+        wordId: 'midnight-word',
+        dueAtUtc: due,
+      );
+      ReviewCenterUseCases useCases(String timezone) => ReviewCenterUseCases(
+        reader: DriftReviewCenterReader(database),
+        ownerIdentities: const _OwnerIdentities(),
+        sessionLauncher: _SessionLauncher(),
+        nowUtc: () => clock,
+        timezoneId: timezone,
+      );
+      final before = await useCases(
+        'Asia/Bangkok',
+      ).load(includeReasons: {ReviewQueueReason.dueSrs});
+      expect(before, isEmpty);
+      clock = due;
+      final after = await useCases(
+        'Asia/Bangkok',
+      ).load(includeReasons: {ReviewQueueReason.dueSrs});
+      expect(after.map((item) => item.identity.id), ['midnight-word']);
+      final restarted = await useCases(
+        'America/New_York',
+      ).load(includeReasons: {ReviewQueueReason.dueSrs});
+      expect(restarted.map((item) => item.identity.id), ['midnight-word']);
+      final row = await (database.select(
+        database.srsStates,
+      )..where((row) => row.id.equals('midnight-srs'))).getSingle();
+      expect(row.dueAtUtcMs, due.millisecondsSinceEpoch);
+    },
+  );
+
+  test(
     'merges saved incorrect reported and due sources with exact provenance',
     () async {
       await _insertWord(database, id: 'word-1', spelling: 'station');

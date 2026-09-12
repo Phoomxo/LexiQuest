@@ -628,8 +628,14 @@ void main() {
       contains("key: const ValueKey('today-hub-open-review')"),
     );
     expect(
-      todayHubView,
-      contains('widget.actions.openReview(snapshot.reviewWork)'),
+      RegExp(
+        r'widget\.actions\.openReview\(\s*'
+        r'_dependencyReady\(snapshot, TodayHubDependency\.review\)\s*'
+        r'\? snapshot\.reviewWork\s*'
+        r': const <TodayHubReviewWorkItem>\[\],\s*\)',
+      ).hasMatch(todayHubView),
+      isTrue,
+      reason: 'Only ready canonical review work may enter the composed action',
     );
     expect(todayHubBuilder, contains('actions: _todayActions('));
     expect(

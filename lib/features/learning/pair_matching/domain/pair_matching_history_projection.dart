@@ -2,10 +2,13 @@ import '../data/pair_matching_checkpoint_codec.dart';
 import 'pair_matching_launch.dart';
 import 'pair_active_clock.dart';
 import 'pair_star_policy.dart';
+import 'pair_matching_engine.dart';
 
 final class PairMatchingHistoryProjection {
   PairMatchingHistoryProjection(PairMatchingCheckpointSnapshot snapshot)
     : sessionId = snapshot.engine.plan.learningSessionId,
+      firstAnswers = _answerCounts(snapshot.engine, repair: false),
+      repairAnswers = _answerCounts(snapshot.engine, repair: true),
       terminalAtUtc = snapshot.terminal?.atUtc,
       purpose = snapshot.engine.plan.sessionPurpose,
       sourceSessionId = snapshot.engine.plan.sourceSessionId,
@@ -26,6 +29,25 @@ final class PairMatchingHistoryProjection {
   final PairStarResult result;
   final PairTimerState timer;
   final bool reviewNext;
+  final ({int correct, int total}) firstAnswers, repairAnswers;
+}
+
+// Rebuildable presentation facts. Subsequent attempts cannot replace the first
+// submitted answer for a word or modify canonical scores/evidence/rewards.
+({int correct, int total}) _answerCounts(
+  PairMatchingState state, {
+  required bool repair,
+}) {
+  final seen = <String>{};
+  var correct = 0;
+  var total = 0;
+  for (final attempt in state.attempts) {
+    final first = seen.add(attempt.promptWordId);
+    if (first == repair) continue;
+    total++;
+    if (attempt.isCorrect) correct++;
+  }
+  return (correct: correct, total: total);
 }
 
 /// Rebuildable selectors over terminal canonical results. Replay never competes

@@ -4,16 +4,32 @@
 User approved continuous solo local development through R15.10; no restart
 approval loops, subagents/background writers, paid services, push or deployment.
 Use r15-package-workflow.md and read only the active package.
+Latest user instruction: after each accepted package, commit and immediately
+create the next task, one task per package through R15.10.
 
-- Worktree: C:/Users/Phet/.codex/worktrees/1e15/LexiQuest
-- Branch: feature/r15-continuation. This checkpoint accompanies R15.3 commit;
-  resolve its committed SHA before any handoff, never start from default branch.
-- Started at 3a4c282f87ed72a53eaf0153cbe611a144088fa8 (R15.0–2 local source).
+- Worktree: C:/Users/Phet/.codex/worktrees/5554/LexiQuest
+- Branch: feature/r15-learning-continuation; verified clean starting HEAD
+  b17bf81b365c6d5b37d67c84d4b3c36df13234ff (accepted R15.0–3 source).
+- This checkpoint accompanies the accepted R15.4 commit. Resolve exact HEAD
+  before handoff and start the successor from it, never the default branch.
 - No task-owned test/build process remains. Other worktrees untouched.
 - Flutter regenerated registrants with line-ending-only status changes and no
   content diff; excluded from package. Never import pending work elsewhere.
+- Test-generated Pair failure PNG changes are also excluded; do not import them.
 
 ## Current package result
+R15.4 local implementation accepted: version-pinned short explanation/details and
+explicit unavailable copy; first5/6 and repair1/1 presentation/history separated;
+self-report/exposure/recognition/contextual activity copy; injected due-clock test.
+Existing learning/reward/review authorities and historical version guards retained.
+Evidence:2026-09-13-r15-learning-verification.md. Broad gate298 passed with1 stale
+Today source assertion; corrected assertion then passed1/1 with stronger guard.
+Pair result/replay golden1/1 passed;13-file analysis clean. Counts overlap with
+earlier focused checks. Actual Flutter PNGs and two updated goldens reviewed.
+Final runtime/test fingerprint:
+f2f17bfcde58d9317a7714d85525b47a6773a03cd7f15737fd13d6957388587d.
+No current test/build process. Physical/human/release acceptance remains external.
+
 R15.3 local implementation verified: Today canonical primary/dependency guards
 and manual practice; catalog search/actual metadata filters/distinct empty states;
 responsive mode columns, max960 and SafeArea. No new storage/authority.
@@ -27,9 +43,9 @@ R15.2 unchanged evidence: 2026-09-12-r15-pair-verification.md.
 Do not rerun R15.2 or unchanged passed gates just for a new task or commit.
 
 ## Next executable work
-Read ONLY R15.4 roadmap entry and matching LEARN/DATA-04 spec/acceptance sections,
-then continue R15.4–10 sequentially. Current package local boundary is suitable
-for compact handoff if needed; no concurrent source writers.
+Create R15.5 immediately from this accepted commit. Read ONLY R15.5 roadmap,
+matching DATA-01–05 spec and A-DATA acceptance. Continue solo; accept/commit each
+package before creating R15.6,7,8,9,10 sequentially. Do not preload their specs.
 At combined UI source freeze, build once and test authorized Vivo. Never treat
 local widget/contrast/visual evidence as physical acceptance.
 

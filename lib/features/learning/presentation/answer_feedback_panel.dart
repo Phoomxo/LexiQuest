@@ -81,10 +81,16 @@ final class AnswerFeedbackPanel extends StatelessWidget {
               if (feedback.committedContrastiveAttempt != null) ...[
                 const SizedBox(height: 12),
                 CommittedContrastiveFeedbackPanel(
+                  key: ValueKey(
+                    feedback.committedContrastiveAttempt!.stableFingerprint,
+                  ),
                   feedback: feedback,
                   useCases: contrastiveFeedback,
                   featureRegistry: featureRegistry,
                 ),
+              ] else ...[
+                const SizedBox(height: 12),
+                const ExplanationUnavailable(),
               ],
               if (bookmarkIdentity case final identity?)
                 if (onBookmark case final bookmark?) ...[

@@ -3,10 +3,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_history_projection.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_matching_result_view.dart';
 import 'pair_matching_evidence_contract_test.dart' show PairHarness;
 
 void main() {
+  testWidgets('R15 first 5 of 6 stays separate from repair 1 of 1', (
+    tester,
+  ) async {
+    final h = PairHarness(density: PairDensity.standard6);
+    late PairMatchingHistoryProjection result;
+    await tester.runAsync(() async {
+      await h.initialize();
+      final c = await h.restore();
+      await h.tap(c, 'synthetic-0', PairTileSide.prompt);
+      await h.tap(c, 'synthetic-1', PairTileSide.target);
+      for (final i in [1, 2, 3, 4, 5, 0]) {
+        await h.tap(c, 'synthetic-$i', PairTileSide.prompt);
+        await h.tap(c, 'synthetic-$i', PairTileSide.target);
+      }
+      await c.finish();
+      result = PairMatchingHistoryProjection(
+        (await DriftPairMatchingSessionPurposeReader(h.db).read(
+          ownerId: h.owner,
+          sessionId: h.operation.plan.learningSessionId,
+        )).snapshot!,
+      );
+      await h.db.close();
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: PairMatchingResultView(result: result)),
+      ),
+    );
+    expect(find.text('คำตอบครั้งแรก 5/6'), findsOneWidget);
+    expect(find.text('ฝึกซ้ำแก้คำตอบ 1/1'), findsOneWidget);
+    expect(find.text('คำตอบครั้งแรก 6/6'), findsNothing);
+    expect(result.result.stars, 2);
+    await tester.pump();
+    expect(find.text('คำตอบครั้งแรก 5/6'), findsOneWidget);
+  });
+
   testWidgets(
     'result shows separate axes and explicit practice replay action',
     (tester) async {

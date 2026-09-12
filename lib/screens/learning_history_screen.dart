@@ -364,6 +364,19 @@ final class _PairHistoryCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   copy(
+                    'คำตอบครั้งแรก ${projection.firstAnswers.correct}/${projection.firstAnswers.total}',
+                    'First answers ${projection.firstAnswers.correct}/${projection.firstAnswers.total}',
+                  ),
+                ),
+                if (projection.repairAnswers.total > 0)
+                  Text(
+                    copy(
+                      'ฝึกซ้ำแก้คำตอบ ${projection.repairAnswers.correct}/${projection.repairAnswers.total}',
+                      'Repair practice ${projection.repairAnswers.correct}/${projection.repairAnswers.total}',
+                    ),
+                  ),
+                Text(
+                  copy(
                     'จับคู่แล้ว ${projection.result.matched} คู่',
                     'Matched ${projection.result.matched} pairs',
                   ),
@@ -565,6 +578,17 @@ final class _HistoryCard extends StatelessWidget {
               const SizedBox(height: 4),
               if (assessment == null) ...[
                 Text(modeLabel),
+                if (entry.mode == LessonMode.meaningQuiz ||
+                    entry.mode == LessonMode.definitionQuiz)
+                  const Text('กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก'),
+                if (entry.mode == LessonMode.cloze)
+                  const Text('กิจกรรมตอบคำถามจากบริบทของประโยค'),
+                if (entry.mode == LessonMode.flashcard)
+                  const Text(
+                    'บัตรคำใช้การประเมินความจำด้วยตนเอง ไม่ใช่คะแนนสอบ',
+                  ),
+                if (entry.mode == LessonMode.associativeReading)
+                  const Text('การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง'),
                 const SizedBox(height: 4),
                 Text(durationLabel),
               ] else ...[

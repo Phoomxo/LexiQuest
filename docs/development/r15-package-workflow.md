@@ -16,11 +16,11 @@ The R15 acceptance contract remains authoritative. No background implementers.
    validate several accepted UI packages; avoid an APK rebuild per text edit.
 5. Review the diff and requirement coverage, update current state, and commit
    only accepted package files. Keep incomplete/external cases explicit.
-6. At a substantial accepted boundary, prefer a fresh task carrying only the
-   compact checkpoint and exact source branch/commit when the present history
-   is large. Stay in the current task for short, coupled work where reloading
-   would cost more. Do not fork full history, spawn concurrent writers, or
-   interrupt an unresolved operation for a context-percentage threshold.
+6. Latest user instruction (2026-09-13): one task per package. After accepting
+   and committing R15.4, create R15.5 immediately; each successor does the same
+   through R15.10 without a new approval loop. Carry only a compact checkpoint
+   and exact source branch/commit. Complete coupled debugging in the current
+   package before handing off. Never fork full history or overlap source writers.
 
 ## Handoff contract
 

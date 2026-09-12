@@ -63,6 +63,19 @@ final class PairMatchingResultView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
+          Text(
+            copy(
+              'คำตอบครั้งแรก ${result.firstAnswers.correct}/${result.firstAnswers.total}',
+              'First answers ${result.firstAnswers.correct}/${result.firstAnswers.total}',
+            ),
+          ),
+          if (result.repairAnswers.total > 0)
+            Text(
+              copy(
+                'ฝึกซ้ำแก้คำตอบ ${result.repairAnswers.correct}/${result.repairAnswers.total}',
+                'Repair practice ${result.repairAnswers.correct}/${result.repairAnswers.total}',
+              ),
+            ),
           LearningSummaryCard(
             title: copy('จำนวนคู่ที่จับได้', 'Matched pairs'),
             value: '${result.result.matched}',

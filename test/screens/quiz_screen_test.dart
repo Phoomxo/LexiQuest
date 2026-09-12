@@ -749,10 +749,21 @@ void main() {
       );
 
       final next = find.byKey(const ValueKey<String>('meaning-quiz-next'));
+      final questionScroll = Scrollable.of(
+        tester.element(find.text('station')),
+      );
+      questionScroll.position.jumpTo(80);
+      await tester.pump();
+      expect(questionScroll.position.pixels, greaterThan(0));
       await tester.ensureVisible(next);
       await tester.tap(next);
       await tester.pumpAndSettle();
       expect(find.text('สนามบิน'), findsOneWidget);
+      expect(
+        Scrollable.of(tester.element(find.text('สนามบิน'))).position.pixels,
+        0,
+        reason: 'R15 each new question starts at its prompt',
+      );
       expect(
         find.byKey(const ValueKey<String>('typed-recall-input')),
         findsOneWidget,

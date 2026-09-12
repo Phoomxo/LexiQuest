@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'package:vocab_learning_app/features/learning/pair_matching/application/pair_matching_source_composer.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_matching_experience_host.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_matching_result_view.dart';
 import 'pair_matching_evidence_contract_test.dart' show PairHarness;
 import 'pair_timeout_recovery_test.dart' show timedPlan, clocked;
 
@@ -222,6 +223,15 @@ void main() {
             await tester.pumpAndSettle();
           }
         }
+        // The final accepted-pair episode intentionally precedes the result.
+        // pumpAndSettle alone does not advance a future, non-frame Timer.
+        await tester.pump(M3Theme.pairFeedbackHold + M3Theme.pairFeedbackFade);
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(PairMatchingResultView),
+          findsOneWidget,
+          reason: 'Capture only after the canonical terminal result is visible',
+        );
       }
 
       micros = 2000000;

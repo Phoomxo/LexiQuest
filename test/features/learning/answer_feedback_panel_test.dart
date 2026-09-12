@@ -12,6 +12,122 @@ import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 
 void main() {
   testWidgets(
+    'R15 long reviewed text has a bounded excerpt and complete details',
+    (tester) async {
+      final long = List.filled(60, 'reviewed ').join().trim();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ContrastiveFeedbackPanel(
+              explanation: ContrastiveExplanation.reviewed(
+                manifestIdentity: _contrastiveIdentity,
+                correctOptionId: 'station',
+                selectedDistractorId: 'terminal',
+                correctRationale: long,
+                distractorRationale: 'An endpoint.',
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text(long), findsNothing);
+      expect(find.text('${long.substring(0, 180)}…'), findsOneWidget);
+      await tester.ensureVisible(find.text('ดูรายละเอียด'));
+      await tester.tap(find.text('ดูรายละเอียด'));
+      await tester.pump();
+      expect(find.text(long), findsOneWidget);
+    },
+  );
+
+  testWidgets('R15 explanation starts short and expands pinned details', (
+    tester,
+  ) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            controller: scroll,
+            child: Column(
+              children: [
+                const SizedBox(height: 100),
+                ContrastiveFeedbackPanel(
+                  explanation: ContrastiveExplanation.reviewed(
+                    manifestIdentity: _contrastiveIdentity,
+                    correctOptionId: 'option:station',
+                    selectedDistractorId: 'option:terminal',
+                    correctRationale:
+                        'Trains stop here. Example: meet at the station.',
+                    distractorRationale:
+                        'Terminal means an endpoint. It is broader.',
+                  ),
+                ),
+                const SizedBox(height: 800),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    scroll.jumpTo(40);
+    await tester.pump();
+    expect(find.text('Trains stop here.'), findsOneWidget);
+    expect(find.textContaining('Example:'), findsNothing);
+    await tester.tap(find.text('ดูรายละเอียด'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Trains stop here. Example: meet at the station.'),
+      findsOneWidget,
+    );
+    expect(scroll.offset, 40);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ContrastiveFeedbackPanel(
+            explanation: ContrastiveExplanation.reviewed(
+              manifestIdentity: _contrastiveIdentity,
+              correctOptionId: 'option:market',
+              selectedDistractorId: 'option:terminal',
+              correctRationale: 'Buy food here. New example.',
+              distractorRationale: 'A terminal is an endpoint. Another detail.',
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Buy food here.'), findsOneWidget);
+    expect(find.textContaining('New example.'), findsNothing);
+    expect(find.text('ดูรายละเอียด'), findsOneWidget);
+  });
+
+  testWidgets('R15 missing explanation remains explicit after commit', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AnswerFeedbackPanel(
+            feedback: AnswerFeedback.fromCommittedResult(
+              result: const AnswerRecordResult(
+                inserted: true,
+                isCorrect: false,
+                srs: null,
+              ),
+              context: const AnswerFeedbackContext(
+                canonicalCorrectAnswer: 'station',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('คำอธิบายยังไม่พร้อมสำหรับเนื้อหานี้'), findsOneWidget);
+    expect(find.text('คำตอบที่ถูก: station'), findsOneWidget);
+  });
+
+  testWidgets(
     'Task5 feedback semantic bookmark and report retain committed identity',
     (tester) async {
       final semantics = tester.ensureSemantics();

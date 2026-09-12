@@ -33,6 +33,40 @@ import '../features/learning/pair_matching/pair_matching_source_composer_test.da
     as pair_fixture;
 
 void main() {
+  for (final sample in <(LessonMode, String)>[
+    (LessonMode.flashcard, 'บัตรคำใช้การประเมินความจำด้วยตนเอง ไม่ใช่คะแนนสอบ'),
+    (LessonMode.meaningQuiz, 'กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก'),
+    (LessonMode.definitionQuiz, 'กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก'),
+    (LessonMode.cloze, 'กิจกรรมตอบคำถามจากบริบทของประโยค'),
+    (
+      LessonMode.associativeReading,
+      'การอ่านเป็นการสัมผัสภาษา ไม่ใช่คะแนนความถูกต้อง',
+    ),
+  ]) {
+    testWidgets('R15 history explains ${sample.$1.name} evidence', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _app(
+          reader: _Reader([
+            _entry(
+              sessionId: 'semantic-history',
+              mode: sample.$1,
+              state: LearningHistoryTerminalState.completed,
+              packTitle: null,
+              localWordSet: true,
+              duration: const Duration(minutes: 1),
+              startedAtUtc: DateTime.utc(2026, 9, 13),
+            ),
+          ]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(sample.$2), findsOneWidget);
+      expect(find.textContaining('100%'), findsNothing);
+    });
+  }
+
   testWidgets(
     'local CEFR history explains missing title without enabling replay',
     (tester) async {
@@ -158,6 +192,16 @@ void main() {
         await tester.ensureVisible(action);
         await tester.pumpAndSettle();
         expect(tester.widget<FilledButton>(action).onPressed, isNotNull);
+        expect(
+          find.text('คำตอบครั้งแรก 4/4'),
+          findsWidgets,
+          reason: tester
+              .widgetList<Text>(find.byType(Text))
+              .map((t) => t.data)
+              .whereType<String>()
+              .where((t) => t.contains('ครั้งแรก'))
+              .join(', '),
+        );
         expect(
           find.textContaining(normal.plan.learningSessionId),
           findsNothing,

@@ -123,18 +123,66 @@ final class _CommittedContrastiveFeedbackPanelState
   Widget build(BuildContext context) {
     final explanation = _gateEnabled ? _explanation : null;
     return explanation == null
-        ? const SizedBox.shrink()
+        ? const ExplanationUnavailable()
         : ContrastiveFeedbackPanel(explanation: explanation);
   }
 }
 
-final class ContrastiveFeedbackPanel extends StatelessWidget {
+final class ExplanationUnavailable extends StatelessWidget {
+  const ExplanationUnavailable({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    height: 96,
+    child: SingleChildScrollView(
+      child: Text('คำอธิบายยังไม่พร้อมสำหรับเนื้อหานี้'),
+    ),
+  );
+}
+
+final class ContrastiveFeedbackPanel extends StatefulWidget {
   const ContrastiveFeedbackPanel({super.key, required this.explanation});
 
   final ContrastiveExplanation explanation;
 
   @override
+  State<ContrastiveFeedbackPanel> createState() =>
+      _ContrastiveFeedbackPanelState();
+}
+
+final class _ContrastiveFeedbackPanelState
+    extends State<ContrastiveFeedbackPanel> {
+  bool _expanded = false;
+  final _scroll = ScrollController(keepScrollOffset: false);
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(ContrastiveFeedbackPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.explanation, widget.explanation)) {
+      _expanded = false;
+    }
+  }
+
+  // An excerpt of the reviewed text, never a generated explanation.
+  String _summary(String text) {
+    final boundary = RegExp(r'[.!?](?:\s|$)').firstMatch(text);
+    final sentence = boundary == null
+        ? text
+        : text.substring(0, boundary.start + 1);
+    return sentence.runes.length <= 180
+        ? sentence
+        : '${String.fromCharCodes(sentence.runes.take(180))}…';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final explanation = widget.explanation;
     final colorScheme = Theme.of(context).colorScheme;
     final largeText = MediaQuery.textScalerOf(context).scale(16) >= 28;
     final maximumHeight =
@@ -155,7 +203,10 @@ final class ContrastiveFeedbackPanel extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maximumHeight),
           child: Scrollbar(
+            controller: _scroll,
+            thumbVisibility: true,
             child: SingleChildScrollView(
+              controller: _scroll,
               padding: const EdgeInsets.all(12),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -164,13 +215,21 @@ final class ContrastiveFeedbackPanel extends StatelessWidget {
                   _RationaleRow(
                     icon: Icons.lightbulb_outline,
                     title: 'เหตุผลของคำตอบที่ถูก',
-                    rationale: explanation.correctRationale,
+                    rationale: _expanded
+                        ? explanation.correctRationale
+                        : _summary(explanation.correctRationale),
                   ),
                   const SizedBox(height: 12),
                   _RationaleRow(
                     icon: Icons.compare_arrows,
                     title: 'คำตอบที่เลือกต่างกันอย่างไร',
-                    rationale: explanation.distractorRationale,
+                    rationale: _expanded
+                        ? explanation.distractorRationale
+                        : _summary(explanation.distractorRationale),
+                  ),
+                  TextButton(
+                    onPressed: () => setState(() => _expanded = !_expanded),
+                    child: Text(_expanded ? 'ย่อรายละเอียด' : 'ดูรายละเอียด'),
                   ),
                 ],
               ),
