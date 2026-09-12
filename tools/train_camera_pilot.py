@@ -7,12 +7,7 @@ import sys
 import urllib.request
 import zipfile
 
-os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
-os.environ.setdefault('KERAS_HOME', str(Path(sys.argv[2]).resolve() / 'keras-cache'))
-import numpy as np
-from PIL import Image
-import tensorflow as tf
-from camera_accuracy import compare
+from camera_accuracy import compare, audit_dataset
 
 LABELS = ['book', 'bottle', 'chair', 'cup']
 BASELINE_URL = ('https://storage.googleapis.com/download.tensorflow.org/models/tflite/'
@@ -39,16 +34,28 @@ def canonical(label):
 
 def main():
     data, output = map(lambda value: Path(value).resolve(), sys.argv[1:3])
+    manifest = json.loads((data / 'manifest.json').read_text(encoding='utf-8'))
+    rows = manifest['samples']
+    audit = audit_dataset(rows)
+    if audit['status'] != 'coverage-ready':
+        raise ValueError('insufficient-coverage: retain-baseline; do not train the legacy pilot')
+    if any(row['truth'] not in LABELS for row in rows):
+        raise ValueError('Retain baseline: legacy crop trainer cannot train/evaluate the R15 natural unknown protocol')
+    # Keep legacy training code as historical evidence. R15 coverage requires
+    # unknown scenes, so this crop-only trainer cannot pass the preflight.
+    # A future training adapter needs a separately reviewed protocol revision.
+    os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
+    os.environ.setdefault('KERAS_HOME', str(output / 'keras-cache'))
+    import numpy as np
+    from PIL import Image
+    import tensorflow as tf
+
     output.mkdir(parents=True, exist_ok=True)
     if (output / 'report.json').exists() or (output / 'candidate.keras').exists():
         raise ValueError('Preserve previous training evidence')
     tf.config.threading.set_inter_op_parallelism_threads(2)
     tf.config.threading.set_intra_op_parallelism_threads(4)
     tf.keras.utils.set_random_seed(20260911)
-    manifest = json.loads((data / 'manifest.json').read_text(encoding='utf-8'))
-    rows = manifest['samples']
-    # Validate split/group identities without inventing model results.
-    compare([{**row, 'baseline': '__unchecked__', 'candidate': '__unchecked__'} for row in rows])
     pixels, targets = [], []
     for row in rows:
         path = data / row['path']
