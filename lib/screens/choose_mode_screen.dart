@@ -372,84 +372,100 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         .toList(growable: false);
     return Scaffold(
       appBar: AppBar(title: const Text('เรียน')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        children: [
-          for (final card in widget.leadingCards)
-            _supplementaryCard(context, card),
-          if (starter != null) ...[
-            Card(
-              margin: EdgeInsets.zero,
-              elevation: 0,
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'เริ่มฝึกสั้น ๆ',
-                        style: Theme.of(context).textTheme.titleLarge,
+      body: SafeArea(
+        top: false,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 960),
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                8,
+                MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                32,
+              ),
+              children: [
+                for (final card in widget.leadingCards)
+                  _supplementaryCard(context, card),
+                if (starter != null) ...[
+                  Card(
+                    margin: EdgeInsets.zero,
+                    elevation: 0,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            header: true,
+                            child: Text(
+                              'เริ่มฝึกสั้น ๆ',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(_modeDescription(starter.glossary.id)),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            key: const ValueKey('learn-starter'),
+                            onPressed: _openingMode ? null : starter.onTap,
+                            icon: const Icon(Icons.play_arrow),
+                            label: Text(
+                              'เริ่ม${starter.glossary.shortThaiLabel}',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(_modeDescription(starter.glossary.id)),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
-                      key: const ValueKey('learn-starter'),
-                      onPressed: _openingMode ? null : starter.onTap,
-                      icon: const Icon(Icons.play_arrow),
-                      label: Text('เริ่ม${starter.glossary.shortThaiLabel}'),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (widget.secondaryCards.isNotEmpty) ...[
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'วันนี้และแผนเรียน',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-          if (widget.secondaryCards.isNotEmpty) ...[
-            Semantics(
-              header: true,
-              child: Text(
-                'วันนี้และแผนเรียน',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            const SizedBox(height: 12),
-            for (final card in widget.secondaryCards)
-              _supplementaryCard(context, card),
-            const SizedBox(height: 12),
-          ],
-          for (final group in visibleGroups) ...[
-            Padding(
-              padding: EdgeInsets.only(
-                top: group == visibleGroups.first ? 8 : 24,
-                bottom: 12,
-              ),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  group.key,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            _LearningChoiceGrid(
-              tiles: [
-                for (final id in group.value)
-                  for (final tile in tiles)
-                    if (tile.glossary.id == id) tile,
+                  ),
+                  const SizedBox(height: 12),
+                  for (final card in widget.secondaryCards)
+                    _supplementaryCard(context, card),
+                  const SizedBox(height: 12),
+                ],
+                for (final group in visibleGroups) ...[
+                  Padding(
+                    padding: EdgeInsets.only(
+                      top: group == visibleGroups.first ? 8 : 24,
+                      bottom: 12,
+                    ),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        group.key,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  _LearningChoiceGrid(
+                    tiles: [
+                      for (final id in group.value)
+                        for (final tile in tiles)
+                          if (tile.glossary.id == id) tile,
+                    ],
+                  ),
+                ],
+                if (tiles.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
+                  ),
               ],
             ),
-          ],
-          if (tiles.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
-            ),
-        ],
+          ),
+        ),
       ),
     );
   }
@@ -1069,11 +1085,13 @@ class _LearningChoiceGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final width = MediaQuery.sizeOf(context).width;
       final columns =
-          constraints.maxWidth >= 320 &&
-              MediaQuery.textScalerOf(context).scale(16) <= 20.8
+          width < 360 || MediaQuery.textScalerOf(context).scale(16) >= 24
+          ? 1
+          : width < 840
           ? 2
-          : 1;
+          : 3;
       return Column(
         children: [
           for (var index = 0; index < tiles.length; index += columns)
@@ -1085,12 +1103,11 @@ class _LearningChoiceGrid extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: tiles[index]),
-                    if (columns == 2) ...[
-                      const SizedBox(width: 12),
+                    for (var column = 0; column < columns; column++) ...[
+                      if (column > 0) const SizedBox(width: 12),
                       Expanded(
-                        child: index + 1 < tiles.length
-                            ? tiles[index + 1]
+                        child: index + column < tiles.length
+                            ? tiles[index + column]
                             : const SizedBox.shrink(),
                       ),
                     ],

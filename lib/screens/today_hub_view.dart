@@ -9,8 +9,10 @@ import '../features/reminders/domain/study_reminder.dart';
 import '../features/review/domain/review_queue_item.dart';
 import '../features/today_hub/domain/today_hub_models.dart';
 import '../navigation/navigation_glossary.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/registries/feature_registry.dart';
 import '../utils/local_study_datetime.dart';
+import 'choose_mode_screen.dart';
 
 abstract interface class TodayHubActionDelegate {
   Future<void> resume(LearningSessionSummary session);
@@ -184,14 +186,34 @@ final class _TodayHubViewState extends State<TodayHubView> {
   @override
   Widget build(BuildContext context) {
     final snapshot = widget.snapshot;
-    final children = <Widget>[];
+    final children = <Widget>[
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: OutlinedButton.icon(
+          key: const ValueKey('today-hub-manual-practice'),
+          onPressed: () => AppNavigator.pushPage<void>(
+            context,
+            AppPage<void>(
+              name: 'home/learn',
+              builder: (_) =>
+                  ChooseModeScreen(featureRegistry: widget.features),
+            ),
+          ),
+          icon: const Icon(Icons.grid_view_outlined),
+          label: const Text('เลือกฝึกเอง'),
+        ),
+      ),
+    ];
     final sectionStarts = <int>{};
     for (final section in snapshot.sectionOrder) {
       final sectionStart = children.length;
       switch (section) {
         case TodayHubSectionKind.resume:
           final session = snapshot.resumableSession;
-          if (session != null) children.add(_resumeCard(session));
+          if (session != null &&
+              _dependencyReady(snapshot, TodayHubDependency.activeSession)) {
+            children.add(_resumeCard(session));
+          }
           _statusFor(
             children,
             TodayHubDependency.activeSession,
@@ -209,11 +231,13 @@ final class _TodayHubViewState extends State<TodayHubView> {
           );
         case TodayHubSectionKind.review:
           children.add(_reviewSummary(snapshot));
-          final work = _reviewExpanded
+          final readyWork =
+              _dependencyReady(snapshot, TodayHubDependency.review)
               ? snapshot.reviewWork
-              : snapshot.reviewWork.take(3);
+              : const <TodayHubReviewWorkItem>[];
+          final work = _reviewExpanded ? readyWork : readyWork.take(3);
           children.addAll(work.map(_reviewCard));
-          if (snapshot.reviewWork.length > 3) {
+          if (readyWork.length > 3) {
             children.add(
               TextButton.icon(
                 key: const ValueKey('today-hub-expand-review'),
@@ -281,13 +305,51 @@ final class _TodayHubViewState extends State<TodayHubView> {
     }
     sectionStarts.add(children.length);
     children.add(_historyAction());
-    return ListView.separated(
-      key: const ValueKey('today-hub-view'),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      itemCount: children.length,
-      separatorBuilder: (_, index) =>
-          SizedBox(height: sectionStarts.contains(index + 1) ? 24 : 12),
-      itemBuilder: (_, index) => children[index],
+    final primaryKey = switch (_primaryAction()) {
+      _Action.resume => 'today-hub-resume',
+      _Action.assessment => 'today-hub-assessment',
+      _Action.review => 'today-hub-review-summary',
+      _Action.recommendation => 'today-hub-recommendation',
+      _ => null,
+    };
+    final primaryIndex = primaryKey == null
+        ? -1
+        : children.indexWhere(
+            (child) => child.key == ValueKey<String>(primaryKey),
+          );
+    if (primaryIndex > 0) {
+      final manual = children.removeAt(0);
+      children.insert(primaryIndex, manual);
+      final shiftedStarts = sectionStarts
+          .map((index) => index <= primaryIndex ? index - 1 : index)
+          .toSet();
+      sectionStarts
+        ..clear()
+        ..addAll(shiftedStarts)
+        ..add(primaryIndex)
+        ..add(primaryIndex + 1);
+    }
+    return SafeArea(
+      top: false,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: ListView.separated(
+            key: const ValueKey('today-hub-view'),
+            padding: EdgeInsets.fromLTRB(
+              MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+              16,
+              MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+              32,
+            ),
+            itemCount: children.length,
+            separatorBuilder: (_, index) =>
+                SizedBox(height: sectionStarts.contains(index + 1) ? 24 : 12),
+            itemBuilder: (_, index) => children[index],
+          ),
+        ),
+      ),
     );
   }
 
@@ -297,7 +359,8 @@ final class _TodayHubViewState extends State<TodayHubView> {
     String label,
   ) {
     final state = widget.snapshot.dependencyStates[dependency];
-    if (state == TodayHubDependencyState.unavailable ||
+    if (state == TodayHubDependencyState.stale ||
+        state == TodayHubDependencyState.unavailable ||
         state == TodayHubDependencyState.corrupt) {
       children.add(_statusCard(label));
     }
@@ -336,6 +399,7 @@ final class _TodayHubViewState extends State<TodayHubView> {
               onTap: onPressed,
               child: FilledButton.icon(
                 key: const ValueKey('today-hub-resume-action'),
+                style: _actionStyle(_Action.resume),
                 onPressed: onPressed,
                 icon: Icon(entry.icon),
                 label: Text(entry.fullThaiLabel),
@@ -385,6 +449,9 @@ final class _TodayHubViewState extends State<TodayHubView> {
         _recommendationReasonLabel(recommendation.result.reason),
       );
     }
+    if (!_dependencyReady(snapshot, TodayHubDependency.recommendation)) {
+      return _statusCard('คำแนะนำยังไม่พร้อม');
+    }
     final entry = NavigationGlossary.require('today-hub-start-recommendation');
     final onPressed = _inFlight.contains(_Action.recommendation)
         ? null
@@ -432,6 +499,7 @@ final class _TodayHubViewState extends State<TodayHubView> {
 
   bool _assessmentEnabled(TodayHubAssignedAssessment assessment) =>
       widget.assessmentAvailable &&
+      _dependencyReady(widget.snapshot, TodayHubDependency.assessment) &&
       assessment.run.state == AssessmentRunState.active &&
       widget.features.isEnabled(Feature.researchAssessment);
 
@@ -519,10 +587,15 @@ final class _TodayHubViewState extends State<TodayHubView> {
         ? null
         : () => _run(
             _Action.review,
-            () => widget.actions.openReview(snapshot.reviewWork),
+            () => widget.actions.openReview(
+              _dependencyReady(snapshot, TodayHubDependency.review)
+                  ? snapshot.reviewWork
+                  : const <TodayHubReviewWorkItem>[],
+            ),
             allowed: () => identical(widget.snapshot, snapshot),
           );
     return Column(
+      key: const ValueKey('today-hub-review-summary'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Semantics(
@@ -579,16 +652,37 @@ final class _TodayHubViewState extends State<TodayHubView> {
       snapshot.dependencyStates[dependency] == TodayHubDependencyState.ready ||
       snapshot.dependencyStates[dependency] == TodayHubDependencyState.empty;
 
-  ButtonStyle _actionStyle(_Action action) {
+  _Action? _primaryAction() {
     final snapshot = widget.snapshot;
-    final first = snapshot.resumableSession != null
-        ? _Action.resume
-        : snapshot.assignedAssessment != null &&
-              _assessmentEnabled(snapshot.assignedAssessment!)
-        ? _Action.assessment
-        : snapshot.reviewWork.isNotEmpty
-        ? _Action.review
-        : _Action.recommendation;
+    _Action? first;
+    for (final section in snapshot.sectionOrder) {
+      first = switch (section) {
+        TodayHubSectionKind.resume
+            when snapshot.resumableSession != null &&
+                _dependencyReady(snapshot, TodayHubDependency.activeSession) =>
+          _Action.resume,
+        TodayHubSectionKind.assigned
+            when snapshot.assignedAssessment != null &&
+                _assessmentEnabled(snapshot.assignedAssessment!) =>
+          _Action.assessment,
+        TodayHubSectionKind.review
+            when snapshot.reviewWork.isNotEmpty &&
+                _dependencyReady(snapshot, TodayHubDependency.review) =>
+          _Action.review,
+        TodayHubSectionKind.recommendation
+            when snapshot.recommendation.isAuthoritative &&
+                snapshot.recommendation.mergedInto == null &&
+                _dependencyReady(snapshot, TodayHubDependency.recommendation) =>
+          _Action.recommendation,
+        _ => null,
+      };
+      if (first != null) break;
+    }
+    return first;
+  }
+
+  ButtonStyle _actionStyle(_Action action) {
+    final first = _primaryAction();
     final colors = Theme.of(context).colorScheme;
     return FilledButton.styleFrom(
       foregroundColor: first == action ? colors.onPrimary : colors.primary,

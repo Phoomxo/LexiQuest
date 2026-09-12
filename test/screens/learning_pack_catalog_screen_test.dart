@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
@@ -27,8 +28,171 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
+import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('A-NAV-04 empty catalog has no start or search result claim', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, emptyCatalog: true),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(ListTile), findsNothing);
+  });
+  testWidgets('A-NAV-04 incompatible filters recover independently of search', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, extraPack: true),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'A1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'health'));
+    await tester.pumpAndSettle();
+    expect(find.text('ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'), findsOneWidget);
+    expect(find.text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'), findsNothing);
+    await tester.tap(find.widgetWithText(FilterChip, 'health'));
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+  });
+  setUpAll(loadR15Fonts);
+  for (final width in [320.0, 840.0]) {
+    testWidgets('visual catalog $width', (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: const ValueKey('synthetic-r15-surface'),
+          child: AppDependenciesScope(
+            dependencies: _dependencies(database),
+            child: MaterialApp(
+              theme: M3Theme.darkTheme,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(
+                  context,
+                ).copyWith(textScaler: const TextScaler.linear(2)),
+                child: child!,
+              ),
+              home: const LearningPackCatalogScreen(),
+            ),
+          ),
+        ),
+      );
+      await captureR15Surface(tester, 'A-UI-01-T02-w${width.toInt()}-s2-dark');
+    });
+  }
+
+  for (final width in [320.0, 390.0, 840.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final dark in [false, true]) {
+        testWidgets('A-UI catalog w$width s$scale dark$dark keyboard', (
+          tester,
+        ) async {
+          tester.view.physicalSize = Size(width, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final database = AppDatabase(NativeDatabase.memory());
+          addTearDown(database.close);
+          await tester.pumpWidget(
+            AppDependenciesScope(
+              dependencies: _dependencies(database),
+              child: MaterialApp(
+                theme: dark ? M3Theme.darkTheme : M3Theme.lightTheme,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: child!,
+                ),
+                home: const LearningPackCatalogScreen(),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await tester.enterText(find.byType(TextField), 'Travel');
+          tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+          addTearDown(tester.view.resetViewInsets);
+          await tester.pumpAndSettle();
+          final tile = find.byKey(
+            const ValueKey('learning-pack/open/pack:travel/1'),
+          );
+          expect(
+            tester.getSize(find.byTooltip('ล้างการค้นหา')).height,
+            greaterThanOrEqualTo(48),
+          );
+          await tester.ensureVisible(tile);
+          final position = tester
+              .state<ScrollableState>(
+                find
+                    .descendant(
+                      of: find.byType(ListView),
+                      matching: find.byType(Scrollable),
+                    )
+                    .first,
+              )
+              .position;
+          position.jumpTo(position.maxScrollExtent);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(tester.getRect(tile).bottom, lessThanOrEqualTo(500));
+        });
+      }
+    }
+  }
+
+  testWidgets('A-NAV-04 search miss clears back to catalog', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'synthetic-r15-no-match');
+    await tester.pumpAndSettle();
+    expect(find.text('ไม่พบชุดบทเรียนที่ตรงกับการค้นหา'), findsOneWidget);
+    expect(find.text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'), findsNothing);
+    expect(find.text('Travel basics'), findsNothing);
+    await tester.tap(find.byTooltip('ล้างการค้นหา'));
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'a1');
+    await tester.pumpAndSettle();
+    expect(find.text('Travel basics'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'A1'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'travel'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilterChip, 'A1'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'A1')).selected,
+      isTrue,
+    );
+    expect(find.text('Travel basics'), findsOneWidget);
+  });
+
   testWidgets(
     'renders catalog results with accessible pinned-revision labels',
     (tester) async {
@@ -90,6 +254,8 @@ void main() {
 AppDependencies _dependencies(
   AppDatabase database, {
   FeatureRegistry features = const BuildFeatureRegistry.allEnabled(),
+  bool emptyCatalog = false,
+  bool extraPack = false,
 }) {
   final research = InertResearchDependencies(database);
   final owner = _Owner();
@@ -118,7 +284,7 @@ AppDependencies _dependencies(
       nowUtc: () => DateTime.utc(2026, 8, 24),
     ),
     studyPlanning: StudyPlanningUseCases(
-      packs: _Packs(),
+      packs: _Packs(empty: emptyCatalog, extra: extraPack),
       progress: ProgressUseCases(
         owners: owner,
         queries: DriftProgressQueries(database),
@@ -129,6 +295,9 @@ AppDependencies _dependencies(
 }
 
 final class _Packs implements LearningPackRepository {
+  _Packs({this.empty = false, this.extra = false});
+  final bool empty;
+  final bool extra;
   @override
   Future<LearningPackDetail> getVersion(String packId, int revision) async =>
       LearningPackDetail(
@@ -150,22 +319,40 @@ final class _Packs implements LearningPackRepository {
       );
 
   @override
-  Future<List<LearningPackSummary>> list(LearningPackFilter filter) async => [
-    LearningPackSummary(
-      packId: 'pack:travel',
-      revision: 1,
-      title: 'Travel basics',
-      cefrLevel: 'A1',
-      topic: 'travel',
-      skill: 'vocabulary',
-      goal: 'recognition',
-      contentIdentity: ContentIdentity(
-        type: ContentType.learningPack,
-        id: 'pack:travel',
-        revision: 1,
-      ),
-    ),
-  ];
+  Future<List<LearningPackSummary>> list(LearningPackFilter filter) async =>
+      empty
+      ? []
+      : [
+          if (extra)
+            LearningPackSummary(
+              packId: 'synthetic-r15-health',
+              revision: 1,
+              title: 'Health basics',
+              cefrLevel: 'B1',
+              topic: 'health',
+              skill: 'vocabulary',
+              goal: 'recognition',
+              contentIdentity: ContentIdentity(
+                type: ContentType.learningPack,
+                id: 'synthetic-r15-health',
+                revision: 1,
+              ),
+            ),
+          LearningPackSummary(
+            packId: 'pack:travel',
+            revision: 1,
+            title: 'Travel basics',
+            cefrLevel: 'A1',
+            topic: 'travel',
+            skill: 'vocabulary',
+            goal: 'recognition',
+            contentIdentity: ContentIdentity(
+              type: ContentType.learningPack,
+              id: 'pack:travel',
+              revision: 1,
+            ),
+          ),
+        ];
 }
 
 final class _Owner implements LocalOwnerRepository {

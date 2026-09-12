@@ -23,6 +23,15 @@ final class LearningPackCatalogScreen extends StatefulWidget {
 final class _LearningPackCatalogScreenState
     extends State<LearningPackCatalogScreen> {
   late Future<LearningPackCatalog> _catalog;
+  final _search = TextEditingController();
+  String? _level;
+  String? _topic;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -58,11 +67,92 @@ final class _LearningPackCatalogScreenState
           }
           final packs = snapshot.requireData.packs;
           if (packs.isEmpty) {
-            return const Center(child: Text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'));
+            return const Center(
+              child: Text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'),
+            );
           }
-          return ListView.builder(
-            itemCount: packs.length,
-            itemBuilder: (context, index) => _PackTile(pack: packs[index]),
+          final query = _search.text.trim().toLowerCase();
+          final levels = packs.map((pack) => pack.cefrLevel).toSet().toList()
+            ..sort();
+          final topics = packs.map((pack) => pack.topic).toSet().toList()
+            ..sort();
+          final visible = packs
+              .where(
+                (pack) =>
+                    (_level == null || pack.cefrLevel == _level) &&
+                    (_topic == null || pack.topic == _topic) &&
+                    '${pack.title} ${pack.cefrLevel} ${pack.topic} ${pack.skill} ${pack.goal}'
+                        .toLowerCase()
+                        .contains(query),
+              )
+              .toList();
+          return SafeArea(
+            top: false,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 960),
+                child: ListView(
+                  padding: EdgeInsets.all(
+                    MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
+                  ),
+                  children: [
+                    TextField(
+                      controller: _search,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'ค้นหาชุดบทเรียน',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: query.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'ล้างการค้นหา',
+                                constraints: const BoxConstraints(
+                                  minWidth: 48,
+                                  minHeight: 48,
+                                ),
+                                onPressed: () => setState(_search.clear),
+                                icon: const Icon(Icons.clear),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final level in levels)
+                          FilterChip(
+                            label: Text(level),
+                            selected: _level == level,
+                            onSelected: (selected) => setState(
+                              () => _level = selected ? level : null,
+                            ),
+                          ),
+                        for (final topic in topics)
+                          FilterChip(
+                            label: Text(topic),
+                            selected: _topic == topic,
+                            onSelected: (selected) => setState(
+                              () => _topic = selected ? topic : null,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (visible.isEmpty)
+                      Text(
+                        query.isEmpty
+                            ? 'ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'
+                            : 'ไม่พบชุดบทเรียนที่ตรงกับการค้นหา',
+                      )
+                    else
+                      for (final pack in visible) _PackTile(pack: pack),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
           );
         },
       ),
@@ -102,6 +192,7 @@ final class _PackTile extends StatelessWidget {
       onTap: () => _open(context),
       child: ExcludeSemantics(
         child: ListTile(
+          contentPadding: EdgeInsets.zero,
           key: ValueKey<String>(
             'learning-pack/open/${pack.packId}/${pack.revision}',
           ),

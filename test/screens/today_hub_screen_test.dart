@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
 import 'package:vocab_learning_app/features/goals/domain/learning_goal.dart';
@@ -15,8 +16,260 @@ import 'package:vocab_learning_app/features/today_hub/domain/today_hub_models.da
 import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/today_hub_screen.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
+import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('A-UI-03 Today keyboard follows primary then manual practice', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(snapshot: _snapshot(resumableSession: _resumableSession())),
+    );
+    await tester.pumpAndSettle();
+    for (final key in [
+      'today-hub-resume-action',
+      'today-hub-manual-practice',
+    ]) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      final keys = <Key?>[];
+      FocusManager.instance.primaryFocus!.context!.visitAncestorElements((
+        element,
+      ) {
+        keys.add(element.widget.key);
+        return true;
+      });
+      expect(keys, contains(ValueKey<String>(key)));
+    }
+  });
+  test('A-UI-05 actual layout text roles meet unrounded 4.5 contrast', () {
+    for (final theme in [M3Theme.lightTheme, M3Theme.darkTheme]) {
+      final colors = theme.colorScheme;
+      final card = theme.cardTheme.color ?? colors.surfaceContainerLow;
+      for (final pair in [
+        (colors.onSurface, theme.scaffoldBackgroundColor),
+        (colors.onSurfaceVariant, theme.scaffoldBackgroundColor),
+        (colors.onSurface, card),
+        (colors.onSurfaceVariant, card),
+        (colors.primary, card),
+        (colors.onPrimary, colors.primary),
+        (colors.onPrimaryContainer, colors.primaryContainer),
+        (colors.onSecondaryContainer, colors.secondaryContainer),
+      ]) {
+        final a = pair.$1.computeLuminance();
+        final b = pair.$2.computeLuminance();
+        expect(
+          ((a > b ? a : b) + 0.05) / ((a < b ? a : b) + 0.05),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
+    }
+  });
+  testWidgets('A-NAV-02 unavailable assessment dependency cannot launch', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        snapshot: _snapshot(
+          assignedAssessment: _assignedAssessment(),
+          dependencyStates: _states(
+            overrides: {
+              TodayHubDependency.assessment: TodayHubDependencyState.corrupt,
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('today-hub-assessment-action')),
+      findsNothing,
+    );
+    expect(find.text('แบบประเมินยังไม่พร้อมใช้งาน'), findsOneWidget);
+  });
+  testWidgets('A-UI-08 Today bounds and bottom system inset', (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(bottom: 34);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    final list = find.byKey(const ValueKey('today-hub-view'));
+    expect(tester.getSize(list).width, lessThanOrEqualTo(960));
+    await _scrollToTodayHubAction(tester, 'today-hub-open-history');
+    expect(
+      tester
+          .getRect(find.byKey(const ValueKey('today-hub-open-history')))
+          .bottom,
+      lessThanOrEqualTo(750),
+    );
+  });
+  setUpAll(loadR15Fonts);
+  for (final width in [320.0, 390.0, 840.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final dark in [false, true]) {
+        testWidgets('visual Today w$width s$scale dark$dark', (tester) async {
+          tester.view.physicalSize = Size(width, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: const ValueKey('synthetic-r15-surface'),
+              child: MaterialApp(
+                theme: dark ? M3Theme.darkTheme : M3Theme.lightTheme,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: child!,
+                ),
+                home: TodayHubScreen(
+                  useCases: _Loader(
+                    _snapshot(
+                      resumableSession: _resumableSession(),
+                      reviewWork: [_reviewWork()],
+                    ),
+                  ),
+                  actions: _Actions(),
+                  features: const BuildFeatureRegistry.allEnabled(),
+                  assessmentAvailable: true,
+                ),
+              ),
+            ),
+          );
+          await captureR15Surface(
+            tester,
+            'A-UI-01-T01-w${width.toInt()}-s${scale.toInt()}-${dark ? 'dark' : 'light'}',
+          );
+          await _scrollToTodayHubAction(tester, 'today-hub-open-history');
+          expect(tester.takeException(), isNull);
+          expect(
+            find.byKey(const ValueKey('today-hub-open-history')).hitTestable(),
+            findsOneWidget,
+          );
+        });
+      }
+    }
+  }
+
+  for (final state in [
+    TodayHubDependencyState.stale,
+    TodayHubDependencyState.corrupt,
+    TodayHubDependencyState.unavailable,
+  ]) {
+    testWidgets('A-NAV-03 inconsistent recommendation and review $state', (
+      tester,
+    ) async {
+      final actions = _Actions();
+      await tester.pumpWidget(
+        _app(
+          actions: actions,
+          snapshot: _snapshot(
+            recommendation: _freshRecommendation(contentId: 'word:station'),
+            reviewWork: [_reviewWork()],
+            dependencyStates: _states(
+              overrides: {
+                TodayHubDependency.recommendation: state,
+                TodayHubDependency.review: state,
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('today-hub-start-recommendation')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('today-hub-review:word:station')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('today-hub-open-review')));
+      await tester.pumpAndSettle();
+      expect(actions.reviewCalls, 1);
+      expect(actions.reviewWork, isEmpty);
+    });
+  }
+
+  testWidgets(
+    'A-NAV-03 manual practice stays reachable without recommendation',
+    (tester) async {
+      await tester.pumpWidget(_app());
+      await tester.pumpAndSettle();
+      expect(find.text('เลือกฝึกเอง'), findsOneWidget);
+      await tester.tap(find.text('เลือกฝึกเอง'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ChooseModeScreen), findsOneWidget);
+      expect(find.byKey(const ValueKey('home/learn/quiz')), findsOneWidget);
+    },
+  );
+
+  testWidgets('A-NAV-01 primary follows canonical section order', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        snapshot: _snapshot(
+          sectionOrder: const [TodayHubSectionKind.review],
+          resumableSession: _resumableSession(),
+          reviewWork: [_reviewWork()],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final review = find.byKey(const ValueKey('today-hub-open-review'));
+    final colors = Theme.of(tester.element(review)).colorScheme;
+    expect(
+      tester.getTopLeft(review).dy,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('today-hub-manual-practice')))
+            .dy,
+      ),
+    );
+    expect(
+      tester.widget<OutlinedButton>(review).style!.backgroundColor!.resolve({}),
+      colors.primary,
+    );
+    expect(find.byKey(const ValueKey('today-hub-resume-action')), findsNothing);
+  });
+
+  for (final state in [
+    TodayHubDependencyState.stale,
+    TodayHubDependencyState.corrupt,
+    TodayHubDependencyState.unavailable,
+  ]) {
+    testWidgets('A-NAV-03 resume rejects $state dependency', (tester) async {
+      final actions = _Actions();
+      await tester.pumpWidget(
+        _app(
+          actions: actions,
+          snapshot: _snapshot(
+            resumableSession: _resumableSession(),
+            dependencyStates: _states(
+              overrides: {TodayHubDependency.activeSession: state},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final resume = find.byKey(const ValueKey('today-hub-resume-action'));
+      if (resume.evaluate().isNotEmpty) {
+        expect(tester.widget<FilledButton>(resume).onPressed, isNull);
+      }
+      expect(actions.resumeCalls, 0);
+      expect(find.text('เซสชันที่ค้างอยู่ไม่พร้อมใช้งาน'), findsOneWidget);
+    });
+  }
+
   for (final state in [
     TodayHubDependencyState.empty,
     TodayHubDependencyState.unavailable,
@@ -583,6 +836,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('today-hub-open-review')));
       await tester.pump();
+      await _scrollToTodayHubAction(tester, 'today-hub-open-history');
       await tester.tap(find.byKey(const ValueKey('today-hub-open-history')));
       await tester.pump();
 

@@ -68,6 +68,8 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
+import '../support/r15_visual_capture.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 
 Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
   final scrollable = find
@@ -242,6 +244,114 @@ Future<void> _openConfiguredMode(
 }
 
 void main() {
+  testWidgets('A-UI-08 Choose bounds and bottom system inset', (tester) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(bottom: 34);
+    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPadding);
+    addTearDown(tester.view.resetViewPadding);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ChooseModeScreen(
+          featureRegistry: BuildFeatureRegistry.allEnabled(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(ListView)).width, lessThanOrEqualTo(960));
+    await _scrollToModeEntry(tester, 'home/learn/quiz/cloze');
+    expect(
+      tester
+          .getRect(find.byKey(const ValueKey('home/learn/quiz/cloze')))
+          .bottom,
+      lessThanOrEqualTo(750),
+    );
+  });
+  setUpAll(loadR15Fonts);
+  for (final width in [320.0, 390.0, 840.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final dark in [false, true]) {
+        testWidgets('visual Choose w$width s$scale dark$dark', (tester) async {
+          tester.view.physicalSize = Size(width, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: const ValueKey('synthetic-r15-surface'),
+              child: MaterialApp(
+                theme: dark ? M3Theme.darkTheme : M3Theme.lightTheme,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: child!,
+                ),
+                home: const ChooseModeScreen(
+                  featureRegistry: BuildFeatureRegistry.allEnabled(),
+                ),
+              ),
+            ),
+          );
+          await captureR15Surface(
+            tester,
+            'A-UI-01-T02-mode-w${width.toInt()}-s${scale.toInt()}-${dark ? 'dark' : 'light'}',
+          );
+          await _scrollToModeEntry(tester, 'home/learn/quiz/cloze');
+          expect(tester.takeException(), isNull);
+          expect(
+            find.byKey(const ValueKey('home/learn/quiz/cloze')).hitTestable(),
+            findsOneWidget,
+          );
+        });
+      }
+    }
+  }
+
+  for (final scenario in [
+    (320.0, 1.0, 1),
+    (390.0, 1.0, 2),
+    (840.0, 1.0, 3),
+    (840.0, 1.5, 1),
+  ]) {
+    testWidgets('A-UI-06 mode columns $scenario', (tester) async {
+      tester.view.physicalSize = Size(scenario.$1, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(scenario.$2)),
+            child: child!,
+          ),
+          home: const ChooseModeScreen(
+            featureRegistry: BuildFeatureRegistry.allEnabled(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final rects = [
+        for (final id in [
+          'home/learn/quiz',
+          'home/learn/quiz/definition',
+          'home/learn/srs',
+        ])
+          tester.getRect(find.byKey(ValueKey(id))),
+      ];
+      expect(
+        rects.where((rect) => rect.top == rects.first.top).length,
+        scenario.$3,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('clear starter launches the existing configured meaning quiz', (
     tester,
   ) async {
@@ -620,11 +730,7 @@ void main() {
           'เลือกคำจากคำอธิบาย',
           Icons.menu_book_outlined,
         ),
-        (
-          'home/learn/srs',
-          'ทบทวนคำศัพท์',
-          Icons.event_repeat_outlined,
-        ),
+        ('home/learn/srs', 'ทบทวนคำศัพท์', Icons.event_repeat_outlined),
         (
           'home/learn/reading/cefr',
           'อ่านตามระดับภาษา CEFR',
