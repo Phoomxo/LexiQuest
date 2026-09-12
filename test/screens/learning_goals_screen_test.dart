@@ -18,6 +18,41 @@ import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
+  testWidgets('R15.5 goals reload when owner dependencies are replaced', (
+    tester,
+  ) async {
+    LearningGoalUseCases cases(String owner) => LearningGoalUseCases(
+      activeOwnerId: () async => owner,
+      repository: _Goals([
+        LearningGoal(
+          id: 'goal:$owner',
+          kind: LearningGoalKind.personal,
+          title: 'Goal $owner',
+          deadlineAtUtc: DateTime.utc(2026, 9, 1),
+          timezone: const LearningGoalTimezoneContext(
+            timezoneId: 'UTC',
+            utcOffsetMinutes: 0,
+          ),
+          status: LearningGoalStatus.active,
+          createdAtUtc: DateTime.utc(2026, 8, 25),
+          updatedAtUtc: DateTime.utc(2026, 8, 25),
+        ),
+      ]),
+      nowUtc: () => DateTime.utc(2026, 8, 25),
+      generateId: () => 'new:$owner',
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: LearningGoalsScreen(useCases: cases('A'))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Goal A'), findsOneWidget);
+    await tester.pumpWidget(
+      MaterialApp(home: LearningGoalsScreen(useCases: cases('B'))),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Goal A'), findsNothing);
+    expect(find.text('Goal B'), findsOneWidget);
+  });
   for (final changeOwner in [false, true]) {
     testWidgets(
       changeOwner

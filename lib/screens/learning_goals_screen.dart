@@ -43,6 +43,7 @@ final class LearningGoalsScreen extends StatefulWidget {
 
 final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   Future<List<LearningGoal>>? _goals;
+  LearningGoalUseCases? _loadedUseCases;
   Future<bool>? _reminderEntryAvailable;
   Listenable? _registryChanges;
 
@@ -59,7 +60,7 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _goals ??= _resolveUseCases()?.list();
+    _refreshGoalSource();
     final registry = _resolveFeatureRegistry();
     final Listenable? changes = registry is Listenable
         ? registry as Listenable
@@ -75,9 +76,18 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   @override
   void didUpdateWidget(LearningGoalsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _refreshGoalSource();
     if (!identical(oldWidget.reminderUseCases, widget.reminderUseCases) ||
         oldWidget.reminderRuntimeEnabled != widget.reminderRuntimeEnabled) {
       _refreshReminderAvailability();
+    }
+  }
+
+  void _refreshGoalSource() {
+    final useCases = _resolveUseCases();
+    if (!identical(useCases, _loadedUseCases) || _goals == null) {
+      _loadedUseCases = useCases;
+      _goals = useCases?.list();
     }
   }
 

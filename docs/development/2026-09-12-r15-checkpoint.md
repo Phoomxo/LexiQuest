@@ -1,65 +1,59 @@
 # R15 active checkpoint
 
 ## Instruction and source
-User approved continuous solo local development through R15.10; no restart
-approval loops, subagents/background writers, paid services, push or deployment.
-Use r15-package-workflow.md and read only the active package.
-Latest user instruction: after each accepted package, commit and immediately
-create the next task, one task per package through R15.10.
+User approved continuous solo local work through R15.10. One task per package:
+accept and commit current package, then immediately create the next from exact
+accepted SHA. No approval restart, subagents, background writers or overlap.
+Use AGENTS.md and r15-package-workflow.md; read only current package requirements.
 
-- Worktree: C:/Users/Phet/.codex/worktrees/5554/LexiQuest
-- Branch: feature/r15-learning-continuation; verified clean starting HEAD
-  b17bf81b365c6d5b37d67c84d4b3c36df13234ff (accepted R15.0–3 source).
-- This checkpoint accompanies the accepted R15.4 commit. Resolve exact HEAD
-  before handoff and start the successor from it, never the default branch.
-- No task-owned test/build process remains. Other worktrees untouched.
-- Flutter regenerated registrants with line-ending-only status changes and no
-  content diff; excluded from package. Never import pending work elsewhere.
-- Test-generated Pair failure PNG changes are also excluded; do not import them.
+- Worktree:C:/Users/Phet/.codex/worktrees/cad3/LexiQuest
+- Branch:feature/r15-dashboard-continuation
+- Starting HEAD:4936b48b4ce307ecdeb8aa6f77282f5f202f3bd1 (accepted R15.0–4).
+- This checkpoint accompanies accepted R15.5 commit; resolve HEAD before dispatch.
+  Never start from default branch or import pending work elsewhere.
+- No task-owned test/build process remains. Source writes finished at handoff.
+- Generated registrants EOL-only status/no content diff excluded; do not import.
 
 ## Current package result
-R15.4 local implementation accepted: version-pinned short explanation/details and
-explicit unavailable copy; first5/6 and repair1/1 presentation/history separated;
-self-report/exposure/recognition/contextual activity copy; injected due-clock test.
-Existing learning/reward/review authorities and historical version guards retained.
-Evidence:2026-09-13-r15-learning-verification.md. Broad gate298 passed with1 stale
-Today source assertion; corrected assertion then passed1/1 with stronger guard.
-Pair result/replay golden1/1 passed;13-file analysis clean. Counts overlap with
-earlier focused checks. Actual Flutter PNGs and two updated goldens reviewed.
-Final runtime/test fingerprint:
-f2f17bfcde58d9317a7714d85525b47a6773a03cd7f15737fd13d6957388587d.
-No current test/build process. Physical/human/release acceptance remains external.
+R15.5 local implementation accepted: weekly correct/total+rounded percent,
+active time/current review due, honest unavailable copy and availability guard,
+overall mastery/XP labels, existing Goals/reminder route. Fixed Goals cache on
+use-case/dependency replacement. No new storage or authority.
+Evidence:2026-09-13-r15-dashboard-verification.md.
+Broad8-target gate137 passed +1 stale scroll assertion; corrected case1/1 passed.
+Additional ledger5/6 +79s-in10min case1/1 passed. Analysis6files clean.
+Final fingerprint:305b34114968c6b2bfb91540240257b8f3e677ed6189642320c111aafb015910.
+Actual Flutter empty/200%-text summary/details PNGs reviewed. No remaining local
+acceptance/debugging failure. Human/physical/release acceptance external.
 
-R15.3 local implementation verified: Today canonical primary/dependency guards
-and manual practice; catalog search/actual metadata filters/distinct empty states;
-responsive mode columns, max960 and SafeArea. No new storage/authority.
-Evidence: 2026-09-12-r15-layout-verification.md, including precise source logs.
-180 affected screen/navigation checks passed; capture-helper-only rerun26 visual
-checks passed; final bounded analysis clean. Counts overlap, do not sum.
-Actual Flutter before/after PNGs under build/verification/r15-visual were reviewed.
-Physical/TalkBack/human/release acceptance remains unestablished.
-
-R15.2 unchanged evidence: 2026-09-12-r15-pair-verification.md.
-Do not rerun R15.2 or unchanged passed gates just for a new task or commit.
+R15.4 evidence:2026-09-13-r15-learning-verification.md. Version-pinned explanation,
+first5/6 and repair1/1 separated, activity semantics and due-clock retained.
+Pair golden fixture pumps pairFeedbackHold+pairFeedbackFade; do not replace with
+pumpAndSettle alone or change production completion. Prior package evidence stays
+in referenced verification files. Do not rerun unchanged passed gates.
 
 ## Next executable work
-Create R15.5 immediately from this accepted commit. Read ONLY R15.5 roadmap,
-matching DATA-01–05 spec and A-DATA acceptance. Continue solo; accept/commit each
-package before creating R15.6,7,8,9,10 sequentially. Do not preload their specs.
-At combined UI source freeze, build once and test authorized Vivo. Never treat
-local widget/contrast/visual evidence as physical acceptance.
+Create R15.6 immediately from this accepted SHA. Read ONLY matching R15.6 roadmap,
+engineering spec and A-CAM runtime acceptance. Do not preload R15.7–10.
+Use the new task worktree. If detached/codex branch, create task-owned
+feature/r15-camera-continuation without changing another user's branch.
+Accept/commit R15.6 before creating R15.7; carry same rules through R15.10.
+Complete coupled debugging before handoff; never fork full history.
 
-## Device and immutable boundaries
-Vivo9582188822004C6, V2041/API33, com.lexiquest.app debug v23. Preserve identity/data.
-No device install/test in this task. Emulator emulator-5554.
-Serialize Flutter/test/build/codegen. Preserve8/44, EvidenceContext/EventEnvelopeV2,
-canonical learning/reward, owner isolation and optional/default-off research.
-No real enrollment/uploads, paid services, deployment, push, merge or cleanup.
+## Immutable boundaries and device
+Preserve8/44, frozen EvidenceContext/EventEnvelopeV2, canonical learning/reward,
+historical truth, owner isolation, research optional/default-off. No real
+enrollment/upload, paid services, deploy/push/merge or destructive cleanup.
+No Codex Security/worker workflows. Serialize Flutter/test/build/codegen.
+Authorized Vivo9582188822004C6, V2041/API33, com.lexiquest.app debug v23; preserve
+identity/data and use serial explicitly. Build/device verification at combined UI
+source freeze. No device operation occurred in R15.5.
 
 ## Read on demand
 - ../superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md
 - ../superpowers/specs/2026-09-12-r15-engineering-spec.md
 - ../superpowers/plans/2026-09-12-r15-acceptance-contract.md
-- 2026-09-12-r15-layout-verification.md
+- 2026-09-13-r15-dashboard-verification.md
 - lexiquest-guardrails-reference.md
-Do not preload all packages, full history or repeat worktree inventory.
+Current logs/PNGs untracked under cad3/build/verification; earlier learning logs
+remain in5554. Read necessary evidence only; no worktree inventory.

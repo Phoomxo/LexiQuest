@@ -7,8 +7,112 @@ import 'package:vocab_learning_app/features/progress/domain/personal_learning_pr
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/screens/learning_calendar_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
+import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
+
+import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('R15.5 opens existing goals route from dashboard', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: MasteryDashboardScreen(loader: () async => _profile)),
+    );
+    await tester.pumpAndSettle();
+    await _scrollToText(tester, 'เป้าหมายและการแจ้งเตือน');
+    await tester.tap(find.text('เป้าหมายและการแจ้งเตือน'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningGoalsScreen), findsOneWidget);
+  });
+
+  testWidgets('R15.5 actual dashboard surfaces remain readable at large text', (
+    tester,
+  ) async {
+    await loadR15Fonts();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    for (final empty in [false, true]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: M3Theme.lightTheme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(empty ? 1 : 2)),
+            child: child!,
+          ),
+          home: RepaintBoundary(
+            key: const ValueKey('synthetic-r15-surface'),
+            child: MasteryDashboardScreen(
+              loader: () async => _profileFixture(
+                empty: empty,
+                sampleSize: 6,
+                correctCount: 5,
+                activeDuration: const Duration(seconds: 79),
+              ),
+            ),
+          ),
+        ),
+      );
+      await captureR15Surface(
+        tester,
+        empty ? 'r15-dashboard-empty' : 'r15-dashboard-large-text',
+      );
+      await _scrollToText(tester, 'ความแม่นยำ');
+      await captureR15Surface(
+        tester,
+        empty ? 'r15-dashboard-empty-details' : 'r15-dashboard-details',
+      );
+    }
+  });
+  testWidgets(
+    'R15.5 summary shows 5 of 6, rounded accuracy and active seconds',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MasteryDashboardScreen(
+            loader: () async => _profileFixture(
+              sampleSize: 6,
+              correctCount: 5,
+              activeDuration: const Duration(seconds: 79),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('5 / 6'), findsOneWidget);
+      expect(find.text('ตอบถูก 5 จาก 6 คำตอบ · 83%'), findsOneWidget);
+      expect(find.text('1 นาที 19 วินาที'), findsOneWidget);
+      expect(find.text('ถึงกำหนดทบทวนตอนนี้: 1 คำ'), findsOneWidget);
+      expect(find.textContaining('10 นาที'), findsNothing);
+    },
+  );
+
+  for (final availability in ProfileAxisAvailability.values) {
+    testWidgets('R15.5 zero sample is unavailable $availability', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MasteryDashboardScreen(
+            loader: () async => _profileFixture(
+              sampleSize: 0,
+              correctCount: 0,
+              accuracyAvailability: availability,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ยังไม่มีข้อมูลคำตอบที่ใช้คำนวณ'), findsOneWidget);
+      expect(find.textContaining('NaN'), findsNothing);
+      expect(find.text('0%'), findsNothing);
+    });
+  }
+
   testWidgets(
     'mastery delegates review and weakness without creating its own session',
     (tester) async {
@@ -76,7 +180,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ'), findsOneWidget);
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsOneWidget);
     expect(find.textContaining('24 ส.ค. 2569'), findsOneWidget);
     expect(find.textContaining('30 ส.ค. 2569'), findsOneWidget);
     expect(find.textContaining('เวลาประเทศไทย'), findsOneWidget);
@@ -100,7 +204,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('ตอบถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+    expect(find.text('ตอบถูก 1 จาก 1 คำตอบ · 100%'), findsOneWidget);
     expect(find.textContaining('มีข้อมูลน้อย'), findsOneWidget);
     expect(
       find.text(
@@ -221,8 +325,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(loadCalls, 2);
+    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsOneWidget);
+    await _scrollToText(tester, 'Listening');
     expect(find.text('Listening'), findsOneWidget);
-    expect(find.text('ตอบถูก 8 จาก 10 คำตอบ'), findsOneWidget);
   });
 
   testWidgets(
@@ -245,23 +350,23 @@ void main() {
       );
       first.complete(_profile);
       await tester.pumpAndSettle();
-      expect(find.text('ตอบถูก 8 จาก 10 คำตอบ'), findsOneWidget);
+      expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsOneWidget);
 
       loader.value = () => second.future;
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      expect(find.text('ตอบถูก 8 จาก 10 คำตอบ'), findsNothing);
+      expect(find.text('ตอบถูก 8 จาก 10 คำตอบ · 80%'), findsNothing);
 
       final replacement = _profileFixture(sampleSize: 1, correctCount: 1);
       loader.value = () => third.future;
       await tester.pump();
       third.complete(replacement);
       await tester.pumpAndSettle();
-      expect(find.text('ตอบถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+      expect(find.text('ตอบถูก 1 จาก 1 คำตอบ · 100%'), findsOneWidget);
 
       second.complete(_empty);
       await tester.pumpAndSettle();
-      expect(find.text('ตอบถูก 1 จาก 1 คำตอบ'), findsOneWidget);
+      expect(find.text('ตอบถูก 1 จาก 1 คำตอบ · 100%'), findsOneWidget);
       expect(find.text('ยังไม่มีคำตอบในสัปดาห์นี้'), findsNothing);
     },
   );
@@ -315,6 +420,8 @@ PersonalLearningProfile _profileFixture({
   bool empty = false,
   int sampleSize = 10,
   int correctCount = 8,
+  Duration activeDuration = const Duration(minutes: 25),
+  ProfileAxisAvailability? accuracyAvailability,
 }) {
   final availability = empty
       ? ProfileAxisAvailability.noEvidence
@@ -343,10 +450,10 @@ PersonalLearningProfile _profileFixture({
     ),
     effort: PersonalLearningEffort(
       availability: availability,
-      activeDuration: empty ? Duration.zero : const Duration(minutes: 25),
+      activeDuration: empty ? Duration.zero : activeDuration,
     ),
     accuracy: PersonalLearningAccuracy(
-      availability: availability,
+      availability: accuracyAvailability ?? availability,
       sampleSize: empty ? 0 : sampleSize,
       correctCount: empty ? 0 : correctCount,
     ),

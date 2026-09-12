@@ -9,6 +9,7 @@ import '../runtime/app_dependencies.dart';
 import '../utils/local_study_datetime.dart';
 import '../widgets/learning_summary_card.dart';
 import 'learning_calendar_screen.dart';
+import 'learning_goals_screen.dart';
 
 typedef ProgressLoader = Future<ProgressSnapshot> Function();
 typedef MasteryProfileLoader = Future<PersonalLearningProfile> Function();
@@ -168,6 +169,12 @@ class _DashboardBody extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 24),
+        Text(
+          'รายละเอียดสะสมและสถานะปัจจุบัน',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const Text('ความชำนาญและ XP เป็นข้อมูลสะสม ไม่ใช่ผลเฉพาะสัปดาห์นี้'),
+        const SizedBox(height: 12),
         if (profile.isEmpty)
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
@@ -224,12 +231,10 @@ class _DashboardBody extends StatelessWidget {
         _AxisSection(
           title: 'ความแม่นยำ',
           child: profile.accuracy.value == null
-              ? const _NoEvidence()
+              ? const Text('ยังไม่มีข้อมูลคำตอบที่ใช้คำนวณ')
               : _MetricRow(
-                  label: 'ความแม่นยำจากการฝึก',
-                  value:
-                      '${(profile.accuracy.value! * 100).toStringAsFixed(0)}% '
-                      'จาก ${profile.accuracy.sampleSize} คำตอบ',
+                  label: 'ความแม่นยำสัปดาห์นี้',
+                  value: _accuracyCaption(profile.accuracy),
                 ),
         ),
         _AxisSection(
@@ -288,6 +293,18 @@ class _DashboardBody extends StatelessWidget {
           icon: const Icon(Icons.calendar_month_outlined),
           label: const Text('เปิดปฏิทินการเรียน'),
         ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: () => AppNavigator.pushPage<void>(
+            context,
+            AppPage<void>(
+              name: 'study-planning/goals',
+              builder: (_) => const LearningGoalsScreen(),
+            ),
+          ),
+          icon: const Icon(Icons.flag_outlined),
+          label: const Text('เป้าหมายและการแจ้งเตือน'),
+        ),
       ],
     );
   }
@@ -320,17 +337,31 @@ class _WeeklyEvidenceSummary extends StatelessWidget {
           value: hasEvidence
               ? '${accuracy.correctCount} / ${accuracy.sampleSize}'
               : null,
-          caption: hasEvidence
-              ? 'ตอบถูก ${accuracy.correctCount} จาก ${accuracy.sampleSize} คำตอบ'
-              : null,
+          caption: hasEvidence ? _accuracyCaption(accuracy) : null,
         ),
         Text(
           '$period · เวลา$timezone (${calendar.timezoneId})',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
+        Text(
+          'เวลาเรียนจริงสัปดาห์นี้',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        Text(
+          profile.effort.availability == ProfileAxisAvailability.available
+              ? _duration(profile.effort.activeDuration)
+              : 'ยังไม่มีข้อมูลเวลาเรียนจริง',
+        ),
+        const SizedBox(height: 8),
+        Text(
+          profile.srs.availability == ProfileAxisAvailability.available
+              ? 'ถึงกำหนดทบทวนตอนนี้: ${profile.srs.dueReviewCount} คำ'
+              : 'ยังไม่มีคำในตารางทบทวน',
+        ),
+        const SizedBox(height: 12),
         if (!hasEvidence)
-          const Text('เริ่มฝึกเมื่อพร้อม แล้วกลับมาดูผลได้')
+          const Text('ยังไม่มีข้อมูลคำตอบที่ใช้คำนวณ')
         else ...<Widget>[
           Text(
             accuracy.sampleSize == 1
@@ -467,3 +498,7 @@ String _duration(Duration duration) {
   final seconds = duration.inSeconds.remainder(60);
   return minutes == 0 ? '$seconds วินาที' : '$minutes นาที $seconds วินาที';
 }
+
+String _accuracyCaption(PersonalLearningAccuracy accuracy) =>
+    'ตอบถูก ${accuracy.correctCount} จาก ${accuracy.sampleSize} คำตอบ · '
+    '${(accuracy.value! * 100).toStringAsFixed(0)}%';

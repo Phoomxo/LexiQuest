@@ -17,6 +17,15 @@ import 'package:vocab_learning_app/features/progress/data/drift_progress_queries
 import 'package:vocab_learning_app/features/progress/domain/personal_learning_profile.dart';
 
 void main() {
+  test('R15.5 noEvidence accuracy never yields a proficiency value', () {
+    const accuracy = PersonalLearningAccuracy(
+      availability: ProfileAxisAvailability.noEvidence,
+      sampleSize: 6,
+      correctCount: 5,
+    );
+    expect(accuracy.value, isNull);
+  });
+
   setUpAll(timezone_data.initializeTimeZones);
 
   late AppDatabase database;
@@ -30,6 +39,96 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'R15.5 ledger five of six and 79 active seconds ignores ten minute span',
+    () async {
+      await _insertSession(database, ownerId: 'owner-1', id: 'six-answers');
+      for (var i = 0; i < 6; i++) {
+        await _insertAttempt(
+          database,
+          ownerId: 'owner-1',
+          id: 'answer:$i',
+          sessionId: 'six-answers',
+          occurredAtUtc: DateTime.utc(2026, 8, 25, 3, i),
+          isCorrect: i != 5,
+          evidence: _practiceEvidence(),
+        );
+      }
+      final start = DateTime.utc(2026, 8, 25, 3);
+      await _insertSegment(
+        database,
+        ownerId: 'owner-1',
+        id: 'active79',
+        sessionId: 'six-answers',
+        startedAtUtc: start,
+        activeDurationMs: 79000,
+        wallSpan: const Duration(minutes: 10),
+      );
+      final before = await _totalChanges(database);
+      final profile = await reader.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 8, 26),
+        timezoneId: 'Asia/Bangkok',
+      );
+      expect(profile.accuracy.correctCount, 5);
+      expect(profile.accuracy.sampleSize, 6);
+      expect(profile.accuracy.value, 5 / 6);
+      expect(profile.effort.activeDuration, const Duration(seconds: 79));
+      expect(await _totalChanges(database), before);
+    },
+  );
+
+  test('R15.5 weekly boundary keeps overall mastery and XP separate', () async {
+    await _seedPracticeAndAssessment(database, ownerId: 'owner-1');
+    final previous = await reader.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 8, 30, 16, 59),
+      timezoneId: 'Asia/Bangkok',
+    );
+    await _seedEngagement(database, ownerId: 'owner-1');
+    final sameWeek = await reader.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 8, 30, 16, 59),
+      timezoneId: 'Asia/Bangkok',
+    );
+    expect(
+      sameWeek.engagement.totalXp,
+      greaterThan(previous.engagement.totalXp),
+    );
+    expect(
+      sameWeek.mastery.masteredWordCount,
+      previous.mastery.masteredWordCount,
+    );
+    final next = await reader.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 8, 30, 17),
+      timezoneId: 'Asia/Bangkok',
+    );
+    final utc = await reader.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 8, 30, 17),
+      timezoneId: 'UTC',
+    );
+    expect(next.calendar.weekStart, DateTime(2026, 8, 31));
+    expect(utc.calendar.weekStart, DateTime(2026, 8, 24));
+    expect(next.accuracy.value, isNull);
+    expect(next.effort.activeDuration, Duration.zero);
+    expect(next.accuracy.sampleSize, next.calendar.weekly.accuracy.sampleSize);
+    expect(
+      utc.effort.activeDuration,
+      utc.calendar.weekly.effort.activeDuration,
+    );
+    expect(utc.accuracy.sampleSize, 1);
+    expect(next.mastery.masteredWordCount, sameWeek.mastery.masteredWordCount);
+    expect(next.engagement.totalXp, sameWeek.engagement.totalXp);
+    final foreign = await reader.load(
+      ownerId: 'owner-2',
+      nowUtc: DateTime.utc(2026, 8, 30, 17),
+      timezoneId: 'Asia/Bangkok',
+    );
+    expect(foreign.isEmpty, isTrue);
+  });
 
   test('composes six typed axes from their canonical authorities', () async {
     await _seedPracticeAndAssessment(database, ownerId: 'owner-1');
@@ -593,6 +692,7 @@ Future<void> _insertSegment(
   required String sessionId,
   required DateTime startedAtUtc,
   required int activeDurationMs,
+  Duration wallSpan = const Duration(minutes: 1),
 }) => database
     .into(database.learningTimeSegments)
     .insert(
@@ -603,9 +703,7 @@ Future<void> _insertSegment(
         activeStartOffsetMs: 0,
         activeDurationMs: activeDurationMs,
         startedAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
-        endedAtUtcMs: startedAtUtc
-            .add(const Duration(minutes: 1))
-            .millisecondsSinceEpoch,
+        endedAtUtcMs: startedAtUtc.add(wallSpan).millisecondsSinceEpoch,
         timezoneId: 'Asia/Bangkok',
         timezoneOffsetMinutes: 420,
         captureSource: 'automaticLesson',

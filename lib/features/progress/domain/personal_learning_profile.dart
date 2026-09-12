@@ -123,7 +123,10 @@ final class PersonalLearningAccuracy {
   final int correctCount;
 
   int get wrongCount => sampleSize - correctCount;
-  double? get value => sampleSize == 0 ? null : correctCount / sampleSize;
+  double? get value =>
+      availability != ProfileAxisAvailability.available || sampleSize == 0
+      ? null
+      : correctCount / sampleSize;
 
   Set<PersonalLearningProfileSource> get sources => const {
     PersonalLearningProfileSource.learningCalendar,
