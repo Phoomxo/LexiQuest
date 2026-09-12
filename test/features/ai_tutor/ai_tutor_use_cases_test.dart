@@ -61,6 +61,160 @@ void main() {
     );
   }
 
+  test(
+    'R15 owner and credential scope fences reject stale history before HTTP',
+    () async {
+      var event = 0;
+      final tutor = createTutor(eventId: () => 'event-${event++}');
+      addTearDown(tutor.dispose);
+      final status = await tutor.loadSettings();
+      expect(status.contextScopeId, isNotNull);
+      final context = TutorRequestContext(
+        sessionId: 'session-a',
+        scopeId: status.contextScopeId,
+        cefrLevel: 'B2',
+        intent: TutorIntent.explanation,
+      );
+      await tutor.reply(
+        scenario: 'Cafe',
+        learnerMessage: 'first',
+        context: context,
+      );
+      expect(gateway.lastContext?.cefrLevel, 'B2');
+      final history = TutorRequestContext(
+        sessionId: 'session-a',
+        scopeId: status.contextScopeId,
+        priorTurns: const [
+          TutorContextTurn(role: TutorTurnRole.learner, text: 'first'),
+          TutorContextTurn(role: TutorTurnRole.tutor, text: 'live reply'),
+        ],
+      );
+      await tutor.reply(
+        scenario: 'Cafe',
+        learnerMessage: 'second',
+        context: history,
+      );
+      expect(gateway.lastContext?.priorTurns, hasLength(2));
+      final credential = (await store.readCredential())!;
+      activeOwner = 'owner-b';
+      await store.writeCredential(credential);
+      await expectLater(
+        tutor.reply(
+          scenario: 'Cafe',
+          learnerMessage: 'third',
+          context: history,
+        ),
+        throwsA(
+          isA<AiTutorException>().having(
+            (e) => e.code,
+            'code',
+            AiFailureCode.cancelled,
+          ),
+        ),
+      );
+      expect(gateway.generateCalls, 2);
+      final next = await tutor.loadSettings();
+      expect(next.contextScopeId, isNot(status.contextScopeId));
+      await store.writeCredential(credential.copyWith(model: 'new-model'));
+      await expectLater(
+        tutor.reply(
+          scenario: 'Cafe',
+          learnerMessage: 'fourth',
+          context: TutorRequestContext(
+            sessionId: 'new',
+            scopeId: next.contextScopeId,
+          ),
+        ),
+        throwsA(
+          isA<AiTutorException>().having(
+            (e) => e.code,
+            'code',
+            AiFailureCode.cancelled,
+          ),
+        ),
+      );
+      expect(gateway.generateCalls, 2);
+    },
+  );
+
+  test(
+    'R15 scenario new session and unbound caller cannot reuse old pairs',
+    () async {
+      var id = 0;
+      final tutor = createTutor(eventId: () => 'session-event-${id++}');
+      addTearDown(tutor.dispose);
+      final scope = (await tutor.loadSettings()).contextScopeId;
+      TutorRequestContext context(String session, {String? fence}) =>
+          TutorRequestContext(
+            sessionId: session,
+            scopeId: fence,
+            priorTurns: const [
+              TutorContextTurn(
+                role: TutorTurnRole.learner,
+                text: 'old private question',
+              ),
+              TutorContextTurn(role: TutorTurnRole.tutor, text: 'old answer'),
+            ],
+          );
+      for (final request in [
+        ('one', 'Cafe', scope),
+        ('one', 'Airport', scope),
+        ('two', 'Airport', scope),
+        ('two', 'Airport', null),
+      ]) {
+        await tutor.reply(
+          scenario: request.$2,
+          learnerMessage: 'latest',
+          context: context(request.$1, fence: request.$3),
+        );
+        expect(gateway.lastContext?.priorTurns, isEmpty);
+      }
+      final credential = (await store.readCredential())!;
+      await store.writeCredential(
+        credential.copyWith(providerId: AiProviderId.claude),
+      );
+      await expectLater(
+        tutor.reply(
+          scenario: 'Airport',
+          learnerMessage: 'latest',
+          context: context('two', fence: scope),
+        ),
+        throwsA(_aiFailure(AiFailureCode.cancelled)),
+      );
+      expect(gateway.generateCalls, 4);
+    },
+  );
+
+  for (final code in [
+    AiFailureCode.invalidKey,
+    AiFailureCode.quota,
+    AiFailureCode.rateLimited,
+    AiFailureCode.malformedResponse,
+    AiFailureCode.timeout,
+    AiFailureCode.cancelled,
+  ]) {
+    test('R15 contextual failure accounting preserves ${code.name}', () async {
+      final tutor = createTutor();
+      addTearDown(tutor.dispose);
+      final scope = (await tutor.loadSettings()).contextScopeId;
+      gateway.failure = AiTutorException(code);
+      await expectLater(
+        tutor.reply(
+          scenario: 'Cafe',
+          learnerMessage: 'question',
+          context: TutorRequestContext(sessionId: 'test', scopeId: scope),
+        ),
+        throwsA(_aiFailure(code)),
+      );
+      expect(gateway.generateCalls, 1);
+      expect(usage.pending, isEmpty);
+      expect(usage.completed, hasLength(1));
+      expect(usage.completed.single.$1, 'owner-a');
+      expect(usage.completed.single.$2.errorCategory, code.name);
+      expect(usage.completed.single.$2.providerReportedCostMicrosUsd, isNull);
+    });
+  }
+
   test('durable pending insert completes before the provider starts', () async {
     final allowBegin = Completer<void>();
     usage.beforeBegin = () => allowBegin.future;
@@ -542,6 +696,7 @@ final class _FakeGateway implements AiTutorGateway {
   AiTutorException? failure;
   Future<void> Function()? onGenerate;
   int generateCalls = 0;
+  TutorRequestContext? lastContext;
 
   @override
   AiProviderId get providerId => providerIdValue;
@@ -554,10 +709,12 @@ final class _FakeGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {
     generateCalls++;
+    lastContext = context;
     await onGenerate?.call();
     if (failure case final error?) throw error;
     return const AiGatewayReply(

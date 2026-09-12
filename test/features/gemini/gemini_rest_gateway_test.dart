@@ -64,7 +64,7 @@ void main() {
       expect(reply, 'Could you give one concrete example?');
       expect(body['generationConfig'], {
         'candidateCount': 1,
-        'maxOutputTokens': 120,
+        'maxOutputTokens': 160,
       });
       expect(jsonEncode(body), contains('Consented learning summary'));
       expect(jsonEncode(body), isNot(contains(key)));

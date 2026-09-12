@@ -40,6 +40,51 @@ final class AiTutorUseCases implements AiTutorController {
   final _AsyncSerialGate _transitionGate = _AsyncSerialGate();
   bool _disposed = false;
   Future<void>? _disposeFuture;
+  (String, AiProviderId?, String?, String?, String?, bool?, bool?)?
+  _contextOwner;
+  String? _contextScopeId;
+  (String, String)? _conversationSession;
+
+  String _scopeFor(String ownerId, AiTutorCredential? credential) {
+    final identity = (
+      ownerId,
+      credential?.providerId,
+      credential?.model,
+      credential?.customBaseUrl,
+      credential?.key,
+      credential?.providerConsent,
+      credential?.shareLearningSummary,
+    );
+    if (_contextOwner != identity) {
+      _contextOwner = identity;
+      _contextScopeId = const Uuid().v4();
+      _conversationSession = null;
+    }
+    return _contextScopeId!;
+  }
+
+  TutorRequestContext? _scopedContext(
+    TutorRequestContext? context,
+    String ownerId,
+    AiTutorCredential credential,
+    String scenario,
+  ) {
+    final scope = _scopeFor(ownerId, credential);
+    if (context == null) return null;
+    if (context.scopeId != null && context.scopeId != scope) {
+      throw const AiTutorException(AiFailureCode.cancelled);
+    }
+    final session = (context.sessionId, scenario);
+    final retain = context.scopeId == scope && _conversationSession == session;
+    _conversationSession = session;
+    return TutorRequestContext(
+      sessionId: context.sessionId,
+      scopeId: scope,
+      cefrLevel: context.cefrLevel,
+      intent: context.intent,
+      priorTurns: retain ? context.priorTurns : const [],
+    );
+  }
 
   List<AiProviderConfig> get availableProviders => AiProviderConfig.all;
 
@@ -52,8 +97,10 @@ final class AiTutorUseCases implements AiTutorController {
       _transitionGate.run(
         () => ownerCoordinator.run(cancellation, (ownerId) async {
           final credential = await store.readCredentialForOwner(ownerId);
+          final scope = _scopeFor(ownerId, credential);
           if (credential == null) {
-            return const AiTutorSettingsStatus(
+            return AiTutorSettingsStatus(
+              contextScopeId: scope,
               hasKey: false,
               providerConsent: false,
               shareLearningSummary: false,
@@ -62,6 +109,7 @@ final class AiTutorUseCases implements AiTutorController {
             );
           }
           return AiTutorSettingsStatus(
+            contextScopeId: scope,
             hasKey: credential.key.trim().isNotEmpty,
             providerConsent: credential.providerConsent,
             shareLearningSummary:
@@ -321,6 +369,7 @@ final class AiTutorUseCases implements AiTutorController {
   Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     AiCancellation? cancellation,
   }) {
     _checkNotDisposed();
@@ -330,6 +379,12 @@ final class AiTutorUseCases implements AiTutorController {
       _transitionGate.run(
         () => ownerCoordinator.run(effectiveCancellation, (ownerId) async {
           final credential = await _requiredCredential(ownerId);
+          final requestContext = _scopedContext(
+            context,
+            ownerId,
+            credential,
+            scenario,
+          );
           String? summary;
           if (credential.shareLearningSummary && loadProgress != null) {
             try {
@@ -358,6 +413,7 @@ final class AiTutorUseCases implements AiTutorController {
               scenario: scenario,
               learnerMessage: learnerMessage,
               learningSummary: summary,
+              context: requestContext,
               cancellation: effectiveCancellation,
             ),
             usageOf: (reply) => reply.usage,
@@ -661,6 +717,9 @@ final class AiTutorUseCases implements AiTutorController {
 
   Future<void> _disposeOnce() async {
     _disposed = true;
+    _contextOwner = null;
+    _contextScopeId = null;
+    _conversationSession = null;
     await _cancelActiveOperations();
   }
 

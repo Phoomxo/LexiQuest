@@ -8,6 +8,57 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/runtime/circuit_breaker.dart';
 
 void main() {
+  test(
+    'R15 Gemini factory forwards bounded context through retry adapter',
+    () async {
+      late Map<String, dynamic> body;
+      final client = MockClient((request) async {
+        body = jsonDecode(request.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': 'คำตอบ'},
+                  ],
+                },
+              },
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      addTearDown(client.close);
+      final gateway = AiTutorGatewayFactory(
+        client: client,
+      ).create(providerId: AiProviderId.gemini, model: 'synthetic-model');
+      await gateway.generateTutorReply(
+        key: 's' * 24,
+        scenario: 'Cafe',
+        learnerMessage: 'latest',
+        context: TutorRequestContext(
+          sessionId: 'local-only',
+          cefrLevel: 'A2',
+          intent: TutorIntent.practice,
+          priorTurns: const [
+            TutorContextTurn(role: TutorTurnRole.learner, text: 'ถาม😀'),
+            TutorContextTurn(role: TutorTurnRole.tutor, text: 'ตอบ'),
+          ],
+        ),
+      );
+      expect(body['generationConfig']['maxOutputTokens'], 480);
+      expect((body['contents'] as List).map((t) => t['role']), [
+        'user',
+        'model',
+        'user',
+      ]);
+      expect(jsonEncode(body['systemInstruction']), contains('CEFR A2'));
+      expect(jsonEncode(body), isNot(contains('local-only')));
+      expect(jsonEncode(body), isNot(contains('s' * 24)));
+    },
+  );
   test('AI Tutor Gemini path retries transient failures', () async {
     var attempts = 0;
     final client = MockClient((_) async {

@@ -12,6 +12,7 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
     required this.client,
     required Uri baseUri,
     required this.model,
+    this.maxOutputTokens,
     OpenAiResponsesOfflineCheck? isOffline,
     this.requestTimeout = const Duration(seconds: 20),
   }) : baseUri = normalizeAiApiBaseUri(baseUri),
@@ -21,6 +22,7 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
   final Uri baseUri;
   final OpenAiResponsesOfflineCheck _isOffline;
   final Duration requestTimeout;
+  final int? maxOutputTokens;
 
   @override
   AiProviderId get providerId => AiProviderId.openai;
@@ -74,10 +76,12 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {
     final normalizedScenario = _normalizedText(scenario, maximumLength: 80);
+    final policy = context ?? TutorRequestContext(sessionId: '');
     final normalizedMessage = _normalizedText(
       learnerMessage,
       maximumLength: 500,
@@ -95,13 +99,12 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
       ..headers['content-type'] = 'application/json'
       ..body = jsonEncode({
         'model': model,
-        'instructions':
-            'You are a concise English tutor. Stay in the requested scenario, '
-            'use CEFR B1-B2 English, correct only material errors kindly, '
-            'never claim to have heard audio, and reply in no more than two '
-            'short sentences.',
-        'input': input.toString(),
-        'max_output_tokens': 120,
+        'instructions': policy.instructions,
+        'input': [
+          ...policy.messages,
+          {'role': 'user', 'content': input.toString()},
+        ],
+        'max_output_tokens': policy.outputTokenCap(maxOutputTokens),
       });
     final response = await _send(request, cancellation: cancellation);
     return _parseReply(response.body);
@@ -219,7 +222,7 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
 
   String _normalizedText(String value, {required int maximumLength}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.isEmpty || normalized.length > maximumLength) {
+    if (normalized.isEmpty || normalized.runes.length > maximumLength) {
       throw const AiTutorException(AiFailureCode.validation);
     }
     return normalized;

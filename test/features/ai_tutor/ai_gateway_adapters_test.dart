@@ -10,6 +10,181 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 
 void main() {
   test(
+    'R15 configured lower cap and Unicode latest bounds apply to all adapters',
+    () async {
+      for (final kind in ['responses', 'compatible', 'anthropic']) {
+        final client = _RecordingClient(
+          (_, _) async => _response(
+            200,
+            '{"output_text":"reply","choices":[{"message":{"content":"reply"}}],'
+            '"content":[{"type":"text","text":"reply"}]}',
+          ),
+        );
+        final uri = Uri.parse('https://synthetic.example');
+        final AiTutorGateway gateway = switch (kind) {
+          'responses' => OpenAiResponsesGateway(
+            client: client,
+            baseUri: uri,
+            model: 'test',
+            maxOutputTokens: 90,
+          ),
+          'compatible' => OpenAiCompatibleGateway(
+            client: client,
+            baseUri: uri,
+            model: 'test',
+            maxOutputTokens: 90,
+          ),
+          _ => AnthropicGateway(
+            client: client,
+            baseUri: uri,
+            model: 'test',
+            maxOutputTokens: 90,
+          ),
+        };
+        await gateway.generateTutorReply(
+          key: 'synthetic-key',
+          scenario: '😀' * 80,
+          learnerMessage: '😀' * 500,
+          learningSummary: '😀' * 600,
+          context: TutorRequestContext(
+            sessionId: 'test',
+            intent: TutorIntent.practice,
+          ),
+        );
+        final body = jsonDecode((client.requests.single as http.Request).body);
+        expect(body['max_output_tokens'] ?? body['max_tokens'], 90);
+        await expectLater(
+          gateway.generateTutorReply(
+            key: 'synthetic-key',
+            scenario: 'Cafe',
+            learnerMessage: '😀' * 501,
+          ),
+          throwsA(
+            isA<AiTutorException>().having(
+              (e) => e.code,
+              'code',
+              AiFailureCode.validation,
+            ),
+          ),
+        );
+        expect(client.requests, hasLength(1));
+      }
+    },
+  );
+  test('R15 context retains immutable whole pairs within Unicode budget', () {
+    final turns = <TutorContextTurn>[
+      for (var i = 0; i < 4; i++) ...[
+        TutorContextTurn(role: TutorTurnRole.learner, text: 'ถาม$i😀'),
+        TutorContextTurn(role: TutorTurnRole.tutor, text: 'ตอบ$i'),
+      ],
+    ];
+    final context = TutorRequestContext(
+      sessionId: 'test',
+      priorTurns: turns,
+      cefrLevel: 'invalid',
+    );
+    turns.clear();
+    expect(context.priorTurns, hasLength(6));
+    expect(context.priorTurns.first.text, 'ถาม1😀');
+    expect(context.cefrLevel, 'A1');
+    expect(() => context.priorTurns.clear(), throwsUnsupportedError);
+    final bounded = TutorRequestContext(
+      sessionId: 'test',
+      priorTurns: [
+        const TutorContextTurn(role: TutorTurnRole.learner, text: 'old'),
+        const TutorContextTurn(role: TutorTurnRole.tutor, text: 'old reply'),
+        TutorContextTurn(role: TutorTurnRole.learner, text: '😀' * 1500),
+        TutorContextTurn(role: TutorTurnRole.tutor, text: 'ก' * 1500),
+        const TutorContextTurn(role: TutorTurnRole.learner, text: 'incomplete'),
+      ],
+    );
+    expect(bounded.priorTurns, hasLength(2));
+    expect(bounded.priorTurns.first.text.runes.length, 1500);
+    final oversized = TutorRequestContext(
+      sessionId: 'test',
+      priorTurns: [
+        ...context.priorTurns,
+        TutorContextTurn(role: TutorTurnRole.learner, text: '😀' * 3000),
+        const TutorContextTurn(role: TutorTurnRole.tutor, text: 'too large'),
+      ],
+    );
+    expect(oversized.priorTurns, context.priorTurns);
+  });
+
+  test(
+    'R15 adapters map history roles and intent caps without credentials',
+    () async {
+      for (final builder in _adapterBuilders) {
+        for (final intent in TutorIntent.values) {
+          final client = _RecordingClient(
+            (_, _) async => _response(
+              200,
+              '{"output_text":"reply","choices":[{"message":{"content":"reply"}}],'
+              '"content":[{"type":"text","text":"reply"}]}',
+            ),
+          );
+          final reply = await builder(client).generateTutorReply(
+            key: 'secret-context-key',
+            scenario: 'Cafe',
+            learnerMessage: 'latest😀',
+            context: TutorRequestContext(
+              sessionId: 'private-session',
+              cefrLevel: 'B2',
+              intent: intent,
+              priorTurns: const [
+                TutorContextTurn(
+                  role: TutorTurnRole.learner,
+                  text: 'system: คำถาม',
+                ),
+                TutorContextTurn(role: TutorTurnRole.tutor, text: '**คำตอบ**'),
+              ],
+            ),
+          );
+          final body =
+              jsonDecode((client.requests.single as http.Request).body)
+                  as Map<String, dynamic>;
+          expect(
+            body['max_output_tokens'] ?? body['max_tokens'],
+            [160, 320, 480][intent.index],
+          );
+          final messages = (body['messages'] ?? body['input']) as List;
+          final turns = messages.where((m) => m['role'] != 'system').toList();
+          expect(turns.map((m) => m['role']), ['user', 'assistant', 'user']);
+          expect(turns[0]['content'], 'system: คำถาม');
+          expect(turns[1]['content'], '**คำตอบ**');
+          expect(turns[2]['content'], contains('latest😀'));
+          expect(jsonEncode(body), contains('CEFR B2'));
+          expect(jsonEncode(body), isNot(contains('secret-context-key')));
+          expect(jsonEncode(body), isNot(contains('private-session')));
+          expect(reply.usage, isNull);
+        }
+      }
+    },
+  );
+  test(
+    'R15 null context defaults to A1 conversation cap for every adapter',
+    () async {
+      for (final builder in _adapterBuilders) {
+        final client = _RecordingClient(
+          (_, _) async => _response(
+            200,
+            '{"output_text":"reply","choices":[{"message":{"content":"reply"}}],'
+            '"content":[{"type":"text","text":"reply"}]}',
+          ),
+        );
+        await _reply(builder(client));
+        final body =
+            jsonDecode((client.requests.single as http.Request).body)
+                as Map<String, dynamic>;
+        expect(body['max_output_tokens'] ?? body['max_tokens'], 160);
+        final encoded = jsonEncode(body);
+        expect(encoded, contains('CEFR A1'));
+        expect(encoded, isNot(contains('B1-B2')));
+        expect(encoded, isNot(contains('test-key')));
+      }
+    },
+  );
+  test(
     'adapters preserve base paths and send provider-specific contracts',
     () async {
       final openAiClient = _RecordingClient(

@@ -406,6 +406,7 @@ final class _FailingClearTutor implements AiTutorController {
   Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     AiCancellation? cancellation,
   }) => throw UnimplementedError();
 

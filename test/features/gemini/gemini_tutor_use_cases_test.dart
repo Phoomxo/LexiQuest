@@ -1,3 +1,6 @@
+import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart'
+    show TutorRequestContext;
+
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -256,6 +259,7 @@ final class _FakeGateway implements GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     GeminiCancellation? cancellation,
   }) async {
@@ -294,6 +298,7 @@ final class _PendingGateway implements GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     GeminiCancellation? cancellation,
   }) async {

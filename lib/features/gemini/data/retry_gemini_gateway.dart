@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import '../../ai_tutor/domain/ai_tutor_contracts.dart' show TutorRequestContext;
 import '../../../runtime/circuit_breaker.dart';
 import '../domain/gemini_contracts.dart';
 
@@ -67,6 +68,7 @@ final class RetryGeminiGateway implements GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     GeminiCancellation? cancellation,
   }) {
@@ -75,6 +77,7 @@ final class RetryGeminiGateway implements GeminiGateway {
         key: key,
         scenario: scenario,
         learnerMessage: learnerMessage,
+        context: context,
         learningSummary: learningSummary,
         cancellation: linked,
       ),

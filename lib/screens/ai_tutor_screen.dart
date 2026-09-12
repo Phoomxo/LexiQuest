@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -69,6 +70,16 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   SpeechPracticeSession? _speechSession;
   final TextEditingController _inputController = TextEditingController();
   final List<ChatMessage> _messages = [];
+  List<TutorContextTurn> _completedTurns = [];
+  String _sessionId = const Uuid().v4();
+  String? _contextScopeId;
+  String _cefrLevel = 'A1';
+  TutorIntent _intent = TutorIntent.conversation;
+  static const _intentLabels = {
+    TutorIntent.conversation: 'สนทนา',
+    TutorIntent.explanation: 'อธิบาย',
+    TutorIntent.practice: 'แบบฝึกหัด',
+  };
   AiCancellation? _generationCancellation;
   String _selectedScenario = _scenarios.first;
   bool _isGenerating = false;
@@ -106,6 +117,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
     _bindSpeechPractice(widget.speechPractice ?? dependencies?.speechPractice);
     if (!identical(resolvedTutor, _tutor)) {
+      _resetConversation();
       _tutor = resolvedTutor;
       unawaited(_loadKeyStatus());
     }
@@ -141,16 +153,42 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   @override
-  void onVoiceRouteResumed() => _ensureSpeechSession();
+  void onVoiceRouteResumed() {
+    _ensureSpeechSession();
+    unawaited(_loadKeyStatus());
+  }
+
+  void _resetConversation() {
+    _interactionEpoch++;
+    _generationCancellation?.cancel();
+    _generationCancellation = null;
+    _isGenerating = false;
+    _sessionId = const Uuid().v4();
+    _completedTurns = [];
+    _messages.clear();
+    _inputController.clear();
+    _error = null;
+  }
+
+  void _applyStatus(AiTutorSettingsStatus status) {
+    if (_contextScopeId != status.contextScopeId) _resetConversation();
+    _contextScopeId = status.contextScopeId;
+    _hasKey = status.hasKey;
+  }
 
   Future<void> _loadKeyStatus() async {
     final tutor = _tutor;
+    final epoch = _interactionEpoch;
     if (tutor == null) return;
     try {
       final status = await tutor.loadSettings();
-      if (mounted) setState(() => _hasKey = status.hasKey);
+      if (mounted && epoch == _interactionEpoch && identical(tutor, _tutor)) {
+        setState(() => _applyStatus(status));
+      }
     } on AiTutorException {
-      if (mounted) setState(() => _hasKey = false);
+      if (mounted && epoch == _interactionEpoch && identical(tutor, _tutor)) {
+        setState(() => _hasKey = false);
+      }
     }
   }
 
@@ -162,6 +200,37 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       setState(() => _error = 'ผู้ช่วยฝึกภาษา AI ยังไม่พร้อมใช้งานในรุ่นนี้');
       return;
     }
+    // Re-read the local owner/credential fence before attaching any history.
+    final preparationEpoch = _interactionEpoch;
+    setState(() => _isGenerating = true);
+    try {
+      final status = await tutor.loadSettings();
+      if (!mounted ||
+          preparationEpoch != _interactionEpoch ||
+          !identical(tutor, _tutor)) {
+        return;
+      }
+      if (status.contextScopeId != _contextScopeId) {
+        setState(() => _applyStatus(status));
+        return;
+      }
+      setState(() => _applyStatus(status));
+    } on AiTutorException catch (error) {
+      if (mounted && preparationEpoch == _interactionEpoch) {
+        setState(() {
+          _isGenerating = false;
+          _error = _aiFailureText(error.code);
+        });
+      }
+      return;
+    }
+    final requestContext = TutorRequestContext(
+      sessionId: _sessionId,
+      scopeId: _contextScopeId,
+      cefrLevel: _cefrLevel,
+      intent: _intent,
+      priorTurns: _completedTurns,
+    );
     final cancellation = AiCancellation();
     final epoch = ++_interactionEpoch;
     _generationCancellation = cancellation;
@@ -176,10 +245,29 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       final reply = await tutor.reply(
         scenario: _selectedScenario,
         learnerMessage: text,
+        context: requestContext,
         cancellation: cancellation,
       );
-      if (!mounted || epoch != _interactionEpoch) return;
+      if (!mounted || epoch != _interactionEpoch || cancellation.isCancelled) {
+        return;
+      }
+      final status = await tutor.loadSettings();
+      if (!mounted || epoch != _interactionEpoch || cancellation.isCancelled) {
+        return;
+      }
+      if (status.contextScopeId != requestContext.scopeId) {
+        setState(() => _applyStatus(status));
+        return;
+      }
       setState(() {
+        _completedTurns = TutorRequestContext(
+          sessionId: _sessionId,
+          priorTurns: [
+            ..._completedTurns,
+            TutorContextTurn(role: TutorTurnRole.learner, text: text),
+            TutorContextTurn(role: TutorTurnRole.tutor, text: reply.text),
+          ],
+        ).priorTurns;
         _messages.add(
           ChatMessage(
             sender: 'ผู้ช่วย AI',
@@ -339,6 +427,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _openAiSettings() async {
+    setState(_resetConversation);
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _generationCancellation = null;
@@ -383,6 +472,14 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         title: const Text('ฝึกสนทนากับ AI'),
         actions: [
           IconButton(
+            tooltip: 'เริ่มบทสนทนาใหม่',
+            onPressed: () {
+              setState(_resetConversation);
+              _cancelAudioForLifecycle().ignore();
+            },
+            icon: const Icon(Icons.add_comment_outlined),
+          ),
+          IconButton(
             tooltip: 'ตั้งค่าผู้ให้บริการ AI',
             onPressed: _openAiSettings,
             icon: const Icon(Icons.key_outlined),
@@ -392,128 +489,197 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: DropdownButtonFormField<String>(
-                initialValue: _selectedScenario,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'สถานการณ์สนทนา',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  for (final scenario in _scenarios)
-                    DropdownMenuItem(
-                      value: scenario,
-                      child: Text(_scenarioLabels[scenario]!),
-                    ),
-                ],
-                onChanged: _isGenerating
-                    ? null
-                    : (value) {
-                        if (value != null) {
-                          setState(() => _selectedScenario = value);
-                        }
-                      },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                _hasKey
-                    ? 'ตรวจข้อความก่อนกดส่ง ข้อความจะส่งไปยังผู้ให้บริการตามความยินยอมที่บันทึกไว้ และอาจมีค่าใช้จ่าย'
-                    : 'ตั้งค่าบัญชีและรหัสเชื่อมต่อของผู้ให้บริการ AI ก่อนเริ่ม',
-                key: const ValueKey<String>('ai-tutor-key-status'),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
             Expanded(
-              child: _messages.isEmpty
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text(
-                          'ยังไม่มีบทสนทนา เลือกสถานการณ์แล้วพิมพ์หรือพูด'
-                          'ภาษาอังกฤษ ตรวจข้อความแล้วกดส่งเมื่อพร้อม',
-                          textAlign: TextAlign.center,
-                        ),
+              child: ListView(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _selectedScenario,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'สถานการณ์สนทนา',
+                        border: OutlineInputBorder(),
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[index];
-                        return Align(
-                          alignment: message.isUser
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Card(
-                            color: message.isUser
-                                ? Theme.of(context).colorScheme.primaryContainer
-                                : Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    message.sender,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.labelMedium,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(message.text),
-                                  if (message.model != null)
-                                    Text(
-                                      'รุ่น AI: ${message.model}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall,
-                                    ),
-                                  if (!message.isUser && _voice != null)
-                                    Wrap(
-                                      children: [
-                                        IconButton(
-                                          tooltip: 'ฟังคำตอบ',
-                                          onPressed: () =>
-                                              _speakAiResponse(message.text),
-                                          icon: const Icon(
-                                            Icons.volume_up_outlined,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: 'หยุดอ่าน',
-                                          onPressed: _stopReply,
-                                          icon: const Icon(
-                                            Icons.stop_circle_outlined,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                ],
+                      items: [
+                        for (final scenario in _scenarios)
+                          DropdownMenuItem(
+                            value: scenario,
+                            child: Text(_scenarioLabels[scenario]!),
+                          ),
+                      ],
+                      onChanged: _isGenerating
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _resetConversation();
+                                  _selectedScenario = value;
+                                });
+                              }
+                            },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Wrap(
+                      spacing: 12,
+                      children: [
+                        DropdownButton<String>(
+                          key: const ValueKey('ai-tutor-level'),
+                          value: _cefrLevel,
+                          hint: const Text('ระดับฝึก'),
+                          items: [
+                            for (final level in TutorRequestContext.levels)
+                              DropdownMenuItem(
+                                value: level,
+                                child: Text(level),
                               ),
+                          ],
+                          onChanged: _isGenerating
+                              ? null
+                              : (level) {
+                                  if (level != null) {
+                                    setState(() {
+                                      _resetConversation();
+                                      _cefrLevel = level;
+                                    });
+                                  }
+                                },
+                        ),
+                        DropdownButton<TutorIntent>(
+                          key: const ValueKey('ai-tutor-intent'),
+                          value: _intent,
+                          items: [
+                            for (final intent in TutorIntent.values)
+                              DropdownMenuItem(
+                                value: intent,
+                                child: Text(_intentLabels[intent]!),
+                              ),
+                          ],
+                          onChanged: _isGenerating
+                              ? null
+                              : (intent) {
+                                  if (intent != null) {
+                                    setState(() {
+                                      _resetConversation();
+                                      _intent = intent;
+                                    });
+                                  }
+                                },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Text(
+                      _hasKey
+                          ? 'ตรวจข้อความก่อนกดส่ง ข้อความจะส่งไปยังผู้ให้บริการตามความยินยอมที่บันทึกไว้ และอาจมีค่าใช้จ่าย'
+                          : 'ตั้งค่าบัญชีและรหัสเชื่อมต่อของผู้ให้บริการ AI ก่อนเริ่ม',
+                      key: const ValueKey<String>('ai-tutor-key-status'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                  _messages.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'ยังไม่มีบทสนทนา เลือกสถานการณ์แล้วพิมพ์หรือพูด'
+                              'ภาษาอังกฤษ ตรวจข้อความแล้วกดส่งเมื่อพร้อม',
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        );
-                      },
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: [
+                              for (final message in _messages)
+                                Align(
+                                  alignment: message.isUser
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Card(
+                                    color: message.isUser
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            message.sender,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.labelMedium,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          SelectableText(message.text),
+                                          if (message.model != null)
+                                            Text(
+                                              'รุ่น AI: ${message.model}',
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.bodySmall,
+                                            ),
+                                          if (!message.isUser && _voice != null)
+                                            Wrap(
+                                              children: [
+                                                IconButton(
+                                                  tooltip: 'ฟังคำตอบ',
+                                                  onPressed: () =>
+                                                      _speakAiResponse(
+                                                        message.text,
+                                                      ),
+                                                  icon: const Icon(
+                                                    Icons.volume_up_outlined,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  tooltip: 'หยุดอ่าน',
+                                                  onPressed: _stopReply,
+                                                  icon: const Icon(
+                                                    Icons.stop_circle_outlined,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                  if (_error != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Text(
+                        _error!,
+                        key: const ValueKey<String>('ai-tutor-error'),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ),
-            ),
-            if (_error != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Text(
-                  _error!,
-                  key: const ValueKey<String>('ai-tutor-error'),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
+                ],
               ),
+            ),
             if (_isGenerating)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

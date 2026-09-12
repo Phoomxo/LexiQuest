@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import '../../ai_tutor/domain/ai_tutor_contracts.dart'
+    show TutorRequestContext, TutorTurnRole;
 import '../domain/gemini_contracts.dart';
 
 typedef OfflineCheck = Future<bool> Function();
@@ -82,11 +84,13 @@ final class GeminiRestGateway implements GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     GeminiCancellation? cancellation,
   }) async {
     final normalized = _normalizedKey(key);
     final normalizedScenario = _normalizedText(scenario, maximumLength: 80);
+    final policy = context ?? TutorRequestContext(sessionId: '');
     final normalizedMessage = _normalizedText(
       learnerMessage,
       maximumLength: 500,
@@ -106,16 +110,17 @@ final class GeminiRestGateway implements GeminiGateway {
           ..body = jsonEncode({
             'systemInstruction': {
               'parts': [
-                {
-                  'text':
-                      'You are a concise English tutor. Stay in the requested '
-                      'scenario, use CEFR B1-B2 English, correct only material '
-                      'errors kindly, never claim to have heard audio, and reply '
-                      'in no more than two short sentences.',
-                },
+                {'text': policy.instructions},
               ],
             },
             'contents': [
+              for (final turn in policy.priorTurns)
+                {
+                  'role': turn.role == TutorTurnRole.learner ? 'user' : 'model',
+                  'parts': [
+                    {'text': turn.text},
+                  ],
+                },
               {
                 'role': 'user',
                 'parts': [
@@ -128,7 +133,10 @@ final class GeminiRestGateway implements GeminiGateway {
                 ],
               },
             ],
-            'generationConfig': {'candidateCount': 1, 'maxOutputTokens': 120},
+            'generationConfig': {
+              'candidateCount': 1,
+              'maxOutputTokens': policy.outputTokenCap(),
+            },
           });
     final response = await _send(
       request,
@@ -329,7 +337,7 @@ final class GeminiRestGateway implements GeminiGateway {
 
   String _normalizedText(String value, {required int maximumLength}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.isEmpty || normalized.length > maximumLength) {
+    if (normalized.isEmpty || normalized.runes.length > maximumLength) {
       throw const GeminiException(GeminiFailureCode.validation);
     }
     return normalized;

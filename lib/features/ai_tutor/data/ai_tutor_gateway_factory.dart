@@ -178,12 +178,14 @@ final class _CircuitBreakingAiTutorGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) => _call(
     cancellation,
     () => _inner.generateTutorReply(
       key: key,
+      context: context,
       scenario: scenario,
       learnerMessage: learnerMessage,
       learningSummary: learningSummary,
@@ -230,6 +232,7 @@ final class _DisabledAiTutorGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) => Future<AiGatewayReply>.error(_disabledAiFailure);
@@ -294,6 +297,7 @@ final class GeminiRestGatewayAdapter implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {
@@ -302,6 +306,7 @@ final class GeminiRestGatewayAdapter implements AiTutorGateway {
         key: key,
         scenario: scenario,
         learnerMessage: learnerMessage,
+        context: context,
         learningSummary: learningSummary,
         cancellation: _bridge(cancellation),
       );

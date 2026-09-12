@@ -353,6 +353,7 @@ final class _ScenarioGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {

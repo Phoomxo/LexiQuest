@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../../ai_tutor/domain/ai_tutor_contracts.dart' show TutorRequestContext;
+
 enum GeminiFailureCode {
   missingKey,
   consentRequired,
@@ -85,6 +87,7 @@ abstract interface class GeminiGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     GeminiCancellation? cancellation,
   });

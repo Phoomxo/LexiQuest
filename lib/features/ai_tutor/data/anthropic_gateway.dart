@@ -14,6 +14,7 @@ final class AnthropicGateway implements AiTutorGateway {
     required http.Client client,
     required Uri baseUri,
     required String model,
+    int? maxOutputTokens,
     AnthropicOfflineCheck? isOffline,
     Duration requestTimeout = const Duration(seconds: 20),
   }) {
@@ -21,6 +22,7 @@ final class AnthropicGateway implements AiTutorGateway {
       client: client,
       baseUri: normalizeAiApiBaseUri(baseUri),
       model: model,
+      maxOutputTokens: maxOutputTokens,
       isOffline: isOffline ?? _assumeOnline,
       requestTimeout: requestTimeout,
     );
@@ -30,6 +32,7 @@ final class AnthropicGateway implements AiTutorGateway {
     required this._client,
     required this._baseUri,
     required this.model,
+    required this.maxOutputTokens,
     required this._isOffline,
     required this.requestTimeout,
   });
@@ -38,6 +41,7 @@ final class AnthropicGateway implements AiTutorGateway {
   final Uri _baseUri;
   final AnthropicOfflineCheck _isOffline;
   final Duration requestTimeout;
+  final int? maxOutputTokens;
 
   @override
   final AiProvider providerId = AiProvider.claude;
@@ -48,11 +52,6 @@ final class AnthropicGateway implements AiTutorGateway {
   static Future<bool> _assumeOnline() async => false;
 
   static const _anthropicVersion = '2023-06-01';
-  static const _systemPrompt =
-      'You are a concise English tutor. Stay in the requested scenario, use '
-      'CEFR B1-B2 English, correct only material errors kindly, never claim to '
-      'have heard audio, and reply in no more than two short sentences.';
-
   @override
   Future<void> validateKey(String key, {AiCancellation? cancellation}) async {
     await listModels(key, cancellation: cancellation);
@@ -106,11 +105,13 @@ final class AnthropicGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {
     final normalized = _normalizedKey(key);
     final normalizedScenario = _normalizedText(scenario, maximumLength: 80);
+    final policy = context ?? TutorRequestContext(sessionId: '');
     final normalizedMessage = _normalizedText(
       learnerMessage,
       maximumLength: 500,
@@ -128,9 +129,10 @@ final class AnthropicGateway implements AiTutorGateway {
       ..write('Learner message: $normalizedMessage');
     final response = await _send(normalized, {
       'model': model,
-      'system': _systemPrompt,
-      'max_tokens': 120,
+      'system': policy.instructions,
+      'max_tokens': policy.outputTokenCap(maxOutputTokens),
       'messages': [
+        ...policy.messages,
         {'role': 'user', 'content': userContent.toString()},
       ],
     }, cancellation: cancellation);
@@ -245,7 +247,7 @@ final class AnthropicGateway implements AiTutorGateway {
 
   String _normalizedText(String value, {required int maximumLength}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.isEmpty || normalized.length > maximumLength) {
+    if (normalized.isEmpty || normalized.runes.length > maximumLength) {
       throw const AiTutorException(AiFailureCode.validation);
     }
     return normalized;

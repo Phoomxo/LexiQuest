@@ -492,6 +492,7 @@ final class _RecordingAiTutorController implements AiTutorController {
   Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     AiCancellation? cancellation,
   }) {
     totalCalls += 1;

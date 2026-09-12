@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,6 +20,7 @@ void main() {
       'rate-limit',
       'malformed',
       'timeout',
+      'cancel',
     ]) {
       test('$provider actual loopback transport: $scenario', () async {
         final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
@@ -30,6 +32,7 @@ void main() {
         final requests = <Map<String, dynamic>>[];
         final paths = <String>[];
         final keys = <String?>[];
+        final received = Completer<void>();
         server.listen((request) async {
           paths.add(request.uri.path);
           keys.add(
@@ -41,7 +44,8 @@ void main() {
             jsonDecode(await utf8.decoder.bind(request).join())
                 as Map<String, dynamic>,
           );
-          if (scenario == 'timeout') {
+          received.complete();
+          if (scenario == 'timeout' || scenario == 'cancel') {
             return; // Accepted socket; deliberately no response.
           }
           request.response.headers.contentType = ContentType.json;
@@ -110,16 +114,46 @@ void main() {
             requestTimeout: timeout,
           ),
         };
+        final cancellation = AiCancellation();
         final operation = gateway.generateTutorReply(
           key: 'synthetic-key',
           scenario: 'Cafe',
           learnerMessage: 'ช่วยอธิบาย café',
+          cancellation: cancellation,
+          context: TutorRequestContext(
+            sessionId: 'not-for-provider',
+            cefrLevel: 'A2',
+            intent: TutorIntent.explanation,
+            priorTurns: const [
+              TutorContextTurn(
+                role: TutorTurnRole.learner,
+                text: 'คำถามก่อน😀',
+              ),
+              TutorContextTurn(role: TutorTurnRole.tutor, text: 'คำตอบก่อน'),
+            ],
+          ),
         );
+        if (scenario == 'cancel') {
+          // Attach the error handler before cancelling an accepted real socket.
+          final check = expectLater(
+            operation,
+            throwsA(
+              isA<AiTutorException>().having(
+                (e) => e.code,
+                'code',
+                AiFailureCode.cancelled,
+              ),
+            ),
+          );
+          await received.future.timeout(const Duration(seconds: 5));
+          cancellation.cancel();
+          await check;
+        }
         if (scenario == 'reply') {
           final reply = await operation;
           expect(reply.text, 'ลองอีกครั้ง — café');
           expect(reply.usage?.totalTokens, 5);
-        } else {
+        } else if (scenario != 'cancel') {
           final code = switch (scenario) {
             'invalid-key' => AiFailureCode.invalidKey,
             'quota' => AiFailureCode.quota,
@@ -144,6 +178,22 @@ void main() {
           reason: 'No implicit retry or duplicate paid operation.',
         );
         expect(requests.single['model'], 'synthetic-model');
+        expect(
+          requests.single['max_output_tokens'] ?? requests.single['max_tokens'],
+          320,
+        );
+        expect(jsonEncode(requests.single), contains('คำถามก่อน😀'));
+        expect(jsonEncode(requests.single), isNot(contains('synthetic-key')));
+        expect(
+          jsonEncode(requests.single),
+          isNot(contains('not-for-provider')),
+        );
+        final turns =
+            (requests.single['input'] ?? requests.single['messages']) as List;
+        expect(
+          turns.where((t) => t['role'] != 'system').map((t) => t['role']),
+          ['user', 'assistant', 'user'],
+        );
         expect(jsonEncode(requests.single), contains('ช่วยอธิบาย café'));
         expect(
           keys.single,

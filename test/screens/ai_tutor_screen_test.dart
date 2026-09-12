@@ -1,7 +1,12 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
@@ -13,6 +18,277 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  for (final large in [false, true]) {
+    testWidgets('R15 visual Thai reply and offline large=$large', (
+      tester,
+    ) async {
+      await (FontLoader(
+            M3Theme.thaiFontFamily,
+          )..addFont(rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf')))
+          .load();
+      await (FontLoader(
+        'MaterialIcons',
+      )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+      tester.view.physicalSize = Size(large ? 320 : 390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final boundary = GlobalKey();
+      final tutor = _FakeAiTutor()
+        ..replyText =
+            'ลองพูดว่า **I would like a coffee.**\n'
+            '- would like ใช้สั่งอย่างสุภาพ\n'
+            'ลองแต่งประโยคของคุณเอง 😀';
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: large ? M3Theme.darkTheme : M3Theme.lightTheme,
+          home: RepaintBoundary(
+            key: boundary,
+            child: MediaQuery(
+              data: MediaQueryData(
+                disableAnimations: true,
+                textScaler: TextScaler.linear(large ? 2 : 1),
+              ),
+              child: AiTutorScreen(aiTutor: tutor),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      Future<void> capture(String state) async {
+        if (Platform.environment['LEXIQUEST_R15_VISUAL_QA'] != '1') return;
+        await tester.runAsync(() async {
+          final rendered =
+              await (boundary.currentContext!.findRenderObject()
+                      as RenderRepaintBoundary)
+                  .toImage();
+          final bytes = await rendered.toByteData(
+            format: ui.ImageByteFormat.png,
+          );
+          final variant =
+              Platform.environment['LEXIQUEST_R15_VISUAL_VARIANT'] ?? 'after';
+          final file = File(
+            'build/verification/r15-ai-visual/$variant-$large-$state.png',
+          );
+          await file.parent.create(recursive: true);
+          await file.writeAsBytes(bytes!.buffer.asUint8List());
+          rendered.dispose();
+        });
+      }
+
+      await capture('empty');
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        'ช่วยอธิบายการสั่งกาแฟ',
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+      await capture('reply');
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+      await capture('reply-end');
+      expect(find.text(tutor.replyText), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      tutor.replyFailure = const AiTutorException(AiFailureCode.offline);
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        'คำถามต่อไป',
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('ai-tutor-error')),
+        160,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await capture('offline');
+      expect(find.byKey(const ValueKey('ai-tutor-error')), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(ListView)).height,
+        greaterThan(300),
+        reason:
+            'Large text and offline status must leave a usable scrolling reading area.',
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets(
+    'R15 completed pairs survive busy and new chat fences late replies',
+    (tester) async {
+      final tutor = _FakeAiTutor()..replyText = 'ไทย **ครบ**\n- คำตอบ 😀';
+      await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+      await tester.pumpAndSettle();
+      Future<void> send(String text) async {
+        await tester.enterText(
+          find.byKey(const ValueKey('ai-tutor-input')),
+          text,
+        );
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+        await tester.pump();
+      }
+
+      await send('คำถามหนึ่ง');
+      await tester.pumpAndSettle();
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is SelectableText && w.data == 'ไทย **ครบ**\n- คำตอบ 😀',
+        ),
+        findsOneWidget,
+      );
+      tutor.replyGate = Completer<void>();
+      tutor.ignoreCancellation = true;
+      await send('คำถามสอง');
+      expect(tutor.contexts.last?.priorTurns.map((t) => t.text), [
+        'คำถามหนึ่ง',
+        'ไทย **ครบ**\n- คำตอบ 😀',
+      ]);
+      expect(find.text('คำถามสอง'), findsOneWidget);
+      await tester.tap(find.byTooltip('เริ่มบทสนทนาใหม่'));
+      await tester.pump();
+      expect(tutor.lastCancellation?.isCancelled, isTrue);
+      tutor.replyGate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('คำถามสอง'), findsNothing);
+      expect(find.text('ไทย **ครบ**\n- คำตอบ 😀'), findsNothing);
+      tutor.replyGate = null;
+      await send('ใหม่');
+      await tester.pumpAndSettle();
+      expect(tutor.contexts.last?.priorTurns, isEmpty);
+      expect(
+        tutor.contexts.last?.sessionId,
+        isNot(tutor.contexts.first?.sessionId),
+      );
+    },
+  );
+
+  testWidgets('R15 scenario and level intent changes start empty context', (
+    tester,
+  ) async {
+    final tutor = _FakeAiTutor();
+    await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+    await tester.pumpAndSettle();
+    Future<void> send() async {
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        'Hello',
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+    }
+
+    await send();
+    final firstSession = tutor.contexts.last!.sessionId;
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('สั่งอาหารในคาเฟ่').last);
+    await tester.pumpAndSettle();
+    await send();
+    expect(tutor.contexts.last!.priorTurns, isEmpty);
+    expect(tutor.contexts.last!.sessionId, isNot(firstSession));
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-level')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('B2').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-intent')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('อธิบาย').last);
+    await tester.pumpAndSettle();
+    await send();
+    expect(tutor.contexts.last!.cefrLevel, 'B2');
+    expect(tutor.contexts.last!.intent, TutorIntent.explanation);
+    expect(tutor.contexts.last!.priorTurns, isEmpty);
+  });
+
+  testWidgets('R15 failed and cancelled questions never become context pairs', (
+    tester,
+  ) async {
+    final tutor = _FakeAiTutor()
+      ..replyFailure = const AiTutorException(AiFailureCode.offline);
+    await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+    await tester.pumpAndSettle();
+    for (final question in ['failed question', 'successful question']) {
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        question,
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+      if (question == 'failed question') {
+        expect(find.text('Live Gemini reply'), findsNothing);
+        expect(find.text(question), findsOneWidget);
+      }
+      tutor.replyFailure = null;
+    }
+    expect(tutor.contexts.last!.priorTurns, isEmpty);
+    tutor.replyGate = Completer<void>();
+    tutor.ignoreCancellation = true;
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'cancelled question',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pump();
+    await tester.tap(find.text('ยกเลิก'));
+    await tester.pump();
+    tutor.replyGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Live Gemini reply'), findsOneWidget);
+  });
+
+  testWidgets('R15 owner changes during reply discard old result and draft', (
+    tester,
+  ) async {
+    final tutor = _FakeAiTutor()..replyGate = Completer<void>();
+    await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'private A',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pump();
+    tutor.scopeId = 'scope-b';
+    tutor.replyGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('private A'), findsNothing);
+    expect(find.text('Live Gemini reply'), findsNothing);
+  });
+
+  testWidgets(
+    'R15 owner scope change clears previous chat before next request',
+    (tester) async {
+      final tutor = _FakeAiTutor();
+      await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+      await tester.pumpAndSettle();
+      for (final text in ['owner A private', 'owner B question']) {
+        await tester.enterText(
+          find.byKey(const ValueKey('ai-tutor-input')),
+          text,
+        );
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+        await tester.pumpAndSettle();
+        tutor.scopeId = 'scope-b';
+      }
+      expect(tutor.messages, ['owner A private']);
+      expect(find.text('owner A private'), findsNothing);
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        'owner B confirmed',
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pumpAndSettle();
+      expect(tutor.contexts.last?.priorTurns, isEmpty);
+      expect(tutor.contexts.last?.scopeId, 'scope-b');
+      expect(find.text('owner A private'), findsNothing);
+    },
+  );
+
   for (final restart in [false, true]) {
     testWidgets(
       'intentional pending voice cancellation is silent restart=$restart',
@@ -547,6 +823,9 @@ void main() {
 
 final class _FakeAiTutor implements AiTutorController {
   final List<String> messages = [];
+  final List<TutorRequestContext?> contexts = [];
+  String scopeId = 'scope-a';
+  String replyText = 'Live Gemini reply';
   AiTutorException? replyFailure;
   Completer<void>? replyGate;
   AiCancellation? lastCancellation;
@@ -577,6 +856,7 @@ final class _FakeAiTutor implements AiTutorController {
   @override
   Future<AiTutorSettingsStatus> loadSettings() async => AiTutorSettingsStatus(
     hasKey: hasKey,
+    contextScopeId: scopeId,
     providerConsent: true,
     shareLearningSummary: false,
     providerId: AiProviderId.gemini,
@@ -609,9 +889,11 @@ final class _FakeAiTutor implements AiTutorController {
   Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     AiCancellation? cancellation,
   }) async {
     messages.add(learnerMessage);
+    contexts.add(context);
     lastCancellation = cancellation;
     await replyGate?.future;
     if (!ignoreCancellation && cancellation?.isCancelled == true) {
@@ -620,7 +902,7 @@ final class _FakeAiTutor implements AiTutorController {
     final failure = replyFailure;
     if (failure != null) throw failure;
     return AiTutorReply(
-      text: 'Live Gemini reply',
+      text: replyText,
       providerId: AiProviderId.gemini,
       model: 'gemini-test',
       generatedAtUtc: DateTime.utc(2026, 7, 30),

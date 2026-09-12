@@ -15,6 +15,7 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
     required http.Client client,
     required Uri baseUri,
     required String model,
+    int? maxOutputTokens,
     OpenAiOfflineCheck? isOffline,
     Duration requestTimeout = const Duration(seconds: 20),
     AiProvider providerId = AiProvider.openai,
@@ -23,6 +24,7 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
       client: client,
       baseUri: normalizeAiApiBaseUri(baseUri),
       model: model,
+      maxOutputTokens: maxOutputTokens,
       isOffline: isOffline ?? _assumeOnline,
       requestTimeout: requestTimeout,
       providerId: providerId,
@@ -33,6 +35,7 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
     required this._client,
     required this._baseUri,
     required this.model,
+    required this.maxOutputTokens,
     required this._isOffline,
     required this.requestTimeout,
     required this.providerId,
@@ -42,6 +45,7 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
   final Uri _baseUri;
   final OpenAiOfflineCheck _isOffline;
   final Duration requestTimeout;
+  final int? maxOutputTokens;
 
   @override
   final AiProvider providerId;
@@ -50,11 +54,6 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
   final String model;
 
   static Future<bool> _assumeOnline() async => false;
-
-  static const _systemPrompt =
-      'You are a concise English tutor. Stay in the requested scenario, use '
-      'CEFR B1-B2 English, correct only material errors kindly, never claim to '
-      'have heard audio, and reply in no more than two short sentences.';
 
   @override
   Future<void> validateKey(String key, {AiCancellation? cancellation}) async {
@@ -99,11 +98,13 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
     required String key,
     required String scenario,
     required String learnerMessage,
+    TutorRequestContext? context,
     String? learningSummary,
     AiCancellation? cancellation,
   }) async {
     final normalized = _normalizedKey(key);
     final normalizedScenario = _normalizedText(scenario, maximumLength: 80);
+    final policy = context ?? TutorRequestContext(sessionId: '');
     final normalizedMessage = _normalizedText(
       learnerMessage,
       maximumLength: 500,
@@ -122,10 +123,11 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
     final response = await _send(normalized, {
       'model': model,
       'messages': [
-        {'role': 'system', 'content': _systemPrompt},
+        {'role': 'system', 'content': policy.instructions},
+        ...policy.messages,
         {'role': 'user', 'content': userContent.toString()},
       ],
-      'max_tokens': 120,
+      'max_tokens': policy.outputTokenCap(maxOutputTokens),
       'temperature': 0.7,
     }, cancellation: cancellation);
     return _parseReply(response.body);
@@ -258,7 +260,7 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
 
   String _normalizedText(String value, {required int maximumLength}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (normalized.isEmpty || normalized.length > maximumLength) {
+    if (normalized.isEmpty || normalized.runes.length > maximumLength) {
       throw const AiTutorException(AiFailureCode.validation);
     }
     return normalized;
