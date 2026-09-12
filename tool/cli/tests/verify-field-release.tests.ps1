@@ -356,6 +356,42 @@ $repoRoot = Split-Path -Parent (
 )
 . (Join-Path $repoRoot 'tool/cli/lib/field-release-evidence.ps1')
 
+$jsonReader = Get-Command ConvertFrom-LexiQuestEvidenceJson `
+    -CommandType Function -ErrorAction SilentlyContinue
+Assert-True ($null -ne $jsonReader) 'evidence JSON reader preserves signed text (API RED)'
+if ($null -ne $jsonReader) {
+    $signedFixture = [pscustomobject][ordered]@{
+        schemaVersion = 2
+        kind = 'synthetic-json-roundtrip'
+        receiptId = 'synthetic-receipt'
+        origin = 'synthetic-test-only'
+        observedAtUtc = '2026-09-09T01:02:03.1200000Z'
+        sourceCommit = 'a' * 40
+        apkSha256 = 'B' * 64
+        payload = [pscustomobject][ordered]@{
+            values = @('2026-09-09T01:02:03Z', '2026-09-09T01:02:03.1200000Z')
+            count = 0
+            physical = $true
+        }
+    }
+    $parsed = $signedFixture | ConvertTo-Json -Depth 20 | ConvertFrom-LexiQuestEvidenceJson
+    Assert-True ($parsed.observedAtUtc -is [string] -and
+        $parsed.observedAtUtc -ceq $signedFixture.observedAtUtc -and
+        $parsed.payload.values[0] -is [string] -and
+        $parsed.payload.values[1] -ceq $signedFixture.payload.values[1]) `
+        'JSON timestamps retain exact fractional text at every depth'
+    Assert-True ($parsed.payload.physical -is [bool] -and
+        $parsed.payload.count -eq 0) 'JSON reader preserves non-date scalar types'
+    $originalSigningBytes = [Convert]::ToBase64String((ConvertTo-LexiQuestEvidenceSigningBytes $signedFixture))
+    $parsedSigningBytes = [Convert]::ToBase64String((ConvertTo-LexiQuestEvidenceSigningBytes $parsed))
+    Assert-True ($originalSigningBytes -ceq $parsedSigningBytes) `
+        'JSON roundtrip leaves the actual signed receipt bytes unchanged'
+    $invalidJsonRejected = $false
+    try { '{broken' | ConvertFrom-LexiQuestEvidenceJson | Out-Null }
+    catch { $invalidJsonRejected = $true }
+    Assert-True $invalidJsonRejected 'evidence JSON reader rejects malformed JSON'
+}
+
 Assert-True (
     Test-LexiQuestPostPackageMetadataPath `
         'docs/field/2026-08-09-final-acceptance.md'
@@ -382,6 +418,118 @@ try {
         Out-Null
     $script:EvidenceSigningRsa =
         [System.Security.Cryptography.RSA]::Create(3072)
+    # R23: producer-shaped envelope validation, without invoking the signer.
+    # This fixture is independent of the legacy receipt fixtures below.
+    $collectorFixture = New-Device 'low' '9'
+    $collectorManifest = [pscustomobject]@{
+        sourceCommit = $script:SourceCommit
+        generatedAtUtc = ConvertTo-StrictUtcText $script:ManifestGeneratedAtUtc
+        artifact = [pscustomobject]@{
+            apkSha256 = 'A' * 64
+            signingCertificateSha256 = 'B' * 64
+            modelSha256 = 'C' * 64
+            packageName = 'com.lexiquest.app'
+            versionName = '1.0.0'
+            versionCode = 2
+            buildId = 'abc123'
+        }
+    }
+    $collectorFixture.release | Add-Member -NotePropertyName sourceCommit -NotePropertyValue $collectorManifest.sourceCommit
+    $collectorFixture.release | Add-Member -NotePropertyName manifestGeneratedAtUtc -NotePropertyValue $collectorManifest.generatedAtUtc
+    $collectorFixture.release | Add-Member -NotePropertyName packageName -NotePropertyValue $collectorManifest.artifact.packageName
+    $collectorFixtureJson = $collectorFixture | ConvertTo-Json -Depth 20
+    $envelopeHelper = Get-Command Test-LexiQuestDeviceCollectorEnvelope `
+        -CommandType Function -ErrorAction SilentlyContinue
+    Assert-True ($null -ne $envelopeHelper) `
+        'collector envelope pure helper exists (API RED, not physical-device evidence)'
+    if ($null -ne $envelopeHelper) {
+        $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+            -DeviceEvidence $collectorFixture -ReleaseManifest $collectorManifest
+        Assert-True ($accepted -is [bool] -and $accepted) `
+            'nested physical boolean true and exact collector release pins are accepted'
+
+        $parsedCollector = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+        $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+            -DeviceEvidence $parsedCollector -ReleaseManifest $collectorManifest
+        Assert-True ($accepted -is [bool] -and $accepted) `
+            'parsed collector accepts exact timestamp text and typed release pins'
+        foreach ($field in @(
+            'sourceCommit', 'manifestGeneratedAtUtc', 'apkSha256',
+            'signingCertificateSha256', 'packageName', 'versionName',
+            'buildId', 'modelSha256', 'versionCode'
+        )) {
+            $candidate = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+            $candidate.release.$field = @($candidate.release.$field)
+            $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+                -DeviceEvidence $candidate -ReleaseManifest $collectorManifest
+            Assert-True ($accepted -is [bool] -and -not $accepted) `
+                "release.$field rejects singleton arrays instead of coercing text"
+        }
+        foreach ($case in @('string-version', 'collector-array', 'origin-array', 'manifest-array')) {
+            $candidate = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+            $manifestCandidate = $collectorManifest | ConvertTo-Json -Depth 10 | ConvertFrom-LexiQuestEvidenceJson
+            switch ($case) {
+                'string-version' { $candidate.release.versionCode = '2' }
+                'collector-array' { $candidate.collector.verifiedApkSha256 = @($candidate.collector.verifiedApkSha256) }
+                'origin-array' { $candidate.collector.origin = @($candidate.collector.origin) }
+                'manifest-array' { $manifestCandidate.artifact.apkSha256 = @($manifestCandidate.artifact.apkSha256) }
+            }
+            $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+                -DeviceEvidence $candidate -ReleaseManifest $manifestCandidate
+            Assert-True ($accepted -is [bool] -and -not $accepted) `
+                "collector envelope rejects malformed scalar $case"
+        }
+
+        foreach ($case in @(
+            'false', 'string-true', 'missing-device', 'top-level-only',
+            'missing-physical', 'wrong-origin', 'collector-apk-mismatch'
+        )) {
+            $candidate = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+            switch ($case) {
+                'false' { $candidate.device.physical = $false }
+                'string-true' { $candidate.device.physical = 'true' }
+                'missing-device' { $candidate.PSObject.Properties.Remove('device') }
+                'top-level-only' {
+                    $candidate.PSObject.Properties.Remove('device')
+                    $candidate | Add-Member -NotePropertyName physical -NotePropertyValue $true
+                }
+                'missing-physical' { $candidate.device.PSObject.Properties.Remove('physical') }
+                'wrong-origin' { $candidate.collector.origin = 'synthetic-wrong-origin' }
+                'collector-apk-mismatch' { $candidate.collector.verifiedApkSha256 = 'D' * 64 }
+            }
+            try {
+                $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+                    -DeviceEvidence $candidate -ReleaseManifest $collectorManifest
+                Assert-True ($accepted -is [bool] -and -not $accepted) `
+                    "collector envelope rejects $case with false"
+            } catch {
+                Assert-True $false "collector envelope must return false for $case, not throw"
+            }
+        }
+        foreach ($field in @(
+            'sourceCommit', 'manifestGeneratedAtUtc', 'apkSha256',
+            'signingCertificateSha256', 'packageName', 'versionName',
+            'buildId', 'versionCode', 'modelSha256'
+        )) {
+            foreach ($invalidValue in @('synthetic-mismatch', $null)) {
+                $candidate = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+                $candidate.release.$field = $invalidValue
+                $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+                    -DeviceEvidence $candidate -ReleaseManifest $collectorManifest
+                Assert-True ($accepted -is [bool] -and -not $accepted) `
+                    "collector envelope rejects mismatched or null release.$field"
+            }
+        }
+        $candidate = $collectorFixtureJson | ConvertFrom-LexiQuestEvidenceJson
+        $manifestWithoutPin = $collectorManifest | ConvertTo-Json -Depth 10 | ConvertFrom-LexiQuestEvidenceJson
+        $candidate.release.apkSha256 = $null
+        $manifestWithoutPin.artifact.apkSha256 = $null
+        $candidate.collector.verifiedApkSha256 = $null
+        $accepted = Test-LexiQuestDeviceCollectorEnvelope `
+            -DeviceEvidence $candidate -ReleaseManifest $manifestWithoutPin
+        Assert-True ($accepted -is [bool] -and -not $accepted) `
+            'matching null release and collector pins cannot authorize an envelope'
+    }
     $trustedEvidencePublicKeyPath = Join-Path $tempRoot `
         'trusted-evidence-public-key.xml'
     [IO.File]::WriteAllText(

@@ -343,32 +343,31 @@ final class ObjectScannerUseCases implements ObjectScannerController {
         throw const CameraPracticeException(CameraFailureCode.cancelled);
       }
       final input = preprocessor.toRawRgb224(captured.bytes);
-      final classifications = await runtime.classify(input, topK: 10);
+      final classCount = deviceModels.manifest.outputShape.last;
+      final classifications = await runtime.classify(
+        input,
+        topK: classCount < 10 ? classCount : 10,
+      );
       if (cancellation?.isCancelled ?? false) {
         throw const CameraPracticeException(CameraFailureCode.cancelled);
       }
       final usable = classifications
           .where(
             (result) =>
-                result.index > 0 && result.confidence >= minimumConfidence,
+                result.index >= 0 &&
+                result.index != deviceModels.manifest.backgroundClassIndex &&
+                result.confidence >= minimumConfidence,
           )
           .toList(growable: false);
       if (usable.isEmpty) {
-        throw const CameraPracticeException(CameraFailureCode.invalidImage);
+        throw const CameraPracticeException(CameraFailureCode.notConfident);
       }
-      ScannedVocabulary? mapped;
-      ModelClassification? matchedClassification;
-      for (final classification in usable) {
-        mapped = labelVocabulary.lookupByMlLabel(classification.label);
-        if (mapped != null) {
-          matchedClassification = classification;
-          break;
-        }
-      }
+      final primary = usable.first;
+      final mapped = labelVocabulary.lookupByMlLabel(primary.label);
       return ObjectScanResult(
         classifications: usable,
         vocabulary: mapped,
-        matchedClassification: matchedClassification,
+        matchedClassification: mapped == null ? null : primary,
         modelId: deviceModels.manifest.id,
         modelVersion: deviceModels.manifest.version,
         capturedAtUtc: captured.capturedAtUtc,

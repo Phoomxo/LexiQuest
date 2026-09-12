@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/export/application/export_use_cases.dart';
 import '../features/export/domain/export_contracts.dart';
+import '../features/identity/domain/owner_lifecycle_manifest.dart';
 import '../runtime/app_dependencies.dart';
 
 class ExportCenterScreen extends StatefulWidget {
@@ -43,9 +44,9 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
       final result = await exports.export(
         format: _format,
         selection: ExportSelection(
-          includeVocabulary: _vocabulary,
-          includeAttempts: _attempts,
-          includeReading: _reading,
+          includeVocabulary: _format == ExportFormat.anki || _vocabulary,
+          includeAttempts: _format != ExportFormat.anki && _attempts,
+          includeReading: _format != ExportFormat.anki && _reading,
         ),
         cancellation: cancellation,
       );
@@ -89,59 +90,91 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          SegmentedButton<ExportFormat>(
-            segments: const [
-              ButtonSegment(value: ExportFormat.csv, label: Text('CSV')),
-              ButtonSegment(value: ExportFormat.pdf, label: Text('PDF')),
-              ButtonSegment(value: ExportFormat.anki, label: Text('Anki')),
-              ButtonSegment(
-                value: ExportFormat.researchJson,
-                label: Text('Research'),
-              ),
-              ButtonSegment(
-                value: ExportFormat.ownerArchiveJson,
-                label: Text('Complete archive'),
-              ),
-            ],
-            selected: {_format},
-            onSelectionChanged: _busy
-                ? null
-                : (selection) => setState(() => _format = selection.single),
+          RadioGroup<ExportFormat>(
+            groupValue: _format,
+            onChanged: (value) {
+              if (!_busy && value != null) {
+                setState(() {
+                  _format = value;
+                  _status = null;
+                });
+              }
+            },
+            child: Column(
+              children: [
+                for (final format in ExportFormat.values)
+                  RadioListTile<ExportFormat>(
+                    key: ValueKey(format),
+                    value: format,
+                    enabled: !_busy,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_formatLabel(format)),
+                    subtitle: Text(_formatPurpose(format)),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
-          Text('เลือกข้อมูล', style: Theme.of(context).textTheme.titleMedium),
-          CheckboxListTile(
-            value: _vocabulary,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _vocabulary = value ?? false),
-            title: const Text('คลังคำศัพท์'),
-            subtitle: const Text('คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา'),
-          ),
-          CheckboxListTile(
-            value: _attempts,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _attempts = value ?? false),
-            title: const Text('ประวัติคำตอบ'),
-            subtitle: const Text('ผลตอบ เวลาตอบ และโหมดคำตอบ'),
-          ),
-          CheckboxListTile(
-            value: _reading,
-            onChanged: _busy
-                ? null
-                : (value) => setState(() => _reading = value ?? false),
-            title: const Text('ประวัติการอ่าน'),
-            subtitle: const Text('ตำแหน่ง เอกสาร revision และสถานะอ่านจบ'),
-          ),
+          if (_format != ExportFormat.ownerArchiveJson &&
+              _format != ExportFormat.anki) ...[
+            Text('เลือกข้อมูล', style: Theme.of(context).textTheme.titleMedium),
+            CheckboxListTile(
+              value: _vocabulary,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _vocabulary = value ?? false),
+              title: const Text('คลังคำศัพท์'),
+              subtitle: const Text('คำศัพท์ หมวดหมู่ ความหมาย และแหล่งที่มา'),
+            ),
+            CheckboxListTile(
+              value: _attempts,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _attempts = value ?? false),
+              title: const Text('ประวัติคำตอบ'),
+              subtitle: const Text('ผลตอบ เวลาตอบ และโหมดคำตอบ'),
+            ),
+            CheckboxListTile(
+              value: _reading,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _reading = value ?? false),
+              title: const Text('ประวัติการอ่าน'),
+              subtitle: const Text('ตำแหน่งที่อ่าน รุ่นเอกสาร และสถานะอ่านจบ'),
+            ),
+          ],
+          if (_format == ExportFormat.ownerArchiveJson) ...[
+            const Text(
+              'สำเนาตามรายการข้อมูลของบัญชีปัจจุบันในเครื่อง ไม่ขึ้นกับตัวเลือกหมวดข้อมูล และไม่ต้องยินยอมเข้าร่วมวิจัย ไฟล์นี้ไม่ใช่ไฟล์สำหรับกู้คืนแอป',
+            ),
+            const Text(
+              'ไม่รวมรหัสลับและโทเคนยืนยันตัวตน ข้อมูลระบุตัวผู้เข้าร่วมโดยตรง ข้อมูลดิบที่ไม่อยู่ในรายการอนุญาตและรายละเอียดจากผู้ให้บริการ ที่อยู่แหล่งข้อมูลและตำแหน่งไฟล์ในเครื่อง',
+            ),
+            ExpansionTile(
+              title: const Text('ดูรายการข้อมูลและขอบเขตในสำเนา'),
+              children: [
+                const Text(
+                  'บางรายการเก็บเฉพาะผลรวม หรือปิดบังข้อมูลระบุตัวตน รายการด้านล่างอ้างอิงข้อกำหนดการส่งออกจริง ไม่ใช่จำนวนระเบียนที่มีข้อมูล',
+                ),
+                for (final entry in ownerLifecycleManifest)
+                  ListTile(
+                    title: Text(entry.alias),
+                    subtitle: Text(
+                      '${_dispositionLabel(entry.exportDisposition)}\nช่องข้อมูลที่อนุญาต: ${entry.allowedExportFields.join(', ')}',
+                    ),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
-          const Text(
-            'ไฟล์ระบุ sample size, UTC, schema version, algorithm version '
-            'และรายการข้อมูลที่ไม่รวม โดยไม่ส่งออก API key หรือ token',
-          ),
+          if (_format != ExportFormat.ownerArchiveJson &&
+              _format != ExportFormat.anki)
+            const Text(
+              'ส่งออกข้อมูลที่เลือกจากเครื่อง พร้อมข้อมูลประกอบตามรูปแบบไฟล์ เช่น จำนวนรายการและเวลามาตรฐาน UTC โดยไม่รวมรหัสเชื่อมต่อหรือโทเคนเข้าสู่ระบบ',
+            ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 48,
+            width: double.infinity,
             child: _busy
                 ? OutlinedButton.icon(
                     onPressed: _cancel,
@@ -149,7 +182,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                     label: const Text('ยกเลิก'),
                   )
                 : FilledButton.icon(
-                    onPressed: _export,
+                    onPressed: _exports == null ? null : _export,
                     icon: const Icon(Icons.save_alt_outlined),
                     label: const Text('สร้างและบันทึกไฟล์'),
                   ),
@@ -169,16 +202,47 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
     );
   }
 
+  String _formatLabel(ExportFormat format) => switch (format) {
+    ExportFormat.csv => 'ตารางข้อมูล (CSV)',
+    ExportFormat.pdf => 'เอกสารสำหรับอ่าน (PDF)',
+    ExportFormat.anki => 'บัตรคำสำหรับ Anki',
+    ExportFormat.researchJson => 'ชุดข้อมูลวิจัย (JSON)',
+    ExportFormat.ownerArchiveJson => 'สำเนาข้อมูลของฉัน',
+  };
+
+  String _formatPurpose(ExportFormat format) => switch (format) {
+    ExportFormat.csv => 'เปิดและจัดการข้อมูลที่เลือกในแอปตารางคำนวณ',
+    ExportFormat.pdf => 'อ่านหรือพิมพ์รายงานข้อมูลที่เลือก',
+    ExportFormat.anki => 'นำเข้าเป็นบัตรคำใน Anki ใช้เฉพาะคำศัพท์และความหมาย',
+    ExportFormat.researchJson =>
+      'สำหรับวิเคราะห์งานวิจัย ต้องมีความยินยอมวิจัยตามรุ่นที่กำหนด แยกจากการส่งออกส่วนตัว',
+    ExportFormat.ownerArchiveJson =>
+      'เก็บข้อมูลตามรายการที่ระบบอนุญาต พร้อมปิดบังข้อมูลบางส่วน เป็นไฟล์ JSON',
+  };
+
+  String _dispositionLabel(OwnerLifecycleExportDisposition disposition) =>
+      switch (disposition) {
+        OwnerLifecycleExportDisposition.redactedIdentity =>
+          'ปิดบังข้อมูลระบุตัวตน',
+        OwnerLifecycleExportDisposition.allowlistedPersonal =>
+          'เฉพาะข้อมูลส่วนตัวที่อนุญาต',
+        OwnerLifecycleExportDisposition.aggregateOnly => 'เฉพาะข้อมูลสรุป',
+        OwnerLifecycleExportDisposition.redactedOwnerMetadata =>
+          'ข้อมูลประกอบบัญชีที่ปิดบังแล้ว',
+        OwnerLifecycleExportDisposition.preservedGlobal =>
+          'ข้อมูลส่วนกลางตามข้อกำหนด',
+      };
+
   String _failureText(ExportFailureCode code) => switch (code) {
     ExportFailureCode.noSelection => 'กรุณาเลือกข้อมูลอย่างน้อยหนึ่งประเภท',
-    ExportFailureCode.noData => 'ไม่มีข้อมูลจริงสำหรับรูปแบบที่เลือก (N=0)',
+    ExportFailureCode.noData => 'ยังไม่มีข้อมูลสำหรับรูปแบบที่เลือก',
     ExportFailureCode.consentRequired =>
-      'ต้องยินยอมเข้าร่วมการทดลองก่อนส่งออกชุดข้อมูลวิจัย',
+      'กรุณาให้ความยินยอมสำหรับการส่งออกข้อมูลวิจัยก่อน การยินยอมนี้ไม่ใช่การสมัครเข้าร่วมการทดลอง',
     ExportFailureCode.cancelled => 'ยกเลิกการส่งออกแล้ว',
     ExportFailureCode.permissionDenied => 'ไม่มีสิทธิ์เขียนไฟล์ไปยังตำแหน่งนี้',
     ExportFailureCode.insufficientSpace => 'พื้นที่จัดเก็บไม่เพียงพอ',
     ExportFailureCode.writeFailed =>
-      'เขียนไฟล์ไม่สำเร็จและล้างไฟล์ชั่วคราวแล้ว',
+      'ยังยืนยันการบันทึกไฟล์ไม่ได้ กรุณาตรวจตำแหน่งที่เลือกก่อนลองอีกครั้ง',
     ExportFailureCode.unavailable => 'ระบบบันทึกไฟล์ไม่พร้อมใช้งาน',
   };
 }

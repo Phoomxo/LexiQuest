@@ -77,6 +77,88 @@ void main() {
 
   tearDown(() => database.close());
 
+  test(
+    'candidate pages advance without losing words or crossing owner/deletion filters',
+    () async {
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 1),
+          );
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-2',
+              ownerId: 'owner-2',
+              name: 'Other',
+              normalizedName: 'other',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      for (var i = 0; i < 107; i++) {
+        final foreign = i == 105;
+        final id = 'page-${i.toString().padLeft(3, '0')}';
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: id,
+                ownerId: foreign ? 'owner-2' : 'owner-1',
+                categoryId: foreign ? 'category-2' : 'category-1',
+                spelling: id,
+                normalizedSpelling: id,
+                meaning: id,
+                normalizedMeaning: id,
+                partOfSpeech: 'noun',
+                isDeleted: Value(i == 106),
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+      }
+      final first = await repository.listQuizWordPage(
+        ownerId: 'owner-1',
+        limit: 100,
+      );
+      final second = await repository.listQuizWordPage(
+        ownerId: 'owner-1',
+        afterId: first.last.id,
+        limit: 100,
+      );
+      expect(first, hasLength(100));
+      expect(second, hasLength(7));
+      final ids = [...first, ...second].map((w) => w.id).toSet();
+      expect(ids, hasLength(107));
+      expect(ids, contains('page-104'));
+      expect(ids, isNot(contains('page-105')));
+      expect(ids, isNot(contains('page-106')));
+      expect(
+        await repository.listQuizWordPage(
+          ownerId: 'owner-1',
+          afterId: second.last.id,
+          limit: 100,
+        ),
+        isEmpty,
+      );
+      expect(
+        await repository.listQuizWordPage(
+          ownerId: 'owner-1',
+          categoryId: 'category-2',
+          limit: 100,
+        ),
+        isEmpty,
+      );
+      await expectLater(
+        repository.listQuizWordPage(ownerId: 'owner-1', limit: 101),
+        throwsRangeError,
+      );
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    },
+  );
+
   test('default repository and rebuilder rollout is fixed Legacy', () {
     expect(
       repository.events.rolloutModeProvider,

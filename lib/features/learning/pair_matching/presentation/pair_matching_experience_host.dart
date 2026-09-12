@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/accessibility/presentation/accessibility_scope.dart';
+import 'package:vocab_learning_app/features/companion/presentation/contextual_companion_widget.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -586,6 +587,13 @@ final class _PairMatchingExperienceHostState
               ? null
               : widget.runtime.revalidate,
           preservePreacceptedSessionOnAttachmentFailure: true,
+          companionBuilder: (builderContext, controller) =>
+              ContextualCompanionWidget(
+                reaction: controller.companionReaction,
+                languageCode: Localizations.localeOf(
+                  builderContext,
+                ).languageCode,
+              ),
           builder: (_) => _PairSessionPane(
             runtime: widget.runtime,
             operation: operation,

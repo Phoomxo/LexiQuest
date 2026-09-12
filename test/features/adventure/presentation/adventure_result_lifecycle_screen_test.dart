@@ -54,16 +54,21 @@ void main() {
 
       expect(reader.sessionReads, <String>['owner:one/session:one']);
       expect(find.text('รางวัลหลักได้รับการยืนยันแล้ว'), findsOneWidget);
-      expect(find.text('Quest: ยืนยันแล้ว'), findsOneWidget);
-      expect(find.text('Streak: ยืนยันแล้ว'), findsOneWidget);
-      expect(
-        find.text('Achievement: ยืนยันแล้ว · first-adventure'),
-        findsOneWidget,
-      );
       expect(
         find.text('ภารกิจรอบนี้เสร็จแล้ว คุณได้ลงมือเรียนรู้'),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-motivation')),
+        160,
+      );
+      await tester.pump();
+      expect(find.text('ภารกิจ: ยืนยันแล้ว'), findsOneWidget);
+      expect(find.text('ความต่อเนื่อง: ยืนยันแล้ว'), findsOneWidget);
+      expect(find.text('ความสำเร็จ: ยืนยันแล้ว'), findsOneWidget);
+      expect(find.text('first-adventure'), findsNothing);
+      await _openDetails(tester);
+      expect(find.text('first-adventure'), findsOneWidget);
     },
   );
 
@@ -92,11 +97,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('รางวัลหลักกำลังยืนยัน'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('adventure-result-technical')),
-      160,
-      scrollable: find.byType(Scrollable),
-    );
+    await _openDetails(tester);
     expect(
       find.byKey(const ValueKey('adventure-result-technical')),
       findsOneWidget,
@@ -237,10 +238,6 @@ void main() {
       160,
       scrollable: find.byType(Scrollable),
     );
-    expect(
-      find.text('ซิงก์รางวัลยังไม่สำเร็จ ลองใหม่ภายหลังได้'),
-      findsOneWidget,
-    );
     expect(find.text('ไปทบทวนแบบเว้นระยะ'), findsOneWidget);
     expect(
       tester
@@ -249,6 +246,11 @@ void main() {
           )
           .onPressed,
       isNotNull,
+    );
+    await _openDetails(tester);
+    expect(
+      find.text('ซิงก์รางวัลยังไม่สำเร็จ ลองใหม่ภายหลังได้'),
+      findsOneWidget,
     );
   });
 
@@ -424,6 +426,21 @@ void main() {
     expect(callbacks, 0);
     expect(find.text('review destination'), findsNothing);
   });
+}
+
+Future<void> _openDetails(WidgetTester tester) async {
+  final details = find.byKey(const ValueKey('adventure-result-details'));
+  await tester.scrollUntilVisible(
+    details,
+    160,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pump();
+  await tester.ensureVisible(details);
+  await tester.pump();
+  expect(details.hitTestable(), findsOneWidget);
+  await tester.tap(details);
+  await tester.pumpAndSettle();
 }
 
 final class _Refresher implements AdventureProjectionReceiptBarrier {

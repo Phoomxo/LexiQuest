@@ -25,7 +25,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(eraser.ownerIds, ['owner-a']);
-    expect(find.text('Local data erased.'), findsOneWidget);
+    expect(find.text('ลบข้อมูลในเครื่องแล้ว'), findsOneWidget);
   });
 }
 

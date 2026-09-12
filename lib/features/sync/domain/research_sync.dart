@@ -7,10 +7,13 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../events/domain/today_experience_event_payload_policy.dart';
 import '../../research/domain/research_participation_permit.dart';
 import '../../research/domain/research_event_identity.dart';
+import '../../research/domain/research_session_proof.dart';
 import 'sync_entity.dart';
 import 'sync_failure.dart';
 
-const researchMeasurementV1RulesRevision = 'research-measurement-v1-r1';
+// Keep revision metadata available to existing callers without making pure
+// Dart build tools depend on the runtime proof-validation graph.
+export 'sync_entity.dart' show researchMeasurementV1RulesRevision;
 
 /// No production constructor: real enrollment/deployment is a separate release.
 final class ResearchMeasurementSyncRollout {
@@ -87,6 +90,7 @@ abstract final class ResearchSyncContract {
     SyncCollection.researchParticipationPermits,
     SyncCollection.motivationMeasurementRuns,
     SyncCollection.motivationResponses,
+    SyncCollection.researchSessionProofs,
     SyncCollection.measurementOpportunities,
     SyncCollection.neutralEventsV2,
   ];
@@ -304,7 +308,10 @@ abstract final class ResearchSyncContract {
         return;
       }
       if (!collections.contains(collection) ||
-          utf8.encode(jsonEncode(p)).length > 16384) {
+          utf8.encode(jsonEncode(p)).length >
+              (collection == SyncCollection.researchSessionProofs
+                  ? ResearchSessionProof.maximumPayloadBytes
+                  : 16384)) {
         _invalid();
       }
       code(entityId);
@@ -323,6 +330,11 @@ abstract final class ResearchSyncContract {
       code(p['permitId']);
       digest(p['permitPayloadSha256']);
       integer(p['permitRevision'], min: 1);
+      if (collection == SyncCollection.researchSessionProofs) {
+        final proof = ResearchSessionProof.decode(p);
+        if (proof.id != entityId || revision != 1) _invalid();
+        return;
+      }
       if (collection == SyncCollection.neutralEventsV2) {
         exactKeys(p, eventKeys);
         validateEvent(
@@ -353,7 +365,10 @@ abstract final class ResearchSyncContract {
         }
         integer(p['consentVersion'], min: 1);
         integer(p['consentDecidedAtUtcMs']);
-        if (p['databaseSchemaVersion'] != 24) _invalid();
+        integer(p['databaseSchemaVersion'], min: 24);
+        if (!const <int>{24, 25, 26}.contains(p['databaseSchemaVersion'])) {
+          _invalid();
+        }
         presentation(p['treatment']);
         if (!const [
           'started',
@@ -493,6 +508,15 @@ abstract final class ResearchSyncContract {
 
   static String fingerprint(Map<String, Object?> p) =>
       sha256.convert(utf8.encode(jsonEncode(_sorted(p)))).toString();
+
+  /// Shared identity for atomic local intent and its immutable wire snapshot.
+  static String operationIdFor({
+    required SyncCollection collection,
+    required String entityId,
+    required Map<String, Object?> payload,
+    required int revision,
+  }) =>
+      'research-sync:${fingerprint({'collection': collection.wireName, 'id': entityId, 'payload': payload})}:$revision';
   static bool same(Object? a, Object? b) =>
       jsonEncode(_sorted(a)) == jsonEncode(_sorted(b));
   static void exactKeys(Map<String, Object?> p, Set<String> keys) {

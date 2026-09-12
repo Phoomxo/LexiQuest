@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/reminders/data/drift_study_reminder_repository.dart';
 import 'package:vocab_learning_app/features/reminders/domain/study_reminder.dart';
 import 'package:vocab_learning_app/features/reminders/domain/study_reminder_repository.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 
 void main() {
   late AppDatabase database;
@@ -18,6 +19,113 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'reminder token proof requires the exact unexpired canonical lease',
+    () async {
+      await repository.activeOwnerId();
+      final gate = DriftOwnerOperationGate(database);
+      final now = DateTime.utc(2026, 8, 28);
+      const token = 'synthetic-reminder-lease';
+      expect(
+        await repository.isOwnerOperationTokenOwned(
+          operationToken: token,
+          nowUtc: now,
+        ),
+        isFalse,
+      );
+      expect(
+        await gate.tryAcquire(
+          token: token,
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        ),
+        isTrue,
+      );
+      try {
+        // A real lease is sufficient proof; an in-memory or owner fence marker
+        // is neither required nor accepted as a substitute for its token.
+        expect(
+          await repository.isOwnerOperationTokenOwned(
+            operationToken: token,
+            nowUtc: now,
+          ),
+          isTrue,
+        );
+        expect(
+          await repository.isOwnerOperationTokenOwned(
+            operationToken: 'unrelated-token',
+            nowUtc: now,
+          ),
+          isFalse,
+        );
+        expect(
+          await repository.isOwnerOperationTokenOwned(
+            operationToken: token,
+            nowUtc: now.add(const Duration(minutes: 1)),
+          ),
+          isFalse,
+        );
+      } finally {
+        await gate.release(token: token);
+      }
+    },
+  );
+
+  test(
+    'same-owner token takeover invalidates stale reminder authority',
+    () async {
+      final owner = await repository.activeOwnerId();
+      final gate = DriftOwnerOperationGate(database);
+      final now = DateTime.utc(2026, 8, 28);
+      expect(
+        await gate.tryAcquire(
+          token: 'old-reminder-token',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        ),
+        isTrue,
+      );
+      try {
+        await repository.beginOwnerOperationFence(
+          ownerId: owner,
+          operationToken: 'old-reminder-token',
+          nowUtc: now,
+        );
+        final later = now.add(const Duration(minutes: 1));
+        expect(
+          await gate.tryAcquire(
+            token: 'new-reminder-token',
+            nowUtc: later,
+            leaseDuration: const Duration(minutes: 1),
+          ),
+          isTrue,
+        );
+        expect(await repository.activeOwnerId(), owner);
+        expect(
+          await repository.isOwnerOperationTokenOwned(
+            operationToken: 'old-reminder-token',
+            nowUtc: later,
+          ),
+          isFalse,
+        );
+        expect(
+          await repository.isOwnerOperationTokenOwned(
+            operationToken: 'new-reminder-token',
+            nowUtc: later,
+          ),
+          isTrue,
+        );
+      } finally {
+        await repository.endOwnerOperationFence(
+          ownerId: owner,
+          operationToken: 'old-reminder-token',
+        );
+        await gate.release(token: 'old-reminder-token');
+        await gate.release(token: 'new-reminder-token');
+      }
+    },
+  );
 
   test(
     'save commits canonical desired state and platform outbox atomically',

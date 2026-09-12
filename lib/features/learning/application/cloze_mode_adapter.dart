@@ -50,8 +50,10 @@ final class ClozeQuestion {
     required this.wordId,
     required this.identity,
     required this.checksumSha256,
+    required this.typedChecksumSha256,
     required this.manifestChecksumSha256,
     required this.prompt,
+    required this.completeSentence,
     required this.correctAnswer,
     required this.options,
     this.optionIdentities = const <String, String>{},
@@ -60,8 +62,10 @@ final class ClozeQuestion {
   final String wordId;
   final ContentIdentity identity;
   final String checksumSha256;
+  final String typedChecksumSha256;
   final String manifestChecksumSha256;
   final String prompt;
+  final String completeSentence;
   final String correctAnswer;
   final List<String> options;
   final Map<String, String> optionIdentities;
@@ -82,13 +86,13 @@ final class ClozeItem {
 
   String get semanticAnnouncement => switch (skipReason) {
     ClozeSkipReason.missingExample =>
-      'Skipped. A reviewed cloze example is unavailable.',
+      'ข้ามข้อนี้ เนื่องจากยังไม่มีตัวอย่างเติมคำที่ผ่านการตรวจทาน',
     ClozeSkipReason.unreviewedContent =>
-      'Skipped. The cloze example has not been approved.',
+      'ข้ามข้อนี้ เนื่องจากตัวอย่างเติมคำยังไม่ผ่านการตรวจทาน',
     ClozeSkipReason.staleContent =>
-      'Skipped. The cloze example no longer matches this session.',
+      'ข้ามข้อนี้ เนื่องจากตัวอย่างเติมคำไม่ตรงกับเนื้อหาในกิจกรรมนี้แล้ว',
     ClozeSkipReason.ambiguousExample =>
-      'Skipped. The reviewed example cannot make one unambiguous blank.',
+      'ข้ามข้อนี้ เนื่องจากตัวอย่างที่ตรวจทานแล้วสร้างช่องว่างที่มีคำตอบเดียวไม่ได้',
     null => '',
   };
 }
@@ -98,14 +102,18 @@ final class _PinnedClozeCandidate {
     required this.word,
     required this.lexical,
     required this.prompt,
+    required this.completeSentence,
     required this.checksumSha256,
+    required this.typedChecksumSha256,
     required this.manifestChecksumSha256,
   });
 
   final QuizWord word;
   final VocabularyWord lexical;
   final String prompt;
+  final String completeSentence;
   final String checksumSha256;
+  final String typedChecksumSha256;
   final String manifestChecksumSha256;
 }
 
@@ -136,8 +144,8 @@ final class ClozeModeAdapter
 
   @override
   HintPolicy get hintPolicy => HintPolicy.staged(
-    strategy: 'Use the words around the blank to identify its role.',
-    context: 'Recall the exact reviewed vocabulary word for this sentence.',
+    strategy: 'สังเกตคำรอบช่องว่างเพื่อดูว่าคำที่หายไปทำหน้าที่อะไร',
+    context: 'นึกถึงคำศัพท์ที่ผ่านการตรวจทานซึ่งทำให้ประโยคนี้สมบูรณ์',
   );
 
   HintEvidenceClassification classifyResponse({
@@ -212,16 +220,24 @@ final class ClozeModeAdapter
         continue;
       }
       final artifactIdentity = _artifactIdentity(lexical);
-      if (artifactIdentity == null) {
+      final typedArtifactIdentity = _artifactIdentity(
+        lexical,
+        inputMode: ClozeInputMode.typed,
+      );
+      if (artifactIdentity == null || typedArtifactIdentity == null) {
         skips[word.id] = ClozeSkipReason.missingExample;
         continue;
       }
       String? prompt;
+      String? completeSentence;
       var sawExample = false;
       for (final example in lexical.richMetadata!.examples) {
         sawExample = true;
         prompt = _blankOneOccurrence(example, lexical.spelling);
-        if (prompt != null) break;
+        if (prompt != null) {
+          completeSentence = _canonicalDisplay(example);
+          break;
+        }
       }
       if (prompt == null) {
         skips[word.id] = sawExample
@@ -233,7 +249,9 @@ final class ClozeModeAdapter
         word: word,
         lexical: lexical,
         prompt: prompt,
+        completeSentence: completeSentence!,
         checksumSha256: artifactIdentity.checksumSha256,
+        typedChecksumSha256: typedArtifactIdentity.checksumSha256,
         manifestChecksumSha256:
             artifactIdentity.verifiedArtifactChecksumSha256!,
       );
@@ -271,8 +289,10 @@ final class ClozeModeAdapter
               revision: candidate.lexical.contentRevision,
             ),
             checksumSha256: candidate.checksumSha256,
+            typedChecksumSha256: candidate.typedChecksumSha256,
             manifestChecksumSha256: candidate.manifestChecksumSha256,
             prompt: candidate.prompt,
+            completeSentence: candidate.completeSentence,
             correctAnswer: correct,
             options: _pinOptions(
               correctOption: correct,
@@ -339,16 +359,20 @@ final class ClozeModeAdapter
       word.contentReviewState == ContentReviewState.approved &&
       word.contentPublicationState == ContentPublicationState.published;
 
-  LexicalPromptArtifactIdentity? _artifactIdentity(VocabularyWord word) =>
-      LexicalPromptArtifactResolver.resolveForAdapter(
-        promptMode: 'clozeSelected',
-        wordId: word.id,
-        coreRevision: word.contentRevision,
-        coreChecksumSha256: word.contentChecksumSha256,
-        verifiedArtifactRevision: word.richMetadata?.verifiedContentRevision,
-        verifiedArtifactChecksumSha256:
-            word.richMetadata?.verifiedArtifactChecksumSha256,
-      );
+  LexicalPromptArtifactIdentity? _artifactIdentity(
+    VocabularyWord word, {
+    ClozeInputMode inputMode = ClozeInputMode.selected,
+  }) => LexicalPromptArtifactResolver.resolveForAdapter(
+    promptMode: inputMode == ClozeInputMode.typed
+        ? 'clozeTyped'
+        : 'clozeSelected',
+    wordId: word.id,
+    coreRevision: word.contentRevision,
+    coreChecksumSha256: word.contentChecksumSha256,
+    verifiedArtifactRevision: word.richMetadata?.verifiedContentRevision,
+    verifiedArtifactChecksumSha256:
+        word.richMetadata?.verifiedArtifactChecksumSha256,
+  );
 
   @override
   EvidenceContext classify(LessonResponse response, LessonSupport support) {
@@ -547,7 +571,9 @@ final class ClozeReviewController extends ChangeNotifier {
       responseTimeMs: responseTimeMs,
       attemptNumber: _index + 1,
       contentRevision: question.identity.revision,
-      checksumSha256: question.checksumSha256,
+      checksumSha256: inputMode == ClozeInputMode.typed
+          ? question.typedChecksumSha256
+          : question.checksumSha256,
       typed: inputMode == ClozeInputMode.typed,
       classification: classification,
       contrastiveFeedback: contrastiveFeedback,

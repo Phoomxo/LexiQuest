@@ -20,7 +20,10 @@ import '../../support/current_database_contract.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
@@ -61,6 +64,39 @@ void main() {
 
   tearDown(() => database.close());
 
+  test('all export formats survive exact file readback', () async {
+    final output = Platform.environment['LEXIQUEST_SYNTHETIC_EXPORT_OUTPUT'];
+    final directory = output == null
+        ? await Directory.systemTemp.createTemp('lexiquest-synthetic-export-')
+        : await Directory(output).create(recursive: true);
+    if (output == null) addTearDown(() => directory.delete(recursive: true));
+    for (final format in ExportFormat.values) {
+      final artifact = await exports.prepare(
+        format: format,
+        selection: _all,
+        cancellation: ExportCancellation(),
+      );
+      final file = File(
+        '${directory.path}/${format.name}.${format == ExportFormat.pdf ? 'pdf' : 'txt'}',
+      );
+      expect(await file.exists(), isFalse);
+      await file.writeAsBytes(artifact.bytes, flush: true);
+      expect(await file.readAsBytes(), orderedEquals(artifact.bytes));
+      expect(artifact.recordCount, greaterThan(0));
+      if (format == ExportFormat.researchJson ||
+          format == ExportFormat.ownerArchiveJson) {
+        expect(
+          jsonDecode(await file.readAsString()),
+          isA<Map<String, dynamic>>(),
+        );
+      } else if (format == ExportFormat.anki) {
+        expect(await file.readAsString(), contains('station\tสถานี'));
+      } else if (format == ExportFormat.pdf) {
+        expect(ascii.decode(artifact.bytes.take(4).toList()), '%PDF');
+      }
+    }
+  });
+
   test('CSV reconciles immutable evidence ids and metadata', () async {
     final artifact = await exports.prepare(
       format: ExportFormat.csv,
@@ -76,6 +112,83 @@ void main() {
     expect(artifact.recordCount, 3);
     expect(artifact.schemaVersion, 1);
   });
+
+  test(
+    'attempt export resolves exact packaged words without exporting catalog or foreign vocabulary',
+    () async {
+      await PackagedStarterCatalog.provision(
+        database,
+        DriftContentManifestRepository(
+          database,
+          loadArtifactBytes: _starterAsset,
+        ),
+        _starterAsset,
+      );
+      final starter = PackagedStarterCatalog.words.first;
+      await database.customInsert(
+        'INSERT INTO answer_attempts '
+        '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+        'response_time_ms, attempt_number, occurred_at_utc_ms) '
+        "VALUES ('attempt-starter', 'local:owner', 'session-1', ?, "
+        "'typedRecall', 1, 400, 2, 3)",
+        variables: [Variable<String>(starter.id)],
+      );
+      await database.customInsert(
+        "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+        "VALUES ('other-owner', 'localGuest', 9)",
+      );
+      await database.customInsert(
+        'INSERT INTO vocabulary_categories '
+        '(id, owner_id, name, normalized_name, created_at_utc_ms, updated_at_utc_ms) '
+        "VALUES ('other-category', 'other-owner', 'Private', 'private', 9, 9)",
+      );
+      await database.customInsert(
+        'INSERT INTO vocabulary_words '
+        '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
+        'normalized_meaning, part_of_speech, created_at_utc_ms, updated_at_utc_ms) '
+        "VALUES ('other-word', 'other-owner', 'other-category', 'secret', "
+        "'secret', 'ส่วนตัว', 'ส่วนตัว', 'noun', 9, 9)",
+      );
+      await database.customInsert(
+        'INSERT INTO answer_attempts '
+        '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+        'response_time_ms, attempt_number, occurred_at_utc_ms) '
+        "VALUES ('attempt-foreign-word', 'local:owner', 'session-1', "
+        "'other-word', 'typedRecall', 1, 400, 3, 4)",
+      );
+
+      final data = await DriftExportReader(database).load(
+        ownerId: 'local:owner',
+        vocabulary: true,
+        attempts: true,
+        reading: false,
+      );
+
+      expect(data.attempts.map((row) => row.id), [
+        'attempt-1',
+        'attempt-starter',
+      ]);
+      expect(data.attempts.last.wordId, starter.id);
+      expect(data.attempts.last.spelling, starter.key);
+      expect(
+        data.attempts.map((row) => row.spelling),
+        isNot(contains('secret')),
+      );
+      expect(data.vocabulary.map((row) => row.id), ['word-1']);
+
+      await (database.update(database.vocabularyWords)
+            ..where((row) => row.id.equals(starter.id)))
+          .write(const VocabularyWordsCompanion(meaning: Value('tampered')));
+      final corrupted = await DriftExportReader(database).load(
+        ownerId: 'local:owner',
+        vocabulary: true,
+        attempts: true,
+        reading: false,
+      );
+      expect(corrupted.attempts.map((row) => row.id), ['attempt-1']);
+      expect(corrupted.vocabulary.map((row) => row.id), ['word-1']);
+    },
+  );
 
   test(
     'saved intent reader exports pinned revision and tombstone state',
@@ -894,6 +1007,8 @@ void main() {
     );
     final text = utf8.decode(artifact.bytes);
     expect(text, contains('station\tสถานี\tTravel\tword-1'));
+    expect(artifact.suggestedFileName, endsWith('.tsv'));
+    expect(artifact.mimeType, 'text/tab-separated-values');
     expect(text, isNot(contains('perseverance')));
   });
 
@@ -954,6 +1069,13 @@ void main() {
       );
     },
   );
+}
+
+Future<Uint8List?> _starterAsset(ContentIdentity identity) async {
+  final data = await rootBundle.load(
+    'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+  );
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 }
 
 const _all = ExportSelection(

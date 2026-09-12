@@ -96,14 +96,14 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
   Widget build(BuildContext context) {
     final snapshot = widget.controller.snapshot;
     final statusLabel = switch (snapshot.status) {
-      FocusTimerStatus.notStarted => 'Ready',
-      FocusTimerStatus.running => 'Focusing',
-      FocusTimerStatus.paused => 'Paused',
-      FocusTimerStatus.finished => 'Finished',
+      FocusTimerStatus.notStarted => 'พร้อมเริ่ม',
+      FocusTimerStatus.running => 'กำลังเรียน',
+      FocusTimerStatus.paused => 'พักชั่วคราว',
+      FocusTimerStatus.finished => 'จบแล้ว',
     };
     return Semantics(
       container: true,
-      label: 'Focus timer, $statusLabel, ${_format(snapshot.activeDuration)}',
+      label: 'จับเวลาเรียน $statusLabel ${_format(snapshot.activeDuration)}',
       child: Card(
         margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
         child: Padding(
@@ -125,7 +125,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                     children: <Widget>[
                       const Icon(Icons.timer_outlined),
                       const SizedBox(width: 8),
-                      Flexible(child: Text('Focus timer', style: titleStyle)),
+                      Flexible(child: Text('จับเวลาเรียน', style: titleStyle)),
                     ],
                   );
                   final textScaler = MediaQuery.textScalerOf(context);
@@ -154,7 +154,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
               Text(statusLabel),
               if (_failure != null)
                 const Text(
-                  'Focus timer is temporarily unavailable.',
+                  'ระบบจับเวลาเรียนไม่พร้อมใช้งานชั่วคราว',
                   key: ValueKey<String>('focus-timer/error'),
                 ),
               const SizedBox(height: 8),
@@ -169,7 +169,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                           ? null
                           : () => _run(() => widget.onStart(widget.nowUtc())),
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Start focus'),
+                      label: const Text('เริ่มจับเวลา'),
                     ),
                   if (snapshot.status == FocusTimerStatus.running)
                     OutlinedButton.icon(
@@ -178,7 +178,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                           ? null
                           : () => _run(() => widget.onPause(widget.nowUtc())),
                       icon: const Icon(Icons.pause),
-                      label: const Text('Pause'),
+                      label: const Text('พัก'),
                     ),
                   if (snapshot.status == FocusTimerStatus.paused)
                     FilledButton.icon(
@@ -187,7 +187,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                           ? null
                           : () => _run(() => widget.onResume(widget.nowUtc())),
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Resume'),
+                      label: const Text('ทำต่อ'),
                     ),
                   if (snapshot.status == FocusTimerStatus.running ||
                       snapshot.status == FocusTimerStatus.paused)
@@ -197,7 +197,7 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                           ? null
                           : () => _run(() => widget.onFinish(widget.nowUtc())),
                       icon: const Icon(Icons.stop),
-                      label: const Text('Finish'),
+                      label: const Text('จบการจับเวลา'),
                     ),
                 ],
               ),

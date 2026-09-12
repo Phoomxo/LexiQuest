@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning/domain/lesson_mode.dart';
+import '../navigation/navigation_glossary.dart';
+
 import '../features/learning_packs/application/learning_pack_detail_use_cases.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/learning_packs/domain/learning_pack_detail.dart';
@@ -123,16 +126,16 @@ final class LearningPackDetailUnavailable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning pack unavailable')),
+      appBar: AppBar(title: const Text('ชุดเนื้อหายังไม่พร้อมใช้งาน')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Semantics(
-            label: 'Learning pack $packId revision $revision unavailable',
+            label: 'ชุดเนื้อหา $packId รุ่น $revision ไม่พร้อมใช้งาน',
             child: const ExcludeSemantics(
               child: Text(
-                'This learning pack revision is unavailable. Your saved '
-                'learning data is unchanged.',
+                'ชุดเนื้อหารุ่นนี้ไม่พร้อมใช้งาน '
+                'ข้อมูลการเรียนที่บันทึกไว้ไม่เปลี่ยนแปลง',
                 textAlign: TextAlign.center,
               ),
             ),
@@ -160,14 +163,14 @@ final class _DetailBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = view.detail.summary;
     return Scaffold(
-      appBar: AppBar(title: const Text('Learning pack detail')),
+      appBar: AppBar(title: const Text('รายละเอียดชุดเนื้อหาการเรียน')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Semantics(
             header: true,
             label:
-                '${summary.title}, ${summary.cefrLevel}, revision '
+                '${summary.title}, ${summary.cefrLevel}, รุ่น '
                 '${summary.revision}',
             child: ExcludeSemantics(
               child: Text(
@@ -177,16 +180,16 @@ final class _DetailBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text('Level: ${summary.cefrLevel}'),
-          Text('Topic: ${summary.topic}'),
-          Text('Skill: ${summary.skill}'),
-          Text('Goal: ${summary.goal}'),
+          Text('ระดับภาษา: ${summary.cefrLevel}'),
+          Text('หัวข้อ: ${summary.topic}'),
+          Text('ทักษะ: ${summary.skill}'),
+          Text('เป้าหมาย: ${summary.goal}'),
           const SizedBox(height: 24),
-          const Text('Progress'),
-          Text('Completed sessions: ${view.progress.completedSessions}'),
-          Text('Practice attempts: ${view.progress.sampleSize}'),
+          const Text('ความคืบหน้า'),
+          Text('กิจกรรมที่เรียนจบ: ${view.progress.completedSessions}'),
+          Text('จำนวนครั้งที่ฝึก: ${view.progress.sampleSize}'),
           const SizedBox(height: 24),
-          const Text('Pinned vocabulary references'),
+          const Text('คำศัพท์อ้างอิงของชุดนี้'),
           for (final word in words)
             RichLexicalCard(
               word: word,
@@ -204,15 +207,16 @@ final class _DetailBody extends StatelessWidget {
               onReport: reportContent,
             ),
           const SizedBox(height: 24),
-          const Text('Activities'),
+          const Text('กิจกรรม'),
           for (final activity in view.activities)
             Semantics(
               container: true,
-              label: '${activity.label}: ${activity.availability.label}',
+              label:
+                  '${_activityLabel(activity.mode)}: ${_availabilityLabel(activity.availability)}',
               child: ExcludeSemantics(
                 child: ListTile(
-                  title: Text(activity.label),
-                  subtitle: Text(activity.availability.label),
+                  title: Text(_activityLabel(activity.mode)),
+                  subtitle: Text(_availabilityLabel(activity.availability)),
                 ),
               ),
             ),
@@ -227,4 +231,31 @@ final class _DetailScreenData {
 
   final LearningPackDetailView view;
   final List<VocabularyWord> words;
+}
+
+String _availabilityLabel(LearningPackActivityAvailability availability) =>
+    switch (availability) {
+      LearningPackActivityAvailability.available => 'พร้อมใช้งาน',
+      LearningPackActivityAvailability.unavailable => 'ยังไม่พร้อมใช้งาน',
+    };
+
+String _activityLabel(LessonMode mode) {
+  if (mode == LessonMode.handwritingScratchpad) return 'กระดานฝึกเขียน';
+  final id = switch (mode) {
+    LessonMode.associativeReading => 'home/learn/associative-reading',
+    LessonMode.meaningQuiz => 'home/learn/quiz',
+    LessonMode.typedRecall => 'home/learn/quiz/typed-recall',
+    LessonMode.definitionQuiz => 'home/learn/quiz/definition',
+    LessonMode.cloze => 'home/learn/quiz/cloze',
+    LessonMode.matching => 'home/learn/quiz/matching',
+    LessonMode.flashcard => 'home/learn/srs',
+    LessonMode.dictation => 'home/learn/quiz/dictation',
+    LessonMode.speaking => 'home/learn/speech/speaking',
+    LessonMode.shadowing => 'home/learn/speech/shadowing',
+    LessonMode.cefrReading => 'home/learn/reading/cefr',
+    LessonMode.sentenceScramble => 'home/learn/quiz/sentence-scramble',
+    LessonMode.wordScramble => 'home/learn/quiz/word-scramble',
+    LessonMode.handwritingScratchpad => throw StateError('Handled above'),
+  };
+  return NavigationGlossary.require(id).fullThaiLabel;
 }

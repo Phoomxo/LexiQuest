@@ -19,6 +19,14 @@ final class DriftStudyReminderRepository implements StudyReminderRepository {
   }
 
   @override
+  Future<bool> isOwnerOperationTokenOwned({
+    required String operationToken,
+    required DateTime nowUtc,
+  }) => DriftOwnerOperationGate(
+    database,
+  ).isOwned(token: operationToken, nowUtc: nowUtc);
+
+  @override
   Future<void> beginOwnerOperationFence({
     required String ownerId,
     required String operationToken,

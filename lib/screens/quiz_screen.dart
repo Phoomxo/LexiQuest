@@ -17,6 +17,7 @@ import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
+import '../widgets/cefr_practice_example.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
@@ -40,6 +41,7 @@ class QuizScreen extends StatefulWidget {
     this.completionPageBuilder,
     this.adventureDiagnostics,
     this.allowSkip = false,
+    this.attachedSession,
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -55,6 +57,7 @@ class QuizScreen extends StatefulWidget {
     this.completionPageBuilder,
     this.adventureDiagnostics,
     this.allowSkip = false,
+    this.attachedSession,
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
        typedRecall = true;
@@ -71,6 +74,7 @@ class QuizScreen extends StatefulWidget {
   final QuizCompletionPageBuilder? completionPageBuilder;
   final AdventureDiagnostics? adventureDiagnostics;
   final bool allowSkip;
+  final QuizSession? attachedSession;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -154,6 +158,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ? const MeaningQuizModeAdapter()
           : null;
     }
+    final attachedSession = widget.attachedSession;
     final rawLoad = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
@@ -174,6 +179,8 @@ class _QuizScreenState extends State<QuizScreen> {
         ? Future<QuizSession>.error(
             StateError('meaning quiz learning authority mismatch'),
           )
+        : attachedSession != null
+        ? Future<QuizSession>.value(attachedSession)
         : _loadConfiguredQuiz(learning, dependencies);
     final lifecycle = _lessonLifecycle;
     _load = _prepareSession(
@@ -332,8 +339,27 @@ class _QuizScreenState extends State<QuizScreen> {
               : await loadLexicalWords(
                   session.questions.map((question) => question.word.id),
                 );
+          if (!mounted || _lessonLifecycle?.acceptsOperations == false) {
+            return session;
+          }
+          var distractorWords = const <QuizWord>[];
+          if (widget.attachedSession != null) {
+            final sessionOwnerId = session.ownerId;
+            if (sessionOwnerId == null) {
+              throw StateError('Review distractor authority is unavailable.');
+            }
+            distractorWords = await _learning!.readReviewDistractors(
+              ownerId: sessionOwnerId,
+              excludingWordIds: session.questions.map(
+                (question) => question.word.id,
+              ),
+            );
+            if (distractorWords.isEmpty) {
+              throw const InsufficientMeaningQuizOptions();
+            }
+          }
           if (!mounted) return session;
-          _meaningReview = _modeAdapter!.createReview(
+          final meaningReview = _modeAdapter!.createReview(
             session: session,
             learning: _learning!,
             evidence: _evidenceAdapter!,
@@ -348,7 +374,16 @@ class _QuizScreenState extends State<QuizScreen> {
             direction:
                 _sessionConfiguration?.direction ?? SessionDirection.mixed,
             lexicalWords: lexicalWords,
-          )..addListener(_onReviewChanged);
+            distractorWords: distractorWords,
+          );
+          if (widget.attachedSession != null &&
+              meaningReview.questions.any(
+                (question) => question.options.length < 2,
+              )) {
+            meaningReview.dispose();
+            throw const InsufficientMeaningQuizOptions();
+          }
+          _meaningReview = meaningReview..addListener(_onReviewChanged);
         }
         _responseStopwatch
           ..reset()
@@ -396,12 +431,18 @@ class _QuizScreenState extends State<QuizScreen> {
         unawaited(_confirmExit(context));
       },
       child: AccessibilityModeScaffold(
-        appBar: AppBar(title: const Text('Quiz คำศัพท์')),
+        appBar: AppBar(title: const Text('แบบทดสอบคำศัพท์')),
         body: FutureBuilder<QuizSession>(
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               final error = snapshot.error;
+              if (error is InsufficientMeaningQuizOptions) {
+                return const _QuizMessage(
+                  icon: Icons.library_add_outlined,
+                  message: 'ตัวเลือกสำหรับทบทวนยังไม่เพียงพอ',
+                );
+              }
               if (error is SessionConfigurationResetRequired) {
                 return Padding(
                   padding: const EdgeInsets.all(16),
@@ -492,8 +533,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         }
                       },
                       decoration: const InputDecoration(
-                        labelText: 'Type the vocabulary word',
-                        hintText: 'Enter the spelling from memory',
+                        labelText: 'พิมพ์คำศัพท์',
+                        hintText: 'สะกดคำจากความจำ',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -506,7 +547,7 @@ class _QuizScreenState extends State<QuizScreen> {
                               _typedResponseController.text.trim().isEmpty
                           ? null
                           : _recordTyped,
-                      child: const Text('Check answer'),
+                      child: const Text('ตรวจคำตอบ'),
                     ),
                   ] else
                     ...question.options.map(
@@ -535,20 +576,27 @@ class _QuizScreenState extends State<QuizScreen> {
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
                 onPressed: _isSaving ? null : _retryEvidence,
-                child: const Text('Retry saved answer'),
+                child: const Text('ลองบันทึกคำตอบเดิมอีกครั้ง'),
               )
             else if (_reviewPhase ==
                 MeaningQuizReviewPhase.completionRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
                 onPressed: _isSaving ? null : _retrySessionClose,
-                child: const Text('Retry session completion'),
+                child: const Text('ลองจบกิจกรรมอีกครั้ง'),
               ),
             if (_reviewFeedback case final feedback?) ...<Widget>[
               const SizedBox(height: 12),
               AccessibilitySemanticRegion(
                 role: AccessibilitySemanticRole.feedback,
                 child: AnswerFeedbackPanel(feedback: feedback),
+              ),
+              CefrPracticeExample(
+                spelling: question.word.spelling,
+                meaning: question.word.meaning,
+                partOfSpeech: question.word.partOfSpeech,
+                cefrLevel: question.word.cefrLevel,
+                revealed: true,
               ),
             ],
             if (widget.allowSkip && !_isAnswered && !_isSkipped) ...<Widget>[

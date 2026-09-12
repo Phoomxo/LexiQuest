@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide LocalOwner;
@@ -579,9 +580,10 @@ void main() {
       final word = await vocabulary.createWord(
         CreateWordCommand(
           categoryId: category.id,
-          spelling: 'durable',
-          meaning: 'lasting',
-          partOfSpeech: 'adjective',
+          spelling: 'book',
+          meaning: 'หนังสือ',
+          partOfSpeech: 'noun',
+          cefrLevel: 'A1',
         ),
       );
       var nextId = 0;
@@ -624,10 +626,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('durable'));
+      expect(find.byKey(const ValueKey('cefr-practice-example')), findsNothing);
+      await tester.tap(find.text('book'));
       for (
         var pump = 0;
-        pump < 50 && find.text('lasting').evaluate().isEmpty;
+        pump < 50 && find.text('หนังสือ').evaluate().isEmpty;
         pump++
       ) {
         await tester.pump(const Duration(milliseconds: 1));
@@ -647,7 +650,16 @@ void main() {
       expect(srs.single.repetitions, before.repetitions);
       expect(srs.single.lapses, before.lapses);
       expect(srs.single.dueAtUtcMs, before.dueAtUtcMs);
-      expect(find.text('lasting'), findsOneWidget);
+      expect(find.text('หนังสือ'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('cefr-practice-example')),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(2),
+      );
       expect(find.text('จำได้แล้ว (Good)'), findsNothing);
 
       var restartId = 0;
@@ -666,24 +678,32 @@ void main() {
     },
   );
 
-  testWidgets(
-    'production controls remain accessible at narrow width and 200% text',
-    (tester) async {
-      await tester.binding.setSurfaceSize(const Size(320, 568));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      final repository = _RetryLearningRepository(failAnswerOnce: false);
-      final learning = LearningUseCases(
-        owners: _ScenarioOwnerRepository(),
-        repository: repository,
-        generateId: () => 'accessible-flashcard',
-        nowUtc: () => DateTime.utc(2026, 8, 25, 10),
-        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-a11y'),
-      );
+  for (final locale in const [Locale('th'), Locale('en')]) {
+    testWidgets(
+      'production controls remain accessible at narrow width and 200% text ${locale.languageCode}',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(320, 568));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        final repository = _RetryLearningRepository(failAnswerOnce: false);
+        final learning = LearningUseCases(
+          owners: _ScenarioOwnerRepository(),
+          repository: repository,
+          generateId: () => 'accessible-flashcard',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 10),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-a11y'),
+        );
 
-      await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: MaterialApp(
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            supportedLocales: const [Locale('th'), Locale('en')],
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
             home: SrsFlashcardsScreen(
               learning: learning,
               evidenceAdapter: CurrentActivityEvidenceAdapter(
@@ -692,20 +712,38 @@ void main() {
               modeAdapter: const FlashcardModeAdapter(),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-      expect(find.text('durable'), findsOneWidget);
-      expect(find.text('จำได้แล้ว (Good)'), findsOneWidget);
-      expect(find.text('จำไม่ได้ (Again)'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel('Reveal answer for durable'),
-        findsOneWidget,
-      );
-    },
-  );
+        expect(tester.takeException(), isNull);
+        expect(find.text('durable'), findsOneWidget);
+        expect(find.text('จำได้แล้ว (Good)'), findsOneWidget);
+        expect(find.text('จำไม่ได้ (Again)'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(
+            locale.languageCode == 'th'
+                ? 'เปิดคำแปลของ durable'
+                : 'Reveal answer for durable',
+          ),
+          findsOneWidget,
+        );
+        final reveal = find.byKey(
+          const ValueKey<String>('flashcard-reveal-answer'),
+        );
+        await tester.ensureVisible(reveal);
+        await tester.tap(reveal);
+        await tester.pumpAndSettle();
+        expect(
+          find.bySemanticsLabel(
+            locale.languageCode == 'th'
+                ? 'คำแปลของ durable'
+                : 'Answer for durable',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+  }
 
   testWidgets(
     'final-card close failure keeps one answer and a route-safe close retry',

@@ -378,6 +378,12 @@ final class _ContextualPairActions implements TodayHubActionDelegate {
   final TodayHubActionDelegate fallback;
   final bool Function() isCurrent;
   @override
+  Future<void> openPlanning({required String ownerId}) async {
+    if (!isCurrent() || ownerId != today.ownerId) return;
+    await fallback.openPlanning(ownerId: ownerId);
+  }
+
+  @override
   Future<void> openReview(List<TodayHubReviewWorkItem> work) =>
       router._open(this, work);
   @override

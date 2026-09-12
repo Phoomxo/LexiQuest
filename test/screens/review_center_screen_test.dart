@@ -266,8 +266,8 @@ void main() {
               nowUtc: () => _now,
               timezoneId: 'Asia/Bangkok',
             ),
-            lessonShellBuilder: (returnedItem) {
-              builderItem = returnedItem;
+            lessonShellBuilder: (request) {
+              builderItem = request.item;
               return _lessonDestination(learning: fixture.learning);
             },
           ),
@@ -596,7 +596,7 @@ void main() {
       todayHubBuilderEnd,
     );
     final todayActionsStart = mainNavigation.indexOf(
-      '_MainNavigationTodayHubActions _todayActions()',
+      '_MainNavigationTodayHubActions _todayActions({',
     );
     expect(todayActionsStart, greaterThanOrEqualTo(0));
     final todayActionsEnd = mainNavigation.indexOf(
@@ -612,7 +612,14 @@ void main() {
     expect(record.dependencies, contains(FeatureContractId.f20));
     expect(record.dependencies, contains(FeatureContractId.f21));
     expect(todayHubRecord.dependencies, contains(FeatureContractId.f22));
-    expect(productionEntryIds, contains('home/today'));
+    expect(productionEntryIds, isNot(contains('home/today')));
+    expect(
+      RegExp(
+        r"void _openToday\(\) => _pushFeatureDestination\(\s*"
+        r"'home/today',\s*Feature\.dailyContinuity,\s*_buildTodayHub,",
+      ).hasMatch(mainNavigation),
+      isTrue,
+    );
     expect(productionEntryIds, isNot(contains('home/today/review')));
     expect(productionEntryIds, isNot(contains('home/review')));
     expect(drawerKeys, isNot(contains('drawer/review/center')));
@@ -624,7 +631,11 @@ void main() {
       todayHubView,
       contains('widget.actions.openReview(snapshot.reviewWork)'),
     );
-    expect(todayHubBuilder, contains('actions: _todayActions()'));
+    expect(todayHubBuilder, contains('actions: _todayActions('));
+    expect(
+      todayHubBuilder,
+      contains('_selectLearningFromToday(fromTodayRoute: context)'),
+    );
     expect(todayActions, contains('openReview: _openTodayReview'));
     expect(
       todayHubBuilder,
@@ -635,7 +646,13 @@ void main() {
       todayHubBuilder,
       contains('ProductionFeatureUnavailableReason.missingDependency'),
     );
-    expect(mainNavigation, contains("'home/today/review'"));
+    expect(
+      RegExp(
+        r"_pushFeatureDestination\(\s*'home/today/review',\s*"
+        r'Feature\.dailyContinuity,',
+      ).hasMatch(mainNavigation),
+      isTrue,
+    );
     expect(mainNavigation, contains('ReviewCenterScreen('));
   });
 }
@@ -652,7 +669,7 @@ ReviewCenterUseCases _useCases({
   timezoneId: 'Asia/Bangkok',
 );
 
-UnifiedLessonShellLease _unusedDestination(ReviewQueueItem _) =>
+UnifiedLessonShellLease _unusedDestination(ReviewLessonLaunchRequest _) =>
     throw StateError('launch is not expected in this test');
 
 UnifiedLessonShellLease _lessonDestination({

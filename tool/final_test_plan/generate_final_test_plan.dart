@@ -3,7 +3,6 @@ import 'dart:io' as io;
 
 import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
-import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
@@ -399,8 +398,8 @@ List<String> _readTableInventory(io.Directory root) {
           .map((match) => match.group(1)!)
           .toList(growable: false)
         ..sort();
-  // Schema v24 adds four research tables; the 8/44 product catalog is unchanged.
-  if (tables.length != tables.toSet().length || tables.length != 48) {
+  // Schema v26 adds the historical proof mirror; the 8/44 catalog is unchanged.
+  if (tables.length != tables.toSet().length || tables.length != 49) {
     throw FinalTestPlanContractFailure(
       'Current database table inventory is duplicate or stale: '
       '${tables.length}.',

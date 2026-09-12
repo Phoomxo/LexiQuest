@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../vocabulary/domain/vocabulary_repository.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
@@ -21,6 +22,7 @@ import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
+import '../domain/associative_reading_checkpoint.dart';
 import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/learning_repository.dart';
 import '../domain/session_configuration.dart';
@@ -42,11 +44,13 @@ import '../application/current_activity_evidence.dart'
 final class DriftLearningRepository
     implements
         LearningRepository,
+        PagedQuizWordRepository,
         LearningEvidenceReplayRepository,
         LearningSessionLifecycleRepository,
         PairAcceptedSessionDispositionRepository,
         SessionConfiguredLearningRepository,
         LearningActivityRecoveryRepository,
+        AssociativeReadingRecoveryRepository,
         LearningActivitySessionHistoryRepository,
         PinnedLearningContentRepository,
         ExactPinnedLearningActivityRepository,
@@ -95,6 +99,15 @@ final class DriftLearningRepository
     required String ownerId,
     String? categoryId,
     required int limit,
+  }) =>
+      listQuizWordPage(ownerId: ownerId, categoryId: categoryId, limit: limit);
+
+  @override
+  Future<List<QuizWord>> listQuizWordPage({
+    required String ownerId,
+    String? categoryId,
+    String? afterId,
+    required int limit,
   }) async {
     if (limit < 1 || limit > 100) {
       throw RangeError.range(limit, 1, 100, 'limit');
@@ -102,8 +115,11 @@ final class DriftLearningRepository
     final query = database.select(database.vocabularyWords)
       ..where(
         (row) =>
-            row.ownerId.equals(ownerId) &
+            PackagedStarterAccess.wordsFor(database, ownerId) &
             row.isDeleted.equals(false) &
+            (afterId == null
+                ? const Constant(true)
+                : row.id.isBiggerThanValue(afterId)) &
             (categoryId == null
                 ? const Constant(true)
                 : row.categoryId.equals(categoryId)),
@@ -156,7 +172,7 @@ final class DriftLearningRepository
     final query = database.select(database.vocabularyWords)
       ..where(
         (row) =>
-            row.ownerId.equals(ownerId) &
+            PackagedStarterAccess.wordsFor(database, ownerId) &
             row.isDeleted.equals(false) &
             row.id.isIn(wordIds),
       );
@@ -262,7 +278,8 @@ final class DriftLearningRepository
       final categories =
           await (database.select(database.vocabularyCategories)..where(
                 (row) =>
-                    row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
+                    PackagedStarterAccess.categoriesFor(database, ownerId) &
+                    row.isDeleted.equals(false),
               ))
               .get();
       final categoryIds = categories.map((row) => row.id).toSet();
@@ -271,7 +288,9 @@ final class DriftLearningRepository
           .toList(growable: false);
       final rows =
           await (database.select(database.vocabularyWords)..where(
-                (row) => row.ownerId.equals(ownerId) & row.id.isIn(wordIds),
+                (row) =>
+                    PackagedStarterAccess.wordsFor(database, ownerId) &
+                    row.id.isIn(wordIds),
               ))
               .get();
       final byId = <String, db.VocabularyWord>{
@@ -406,6 +425,15 @@ final class DriftLearningRepository
 
   @override
   Future<void> startSession(LearningSessionDraft session) async {
+    if (session.id.startsWith('reading:')) {
+      throw StateError(
+        'Reading namespace requires atomic exact pinned admission',
+      );
+    }
+    await _insertLearningSession(session);
+  }
+
+  Future<void> _insertLearningSession(LearningSessionDraft session) async {
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
     final configuration = session.sessionConfiguration;
     if (configuration != null && configuration.ownerId != session.ownerId) {
@@ -436,6 +464,9 @@ final class DriftLearningRepository
     required LearningSessionDraft session,
     required LearningActivityCheckpoint checkpoint,
   }) {
+    if (session.id.startsWith('reading:')) {
+      throw StateError('Reading namespace requires exact pinned admission');
+    }
     if (checkpoint.sessionId != session.id ||
         checkpoint.activityType != session.activityType ||
         checkpoint.revision != 1) {
@@ -503,7 +534,9 @@ final class DriftLearningRepository
       }
       final rows =
           await (database.select(database.vocabularyWords)..where(
-                (row) => row.ownerId.equals(ownerId) & row.id.isIn(wordIds),
+                (row) =>
+                    PackagedStarterAccess.wordsFor(database, ownerId) &
+                    row.id.isIn(wordIds),
               ))
               .get();
       final byId = <String, db.VocabularyWord>{
@@ -517,6 +550,30 @@ final class DriftLearningRepository
             word!.contentRevision != pin.identity.revision ||
             word.contentChecksumSha256 != pin.checksumSha256) {
           throw StateError('Pinned checkpoint content is no longer exact.');
+        }
+      }
+      if (session.id.startsWith('reading:')) {
+        final reading = AssociativeReadingCheckpoint.fromJson(
+          canonicalCheckpoint.state,
+        );
+        if (session.activityType != 'associativeReading' ||
+            jsonEncode(
+                  reading.words
+                      .map((word) => [word.id, word.revision, word.checksum])
+                      .toList(),
+                ) !=
+                jsonEncode(
+                  frozenContent
+                      .map(
+                        (pin) => [
+                          pin.identity.id,
+                          pin.identity.revision,
+                          pin.checksumSha256,
+                        ],
+                      )
+                      .toList(),
+                )) {
+          throw StateError('Reading admission pins do not match checkpoint');
         }
       }
       await _startSessionWithCheckpointInTransaction(
@@ -716,13 +773,20 @@ final class DriftLearningRepository
                 ..limit(1))
               .get();
       if (reports.isNotEmpty) throw StateError('Pair content is reported');
-      final rows = await (database.select(
-        database.vocabularyWords,
-      )..where((r) => r.ownerId.equals(plan.ownerId) & r.id.isIn(ids))).get();
+      final rows =
+          await (database.select(database.vocabularyWords)..where(
+                (r) =>
+                    PackagedStarterAccess.wordsFor(database, plan.ownerId) &
+                    r.id.isIn(ids),
+              ))
+              .get();
       final categories =
           await (database.select(database.vocabularyCategories)..where(
                 (r) =>
-                    r.ownerId.equals(plan.ownerId) &
+                    PackagedStarterAccess.categoriesFor(
+                      database,
+                      plan.ownerId,
+                    ) &
                     r.isDeleted.equals(false) &
                     r.id.isIn(rows.map((r) => r.categoryId).toSet()),
               ))
@@ -797,7 +861,11 @@ final class DriftLearningRepository
           requestedSessionId: sessionId,
         );
       }
-      await startSession(session);
+      if (session.id.startsWith('reading:')) {
+        await _insertLearningSession(session);
+      } else {
+        await startSession(session);
+      }
       stored = await (database.select(
         database.learningSessions,
       )..where((row) => row.id.equals(sessionId))).getSingle();
@@ -939,6 +1007,35 @@ final class DriftLearningRepository
       ownerId: requiredOwnerId,
       session: session,
     );
+    if (activityType == 'associativeReading' &&
+        (sessionId.startsWith('reading:') ||
+            canonicalState['kind'] == 'associativeReading' ||
+            latest?.state['kind'] == 'associativeReading')) {
+      await _requireReadingOwner(requiredOwnerId);
+      final reading = AssociativeReadingCheckpoint.fromJson(canonicalState);
+      await _validateReadingPins(requiredOwnerId, reading);
+      if (latest == null) {
+        if (reading.stage != 1 || checkpoint.revision != 1) {
+          throw StateError('Reading must start at stage one');
+        }
+      } else {
+        final previous = AssociativeReadingCheckpoint.fromJson(latest.state);
+        if (!reading.sameContent(previous) ||
+            reading.stage < previous.stage ||
+            reading.stage > previous.stage + 1) {
+          throw StateError('Reading checkpoint transition is invalid');
+        }
+        // Before a terminal checkpoint is appended, completed state still has
+        // the previous checkpoint. Authenticate its attempts without requiring
+        // the terminal checkpoint that this transaction is about to append.
+        final recovery = await _loadActivityRecoveryForSession(
+          ownerId: requiredOwnerId,
+          session: session.copyWith(state: 'active'),
+          strictExactIdentity: true,
+        );
+        reading.recallResults(recovery!);
+      }
+    }
     if (activityType == 'matching' &&
         (canonicalState['schemaVersion'] == 6 ||
             latest?.state['schemaVersion'] == 6)) {
@@ -1029,6 +1126,125 @@ final class DriftLearningRepository
     }
   }
 
+  Future<void> _requireReadingOwner(String ownerId) async {
+    final active = await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).get();
+    if (active.length != 1 || active.single.id != ownerId) {
+      throw StateError('Reading owner is no longer active');
+    }
+  }
+
+  Future<void> _validateReadingPins(
+    String ownerId,
+    AssociativeReadingCheckpoint content,
+  ) async {
+    final words = await listExactPinnedQuizWords(
+      ownerId: ownerId,
+      content: content.words.map((word) => word.content).toList(),
+    );
+    if (words.length != content.words.length)
+      throw StateError('Reading content is unavailable');
+    final categories =
+        await (database.select(database.vocabularyCategories)..where(
+              (row) =>
+                  row.id.isIn(words.map((word) => word.categoryId)) &
+                  PackagedStarterAccess.categoriesFor(database, ownerId) &
+                  row.isDeleted.equals(false),
+            ))
+            .get();
+    final categoryIds = categories.map((row) => row.id).toSet();
+    if (words.any((word) => !categoryIds.contains(word.categoryId))) {
+      throw StateError('Reading category is unavailable');
+    }
+    for (var index = 0; index < words.length; index++) {
+      final word = words[index];
+      final pin = content.words[index];
+      if (word.id != pin.id ||
+          word.spelling != pin.spelling ||
+          (word.normalizedSpelling ?? word.spelling) != pin.canonicalAnswer ||
+          jsonEncode(word.acceptedSpellingVariants) !=
+              jsonEncode(pin.acceptedVariants) ||
+          (pin.acceptedVariants.isNotEmpty &&
+              (word.acceptedSpellingVariantsRevision !=
+                      pin.acceptedVariantsRevision ||
+                  word.acceptedSpellingVariantsChecksumSha256 !=
+                      pin.acceptedVariantsChecksum))) {
+        throw StateError('Reading answer set changed');
+      }
+    }
+  }
+
+  @override
+  Future<LearningActivityRecovery?> loadReadingRecovery({
+    required String ownerId,
+    required AssociativeReadingCheckpoint content,
+  }) => database.transaction(() async {
+    await _requireReadingOwner(ownerId);
+    // Filter by document in SQLite before applying the bounded candidate scan.
+    // Active mismatches are deliberately not retired; atomic admission rejects
+    // any later attempt to start a competing activity.
+    final candidates = await database
+        .customSelect(
+          '''
+SELECT DISTINCT s.id FROM learning_sessions s
+JOIN events_v2 e ON e.aggregate_id = s.id AND e.owner_id = s.owner_id
+WHERE s.owner_id = ? AND s.activity_type = 'associativeReading'
+  AND s.state IN ('active', 'completed')
+  AND e.event_type = 'LearningActivityCheckpoint'
+  AND json_valid(e.payload_json)
+  AND json_extract(e.payload_json, '\$.state.kind') = 'associativeReading'
+  AND json_extract(e.payload_json, '\$.state.documentId') = ?
+  AND json_extract(e.payload_json, '\$.state.documentRevision') = ?
+ORDER BY CASE s.state WHEN 'active' THEN 0 ELSE 1 END, s.started_at_utc_ms DESC, s.id DESC
+LIMIT 1
+''',
+          variables: [
+            Variable.withString(ownerId),
+            Variable.withString(content.documentId),
+            Variable.withInt(content.documentRevision),
+          ],
+        )
+        .get();
+    if (candidates.isEmpty) return null;
+    final recovery = await loadExactActivityRecovery(
+      ownerId: ownerId,
+      sessionId: candidates.single.read<String>('id'),
+      activityType: 'associativeReading',
+    );
+    if (recovery == null || recovery.checkpoint == null)
+      throw StateError('Reading recovery is missing');
+    final stored = AssociativeReadingCheckpoint.fromJson(
+      recovery.checkpoint!.state,
+    );
+    if (!stored.sameContent(content))
+      throw StateError('Reading document content changed');
+    stored.recallResults(recovery);
+    await _validateReadingPins(ownerId, stored);
+    await _requireReadingOwner(ownerId);
+    return recovery;
+  });
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingCheckpoint({
+    required ReadingProgressCommand progress,
+    required LearningActivityCheckpoint checkpoint,
+  }) => database.transaction(() async {
+    await _requireReadingOwner(progress.ownerId);
+    final state = AssociativeReadingCheckpoint.fromJson(checkpoint.state);
+    if (progress.documentId != state.documentId ||
+        progress.documentRevision != state.documentRevision ||
+        progress.position != state.stage ||
+        progress.isCompleted) {
+      throw StateError('Reading progress does not match active checkpoint');
+    }
+    await _appendActivityCheckpoint(
+      ownerId: progress.ownerId,
+      checkpoint: checkpoint,
+    );
+    return saveReadingProgress(progress);
+  });
+
   @override
   Future<LearningActivityRecovery?> loadLatestActivityRecovery({
     required String ownerId,
@@ -1103,6 +1319,11 @@ final class DriftLearningRepository
       session: recoverySession,
       strictExactIdentity: strictExactIdentity,
     );
+    if (recoverySession.id.startsWith('reading:')) {
+      if (checkpoint == null)
+        throw StateError('Canonical reading checkpoint missing');
+      AssociativeReadingCheckpoint.fromJson(checkpoint.state);
+    }
     if (checkpoint == null) {
       if (strictExactIdentity) {
         throw StateError('exact activity checkpoint is missing or corrupt');
@@ -1648,7 +1869,7 @@ final class DriftLearningRepository
           await (database.select(database.vocabularyWords)..where(
                 (row) =>
                     row.id.equals(command.wordId) &
-                    row.ownerId.equals(command.ownerId),
+                    PackagedStarterAccess.wordsFor(database, command.ownerId),
               ))
               .getSingleOrNull();
       if (word == null) {
@@ -2335,6 +2556,32 @@ final class DriftLearningRepository
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      LearningActivityCheckpoint? readingCheckpoint;
+      AssociativeReadingCheckpoint? readingState;
+      if (row.activityType == 'associativeReading') {
+        final latest = await _latestActivityCheckpoint(
+          ownerId: ownerId,
+          session: row,
+          strictExactIdentity: true,
+        );
+        if (row.id.startsWith('reading:') ||
+            latest?.state['kind'] == 'associativeReading') {
+          if (latest == null)
+            throw StateError('Canonical reading checkpoint missing');
+          await _requireReadingOwner(ownerId);
+          final recovery = await _loadActivityRecoveryForSession(
+            ownerId: ownerId,
+            session: row,
+            strictExactIdentity: true,
+          );
+          readingCheckpoint = latest;
+          readingState = AssociativeReadingCheckpoint.fromJson(latest.state);
+          if (readingState.stage != 6)
+            throw StateError('Reading has not reached completion');
+          readingState.recallResults(recovery!);
+          await _validateReadingPins(ownerId, readingState);
+        }
+      }
       // A captured close can outlive the pane's owner binding. Authenticate
       // strict Pair work inside the canonical transaction, including retries.
       PairMatchingCheckpointSnapshot? pair;
@@ -2384,6 +2631,34 @@ final class DriftLearningRepository
       final completed = await (database.select(
         database.learningSessions,
       )..where((candidate) => candidate.id.equals(sessionId))).getSingle();
+      if (readingCheckpoint != null && readingState != null) {
+        // Session timestamps are persisted at millisecond precision. Use that
+        // durable identity for the generated reading checkpoint as well.
+        final terminalAtUtc = _fromEpoch(completed.endedAtUtcMs)!;
+        await _appendActivityCheckpoint(
+          ownerId: ownerId,
+          checkpoint: LearningActivityCheckpoint(
+            sessionId: sessionId,
+            activityType: 'associativeReading',
+            revision: readingCheckpoint.revision + 1,
+            occurredAtUtc: endedAtUtc,
+            state: readingState.toJson(),
+            terminalAtUtc: terminalAtUtc,
+            terminalAcknowledged: true,
+          ),
+        );
+        await saveReadingProgress(
+          ReadingProgressCommand(
+            eventId: 'reading-complete:$sessionId',
+            ownerId: ownerId,
+            documentId: readingState.documentId,
+            documentRevision: readingState.documentRevision,
+            position: 6,
+            isCompleted: true,
+            occurredAtUtc: endedAtUtc,
+          ),
+        );
+      }
       return _rowToSummary(completed);
     });
   }
@@ -2449,7 +2724,7 @@ final class DriftLearningRepository
             ),
           ])
           ..where(
-            database.vocabularyWords.ownerId.equals(ownerId) &
+            PackagedStarterAccess.wordsFor(database, ownerId) &
                 database.vocabularyWords.isDeleted.equals(false),
           )
           ..orderBy([OrderingTerm.asc(database.srsStates.dueAtUtcMs)])

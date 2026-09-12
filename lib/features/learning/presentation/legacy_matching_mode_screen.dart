@@ -256,14 +256,15 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
         unawaited(_confirmExit());
       },
       child: AccessibilityModeScaffold(
-        appBar: AppBar(title: const Text('Matching')),
+        appBar: AppBar(title: const Text('จับคู่คำศัพท์')),
         body: FutureBuilder<QuizSession>(
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const _MatchingMessage(
                 icon: Icons.error_outline,
-                message: 'Matching is unavailable. No learning data changed.',
+                message:
+                    'กิจกรรมจับคู่ไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง',
               );
             }
             if (!snapshot.hasData) {
@@ -272,7 +273,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
             if (snapshot.data!.isEmpty) {
               return const _MatchingMessage(
                 icon: Icons.library_add_outlined,
-                message: 'No vocabulary is available for Matching.',
+                message: 'ยังไม่มีคำศัพท์สำหรับกิจกรรมจับคู่',
               );
             }
             final review = _review;
@@ -294,8 +295,9 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Semantics(
-              label:
-                  '${review.matchedWordIds.length} of ${review.pairSet.pairs.length} pairs matched',
+              label: Localizations.localeOf(context).languageCode == 'th'
+                  ? 'จับคู่แล้ว ${review.matchedWordIds.length} จาก ${review.pairSet.pairs.length} คู่'
+                  : '${review.matchedWordIds.length} of ${review.pairSet.pairs.length} pairs matched',
               child: LinearProgressIndicator(
                 value:
                     review.matchedWordIds.length / review.pairSet.pairs.length,
@@ -306,9 +308,9 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
               role: AccessibilitySemanticRole.prompt,
               child: Text(
                 widget.showCountdown
-                    ? 'Match each word with its meaning. Time remaining: '
+                    ? 'จับคู่คำศัพท์กับความหมาย เวลาที่เหลือ: '
                           '${_durationLabel(_announcedTimeRemaining ?? widget.timeLimit!)}.'
-                    : 'Untimed accessibility session. Active effort remains bounded.',
+                    : 'กิจกรรมแบบไม่แสดงเวลานับถอยหลัง ยังมีขีดจำกัดเวลาเรียนจริง',
                 textAlign: TextAlign.center,
               ),
             ),
@@ -319,7 +321,10 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Text('Words', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'คำศัพท์',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   for (final pair in review.pairSet.wordOrder)
                     if (!review.matchedWordIds.contains(pair.word.id))
@@ -328,7 +333,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
                         child: Semantics(
                           button: true,
                           selected: review.selectedWordId == pair.word.id,
-                          label: 'Word ${pair.wordLabel}',
+                          label: 'คำศัพท์ ${pair.wordLabel}',
                           child: FilledButton.tonal(
                             key: ValueKey<String>(
                               'matching-word-${pair.word.id}',
@@ -348,7 +353,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
                       ),
                   const SizedBox(height: 12),
                   Text(
-                    'Meanings',
+                    'ความหมาย',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -360,7 +365,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
                           button: true,
                           selected:
                               review.selectedMeaningWordId == pair.word.id,
-                          label: 'Meaning ${pair.meaningLabel}',
+                          label: 'ความหมาย ${pair.meaningLabel}',
                           child: OutlinedButton(
                             key: ValueKey<String>(
                               'matching-meaning-${pair.word.id}',
@@ -388,14 +393,14 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
                 onPressed: _retryEvidence,
-                child: const Text('Retry saved match'),
+                child: const Text('ลองบันทึกคู่เดิมอีกครั้ง'),
               )
             else if (review.phase ==
                 MatchingReviewPhase.completionRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
                 onPressed: _retryCompletion,
-                child: const Text('Retry session completion'),
+                child: const Text('ลองจบกิจกรรมอีกครั้ง'),
               ),
             if (review.feedback case final feedback?) ...<Widget>[
               const SizedBox(height: 12),
@@ -410,7 +415,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
               FilledButton(
                 key: const ValueKey<String>('matching-finish'),
                 onPressed: _actionLocked ? null : _finish,
-                child: const Text('View results'),
+                child: const Text('ดูผลการเรียน'),
               ),
             ],
           ],
@@ -456,7 +461,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
           ..start();
       }
     } on Object {
-      _showFailure('Could not save the match. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคู่คำไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -476,7 +481,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
         ..reset()
         ..start();
     } on Object {
-      _showFailure('Could not save the match. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคู่คำไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -487,7 +492,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
     try {
       await _showScore(await review.finish());
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -497,7 +502,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
     try {
       await _showScore(await review.timeout());
     } on Object {
-      _showFailure('Could not close the timed session. Please retry.');
+      _showFailure('ยังจบกิจกรรมเมื่อหมดเวลาไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -520,7 +525,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
     try {
       await _showScore(await review.retryCompletion());
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -557,16 +562,16 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Leave Matching?'),
-        content: const Text('The active session will be closed safely.'),
+        title: const Text('ออกจากกิจกรรมจับคู่หรือไม่'),
+        content: const Text('ระบบจะดำเนินการจบกิจกรรมที่กำลังเรียนอยู่'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep matching'),
+            child: const Text('จับคู่ต่อ'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Leave'),
+            child: const Text('ออกจากกิจกรรม'),
           ),
         ],
       ),
@@ -595,7 +600,7 @@ class _LegacyMatchingModeScreenState extends State<LegacyMatchingModeScreen> {
     } on Object {
       if (!mounted) return;
       setState(() => _abandoning = false);
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
       return;
     }
     if (mounted) Navigator.of(context).pop();

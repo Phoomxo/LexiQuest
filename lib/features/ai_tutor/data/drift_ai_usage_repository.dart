@@ -181,9 +181,12 @@ final class DriftAiUsageRepository implements AiUsageRepository {
       bucket
         ..requestCount += 1
         ..totalLatencyMs += row.latencyMs
-        ..totalTokens += row.totalTokens ?? 0
+        ..knownTokens += row.totalTokens ?? 0
         ..providerReportedCostMicrosUsd +=
             row.providerReportedCostMicrosUsd ?? 0;
+      if (row.totalTokens != null) {
+        bucket.tokenReportedRequestCount += 1;
+      }
       if (row.providerReportedCostMicrosUsd != null) {
         bucket.providerReportedCostCount += 1;
       }
@@ -205,7 +208,14 @@ final class DriftAiUsageRepository implements AiUsageRepository {
                 successCount: entry.value.successCount,
                 failureCount: entry.value.failureCount,
                 indeterminateCount: entry.value.indeterminateCount,
-                totalTokens: entry.value.totalTokens,
+                totalTokens:
+                    entry.value.tokenReportedRequestCount ==
+                        entry.value.requestCount
+                    ? entry.value.knownTokens
+                    : null,
+                knownTokens: entry.value.knownTokens,
+                tokenReportedRequestCount:
+                    entry.value.tokenReportedRequestCount,
                 totalLatencyMs: entry.value.totalLatencyMs,
                 providerReportedCostMicrosUsd:
                     entry.value.providerReportedCostCount ==
@@ -262,6 +272,8 @@ final class DriftAiUsageRepository implements AiUsageRepository {
             'failureCount': item.failureCount,
             'indeterminateCount': item.indeterminateCount,
             'totalTokens': item.totalTokens,
+            'knownTokens': item.knownTokens,
+            'tokenReportedRequestCount': item.tokenReportedRequestCount,
             'totalLatencyMs': item.totalLatencyMs,
             'providerReportedCostMicrosUsd': item.providerReportedCostMicrosUsd,
           },
@@ -328,7 +340,8 @@ final class _UsageAccumulator {
   int successCount = 0;
   int failureCount = 0;
   int indeterminateCount = 0;
-  int totalTokens = 0;
+  int knownTokens = 0;
+  int tokenReportedRequestCount = 0;
   int totalLatencyMs = 0;
   int providerReportedCostMicrosUsd = 0;
   int providerReportedCostCount = 0;

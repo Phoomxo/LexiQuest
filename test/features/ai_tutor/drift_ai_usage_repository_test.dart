@@ -25,6 +25,173 @@ void main() {
 
   tearDown(() => database.close());
 
+  for (final metadata in <(String, int?, int?)>[
+    ('success', null, null),
+    ('success', 2, null),
+    ('success', 2, 3),
+    ('failure', null, null),
+    ('indeterminate', null, null),
+  ]) {
+    test(
+      'unreported total remains unknown for terminal metadata $metadata',
+      () async {
+        await repository.beginForOwner('owner-a', _attempt('unknown-total'));
+        await repository.finalizeForOwner(
+          'owner-a',
+          AiUsageCompletion(
+            eventId: 'unknown-total',
+            outcome: metadata.$1,
+            latencyMs: 10,
+            errorCategory: metadata.$1 == 'success'
+                ? null
+                : 'syntheticUnavailable',
+            inputTokens: metadata.$2,
+            outputTokens: metadata.$3,
+            providerReportedCostMicrosUsd: 0,
+          ),
+        );
+        final summary = (await repository.summarize()).single;
+        expect(summary.requestCount, 1);
+        expect(summary.knownTokens, 0);
+        expect(summary.tokenReportedRequestCount, 0);
+        expect(
+          summary.totalTokens,
+          isNull,
+          reason:
+              'Missing provider total is not zero or inferred input/output sum.',
+        );
+        expect(summary.providerReportedCostMicrosUsd, 0);
+        expect(summary.successCount, metadata.$1 == 'success' ? 1 : 0);
+        expect(summary.failureCount, metadata.$1 == 'failure' ? 1 : 0);
+        expect(
+          summary.indeterminateCount,
+          metadata.$1 == 'indeterminate' ? 1 : 0,
+        );
+        final row = await database.select(database.aiUsageEvents).getSingle();
+        expect(row.totalTokens, isNull);
+        expect(row.inputTokens, metadata.$2);
+        expect(row.outputTokens, metadata.$3);
+      },
+    );
+  }
+
+  test('explicitly reported zero remains a complete measured total', () async {
+    await repository.beginForOwner('owner-a', _attempt('reported-zero'));
+    await repository.finalizeForOwner(
+      'owner-a',
+      AiUsageCompletion(
+        eventId: 'reported-zero',
+        outcome: 'success',
+        latencyMs: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        providerReportedCostMicrosUsd: 0,
+      ),
+    );
+    final summary = (await repository.summarize()).single;
+    expect(summary.requestCount, 1);
+    expect(summary.totalTokens, 0);
+    expect(summary.knownTokens, 0);
+    expect(summary.tokenReportedRequestCount, 1);
+    expect(summary.providerReportedCostMicrosUsd, 0);
+  });
+
+  test(
+    'mixed totals include terminal outcomes and isolate owners from pending',
+    () async {
+      for (final row in <(String, String, int?)>[
+        ('known-success', 'success', 7),
+        ('unknown-success', 'success', null),
+        ('known-failure', 'failure', 3),
+        ('known-indeterminate', 'indeterminate', 0),
+      ]) {
+        await repository.beginForOwner('owner-a', _attempt(row.$1));
+        await repository.finalizeForOwner(
+          'owner-a',
+          AiUsageCompletion(
+            eventId: row.$1,
+            outcome: row.$2,
+            latencyMs: 10,
+            errorCategory: row.$2 == 'success' ? null : 'syntheticUnavailable',
+            totalTokens: row.$3,
+          ),
+        );
+      }
+      await repository.beginForOwner('owner-a', _attempt('still-pending'));
+      await repository.beginForOwner('owner-b', _attempt('other-zero'));
+      await repository.finalizeForOwner(
+        'owner-b',
+        AiUsageCompletion(
+          eventId: 'other-zero',
+          outcome: 'success',
+          latencyMs: 1,
+          totalTokens: 0,
+        ),
+      );
+
+      final mixed = (await repository.summarize()).single;
+      expect(mixed.requestCount, 4);
+      expect(mixed.successCount, 2);
+      expect(mixed.failureCount, 1);
+      expect(mixed.indeterminateCount, 1);
+      expect(mixed.totalLatencyMs, 40);
+      expect(mixed.totalTokens, isNull);
+      expect(mixed.knownTokens, 10);
+      expect(mixed.tokenReportedRequestCount, 3);
+      expect(mixed.providerReportedCostMicrosUsd, isNull);
+      final exported =
+          jsonDecode(
+                await repository.exportAggregateJson(researchConsent: true),
+              )
+              as Map<String, dynamic>;
+      final exportedProvider =
+          (exported['providers'] as List).single as Map<String, dynamic>;
+      expect(exportedProvider['totalTokens'], isNull);
+      expect(exportedProvider['knownTokens'], 10);
+      expect(exportedProvider['tokenReportedRequestCount'], 3);
+      expect(exportedProvider['requestCount'], 4);
+      activeOwner = 'owner-b';
+      final other = (await repository.summarize()).single;
+      expect(other.requestCount, 1);
+      expect(other.totalTokens, 0);
+      expect(other.knownTokens, 0);
+      expect(other.tokenReportedRequestCount, 1);
+      expect(other.totalLatencyMs, 1);
+      expect(
+        (await repository.summarizeForOwner('owner-a')).single.totalTokens,
+        isNull,
+      );
+    },
+  );
+
+  test(
+    'aggregate export does not turn missing provider total into zero',
+    () async {
+      await repository.beginForOwner('owner-a', _attempt('unknown-export'));
+      await repository.finalizeForOwner(
+        'owner-a',
+        AiUsageCompletion(
+          eventId: 'unknown-export',
+          outcome: 'success',
+          latencyMs: 10,
+        ),
+      );
+      final document =
+          jsonDecode(
+                await repository.exportAggregateJson(researchConsent: true),
+              )
+              as Map<String, dynamic>;
+      final provider =
+          (document['providers'] as List).single as Map<String, dynamic>;
+      expect(provider['totalTokens'], isNull);
+      expect(provider['knownTokens'], 0);
+      expect(provider['tokenReportedRequestCount'], 0);
+      expect(provider['requestCount'], 1);
+      expect(provider.containsKey('eventId'), isFalse);
+    },
+  );
+
   test('strict begin precedes one CAS terminal transition', () async {
     final attempt = _attempt('event-a');
     await repository.beginForOwner('owner-a', attempt);
@@ -87,6 +254,9 @@ void main() {
 
     final summary = (await repository.summarizeForOwner('owner-a')).single;
     expect(summary.requestCount, 2);
+    expect(summary.totalTokens, 14);
+    expect(summary.knownTokens, 14);
+    expect(summary.tokenReportedRequestCount, 2);
     expect(summary.providerReportedCostMicrosUsd, isNull);
   });
 

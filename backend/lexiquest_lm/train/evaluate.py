@@ -190,6 +190,12 @@ def _compute_perplexity(model, tokenizer, rows, *, max_length: int) -> float:
 
 
 def _run_real_evaluate(args: argparse.Namespace) -> int:
+    if args.adapter is not None and (
+        not args.adapter or not Path(args.adapter).is_dir()
+    ):
+        print(f"ERROR: adapter directory not found: {args.adapter}", file=sys.stderr)
+        return 2
+
     import torch
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -210,11 +216,15 @@ def _run_real_evaluate(args: argparse.Namespace) -> int:
         dtype=torch.float16,
     )
 
-    if args.adapter and Path(args.adapter).exists():
+    if args.adapter is not None:
         print(f"Loading LoRA adapter from {args.adapter}...")
+        # A requested adapter must load successfully, even if it disappeared
+        # after validation. Never substitute base-only evaluation on failure.
         model = PeftModel.from_pretrained(base, args.adapter)
+        checkpoint = str(args.adapter)
     else:
         model = base
+        checkpoint = str(args.model)
 
     perplexity = _compute_perplexity(
         model, tokenizer, rows, max_length=args.max_length
@@ -246,7 +256,7 @@ def _run_real_evaluate(args: argparse.Namespace) -> int:
 
     em = _exact_match_rate([(s["predicted"], s["expected"]) for s in samples])
     _report(
-        checkpoint=str(args.adapter or args.model),
+        checkpoint=checkpoint,
         n_test=len(rows),
         perplexity=perplexity,
         exact_match=em,

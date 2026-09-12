@@ -274,7 +274,7 @@ if (-not (Test-Path -LiteralPath $releaseManifestFile -PathType Leaf)) {
 }
 $releaseManifest =
     Get-Content -LiteralPath $releaseManifestFile -Raw -Encoding utf8 |
-        ConvertFrom-Json
+        ConvertFrom-LexiQuestEvidenceJson
 $privateEvidencePath = Resolve-RepositoryPath $PrivateEvidenceDirectory
 $apkPath = [System.IO.Path]::GetFullPath(
     (Join-Path (

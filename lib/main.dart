@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'config/m3_theme.dart';
 import 'features/accessibility/presentation/accessibility_scope.dart';
 import 'features/preferences/application/display_preferences_controller.dart';
@@ -34,9 +35,16 @@ Future<void> main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, required this.dependencies});
+  const MyApp({
+    super.key,
+    required this.dependencies,
+    this.ownsDependencies = true,
+  });
 
   final AppDependencies dependencies;
+
+  /// Embedded hosts may retain and dispose their shared runtime themselves.
+  final bool ownsDependencies;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -59,6 +67,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      final dependencies = widget.dependencies;
+      _refreshDailyQuests(dependencies).ignore();
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
         trigger.requestDetached(SyncTriggerReason.appResume);
@@ -66,10 +76,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _refreshDailyQuests(AppDependencies dependencies) async {
+    if (!mounted || !identical(widget.dependencies, dependencies)) return;
+    final owners = dependencies.localOwners;
+    if (owners == null) return;
+    final expectedOwnerId = (await owners.getOrCreateActiveOwner()).id;
+    if (!mounted || !identical(widget.dependencies, dependencies)) return;
+    await dependencies.quest.refreshDaily(expectedOwnerId: expectedOwnerId);
+  }
+
   @override
   void didUpdateWidget(covariant MyApp oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.dependencies, widget.dependencies)) {
+    if (oldWidget.ownsDependencies &&
+        !identical(oldWidget.dependencies, widget.dependencies)) {
       oldWidget.dependencies.dispose().ignore();
     }
   }
@@ -77,7 +97,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    widget.dependencies.dispose().ignore();
+    if (widget.ownsDependencies) widget.dependencies.dispose().ignore();
     super.dispose();
   }
 
@@ -87,6 +107,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     Widget buildApp() => MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'LexiQuest - AI Vocab Learning',
+      locale: const Locale('th'),
+      supportedLocales: const [Locale('th')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: M3Theme.lightTheme,
       darkTheme: M3Theme.darkTheme,
       themeMode:

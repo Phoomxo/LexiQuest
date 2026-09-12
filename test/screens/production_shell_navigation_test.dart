@@ -255,10 +255,9 @@ void main() {
         .toList();
 
     expect(destinations.map((destination) => destination.label), <String>[
+      'เรียน',
       'คลังคำศัพท์',
-      'การเรียนรู้',
       'ความชำนาญ',
-      'ฝึกเพิ่ม',
       'รางวัล',
       'โปรไฟล์',
     ]);
@@ -281,10 +280,6 @@ void main() {
       (
         destinationKey: 'home/mastery',
         backingKey: 'production-feature-view-mastery',
-      ),
-      (
-        destinationKey: 'home/weakness',
-        backingKey: 'production-feature-view-weakness',
       ),
       (
         destinationKey: 'home/achievements',
@@ -344,6 +339,14 @@ void main() {
     final vocabularyTile = find.descendant(
       of: find.byType(Drawer),
       matching: find.widgetWithText(ListTile, 'คลังคำศัพท์'),
+    );
+    await tester.scrollUntilVisible(
+      vocabularyTile,
+      150,
+      scrollable: find.descendant(
+        of: find.byType(Drawer),
+        matching: find.byType(Scrollable),
+      ),
     );
     expect(vocabularyTile, findsOneWidget);
     await tester.tap(vocabularyTile);
@@ -480,7 +483,7 @@ void main() {
               'The production bulk-add screen must resolve ImportVocabulary '
               'from AppDependenciesScope and expose an enabled import action.',
         );
-        await tester.pageBack();
+        await tester.tap(find.byType(BackButton));
         await _pumpUntilGone(
           tester,
           find.byKey(const ValueKey('import-rows-field')),

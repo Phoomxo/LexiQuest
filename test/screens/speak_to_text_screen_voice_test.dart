@@ -678,7 +678,7 @@ void main() {
       final root = find.byType(SpeakToTextScreen);
       expectInsideAccessibilityRole(
         scope: root,
-        descendant: find.textContaining('ความเหมือนของข้อความ:'),
+        descendant: find.textContaining('คำที่ได้ยินตรงกับคำเป้าหมาย:'),
         role: AccessibilitySemanticRole.feedback,
         reason: 'speech assessment is feedback, not pre-response prompt state',
       );
@@ -943,6 +943,188 @@ void main() {
     expect(repository.commands, hasLength(1));
   });
 
+  testWidgets(
+    'speaking result UX: partial exact text remains provisional after recognition failure',
+    (tester) async {
+      final gateway = _ResultLifecycleSpeechGateway();
+      final repository = _CountingLearningRepository();
+      await _pumpSpeechResultRegression(tester, gateway, repository);
+
+      gateway.emit('station', isFinal: false);
+      await tester.pumpAndSettle();
+      final provisionalScoreWasShown = find
+          .textContaining('100%')
+          .evaluate()
+          .isNotEmpty;
+      final provisionalFinishWasShown = find
+          .widgetWithText(OutlinedButton, 'เสร็จสิ้น')
+          .evaluate()
+          .isNotEmpty;
+      gateway.fail(SpeechFailureCode.engine);
+      await tester.pumpAndSettle();
+
+      expect(provisionalScoreWasShown, isFalse);
+      expect(provisionalFinishWasShown, isFalse);
+      expect(find.textContaining('100%'), findsNothing);
+      expect(find.widgetWithText(OutlinedButton, 'เสร็จสิ้น'), findsNothing);
+      expect(
+        find.text('ฟังเสียงครั้งนี้ไม่สำเร็จ ลองพูดอีกครั้งได้'),
+        findsOneWidget,
+      );
+      expect(find.text('ระบบรู้จำเสียงไม่พร้อมใช้งาน'), findsNothing);
+      expect(repository.commands, isEmpty);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('speech-listen-button')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'speaking result UX: a valid final clears recognition failure and records once',
+    (tester) async {
+      final gateway = _ResultLifecycleSpeechGateway();
+      final repository = _CountingLearningRepository();
+      await _pumpSpeechResultRegression(tester, gateway, repository);
+      gateway.fail(SpeechFailureCode.engine);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('speech-error')), findsOneWidget);
+
+      gateway.emit('station', isFinal: true);
+      await tester.pumpAndSettle();
+      gateway.fail(SpeechFailureCode.engine);
+      gateway.emit('different', isFinal: true);
+      gateway.emit('late partial', isFinal: false);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('speech-error')), findsNothing);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('speech-transcript')))
+            .data,
+        'station',
+      );
+      expect(find.text(_confirmedSpeechScore), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'เสร็จสิ้น'), findsOneWidget);
+      expect(repository.commands, hasLength(1));
+      expect(repository.successfulRecordCalls, 1);
+      expect(
+        repository.commands.single.providerProvenance,
+        contains('transcript-edit-distance-v1'),
+      );
+    },
+  );
+
+  testWidgets('manual stop accepts its final transcript and records once', (
+    tester,
+  ) async {
+    final gateway = _ResultLifecycleSpeechGateway(
+      finalOnStop: 'station',
+      delayFinalOnStop: true,
+    );
+    final repository = _CountingLearningRepository();
+    await _pumpSpeechResultRegression(tester, gateway, repository);
+
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(_confirmedSpeechScore), findsOneWidget);
+    expect(repository.commands, hasLength(1));
+    expect(repository.successfulRecordCalls, 1);
+  });
+
+  testWidgets(
+    'speaking result UX: final recovery preserves an unrelated playback error',
+    (tester) async {
+      final gateway = _ResultLifecycleSpeechGateway();
+      final repository = _CountingLearningRepository();
+      final provider = FakeVoiceProvider();
+      await _pumpSpeechResultRegression(
+        tester,
+        gateway,
+        repository,
+        voiceProvider: provider,
+      );
+      provider.errorToThrow = StateError('synthetic playback failure');
+      await tester.tap(find.byIcon(Icons.volume_up));
+      await tester.pumpAndSettle();
+      expect(find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน'), findsOneWidget);
+
+      gateway.fail(SpeechFailureCode.engine);
+      await tester.pumpAndSettle();
+      gateway.emit('station', isFinal: true);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ระบบอ่านออกเสียงไม่พร้อมใช้งาน'), findsOneWidget);
+      expect(find.text('ระบบรู้จำเสียงไม่พร้อมใช้งาน'), findsNothing);
+      expect(
+        find.text('ฟังเสียงครั้งนี้ไม่สำเร็จ ลองพูดอีกครั้งได้'),
+        findsNothing,
+      );
+      expect(repository.commands, hasLength(1));
+      expect(repository.successfulRecordCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'speaking result UX: confirmed text score stays clear while persistence retries',
+    (tester) async {
+      final gateway = _ResultLifecycleSpeechGateway();
+      final repository = _CountingLearningRepository(failFirstRecord: true);
+      await _pumpSpeechResultRegression(tester, gateway, repository);
+      gateway.fail(SpeechFailureCode.engine);
+      gateway.emit('station', isFinal: true);
+      await tester.pumpAndSettle();
+      gateway.fail(SpeechFailureCode.engine);
+      gateway.emit('different', isFinal: true);
+      await tester.pumpAndSettle();
+
+      final retry = find.byKey(const ValueKey('current-evidence-retry'));
+      expect(
+        find.text('บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsOneWidget,
+      );
+      expect(retry, findsOneWidget);
+      expect(
+        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        isNull,
+      );
+      expect(repository.commands, hasLength(1));
+      expect(repository.successfulRecordCalls, 0);
+      expect(find.text(_confirmedSpeechScore), findsOneWidget);
+      expect(find.text(_speechScoreCaveat), findsOneWidget);
+      expect(find.textContaining('transcript-edit-distance-v1'), findsNothing);
+      expect(find.textContaining('pitch'), findsNothing);
+      expect(find.textContaining('phoneme'), findsNothing);
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(repository.commands, hasLength(2));
+      expect(repository.successfulRecordCalls, 1);
+      expect(repository.commands.last.id, repository.commands.first.id);
+      expect(
+        repository.commands.last.providerProvenance,
+        repository.commands.first.providerProvenance,
+      );
+      expect(
+        repository.commands.last.providerProvenance,
+        contains('transcript-edit-distance-v1'),
+      );
+      expect(
+        find.text('บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsNothing,
+      );
+      expect(
+        tester.widget<OutlinedButton>(find.byType(OutlinedButton)).onPressed,
+        isNotNull,
+      );
+    },
+  );
+
   for (final throwsAfterFinal in <bool>[false, true]) {
     testWidgets(
       'accepted final fences late callbacks and ${throwsAfterFinal ? 'start failure' : 'start completion'}',
@@ -997,6 +1179,127 @@ void main() {
         expect(gateway.stopCalls, 1);
       },
     );
+  }
+}
+
+const _confirmedSpeechScore = 'คำที่ได้ยินตรงกับคำเป้าหมาย: 100%';
+const _speechScoreCaveat =
+    'คะแนนนี้เทียบข้อความที่ระบบได้ยิน การประเมินความชัดเจนของการออกเสียงยังไม่รองรับ';
+
+Future<void> _pumpSpeechResultRegression(
+  WidgetTester tester,
+  _ResultLifecycleSpeechGateway gateway,
+  _CountingLearningRepository repository, {
+  FakeVoiceProvider? voiceProvider,
+}) async {
+  tester.view.physicalSize = const Size(800, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  var nextId = 0;
+  final learning = LearningUseCases(
+    owners: _LearningOwnerRepository(),
+    repository: repository,
+    generateId: () => 'speech-result-${++nextId}',
+    nowUtc: () => DateTime.utc(2026, 9, 8),
+    buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+  );
+  final voice = VoiceUseCases(
+    provider: voiceProvider ?? FakeVoiceProvider(),
+    disposeProvider: () async {},
+  );
+  addTearDown(voice.dispose);
+  await tester.pumpWidget(
+    MaterialApp(
+      home: SpeakToTextScreen(
+        correctWord: 'station',
+        voice: voice,
+        speechPractice: SpeechPracticeUseCases(gateway),
+        learning: learning,
+        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        sessionId: 'session-result',
+        wordId: 'word-station',
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+  await tester.pumpAndSettle();
+}
+
+final class _ResultLifecycleSpeechGateway implements SpeechRecognitionGateway {
+  _ResultLifecycleSpeechGateway({
+    this.finalOnStop,
+    this.delayFinalOnStop = false,
+  });
+  final String? finalOnStop;
+  final bool delayFinalOnStop;
+  SpeechEventCallback? _onEvent;
+  SpeechFailureCallback? _onFailure;
+  String? _locale;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {
+    _onFailure = onFailure;
+  }
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    _locale = locale;
+    _onEvent = onEvent;
+    isListening = true;
+  }
+
+  void emit(String transcript, {required bool isFinal}) {
+    if (isFinal) isListening = false;
+    _onEvent!(
+      SpeechRecognitionEvent(
+        transcript: transcript,
+        isFinal: isFinal,
+        recognizedAtUtc: DateTime.utc(2026, 9, 8),
+        engine: 'synthetic-stt',
+        locale: _locale!,
+      ),
+    );
+  }
+
+  void fail(SpeechFailureCode failure) {
+    isListening = false;
+    _onFailure!(failure);
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+    final transcript = finalOnStop;
+    if (transcript != null) {
+      if (delayFinalOnStop) {
+        Future<void>.delayed(
+          Duration.zero,
+          () => emit(transcript, isFinal: true),
+        );
+      } else {
+        emit(transcript, isFinal: true);
+      }
+    }
+  }
+
+  @override
+  Future<void> cancel() async {
+    isListening = false;
   }
 }
 

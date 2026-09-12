@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest.dart' as timezone_data;
 import 'dart:ui' show SemanticsAction, SemanticsActionEvent;
 import 'dart:convert';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
@@ -18,6 +19,7 @@ import 'package:vocab_learning_app/features/learning/pair_matching/application/p
 import 'package:vocab_learning_app/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_star_policy.dart';
 import 'pair_matching_evidence_contract_test.dart' show PairHarness;
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -36,6 +38,111 @@ import 'package:vocab_learning_app/features/time_tracking/domain/focus_timer.dar
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
 void main() {
+  setUpAll(timezone_data.initializeTimeZones);
+  test(
+    'replay normalizes UTC microseconds without weakening admission or retry',
+    () async {
+      final h = PairHarness();
+      addTearDown(h.db.close);
+      await h.initialize();
+      final source = h.operation;
+      final coordinator = await h.restore();
+      await h.finishBounded(coordinator);
+      await coordinator.finish();
+      final reader = DriftPairMatchingSessionPurposeReader(h.db);
+      final authenticated = (await reader.read(
+        ownerId: h.owner,
+        sessionId: source.plan.learningSessionId,
+      )).snapshot!;
+      final replay = PairPracticeReplay(
+        reader: reader,
+        start: PairMatchingAtomicStartAdapter(
+          repository: h.real,
+          capability: InternalPairMatchingCapability(
+            allowlist: PairCuratedAllowlist(
+              version: source.plan.allowlistVersion,
+              items: source.plan.orderedLexicalItems,
+            ),
+            isEnabled: () => true,
+          ),
+        ),
+      );
+      Future<PairMatchingStartOperation> prepare(DateTime at) => replay.prepare(
+        ownerId: h.owner,
+        sourceSessionId: source.plan.learningSessionId,
+        launchOperationId: 'synthetic-microsecond-replay',
+        createdAtUtc: at,
+        appVersion: 'synthetic',
+        buildId: 'synthetic',
+      );
+      await expectLater(
+        prepare(
+          authenticated.terminal!.atUtc.subtract(
+            const Duration(microseconds: 1),
+          ),
+        ),
+        throwsStateError,
+      );
+      final supplied = DateTime.utc(2026, 9, 5, 0, 2, 0, 123, 456);
+      await expectLater(prepare(supplied.toLocal()), throwsArgumentError);
+      expect(await h.db.select(h.db.learningSessions).get(), hasLength(1));
+      final rewardsBefore =
+          (await h.db.customSelect('SELECT * FROM reward_transactions').get())
+              .map((row) => row.data)
+              .toList();
+      final pointsBefore =
+          (await h.db.customSelect('SELECT * FROM points_ledger_entries').get())
+              .map((row) => row.data)
+              .toList();
+      final operation = await prepare(supplied);
+      expect(
+        operation.plan.createdAtUtc,
+        DateTime.utc(2026, 9, 5, 0, 2, 0, 123),
+      );
+      expect(operation.plan.createdAtUtc.isUtc, isTrue);
+      expect(operation.plan.createdAtUtc.microsecondsSinceEpoch % 1000, 0);
+      expect(
+        operation.plan.createdAtUtc.isBefore(authenticated.terminal!.atUtc),
+        isFalse,
+      );
+      expect(
+        PairMatchingPlanV1.fromStableSerialization(
+          operation.plan.stableSerialization,
+        ).stableSerialization,
+        operation.plan.stableSerialization,
+      );
+      final restored = PairMatchingStartOperation.fromStableSerialization(
+        operation.stableSerialization,
+      );
+      await replay.start.start(operation);
+      await replay.start.start(restored);
+      final sessions = await h.db.select(h.db.learningSessions).get();
+      expect(sessions, hasLength(2));
+      expect(
+        sessions.where((row) => row.id == operation.plan.learningSessionId),
+        hasLength(1),
+      );
+      expect(
+        (await reader.read(
+          ownerId: h.owner,
+          sessionId: operation.plan.learningSessionId,
+        )).snapshot!.engine.plan.sessionPurpose.name,
+        'practiceReplay',
+      );
+      expect(
+        (await h.db.customSelect('SELECT * FROM reward_transactions').get())
+            .map((row) => row.data)
+            .toList(),
+        rewardsBefore,
+      );
+      expect(
+        (await h.db.customSelect('SELECT * FROM points_ledger_entries').get())
+            .map((row) => row.data)
+            .toList(),
+        pointsBefore,
+      );
+    },
+  );
   for (final mutation in [
     'deleted',
     'reported',
@@ -362,7 +469,7 @@ void main() {
         owners: h.learning.owners,
         generateId: () => 'synthetic-quest-${++questId}',
         nowUtc: () => DateTime.utc(2026, 9, 5),
-        timezoneId: 'UTC',
+        timezoneId: 'Etc/UTC',
       );
       await quest.startQuest(QuestCatalogProvider.dailyCorrectAnswers);
       final sinkCalls = <String>[];

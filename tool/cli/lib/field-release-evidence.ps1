@@ -1,6 +1,64 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 3.0
 
+function ConvertFrom-LexiQuestEvidenceJson {
+    [CmdletBinding()]
+    param([Parameter(Mandatory, ValueFromPipeline)][string]$Json)
+
+    process {
+        # JSON date coercion changes authenticated text, including nested payloads.
+        if ((Get-Command ConvertFrom-Json -CommandType Cmdlet).Parameters.ContainsKey('DateKind')) {
+            ConvertFrom-Json -InputObject $Json -DateKind String -ErrorAction Stop
+        } else {
+            ConvertFrom-Json -InputObject $Json -ErrorAction Stop
+        }
+    }
+}
+
+function Test-LexiQuestDeviceCollectorEnvelope {
+    param(
+        [AllowNull()][object]$DeviceEvidence,
+        [AllowNull()][object]$ReleaseManifest
+    )
+
+    try {
+        if ($DeviceEvidence.device.physical -isnot [bool] -or
+            $DeviceEvidence.device.physical -ne $true -or
+            $DeviceEvidence.collector.origin -isnot [string] -or
+            $DeviceEvidence.collector.origin -cne 'physical-android-collector') {
+            return $false
+        }
+        if (-not (Test-LexiQuestIntegerValue $DeviceEvidence.release.versionCode) -or
+            -not (Test-LexiQuestIntegerValue $ReleaseManifest.artifact.versionCode) -or
+            $DeviceEvidence.release.versionCode -ne $ReleaseManifest.artifact.versionCode) {
+            return $false
+        }
+        $pins = @(
+            @($DeviceEvidence.release.sourceCommit, $ReleaseManifest.sourceCommit),
+            @($DeviceEvidence.release.manifestGeneratedAtUtc, $ReleaseManifest.generatedAtUtc),
+            @($DeviceEvidence.release.apkSha256, $ReleaseManifest.artifact.apkSha256),
+            @($DeviceEvidence.release.signingCertificateSha256, $ReleaseManifest.artifact.signingCertificateSha256),
+            @($DeviceEvidence.release.packageName, $ReleaseManifest.artifact.packageName),
+            @($DeviceEvidence.release.versionName, $ReleaseManifest.artifact.versionName),
+            @($DeviceEvidence.release.buildId, $ReleaseManifest.artifact.buildId),
+            @($DeviceEvidence.release.modelSha256, $ReleaseManifest.artifact.modelSha256),
+            @($DeviceEvidence.collector.verifiedApkSha256, $ReleaseManifest.artifact.apkSha256)
+        )
+        foreach ($pin in $pins) {
+            if ($pin[0] -isnot [string] -or $pin[1] -isnot [string] -or
+                [string]::IsNullOrWhiteSpace($pin[0]) -or
+                [string]::IsNullOrWhiteSpace($pin[1]) -or
+                $pin[0] -cne $pin[1]) {
+                return $false
+            }
+        }
+        return $true
+    } catch {
+        # Absent or malformed properties under StrictMode cannot authorize signing.
+        return $false
+    }
+}
+
 function Get-LexiQuestRequiredFieldJourneys {
     return @(
         'consentGuestStartup',
@@ -275,7 +333,7 @@ function Test-LexiQuestPrivateEvidenceReference {
     }
     try {
         $receipt = Get-Content -LiteralPath $blobPath -Raw -Encoding utf8 |
-            ConvertFrom-Json
+            ConvertFrom-LexiQuestEvidenceJson
     }
     catch {
         return $false
@@ -334,7 +392,7 @@ function Test-LexiQuestPrivateEvidenceReference {
                 -LiteralPath $sourceExportPath `
                 -Raw `
                 -Encoding utf8 |
-                    ConvertFrom-Json
+                    ConvertFrom-LexiQuestEvidenceJson
         }
         catch {
             return $false

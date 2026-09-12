@@ -10,6 +10,8 @@ import '../../assessment/domain/assessment_models.dart';
 import '../../assessment/domain/assessment_repository.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/data/drift_learning_event_store.dart';
+import '../../learning/data/drift_learning_repository.dart';
+import '../../learning/domain/associative_reading_checkpoint.dart';
 import '../../learning/application/current_activity_evidence.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_context.dart';
@@ -22,6 +24,8 @@ import '../../learning/pair_matching/data/pair_matching_checkpoint_codec.dart';
 import '../../learning/pair_matching/domain/pair_matching_session_purpose.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../motivation/data/drift_streak_repository.dart';
+import '../../quest/domain/quest_definition_codec.dart';
+import '../../quest/domain/quest_models.dart' show QuestType;
 import '../../rewards/data/drift_avatar_progression_eligibility.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
@@ -34,6 +38,9 @@ import '../../sync/domain/owner_operation_gate.dart';
 import '../../sync/domain/sync_failure.dart';
 import '../../sync/domain/sync_store.dart';
 import '../../time_tracking/domain/learning_time_segment.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
+import '../../vocabulary/application/vocabulary_use_cases.dart'
+    show normalizeVocabularyText, maxCategoryNameLength;
 import '../domain/owner_upgrade.dart';
 
 typedef OwnerUpgradeUtcNow = DateTime Function();
@@ -46,6 +53,12 @@ typedef OwnerUpgradeGateDelay = Future<void> Function(Duration delay);
 final class _PairUpgradePins {
   const _PairUpgradePins(this.sessionIds, this.wordIds);
   final Set<String> sessionIds, wordIds;
+}
+
+final class _ReadingUpgradePins {
+  const _ReadingUpgradePins(this.categories, this.sessions);
+  final Set<String> categories;
+  final Map<String, AssociativeReadingCheckpoint> sessions;
 }
 
 /// Research enrollment pins cannot be transferred or re-signed locally.
@@ -69,6 +82,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required this.generateOwnerOperationToken,
     required this.deleteOwnerSecrets,
     this.deleteOwnerSecretsFenced,
+    this.transitionLifecycle,
     OwnerOperationGate? ownerOperationGate,
     this.ownerGateDelay = _defaultOwnerGateDelay,
     this.ownerGateLeaseDuration = const Duration(minutes: 10),
@@ -88,6 +102,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   final OwnerUpgradeIdGenerator generateOwnerOperationToken;
   final DeleteOwnerSecretsForUpgrade deleteOwnerSecrets;
   final DeleteOwnerSecretsFencedForUpgrade? deleteOwnerSecretsFenced;
+  final OwnerTransitionLifecycle? transitionLifecycle;
   final OwnerOperationGate ownerOperationGate;
   final OwnerUpgradeGateDelay ownerGateDelay;
   final Duration ownerGateLeaseDuration;
@@ -117,263 +132,301 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           await _requireNoPinnedResearchRows(sourceId);
         }
         final targetBeforeTransaction = await _ownerByFirebaseUid(uid);
-        if (sourceBeforeTransaction.firebaseUid != uid &&
-            targetBeforeTransaction != null) {
-          // External secret deletion is intentionally outside SQLite. A later
-          // inventory rollback cannot restore the deleted credential.
-          final fencedDelete = deleteOwnerSecretsFenced;
-          if (fencedDelete == null) {
-            await deleteOwnerSecrets(sourceBeforeTransaction.id);
-          } else {
-            await fencedDelete(sourceBeforeTransaction.id, operationToken);
-          }
-        }
-
-        return _database.transaction(() async {
-          if (!await _fenceOwnerTransition(operationToken)) {
-            throw StateError('owner-operation gate was lost');
-          }
-          final source = await _ownerById(sourceId);
-          if (source == null || !source.isActive) {
-            throw StateError('active local owner was not found');
-          }
-          if (source.firebaseUid != uid) {
-            // Revalidate in the fenced transaction before any owner mutation.
-            await _requireNoPinnedResearchRows(sourceId);
-          }
-          final pairPins = await _preflightPairUpgrade(source.id);
-          if (source.firebaseUid == uid) {
-            final avatarEligibility = DriftAvatarProgressionEligibility(
-              _database,
-              nowUtc: nowUtc,
-            );
-            final avatarReady = await _tryEstablishAvatarCutover(
-              avatarEligibility,
-              source.id,
-            );
-            await DriftStreakRepository(_database).establishCutover(
-              ownerId: source.id,
-              establishedAtUtc: _requireUtc(nowUtc()),
-            );
-            await DriftEconomyCutover(_database).ensureSeparated(source.id);
-            await _rebuildAvatarOrQuarantine(
-              avatarEligibility,
-              source.id,
-              avatarReady: avatarReady,
-            );
-            return OwnerUpgradeResult(
-              targetOwnerId: source.id,
-              mode: OwnerUpgradeMode.alreadyBound,
-              conflictCount: 0,
-            );
+        Future<OwnerUpgradeResult> transition() async {
+          if (sourceBeforeTransaction.firebaseUid != uid &&
+              targetBeforeTransaction != null) {
+            // External secret deletion is intentionally outside SQLite. A later
+            // inventory rollback cannot restore the deleted credential.
+            final fencedDelete = deleteOwnerSecretsFenced;
+            if (fencedDelete == null) {
+              await deleteOwnerSecrets(sourceBeforeTransaction.id);
+            } else {
+              await fencedDelete(sourceBeforeTransaction.id, operationToken);
+            }
           }
 
-          final target = await _ownerByFirebaseUid(uid);
-          final upgradedAtUtc = _requireUtc(nowUtc());
-          final upgradedAt = upgradedAtUtc.millisecondsSinceEpoch;
-          if (target == null) {
-            final avatarEligibility = DriftAvatarProgressionEligibility(
-              _database,
-              nowUtc: nowUtc,
-            );
-            final avatarReady = await _tryEstablishAvatarCutover(
-              avatarEligibility,
-              source.id,
-            );
-            await DriftStreakRepository(_database).establishCutover(
+          return _database.transaction(() async {
+            if (!await _fenceOwnerTransition(operationToken)) {
+              throw StateError('owner-operation gate was lost');
+            }
+            final source = await _ownerById(sourceId);
+            if (source == null || !source.isActive) {
+              throw StateError('active local owner was not found');
+            }
+            if (source.firebaseUid != uid) {
+              // Revalidate in the fenced transaction before any owner mutation.
+              await _requireNoPinnedResearchRows(sourceId);
+            }
+            final pairPins = await _preflightPairUpgrade(source.id);
+            final readingPins = await _preflightReadingUpgrade(source.id);
+            if (source.firebaseUid == uid) {
+              final avatarEligibility = DriftAvatarProgressionEligibility(
+                _database,
+                nowUtc: nowUtc,
+              );
+              final avatarReady = await _tryEstablishAvatarCutover(
+                avatarEligibility,
+                source.id,
+              );
+              await DriftStreakRepository(_database).establishCutover(
+                ownerId: source.id,
+                establishedAtUtc: _requireUtc(nowUtc()),
+              );
+              await DriftEconomyCutover(_database).ensureSeparated(source.id);
+              await _rebuildAvatarOrQuarantine(
+                avatarEligibility,
+                source.id,
+                avatarReady: avatarReady,
+              );
+              return OwnerUpgradeResult(
+                targetOwnerId: source.id,
+                mode: OwnerUpgradeMode.alreadyBound,
+                conflictCount: 0,
+              );
+            }
+
+            final target = await _ownerByFirebaseUid(uid);
+            final upgradedAtUtc = _requireUtc(nowUtc());
+            final upgradedAt = upgradedAtUtc.millisecondsSinceEpoch;
+            if (target == null) {
+              final avatarEligibility = DriftAvatarProgressionEligibility(
+                _database,
+                nowUtc: nowUtc,
+              );
+              final avatarReady = await _tryEstablishAvatarCutover(
+                avatarEligibility,
+                source.id,
+              );
+              await DriftStreakRepository(_database).establishCutover(
+                ownerId: source.id,
+                establishedAtUtc: upgradedAtUtc,
+              );
+              await DriftEconomyCutover(_database).ensureSeparated(source.id);
+              await _rebuildAvatarOrQuarantine(
+                avatarEligibility,
+                source.id,
+                avatarReady: avatarReady,
+              );
+              await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+              await _reconcileExperimentAssignmentOutbox(
+                ownerId: source.id,
+                firebaseUid: uid,
+                historicalOwnerIds: <String>{source.id},
+              );
+              await (_database.update(
+                _database.localOwners,
+              )..where((row) => row.id.equals(source.id))).write(
+                db.LocalOwnersCompanion(
+                  firebaseUid: Value(uid),
+                  accountState: const Value('firebaseBound'),
+                  upgradedAtUtcMs: Value(upgradedAt),
+                ),
+              );
+              return OwnerUpgradeResult(
+                targetOwnerId: source.id,
+                mode: OwnerUpgradeMode.anonymousBound,
+                conflictCount: 0,
+              );
+            }
+
+            await _requirePairUpgradeDestinationCapacity(
               ownerId: source.id,
+              destinationOwnerId: target.id,
+              sessionIds: pairPins.sessionIds,
+            );
+            await DriftStreakRepository(_database).mergeCutovers(
+              sourceId: source.id,
+              targetId: target.id,
               establishedAtUtc: upgradedAtUtc,
             );
-            await DriftEconomyCutover(_database).ensureSeparated(source.id);
-            await _rebuildAvatarOrQuarantine(
-              avatarEligibility,
+            final avatarProgressionEligibility =
+                DriftAvatarProgressionEligibility(_database, nowUtc: nowUtc);
+            final sourceAvatarReady = await _tryEstablishAvatarCutover(
+              avatarProgressionEligibility,
               source.id,
-              avatarReady: avatarReady,
             );
+            final targetAvatarReady = await _tryEstablishAvatarCutover(
+              avatarProgressionEligibility,
+              target.id,
+            );
+            final avatarCutoversReady = sourceAvatarReady && targetAvatarReady;
+            var convertedTargetAvatarTransactionIds = const <String>{};
+            if (!avatarCutoversReady) {
+              convertedTargetAvatarTransactionIds =
+                  await avatarProgressionEligibility
+                      .detachCutoversForQuarantinedMerge(
+                        sourceId: source.id,
+                        targetId: target.id,
+                      );
+            }
+            var conflicts = 0;
+            conflicts += await _mergeCategories(
+              source.id,
+              target.id,
+              upgradedAt,
+              protectedReadingCategories: readingPins.categories,
+            );
+            conflicts += await _mergeWords(
+              source.id,
+              target.id,
+              upgradedAt,
+              pairPins: pairPins,
+            );
+            conflicts += await _mergeSrsStates(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            conflicts += await _mergeStreakState(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            conflicts += await _mergeLearningDays(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            conflicts += await _mergeAssociativeState(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            conflicts += await _mergeQuestState(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            await _makeImportKeysUnique(source.id, target.id);
+            conflicts += await _makeRewardKeysUnique(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            if (avatarCutoversReady) {
+              await avatarProgressionEligibility.refreshForOwnerMerge(
+                source.id,
+              );
+              await avatarProgressionEligibility.refreshForOwnerMerge(
+                target.id,
+              );
+              convertedTargetAvatarTransactionIds =
+                  await avatarProgressionEligibility.mergeCutovers(
+                    sourceId: source.id,
+                    targetId: target.id,
+                  );
+            }
+            conflicts += await _mergeResearchConsents(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            conflicts += await _mergeSavedLearningItems(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            await _mergeLearnerPreferences(source.id, target.id, upgradedAt);
+            await _mergeAssessmentRuns(source.id, target.id);
+            await _mergeExperimentAssignments(source.id, target.id);
+            conflicts += await _discardNaturalKeyDuplicates(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            await _discardAiUsageDuplicates(source.id, target.id);
             await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
-            await _reconcileExperimentAssignmentOutbox(
-              ownerId: source.id,
-              firebaseUid: uid,
-              historicalOwnerIds: <String>{source.id},
+            await _reviveConvertedTargetAvatarPermissionFailures(
+              ownerId: target.id,
+              transactionIds: convertedTargetAvatarTransactionIds,
+              rehomedAtUtcMs: upgradedAt,
             );
-            await (_database.update(
-              _database.localOwners,
-            )..where((row) => row.id.equals(source.id))).write(
-              db.LocalOwnersCompanion(
-                firebaseUid: Value(uid),
-                accountState: const Value('firebaseBound'),
-                upgradedAtUtcMs: Value(upgradedAt),
-              ),
+            await _normalizeLearningProjectionState(source.id, target.id);
+            await _mergeSessionConfigurations(source.id, target.id);
+            await _rebindLearningSessionConfigurations(source.id, target.id);
+            conflicts += await _makeEventKeysUnique(
+              source.id,
+              target.id,
+              upgradedAt,
+            );
+            await _moveOwnerRows(source.id, target.id);
+            await _reconcileExperimentAssignmentOutbox(
+              ownerId: target.id,
+              firebaseUid: uid,
+              historicalOwnerIds: <String>{source.id, target.id},
+            );
+            await _database.customUpdate(
+              'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+            );
+            await _database.customUpdate(
+              'UPDATE local_owners '
+              'SET is_active = 1, account_state = ?, upgraded_at_utc_ms = ? '
+              'WHERE id = ?',
+              variables: [
+                const Variable<String>('firebaseBound'),
+                Variable<int>(upgradedAt),
+                Variable<String>(target.id),
+              ],
+              updates: {_database.localOwners},
+            );
+            await _database.customUpdate(
+              'UPDATE local_owners '
+              'SET account_state = ?, upgraded_at_utc_ms = ? WHERE id = ?',
+              variables: [
+                Variable<String>('mergedInto:${target.id}'),
+                Variable<int>(upgradedAt),
+                Variable<String>(source.id),
+              ],
+              updates: {_database.localOwners},
+            );
+            await _database.customUpdate(
+              'UPDATE local_owners '
+              'SET account_state = ?, upgraded_at_utc_ms = ? '
+              'WHERE account_state = ?',
+              variables: [
+                Variable<String>('mergedInto:${target.id}'),
+                Variable<int>(upgradedAt),
+                Variable<String>('mergedInto:${source.id}'),
+              ],
+              updates: {_database.localOwners},
+            );
+            await _requirePairUpgradeDestinationCapacity(
+              ownerId: target.id,
+              destinationOwnerId: target.id,
+              sessionIds: pairPins.sessionIds,
+            );
+            final movedReading = await _preflightReadingUpgrade(target.id);
+            for (final entry in readingPins.sessions.entries) {
+              final restored = movedReading.sessions[entry.key];
+              if (restored == null ||
+                  !entry.value.sameContent(restored) ||
+                  entry.value.stage != restored.stage) {
+                throw StateError(
+                  'Reading owner upgrade changed accepted recovery',
+                );
+              }
+            }
+            await _rebuildLearningProjections(target.id);
+            await DriftEconomyCutover(_database).ensureSeparated(target.id);
+            await _rebuildAvatarOrQuarantine(
+              avatarProgressionEligibility,
+              target.id,
+              avatarReady: avatarCutoversReady,
             );
             return OwnerUpgradeResult(
-              targetOwnerId: source.id,
-              mode: OwnerUpgradeMode.anonymousBound,
-              conflictCount: 0,
+              targetOwnerId: target.id,
+              mode: OwnerUpgradeMode.mergedExisting,
+              conflictCount: conflicts,
             );
-          }
+          });
+        }
 
-          await _requirePairUpgradeDestinationCapacity(
-            ownerId: source.id,
-            destinationOwnerId: target.id,
-            sessionIds: pairPins.sessionIds,
-          );
-          await DriftStreakRepository(_database).mergeCutovers(
-            sourceId: source.id,
-            targetId: target.id,
-            establishedAtUtc: upgradedAtUtc,
-          );
-          final avatarProgressionEligibility =
-              DriftAvatarProgressionEligibility(_database, nowUtc: nowUtc);
-          final sourceAvatarReady = await _tryEstablishAvatarCutover(
-            avatarProgressionEligibility,
-            source.id,
-          );
-          final targetAvatarReady = await _tryEstablishAvatarCutover(
-            avatarProgressionEligibility,
-            target.id,
-          );
-          final avatarCutoversReady = sourceAvatarReady && targetAvatarReady;
-          var convertedTargetAvatarTransactionIds = const <String>{};
-          if (!avatarCutoversReady) {
-            convertedTargetAvatarTransactionIds =
-                await avatarProgressionEligibility
-                    .detachCutoversForQuarantinedMerge(
-                      sourceId: source.id,
-                      targetId: target.id,
-                    );
-          }
-          var conflicts = 0;
-          conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
-          conflicts += await _mergeWords(
-            source.id,
-            target.id,
-            upgradedAt,
-            pairPins: pairPins,
-          );
-          conflicts += await _mergeSrsStates(source.id, target.id, upgradedAt);
-          conflicts += await _mergeStreakState(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          conflicts += await _mergeLearningDays(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          conflicts += await _mergeAssociativeState(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          conflicts += await _mergeQuestState(source.id, target.id, upgradedAt);
-          await _makeImportKeysUnique(source.id, target.id);
-          conflicts += await _makeRewardKeysUnique(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          if (avatarCutoversReady) {
-            await avatarProgressionEligibility.refreshForOwnerMerge(source.id);
-            await avatarProgressionEligibility.refreshForOwnerMerge(target.id);
-            convertedTargetAvatarTransactionIds =
-                await avatarProgressionEligibility.mergeCutovers(
-                  sourceId: source.id,
-                  targetId: target.id,
-                );
-          }
-          conflicts += await _mergeResearchConsents(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          conflicts += await _mergeSavedLearningItems(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          await _mergeLearnerPreferences(source.id, target.id, upgradedAt);
-          await _mergeAssessmentRuns(source.id, target.id);
-          await _mergeExperimentAssignments(source.id, target.id);
-          conflicts += await _discardNaturalKeyDuplicates(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          await _discardAiUsageDuplicates(source.id, target.id);
-          await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
-          await _reviveConvertedTargetAvatarPermissionFailures(
-            ownerId: target.id,
-            transactionIds: convertedTargetAvatarTransactionIds,
-            rehomedAtUtcMs: upgradedAt,
-          );
-          await _normalizeLearningProjectionState(source.id, target.id);
-          await _mergeSessionConfigurations(source.id, target.id);
-          await _rebindLearningSessionConfigurations(source.id, target.id);
-          conflicts += await _makeEventKeysUnique(
-            source.id,
-            target.id,
-            upgradedAt,
-          );
-          await _moveOwnerRows(source.id, target.id);
-          await _reconcileExperimentAssignmentOutbox(
-            ownerId: target.id,
-            firebaseUid: uid,
-            historicalOwnerIds: <String>{source.id, target.id},
-          );
-          await _database.customUpdate(
-            'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
-          );
-          await _database.customUpdate(
-            'UPDATE local_owners '
-            'SET is_active = 1, account_state = ?, upgraded_at_utc_ms = ? '
-            'WHERE id = ?',
-            variables: [
-              const Variable<String>('firebaseBound'),
-              Variable<int>(upgradedAt),
-              Variable<String>(target.id),
-            ],
-            updates: {_database.localOwners},
-          );
-          await _database.customUpdate(
-            'UPDATE local_owners '
-            'SET account_state = ?, upgraded_at_utc_ms = ? WHERE id = ?',
-            variables: [
-              Variable<String>('mergedInto:${target.id}'),
-              Variable<int>(upgradedAt),
-              Variable<String>(source.id),
-            ],
-            updates: {_database.localOwners},
-          );
-          await _database.customUpdate(
-            'UPDATE local_owners '
-            'SET account_state = ?, upgraded_at_utc_ms = ? '
-            'WHERE account_state = ?',
-            variables: [
-              Variable<String>('mergedInto:${target.id}'),
-              Variable<int>(upgradedAt),
-              Variable<String>('mergedInto:${source.id}'),
-            ],
-            updates: {_database.localOwners},
-          );
-          await _requirePairUpgradeDestinationCapacity(
-            ownerId: target.id,
-            destinationOwnerId: target.id,
-            sessionIds: pairPins.sessionIds,
-          );
-          await _rebuildLearningProjections(target.id);
-          await DriftEconomyCutover(_database).ensureSeparated(target.id);
-          await _rebuildAvatarOrQuarantine(
-            avatarProgressionEligibility,
-            target.id,
-            avatarReady: avatarCutoversReady,
-          );
-          return OwnerUpgradeResult(
-            targetOwnerId: target.id,
-            mode: OwnerUpgradeMode.mergedExisting,
-            conflictCount: conflicts,
-          );
-        });
+        return _runTransition(
+          sourceOwnerId: sourceId,
+          operationToken: operationToken,
+          operation: transition,
+          targetOwnerId: (result) => result.targetOwnerId,
+        );
       }),
     );
   }
@@ -381,39 +434,49 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   @override
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
     return _serialized(
-      () => _withOwnerOperationGate((operationToken) {
-        return _database.transaction(() async {
-          if (!await _fenceOwnerTransition(operationToken)) {
-            throw StateError('owner-operation gate was lost');
-          }
-          final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
-          final createdAtUtc = _requireUtc(nowUtc());
-          final createdAt = createdAtUtc.millisecondsSinceEpoch;
-          await _database.customUpdate(
-            'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
-            updates: {_database.localOwners},
-          );
-          await _database
-              .into(_database.localOwners)
-              .insert(
-                db.LocalOwnersCompanion.insert(
-                  id: ownerId,
-                  createdAtUtcMs: createdAt,
-                ),
-              );
-          await DriftStreakRepository(
-            _database,
-          ).establishCutover(ownerId: ownerId, establishedAtUtc: createdAtUtc);
-          await DriftAvatarProgressionEligibility(
-            _database,
-            nowUtc: nowUtc,
-          ).establishCutover(ownerId);
-          return OwnerUpgradeResult(
-            targetOwnerId: ownerId,
-            mode: OwnerUpgradeMode.localGuestCreated,
-            conflictCount: 0,
-          );
-        });
+      () => _withOwnerOperationGate((operationToken) async {
+        final source = await (_database.select(
+          _database.localOwners,
+        )..where((row) => row.isActive.equals(true))).getSingle();
+        return _runTransition(
+          sourceOwnerId: source.id,
+          operationToken: operationToken,
+          targetOwnerId: (OwnerUpgradeResult result) => result.targetOwnerId,
+          operation: () => _database.transaction(() async {
+            if (!await _fenceOwnerTransition(operationToken)) {
+              throw StateError('owner-operation gate was lost');
+            }
+            final ownerId =
+                'local:${_requiredId(generateOwnerId(), 'ownerId')}';
+            final createdAtUtc = _requireUtc(nowUtc());
+            final createdAt = createdAtUtc.millisecondsSinceEpoch;
+            await _database.customUpdate(
+              'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+              updates: {_database.localOwners},
+            );
+            await _database
+                .into(_database.localOwners)
+                .insert(
+                  db.LocalOwnersCompanion.insert(
+                    id: ownerId,
+                    createdAtUtcMs: createdAt,
+                  ),
+                );
+            await DriftStreakRepository(_database).establishCutover(
+              ownerId: ownerId,
+              establishedAtUtc: createdAtUtc,
+            );
+            await DriftAvatarProgressionEligibility(
+              _database,
+              nowUtc: nowUtc,
+            ).establishCutover(ownerId);
+            return OwnerUpgradeResult(
+              targetOwnerId: ownerId,
+              mode: OwnerUpgradeMode.localGuestCreated,
+              conflictCount: 0,
+            );
+          }),
+        );
       }),
     );
   }
@@ -426,37 +489,50 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final previous = _requiredId(previousOwnerId, 'previousOwnerId');
     final guest = _requiredId(guestOwnerId, 'guestOwnerId');
     return _serialized(
-      () => _withOwnerOperationGate((operationToken) {
-        return _database.transaction(() async {
-          if (!await _fenceOwnerTransition(operationToken)) {
-            throw StateError('owner-operation gate was lost');
-          }
-          final guestRow = await _ownerById(guest);
-          final previousRow = await _ownerById(previous);
-          if (guestRow == null ||
-              previousRow == null ||
-              !guestRow.isActive ||
-              guestRow.firebaseUid != null) {
-            throw StateError('logout rollback state is no longer safe');
-          }
-          await DriftStreakRepository(_database).rollbackTransitionCutover(
-            ownerId: guest,
-            establishedAtUtc: DateTime.fromMillisecondsSinceEpoch(
-              guestRow.createdAtUtcMs,
-              isUtc: true,
-            ),
-          );
-          await DriftAvatarProgressionEligibility(
-            _database,
-            nowUtc: nowUtc,
-          ).rollbackEmptyTransition(guest);
-          await (_database.delete(
-            _database.localOwners,
-          )..where((row) => row.id.equals(guest))).go();
-          await (_database.update(_database.localOwners)
-                ..where((row) => row.id.equals(previous)))
-              .write(const db.LocalOwnersCompanion(isActive: Value(true)));
-        });
+      () => _withOwnerOperationGate((operationToken) async {
+        final guestBeforeTransaction = await _ownerById(guest);
+        final previousBeforeTransaction = await _ownerById(previous);
+        if (guestBeforeTransaction == null ||
+            previousBeforeTransaction == null ||
+            !guestBeforeTransaction.isActive ||
+            guestBeforeTransaction.firebaseUid != null) {
+          throw StateError('logout rollback state is no longer safe');
+        }
+        return _runTransition<void>(
+          sourceOwnerId: guest,
+          operationToken: operationToken,
+          targetOwnerId: (_) => previous,
+          operation: () => _database.transaction(() async {
+            if (!await _fenceOwnerTransition(operationToken)) {
+              throw StateError('owner-operation gate was lost');
+            }
+            final guestRow = await _ownerById(guest);
+            final previousRow = await _ownerById(previous);
+            if (guestRow == null ||
+                previousRow == null ||
+                !guestRow.isActive ||
+                guestRow.firebaseUid != null) {
+              throw StateError('logout rollback state is no longer safe');
+            }
+            await DriftStreakRepository(_database).rollbackTransitionCutover(
+              ownerId: guest,
+              establishedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                guestRow.createdAtUtcMs,
+                isUtc: true,
+              ),
+            );
+            await DriftAvatarProgressionEligibility(
+              _database,
+              nowUtc: nowUtc,
+            ).rollbackEmptyTransition(guest);
+            await (_database.delete(
+              _database.localOwners,
+            )..where((row) => row.id.equals(guest))).go();
+            await (_database.update(_database.localOwners)
+                  ..where((row) => row.id.equals(previous)))
+                .write(const db.LocalOwnersCompanion(isActive: Value(true)));
+          }),
+        );
       }),
     );
   }
@@ -589,11 +665,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final snapshot = purpose.snapshot;
     if (snapshot == null) return null; // Successfully validated legacy chain.
     for (final item in snapshot.engine.plan.orderedLexicalItems) {
-      final word = await (_database.select(
-        _database.vocabularyWords,
-      )..where((row) => row.id.equals(item.wordId))).getSingleOrNull();
+      final word =
+          await (_database.select(_database.vocabularyWords)..where(
+                (row) =>
+                    row.id.equals(item.wordId) &
+                    PackagedStarterAccess.wordsFor(_database, ownerId),
+              ))
+              .getSingleOrNull();
       if (word == null ||
-          word.ownerId != ownerId ||
           word.spelling != item.spelling ||
           word.meaning != item.meaning ||
           word.contentRevision != item.contentRevision) {
@@ -705,11 +784,103 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     }
   }
 
+  Future<_ReadingUpgradePins> _preflightReadingUpgrade(String ownerId) async {
+    final categories = <String>{};
+    final sessions = <String, AssociativeReadingCheckpoint>{};
+    final repository = DriftLearningRepository(_database);
+    var cursor = '';
+    while (true) {
+      final page =
+          await (_database.select(_database.learningSessions)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.id.like('reading:%') &
+                      row.id.isBiggerThanValue(cursor) &
+                      row.state.isIn(['active', 'completed']),
+                )
+                ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                ..limit(64))
+              .get();
+      for (final session in page) {
+        final recovery = await repository.loadExactActivityRecovery(
+          ownerId: ownerId,
+          sessionId: session.id,
+          activityType: 'associativeReading',
+        );
+        if (recovery?.checkpoint == null)
+          throw StateError('Reading upgrade checkpoint missing');
+        final state = AssociativeReadingCheckpoint.fromJson(
+          recovery!.checkpoint!.state,
+        );
+        state.recallResults(recovery);
+        final rows =
+            await (_database.select(_database.vocabularyWords)..where(
+                  (row) =>
+                      row.id.isIn(state.words.map((pin) => pin.id)) &
+                      PackagedStarterAccess.wordsFor(_database, ownerId),
+                ))
+                .get();
+        final liveCategories =
+            await (_database.select(_database.vocabularyCategories)..where(
+                  (row) =>
+                      row.id.isIn(rows.map((word) => word.categoryId)) &
+                      PackagedStarterAccess.categoriesFor(_database, ownerId) &
+                      row.isDeleted.equals(false),
+                ))
+                .get();
+        final categoryIds = liveCategories.map((row) => row.id).toSet();
+        final protectedCategories = <String>{};
+        var recoverable = true;
+        for (final pin in state.words) {
+          final matches = rows.where((row) => row.id == pin.id);
+          if (matches.length != 1) {
+            recoverable = false;
+            break;
+          }
+          final word = matches.single;
+          final checksum =
+              ContentQualityPolicy.effectiveVocabularyChecksumSha256(
+                categoryId: word.categoryId,
+                spelling: word.spelling,
+                normalizedSpelling: word.normalizedSpelling,
+                meaning: word.meaning,
+                normalizedMeaning: word.normalizedMeaning,
+                partOfSpeech: word.partOfSpeech,
+                cefrLevel: word.cefrLevel,
+                source: word.source,
+                isGlobal: word.isGlobal,
+                storedChecksumSha256: word.contentChecksumSha256,
+              );
+          if (word.isDeleted ||
+              !categoryIds.contains(word.categoryId) ||
+              word.contentRevision != pin.revision ||
+              checksum != pin.checksum ||
+              word.spelling != pin.spelling ||
+              word.normalizedSpelling != pin.canonicalAnswer) {
+            recoverable = false;
+            break;
+          }
+          protectedCategories.add(word.categoryId);
+        }
+        // Canonical history was authenticated above. Later vocabulary edits
+        // may make it unavailable to replay without invalidating account bind.
+        if (!recoverable) continue;
+        categories.addAll(protectedCategories);
+        sessions[session.id] = state;
+      }
+      if (page.length < 64) break;
+      cursor = page.last.id;
+    }
+    return _ReadingUpgradePins(categories, sessions);
+  }
+
   Future<int> _mergeCategories(
     String sourceId,
     String targetId,
-    int resolvedAt,
-  ) async {
+    int resolvedAt, {
+    Set<String> protectedReadingCategories = const {},
+  }) async {
     final collisions = await _database
         .customSelect(
           '''
@@ -728,6 +899,57 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     for (final collision in collisions) {
       final guestId = collision.read<String>('guest_id');
       final targetCategoryId = collision.read<String>('target_id');
+      if (protectedReadingCategories.contains(guestId)) {
+        // Core word checksums commit category IDs, not category display names.
+        // Preserve the entire accepted category so lexical/history identities
+        // remain usable; other duplicates follow the existing merge policy.
+        final names = await (_database.select(
+          _database.vocabularyCategories,
+        )..where((row) => row.ownerId.isIn([sourceId, targetId]))).get();
+        final occupied = names.map((row) => row.normalizedName).toSet();
+        String? selectedName;
+        for (var number = 1; number <= 10000; number++) {
+          final suffix = number == 1
+              ? ' (บทเรียนเดิม)'
+              : ' (บทเรียนเดิม $number)';
+          var base = collision.read<String>('guest_name');
+          while (base.length + suffix.length > maxCategoryNameLength) {
+            base = String.fromCharCodes(base.runes.take(base.runes.length - 1));
+          }
+          final candidate = '$base$suffix';
+          if (!occupied.contains(normalizeVocabularyText(candidate))) {
+            selectedName = candidate;
+            break;
+          }
+        }
+        if (selectedName == null)
+          throw StateError('Reading category rename bound exceeded');
+        final category = names.singleWhere((row) => row.id == guestId);
+        await (_database.update(
+          _database.vocabularyCategories,
+        )..where((row) => row.id.equals(guestId))).write(
+          db.VocabularyCategoriesCompanion(
+            name: Value(selectedName),
+            normalizedName: Value(normalizeVocabularyText(selectedName)),
+            updatedAtUtcMs: Value(resolvedAt),
+            localRevision: Value(category.localRevision + 1),
+          ),
+        );
+        await _recordMergeConflict(
+          ownerId: targetId,
+          entityType: 'category',
+          entityId: guestId,
+          localSnapshot: {'id': guestId, 'name': category.name},
+          targetSnapshot: {
+            'id': targetCategoryId,
+            'name': collision.read<String>('target_name'),
+          },
+          resolutionPolicy: _GuestUpgradeConflictPolicy.preserveBoth,
+          outcome: _GuestUpgradeConflictOutcome.bothRetained,
+          resolvedAt: resolvedAt,
+        );
+        continue;
+      }
       final remappedWords = await (_database.select(
         _database.vocabularyWords,
       )..where((row) => row.categoryId.equals(guestId))).get();
@@ -1708,183 +1930,135 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     String targetId,
     int resolvedAt,
   ) async {
-    var conflictCount = 0;
-    final collisions = await _database
+    // Read history once rather than joining every source period to every target
+    // period. Previously noncanonical rows remain untouched and are moved by
+    // the enclosing owner transaction with their children and receipts.
+    final rows =
+        await (_database.select(_database.questInstances)..where(
+              (row) =>
+                  row.ownerId.isIn([sourceId, targetId]) &
+                  row.isCanonical.equals(true),
+            ))
+            .get();
+    final progress = await _database
         .customSelect(
           '''
-      SELECT guest.instance_id AS guest_id, target.instance_id AS target_id,
-             guest.catalog_version AS guest_catalog,
-             target.catalog_version AS target_catalog,
-             guest.assigned_at_utc_ms AS guest_assigned,
-             target.assigned_at_utc_ms AS target_assigned,
-             guest.state AS guest_state, target.state AS target_state,
-             guest.completed_at_utc_ms AS guest_completed,
-             target.completed_at_utc_ms AS target_completed,
-             guest.expired_at_utc_ms AS guest_expired,
-             target.expired_at_utc_ms AS target_expired
-      FROM quest_instances AS guest
-      JOIN quest_instances AS target
-        ON target.owner_id = ? AND target.quest_id = guest.quest_id
-      WHERE guest.owner_id = ?
-      ORDER BY guest.instance_id
-      ''',
-          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+      SELECT progress.* FROM quest_objective_progress AS progress
+      JOIN quest_instances AS instance ON instance.instance_id = progress.instance_id
+      WHERE instance.owner_id IN (?, ?) AND instance.is_canonical = 1
+    ''',
+          variables: [Variable(sourceId), Variable(targetId)],
         )
         .get();
-    for (final collision in collisions) {
-      final guestId = collision.read<String>('guest_id');
-      final targetInstanceId = collision.read<String>('target_id');
-      final guestState = collision.read<String>('guest_state');
-      final targetState = collision.read<String>('target_state');
-      final guestTimestamp =
-          collision.readNullable<int>('guest_completed') ??
-          collision.readNullable<int>('guest_expired') ??
-          collision.read<int>('guest_assigned');
-      final targetTimestamp =
-          collision.readNullable<int>('target_completed') ??
-          collision.readNullable<int>('target_expired') ??
-          collision.read<int>('target_assigned');
-      final guestWins =
-          _compareQuestState(
-            state: guestState,
-            catalogVersion: collision.read<int>('guest_catalog'),
-            timestamp: guestTimestamp,
-            stableId: guestId,
-            otherState: targetState,
-            otherCatalogVersion: collision.read<int>('target_catalog'),
-            otherTimestamp: targetTimestamp,
-            otherStableId: targetInstanceId,
-          ) >
-          0;
-      if (guestWins) {
-        await (_database.update(
-          _database.questInstances,
-        )..where((row) => row.instanceId.equals(targetInstanceId))).write(
-          db.QuestInstancesCompanion(
-            catalogVersion: Value(collision.read<int>('guest_catalog')),
-            assignedAtUtcMs: Value(collision.read<int>('guest_assigned')),
-            state: Value(guestState),
-            completedAtUtcMs: Value(
-              collision.readNullable<int>('guest_completed'),
-            ),
-            expiredAtUtcMs: Value(collision.readNullable<int>('guest_expired')),
-          ),
+    final progressByInstance = <String, List<Map<String, Object?>>>{};
+    for (final row in progress) {
+      progressByInstance
+          .putIfAbsent(row.read<String>('instance_id'), () => [])
+          .add(row.data);
+    }
+    final byQuest = <String, List<_QuestMergeCandidate>>{};
+    for (final row in rows) {
+      final snapshot = row.definitionSnapshotJson == null
+          ? null
+          : QuestDefinitionCodec.decode(row.definitionSnapshotJson!).definition;
+      if (snapshot != null &&
+          (snapshot.questId != row.questId ||
+              snapshot.catalogVersion != row.catalogVersion ||
+              !QuestDefinitionCodec.matchesStoredProgress(
+                snapshot,
+                progressByInstance[row.instanceId] ?? [],
+              ))) {
+        throw StateError(
+          'quest merge snapshot does not match durable instance',
         );
       }
-      final guestObjectives = await (_database.select(
-        _database.questObjectiveProgress,
-      )..where((row) => row.instanceId.equals(guestId))).get();
-      final targetObjectives = await (_database.select(
-        _database.questObjectiveProgress,
-      )..where((row) => row.instanceId.equals(targetInstanceId))).get();
-      for (final guestObjective in guestObjectives) {
-        final targetObjective = targetObjectives
-            .where(
-              (candidate) =>
-                  candidate.objectiveId == guestObjective.objectiveId,
-            )
-            .firstOrNull;
-        if (targetObjective == null) {
-          await (_database.update(
-            _database.questObjectiveProgress,
-          )..where((row) => row.id.equals(guestObjective.id))).write(
-            db.QuestObjectiveProgressCompanion(
-              id: Value('$targetInstanceId:${guestObjective.objectiveId}'),
-              instanceId: Value(targetInstanceId),
-            ),
-          );
-          continue;
+      final candidate = _QuestMergeCandidate(
+        row,
+        isOnce:
+            snapshot?.type == QuestType.milestone ||
+            snapshot?.type == QuestType.story,
+      );
+      byQuest.putIfAbsent(row.questId, () => []).add(candidate);
+    }
+
+    final demotions =
+        <
+          ({
+            _QuestMergeCandidate loser,
+            _QuestMergeCandidate winner,
+            String reason,
+          })
+        >[];
+    for (final candidates in byQuest.values) {
+      final hasEstablishedOccupancy = candidates.any(
+        (candidate) => candidate.occupiesAt(resolvedAt),
+      );
+      candidates.sort((left, right) {
+        // Compatibility history has no reconstructable past duration. Prefer
+        // an established current occupancy before ranking its representative.
+        if (hasEstablishedOccupancy &&
+            left.isCompatibility != right.isCompatibility) {
+          return left.isCompatibility ? 1 : -1;
         }
-        if (guestObjective.targetCount == targetObjective.targetCount) {
-          final sourceIds = <String>{
-            ..._decodeStringList(targetObjective.sourceEventIdsJson),
-            ..._decodeStringList(guestObjective.sourceEventIdsJson),
-          }.toList()..sort();
-          final maximum =
-              guestObjective.currentCount > targetObjective.currentCount
-              ? guestObjective.currentCount
-              : targetObjective.currentCount;
-          await (_database.update(
-            _database.questObjectiveProgress,
-          )..where((row) => row.id.equals(targetObjective.id))).write(
-            db.QuestObjectiveProgressCompanion(
-              currentCount: Value(
-                maximum > targetObjective.targetCount
-                    ? targetObjective.targetCount
-                    : maximum,
-              ),
-              sourceEventIdsJson: Value(jsonEncode(sourceIds)),
-            ),
-          );
-        } else {
-          if (guestWins) {
-            await (_database.update(
-              _database.questObjectiveProgress,
-            )..where((row) => row.id.equals(targetObjective.id))).write(
-              db.QuestObjectiveProgressCompanion(
-                currentCount: Value(
-                  guestObjective.currentCount > guestObjective.targetCount
-                      ? guestObjective.targetCount
-                      : guestObjective.currentCount,
-                ),
-                targetCount: Value(guestObjective.targetCount),
-                sourceEventIdsJson: Value(guestObjective.sourceEventIdsJson),
-              ),
-            );
+        final rank = _questStateRank(
+          right.row.state,
+        ).compareTo(_questStateRank(left.row.state));
+        return rank != 0
+            ? rank
+            : left.row.instanceId.compareTo(right.row.instanceId);
+      });
+      final retained = <_QuestMergeCandidate>[];
+      for (final candidate in candidates) {
+        _QuestMergeCandidate? winner;
+        String? reason;
+        for (final prior in retained) {
+          reason = candidate.conflictWith(prior, resolvedAt);
+          if (reason != null) {
+            winner = prior;
+            break;
           }
-          await _recordMergeConflict(
-            ownerId: targetId,
-            entityType: 'questObjective',
-            entityId: targetObjective.id,
-            localSnapshot: <String, Object?>{
-              'id': guestObjective.id,
-              'currentCount': guestObjective.currentCount,
-              'targetCount': guestObjective.targetCount,
-              'sourceEventIds': _decodeStringList(
-                guestObjective.sourceEventIdsJson,
-              ),
-            },
-            targetSnapshot: <String, Object?>{
-              'id': targetObjective.id,
-              'currentCount': targetObjective.currentCount,
-              'targetCount': targetObjective.targetCount,
-              'sourceEventIds': _decodeStringList(
-                targetObjective.sourceEventIdsJson,
-              ),
-            },
-            resolutionPolicy: _GuestUpgradeConflictPolicy.rankedQuestObjective,
-            outcome: guestWins
-                ? _GuestUpgradeConflictOutcome.guestRetained
-                : _GuestUpgradeConflictOutcome.targetRetained,
-            resolvedAt: resolvedAt,
-          );
-          conflictCount += 1;
         }
-        await (_database.delete(
-          _database.questObjectiveProgress,
-        )..where((row) => row.id.equals(guestObjective.id))).go();
+        if (winner == null) {
+          retained.add(candidate);
+        } else {
+          demotions.add((loser: candidate, winner: winner, reason: reason!));
+        }
       }
+    }
+
+    // Both partial UNIQUE indexes are immediate. Demote every loser before the
+    // surrounding transaction rewrites either owner, without copying pins or
+    // summing progress into a different historical identity.
+    for (final conflict in demotions) {
+      final loser = conflict.loser.row;
+      await (_database.update(
+        _database.questInstances,
+      )..where((row) => row.instanceId.equals(loser.instanceId))).write(
+        db.QuestInstancesCompanion(
+          isCanonical: const Value(false),
+          state: loser.state == 'active'
+              ? const Value('abandoned')
+              : const Value.absent(),
+        ),
+      );
       await _recordMergeConflict(
         ownerId: targetId,
         entityType: 'questInstance',
-        entityId: targetInstanceId,
-        localSnapshot: <String, Object?>{'id': guestId, 'state': guestState},
-        targetSnapshot: <String, Object?>{
-          'id': targetInstanceId,
-          'state': targetState,
-        },
+        entityId: loser.instanceId,
+        localSnapshot: conflict.loser.evidence(
+          winnerId: conflict.winner.row.instanceId,
+          reason: conflict.reason,
+        ),
+        targetSnapshot: conflict.winner.evidence(
+          winnerId: conflict.winner.row.instanceId,
+          reason: conflict.reason,
+        ),
         resolutionPolicy: _GuestUpgradeConflictPolicy.rankedQuest,
-        outcome: guestWins
-            ? _GuestUpgradeConflictOutcome.guestRetained
-            : _GuestUpgradeConflictOutcome.targetRetained,
+        outcome: _GuestUpgradeConflictOutcome.bothRetained,
         resolvedAt: resolvedAt,
       );
-      await (_database.delete(
-        _database.questInstances,
-      )..where((row) => row.instanceId.equals(guestId))).go();
-      conflictCount += 1;
     }
-    return conflictCount;
+    return demotions.length;
   }
 
   Future<int> _makeEventKeysUnique(
@@ -3298,13 +3472,29 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       if (safe != null) {
         final normalizedKey =
             'learning-projection-cursor:$targetId:$projection:v$version';
+        // A prefix verified for one owner must be audited against the merged
+        // history. Preserve unknown or mixed producers so they still fail the
+        // event store's canonical cursor checks instead of being legitimized.
+        final needsMergedFrontierAudit =
+            safe.appVersion == 'learning-projection-cursor-v2' &&
+            safe.buildId == 'learning-projection-cursor-v2';
         await _database.customUpdate(
           'UPDATE events_v2 SET event_id = ?, idempotency_key = ?, '
-          'actor_identity = ? WHERE event_id = ?',
+          'actor_identity = ?, app_version = ?, build_id = ? WHERE event_id = ?',
           variables: [
             Variable<String>(normalizedKey),
             Variable<String>(normalizedKey),
             Variable<String>(targetId),
+            Variable<String>(
+              needsMergedFrontierAudit
+                  ? 'learning-projection-cursor-v1'
+                  : safe.appVersion,
+            ),
+            Variable<String>(
+              needsMergedFrontierAudit
+                  ? 'learning-projection-cursor-v1'
+                  : safe.buildId,
+            ),
             Variable<String>(safe.eventId),
           ],
           updates: {_database.eventsV2},
@@ -4013,13 +4203,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'EXISTS (SELECT 1 FROM motivation_measurement_runs WHERE owner_id = ?) OR '
           'EXISTS (SELECT 1 FROM motivation_responses WHERE owner_id = ?) OR '
           'EXISTS (SELECT 1 FROM research_participation_permits WHERE owner_id = ?) OR '
-          'EXISTS (SELECT 1 FROM measurement_opportunities WHERE owner_id = ?)',
-          variables: [for (var i = 0; i < 4; i++) Variable<String>(ownerId)],
+          'EXISTS (SELECT 1 FROM measurement_opportunities WHERE owner_id = ?) OR '
+          'EXISTS (SELECT 1 FROM research_session_proofs WHERE owner_id = ?)',
+          variables: [for (var i = 0; i < 5; i++) Variable<String>(ownerId)],
           readsFrom: {
             _database.motivationMeasurementRuns,
             _database.motivationResponses,
             _database.researchParticipationPermits,
             _database.measurementOpportunities,
+            _database.researchSessionProofs,
           },
         )
         .getSingleOrNull();
@@ -4037,6 +4229,20 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       _database.localOwners,
     )..where((row) => row.firebaseUid.equals(uid))).getSingleOrNull();
   }
+
+  Future<T> _runTransition<T>({
+    required String sourceOwnerId,
+    required String operationToken,
+    required Future<T> Function() operation,
+    required String Function(T result) targetOwnerId,
+  }) =>
+      transitionLifecycle?.run(
+        sourceOwnerId: sourceOwnerId,
+        operationToken: operationToken,
+        operation: operation,
+        targetOwnerId: targetOwnerId,
+      ) ??
+      operation();
 
   Future<T> _withOwnerOperationGate<T>(
     Future<T> Function(String operationToken) operation,
@@ -4058,13 +4264,23 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     }
 
     final stopHeartbeat = Completer<void>();
-    final heartbeat = _runOwnerGateHeartbeat(operationToken, stopHeartbeat);
+    // Attach the handler immediately: renewal can fail while operation() is
+    // still awaiting external work. The transaction separately proves the
+    // lease before mutation; cleanup cannot replace its result or exception.
+    final heartbeat = _runOwnerGateHeartbeat(
+      operationToken,
+      stopHeartbeat,
+    ).catchError((Object _) {});
     try {
       return await operation(operationToken);
     } finally {
       if (!stopHeartbeat.isCompleted) stopHeartbeat.complete();
       await heartbeat;
-      await ownerOperationGate.release(token: operationToken);
+      try {
+        await ownerOperationGate.release(token: operationToken);
+      } on Object {
+        // An unreleased lease expires; preserve the canonical operation result.
+      }
     }
   }
 
@@ -4132,7 +4348,6 @@ abstract final class _GuestUpgradeConflictPolicy {
   static const latestAssociation = 'guestUpgradeLatestAssociation';
   static const latestMemory = 'guestUpgradeLatestMemory';
   static const rankedQuest = 'guestUpgradeRankedQuest';
-  static const rankedQuestObjective = 'guestUpgradeRankedQuestObjective';
   static const preserveBoth = 'guestUpgradePreserveBoth';
   static const latestSavedIntent = 'guestUpgradeLatestSavedIntent';
 }
@@ -4257,25 +4472,74 @@ final class _RehomeSpecification {
   final bool createOutboxWhenMissing;
 }
 
-int _compareQuestState({
-  required String state,
-  required int catalogVersion,
-  required int timestamp,
-  required String stableId,
-  required String otherState,
-  required int otherCatalogVersion,
-  required int otherTimestamp,
-  required String otherStableId,
-}) {
-  final stateComparison = _questStateRank(
-    state,
-  ).compareTo(_questStateRank(otherState));
-  if (stateComparison != 0) return stateComparison;
-  final catalogComparison = catalogVersion.compareTo(otherCatalogVersion);
-  if (catalogComparison != 0) return catalogComparison;
-  final timestampComparison = timestamp.compareTo(otherTimestamp);
-  if (timestampComparison != 0) return timestampComparison;
-  return stableId.compareTo(otherStableId);
+final class _QuestMergeCandidate {
+  const _QuestMergeCandidate(this.row, {required this.isOnce});
+
+  final db.QuestInstance row;
+  final bool isOnce;
+
+  String get logicalPeriod => isOnce
+      ? 'once'
+      : row.periodKey.isEmpty
+      ? 'legacy:${row.instanceId}'
+      : row.periodKey;
+
+  bool get isCompatibility =>
+      row.periodPolicy == 'legacyDuration' &&
+      row.deadlineAtUtcMs == null &&
+      !isOnce &&
+      (row.periodKey.isEmpty || row.periodKey.startsWith('legacy:'));
+
+  bool occupiesAt(int now) {
+    if (isCompatibility) return false;
+    if (isOnce || row.periodKey == 'once') return true;
+    // Occupancy lasts through the calendar period even when its shorter
+    // evidence deadline has passed. A stale active label cannot extend it.
+    final end = row.periodEndAtUtcMs ?? row.deadlineAtUtcMs;
+    final start = row.periodStartAtUtcMs == 0
+        ? row.assignedAtUtcMs
+        : row.periodStartAtUtcMs;
+    return start <= now && end != null && now < end;
+  }
+
+  String? conflictWith(_QuestMergeCandidate other, int resolvedAt) {
+    if (logicalPeriod == other.logicalPeriod) return 'samePeriod';
+    if (isCompatibility && other.isCompatibility)
+      return 'compatibilityRepresentative';
+    if ((isCompatibility && other.occupiesAt(resolvedAt)) ||
+        (other.isCompatibility && occupiesAt(resolvedAt))) {
+      return 'establishedCompatibilityOccupancy';
+    }
+    if (row.state == 'active' && other.row.state == 'active')
+      return 'activeUniqueness';
+    // A null-duration legacy compatibility row is not evidence of an infinite
+    // historical window. Its first-period interpretation remains assignment's
+    // responsibility; merging never fabricates its past calendar.
+    if (isCompatibility || other.isCompatibility) return null;
+    final end = row.deadlineAtUtcMs;
+    final otherEnd = other.row.deadlineAtUtcMs;
+    if ((otherEnd == null || row.assignedAtUtcMs < otherEnd) &&
+        (end == null || other.row.assignedAtUtcMs < end)) {
+      return 'overlap';
+    }
+    return null;
+  }
+
+  Map<String, Object?> evidence({
+    required String winnerId,
+    required String reason,
+  }) => {
+    'id': row.instanceId,
+    'ownerId': row.ownerId,
+    'state': row.state,
+    'periodPolicy': row.periodPolicy,
+    'periodKey': row.periodKey,
+    'logicalPeriod': logicalPeriod,
+    'assignedAtUtcMs': row.assignedAtUtcMs,
+    'deadlineAtUtcMs': row.deadlineAtUtcMs,
+    'retainedInstanceId': winnerId,
+    'reason': reason,
+  };
 }
 
 int _questStateRank(String state) => switch (state) {
@@ -4285,14 +4549,6 @@ int _questStateRank(String state) => switch (state) {
   'abandoned' => 1,
   _ => 0,
 };
-
-List<String> _decodeStringList(String source) {
-  final decoded = jsonDecode(source);
-  if (decoded is! List || decoded.any((value) => value is! String)) {
-    throw StateError('quest objective source evidence is invalid');
-  }
-  return decoded.cast<String>();
-}
 
 String _requiredId(String value, String field) {
   final canonical = value.trim();

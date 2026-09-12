@@ -26,6 +26,86 @@ void main() {
     }
   });
 
+  test('long correct sequence saturates at the numerical safety ceiling', () {
+    SrsSnapshot? state;
+
+    for (var repetition = 0; repetition < 27; repetition++) {
+      state = policy.review(previous: state, isCorrect: true, nowUtc: now);
+    }
+
+    expect(state?.intervalDays, 36500);
+    expect(state?.repetitions, 27);
+    expect(state?.algorithmVersion, 2);
+
+    final continued = policy.review(
+      previous: state,
+      isCorrect: true,
+      nowUtc: now,
+    );
+    expect(continued.intervalDays, 36500);
+    expect(continued.repetitions, 28);
+    expect(continued.algorithmVersion, 2);
+  });
+
+  test('oversized historical interval saturates before multiplication', () {
+    const previous = SrsSnapshot(
+      intervalDays: 1 << 62,
+      repetitions: 27,
+      lapses: 4,
+      stability: 1,
+      difficulty: 0.4,
+      lastReviewAtUtc: null,
+      dueAtUtc: null,
+      algorithmVersion: 1,
+    );
+
+    final next = policy.review(
+      previous: previous,
+      isCorrect: true,
+      nowUtc: now,
+    );
+
+    expect(next.intervalDays, 36500);
+    expect(next.repetitions, 28);
+    expect(next.lapses, 4);
+    expect(next.dueAtUtc, now.add(const Duration(days: 36500)));
+    expect(next.algorithmVersion, 2);
+  });
+
+  test(
+    'correct and incorrect sequence resets then regrows deterministically',
+    () {
+      SrsSnapshot? state;
+      final outcomes = <bool>[
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+      ];
+      final expectedIntervals = <int>[1, 3, 7, 14, 28, 1, 1, 3, 7, 14, 28];
+
+      for (var index = 0; index < outcomes.length; index++) {
+        state = policy.review(
+          previous: state,
+          isCorrect: outcomes[index],
+          nowUtc: now,
+        );
+        expect(state.intervalDays, expectedIntervals[index]);
+        expect(state.algorithmVersion, 2);
+      }
+
+      expect(state?.repetitions, 5);
+      expect(state?.lapses, 1);
+    },
+  );
+
   test('incorrect review resets interval and increments lapses', () {
     const previous = SrsSnapshot(
       intervalDays: 14,
@@ -48,6 +128,7 @@ void main() {
     expect(next.repetitions, 0);
     expect(next.lapses, 3);
     expect(next.difficulty, greaterThan(previous.difficulty));
+    expect(next.algorithmVersion, 2);
   });
 
   test('rejects a non-UTC clock value', () {

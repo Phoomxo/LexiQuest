@@ -185,9 +185,8 @@ def _pos_family(part_of_speech: str) -> str:
     The dictionary API uses many variants (``Noun``, ``Transitive Verb``,
     ``Adjective`` etc.); templates only need a coarse family.
 
-    Order matters: ``adverb`` is checked before ``verb`` because "adverb"
-    contains the substring "verb", and ``adjective`` before anything else for
-    the same reason.
+    Order matters: ``adverb`` is checked before ``verb`` and ``pronoun``
+    before ``noun`` because each contains the other label as a substring.
     """
 
     pos = (part_of_speech or "").lower()
@@ -195,6 +194,8 @@ def _pos_family(part_of_speech: str) -> str:
         return "adverb"
     if "adjective" in pos or "adj" in pos:
         return "adjective"
+    if "pronoun" in pos:
+        return "function"
     if "noun" in pos:
         return "noun"
     if "verb" in pos:
@@ -205,7 +206,6 @@ def _pos_family(part_of_speech: str) -> str:
             "preposition",
             "conjunction",
             "determiner",
-            "pronoun",
             "article",
             "modal",
             "interjection",
@@ -287,9 +287,14 @@ def generate_template_rows(
 
     rows: list[dict[str, object]] = []
     pos_family = _pos_family(word.part_of_speech)
+    # Function sentence templates use preposition slots. Pronouns retain
+    # their coarse family but need the universal word-focused sentences.
+    sentence_family = (
+        "any" if "pronoun" in (word.part_of_speech or "").lower() else pos_family
+    )
 
     sentence_templates = _templates_for_level_and_pos(
-        _SENTENCE_TEMPLATES, word.cefr_level, pos_family
+        _SENTENCE_TEMPLATES, word.cefr_level, sentence_family
     )
     chosen_sentences = rng.sample(
         sentence_templates, k=min(3, len(sentence_templates))
@@ -301,7 +306,7 @@ def generate_template_rows(
                 response=_format_template(template, word),
                 kind="sentence",
                 word=word,
-                source=f"template_sentence_{word.cefr_level.lower() or 'a1'}_{pos_family}",
+                source=f"template_sentence_{word.cefr_level.lower() or 'a1'}_{sentence_family}",
             )
         )
 

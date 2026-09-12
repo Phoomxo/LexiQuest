@@ -1185,6 +1185,281 @@ void main() {
   );
 
   test(
+    'reopened legacy frontier recovers an earlier missing receipt',
+    () async {
+      final first = _event(
+        sourceEvidenceId: 'legacy-gap-a',
+        occurredAtUtc: DateTime.utc(2026, 9, 8, 10),
+      );
+      final last = _event(
+        sourceEvidenceId: 'legacy-gap-z',
+        occurredAtUtc: DateTime.utc(2026, 9, 8, 12),
+      );
+      await store.append(first);
+      await store.append(last);
+      await store.markProjectionOutcome(
+        source: last,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      // Persist the authentic cursor an older implementation could advance past
+      // an unfinished predecessor. Its source and terminal receipt are genuine.
+      await _insertRawEvent(
+        database,
+        _projectionCursor(
+          sourceEventId: last.eventId,
+          projection: 'streak',
+          occurredAtUtc: last.occurredAtUtc,
+        ),
+      );
+      final receiptId = 'learning-projection:streak:${last.eventId}:v2';
+      final receiptBefore = (await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(receiptId))).getSingle()).toJson();
+      final reopened = DriftLearningEventStore(database);
+      await expectLater(
+        database.transaction(() async {
+          expect(
+            (await reopened.listPendingProjectionEvents(
+              ownerId: 'owner-1',
+              projection: 'streak',
+              appliedVersion: 2,
+              limit: 1,
+            )).single.event.eventId,
+            first.eventId,
+          );
+          throw StateError('synthetic outer rollback');
+        }),
+        throwsStateError,
+      );
+      final rolledBackCursor =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection-cursor:owner-1:streak:v2',
+                ),
+              ))
+              .getSingle();
+      expect(rolledBackCursor.appVersion, 'learning-projection-cursor-v1');
+      expect(rolledBackCursor.aggregateId, last.eventId);
+      final pending = await reopened.listPendingProjectionEvents(
+        ownerId: 'owner-1',
+        projection: 'streak',
+        appliedVersion: 2,
+        limit: 1,
+      );
+      expect(pending.map((item) => item.event.eventId), [first.eventId]);
+      await reopened.markProjectionOutcome(
+        source: first,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      expect(
+        await reopened.ensureProjectionOutcomeWritable(
+          source: last,
+          projection: 'streak',
+          appliedVersion: 2,
+        ),
+        isFalse,
+        reason: 'Recovery must reuse the immutable existing receipt.',
+      );
+      expect(
+        await reopened.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'streak',
+          appliedVersion: 2,
+          limit: 1,
+        ),
+        isEmpty,
+      );
+      expect(
+        (await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(receiptId))).getSingle()).toJson(),
+        receiptBefore,
+      );
+    },
+  );
+
+  test(
+    'gap-free legacy cursor upgrades producer without changing receipts',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'legacy-complete',
+        occurredAtUtc: DateTime.utc(2026, 9, 8, 12),
+      );
+      await store.append(source);
+      await store.markProjectionOutcome(
+        source: source,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      const key = 'learning-projection-cursor:owner-1:streak:v2';
+      await database.customUpdate(
+        'UPDATE events_v2 SET app_version = ?, build_id = ? WHERE event_id = ?',
+        variables: [
+          const Variable('learning-projection-cursor-v1'),
+          const Variable('learning-projection-cursor-v1'),
+          const Variable(key),
+        ],
+        updates: {database.eventsV2},
+      );
+      expect(
+        await store.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'streak',
+          appliedVersion: 2,
+          limit: 1,
+        ),
+        isEmpty,
+      );
+      final cursor = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(key))).getSingle();
+      expect(cursor.appVersion, 'learning-projection-cursor-v2');
+      expect(cursor.buildId, cursor.appVersion);
+      expect(cursor.eventVersion, 1);
+      expect(cursor.aggregateId, source.eventId);
+      expect(
+        await store.ensureProjectionOutcomeWritable(
+          source: source,
+          projection: 'streak',
+          appliedVersion: 2,
+        ),
+        isFalse,
+      );
+    },
+  );
+
+  test('late source with unprojected predecessor remains appendable', () async {
+    final last = _event(
+      sourceEvidenceId: 'late-c',
+      occurredAtUtc: DateTime.utc(2026, 9, 8, 12),
+    );
+    final first = _event(
+      sourceEvidenceId: 'late-a',
+      occurredAtUtc: DateTime.utc(2026, 9, 8, 10),
+    );
+    final middle = _event(
+      sourceEvidenceId: 'late-b',
+      occurredAtUtc: DateTime.utc(2026, 9, 8, 11),
+    );
+    await store.append(last);
+    // A real reconciler can have captured C before A is appended. Its sink
+    // completes after A arrives; no sleeps or forged cursor rows are needed.
+    final captured = await store.listPendingProjectionEvents(
+      ownerId: 'owner-1',
+      projection: 'streak',
+      appliedVersion: 2,
+      limit: 50,
+    );
+    expect(captured.single.event.eventId, last.eventId);
+    await store.append(first);
+    await store.markProjectionOutcome(
+      source: captured.single.event,
+      projection: 'streak',
+      appliedVersion: 2,
+      outcome: LearningProjectionOutcome.applied,
+    );
+    await store.append(middle);
+    final pending = await store.listPendingProjectionEvents(
+      ownerId: 'owner-1',
+      projection: 'streak',
+      appliedVersion: 2,
+      limit: 50,
+    );
+    expect(
+      pending.map((item) => item.event.eventId),
+      containsAll([first.eventId, middle.eventId]),
+    );
+    expect(
+      await store.readProjectionReceipt(
+        source: last,
+        projection: 'streak',
+        appliedVersion: 2,
+      ),
+      isNotNull,
+    );
+  });
+
+  test(
+    'stale projection completion cannot overtake a concurrent late source',
+    () async {
+      final sameSecond = DateTime.utc(2026, 9, 8, 12);
+      final last = _event(
+        sourceEvidenceId: 'stale-z',
+        occurredAtUtc: sameSecond,
+      );
+      final first = _event(
+        sourceEvidenceId: 'stale-a',
+        occurredAtUtc: sameSecond,
+      );
+      await store.append(last);
+      final captured = await store.listPendingProjectionEvents(
+        ownerId: 'owner-1',
+        projection: 'streak',
+        appliedVersion: 2,
+        limit: 50,
+      );
+      await store.append(first);
+      await store.markProjectionOutcome(
+        source: captured.single.event,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      final pending = await store.listPendingProjectionEvents(
+        ownerId: 'owner-1',
+        projection: 'streak',
+        appliedVersion: 2,
+        limit: 50,
+      );
+      expect(
+        pending.map((item) => item.event.eventId),
+        contains(first.eventId),
+        reason:
+            'A late source must remain pending after an already running later sink completes.',
+      );
+      await store.markProjectionOutcome(
+        source: first,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      expect(
+        await store.ensureProjectionOutcomeWritable(
+          source: last,
+          projection: 'streak',
+          appliedVersion: 2,
+        ),
+        isFalse,
+        reason: 'An existing terminal receipt must prevent a second sink call.',
+      );
+      expect(
+        await store.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'streak',
+          appliedVersion: 2,
+          limit: 50,
+        ),
+        isEmpty,
+      );
+      for (final source in [first, last]) {
+        expect(
+          await store.readProjectionReceipt(
+            source: source,
+            projection: 'streak',
+            appliedVersion: 2,
+          ),
+          isNotNull,
+        );
+      }
+    },
+  );
+
+  test(
     'present optional receipt and Quest grant fields cannot be null',
     () async {
       final source = _event(

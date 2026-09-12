@@ -288,6 +288,8 @@ final class AiUsageSummary {
     required this.failureCount,
     required this.indeterminateCount,
     required this.totalTokens,
+    required this.knownTokens,
+    required this.tokenReportedRequestCount,
     required this.totalLatencyMs,
     required this.providerReportedCostMicrosUsd,
   });
@@ -298,7 +300,13 @@ final class AiUsageSummary {
   final int successCount;
   final int failureCount;
   final int indeterminateCount;
-  final int totalTokens;
+
+  /// Present only when every terminal request reported its total.
+  final int? totalTokens;
+
+  /// Sum of explicitly reported totals; never an estimate for missing values.
+  final int knownTokens;
+  final int tokenReportedRequestCount;
   final int totalLatencyMs;
 
   /// Null means the provider did not report a cost. Zero is a reported zero.

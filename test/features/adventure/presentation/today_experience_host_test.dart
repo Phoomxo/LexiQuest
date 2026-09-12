@@ -1560,6 +1560,8 @@ ActivePresentationPermit _permit() => ActivePresentationPermit(
 
 final class _Actions implements TodayHubActionDelegate {
   @override
+  Future<void> openPlanning({required String ownerId}) async {}
+  @override
   Future<void> openHistory() async {}
   @override
   Future<void> openReview(List<TodayHubReviewWorkItem> work) async {}

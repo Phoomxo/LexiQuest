@@ -3,18 +3,34 @@ import '../../identity/domain/local_owner_repository.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/quest_models.dart';
 import '../domain/quest_repository.dart';
+import '../domain/quest_definition_codec.dart';
+import '../domain/quest_period.dart';
+import 'quest_catalog_provider.dart';
 
 typedef QuestUtcNow = DateTime Function();
 typedef QuestIdGenerator = String Function();
+typedef QuestAuthorityGuard = Future<void> Function(String expectedOwnerId);
+
+enum QuestRefreshOutcome { refreshed, unchanged, unavailable }
+
+/// Read-only presentation data; missing pinned metadata never grants progress.
+final class QuestStatusEntry {
+  const QuestStatusEntry({required this.instance, required this.definition});
+
+  final QuestInstance instance;
+  final QuestDefinition? definition;
+}
 
 final class QuestProjectionEvaluation {
   const QuestProjectionEvaluation({
     required this.eligible,
     required this.completed,
+    this.pinnedRewards = const {},
   });
 
   final bool eligible;
   final List<QuestCompletedEvent> completed;
+  final Map<String, RewardSpec> pinnedRewards;
 }
 
 /// Called when a quest completes. The callback grants the paired XP and Coin
@@ -47,6 +63,7 @@ final class QuestUseCases {
     required this.timezoneId,
     this.shadowOrchestrator,
     this.rewardSink,
+    this.authorityGuard,
   });
 
   final QuestRepository repository;
@@ -65,6 +82,73 @@ final class QuestUseCases {
   /// When non-null, the quest-completion economy award is granted via this
   /// callback. Idempotent by the durable completion source identity.
   final QuestRewardSink? rewardSink;
+  final QuestAuthorityGuard? authorityGuard;
+  final Set<void Function()> _statusListeners = {};
+  bool _disposed = false;
+  bool get isDisposed => _disposed;
+
+  void addStatusListener(void Function() listener) {
+    _requireOpen();
+    _statusListeners.add(listener);
+  }
+
+  void removeStatusListener(void Function() listener) =>
+      _statusListeners.remove(listener);
+
+  void dispose() {
+    _disposed = true;
+    _statusListeners.clear();
+  }
+
+  void _requireOpen() {
+    if (_disposed) throw StateError('Quest authority has been disposed.');
+  }
+
+  Future<void> _requireRefreshAuthority(String expectedOwnerId) async {
+    _requireOpen();
+    final owner = await owners.getOrCreateActiveOwner();
+    _requireOpen();
+    if (owner.id != expectedOwnerId) throw QuestOwnerChanged();
+    await authorityGuard?.call(expectedOwnerId);
+    _requireOpen();
+  }
+
+  /// Refresh only the enabled daily catalog. A scheduling outage is explicit;
+  /// owner/fence/held-token failures still prevent admission by the caller.
+  Future<QuestRefreshOutcome> refreshDaily({
+    required String expectedOwnerId,
+  }) async {
+    if (!_validIdentifier(expectedOwnerId))
+      throw ArgumentError.value(expectedOwnerId, 'expectedOwnerId');
+    await _requireRefreshAuthority(expectedOwnerId);
+    var outcome = QuestRefreshOutcome.unchanged;
+    QuestOwnerChanged? ownerFailure;
+    StackTrace? ownerFailureStack;
+    try {
+      for (final definition in QuestCatalogProvider.dailyQuests) {
+        final inserted = await _startQuestForOwner(definition, expectedOwnerId);
+        if (inserted != null) outcome = QuestRefreshOutcome.refreshed;
+      }
+    } catch (error, stack) {
+      if (error is QuestOwnerChanged) {
+        ownerFailure = error;
+        ownerFailureStack = stack;
+      }
+      outcome = QuestRefreshOutcome.unavailable;
+    }
+    // This guard also runs after scheduling failed; it is deliberately outside
+    // the best-effort catch. Disposed resources are checked before any reads.
+    await _requireRefreshAuthority(expectedOwnerId);
+    if (ownerFailure != null)
+      Error.throwWithStackTrace(ownerFailure, ownerFailureStack!);
+    if (outcome != QuestRefreshOutcome.unavailable) {
+      for (final listener in List<void Function()>.of(_statusListeners)) {
+        if (_disposed) break;
+        if (_statusListeners.contains(listener)) listener();
+      }
+    }
+    return outcome;
+  }
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -73,38 +157,40 @@ final class QuestUseCases {
   ///
   /// Returns the new [QuestInstance], or null when the quest is already active.
   Future<QuestInstance?> startQuest(QuestDefinition def) async {
+    _requireOpen();
     _validateDefinition(def);
     final owner = await owners.getOrCreateActiveOwner();
-    final existing = await repository.getActiveInstances(owner.id);
-    QuestInstance? active;
-    for (final instance in existing) {
-      if (instance.questId != def.questId) continue;
-      if (active != null) {
-        throw StateError('duplicate active quest authority state');
-      }
-      active = instance;
-    }
-    if (active != null) {
-      final stored = await repository.getDefinition(def.questId);
-      _requirePinnedInstance(
-        instance: active,
-        catalogDefinition: def,
-        storedDefinition: stored,
-        expectedOwnerId: owner.id,
-      );
-      return null;
-    }
+    return _startQuestForOwner(def, owner.id);
+  }
 
-    await repository.upsertDefinition(def);
-
+  Future<QuestInstance?> _startQuestForOwner(
+    QuestDefinition def,
+    String ownerId,
+  ) async {
+    _requireOpen();
+    _validateDefinition(def);
     final now = _now();
+    final snapshot = QuestDefinitionCodec.decode(
+      QuestDefinitionCodec.encode(
+        QuestDefinitionSnapshot(
+          definition: def,
+          origin: QuestDefinitionSnapshotOrigin.capturedAssignment,
+        ),
+      ),
+    );
     final instance = QuestInstance(
       instanceId: 'quest:${_nextId()}',
       questId: def.questId,
-      ownerId: owner.id,
+      ownerId: ownerId,
       catalogVersion: def.catalogVersion,
       assignedAtUtc: now,
       state: QuestInstanceState.active,
+      period: QuestPeriod.forAssignment(
+        definition: snapshot.definition,
+        assignedAtUtc: now,
+        timezoneId: timezoneId,
+      ),
+      definitionSnapshot: snapshot,
       progress: def.objectives
           .map(
             (o) => ObjectiveProgress(
@@ -115,8 +201,12 @@ final class QuestUseCases {
           )
           .toList(growable: false),
     );
-    await repository.startInstance(instance);
-    return instance;
+    final inserted = await repository.assignForPeriod(
+      definition: snapshot.definition,
+      instance: instance,
+      nowUtc: now,
+    );
+    return inserted ? instance : null;
   }
 
   /// Retained only so older callers fail closed instead of silently bypassing
@@ -140,7 +230,15 @@ final class QuestUseCases {
     List<QuestDefinition> catalog,
   ) async {
     final catalogById = _validatedCatalog(catalog);
-    final active = await repository.getActiveInstances(event.ownerIdentity);
+    await repository.expireStaleInstances(
+      ownerId: event.ownerIdentity,
+      nowUtc: _now(),
+    );
+    final active = await repository.getProjectionCandidates(
+      ownerId: event.ownerIdentity,
+      occurredAtUtc: event.occurredAtUtc,
+      questIds: catalogById.keys,
+    );
     final completedByEvent = await repository
         .getCompletedInstancesForSourceEvent(
           ownerId: event.ownerIdentity,
@@ -152,10 +250,11 @@ final class QuestUseCases {
     }
 
     final relevant = <QuestInstance>[...active, ...completedByEvent];
+    final pinnedDefinitions = <String, QuestDefinition>{};
     for (final instance in relevant) {
       final definition = catalogById[instance.questId];
       final stored = await repository.getDefinition(instance.questId);
-      _requirePinnedInstance(
+      pinnedDefinitions[instance.instanceId] = _requirePinnedInstance(
         instance: instance,
         catalogDefinition: definition,
         storedDefinition: stored,
@@ -170,7 +269,7 @@ final class QuestUseCases {
     for (final instance in active) {
       if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
       eligible = true;
-      final def = catalogById[instance.questId]!;
+      final def = pinnedDefinitions[instance.instanceId]!;
 
       final updated = instance.advanceIfMatches(
         _eventForObjectiveMatching(event),
@@ -198,7 +297,15 @@ final class QuestUseCases {
       _forwardToShadow(completion, event);
       completed.add(completion);
     }
-    return QuestProjectionEvaluation(eligible: eligible, completed: completed);
+    return QuestProjectionEvaluation(
+      eligible: eligible,
+      completed: List.unmodifiable(completed),
+      pinnedRewards: Map.unmodifiable({
+        for (final completion in completed)
+          completion.questInstanceId:
+              pinnedDefinitions[completion.questInstanceId]!.reward,
+      }),
+    );
   }
 
   Map<String, dynamic> projectionPayload(
@@ -209,14 +316,14 @@ final class QuestUseCases {
       'eligible': evaluation.eligible,
       'rewardGrants': evaluation.completed
           .map((completion) {
-            final definition = catalog.firstWhere(
-              (candidate) => candidate.questId == completion.questId,
-            );
-            final rewardItemId = definition.reward.rewardItemId;
+            final reward = evaluation.pinnedRewards[completion.questInstanceId];
+            if (reward == null)
+              throw StateError('quest completion has no pinned reward');
+            final rewardItemId = reward.rewardItemId;
             return <String, dynamic>{
               'ownerId': completion.ownerId,
               'idempotencyKey': completion.idempotencyKey,
-              'xpAmount': definition.reward.xpAmount,
+              'xpAmount': reward.xpAmount,
               // This is also the source identity written by the deployed
               // Quest XP path. Keeping it canonical lets an interrupted
               // pre-separation grant replay without creating duplicate XP.
@@ -245,6 +352,53 @@ final class QuestUseCases {
     }
     final owner = await owners.getOrCreateActiveOwner();
     return repository.getAllInstances(owner.id, limit: limit);
+  }
+
+  Future<List<QuestStatusEntry>> loadStatusForCurrentOwner({
+    int limit = 50,
+  }) async {
+    if (limit < 1 || limit > 50) {
+      throw RangeError.range(limit, 1, 50, 'limit');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    final instances = await repository.getAllInstances(owner.id, limit: limit);
+    if (instances.length > limit) throw StateError('quest read exceeded bound');
+    final definitions = <String, QuestDefinition?>{};
+    final result = <QuestStatusEntry>[];
+    for (final instance in instances) {
+      if (instance.ownerId != owner.id) throw StateError('quest owner changed');
+      if (!definitions.containsKey(instance.questId)) {
+        definitions[instance.questId] = await repository.getDefinition(
+          instance.questId,
+        );
+      }
+      final stored = definitions[instance.questId];
+      var definition = instance.definitionSnapshot?.definition;
+      if (definition != null) {
+        _validateDefinition(definition);
+        if (definition.questId != instance.questId ||
+            definition.catalogVersion != instance.catalogVersion) {
+          throw StateError('quest definition identity mismatch');
+        }
+        if (!_progressMatchesDefinition(instance.progress, definition)) {
+          throw StateError('quest objective pin mismatch');
+        }
+        if (stored != null &&
+            stored.catalogVersion == instance.catalogVersion &&
+            !_sameDefinition(stored, definition)) {
+          throw StateError('quest definition changed without a version change');
+        }
+        if (instance.state == QuestInstanceState.active &&
+            (stored == null ||
+                stored.catalogVersion != instance.catalogVersion))
+          definition = null;
+      }
+      result.add(QuestStatusEntry(instance: instance, definition: definition));
+    }
+    if ((await owners.getOrCreateActiveOwner()).id != owner.id) {
+      throw StateError('quest owner changed during read');
+    }
+    return List<QuestStatusEntry>.unmodifiable(result);
   }
 
   /// Retries the reward projection for a completed quest caused by [event].
@@ -279,22 +433,7 @@ final class QuestUseCases {
   /// already-expired instances are left unchanged.
   Future<void> expireStale() async {
     final owner = await owners.getOrCreateActiveOwner();
-    final active = await repository.getActiveInstances(owner.id);
-    if (active.isEmpty) return;
-
-    final now = _now();
-    for (final instance in active) {
-      final def = await repository.getDefinition(instance.questId);
-      if (def == null) continue;
-
-      final expiresIn = def.expiresIn;
-      if (expiresIn == null) continue;
-
-      final deadline = instance.assignedAtUtc.add(expiresIn);
-      if (now.isAfter(deadline)) {
-        await repository.markExpired(instance.instanceId, now);
-      }
-    }
+    await repository.expireStaleInstances(ownerId: owner.id, nowUtc: _now());
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
@@ -316,22 +455,37 @@ final class QuestUseCases {
     return Map<String, QuestDefinition>.unmodifiable(byId);
   }
 
-  void _requirePinnedInstance({
+  QuestDefinition _requirePinnedInstance({
     required QuestInstance instance,
     required QuestDefinition? catalogDefinition,
     required QuestDefinition? storedDefinition,
     required String expectedOwnerId,
   }) {
-    final definition = catalogDefinition;
-    final stored = storedDefinition;
+    final definition = instance.definitionSnapshot?.definition;
     if (instance.ownerId != expectedOwnerId ||
         definition == null ||
-        stored == null ||
+        (catalogDefinition == null &&
+            instance.state != QuestInstanceState.completed) ||
+        definition.questId != instance.questId ||
         instance.catalogVersion != definition.catalogVersion ||
-        !_sameDefinition(stored, definition) ||
         !_progressMatchesDefinition(instance.progress, definition)) {
       throw StateError('quest catalog pin does not match durable instance');
     }
+    _validateDefinition(definition);
+    for (final live in [catalogDefinition, storedDefinition]) {
+      if (live != null &&
+          live.catalogVersion == instance.catalogVersion &&
+          !_sameDefinition(live, definition)) {
+        throw StateError('quest definition changed without a version change');
+      }
+    }
+    if (instance.state == QuestInstanceState.active &&
+        (catalogDefinition?.catalogVersion != instance.catalogVersion ||
+            storedDefinition == null ||
+            storedDefinition.catalogVersion != instance.catalogVersion)) {
+      throw StateError('quest catalog pin does not match active instance');
+    }
+    return definition;
   }
 
   void _validateDefinition(QuestDefinition definition) {

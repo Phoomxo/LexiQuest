@@ -64,20 +64,20 @@ void main() {
         ),
       );
 
-      expect(find.text('Show strategy'), findsOneWidget);
+      expect(find.text('ดูวิธีคิด'), findsOneWidget);
       expect(find.text('Look for the familiar word family.'), findsNothing);
       expect(find.text('The sentence is about rail travel.'), findsNothing);
 
-      await tester.tap(find.text('Show strategy'));
+      await tester.tap(find.text('ดูวิธีคิด'));
       await tester.pump();
       expect(find.text('Look for the familiar word family.'), findsOneWidget);
-      expect(find.text('Reveal context'), findsOneWidget);
+      expect(find.text('ดูบริบทเพิ่ม'), findsOneWidget);
       expect(find.text('The sentence is about rail travel.'), findsNothing);
 
-      await tester.tap(find.text('Reveal context'));
+      await tester.tap(find.text('ดูบริบทเพิ่ม'));
       await tester.pump();
       expect(find.text('The sentence is about rail travel.'), findsOneWidget);
-      expect(find.text('Hint budget exhausted'), findsOneWidget);
+      expect(find.text('ใช้คำใบ้ครบแล้ว'), findsOneWidget);
       final button = tester.widget<FilledButton>(find.byType(FilledButton));
       expect(button.onPressed, isNull);
     },

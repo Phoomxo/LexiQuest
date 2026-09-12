@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.requests import ClientDisconnect
 
 from lexiquest_voice.app import create_app
 from lexiquest_voice.config import Settings
@@ -22,6 +25,179 @@ _SPEECH_BODY = {
     "voice": "teacher_female",
     "speed": 1.0,
 }
+
+
+class _CountingSpeechEngine(FakeSpeechEngine):
+    def __init__(self):
+        self.calls = []
+
+    def synthesize(self, request):
+        self.calls.append(request)
+        return super().synthesize(request)
+
+
+class _BodyExchange:
+    """Deliver actual ASGI chunks without an HTTP client fixing their headers."""
+
+    def __init__(self, messages):
+        self.messages = messages
+        self.read_count = 0
+        self.sent = []
+
+    async def run(self, app, headers):
+        async def receive():
+            if self.read_count < len(self.messages):
+                message = self.messages[self.read_count]
+                self.read_count += 1
+                return message
+            # A completed body is not a disconnect. Wait until the response
+            # finishes; middleware may concurrently listen for disconnects.
+            await asyncio.Event().wait()
+
+        async def send(message):
+            self.sent.append(message)
+
+        await asyncio.wait_for(
+            app(
+                {
+                    "type": "http",
+                    "asgi": {"version": "3.0", "spec_version": "2.4"},
+                    "http_version": "1.1",
+                    "method": "POST",
+                    "scheme": "http",
+                    "path": "/v1/speech",
+                    "raw_path": b"/v1/speech",
+                    "query_string": b"",
+                    "root_path": "",
+                    "headers": [(b"content-type", b"application/json"), *headers],
+                    "client": ("127.0.0.1", 12345),
+                    "server": ("testserver", 80),
+                },
+                receive,
+                send,
+            ),
+            timeout=5,
+        )
+
+    @property
+    def status(self):
+        starts = [item for item in self.sent if item["type"] == "http.response.start"]
+        assert len(starts) == 1
+        return starts[0]["status"]
+
+    @property
+    def body(self):
+        return b"".join(
+            item.get("body", b"")
+            for item in self.sent
+            if item["type"] == "http.response.body"
+        )
+
+
+def _body_headers(mode, size, authenticated=True):
+    headers = []
+    if authenticated:
+        headers.append((b"authorization", b"Bearer valid-token"))
+    if mode == "declared":
+        headers.append((b"content-length", str(size).encode("ascii")))
+    elif mode == "lying":
+        headers.append((b"content-length", b"1"))
+    elif mode == "chunked":
+        headers.append((b"transfer-encoding", b"chunked"))
+    return headers
+
+
+def _padded_body(size):
+    # JSON whitespace tests transport size without hitting the text/schema
+    # ceiling. Non-ASCII text also distinguishes byte counts from characters.
+    body = json.dumps(
+        {"text": "แมว", **_SPEECH_BODY}, ensure_ascii=False
+    ).encode("utf-8")
+    assert len(body) <= size
+    return body + b" " * (size - len(body))
+
+
+def _body_app():
+    provider = _CountingSpeechEngine()
+    return create_app(
+        engine=provider,
+        token_verifier=FakeTokenVerifier(),
+        settings=Settings(),
+    ), provider
+
+
+@pytest.mark.parametrize("mode", ["missing", "lying", "chunked", "declared"])
+@pytest.mark.parametrize("authenticated", [False, True])
+def test_asgi_body_limit_rejects_oversize_before_provider(mode, authenticated):
+    app, provider = _body_app()
+    body = _padded_body(100_001)
+    exchange = _BodyExchange([
+        {"type": "http.request", "body": body[:50_000], "more_body": True},
+        {"type": "http.request", "body": body[50_000:100_000], "more_body": True},
+        {"type": "http.request", "body": body[100_000:], "more_body": True},
+        # Rejection must not drain the rest of a potentially unbounded stream.
+        {"type": "http.request", "body": b" ", "more_body": False},
+    ])
+
+    asyncio.run(exchange.run(app, _body_headers(mode, len(body), authenticated)))
+
+    assert exchange.status == 413
+    assert json.loads(exchange.body)["detail"]["code"] == "PAYLOAD_TOO_LARGE"
+    assert provider.calls == []
+    assert exchange.read_count == (0 if mode == "declared" else 3)
+
+
+@pytest.mark.parametrize("mode", ["missing", "lying", "chunked", "declared"])
+@pytest.mark.parametrize("size", [99_999, 100_000])
+def test_asgi_body_limit_replays_valid_body_at_boundary(mode, size):
+    app, provider = _body_app()
+    body = _padded_body(size)
+    exchange = _BodyExchange([
+        {"type": "http.request", "body": body[:17], "more_body": True},
+        {"type": "http.request", "body": b"", "more_body": True},
+        {"type": "http.request", "body": body[17:50_000], "more_body": True},
+        {"type": "http.request", "body": body[50_000:], "more_body": False},
+    ])
+
+    asyncio.run(exchange.run(app, _body_headers(mode, size)))
+
+    assert exchange.status == 200
+    assert len(provider.calls) == 1
+    assert provider.calls[0].text == "แมว"
+    assert exchange.body == b"RIFF-test-wav"
+    assert exchange.read_count == 4
+
+
+@pytest.mark.parametrize("body", [b"", b'{"text":'])
+def test_asgi_body_limit_preserves_invalid_json_rejection(body):
+    app, provider = _body_app()
+    exchange = _BodyExchange([
+        {"type": "http.request", "body": body, "more_body": False},
+    ])
+
+    asyncio.run(exchange.run(app, _body_headers("missing", len(body))))
+
+    assert exchange.status == 422
+    assert provider.calls == []
+
+
+def test_asgi_body_limit_disconnect_does_not_invoke_provider():
+    app, provider = _body_app()
+    exchange = _BodyExchange([
+        {"type": "http.request", "body": b'{"text":', "more_body": True},
+        {"type": "http.disconnect"},
+    ])
+
+    try:
+        asyncio.run(exchange.run(app, _body_headers("missing", 0)))
+    except ClientDisconnect:
+        # ASGI may propagate the transport disconnect instead of replying.
+        pass
+
+    assert exchange.read_count == 2
+    assert provider.calls == []
+    starts = [item for item in exchange.sent if item["type"] == "http.response.start"]
+    assert all(400 <= item["status"] < 500 for item in starts)
 
 
 def test_health_endpoints(client: TestClient) -> None:

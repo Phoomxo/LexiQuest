@@ -218,6 +218,19 @@ final class UnifiedLessonSessionLifecycle {
     return _routeLifecycle?.retire() ?? _controller.abandon(_nowUtc());
   }
 
+  /// Explicit retry of a settled failed stop. New learning stays fenced and
+  /// the route retains its original accepted work and terminal cutoff.
+  Future<void> retryFailedAbandon() {
+    _ephemeralStates.clear();
+    final route = _routeLifecycle;
+    if (route == null) {
+      return Future<void>.error(
+        StateError('A captured route stop is required'),
+      );
+    }
+    return route.retryFailedRetirement();
+  }
+
   Future<T> runAdmittedOperation<T>(Future<T> Function() operation) {
     if (!acceptsOperations) {
       return Future<T>.error(
@@ -309,6 +322,9 @@ final class UnifiedLessonRouteLifecycle {
   Future<void> Function()? _acceptedClosePreparation;
   LessonTerminalCutoff? _retirementCutoff;
   Future<void>? _terminal;
+  bool _terminalFailed = false;
+  Future<void>? _retirementConfigurationClose;
+  Future<void>? _retirementTimeClose;
   bool _initializationAttached = false;
   PairMatchingSessionCoordinator? _pairSession;
   bool get ownsPairSession => _pairSession != null;
@@ -697,11 +713,37 @@ final class UnifiedLessonRouteLifecycle {
     final cutoff = _retirementCutoff ??= _controller.captureTerminalCutoff(
       _nowUtc(),
     );
-    final configurationClose = _controller.closeConfigurationEffortAtCutoff(
+    final configurationClose = _retirementConfigurationClose ??= _controller
+        .closeConfigurationEffortAtCutoff(cutoff);
+    final timeClose = _retirementTimeClose ??= _controller.closeTimeAtCutoff(
       cutoff,
     );
-    final timeClose = _controller.closeTimeAtCutoff(cutoff);
-    return _terminal ??= _retire(cutoff, configurationClose, timeClose);
+    final operation = _terminal = _retire(
+      cutoff,
+      configurationClose,
+      timeClose,
+    );
+    unawaited(
+      operation.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace _) {
+          if (identical(_terminal, operation)) _terminalFailed = true;
+        },
+      ),
+    );
+    return operation;
+  }
+
+  /// Opt-in manual recovery; automatic retirement still returns its original
+  /// failed Future. Never reopen admission or recapture the retirement cutoff.
+  Future<void> retryFailedRetirement() {
+    if (!_terminalFailed || _terminal == null) {
+      return _terminal ??
+          Future<void>.error(StateError('No failed retirement to retry'));
+    }
+    _terminal = null;
+    _terminalFailed = false;
+    return retire();
   }
 
   Future<void> _retire(
@@ -1303,6 +1345,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
           _lifecycleTransitionInFlight = null;
           if (outcome != _LifecycleDriveOutcome.settled ||
               !mounted ||
+              widget.routeLifecycle?.acceptsOperations == false ||
               !identical(widget.controller, controller)) {
             return;
           }
@@ -1323,6 +1366,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     UnifiedLessonController controller,
   ) async {
     while (mounted && identical(widget.controller, controller)) {
+      if (widget.routeLifecycle?.acceptsOperations == false) {
+        return _LifecycleDriveOutcome.settled;
+      }
       if (!_lifecycleWantsActive) {
         if (controller.state.status != LessonSessionStatus.active) {
           return _LifecycleDriveOutcome.settled;
@@ -1495,6 +1541,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       );
     }
     final hintState = controller.hintState;
+    final completed = controller.state.status == LessonSessionStatus.completed;
+    final terminal = completed || controller.state.status == LessonSessionStatus.abandoned;
+    final displayedProgress = completed ? 1.0 : controller.state.progress;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
@@ -1508,109 +1557,126 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
           widget.routeLifecycle,
           _ephemeralStates,
         ),
-        child: Column(
-          children: <Widget>[
-            AccessibilitySemanticRegion(
-              role: AccessibilitySemanticRole.contextAndProgress,
-              label:
-                  'Lesson ${controller.state.status.name}. '
-                  'Progress '
-                  '${(controller.state.progress * 100).round()} percent',
-              child: LinearProgressIndicator(value: controller.state.progress),
-            ),
-            if (_focusGateEnabled)
-              if (controller.focusTimer case final timer?)
-                if (timer.snapshot.sessionId != null)
-                  FocusTimerWidget(
-                    controller: timer,
-                    nowUtc: _now,
-                    onStart: controller.startFocusTimer,
-                    onPause: controller.pauseFocusTimer,
-                    onResume: controller.resumeFocusTimer,
-                    onFinish: controller.finishFocusTimer,
-                  ),
-            if (widget.companionBuilder case final companionBuilder?)
-              companionBuilder(context, controller)
-            else
-              ContextualCompanionWidget(reaction: controller.companionReaction),
-            Expanded(
-              child: Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: controller.admitsLearningTime
-                    ? (_) => controller.noteActiveLearningInteraction(_now())
-                    : null,
-                child: Builder(
-                  builder: (modeContext) {
-                    final modeSurface = widget.builder(modeContext);
-                    Widget? committedFeedback;
-                    if (controller.feedback case final feedback?) {
-                      committedFeedback = AccessibilitySemanticRegion(
-                        role: AccessibilitySemanticRole.feedback,
-                        child: AnswerFeedbackPanel(
-                          feedback: feedback,
-                          bookmarkIdentity: feedback.bookmarkIdentity,
-                          onBookmark: bookmarkLearningItem,
-                          reportIdentity: feedback.bookmarkIdentity,
-                          onReport: reportContent,
-                          contrastiveFeedback:
-                              widget.contrastiveFeedback ??
-                              dependencies?.contrastiveFeedback,
-                          featureRegistry: dependencies?.features,
-                        ),
-                      );
-                    }
-                    final AccessibilityModeFeedbackSurface? accessibleSurface =
-                        modeSurface is AccessibilityModeFeedbackSurface
-                        ? modeSurface as AccessibilityModeFeedbackSurface
-                        : null;
-                    final placedModeSurface = accessibleSurface == null
-                        ? modeSurface
-                        : accessibleSurface.withShellFeedback(
-                            committedFeedback,
-                          );
-
-                    return Column(
-                      children: <Widget>[
-                        if (controller.state.status ==
-                                LessonSessionStatus.active &&
-                            widget.routeLifecycle?.ownsPairSession != true &&
-                            hintState != null)
-                          HintPanel(
-                            state: hintState,
-                            onRevealNext: controller.revealNextHint,
-                            enabled: controller.canRevealHint,
-                          ),
-                        if (accessibleSurface == null &&
-                            committedFeedback != null)
-                          committedFeedback,
-                        if (resetRequired != null)
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: SessionConfigurationResetPrompt(
-                              error: resetRequired,
-                              onReset: () => Navigator.of(context).maybePop(),
-                            ),
-                          ),
-                        if (controller.configurationLimitReached)
-                          Semantics(
-                            key: const ValueKey(
-                              'session-configuration-limit-reached',
-                            ),
-                            liveRegion: true,
-                            label: 'Session limit reached',
-                            child: const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text('Session limit reached'),
-                            ),
-                          ),
-                        Expanded(child: placedModeSurface),
-                      ],
-                    );
-                  },
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.contextAndProgress,
+                label:
+                    'บทเรียน: ${switch (controller.state.status) {
+                      LessonSessionStatus.planned => 'พร้อมเริ่ม',
+                      LessonSessionStatus.active => 'กำลังเรียน',
+                      LessonSessionStatus.paused => 'หยุดพัก',
+                      LessonSessionStatus.completed => 'เรียนจบแล้ว',
+                      LessonSessionStatus.abandoned => 'ยุติกิจกรรมแล้ว',
+                    }} ความคืบหน้า '
+                    '${(displayedProgress * 100).round()} เปอร์เซ็นต์',
+                child: LinearProgressIndicator(
+                  value: displayedProgress,
                 ),
               ),
-            ),
-          ],
+              if (_focusGateEnabled && !terminal)
+                if (controller.focusTimer case final timer?)
+                  if (timer.snapshot.sessionId != null)
+                    FocusTimerWidget(
+                      controller: timer,
+                      nowUtc: _now,
+                      onStart: controller.startFocusTimer,
+                      onPause: controller.pauseFocusTimer,
+                      onResume: controller.resumeFocusTimer,
+                      onFinish: controller.finishFocusTimer,
+                    ),
+              if (widget.companionBuilder case final companionBuilder?)
+                companionBuilder(context, controller)
+              else
+                ContextualCompanionWidget(
+                  reaction: controller.companionReaction,
+                ),
+              Expanded(
+                child: Listener(
+                  behavior: HitTestBehavior.translucent,
+                  onPointerDown: controller.admitsLearningTime
+                      ? (_) {
+                          if (widget.routeLifecycle?.acceptsOperations !=
+                              false) {
+                            controller.noteActiveLearningInteraction(_now());
+                          }
+                        }
+                      : null,
+                  child: Builder(
+                    builder: (modeContext) {
+                      final modeSurface = widget.builder(modeContext);
+                      Widget? committedFeedback;
+                      if (controller.feedback case final feedback?) {
+                        committedFeedback = AccessibilitySemanticRegion(
+                          role: AccessibilitySemanticRole.feedback,
+                          child: AnswerFeedbackPanel(
+                            feedback: feedback,
+                            bookmarkIdentity: feedback.bookmarkIdentity,
+                            onBookmark: bookmarkLearningItem,
+                            reportIdentity: feedback.bookmarkIdentity,
+                            onReport: reportContent,
+                            contrastiveFeedback:
+                                widget.contrastiveFeedback ??
+                                dependencies?.contrastiveFeedback,
+                            featureRegistry: dependencies?.features,
+                          ),
+                        );
+                      }
+                      final AccessibilityModeFeedbackSurface?
+                      accessibleSurface =
+                          modeSurface is AccessibilityModeFeedbackSurface
+                          ? modeSurface as AccessibilityModeFeedbackSurface
+                          : null;
+                      final placedModeSurface = accessibleSurface == null
+                          ? modeSurface
+                          : accessibleSurface.withShellFeedback(
+                              committedFeedback,
+                            );
+
+                      return Column(
+                        children: <Widget>[
+                          if (controller.state.status ==
+                                  LessonSessionStatus.active &&
+                              widget.routeLifecycle?.ownsPairSession != true &&
+                              hintState != null)
+                            HintPanel(
+                              state: hintState,
+                              onRevealNext: controller.revealNextHint,
+                              enabled: controller.canRevealHint,
+                            ),
+                          if (accessibleSurface == null &&
+                              committedFeedback != null)
+                            committedFeedback,
+                          if (resetRequired != null)
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: SessionConfigurationResetPrompt(
+                                error: resetRequired,
+                                onReset: () => Navigator.of(context).maybePop(),
+                              ),
+                            ),
+                          if (controller.configurationLimitReached)
+                            Semantics(
+                              key: const ValueKey(
+                                'session-configuration-limit-reached',
+                              ),
+                              liveRegion: true,
+                              label: 'ถึงขีดจำกัดของกิจกรรมแล้ว',
+                              child: const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('ถึงขีดจำกัดของกิจกรรมแล้ว'),
+                              ),
+                            ),
+                          Expanded(child: placedModeSurface),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

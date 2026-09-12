@@ -4,13 +4,18 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 
 void main() {
   late AppDatabase database;
@@ -34,6 +39,179 @@ void main() {
 
   tearDown(() async {
     await database.close();
+  });
+
+  group('owner-scoped restored bookmark identity', () {
+    final wireId = SavedLearningItemSyncPayloadContract.canonicalEntityId(
+      contentType: 'lexicalMetadata',
+      contentId: 'word:shared',
+      contentRevision: 1,
+    );
+    Future<void> pull(
+      String owner, {
+      int revision = 1,
+      bool deleted = false,
+    }) async {
+      final at = nowUtc.add(Duration(seconds: revision));
+      expect(
+        await store.applyPullPage(
+          ownerId: owner,
+          collection: SyncCollection.savedLearningItems,
+          ownerGateToken: 'test-owner-gate',
+          nowUtc: nowUtc,
+          page: PullPage(
+            changes: [
+              SyncEntity(
+                collection: SyncCollection.savedLearningItems,
+                entityId: wireId,
+                revision: revision,
+                isDeleted: deleted,
+                payloadVersion: 1,
+                clientUpdatedAtUtc: at,
+                serverUpdatedAtUtc: at,
+                payload: {
+                  'contentType': 'lexicalMetadata',
+                  'contentId': 'word:shared',
+                  'contentRevision': 1,
+                  'savedAtUtcMs': nowUtc.millisecondsSinceEpoch,
+                  'updatedAtUtcMs': at.millisecondsSinceEpoch,
+                  'isDeleted': deleted,
+                },
+              ),
+            ],
+            nextCursor: SyncCursor(serverUpdatedAtUtc: at, documentId: wireId),
+            hasMore: false,
+          ),
+        ),
+        isTrue,
+      );
+    }
+
+    test(
+      'two owners restore identical wire content without local ID collision',
+      () async {
+        await _insertOwner(database, 'owner-b');
+        await pull('owner-a');
+        await pull('owner-b');
+        final first = await database.select(database.savedLearningItems).get();
+        expect(first, hasLength(2));
+        expect(first.map((row) => row.id).toSet(), hasLength(2));
+        expect(first.map((row) => row.ownerId).toSet(), {'owner-a', 'owner-b'});
+        await pull('owner-a', revision: 2);
+        await pull('owner-b', revision: 2);
+        final repeated = await database
+            .select(database.savedLearningItems)
+            .get();
+        expect(
+          repeated.map((row) => row.id).toSet(),
+          first.map((row) => row.id).toSet(),
+        );
+        expect(repeated.every((row) => row.cloudRevision == 2), isTrue);
+        await pull('owner-a', revision: 3, deleted: true);
+        final tombstones = await database
+            .select(database.savedLearningItems)
+            .get();
+        expect(
+          tombstones.singleWhere((row) => row.ownerId == 'owner-a').isDeleted,
+          isTrue,
+        );
+        expect(
+          tombstones.singleWhere((row) => row.ownerId == 'owner-b').isDeleted,
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'legacy local ID survives pull and unsave push acknowledgement',
+      () async {
+        store = DriftSyncStore(
+          database,
+          savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+            deployedRulesRevision: savedLearningItemV1RulesRevision,
+          ),
+        );
+        await database.customUpdate(
+          "UPDATE local_owners SET is_active = 1 WHERE id = 'owner-a'",
+        );
+        await database
+            .into(database.savedLearningItems)
+            .insert(
+              SavedLearningItemsCompanion.insert(
+                id: 'legacy-local-bookmark',
+                ownerId: 'owner-a',
+                contentType: 'lexicalMetadata',
+                contentId: 'word:shared',
+                contentRevision: 1,
+                savedAtUtcMs: nowUtc.millisecondsSinceEpoch,
+                updatedAtUtcMs: nowUtc.millisecondsSinceEpoch,
+              ),
+            );
+        await pull('owner-a');
+        final restored = await database
+            .select(database.savedLearningItems)
+            .getSingle();
+        expect(restored.id, 'legacy-local-bookmark');
+        final mutationTime = nowUtc.add(const Duration(seconds: 5));
+        await DriftLearnerIntentRepository(
+          database,
+          owners: DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'unused-owner',
+            nowUtc: () => mutationTime,
+          ),
+          nowUtc: () => mutationTime,
+        ).unsave(
+          const ContentIdentity(
+            type: ContentType.lexicalMetadata,
+            id: 'word:shared',
+            revision: 1,
+          ),
+        );
+        final claim = (await store.claimPending(
+          ownerId: 'owner-a',
+          firebaseUid: 'firebase-a',
+          limit: 10,
+          leaseToken: 'bookmark-claim',
+          ownerGateToken: 'test-owner-gate',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: mutationTime,
+        )).single;
+        final attempt = (await store.beginAttempt(
+          claim: claim,
+          ownerGateToken: 'test-owner-gate',
+          nowUtc: mutationTime,
+        ))!;
+        expect(attempt.mutation.entityId, wireId);
+        expect(attempt.mutation.payload['isDeleted'], isTrue);
+        // SyncEngine translates the wire acknowledgement back to this local
+        // operation identity before handing it to the store.
+        expect(
+          await store.acknowledge(
+            operationId: attempt.localOperationId,
+            leaseToken: attempt.leaseToken,
+            ownerGateToken: 'test-owner-gate',
+            nowUtc: mutationTime,
+            acknowledgement: PushAcknowledged(
+              operationId: attempt.localOperationId,
+              resultingRevision: 2,
+              acknowledgedAtUtc: mutationTime,
+            ),
+          ),
+          isTrue,
+        );
+        final acknowledged = await database
+            .select(database.savedLearningItems)
+            .getSingle();
+        expect(acknowledged.id, 'legacy-local-bookmark');
+        expect(acknowledged.isDeleted, isTrue);
+        expect(acknowledged.cloudRevision, 2);
+        expect(
+          (await database.select(database.outboxOperations).get()).single.state,
+          'acknowledged',
+        );
+      },
+    );
   });
 
   test(
@@ -1473,6 +1651,173 @@ void main() {
     expect(await store.readCheckpoint('owner-a', SyncCollection.words), isNull);
   });
 
+  for (final collision in [
+    'reserved category',
+    'reserved word',
+    'foreign category',
+    'foreign word',
+  ]) {
+    test('pull rejects $collision identity without changing content', () async {
+      await _installPackagedStarter(database);
+      await _insertOwner(database, 'owner-b');
+      for (final owner in ['owner-a', 'owner-b']) {
+        await _insertCategory(
+          database,
+          ownerId: owner,
+          id: 'category:$owner',
+          name: 'Personal $owner',
+        );
+      }
+      await _insertOwnedWord(database, ownerId: 'owner-b', id: 'word:foreign');
+      final isCategory = collision.endsWith('category');
+      final reserved = collision.startsWith('reserved');
+      final collection = isCategory
+          ? SyncCollection.categories
+          : SyncCollection.words;
+      final entityId = isCategory
+          ? (reserved ? PackagedStarterCatalog.categoryId : 'category:owner-b')
+          : (reserved ? PackagedStarterCatalog.words.first.id : 'word:foreign');
+      final categoriesBefore = await database
+          .select(database.vocabularyCategories)
+          .get();
+      final wordsBefore = await database.select(database.vocabularyWords).get();
+      final ownersBefore = await database.select(database.localOwners).get();
+      final changedAt = nowUtc.add(const Duration(seconds: 1));
+      final entity = isCategory
+          ? SyncEntity(
+              collection: collection,
+              entityId: entityId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: changedAt,
+              serverUpdatedAtUtc: changedAt,
+              payload: const {'name': 'Incoming personal category'},
+            )
+          : _incomingPersonalWord(
+              entityId: entityId,
+              categoryId: 'category:owner-a',
+              at: changedAt,
+            );
+      await expectLater(
+        store.applyPullPage(
+          ownerId: 'owner-a',
+          collection: collection,
+          ownerGateToken: 'test-owner-gate',
+          nowUtc: changedAt,
+          page: PullPage(
+            changes: [entity],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: changedAt,
+              documentId: entityId,
+            ),
+            hasMore: false,
+          ),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        categoriesBefore,
+      );
+      expect(
+        await database.select(database.vocabularyWords).get(),
+        wordsBefore,
+      );
+      expect(await database.select(database.localOwners).get(), ownersBefore);
+      expect(await store.readCheckpoint('owner-a', collection), isNull);
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    });
+  }
+
+  for (final target in ['reserved', 'foreign']) {
+    test(
+      'word push conflict rejects $target category without acknowledging',
+      () async {
+        await _installPackagedStarter(database);
+        await _insertOwner(database, 'owner-b');
+        for (final owner in ['owner-a', 'owner-b']) {
+          await _insertCategory(
+            database,
+            ownerId: owner,
+            id: 'category:$owner',
+            name: 'Personal $owner',
+          );
+        }
+        await _insertOwnedWord(database, ownerId: 'owner-a', id: 'word:local');
+        await database
+            .into(database.outboxOperations)
+            .insert(
+              OutboxOperationsCompanion.insert(
+                operationId: 'word:local:1',
+                ownerId: 'owner-a',
+                entityType: 'word',
+                entityId: 'word:local',
+                operationKind: 'upsert',
+                createdAtUtcMs: 1,
+              ),
+            );
+        final claim = (await store.claimPending(
+          ownerId: 'owner-a',
+          firebaseUid: 'firebase-a',
+          limit: 1,
+          leaseToken: 'lease-word',
+          ownerGateToken: 'test-owner-gate',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: nowUtc,
+        )).single;
+        final attempted = (await store.beginAttempt(
+          claim: claim,
+          ownerGateToken: 'test-owner-gate',
+          nowUtc: nowUtc,
+        ))!;
+        final categoriesBefore = await database
+            .select(database.vocabularyCategories)
+            .get();
+        final wordsBefore = await database
+            .select(database.vocabularyWords)
+            .get();
+        final operationsBefore = await database
+            .select(database.outboxOperations)
+            .get();
+        final changedAt = nowUtc.add(const Duration(seconds: 1));
+        await expectLater(
+          store.resolvePushConflict(
+            claim: attempted,
+            ownerGateToken: 'test-owner-gate',
+            cloudEntity: _incomingPersonalWord(
+              entityId: 'word:local',
+              categoryId: target == 'reserved'
+                  ? PackagedStarterCatalog.categoryId
+                  : 'category:owner-b',
+              at: changedAt,
+            ),
+            resolvedAtUtc: changedAt,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+        expect(
+          await database.select(database.vocabularyCategories).get(),
+          categoriesBefore,
+        );
+        expect(
+          await database.select(database.vocabularyWords).get(),
+          wordsBefore,
+        );
+        expect(
+          await database.select(database.outboxOperations).get(),
+          operationsBefore,
+        );
+        expect(await database.select(database.syncConflicts).get(), isEmpty);
+        expect(
+          await store.readCheckpoint('owner-a', SyncCollection.words),
+          isNull,
+        );
+      },
+    );
+  }
+
   test(
     'legacy word payload preserves null storage and exposes canonical read identity',
     () async {
@@ -2111,6 +2456,67 @@ Future<void> _insertOwner(AppDatabase database, String ownerId) {
       .into(database.localOwners)
       .insert(LocalOwnersCompanion.insert(id: ownerId, createdAtUtcMs: 0));
 }
+
+Future<void> _installPackagedStarter(AppDatabase database) async {
+  Future<Uint8List> load(ContentIdentity identity) => File(
+    'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+  ).readAsBytes();
+  await PackagedStarterCatalog.provision(
+    database,
+    DriftContentManifestRepository(database, loadArtifactBytes: load),
+    load,
+  );
+}
+
+Future<void> _insertOwnedWord(
+  AppDatabase database, {
+  required String ownerId,
+  required String id,
+}) => database
+    .into(database.vocabularyWords)
+    .insert(
+      VocabularyWordsCompanion.insert(
+        id: id,
+        ownerId: ownerId,
+        categoryId: 'category:$ownerId',
+        spelling: 'local',
+        normalizedSpelling: 'local',
+        meaning: 'ส่วนตัว',
+        normalizedMeaning: 'ส่วนตัว',
+        partOfSpeech: 'noun',
+        createdAtUtcMs: 0,
+        updatedAtUtcMs: 0,
+      ),
+    )
+    .then((_) {});
+
+SyncEntity _incomingPersonalWord({
+  required String entityId,
+  required String categoryId,
+  required DateTime at,
+}) => SyncEntity(
+  collection: SyncCollection.words,
+  entityId: entityId,
+  revision: 1,
+  isDeleted: false,
+  payloadVersion: 1,
+  clientUpdatedAtUtc: at,
+  serverUpdatedAtUtc: at,
+  payload: {
+    'categoryId': categoryId,
+    'spelling': 'cloud',
+    'normalizedSpelling': 'cloud',
+    'meaning': 'เมฆ',
+    'normalizedMeaning': 'เมฆ',
+    'partOfSpeech': 'noun',
+    'cefrLevel': null,
+    'source': 'manual',
+    'isGlobal': false,
+    'isDeleted': false,
+    'createdAtUtcMs': 0,
+    'updatedAtUtcMs': at.millisecondsSinceEpoch,
+  },
+);
 
 Future<void> _insertCategory(
   AppDatabase database, {

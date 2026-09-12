@@ -28,18 +28,17 @@ class ScannedVocabulary {
 class ObjectVocabularyDatabase {
   const ObjectVocabularyDatabase();
 
-  /// Look up vocabulary by ML Kit label (case-insensitive).
+  static const Map<String, String> _reviewedLabelAliases = {
+    'coffee cup': 'cup',
+  };
+
+  /// Look up a normalized model label or an explicitly reviewed alias.
   ScannedVocabulary? lookupByMlLabel(String label) {
     final key = label.toLowerCase().trim();
+    if (key.isEmpty) return null;
+    final lookupKey = _reviewedLabelAliases[key] ?? key;
     for (final entry in _entries) {
-      if (entry.mlLabel.toLowerCase() == key) return entry;
-    }
-    // Partial match fallback: check if the label contains an entry keyword.
-    for (final entry in _entries) {
-      if (key.contains(entry.mlLabel.toLowerCase()) ||
-          entry.mlLabel.toLowerCase().contains(key)) {
-        return entry;
-      }
+      if (entry.mlLabel.toLowerCase() == lookupKey) return entry;
     }
     return null;
   }

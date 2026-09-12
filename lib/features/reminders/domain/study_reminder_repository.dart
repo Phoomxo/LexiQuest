@@ -45,6 +45,11 @@ final class StudyReminderDesiredState {
 abstract interface class StudyReminderRepository {
   Future<String> activeOwnerId();
 
+  Future<bool> isOwnerOperationTokenOwned({
+    required String operationToken,
+    required DateTime nowUtc,
+  });
+
   Future<void> beginOwnerOperationFence({
     required String ownerId,
     required String operationToken,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value, Variable;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -21,6 +22,8 @@ import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_m
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_plan.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_session_purpose.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 
 import 'pair_matching_evidence_contract_test.dart' show PairHarness;
 import 'pair_matching_source_composer_test.dart' as f;
@@ -136,7 +139,104 @@ SessionConfiguration _configuration(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(tz.initializeTimeZones);
+
+  test(
+    'Pair owner upgrade rehomes learner evidence while preserving the packaged catalog',
+    () async {
+      const launchId = 'packaged-upgrade-launch';
+      const sourceOwner = 'synthetic-owner';
+      final starterWords = PackagedStarterCatalog.words.take(4).toList();
+      final plan = PairMatchingPlanV1(
+        ownerId: sourceOwner,
+        orderedLexicalItems: [
+          for (final word in starterWords)
+            PairLexicalItem(
+              wordId: word.id,
+              contentRevision: 1,
+              checksum: word.coreHash,
+              spelling: word.key,
+              meaning: word.meaning,
+              sourceLocale: 'en',
+              targetLocale: 'th',
+              sourceReasons: const {PairSourceReason.newContent},
+            ),
+        ],
+        direction: PairDirection.enToTh,
+        density: PairDensity.compact4,
+        shuffleSeed: 42,
+        timerPreset: PairTimerPreset.seconds120,
+        allowlistVersion: 'packaged-starter-r1',
+        learningSessionId: pairSessionId(sourceOwner, launchId),
+        entryKind: PairSourceSurface.learn,
+        sourceSnapshotId: 'packaged-starter-r1',
+        createdAtUtc: DateTime.utc(2026, 9, 5),
+      );
+      final h = PairHarness(
+        pinnedPlan: plan,
+        launchId: launchId,
+        provisionVocabulary: (database) => PackagedStarterCatalog.provision(
+          database,
+          DriftContentManifestRepository(
+            database,
+            loadArtifactBytes: _starterAsset,
+          ),
+          _starterAsset,
+        ),
+      );
+      addTearDown(h.db.close);
+      await h.initialize();
+
+      final coordinator = await h.restore();
+      addTearDown(coordinator.dispose);
+      final answered = starterWords.first.id;
+      await h.tap(coordinator, answered, PairTileSide.prompt);
+      await h.tap(coordinator, answered, PairTileSide.target);
+      expect(
+        await h.db.select(h.db.srsStates).get(),
+        isEmpty,
+        reason:
+            'Pair recognition is not independent recall under the frozen SRS policy.',
+      );
+      final catalogBefore = await _packagedCatalogSnapshot(h);
+      await _targetOwner(h);
+
+      final result = await _upgrade(
+        h,
+      ).upgrade(activeOwnerId: sourceOwner, firebaseUid: _uid);
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      expect(await _packagedCatalogSnapshot(h), catalogBefore);
+      final attempts = await h.db.select(h.db.answerAttempts).get();
+      expect(attempts, hasLength(1));
+      expect(
+        (attempts.single.ownerId, attempts.single.wordId),
+        (_target, answered),
+      );
+      expect(
+        await h.db.select(h.db.srsStates).get(),
+        isEmpty,
+        reason:
+            'Owner upgrade must not turn Pair recognition into SRS evidence.',
+      );
+      expect(
+        (await h.db.select(h.db.eventsV2).get()).map((row) => row.ownerId),
+        everyElement(_target),
+      );
+      final packageOutbox =
+          await (h.db.select(h.db.outboxOperations)..where(
+                (row) =>
+                    row.entityType.isIn(const ['category', 'word']) &
+                    row.entityId.isIn([
+                      PackagedStarterCatalog.categoryId,
+                      ...PackagedStarterCatalog.words.map((word) => word.id),
+                    ]),
+              ))
+              .get();
+      expect(packageOutbox, isEmpty);
+    },
+  );
 
   test(
     'actual near-ceiling Pair upgrade to control256 owner refuses atomically before remapping pins',
@@ -998,4 +1098,35 @@ void main() {
       );
     },
   );
+}
+
+Future<Uint8List?> _starterAsset(ContentIdentity identity) async {
+  final data = await rootBundle.load(
+    'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+  );
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+}
+
+Future<Map<String, Object?>> _packagedCatalogSnapshot(PairHarness h) async {
+  final owner = await (h.db.select(
+    h.db.localOwners,
+  )..where((row) => row.id.equals(PackagedStarterCatalog.ownerId))).getSingle();
+  final category =
+      await (h.db.select(h.db.vocabularyCategories)
+            ..where((row) => row.id.equals(PackagedStarterCatalog.categoryId)))
+          .getSingle();
+  final words =
+      await (h.db.select(h.db.vocabularyWords)
+            ..where((row) => row.ownerId.equals(PackagedStarterCatalog.ownerId))
+            ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+          .get();
+  final manifests = await (h.db.select(
+    h.db.contentManifests,
+  )..orderBy([(row) => OrderingTerm.asc(row.id)])).get();
+  return <String, Object?>{
+    'owner': owner,
+    'category': category,
+    'words': words,
+    'manifests': manifests,
+  };
 }

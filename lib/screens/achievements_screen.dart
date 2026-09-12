@@ -5,14 +5,23 @@ import '../features/achievements/data/file_selector_share_card_store.dart';
 import '../features/achievements/presentation/achievement_share_card.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/learning_summary_card.dart';
 
 typedef AchievementProgressLoader = Future<ProgressSnapshot> Function();
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({super.key, this.loader, this.shareCards});
+  const AchievementsScreen({
+    super.key,
+    this.loader,
+    this.shareCards,
+    this.onOpenQuests,
+    this.onOpenShop,
+  });
 
   final AchievementProgressLoader? loader;
   final AchievementShareCardUseCases? shareCards;
+  final VoidCallback? onOpenQuests;
+  final VoidCallback? onOpenShop;
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
@@ -68,68 +77,141 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ความสำเร็จ')),
-      body: FutureBuilder<ProgressSnapshot>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text('ไม่สามารถอ่านประวัติความสำเร็จในเครื่องได้'),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final progress = snapshot.data!;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.toll_outlined),
-                  title: const Text('คะแนนสะสม'),
-                  trailing: Text('${progress.totalXp}'),
-                  subtitle: Text(
-                    'หลักฐานคำตอบ ${progress.sampleSize} รายการ · อัลกอริทึม v${progress.algorithmVersion}',
-                  ),
-                ),
+      appBar: AppBar(title: const Text('รางวัล')),
+      body: Column(
+        children: [
+          if (widget.onOpenQuests != null || widget.onOpenShop != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.onOpenQuests != null)
+                    FilledButton.tonalIcon(
+                      key: const ValueKey('rewards-open-quests'),
+                      onPressed: widget.onOpenQuests,
+                      icon: const Icon(Icons.flag_outlined),
+                      label: const Text('ภารกิจการเรียน'),
+                    ),
+                  if (widget.onOpenQuests != null && widget.onOpenShop != null)
+                    const SizedBox(height: 12),
+                  if (widget.onOpenShop != null)
+                    OutlinedButton.icon(
+                      key: const ValueKey('rewards-open-shop'),
+                      onPressed: widget.onOpenShop,
+                      icon: const Icon(Icons.storefront_outlined),
+                      label: const Text('ร้านค้ารางวัล'),
+                    ),
+                ],
               ),
-              const SizedBox(height: 8),
-              if (progress.achievements.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(
-                    child: Text(
-                      'ยังไม่มีความสำเร็จที่ปลดล็อก\nจำนวนหลักฐาน: 0',
-                      textAlign: TextAlign.center,
+            ),
+          Expanded(
+            child: FutureBuilder<ProgressSnapshot>(
+              future: _load,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'ไม่สามารถอ่านประวัติความสำเร็จในเครื่องได้',
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: () => setState(() {
+                            _startLoad();
+                            _load?.ignore();
+                          }),
+                          child: const Text('ลองใหม่'),
+                        ),
+                      ],
                     ),
-                  ),
-                )
-              else
-                for (final achievement in progress.achievements)
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.workspace_premium_outlined),
-                      title: Text(_title(achievement.id)),
-                      subtitle: Text(
-                        'หลักฐาน ${achievement.sourceEventId} · นิยาม v${achievement.definitionVersion}',
-                      ),
-                      trailing: _shareCards.canShare(achievement)
-                          ? _shareAction(progress, achievement)
-                          : Text(_date(achievement.unlockedAtUtc)),
+                  );
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final progress = snapshot.data!;
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    LearningSummaryCard(
+                      icon: Icons.toll_outlined,
+                      title: 'คะแนนสะสม',
+                      value: '${progress.totalXp}',
+                      caption: 'หลักฐานคำตอบ ${progress.sampleSize} รายการ',
                     ),
-                  ),
-              if (_shareStatus != null) ...[
-                const SizedBox(height: 12),
-                _shareStatusMessage(),
-              ],
-              if (_savedArtifact case final artifact?) ...[
-                const SizedBox(height: 12),
-                AchievementShareCard(artifact: artifact),
-              ],
-            ],
-          );
-        },
+                    const SizedBox(height: 12),
+                    Text(
+                      'ความสำเร็จ',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    if (progress.achievements.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48),
+                        child: Center(
+                          child: Text(
+                            'ยังไม่มีความสำเร็จที่ปลดล็อก\nจำนวนหลักฐาน: ${progress.sampleSize}',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    else
+                      for (final achievement in progress.achievements)
+                        Card(
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(
+                                  Icons.workspace_premium_outlined,
+                                ),
+                                title: Text(_title(achievement.id)),
+                                subtitle: Text(
+                                  'ปลดล็อกเมื่อ ${_date(achievement.unlockedAtUtc)}',
+                                ),
+                                trailing: _shareCards.canShare(achievement)
+                                    ? _shareAction(progress, achievement)
+                                    : Text(_date(achievement.unlockedAtUtc)),
+                              ),
+                              ExpansionTile(
+                                title: const Text('รายละเอียดความสำเร็จ'),
+                                key: ValueKey(
+                                  'achievement-details/${achievement.id}',
+                                ),
+                                children: [
+                                  Text(
+                                    'รหัส ${achievement.id} · หลักฐาน ${achievement.sourceEventId} · นิยาม v${achievement.definitionVersion}',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ExpansionTile(
+                      title: const Text('รายละเอียดคะแนน'),
+                      children: [
+                        Text('อัลกอริทึม v${progress.algorithmVersion}'),
+                      ],
+                    ),
+                    if (_shareStatus != null) ...[
+                      const SizedBox(height: 12),
+                      _shareStatusMessage(),
+                    ],
+                    if (_savedArtifact case final artifact?) ...[
+                      const SizedBox(height: 12),
+                      AchievementShareCard(artifact: artifact),
+                    ],
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -140,7 +222,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     'first_session' => 'เรียนจบเซสชันแรก',
     'perfect_session' => 'ตอบถูกครบทั้งเซสชัน',
     'ten_correct' => 'ตอบถูกครบ 10 ครั้ง',
-    _ => id,
+    _ => 'ความสำเร็จที่บันทึกไว้',
   };
 
   String _date(DateTime value) =>
@@ -155,6 +237,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     return Semantics(
       container: true,
       button: true,
+      enabled: !busy,
       label: 'บันทึกการ์ดความสำเร็จ: $title',
       excludeSemantics: true,
       onTap: onPressed,

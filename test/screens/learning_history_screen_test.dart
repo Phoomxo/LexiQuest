@@ -34,6 +34,33 @@ import '../features/learning/pair_matching/pair_matching_source_composer_test.da
 
 void main() {
   testWidgets(
+    'local CEFR history explains missing title without enabling replay',
+    (tester) async {
+      final entry = _entry(
+        sessionId: 'local-cefr-history',
+        mode: LessonMode.cefrReading,
+        state: LearningHistoryTerminalState.completed,
+        packTitle: null,
+        localWordSet: true,
+        duration: const Duration(minutes: 1),
+        startedAtUtc: DateTime.utc(2026, 9, 12),
+      );
+      await tester.pumpWidget(_app(reader: _Reader([entry]), textScale: 2));
+      await tester.pumpAndSettle();
+      expect(find.text('กิจกรรมอ่านตามระดับ CEFR'), findsOneWidget);
+      expect(
+        find.text(entry.localCefrPresentation!.detailThai),
+        findsOneWidget,
+      );
+      expect(find.text('เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('replay-history-local-cefr-history')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'canonical completed normal and replay survive abandoned Pair in one bounded History page',
     (tester) async {
       tester.view.physicalSize = const Size(320, 720);
@@ -634,7 +661,8 @@ void main() {
         ownerId: fixture.ownerId,
         mode: LessonMode.matching,
         state: LearningHistoryTerminalState.completed,
-        packTitle: 'Travel Essentials',
+        packTitle: null,
+        localWordSet: true,
         duration: const Duration(minutes: 1),
         startedAtUtc: DateTime.utc(2026, 9, 5),
         pairSummary: fixture.projection,
@@ -659,6 +687,8 @@ void main() {
       expect(tester.widget<FilledButton>(replay).onPressed, isNull);
       expect(tester.getSize(replay).height, greaterThanOrEqualTo(48));
       expect(find.text('Practice Replay unavailable'), findsOneWidget);
+      expect(find.text('Saved word set'), findsOneWidget);
+      expect(find.text('Saved content is unavailable'), findsNothing);
       expect(
         find.text('Full interactive duration unavailable'),
         findsOneWidget,
@@ -834,6 +864,7 @@ LearningHistoryEntry _entry({
       LearningHistoryContentAvailability.available,
   PairMatchingHistoryProjection? pairSummary,
   bool pairPurposeUnavailable = false,
+  bool localWordSet = false,
 }) {
   final configuration = SessionConfiguration.validated(
     schemaVersion: sessionConfigurationSchemaVersion,
@@ -847,7 +878,7 @@ LearningHistoryEntry _entry({
     timing: const SessionTiming.untimedAlternative(
       maximumActiveEffort: Duration(minutes: 10),
     ),
-    packIdentity: _packIdentity,
+    packIdentity: localWordSet ? null : _packIdentity,
     protocolId: 'protocol:local-standard',
     protocolVersion: '1',
     protocolLimitsIdentity:
@@ -857,9 +888,11 @@ LearningHistoryEntry _entry({
     sessionId: sessionId,
     ownerId: ownerId,
     mode: mode,
-    packIdentity: _packIdentity,
+    packIdentity: localWordSet ? null : _packIdentity,
     packTitle: packTitle,
-    contentAvailability: availability,
+    contentAvailability: localWordSet
+        ? LearningHistoryContentAvailability.unavailable
+        : availability,
     activeLearningDuration: duration,
     terminalState: state,
     startedAtUtc: startedAtUtc,

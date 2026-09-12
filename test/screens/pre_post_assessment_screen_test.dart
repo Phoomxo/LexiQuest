@@ -61,10 +61,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Pre-assessment'), findsOneWidget);
+      expect(find.text('แบบประเมินก่อนเรียน'), findsOneWidget);
       expect(find.text('Choose the best meaning.'), findsOneWidget);
       expect(
-        find.text('Instrument instrument-v1 · Form form-v1'),
+        find.text('เครื่องมือ instrument-v1 · แบบประเมิน form-v1'),
         findsOneWidget,
       );
       expect(find.text('choice-a'), findsOneWidget);
@@ -81,8 +81,8 @@ void main() {
       await tester.tap(find.text('choice-a'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Assessment complete'), findsOneWidget);
-      expect(find.textContaining('Correct'), findsNothing);
+      expect(find.text('ทำแบบประเมินเสร็จแล้ว'), findsOneWidget);
+      expect(find.textContaining('ถูกต้อง'), findsNothing);
       expect(find.textContaining('Incorrect'), findsNothing);
       expect(find.textContaining('เฉลย'), findsNothing);
       final attempts = await harness.database
@@ -175,7 +175,7 @@ void main() {
 
     await tester.tap(find.text('choice-a'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Assessment unavailable'), findsOneWidget);
+    expect(find.textContaining('แบบประเมินไม่พร้อมใช้งาน'), findsOneWidget);
     harness.advance(const Duration(hours: 1));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

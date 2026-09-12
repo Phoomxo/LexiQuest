@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import 'research_schema_guards.dart';
+import '../../features/quest/domain/quest_definition_codec.dart';
+import '../../features/quest/domain/quest_period.dart';
 
 import 'tables/ai_usage_tables.dart';
 import 'tables/associative_tables.dart';
@@ -36,6 +40,7 @@ part 'app_database.g.dart';
     MotivationResponses,
     ResearchParticipationPermits,
     MeasurementOpportunities,
+    ResearchSessionProofs,
     VocabularyCategories,
     VocabularyWords,
     VocabularyImports,
@@ -79,7 +84,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 24;
+  static const int currentSchemaVersion = 26;
 
   AppDatabase(super.executor);
 
@@ -337,6 +342,8 @@ final class AppDatabase extends _$AppDatabase {
         await migrator.createTable(researchParticipationPermits);
         await migrator.createTable(measurementOpportunities);
       }
+      if (from < 25) await _upgradeQuestPeriods(migrator);
+      if (from < 26) await _upgradeResearchSessionProofs(migrator);
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -345,9 +352,264 @@ final class AppDatabase extends _$AppDatabase {
       await _createAiUsageIndexes();
       await _createContentManifestImmutabilityTriggers();
       await _createLearningTimeGuards();
+      await _createQuestGuards();
       await installResearchSchemaGuards((sql) => customStatement(sql));
     },
   );
+
+  Future<void> _upgradeResearchSessionProofs(Migrator migrator) async {
+    final foreignKeys = (await customSelect(
+      'PRAGMA foreign_keys',
+    ).getSingle()).read<int>('foreign_keys');
+    final legacyAlter = (await customSelect(
+      'PRAGMA legacy_alter_table',
+    ).getSingle()).read<int>('legacy_alter_table');
+    try {
+      // The older quest migration may have restored FK ON. SQLite ignores
+      // disabling it inside a transaction, so verify this boundary explicitly.
+      await customStatement('PRAGMA foreign_keys = OFF');
+      if ((await customSelect(
+            'PRAGMA foreign_keys',
+          ).getSingle()).read<int>('foreign_keys') !=
+          0) {
+        throw StateError(
+          'research proof migration requires foreign keys off before transaction',
+        );
+      }
+      await transaction(() async {
+        final retained = <String, String>{};
+        for (final table in [
+          'motivation_measurement_runs',
+          'motivation_responses',
+          'research_participation_permits',
+          'measurement_opportunities',
+          'learning_sessions',
+          'quest_instances',
+          'quest_objective_progress',
+          'points_ledger_entries',
+          'reward_transactions',
+          'events_v2',
+          if (await _tableExists('research_session_proofs'))
+            'research_session_proofs',
+        ]) {
+          retained[table] = await _researchMigrationRows(table);
+        }
+        // Keep creation within this transaction. A failed retained-authority
+        // check must leave raw25 without a partially installed proof table.
+        if (!await _tableExists('research_session_proofs')) {
+          await migrator.createTable(researchSessionProofs);
+        }
+        final references = await customSelect(
+          'PRAGMA foreign_key_list(measurement_opportunities)',
+        ).get();
+        if (references.any(
+          (row) => row.read<String>('table') == 'learning_sessions',
+        )) {
+          // This retained parent trigger references the table across the
+          // DROP/rename gap. Reinstall its unchanged definition before commit.
+          await customStatement(
+            'DROP TRIGGER IF EXISTS learning_sessions_referenced_pins_v24_update',
+          );
+          await migrator.alterTable(TableMigration(measurementOpportunities));
+        }
+        await installResearchSchemaGuards((sql) => customStatement(sql));
+        for (final entry in retained.entries) {
+          if (await _researchMigrationRows(entry.key) != entry.value) {
+            throw StateError(
+              'research proof migration changed retained ${entry.key}',
+            );
+          }
+        }
+        if ((await customSelect('PRAGMA foreign_key_check').get()).isNotEmpty) {
+          throw StateError(
+            'research proof migration foreign key validation failed',
+          );
+        }
+        // The removed canonical-session FK cannot check polymorphic authority.
+        // Validate every retained row, including tombstones, before commit.
+        final orphan = await customSelect(
+          '''SELECT 1 FROM measurement_opportunities o
+          WHERE ${researchOpportunityAuthorityMismatch('o')} LIMIT 1''',
+        ).get();
+        final invalidProof = await customSelect(
+          '''SELECT 1 FROM research_session_proofs q
+          WHERE ${researchSessionProofOwnerMismatch('q')}
+            OR ${researchSessionProofSiblingMismatch('q')} LIMIT 1''',
+        ).get();
+        if (orphan.isNotEmpty || invalidProof.isNotEmpty) {
+          throw StateError(
+            'research proof migration retained authority validation failed',
+          );
+        }
+      });
+    } finally {
+      try {
+        await customStatement('PRAGMA legacy_alter_table = $legacyAlter');
+      } finally {
+        await customStatement('PRAGMA foreign_keys = $foreignKeys');
+      }
+    }
+  }
+
+  Future<String> _researchMigrationRows(String table) async => jsonEncode(
+    (await customSelect(
+      'SELECT * FROM $table ORDER BY 1',
+    ).get()).map((row) => row.data).toList(),
+  );
+
+  Future<void> _upgradeQuestPeriods(Migrator migrator) async {
+    final foreignKeys = (await customSelect(
+      'PRAGMA foreign_keys',
+    ).getSingle()).read<int>('foreign_keys');
+    final legacyAlter = (await customSelect(
+      'PRAGMA legacy_alter_table',
+    ).getSingle()).read<int>('legacy_alter_table');
+    try {
+      // SQLite ignores this pragma inside a transaction. The parent rebuild
+      // must not cascade-delete objective rows while replacing its table.
+      await customStatement('PRAGMA foreign_keys = OFF');
+      if ((await customSelect(
+            'PRAGMA foreign_keys',
+          ).getSingle()).read<int>('foreign_keys') !=
+          0) {
+        throw StateError(
+          'quest migration requires foreign keys off before transaction',
+        );
+      }
+      await transaction(() async {
+        const instanceIdentity =
+            'instance_id,quest_id,owner_id,catalog_version,assigned_at_utc_ms,state,completed_at_utc_ms,expired_at_utc_ms';
+        final beforeInstances = await _questMigrationIdentity(
+          'SELECT $instanceIdentity FROM quest_instances ORDER BY instance_id',
+        );
+        final retained = <String, String>{};
+        for (final table in [
+          'quest_objective_progress',
+          'points_ledger_entries',
+          'reward_transactions',
+        ]) {
+          retained[table] = await _questMigrationIdentity(
+            'SELECT * FROM $table ORDER BY 1',
+          );
+        }
+        final names = (await customSelect(
+          'PRAGMA table_info(quest_instances)',
+        ).get()).map((row) => row.read<String>('name')).toSet();
+        final columns = [
+          questInstances.periodPolicy,
+          questInstances.periodKey,
+          questInstances.periodTimezoneId,
+          questInstances.periodStartAtUtcMs,
+          questInstances.periodEndAtUtcMs,
+          questInstances.deadlineAtUtcMs,
+          questInstances.isCanonical,
+          questInstances.definitionSnapshotJson,
+        ];
+        final missing = columns
+            .where((column) => !names.contains(column.$name))
+            .toList();
+        if (missing.isNotEmpty) {
+          await migrator.alterTable(
+            TableMigration(questInstances, newColumns: missing),
+          );
+        }
+        final legacyRows = await customSelect(
+          "SELECT * FROM quest_instances WHERE period_key = '' AND period_policy = 'legacyDuration'",
+        ).get();
+        for (final row in legacyRows) {
+          final id = row.read<String>('instance_id');
+          final assigned = row.read<int>('assigned_at_utc_ms');
+          String? snapshotJson;
+          int? deadline;
+          final stored = await customSelect(
+            'SELECT * FROM quest_definitions WHERE quest_id = ?',
+            variables: [Variable(row.read<String>('quest_id'))],
+          ).getSingleOrNull();
+          if (stored != null) {
+            try {
+              final definition = QuestDefinitionCodec.fromStorage(stored.data);
+              final progressRows = await customSelect(
+                'SELECT * FROM quest_objective_progress WHERE instance_id = ?',
+                variables: [Variable(id)],
+              ).get();
+              if (definition.catalogVersion ==
+                      row.read<int>('catalog_version') &&
+                  QuestDefinitionCodec.matchesStoredProgress(
+                    definition,
+                    progressRows.map((item) => item.data).toList(),
+                  )) {
+                snapshotJson = QuestDefinitionCodec.encode(
+                  QuestDefinitionSnapshot(
+                    definition: definition,
+                    origin: QuestDefinitionSnapshotOrigin.migrationCatalog,
+                  ),
+                );
+                final duration = definition.expiresIn;
+                if (duration != null) {
+                  deadline = QuestPeriod.safeDeadline(
+                    DateTime.fromMillisecondsSinceEpoch(assigned, isUtc: true),
+                    duration,
+                  ).millisecondsSinceEpoch;
+                }
+              }
+            } on FormatException {
+              /* Unknown history stays unknown. */
+            } on TypeError {
+              /* Malformed catalog/progress cannot become a pin. */
+            } on ArgumentError {
+              /* Invalid historical enum cannot become a pin. */
+            }
+          }
+          await customStatement(
+            'UPDATE quest_instances SET period_key = ?, period_start_at_utc_ms = ?, period_end_at_utc_ms = ?, deadline_at_utc_ms = ?, definition_snapshot_json = ? WHERE instance_id = ?',
+            ['legacy:$id', assigned, deadline, deadline, snapshotJson, id],
+          );
+        }
+        await _createQuestGuards();
+        if (await _questMigrationIdentity(
+              'SELECT $instanceIdentity FROM quest_instances ORDER BY instance_id',
+            ) !=
+            beforeInstances) {
+          throw StateError(
+            'quest migration changed historical instance identity',
+          );
+        }
+        for (final entry in retained.entries) {
+          if (await _questMigrationIdentity(
+                'SELECT * FROM ${entry.key} ORDER BY 1',
+              ) !=
+              entry.value) {
+            throw StateError('quest migration changed retained ${entry.key}');
+          }
+        }
+        if ((await customSelect('PRAGMA foreign_key_check').get()).isNotEmpty) {
+          throw StateError('quest migration foreign key validation failed');
+        }
+      });
+    } finally {
+      await customStatement('PRAGMA legacy_alter_table = $legacyAlter');
+      await customStatement('PRAGMA foreign_keys = $foreignKeys');
+    }
+  }
+
+  Future<String> _questMigrationIdentity(String query) async => jsonEncode(
+    (await customSelect(query).get()).map((row) => row.data).toList(),
+  );
+
+  Future<void> _createQuestGuards() async {
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS quest_canonical_period ON quest_instances(owner_id,quest_id,period_key) WHERE is_canonical = 1',
+    );
+    await customStatement(
+      "CREATE UNIQUE INDEX IF NOT EXISTS quest_canonical_active ON quest_instances(owner_id,quest_id) WHERE is_canonical = 1 AND state = 'active'",
+    );
+    await customStatement(
+      '''CREATE TRIGGER IF NOT EXISTS quest_definition_snapshot_immutable
+      BEFORE UPDATE OF definition_snapshot_json ON quest_instances
+      WHEN NEW.definition_snapshot_json IS NOT OLD.definition_snapshot_json
+      BEGIN SELECT RAISE(ABORT, 'quest_definition_snapshot_is_immutable'); END''',
+    );
+  }
 
   Future<void> _createLearningTimeGuards() async {
     if (!await _tableExists('learning_time_segments')) return;

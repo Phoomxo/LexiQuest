@@ -25,6 +25,207 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  test('complete partial recovers before any EOF range request', () async {
+    final bytes = utf8.encode('verified-complete-partial');
+    final manifest = _manifestFor(bytes);
+    final partial = File(
+      '${directory.path}${Platform.pathSeparator}${manifest.fileStem}.tflite.partial',
+    );
+    await partial.writeAsBytes(bytes, flush: true);
+    final source = _EofRangeSource(bytes);
+    final verifier = _RecordingVerifier();
+    final completed = <String>[];
+    final completionIds = <String>[];
+    final cachedIds = <String>[];
+    final manager = ModelDownloadManager(
+      repository: repository,
+      source: source,
+      verifier: verifier,
+      modelDirectory: () async => directory,
+      nowUtc: () => DateTime.utc(2026, 9, 9),
+      onVerifiedActivation:
+          ({required modelVersion, required completionId}) async {
+            completed.add(modelVersion);
+            completionIds.add(completionId);
+          },
+      onCachedArtifactVerified:
+          ({required modelVersion, required completionId}) async {
+            expect(modelVersion, manifest.version);
+            cachedIds.add(completionId);
+          },
+    );
+    addTearDown(manager.dispose);
+    final first = await manager.downloadAndActivate(manifest);
+    final second = await manager.downloadAndActivate(manifest);
+    expect(source.requestedStarts, isEmpty);
+    expect(first.state, ModelDownloadState.active);
+    expect(second.localPath, first.localPath);
+    expect(await File(first.localPath!).readAsBytes(), bytes);
+    expect(await partial.exists(), isFalse);
+    expect(verifier.paths.first, partial.path);
+    expect(repository.activations, 1);
+    expect(completed, [manifest.version]);
+    expect(completionIds.single, isNotEmpty);
+    expect(cachedIds, completionIds);
+  });
+
+  test('same-size corrupt partial is rejected without downloading', () async {
+    final bytes = utf8.encode('verified-complete-partial');
+    final manifest = _manifestFor(bytes);
+    final partial = File(
+      '${directory.path}${Platform.pathSeparator}${manifest.fileStem}.tflite.partial',
+    );
+    await partial.writeAsBytes(List.filled(bytes.length, 0), flush: true);
+    final source = _EofRangeSource(bytes);
+    final verifier = _RecordingVerifier();
+    final manager = ModelDownloadManager(
+      repository: repository,
+      source: source,
+      verifier: verifier,
+      modelDirectory: () async => directory,
+      nowUtc: () => DateTime.utc(2026, 9, 9),
+    );
+    addTearDown(manager.dispose);
+    await expectLater(
+      manager.downloadAndActivate(manifest),
+      throwsA(
+        isA<ModelLifecycleException>().having(
+          (e) => e.code,
+          'code',
+          ModelFailureCode.checksumMismatch,
+        ),
+      ),
+    );
+    expect(source.requestedStarts, isEmpty);
+    expect(verifier.paths, isEmpty);
+    expect(repository.activations, 0);
+    expect(await partial.exists(), isFalse);
+    expect(repository.record!.state, ModelDownloadState.failed);
+  });
+
+  test('complete partial still requires interpreter acceptance', () async {
+    final bytes = utf8.encode('valid-hash-invalid-interpreter');
+    final manifest = _manifestFor(bytes);
+    final partial = File(
+      '${directory.path}${Platform.pathSeparator}${manifest.fileStem}.tflite.partial',
+    );
+    await partial.writeAsBytes(bytes, flush: true);
+    final source = _EofRangeSource(bytes);
+    final verifier = _ControlledVerifier(reject: true);
+    final manager = ModelDownloadManager(
+      repository: repository,
+      source: source,
+      verifier: verifier,
+      modelDirectory: () async => directory,
+      nowUtc: () => DateTime.utc(2026, 9, 9),
+    );
+    addTearDown(manager.dispose);
+    await expectLater(
+      manager.downloadAndActivate(manifest),
+      throwsA(
+        isA<ModelLifecycleException>().having(
+          (e) => e.code,
+          'code',
+          ModelFailureCode.interpreterRejected,
+        ),
+      ),
+    );
+    expect(source.requestedStarts, isEmpty);
+    expect(verifier.calls, 1);
+    expect(repository.activations, 0);
+    expect(await partial.readAsBytes(), bytes);
+    expect(
+      await File('${directory.path}/${manifest.fileStem}.tflite').exists(),
+      isFalse,
+    );
+  });
+
+  for (final completePartial in [false, true]) {
+    test(
+      'cancel during verification prevents activation completePartial=$completePartial',
+      () async {
+        final bytes = utf8.encode('cancel-verification-bytes');
+        final manifest = _manifestFor(bytes);
+        final partial = File(
+          '${directory.path}${Platform.pathSeparator}${manifest.fileStem}.tflite.partial',
+        );
+        if (completePartial) await partial.writeAsBytes(bytes, flush: true);
+        final source = _MemoryRangeSource(bytes);
+        final verifier = _ControlledVerifier(block: true);
+        final cancellation = ModelCancellation();
+        final completed = <String>[];
+        final manager = ModelDownloadManager(
+          repository: repository,
+          source: source,
+          verifier: verifier,
+          modelDirectory: () async => directory,
+          nowUtc: () => DateTime.utc(2026, 9, 9),
+          onDownloadCompleted: (version) async {
+            completed.add(version);
+          },
+        );
+        addTearDown(manager.dispose);
+        final operation = manager.downloadAndActivate(
+          manifest,
+          cancellation: cancellation,
+        );
+        final assertion = expectLater(
+          operation,
+          throwsA(
+            isA<ModelLifecycleException>().having(
+              (e) => e.code,
+              'code',
+              ModelFailureCode.cancelled,
+            ),
+          ),
+        );
+        try {
+          await verifier.started.future.timeout(const Duration(seconds: 5));
+        } finally {
+          cancellation.cancel();
+          verifier.release.complete();
+          await assertion;
+        }
+        expect(repository.activations, 0);
+        expect(completed, isEmpty);
+        expect(repository.record!.state, ModelDownloadState.cancelled);
+        expect(await partial.readAsBytes(), bytes);
+        expect(
+          await File('${directory.path}/${manifest.fileStem}.tflite').exists(),
+          isFalse,
+        );
+        expect(source.requestedStarts, completePartial ? isEmpty : [0]);
+      },
+    );
+  }
+
+  test(
+    'oversized partial restarts and verifies exact replacement bytes',
+    () async {
+      final bytes = utf8.encode('correct-model');
+      final manifest = _manifestFor(bytes);
+      final partial = File(
+        '${directory.path}${Platform.pathSeparator}${manifest.fileStem}.tflite.partial',
+      );
+      await partial.writeAsBytes([...bytes, 0], flush: true);
+      final source = _MemoryRangeSource(bytes);
+      final verifier = _RecordingVerifier();
+      final manager = ModelDownloadManager(
+        repository: repository,
+        source: source,
+        verifier: verifier,
+        modelDirectory: () async => directory,
+        nowUtc: () => DateTime.utc(2026, 9, 9),
+      );
+      addTearDown(manager.dispose);
+      final result = await manager.downloadAndActivate(manifest);
+      expect(source.requestedStarts, [0]);
+      expect(await File(result.localPath!).readAsBytes(), bytes);
+      expect(verifier.paths, [partial.path]);
+      expect(repository.activations, 1);
+    },
+  );
+
   test(
     'resumes valid partial bytes, verifies, and activates atomically',
     () async {
@@ -767,5 +968,46 @@ final class _RecordingVerifier implements ModelFileVerifier {
   @override
   Future<void> verify(String path, ModelManifest manifest) async {
     paths.add(path);
+  }
+}
+
+final class _EofRangeSource implements ModelByteSource {
+  _EofRangeSource(this.bytes);
+  final List<int> bytes;
+  final List<int> requestedStarts = [];
+
+  @override
+  Future<ModelByteResponse> open(
+    Uri uri, {
+    required int start,
+    ModelCancellation? cancellation,
+  }) async {
+    requestedStarts.add(start);
+    if (start >= bytes.length) {
+      return ModelByteResponse(statusCode: 416, bytes: const Stream.empty());
+    }
+    return ModelByteResponse(
+      statusCode: start == 0 ? 200 : 206,
+      contentRangeStart: start == 0 ? null : start,
+      bytes: Stream.value(bytes.sublist(start)),
+    );
+  }
+}
+
+final class _ControlledVerifier implements ModelFileVerifier {
+  _ControlledVerifier({this.reject = false, this.block = false});
+  final bool reject;
+  final bool block;
+  final started = Completer<void>();
+  final release = Completer<void>();
+  int calls = 0;
+
+  @override
+  Future<void> verify(String path, ModelManifest manifest) async {
+    calls += 1;
+    started.complete();
+    if (block) await release.future;
+    if (reject)
+      throw const ModelLifecycleException(ModelFailureCode.interpreterRejected);
   }
 }

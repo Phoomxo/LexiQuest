@@ -117,10 +117,10 @@ void main() {
       );
 
       await tester.enterText(find.byType(TextField), 'station');
-      await tester.ensureVisible(find.text('I checked it'));
-      await tester.tap(find.text('I checked it'));
+      await tester.ensureVisible(find.text('ตรวจด้วยตัวเองแล้ว'));
+      await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
       await tester.pump();
-      await tester.tap(find.text('I checked it'));
+      await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
       await tester.pump();
 
       expect(outcomes, hasLength(1));
@@ -130,7 +130,7 @@ void main() {
       );
       expect(outcomes.single.responseCode, 'typed-alternative-self-check');
       expect(outcomes.single.toString(), isNot(contains('station')));
-      await tester.tap(find.text('I need more practice'));
+      await tester.tap(find.text('อยากฝึกเพิ่ม'));
       await tester.pump();
       expect(outcomes, hasLength(2));
       expect(
@@ -139,7 +139,7 @@ void main() {
       );
       expect(
         find.bySemanticsLabel(
-          'Handwriting scratchpad. Draw locally; handwriting is not recognized.',
+          'กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ',
         ),
         findsOneWidget,
       );
@@ -232,7 +232,7 @@ void main() {
     await tester.pump();
 
     final undo = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Undo stroke'),
+      find.widgetWithText(OutlinedButton, 'ย้อนเส้นล่าสุด'),
     );
     expect(undo.onPressed, isNotNull);
   });
@@ -260,6 +260,6 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.byType(Scrollable), findsWidgets);
-    expect(find.text('Type your answer instead'), findsOneWidget);
+    expect(find.text('พิมพ์คำตอบแทน'), findsOneWidget);
   });
 }

@@ -54,7 +54,7 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Focus timer'), findsOneWidget);
+      expect(find.text('จับเวลาเรียน'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('focus-timer/duration')),
         findsOneWidget,

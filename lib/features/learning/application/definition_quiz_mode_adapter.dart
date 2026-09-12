@@ -81,11 +81,11 @@ final class DefinitionQuizItem {
 
   String get semanticAnnouncement => switch (skipReason) {
     DefinitionQuizSkipReason.missingDefinition =>
-      'Skipped. A reviewed English definition is unavailable.',
+      'ข้ามข้อนี้ เนื่องจากยังไม่มีคำจำกัดความภาษาอังกฤษที่ผ่านการตรวจทาน',
     DefinitionQuizSkipReason.unreviewedDefinition =>
-      'Skipped. The English definition has not been approved.',
+      'ข้ามข้อนี้ เนื่องจากคำจำกัดความภาษาอังกฤษยังไม่ผ่านการตรวจทาน',
     DefinitionQuizSkipReason.staleDefinition =>
-      'Skipped. The English definition no longer matches this session.',
+      'ข้ามข้อนี้ เนื่องจากคำจำกัดความภาษาอังกฤษไม่ตรงกับเนื้อหาในกิจกรรมนี้แล้ว',
     null => '',
   };
 }
@@ -133,8 +133,8 @@ final class DefinitionQuizModeAdapter
 
   @override
   HintPolicy get hintPolicy => HintPolicy.staged(
-    strategy: 'Use the part of speech and the definition wording as clues.',
-    context: 'Compare every visible word with the complete definition.',
+    strategy: 'ใช้ชนิดของคำและข้อความในคำจำกัดความเป็นตัวช่วย',
+    context: 'เปรียบเทียบคำทุกคำที่เห็นกับคำจำกัดความทั้งหมด',
   );
 
   DefinitionQuizReviewController createReview({

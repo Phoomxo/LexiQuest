@@ -87,6 +87,31 @@ LearningEvidenceProjectionSink _coinsSink(DriftRewardRepository rewards) =>
     };
 
 final class _CrashAfterProgressRepository implements QuestRepository {
+  @override
+  Future<bool> assignForPeriod({
+    required QuestDefinition definition,
+    required QuestInstance instance,
+    required DateTime nowUtc,
+  }) => delegate.assignForPeriod(
+    definition: definition,
+    instance: instance,
+    nowUtc: nowUtc,
+  );
+  @override
+  Future<void> expireStaleInstances({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) => delegate.expireStaleInstances(ownerId: ownerId, nowUtc: nowUtc);
+  @override
+  Future<List<QuestInstance>> getProjectionCandidates({
+    required String ownerId,
+    required DateTime occurredAtUtc,
+    required Iterable<String> questIds,
+  }) => delegate.getProjectionCandidates(
+    ownerId: ownerId,
+    occurredAtUtc: occurredAtUtc,
+    questIds: questIds,
+  );
   _CrashAfterProgressRepository(this.delegate);
   final QuestRepository delegate;
   bool armed = true;

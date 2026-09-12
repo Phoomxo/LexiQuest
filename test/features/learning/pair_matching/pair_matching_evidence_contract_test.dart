@@ -112,6 +112,7 @@ class PairHarness {
     this.buildTag = 'synthetic',
     this.evidenceId,
     this.configuration,
+    this.provisionVocabulary,
     QueryExecutor? executor,
   }) : db = AppDatabase(executor ?? NativeDatabase.memory());
   final AppDatabase db;
@@ -121,6 +122,7 @@ class PairHarness {
   final String launchId, buildTag;
   final String Function()? evidenceId;
   final SessionConfiguration? configuration;
+  final Future<void> Function(AppDatabase database)? provisionVocabulary;
   late DriftLearningRepository real;
   late PairFaultRepository repository;
   late LearningUseCases learning;
@@ -132,40 +134,45 @@ class PairHarness {
     await db
         .into(db.localOwners)
         .insert(LocalOwnersCompanion.insert(id: owner, createdAtUtcMs: 1));
-    await db
-        .into(db.vocabularyCategories)
-        .insert(
-          VocabularyCategoriesCompanion.insert(
-            id: 'synthetic-category',
-            ownerId: owner,
-            name: 'Synthetic',
-            normalizedName: 'synthetic',
-            createdAtUtcMs: 1,
-            updatedAtUtcMs: 1,
-          ),
-        );
     final items =
         pinnedPlan?.orderedLexicalItems ??
         List.generate(density.pairCount, f.fixture);
-    for (final i in items) {
+    final provision = provisionVocabulary;
+    if (provision != null) {
+      await provision(db);
+    } else {
       await db
-          .into(db.vocabularyWords)
+          .into(db.vocabularyCategories)
           .insert(
-            VocabularyWordsCompanion.insert(
-              id: i.wordId,
+            VocabularyCategoriesCompanion.insert(
+              id: 'synthetic-category',
               ownerId: owner,
-              categoryId: 'synthetic-category',
-              spelling: i.spelling,
-              normalizedSpelling: i.spelling,
-              meaning: i.meaning,
-              normalizedMeaning: i.meaning,
-              partOfSpeech: 'noun',
-              contentRevision: Value(i.contentRevision),
-              contentChecksumSha256: Value(i.checksum),
+              name: 'Synthetic',
+              normalizedName: 'synthetic',
               createdAtUtcMs: 1,
               updatedAtUtcMs: 1,
             ),
           );
+      for (final i in items) {
+        await db
+            .into(db.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: i.wordId,
+                ownerId: owner,
+                categoryId: 'synthetic-category',
+                spelling: i.spelling,
+                normalizedSpelling: i.spelling,
+                meaning: i.meaning,
+                normalizedMeaning: i.meaning,
+                partOfSpeech: 'noun',
+                contentRevision: Value(i.contentRevision),
+                contentChecksumSha256: Value(i.checksum),
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+      }
     }
     real = DriftLearningRepository(db);
     repository = PairFaultRepository(real);

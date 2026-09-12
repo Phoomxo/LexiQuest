@@ -1,10 +1,220 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as timezone_data;
 import 'package:vocab_learning_app/features/reminders/data/platform_reminder_scheduler.dart';
 import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(timezone_data.initializeTimeZones);
+  setUpAll(AndroidFlutterLocalNotificationsPlugin.registerWith);
+
+  group('current OS notification permission through the plugin channel', () {
+    const channel = MethodChannel('dexterous.com/flutter/local_notifications');
+
+    // The platform interface has a late singleton with no default test value.
+    // Establish this file's baseline, then restore it after every case.
+
+    for (final scenario in [
+      (
+        name: 'Android grant then OS revoke',
+        target: TargetPlatform.android,
+        priorGrant: true,
+        response: false,
+        expected: ReminderPermissionState.denied,
+      ),
+      (
+        name: 'Android grant then unavailable OS status',
+        target: TargetPlatform.android,
+        priorGrant: true,
+        response: null,
+        expected: ReminderPermissionState.unknown,
+      ),
+      (
+        name: 'Android fresh OS denial',
+        target: TargetPlatform.android,
+        priorGrant: false,
+        response: false,
+        expected: ReminderPermissionState.denied,
+      ),
+      (
+        name: 'iOS grant then OS revoke',
+        target: TargetPlatform.iOS,
+        priorGrant: true,
+        response: <String, bool>{
+          'isEnabled': false,
+          'isAlertEnabled': false,
+          'isProvisionalEnabled': false,
+        },
+        expected: ReminderPermissionState.denied,
+      ),
+      (
+        name: 'iOS grant then unavailable OS status',
+        target: TargetPlatform.iOS,
+        priorGrant: true,
+        response: null,
+        expected: ReminderPermissionState.unknown,
+      ),
+      (
+        name: 'iOS provisional status permits notifications',
+        target: TargetPlatform.iOS,
+        priorGrant: true,
+        response: <String, bool>{
+          'isEnabled': true,
+          'isAlertEnabled': false,
+          'isProvisionalEnabled': true,
+        },
+        expected: ReminderPermissionState.granted,
+      ),
+      (
+        name: 'iOS fresh OS denial',
+        target: TargetPlatform.iOS,
+        priorGrant: false,
+        response: <String, bool>{
+          'isEnabled': false,
+          'isAlertEnabled': false,
+          'isProvisionalEnabled': false,
+        },
+        expected: ReminderPermissionState.denied,
+      ),
+    ]) {
+      test(scenario.name, () async {
+        final originalTarget = debugDefaultTargetPlatformOverride;
+        final originalPlugin = FlutterLocalNotificationsPlatform.instance;
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        addTearDown(() {
+          messenger.setMockMethodCallHandler(channel, null);
+          debugDefaultTargetPlatformOverride = originalTarget;
+          FlutterLocalNotificationsPlatform.instance = originalPlugin;
+        });
+        final android = scenario.target == TargetPlatform.android;
+        debugDefaultTargetPlatformOverride = scenario.target;
+        if (android) {
+          AndroidFlutterLocalNotificationsPlugin.registerWith();
+        } else {
+          IOSFlutterLocalNotificationsPlugin.registerWith();
+        }
+        final requestMethod = android
+            ? 'requestNotificationsPermission'
+            : 'requestPermissions';
+        final queryMethod = android
+            ? 'areNotificationsEnabled'
+            : 'checkPermissions';
+        final calls = <String>[];
+        Object? currentStatus = android
+            ? true
+            : <String, bool>{
+                'isEnabled': true,
+                'isAlertEnabled': true,
+                'isProvisionalEnabled': false,
+              };
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          calls.add(call.method);
+          if (call.method == requestMethod) return true;
+          if (call.method == queryMethod) return currentStatus;
+          throw StateError('Unexpected notification method ${call.method}');
+        });
+        final scheduler = PlatformReminderScheduler(
+          FlutterLocalNotificationsGateway(
+            targetPlatform: android
+                ? ReminderTargetPlatform.android
+                : ReminderTargetPlatform.ios,
+          ),
+          targetPlatform: android
+              ? ReminderTargetPlatform.android
+              : ReminderTargetPlatform.ios,
+        );
+        if (scenario.priorGrant) {
+          expect(
+            await scheduler.requestPermission(),
+            ReminderPermissionState.granted,
+          );
+          expect(
+            await scheduler.permissionState(),
+            ReminderPermissionState.granted,
+          );
+        }
+
+        currentStatus = scenario.response;
+        final current = await scheduler.permissionState();
+        final repeated = await scheduler.permissionState();
+
+        expect(
+          calls,
+          [
+            if (scenario.priorGrant) requestMethod,
+            if (scenario.priorGrant) queryMethod,
+            queryMethod,
+            queryMethod,
+          ],
+          reason: 'Reading OS permission must never prompt or use cached truth',
+        );
+        expect(current, scenario.expected);
+        expect(repeated, scenario.expected);
+      });
+    }
+  });
+
+  test(
+    'native enumeration retains actual reminder ID and ignores foreign or malformed payloads',
+    () async {
+      const channel = MethodChannel(
+        'dexterous.com/flutter/local_notifications',
+      );
+      final originalTarget = debugDefaultTargetPlatformOverride;
+      final originalPlugin = FlutterLocalNotificationsPlatform.instance;
+      AndroidFlutterLocalNotificationsPlugin.registerWith();
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(channel, null);
+        debugDefaultTargetPlatformOverride = originalTarget;
+        FlutterLocalNotificationsPlatform.instance = originalPlugin;
+      });
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      const actual = ReminderPlatformEntry(
+        platformId: 717171,
+        ownerId: 'retired-owner',
+        reminderId: 'deleted-reminder',
+      );
+      expect(
+        actual.platformId,
+        isNot(studyReminderPlatformId(actual.ownerId, actual.reminderId)),
+      );
+      final calls = <String>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call.method);
+        expect(call.method, 'pendingNotificationRequests');
+        return [
+          {
+            'id': actual.platformId,
+            'title': 'Synthetic',
+            'body': 'Synthetic',
+            'payload': encodeReminderPlatformPayload(actual),
+          },
+          {'id': 11, 'payload': 'foreign-notification'},
+          {'id': 12, 'payload': 'lexiquest-reminder:{'},
+          {
+            'id': 13,
+            'payload': 'lexiquest-reminder:{"ownerId":9,"reminderId":"x"}',
+          },
+          {'id': 14, 'payload': null},
+        ];
+      });
+      final scheduler = PlatformReminderScheduler(
+        FlutterLocalNotificationsGateway(
+          targetPlatform: ReminderTargetPlatform.android,
+        ),
+        targetPlatform: ReminderTargetPlatform.android,
+      );
+      expect(await scheduler.pendingEntries(), [actual]);
+      expect(calls, ['pendingNotificationRequests']);
+    },
+  );
 
   test('Android schedules with inexact allow-while-idle semantics', () async {
     final native = _NativeGateway();

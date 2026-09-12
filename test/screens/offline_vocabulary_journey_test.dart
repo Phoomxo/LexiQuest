@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
@@ -97,11 +98,24 @@ void main() {
     );
   });
 
-  Future<void> pumpCategories(WidgetTester tester) {
+  Future<void> pumpCategories(
+    WidgetTester tester, {
+    ThemeData? theme,
+    double textScale = 1,
+  }) {
     return tester.pumpWidget(
       AppDependenciesScope(
         dependencies: dependencies,
-        child: MaterialApp(home: CategoriesPage()),
+        child: MaterialApp(
+          theme: theme,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
+          home: CategoriesPage(),
+        ),
       ),
     );
   }
@@ -134,6 +148,75 @@ void main() {
   }
 
   testWidgets(
+    'word search distinguishes no matches from an empty category',
+    (tester) async {
+      final vocabulary = dependencies.vocabulary!;
+      await tester.runAsync(() async {
+        final category = await vocabulary.createCategory('Travel');
+        for (final spelling in ['station', 'airport']) {
+          await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: spelling,
+              meaning: spelling == 'station' ? 'สถานี' : 'สนามบิน',
+              partOfSpeech: 'noun',
+            ),
+          );
+        }
+      });
+      await pumpCategories(tester);
+      await pumpUntilFound(tester, find.text('Travel'));
+      await tester.tap(find.text('Travel'));
+      await finishRouteTransition(tester);
+      await pumpUntilFound(tester, find.text('station'));
+      expect(find.text('airport'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'unmatched query');
+      await pumpUntilFound(tester, find.text('ไม่พบคำศัพท์ที่ตรงกับคำค้น'));
+      expect(find.text('ยังไม่มีคำศัพท์ในหมวดนี้'), findsNothing);
+      await tester.enterText(find.byType(TextField), '');
+      await pumpUntilFound(tester, find.text('station'));
+      expect(find.text('airport'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.runAsync(database.close);
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
+    'device regression: category form fits landscape keyboard',
+    (tester) async {
+      tester.view.physicalSize = const Size(2226, 1080);
+      tester.view.devicePixelRatio = 2.75;
+      tester.view.padding = const FakeViewPadding(top: 77);
+      tester.view.viewPadding = const FakeViewPadding(top: 77);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      addTearDown(tester.view.resetPadding);
+      addTearDown(tester.view.resetViewPadding);
+      await pumpCategories(tester, theme: M3Theme.darkTheme);
+      await pumpUntilFound(tester, find.textContaining('ยังไม่มีหมวดหมู่'));
+      await tester.tap(find.byKey(const ValueKey('add-category')));
+      await finishRouteTransition(tester);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 550);
+      for (var frame = 0; frame < 20; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(tester.takeException(), isNull);
+      }
+      expect(tester.takeException(), isNull);
+      final save = find.byKey(const ValueKey('save-category'));
+      await tester.ensureVisible(save);
+      expect(save.hitTestable(), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.runAsync(database.close);
+      await tester.pump(const Duration(milliseconds: 1));
+    },
+    timeout: const Timeout(Duration(seconds: 30)),
+  );
+
+  testWidgets(
     'guest vocabulary survives widget reconstruction without cloud',
     (tester) async {
       await pumpCategories(tester);
@@ -155,6 +238,7 @@ void main() {
       await tester.tap(find.text('Travel'));
       await pumpUntilFound(tester, find.byKey(const ValueKey('add-word')));
       await finishRouteTransition(tester);
+      expect(find.text('ยังไม่มีคำศัพท์ในหมวดนี้'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('add-word')));
       await pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
@@ -191,6 +275,65 @@ void main() {
       expect(find.text('Travel'), findsOneWidget);
       await tester.tap(find.text('Travel'));
       await pumpUntilFound(tester, find.text('station'));
+
+      // A long list must leave its final row reachable above both FABs.
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.runAsync(() async {
+        final category = await database
+            .select(database.vocabularyCategories)
+            .getSingle();
+        for (var index = 0; index < 20; index++) {
+          final spelling = 'word${index.toString().padLeft(2, '0')}';
+          await database.customStatement(
+            'INSERT INTO vocabulary_words '
+            '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
+            'normalized_meaning, part_of_speech, created_at_utc_ms, updated_at_utc_ms) '
+            "VALUES (?, ?, ?, ?, ?, 'คำทดสอบ', 'คำทดสอบ', 'noun', 1, 1)",
+            <Object?>[
+              'layout:$index',
+              category.ownerId,
+              category.id,
+              spelling,
+              spelling,
+            ],
+          );
+        }
+      });
+      await tester.binding.setSurfaceSize(const Size(320, 568));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpCategories(tester, theme: M3Theme.darkTheme, textScale: 2);
+      await pumpUntilFound(tester, find.text('Travel'));
+      await tester.tap(find.text('Travel'));
+      await finishRouteTransition(tester);
+      await pumpUntilFound(tester, find.text('station'));
+      await tester.scrollUntilVisible(
+        find.text('word19'),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.drag(find.byType(ListView), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      final lastRow = find.ancestor(
+        of: find.text('word19'),
+        matching: find.byType(ListTile),
+      );
+      final delete = find.descendant(
+        of: lastRow,
+        matching: find.byTooltip('ลบคำศัพท์'),
+      );
+      expect(
+        tester.getBottomRight(lastRow).dy,
+        lessThan(tester.getTopLeft(find.byTooltip('นำเข้าคำศัพท์')).dy),
+      );
+      expect(delete.hitTestable(), findsOneWidget);
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
+      expect(find.text('ลบ “word19” หรือไม่'), findsOneWidget);
+      await tester.tap(find.text('ยกเลิก'));
+      await tester.pumpAndSettle();
+      expect(find.text('word19'), findsOneWidget);
+      expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 1));

@@ -31,6 +31,23 @@ final class _TestOwnerRepository implements LocalOwnerRepository {
 
 final class _TestQuestRepository implements QuestRepository {
   @override
+  Future<bool> assignForPeriod({
+    required QuestDefinition definition,
+    required QuestInstance instance,
+    required DateTime nowUtc,
+  }) async => false;
+  @override
+  Future<void> expireStaleInstances({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) async {}
+  @override
+  Future<List<QuestInstance>> getProjectionCandidates({
+    required String ownerId,
+    required DateTime occurredAtUtc,
+    required Iterable<String> questIds,
+  }) async => const [];
+  @override
   Future<List<QuestInstance>> getAllInstances(
     String ownerId, {
     int limit = 50,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter/foundation.dart' show debugPrintSynchronously;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -136,6 +137,11 @@ void main() {
         phaseTrace.complete('03-guest-login');
 
         phaseTrace.begin('04-vocabulary-create');
+        await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('add-category')),
+        );
         await tester.tap(find.byKey(const ValueKey('add-category')));
         await _pumpUntilFound(
           tester,
@@ -206,19 +212,19 @@ void main() {
 
         phaseTrace.begin('06-associative-launch-to-stage-3');
         await _openConfiguredMode(tester, 'home/learn/associative-reading');
-        await _pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await _pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await _pumpUntilFound(
           tester,
           find.byType(AssociativeReadingSessionScreen),
         );
         final completeAndContinueButton = find.widgetWithText(
           FilledButton,
-          'Complete & Continue',
+          'เสร็จแล้ว ไปขั้นถัดไป',
         );
         for (final title in const <String>[
-          'Stage 2: Cue Fading',
-          'Stage 3: Active Recall',
+          'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+          'ขั้นที่ 3: นึกคำจากความจำ',
         ]) {
           await _tapVisibleCenter(tester, completeAndContinueButton);
           await _pumpUntilFound(tester, find.text(title));
@@ -226,19 +232,24 @@ void main() {
         phaseTrace.complete('06-associative-launch-to-stage-3');
 
         phaseTrace.begin('07-associative-stage-3-recall');
+        final readingScreen = tester.widget<AssociativeReadingSessionScreen>(
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        final readingWord = readingScreen.targetWords.single;
+        final readingWordId = readingScreen.targetWordIds![readingWord]!;
         await _enterAssociativeStageText(
           tester,
-          hintText: 'Type from memory',
-          value: 'station',
+          hintText: 'พิมพ์จากความจำ',
+          value: readingWord,
         );
         await _tapAssociativeContinue(tester);
-        await _pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
         phaseTrace.complete('07-associative-stage-3-recall');
 
         phaseTrace.begin('08-associative-stage-4-association');
         await _enterAssociativeStageText(
           tester,
-          hintText: 'Keyword, story, or image...',
+          hintText: 'คำช่วยจำ เรื่องราว หรือภาพ…',
           value: 'train platform',
         );
         await _tapAssociativeContinue(tester);
@@ -248,22 +259,24 @@ void main() {
         phaseTrace.begin('09-associative-stage-5-transfer');
         await _enterAssociativeStageText(
           tester,
-          hintText: 'Enter a new sentence',
-          value: 'Meet me at the station.',
+          hintText: 'พิมพ์ประโยคใหม่',
+          value: 'I use $readingWord.',
         );
         await _tapAssociativeContinue(tester);
-        await _pumpUntilFound(tester, find.text('Stage 6: Finish'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 6: จบกิจกรรม'));
         phaseTrace.complete('09-associative-stage-5-transfer');
 
         phaseTrace.begin('10-associative-finish');
         await _tapAssociativeFinish(tester);
         await _pumpUntilAssociativeFinishOutcome(tester);
 
-        final afterAssociativeRecall = await _readSrsVocabularyInventory(
+        await tester.runAsync(first.learningReconciliation!.drain);
+        final srsIdentity = await _expectSelectedReadingWithSrs(
           tester,
           first.database!,
+          readingWordId,
+          readingWord,
         );
-        final srsIdentity = _expectStationWithSrs(afterAssociativeRecall);
         Navigator.of(
           tester.element(find.byType(AssociativeReadingLauncherScreen)),
         ).pop();
@@ -278,19 +291,20 @@ void main() {
             <Object>[srsIdentity.ownerId, srsIdentity.wordId],
           ),
         );
-        final dueInventory = await _readSrsVocabularyInventory(
+        final dueSrs = await _expectSelectedReadingWithSrs(
           tester,
           first.database!,
+          readingWordId,
+          readingWord,
         );
-        final dueSrs = _expectStationWithSrs(dueInventory);
         expect(dueSrs.dueAtUtcMs, 0, reason: dueSrs.diagnostic);
 
         await _openConfiguredMode(tester, 'home/learn/srs');
         await _pumpUntilFound(tester, find.byType(SrsFlashcardsScreen));
-        await _pumpUntilFound(tester, find.text('station'));
+        await _pumpUntilFound(tester, find.text(readingWord));
         final cardWord = find.descendant(
           of: find.byType(SrsFlashcardsScreen),
-          matching: find.text('station'),
+          matching: find.text(readingWord),
         );
         expect(cardWord, findsOneWidget);
         await tester.tap(cardWord);
@@ -355,11 +369,12 @@ void main() {
           of: masteryDashboard,
           matching: find.byType(Scrollable),
         );
+        await _pumpUntilFound(tester, masteryScrollable);
         expect(masteryScrollable, findsOneWidget);
         await tester.scrollUntilVisible(
           find.descendant(
             of: masteryDashboard,
-            matching: find.text('Engagement'),
+            matching: find.text('ความต่อเนื่องในการเรียน'),
           ),
           240,
           scrollable: masteryScrollable,
@@ -370,7 +385,10 @@ void main() {
           findsOneWidget,
         );
         expect(
-          find.descendant(of: masteryDashboard, matching: find.text('Streak')),
+          find.descendant(
+            of: masteryDashboard,
+            matching: find.text('เรียนต่อเนื่อง'),
+          ),
           findsOneWidget,
         );
         phaseTrace.complete('13-mastery');
@@ -398,7 +416,19 @@ void main() {
         final engagementLabel = NavigationGlossary.require(
           'profile/engagement',
         ).fullThaiLabel;
+        await _pumpUntilFound(tester, profileScrollable);
         expect(profileScrollable, findsOneWidget);
+        final profileDetails = find.descendant(
+          of: profileSettings,
+          matching: find.byKey(const ValueKey('profile-learning-details')),
+        );
+        await tester.scrollUntilVisible(
+          profileDetails,
+          240,
+          scrollable: profileScrollable,
+        );
+        await _tapVisibleCenter(tester, profileDetails);
+        await tester.pumpAndSettle();
         await tester.scrollUntilVisible(
           find.descendant(
             of: profileSettings,
@@ -447,7 +477,7 @@ void main() {
           ),
           findsOneWidget,
         );
-        await tester.pageBack();
+        await tester.tap(find.byType(BackButton));
         await _pumpUntilGone(tester, find.byType(ShopPage));
         phaseTrace.complete('16-shop');
 
@@ -525,11 +555,14 @@ void main() {
         phaseTrace.begin('21-reopen-ui');
         await tester.pumpWidget(MyApp(dependencies: reopened));
         await _pumpUntilFound(tester, find.byType(MainNavigationScreen));
+        await _pumpUntilFound(tester, find.byType(ChooseModeScreen));
+        await tester.tap(find.byKey(const ValueKey('home/vocabulary')));
+        await _pumpUntilFound(tester, find.byType(CategoriesPage));
         expect(find.byType(CategoriesPage), findsOneWidget);
         await _pumpUntilFound(tester, find.text('Field travel'));
         await tester.tap(find.text('Field travel'));
         await _pumpUntilFound(tester, find.text('station'));
-        await tester.pageBack();
+        await tester.tap(find.byType(BackButton));
         await _pumpUntilFound(tester, find.byType(CategoriesPage));
         await tester.pumpAndSettle();
         phaseTrace.complete('21-reopen-ui');
@@ -540,12 +573,34 @@ void main() {
         await _scrollDrawerTo(tester, exportEntry);
         await _tapVisibleCenter(tester, exportEntry);
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.widgetWithText(FilledButton, 'สร้างและบันทึกไฟล์'),
+        final exportScreen = find.byType(ExportCenterScreen);
+        await _pumpUntilFound(tester, exportScreen);
+        final exportScrollable = find.descendant(
+          of: exportScreen,
+          matching: find.byType(Scrollable),
         );
-        await _pumpUntilFound(
-          tester,
-          find.byKey(const ValueKey('export-status')),
+        final exportButton = find.descendant(
+          of: exportScreen,
+          matching: find.widgetWithText(FilledButton, 'สร้างและบันทึกไฟล์'),
+        );
+        expect(exportScrollable, findsOneWidget);
+        await tester.scrollUntilVisible(
+          exportButton,
+          240,
+          scrollable: exportScrollable,
+        );
+        await _pumpUntilEnabled(tester, exportButton);
+        await _tapVisibleCenter(tester, exportButton);
+        final exportStatus = find.byKey(const ValueKey('export-status'));
+        final exportPosition = tester
+            .state<ScrollableState>(exportScrollable)
+            .position;
+        debugPrintSynchronously(
+          '[EXPORT-UI] after-tap artifact=${exportStore.artifact != null} '
+          'statusCount=${exportStatus.evaluate().length} '
+          'pixels=${exportPosition.pixels} '
+          'max=${exportPosition.maxScrollExtent} '
+          'scrolling=${exportPosition.isScrollingNotifier.value}',
         );
         await _pumpUntil(
           tester,
@@ -555,10 +610,22 @@ void main() {
         expect(exportStore.artifact, isNotNull);
         expect(exportStore.artifact!.recordCount, greaterThan(0));
         expect(utf8.decode(exportStore.artifact!.bytes), contains('station'));
+        await tester.scrollUntilVisible(
+          exportStatus,
+          240,
+          scrollable: exportScrollable,
+          continuous: true,
+        );
+        await tester.pumpAndSettle();
+        expect(exportStatus.hitTestable(), findsOneWidget);
+        expect(
+          tester.widget<Text>(exportStatus).data,
+          startsWith('บันทึกแล้ว'),
+        );
         phaseTrace.complete('22-export');
 
         phaseTrace.begin('23-sign-out');
-        await tester.pageBack();
+        await tester.tap(find.byType(BackButton));
         await _pumpUntilGone(tester, find.byType(ExportCenterScreen));
         await _openDrawer(tester);
         final settingsEntry = find.byKey(
@@ -567,7 +634,21 @@ void main() {
         await _scrollDrawerTo(tester, settingsEntry);
         await _tapVisibleCenter(tester, settingsEntry);
         await _pumpUntilFound(tester, find.byType(SettingScreen));
-        await tester.tap(find.text('ออกจากระบบ'));
+        final settingsScrollable = find.descendant(
+          of: find.byType(SettingScreen),
+          matching: find.byType(Scrollable),
+        );
+        final signOut = find.descendant(
+          of: find.byType(SettingScreen),
+          matching: find.widgetWithText(ListTile, 'ออกจากระบบ'),
+        );
+        expect(settingsScrollable, findsOneWidget);
+        await tester.scrollUntilVisible(
+          signOut,
+          240,
+          scrollable: settingsScrollable,
+        );
+        await _tapVisibleCenter(tester, signOut);
         await _pumpUntilFound(tester, find.byType(LoginScreen));
         expect(accountGateway.signOutCalls, 1);
         expect(await reopenedEntryState.read(), AppEntryMode.signedOut);
@@ -648,6 +729,9 @@ Future<_SrsVocabularyInventory> _readSrsVocabularyInventory(
           s.due_at_utc_ms AS due_at_utc_ms
         FROM vocabulary_words AS w
         LEFT JOIN srs_states AS s ON s.word_id = w.id
+        WHERE w.owner_id = (
+          SELECT id FROM local_owners WHERE is_active = 1 ORDER BY id LIMIT 1
+        )
         ORDER BY w.id, s.id
       ''').get();
   return (
@@ -709,14 +793,47 @@ void _expectStationWithoutSrs(_SrsVocabularyInventory inventory) {
   expect(station.dueAtUtcMs, isNull, reason: station.diagnostic);
 }
 
-_StationSrsState _expectStationWithSrs(_SrsVocabularyInventory inventory) {
-  final station = _expectStationInventory(inventory);
-  expect(station.srsId, isNotNull, reason: station.diagnostic);
-  expect(station.srsOwnerId, station.ownerId, reason: station.diagnostic);
-  expect(station.srsWordId, station.wordId, reason: station.diagnostic);
-  expect(station.dueAtUtcMs, isNotNull, reason: station.diagnostic);
-  return station;
-}
+Future<_StationSrsState> _expectSelectedReadingWithSrs(
+  WidgetTester tester,
+  AppDatabase database,
+  String wordId,
+  String spelling,
+) async => (await tester.runAsync(() async {
+  // Reading can select verified starter content as well as learner vocabulary.
+  // The review state must still belong to the active learner and exact word.
+  final rows = await database
+      .customSelect(
+        '''
+SELECT o.id AS owner_id, w.id AS word_id, w.spelling,
+       s.id AS srs_id, s.owner_id AS srs_owner_id,
+       s.word_id AS srs_word_id, s.due_at_utc_ms
+FROM local_owners o
+JOIN srs_states s ON s.owner_id = o.id
+JOIN vocabulary_words w ON w.id = s.word_id
+WHERE o.is_active = 1 AND w.is_deleted = 0 AND w.id = ?
+''',
+        variables: [Variable<String>(wordId)],
+      )
+      .get();
+  expect(
+    rows,
+    hasLength(1),
+    reason: 'The selected reading word must have one owner-scoped SRS state',
+  );
+  final row = rows.single;
+  expect(row.read<String>('spelling'), spelling);
+  expect(row.read<String>('srs_owner_id'), row.read<String>('owner_id'));
+  expect(row.read<String>('srs_word_id'), wordId);
+  return (
+    ownerId: row.read<String>('owner_id'),
+    wordId: row.read<String>('word_id'),
+    srsId: row.read<String>('srs_id'),
+    srsOwnerId: row.read<String>('srs_owner_id'),
+    srsWordId: row.read<String>('srs_word_id'),
+    dueAtUtcMs: row.read<int>('due_at_utc_ms'),
+    diagnostic: 'Exact selected reading word has one active-owner SRS row',
+  );
+}))!;
 
 Future<void> _openConfiguredMode(WidgetTester tester, String entryKey) async {
   await _dismissPhysicalIme(tester);
@@ -740,23 +857,59 @@ Future<void> _openConfiguredMode(WidgetTester tester, String entryKey) async {
   );
   scrollPosition.jumpTo(0);
   await tester.pump();
-  await tester.scrollUntilVisible(entry, 240, scrollable: scrollable);
+  void reportScroll(String phase) {
+    debugPrintSynchronously(
+      '[MODE-SCROLL] phase=$phase entry=$entryKey '
+      'count=${entry.evaluate().length} '
+      'pixels=${scrollPosition.pixels} '
+      'max=${scrollPosition.maxScrollExtent} '
+      'viewport=${scrollPosition.viewportDimension} '
+      'rect=${tester.getRect(scrollable)} '
+      'physicalSize=${tester.view.physicalSize} '
+      'dpr=${tester.view.devicePixelRatio} '
+      'viewInsets=${tester.view.viewInsets}',
+    );
+  }
+
+  reportScroll('before');
+  try {
+    await tester.scrollUntilVisible(
+      entry,
+      240,
+      scrollable: scrollable,
+      continuous: true,
+    );
+  } finally {
+    reportScroll('after');
+  }
   await tester.pump();
   await tester.ensureVisible(entry);
+  await tester.pump();
+  expect(entry.hitTestable(), findsOneWidget);
   await tester.tap(entry);
 
   final sheet = find.byKey(const ValueKey('session-configuration-sheet'));
   await _pumpUntilFound(tester, sheet);
   expect(sheet, findsOneWidget);
   expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+  await tester.pumpAndSettle();
+  final options = find.byKey(const ValueKey('session-options-toggle'));
+  await tester.ensureVisible(options);
+  await tester.pump();
+  expect(options.hitTestable(), findsOneWidget);
+  await tester.tap(options);
   final itemCount = find.byKey(const ValueKey('session-item-count'));
   await _pumpUntilFound(tester, itemCount);
+  await tester.ensureVisible(itemCount);
+  await tester.pump();
   await tester.enterText(itemCount, '1');
   await _dismissPhysicalIme(tester);
 
   final start = find.byKey(const ValueKey('session-config-start'));
   await _pumpUntilFound(tester, start);
   await tester.ensureVisible(start);
+  await tester.pump();
+  expect(start.hitTestable(), findsOneWidget);
   await tester.tap(start);
   await tester.pump();
 }
@@ -1070,7 +1223,7 @@ Future<void> _enterAssociativeStageText(
 
 Finder _associativeContinueButton() => find.descendant(
   of: find.byType(AssociativeReadingSessionScreen),
-  matching: find.widgetWithText(FilledButton, 'Complete & Continue'),
+  matching: find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
 );
 
 Future<void> _tapAssociativeContinue(WidgetTester tester) async {
@@ -1083,7 +1236,7 @@ Future<void> _tapAssociativeContinue(WidgetTester tester) async {
 
 Finder _associativeFinishButton() => find.descendant(
   of: find.byType(AssociativeReadingSessionScreen),
-  matching: find.widgetWithText(FilledButton, 'Finish Session'),
+  matching: find.widgetWithText(FilledButton, 'จบกิจกรรม'),
 );
 
 Future<void> _tapAssociativeFinish(WidgetTester tester) async {
@@ -1095,18 +1248,16 @@ Future<void> _tapAssociativeFinish(WidgetTester tester) async {
 }
 
 Future<void> _pumpUntilAssociativeStage4Outcome(WidgetTester tester) async {
-  final stageFive = find.text('Stage 5: Context Transfer');
+  final stageFive = find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่');
   final associationRetry = find.byKey(
     const ValueKey<String>('current-association-retry'),
   );
   final checkpointRetry = find.byKey(
     const ValueKey<String>('current-reading-checkpoint-retry'),
   );
-  const cueRequired =
-      'Create a memory cue for every target word before '
-      'continuing.';
+  const cueRequired = 'สร้างตัวช่วยจำให้ครบทุกคำเป้าหมายก่อนดำเนินต่อ';
   const associationSaveFailed =
-      'Could not save the memory association. Try again.';
+      'ยังยืนยันการบันทึกการเชื่อมโยงไม่ได้ กรุณาลองอีกครั้ง';
 
   for (var index = 0; index < 250; index++) {
     await tester.pump(const Duration(milliseconds: 20));
@@ -1137,7 +1288,7 @@ Future<void> _pumpUntilAssociativeStage4Outcome(WidgetTester tester) async {
 Future<void> _pumpUntilAssociativeFinishOutcome(WidgetTester tester) async {
   final launcherStart = find.descendant(
     of: find.byType(AssociativeReadingLauncherScreen),
-    matching: find.widgetWithText(FilledButton, 'Start reading'),
+    matching: find.widgetWithText(FilledButton, 'เริ่มอ่าน'),
   );
   final closeRetry = find.byKey(
     const ValueKey<String>('current-session-close-retry'),
@@ -1145,8 +1296,7 @@ Future<void> _pumpUntilAssociativeFinishOutcome(WidgetTester tester) async {
   final progressRetry = find.byKey(
     const ValueKey<String>('current-reading-progress-retry'),
   );
-  const sessionCloseFailed =
-      'Could not finish the learning session. Try again.';
+  const sessionCloseFailed = 'ยังจบกิจกรรมการเรียนไม่ได้ กรุณาลองอีกครั้ง';
   const progressSaveFailed = 'บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง';
 
   for (var index = 0; index < 250; index++) {
@@ -1171,7 +1321,7 @@ Future<void> _pumpUntilAssociativeFinishOutcome(WidgetTester tester) async {
 
     final action = _associativeCurrentAction(tester);
     if (action.label != '<missing or ambiguous>' &&
-        action.label != 'Finish Session') {
+        action.label != 'จบกิจกรรม') {
       fail(
         _associativeFinishDiagnostic(
           tester,
@@ -1179,7 +1329,7 @@ Future<void> _pumpUntilAssociativeFinishOutcome(WidgetTester tester) async {
         ),
       );
     }
-    if (action.label == 'Finish Session' && action.enabled == true) {
+    if (action.label == 'จบกิจกรรม' && action.enabled == true) {
       fail(
         _associativeFinishDiagnostic(
           tester,

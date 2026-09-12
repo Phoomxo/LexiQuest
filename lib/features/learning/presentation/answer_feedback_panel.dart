@@ -36,6 +36,10 @@ final class AnswerFeedbackPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCorrect = feedback.isCorrect;
+    final statusLabel = isCorrect ? 'ถูกต้อง' : 'ยังไม่ถูก';
+    final actionLabel = feedback.nextAction == AnswerFeedbackAction.next
+        ? 'ข้อถัดไป'
+        : 'ลองอีกครั้ง';
     final callback = isCorrect ? onNext : onRetry;
     final icon = isCorrect ? Icons.check_circle : Icons.cancel;
     final report = switch ((reportIdentity, onReport)) {
@@ -51,7 +55,8 @@ final class AnswerFeedbackPanel extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       liveRegion: true,
-      label: feedback.semanticAnnouncement,
+      label:
+          '$statusLabel คำตอบที่ถูก: ${feedback.canonicalCorrectAnswer} $actionLabel',
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -61,18 +66,18 @@ final class AnswerFeedbackPanel extends StatelessWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Icon(icon, semanticLabel: feedback.statusLabel),
+                  Icon(icon, semanticLabel: statusLabel),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      feedback.statusLabel,
+                      statusLabel,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Correct answer: ${feedback.canonicalCorrectAnswer}'),
+              Text('คำตอบที่ถูก: ${feedback.canonicalCorrectAnswer}'),
               if (feedback.committedContrastiveAttempt != null) ...[
                 const SizedBox(height: 12),
                 CommittedContrastiveFeedbackPanel(
@@ -88,12 +93,14 @@ final class AnswerFeedbackPanel extends StatelessWidget {
                     container: true,
                     explicitChildNodes: true,
                     button: true,
-                    label: 'Save for review',
+                    label: 'บันทึกไว้ทบทวน',
+                    enabled: true,
+                    onTap: () => bookmark(identity),
                     child: ExcludeSemantics(
                       child: OutlinedButton.icon(
                         onPressed: () => bookmark(identity),
                         icon: const Icon(Icons.bookmark_add_outlined),
-                        label: const Text('Save for review'),
+                        label: const Text('บันทึกไว้ทบทวน'),
                       ),
                     ),
                   ),
@@ -104,7 +111,13 @@ final class AnswerFeedbackPanel extends StatelessWidget {
                   container: true,
                   explicitChildNodes: true,
                   button: true,
-                  label: 'Report content',
+                  label: 'รายงานเนื้อหา',
+                  enabled: true,
+                  onTap: () => _showContentReport(
+                    context,
+                    identity: contract.identity,
+                    action: contract.action,
+                  ),
                   child: ExcludeSemantics(
                     child: OutlinedButton.icon(
                       onPressed: () => _showContentReport(
@@ -113,19 +126,16 @@ final class AnswerFeedbackPanel extends StatelessWidget {
                         action: contract.action,
                       ),
                       icon: const Icon(Icons.flag_outlined),
-                      label: const Text('Report content'),
+                      label: const Text('รายงานเนื้อหา'),
                     ),
                   ),
                 ),
               ],
               const SizedBox(height: 12),
               if (callback != null)
-                FilledButton(
-                  onPressed: callback,
-                  child: Text(feedback.actionLabel),
-                )
+                FilledButton(onPressed: callback, child: Text(actionLabel))
               else
-                Text('Next action: ${feedback.actionLabel}'),
+                Text('ทำต่อ: $actionLabel'),
             ],
           ),
         ),

@@ -48,13 +48,21 @@ void main() {
       expect(find.text('ดาว 3/3'), findsOneWidget);
       expect(find.byIcon(Icons.star), findsNWidgets(3));
       expect(find.bySemanticsLabel('ดาว 3 จาก 3'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'กลับไปเรียนต่อ'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'ฝึกซ้ำชุดเดิม'), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'กลับไปเรียนต่อ'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(OutlinedButton, 'ฝึกซ้ำชุดเดิม'),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(find.text('กลับไปเรียนต่อ'));
       await tester.tap(find.text('กลับไปเรียนต่อ'));
       expect(returned, 1);
       expect(find.text('ไม่ได้จับเวลา'), findsOneWidget);
       expect(find.text('ไม่มีข้อมูลเวลาเรียนจริงครบทั้งรอบ'), findsOneWidget);
       expect(find.text('เวลาเล่น 0 วินาที'), findsNothing);
+      await tester.ensureVisible(find.text('ฝึกซ้ำชุดเดิม'));
       await tester.tap(find.text('ฝึกซ้ำชุดเดิม'));
       expect(replay, 1);
       expect(tester.takeException(), isNull);

@@ -12,6 +12,83 @@ import 'package:vocab_learning_app/features/adventure/presentation/widgets/adven
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
+  testWidgets('device regression: toggling journey reuses its rendered map', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_snapshot()));
+    final selector = find.byKey(const ValueKey('adventure-map-list-switch'));
+    await tester.ensureVisible(selector);
+    await tester.pumpAndSettle();
+    final map = find.byKey(const ValueKey('adventure-map'));
+    final original = tester.element(map);
+    await tester.tap(
+      find.descendant(of: selector, matching: find.text('รายการ')),
+    );
+    await tester.pumpAndSettle();
+    expect(map, findsNothing);
+    expect(find.byKey(const ValueKey('adventure-map-list')), findsOneWidget);
+    await tester.tap(
+      find.descendant(of: selector, matching: find.text('แผนที่')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.element(map), same(original));
+    expect(find.byKey(const ValueKey('adventure-map-list')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('journey choice survives scrolling and keeps companion stable', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 320);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_app(_snapshot()));
+    final selector = find.byKey(const ValueKey('adventure-map-list-switch'));
+    await tester.scrollUntilVisible(
+      selector,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    await tester.ensureVisible(selector);
+    await tester.pump();
+    final companion = tester.widget(find.byType(AdventureCompanionPanel));
+    await tester.tap(
+      find.descendant(of: selector, matching: find.text('รายการ')),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<SegmentedButton<bool>>(selector).selected, {true});
+    expect(
+      tester.widget(find.byType(AdventureCompanionPanel)),
+      same(companion),
+    );
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(0);
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      selector,
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(tester.widget<SegmentedButton<bool>>(selector).selected, {true});
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('primary mission precedes journey exploration', (tester) async {
+    await tester.pumpWidget(_app(_snapshot()));
+    expect(
+      tester
+          .getTopLeft(find.byKey(const ValueKey('adventure-primary-mission')))
+          .dy,
+      lessThan(
+        tester
+            .getTopLeft(find.byKey(const ValueKey('adventure-map-list-switch')))
+            .dy,
+      ),
+    );
+  });
   testWidgets(
     'renders one primary mission and always-visible Standard switch',
     (tester) async {

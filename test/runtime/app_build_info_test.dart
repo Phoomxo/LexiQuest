@@ -133,6 +133,41 @@ void main() {
   });
 
   testWidgets(
+    'an embedding owner can reopen MyApp before disposing shared resources',
+    (tester) async {
+      var disposeCalls = 0;
+      final controller = DisplayPreferencesController(
+        LearnerPreferencesUseCases(
+          repository: _DisplayRepository(),
+          owners: _DisplayOwner(),
+          nowUtc: () => DateTime.utc(2026, 9, 8),
+        ),
+      );
+      await controller.initialize();
+      final dependencies = _dependencies(
+        const AppBuildInfo.fromEnvironment(),
+        displayPreferences: controller,
+        disposeResources: () async {
+          disposeCalls++;
+          controller.dispose();
+        },
+      );
+      for (var open = 0; open < 2; open++) {
+        await tester.pumpWidget(
+          MyApp(dependencies: dependencies, ownsDependencies: false),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        expect(disposeCalls, 0);
+      }
+      await dependencies.dispose();
+      expect(disposeCalls, 1);
+    },
+  );
+
+  testWidgets(
     'MyApp consumes bounded cleanup failures on replace and unmount',
     (tester) async {
       var firstDisposeCalls = 0;

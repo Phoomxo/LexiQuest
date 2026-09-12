@@ -178,8 +178,7 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
   @override
   Widget build(BuildContext context) => Semantics(
     container: true,
-    label:
-        'Handwriting scratchpad. Draw locally; handwriting is not recognized.',
+    label: 'กระดานฝึกเขียนในเครื่อง ระบบไม่อ่านหรือตรวจลายมืออัตโนมัติ',
     child: SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -188,13 +187,13 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
           AccessibilitySemanticRegion(
             role: AccessibilitySemanticRole.prompt,
             child: Text(
-              'Practice writing',
+              'ฝึกเขียน',
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Draw your answer for your own review. This stays on this device only and is never recognized automatically.',
+            'เขียนคำตอบเพื่อตรวจด้วยตัวเอง ข้อมูลอยู่ในเครื่องนี้เท่านั้น ระบบไม่อ่านลายมืออัตโนมัติ',
           ),
           const SizedBox(height: 12),
           AccessibilitySemanticRegion(
@@ -203,7 +202,7 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
               child: SizedBox(
                 height: 240,
                 child: Semantics(
-                  label: 'Local handwriting canvas',
+                  label: 'พื้นที่ฝึกเขียนในเครื่อง',
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onPanStart: (details) =>
@@ -232,24 +231,24 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
                       ? _controller.undo
                       : null,
                   icon: const Icon(Icons.undo),
-                  label: const Text('Undo stroke'),
+                  label: const Text('ย้อนเส้นล่าสุด'),
                 ),
                 OutlinedButton.icon(
                   onPressed: clearEphemeralState,
                   icon: const Icon(Icons.clear),
-                  label: const Text('Clear local work'),
+                  label: const Text('ล้างสิ่งที่เขียน'),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Typed accessibility alternative',
+            'พิมพ์แทนการเขียน',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           const Text(
-            'Typing is an alternative for your own self-check, not handwriting recognition.',
+            'คุณเลือกพิมพ์เพื่อตรวจคำตอบด้วยตัวเองได้ ระบบไม่ได้ใช้ข้อความนี้อ่านลายมือ',
           ),
           AccessibilitySemanticRegion(
             role: AccessibilitySemanticRole.responseAndInput,
@@ -258,15 +257,14 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
               maxLength: 120,
               onChanged: _onTypedAlternativeChanged,
               decoration: const InputDecoration(
-                labelText: 'Type your answer instead',
-                helperText:
-                    'Your text stays only while this scratchpad is open.',
+                labelText: 'พิมพ์คำตอบแทน',
+                helperText: 'ข้อความอยู่เฉพาะระหว่างเปิดกระดานฝึกนี้',
               ),
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Choose your own result. This does not update progress or rewards.',
+            'เลือกผลการตรวจด้วยตัวเอง โดยไม่เปลี่ยนความก้าวหน้าหรือรางวัล',
           ),
           AccessibilitySemanticRegion(
             role: AccessibilitySemanticRole.navigation,
@@ -277,13 +275,13 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
                 FilledButton(
                   onPressed: () =>
                       _selfCheck(HandwritingSelfCheckSelection.looksCorrect),
-                  child: const Text('I checked it'),
+                  child: const Text('ตรวจด้วยตัวเองแล้ว'),
                 ),
                 OutlinedButton(
                   onPressed: () => _selfCheck(
                     HandwritingSelfCheckSelection.needsMorePractice,
                   ),
-                  child: const Text('I need more practice'),
+                  child: const Text('อยากฝึกเพิ่ม'),
                 ),
               ],
             ),

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'voice_audio_cache.dart';
 import 'voice_audio_player.dart';
 import 'voice_capability.dart';
@@ -62,12 +64,13 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
       final cachedBytes = await _audioCache.get(lookupKey);
       cancellation.throwIfCancelled();
       if (cachedBytes != null) {
-        await _audioPlayer.play(cachedBytes);
+        final playback = await _play(cachedBytes);
         cancellation.throwIfCancelled();
         return _result(
           request: request,
           cacheHit: true,
           modelVersion: _modelVersion,
+          playbackCompleted: playback?.completed,
         );
       }
     }
@@ -89,14 +92,24 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
       cancellation.throwIfCancelled();
     }
 
-    await _audioPlayer.play(audio.bytes);
+    final playback = await _play(audio.bytes);
     cancellation.throwIfCancelled();
     return _result(
       request: request,
       cacheHit: false,
       requestId: audio.requestId,
       modelVersion: audio.modelVersion,
+      playbackCompleted: playback?.completed,
     );
+  }
+
+  Future<VoiceAudioPlayback?> _play(Uint8List bytes) async {
+    final player = _audioPlayer;
+    if (player is VoiceAudioPlayerWithCompletion) {
+      return player.playWithCompletion(bytes);
+    }
+    await player.play(bytes);
+    return null;
   }
 
   void _validateRoute(VoiceRequest request) {
@@ -111,6 +124,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
     required bool cacheHit,
     String? requestId,
     String? modelVersion,
+    Future<void>? playbackCompleted,
   }) {
     return VoicePlaybackResult(
       requestedEngine: request.assignedEngine ?? descriptor.engine,
@@ -119,6 +133,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
       cacheHit: cacheHit,
       requestId: requestId,
       modelVersion: modelVersion,
+      playbackCompleted: playbackCompleted,
     );
   }
 

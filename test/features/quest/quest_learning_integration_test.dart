@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
@@ -18,6 +19,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_event_conte
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -61,6 +63,7 @@ QuestDefinition _quizDef({int targetCount = 1}) => QuestDefinition(
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
+  setUpAll(timezone_data.initializeTimeZones);
   late db.AppDatabase database;
   late LearningUseCases learningUseCases;
   late QuestUseCases questUseCases;
@@ -145,6 +148,198 @@ void main() {
   });
 
   group('Durable Quest reconciliation — D7.1 integration', () {
+    for (final scenario in [
+      'receipt-gap',
+      'saved-receipt',
+      'removed-catalog',
+    ]) {
+      final failReceipt = scenario != 'saved-receipt';
+      test(
+        scenario == 'removed-catalog'
+            ? 'durable history receipt gap applies original grant after catalog removal'
+            : failReceipt
+            ? 'durable history receipt gap recovers original economy after catalog replacement'
+            : 'durable history reward retry uses its saved receipt without catalog metadata',
+        () async {
+          var clock = DateTime.utc(2026, 8, 4, 10);
+          final originalTime = clock;
+          var sinkUnavailable = !failReceipt;
+          var questInvocations = 0;
+          final rewards = DriftRewardRepository(database);
+          final subject = QuestUseCases(
+            repository: questRepo,
+            owners: _FakeOwners(owner),
+            generateId: () => 'durable-history-${++idCount}',
+            nowUtc: () => clock,
+            timezoneId: 'Asia/Bangkok',
+            rewardSink:
+                ({
+                  required ownerId,
+                  required idempotencyKey,
+                  required xpAmount,
+                  required sourceEventId,
+                  required occurredAtUtc,
+                  rewardItemId,
+                }) async {
+                  if (sinkUnavailable)
+                    throw StateError('synthetic reward outage');
+                  expect(ownerId, _ownerId);
+                  expect(xpAmount, 50);
+                  expect(occurredAtUtc, originalTime);
+                  expect(sourceEventId, idempotencyKey);
+                  expect(rewardItemId, isNull);
+                  await rewards.grantQuestXpAndCoins(
+                    ownerId: ownerId,
+                    sourceEventId: sourceEventId,
+                    xpAmount: xpAmount,
+                    occurredAtUtc: occurredAtUtc,
+                  );
+                },
+          );
+          catalog = [_quizDef(targetCount: 1)];
+          final original = (await subject.startQuest(catalog.single))!;
+          const evidenceId = 'durable-versioned-evidence';
+          const receiptId =
+              'learning-projection:quest:learning-event:$evidenceId:v2';
+          const rewardReceiptId =
+              'learning-projection:reward:learning-event:$evidenceId:v2';
+          await _recordEvidence(
+            database: database,
+            owner: owner,
+            sourceEvidenceId: evidenceId,
+            evidenceContext: _legacyDeclaredEvidence(
+              EvidenceClass.independentRecall,
+              engagementAllowed: true,
+            ),
+          );
+          if (failReceipt) {
+            await database.customStatement(
+              r'''CREATE TEMP TRIGGER fail_quest_receipt
+            BEFORE INSERT ON events_v2
+            WHEN NEW.event_type = 'LearningProjectionApplied'
+              AND json_extract(NEW.payload_json, '$.projection') = 'quest'
+            BEGIN SELECT RAISE(ABORT, 'synthetic quest receipt failure'); END''',
+            );
+          }
+          final first = _reconciler(
+            database,
+            subject,
+            () => catalog,
+            reconcileRewards: true,
+            onQuestInvocation: () => questInvocations++,
+          );
+          await first.reconcileOwner(_ownerId);
+          expect(
+            (await questRepo.getAllInstances(_ownerId)).single.state,
+            QuestInstanceState.completed,
+          );
+          final savedReceipt = await (database.select(
+            database.eventsV2,
+          )..where((row) => row.eventId.equals(receiptId))).getSingleOrNull();
+          if (failReceipt) {
+            expect(savedReceipt, isNull);
+            await database.customStatement('DROP TRIGGER fail_quest_receipt');
+          } else {
+            expect(savedReceipt, isNotNull);
+          }
+          expect(
+            await (database.select(
+              database.eventsV2,
+            )..where((row) => row.eventId.equals(rewardReceiptId))).get(),
+            isEmpty,
+          );
+          expect(
+            await database.select(database.rewardTransactions).get(),
+            isEmpty,
+          );
+          clock = DateTime.utc(2026, 8, 5, 10);
+          catalog = [_replacementQuizDef()];
+          final next = (await subject.startQuest(catalog.single))!;
+          if (scenario == 'removed-catalog') catalog = [];
+          sinkUnavailable = false;
+          final callsBeforeRetry = questInvocations;
+          if (!failReceipt) {
+            await database.customStatement(
+              "UPDATE quest_definitions SET objectives_json = '{' WHERE quest_id = 'q-quiz-correct'",
+            );
+            await expectLater(
+              questRepo.getDefinition('q-quiz-correct'),
+              throwsFormatException,
+            );
+          }
+          final restarted = _reconciler(
+            database,
+            subject,
+            () => catalog,
+            reconcileRewards: true,
+            onQuestInvocation: () => questInvocations++,
+          );
+
+          await restarted.reconcileOwner(_ownerId);
+          await restarted.reconcileOwner(_ownerId);
+
+          final receipt = await (database.select(
+            database.eventsV2,
+          )..where((row) => row.eventId.equals(receiptId))).getSingle();
+          final receiptPayload =
+              jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+          expect(receiptPayload['outcome'], 'applied');
+          final receiptResult =
+              receiptPayload['result'] as Map<String, dynamic>;
+          expect(receiptResult['eligible'], isTrue);
+          expect((receiptResult['rewardGrants'] as List).single, {
+            'ownerId': _ownerId,
+            'idempotencyKey':
+                'quest_complete_${original.instanceId}_${original.questId}',
+            'sourceEventId':
+                'quest_complete_${original.instanceId}_${original.questId}',
+            'xpAmount': 50,
+            'occurredAtUtcMs': originalTime.millisecondsSinceEpoch,
+          });
+          if (!failReceipt) {
+            expect(
+              questInvocations,
+              callsBeforeRetry,
+              reason: 'saved quest receipt bypasses the unavailable catalog',
+            );
+            expect(receipt.toJson(), savedReceipt!.toJson());
+          }
+          expect(
+            await (database.select(
+              database.eventsV2,
+            )..where((row) => row.eventId.equals(rewardReceiptId))).get(),
+            hasLength(1),
+          );
+          final sourceKey =
+              'quest_complete_${original.instanceId}_${original.questId}';
+          final xp = await (database.select(
+            database.pointsLedgerEntries,
+          )..where((row) => row.sourceEventId.equals(sourceKey))).get();
+          final coins = await (database.select(
+            database.rewardTransactions,
+          )..where((row) => row.sourceEventId.equals(sourceKey))).get();
+          expect(xp, hasLength(1));
+          expect(coins, hasLength(1));
+          expect(xp.single.amount, 50);
+          expect(coins.single.amount, 50);
+          expect(xp.single.ownerId, _ownerId);
+          expect(coins.single.ownerId, _ownerId);
+          expect(
+            xp.single.occurredAtUtcMs,
+            originalTime.millisecondsSinceEpoch,
+          );
+          expect(
+            coins.single.occurredAtUtcMs,
+            originalTime.millisecondsSinceEpoch,
+          );
+          expect(coins.single.itemId, isNull);
+          final active = (await questRepo.getActiveInstances(_ownerId)).single;
+          expect(active.instanceId, next.instanceId);
+          expect(active.progress.single.currentCount, 0);
+        },
+      );
+    }
+
     test('correct answer advances matching quest objective', () async {
       // targetCount: 2 so quest advances but does not complete after 1 answer.
       final definition = _quizDef(targetCount: 2);
@@ -513,12 +708,15 @@ void main() {
 LearningSideEffectReconciler _reconciler(
   db.AppDatabase database,
   QuestUseCases quest,
-  List<QuestDefinition> Function() catalog,
-) {
+  List<QuestDefinition> Function() catalog, {
+  bool reconcileRewards = false,
+  void Function()? onQuestInvocation,
+}) {
   return LearningSideEffectReconciler(
     database,
     rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
     questSink: (event) async {
+      onQuestInvocation?.call();
       final definitions = catalog();
       final projection = await quest.projectEvent(event, definitions);
       final payload = quest.projectionPayload(projection, definitions);
@@ -526,8 +724,36 @@ LearningSideEffectReconciler _reconciler(
           ? LearningProjectionResult.applied(payload: payload)
           : LearningProjectionResult.notApplicable(payload: payload);
     },
+    rewardSink: !reconcileRewards
+        ? null
+        : (event, result) async {
+            final applied = await quest.reconcileReward(event, result);
+            return LearningProjectionResult.applied(
+              payload: {'rewardApplied': applied},
+            );
+          },
   );
 }
+
+QuestDefinition _replacementQuizDef() => QuestDefinition(
+  questId: 'q-quiz-correct',
+  catalogVersion: 2,
+  title: 'Replacement',
+  description: 'New criteria and reward',
+  type: QuestType.daily,
+  objectives: [
+    QuestObjective(
+      objectiveId: 'obj-correct',
+      description: 'New recall objective',
+      targetCount: 5,
+      criteria: ObjectiveCriteria(
+        eventType: 'SrsReviewCompleted',
+        filters: {'correct': true},
+      ),
+    ),
+  ],
+  reward: RewardSpec(xpAmount: 900),
+);
 
 Future<void> _recordEvidence({
   required db.AppDatabase database,

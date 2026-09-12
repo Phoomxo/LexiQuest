@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../identity/domain/owner_lifecycle_manifest.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
 
 typedef DeleteOwnerSecrets = Future<void> Function(String ownerId);
 typedef DeleteOwnerSecretsFenced =
@@ -67,6 +68,7 @@ class LocalDataDeletion implements LocalDataEraser {
   @override
   Future<int> eraseAll({required String ownerId}) async {
     final normalizedOwnerId = ownerId.trim();
+    PackagedStarterAccess.requireMutable(normalizedOwnerId);
     if (normalizedOwnerId.isEmpty) {
       throw ArgumentError.value(ownerId, 'ownerId', 'must not be empty');
     }

@@ -6,6 +6,8 @@ import '../../../data/local/app_database.dart' as db;
 import '../../events/domain/event_envelope_v2.dart';
 import '../../research/domain/research_participation_permit.dart';
 import '../../research/domain/research_event_identity.dart';
+import '../../research/domain/research_session_proof.dart';
+import '../../research/data/drift_research_session_proof_repository.dart';
 import '../domain/research_sync.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
@@ -19,10 +21,38 @@ final class DriftResearchSyncAdapter {
     this.database, {
     required this.rollout,
     required this.authorizer,
-  });
+    DateTime Function()? researchNowUtc,
+  }) : _researchNowUtc = researchNowUtc ?? (() => DateTime.now().toUtc());
   final db.AppDatabase database;
   final ResearchMeasurementSyncRollout rollout;
   final ResearchSyncAuthorizer? authorizer;
+  final DateTime Function() _researchNowUtc;
+  late final _proofs = DriftResearchSessionProofRepository(
+    database,
+    rollout: rollout,
+    authorizeCandidate: authorizer == null ? null : _authorizeProofCandidate,
+    nowUtc: _researchNowUtc,
+  );
+
+  Future<bool> _authorizeProofCandidate(ResearchSyncRequest request) async {
+    final proof = ResearchSessionProof.decode(request.payload);
+    return allowed(
+      ResearchSyncSnapshot(
+        SyncCollection.researchSessionProofs,
+        request.ownerId,
+        proof.id,
+        1,
+        0,
+        _utc(proof.endedAtUtcMs ?? proof.startedAtUtcMs),
+        proof.toJson(),
+        phase: ResearchSyncPhase.enqueue,
+      ),
+      request.firebaseUid,
+      request.ownerGateToken!,
+      request.evaluatedAtUtc,
+      ResearchSyncPhase.enqueue,
+    );
+  }
 
   Future<bool> ownerAllowed(
     String ownerId,
@@ -127,6 +157,16 @@ final class DriftResearchSyncAdapter {
     if (inserted >= limit || authorizer == null) return inserted;
     // At most 6 * limit candidate rows inspected; no new persistence inventory.
     for (final c in ResearchSyncContract.collections) {
+      if (inserted >= limit) return inserted;
+      if (c == SyncCollection.researchSessionProofs) {
+        inserted += await _proofs.prepareForOwner(
+          ownerId: ownerId,
+          firebaseUid: firebaseUid,
+          ownerGateToken: ownerGateToken,
+          limit: limit - inserted,
+        );
+        continue;
+      }
       final events = c == SyncCollection.neutralEventsV2;
       final table = _table(c);
       final idColumn = events ? 'event_id' : 'id';
@@ -270,6 +310,13 @@ final class DriftResearchSyncAdapter {
       return false;
     }
     if (s.collection == SyncCollection.researchWithdrawals) {
+      if (s.revision != 1 ||
+          s.entityType != 'researchWithdrawal' ||
+          !ResearchSyncContract.same(s.payload, {
+            'permitId': s.id,
+            'ownerId': s.ownerId,
+          }))
+        return false;
       return phase != ResearchSyncPhase.pull &&
           await ownerAllowed(
             s.ownerId,
@@ -278,7 +325,8 @@ final class DriftResearchSyncAdapter {
             now,
             requireAuthorizer: false,
           ) &&
-          await _withdrawalPending(s.ownerId, s.id);
+          (await _durableWithdrawalExists(s) ||
+              await _withdrawalPending(s.ownerId, s.id));
     }
     if (!await ownerAllowed(s.ownerId, uid, token, now)) return false;
     if (!await localContextAllowed(
@@ -403,6 +451,13 @@ final class DriftResearchSyncAdapter {
       Map<String, Object?>? run;
       if (s.collection == SyncCollection.motivationMeasurementRuns) {
         run = s.payload;
+      } else if (s.collection == SyncCollection.researchSessionProofs) {
+        final proof = ResearchSessionProof.decode(s.payload);
+        run = (await snapshot(
+          SyncCollection.motivationMeasurementRuns,
+          s.ownerId,
+          proof.measurementRunId,
+        )).payload;
       } else if (s.collection == SyncCollection.motivationResponses) {
         run = (await snapshot(
           SyncCollection.motivationMeasurementRuns,
@@ -486,7 +541,10 @@ final class DriftResearchSyncAdapter {
     // Signature/receipts/current instrument pins remain the real authorizer's job.
     if (provenance != null) return true;
     final local = await snapshot(s.collection, s.ownerId, s.id);
-    if (!_sameFact(local.payload, s.payload)) return false;
+    if (s.collection == SyncCollection.researchSessionProofs
+        ? !ResearchSyncContract.same(local.payload, s.payload)
+        : !_sameFact(local.payload, s.payload))
+      return false;
     final admitted =
         await (database.select(database.outboxOperations)..where(
               (r) =>
@@ -498,7 +556,9 @@ final class DriftResearchSyncAdapter {
                   r.payloadVersion.equals(1),
             ))
             .getSingleOrNull();
-    return admitted != null;
+    return admitted != null &&
+        (s.collection != SyncCollection.researchSessionProofs ||
+            admitted.baseRevision == 0);
   }
 
   Future<ResearchSyncSnapshot> snapshot(
@@ -566,6 +626,19 @@ final class DriftResearchSyncAdapter {
     }
     final revision = row['local_revision']! as int;
     final cloud = row['cloud_revision']! as int;
+    if (c == SyncCollection.researchSessionProofs) {
+      final proof = researchSessionProofFromRow(row);
+      if (revision != 1) throw const InvalidSyncPayloadFailure();
+      return ResearchSyncSnapshot(
+        c,
+        owner,
+        id,
+        1,
+        0,
+        _utc(proof.endedAtUtcMs ?? proof.startedAtUtcMs),
+        proof.toJson(),
+      );
+    }
     if (c == SyncCollection.researchParticipationPermits) {
       final permit = _permitFromRow(row);
       return ResearchSyncSnapshot(
@@ -688,6 +761,10 @@ final class DriftResearchSyncAdapter {
       throw const InvalidSyncPayloadFailure();
     }
     final c = entity.collection;
+    if (c == SyncCollection.researchSessionProofs) {
+      await _applyProof(owner, entity, uid, token, now);
+      return;
+    }
     final existing = await _row(c, entity.entityId);
     final permitPull = c == SyncCollection.researchParticipationPermits;
     if (existing != null && existing['owner_id'] != owner) {
@@ -877,6 +954,198 @@ final class DriftResearchSyncAdapter {
     }
   }
 
+  Future<void> _applyProof(
+    String owner,
+    SyncEntity entity,
+    String uid,
+    String token,
+    DateTime now,
+  ) async {
+    final proof = ResearchSessionProof.decode(entity.payload);
+    final updated = _utc(proof.endedAtUtcMs ?? proof.startedAtUtcMs);
+    if (entity.clientUpdatedAtUtc != updated)
+      throw const InvalidSyncPayloadFailure();
+    final incoming = ResearchSyncSnapshot(
+      SyncCollection.researchSessionProofs,
+      owner,
+      proof.id,
+      1,
+      0,
+      updated,
+      proof.toJson(),
+      phase: ResearchSyncPhase.pull,
+    );
+    final previous = await _row(SyncCollection.researchSessionProofs, proof.id);
+    if (previous != null) {
+      if (previous['owner_id'] != owner)
+        throw const InvalidSyncPayloadFailure();
+      if (!ResearchSyncContract.same(
+        researchSessionProofFromRow(previous).toJson(),
+        proof.toJson(),
+      )) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      // Deletion prevents resurrection, but never makes conflicting immutable
+      // facts an acceptable replay of the retained proof.
+      if (previous['is_deleted'] == 1) return;
+    }
+    final provenance = entity.serverReadProvenance;
+    if (provenance == null) {
+      final known = await _proofOperation(incoming);
+      if (previous == null || known == null)
+        throw const ProviderUnavailableSyncFailure();
+    }
+    if (!await allowed(
+      incoming,
+      uid,
+      token,
+      now,
+      ResearchSyncPhase.pull,
+      serverReadProvenance: provenance,
+    )) {
+      throw const ProviderUnavailableSyncFailure();
+    }
+    if (provenance != null &&
+        !provenance.matchesEntity(firebaseUid: uid, entity: entity)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final existing = await _row(SyncCollection.researchSessionProofs, proof.id);
+    if (existing != null &&
+        (existing['owner_id'] != owner ||
+            existing['is_deleted'] != 0 ||
+            existing['local_revision'] != 1 ||
+            !ResearchSyncContract.same(
+              researchSessionProofFromRow(existing).toJson(),
+              proof.toJson(),
+            ))) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final siblings = await database
+        .customSelect(
+          'SELECT * FROM research_session_proofs WHERE owner_id = ? AND measurement_run_id = ? '
+          'AND permit_id = ? AND learning_session_id = ? ORDER BY proof_revision, id',
+          variables: [
+            Variable(owner),
+            Variable(proof.measurementRunId),
+            Variable(proof.permitId),
+            Variable(proof.learningSessionId),
+          ],
+        )
+        .get();
+    for (final row in siblings) {
+      if (!researchSessionProofFromRow(row.data).hasSameStartCore(proof)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    }
+    // Validate collision identity before any write. The enclosing page
+    // transaction also rolls back a failed proof/receipt insertion as a unit.
+    final operation = await _proofOperation(incoming);
+    if (existing == null) {
+      await database
+          .into(database.researchSessionProofs)
+          .insert(
+            db.ResearchSessionProofsCompanion.insert(
+              id: proof.id,
+              ownerId: owner,
+              measurementRunId: proof.measurementRunId,
+              permitId: proof.permitId,
+              learningSessionId: proof.learningSessionId,
+              proofRevision: proof.proofRevision,
+              activityType: proof.activityType,
+              sessionState: proof.sessionState,
+              startedAtUtcMs: proof.startedAtUtcMs,
+              endedAtUtcMs: Value(proof.endedAtUtcMs),
+              appVersion: proof.appVersion,
+              buildId: proof.buildId,
+              sessionConfigurationIdentity: Value(
+                proof.sessionConfigurationIdentity,
+              ),
+              sessionConfigurationJson: Value(proof.sessionConfigurationJson),
+              pairStartOperation: Value(proof.pairStartOperation),
+              pairCheckpointEventVersion: Value(
+                proof.pairCheckpointEventVersion,
+              ),
+              pairOwnerLineageJson: Value(
+                proof.pairOwnerLineage == null
+                    ? null
+                    : jsonEncode(proof.pairOwnerLineage),
+              ),
+              permitPayloadSha256: proof.permitPayloadSha256,
+              permitRevision: proof.permitRevision,
+              cloudRevision: const Value(1),
+              lastAcknowledgedAtUtcMs: Value(now.millisecondsSinceEpoch),
+              serverUpdatedAtUtcMs: Value(
+                entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+              ),
+            ),
+          );
+    } else {
+      // Preserve immutable fields and the first acknowledgement. No refreshed
+      // current-parent wrapper is written into a historical proof.
+      await database.customUpdate(
+        'UPDATE research_session_proofs SET cloud_revision = MAX(cloud_revision, 1), '
+        'last_acknowledged_at_utc_ms = COALESCE(last_acknowledged_at_utc_ms, ?), '
+        'server_updated_at_utc_ms = MAX(COALESCE(server_updated_at_utc_ms, 0), ?) '
+        'WHERE id = ? AND owner_id = ? AND is_deleted = 0',
+        variables: [
+          Variable(now.millisecondsSinceEpoch),
+          Variable(entity.serverUpdatedAtUtc.millisecondsSinceEpoch),
+          Variable(proof.id),
+          Variable(owner),
+        ],
+        updates: {database.researchSessionProofs},
+      );
+    }
+    if (operation == null) {
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            db.OutboxOperationsCompanion.insert(
+              operationId: incoming.operationId,
+              ownerId: owner,
+              entityType: incoming.entityType,
+              entityId: proof.id,
+              operationKind: 'upsert',
+              createdAtUtcMs: now.millisecondsSinceEpoch,
+              state: const Value('acknowledged'),
+              acknowledgedAtUtcMs: Value(now.millisecondsSinceEpoch),
+            ),
+          );
+    } else if (operation.state != 'acknowledged') {
+      await (database.update(
+        database.outboxOperations,
+      )..where((row) => row.operationId.equals(incoming.operationId))).write(
+        db.OutboxOperationsCompanion(
+          state: const Value('acknowledged'),
+          acknowledgedAtUtcMs: Value(now.millisecondsSinceEpoch),
+          leaseToken: const Value(null),
+          leaseExpiresAtUtcMs: const Value(null),
+          nextAttemptAtUtcMs: const Value(null),
+          failureCode: const Value(null),
+        ),
+      );
+    }
+  }
+
+  Future<db.OutboxOperation?> _proofOperation(
+    ResearchSyncSnapshot proof,
+  ) async {
+    final row =
+        await (database.select(database.outboxOperations)
+              ..where((row) => row.operationId.equals(proof.operationId)))
+            .getSingleOrNull();
+    if (row != null &&
+        (row.ownerId != proof.ownerId ||
+            row.entityId != proof.id ||
+            row.entityType != proof.entityType ||
+            row.operationKind != 'upsert' ||
+            row.payloadVersion != 1 ||
+            row.baseRevision != 0)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return row;
+  }
+
   Future<void> _recordFactDelivery(
     ResearchSyncSnapshot local,
     ResearchSyncSnapshot incoming,
@@ -1049,6 +1318,31 @@ final class DriftResearchSyncAdapter {
               )
               .getSingleOrNull())
           ?.data;
+  Future<bool> _durableWithdrawalExists(ResearchSyncSnapshot snapshot) async =>
+      await database
+          .customSelect(
+            '''
+        SELECT 1 FROM outbox_operations o
+        JOIN research_participation_permits p
+          ON p.id = o.entity_id AND p.owner_id = o.owner_id
+        WHERE o.operation_id = ? AND o.owner_id = ? AND o.entity_id = ?
+          AND o.entity_type = 'researchWithdrawal'
+          AND o.operation_kind = 'upsert' AND o.payload_version = 1
+        LIMIT 1
+      ''',
+            variables: [
+              Variable(snapshot.operationId),
+              Variable(snapshot.ownerId),
+              Variable(snapshot.id),
+            ],
+            readsFrom: {
+              database.outboxOperations,
+              database.researchParticipationPermits,
+            },
+          )
+          .getSingleOrNull() !=
+      null;
+
   Future<bool> _withdrawalPending(String owner, String id) async =>
       await database
           .customSelect(
@@ -1078,6 +1372,7 @@ final class DriftResearchSyncAdapter {
       SyncCollection.motivationMeasurementRuns =>
         database.motivationMeasurementRuns,
       SyncCollection.motivationResponses => database.motivationResponses,
+      SyncCollection.researchSessionProofs => database.researchSessionProofs,
       SyncCollection.measurementOpportunities =>
         database.measurementOpportunities,
       SyncCollection.neutralEventsV2 => database.eventsV2,
@@ -1142,8 +1437,12 @@ final class ResearchSyncSnapshot {
   final int revision, baseRevision;
   final DateTime updatedAt;
   final Map<String, Object?> payload;
-  String get operationId =>
-      'research-sync:${ResearchSyncContract.fingerprint({'collection': collection.wireName, 'id': id, 'payload': payload})}:$revision';
+  String get operationId => ResearchSyncContract.operationIdFor(
+    collection: collection,
+    entityId: id,
+    payload: payload,
+    revision: revision,
+  );
 }
 
 String _table(SyncCollection c) => c == SyncCollection.neutralEventsV2

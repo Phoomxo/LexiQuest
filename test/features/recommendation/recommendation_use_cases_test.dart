@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -49,6 +50,7 @@ void main() {
       LessonMode.typedRecall,
       LessonMode.cefrReading,
     },
+    RecommendationModeAvailability? modeAvailabilityFor,
   }) => RecommendationUseCases(
     activeOwnerId: () async => activeOwnerId,
     reader: DriftRecommendationReader(database),
@@ -60,6 +62,7 @@ void main() {
             ? RecallLadderModeAvailability.available
             : RecallLadderModeAvailability.liveOff,
     },
+    modeAvailabilityFor: modeAvailabilityFor,
   );
 
   test('explains a current canonical weakness recommendation', () async {
@@ -124,6 +127,96 @@ void main() {
       expect(result.freshness, RecommendationEvidenceFreshness.missing);
       expect(result.alternatives.first, LessonMode.cefrReading);
       expect(await _totalChanges(database), changesBefore);
+    },
+  );
+
+  test(
+    'resamples live reading availability after the canonical read completes',
+    () async {
+      await _seedPreferences(
+        database,
+        ownerId: 'owner-1',
+        activityPreference: LearnerActivityPreference.reading,
+      );
+      final authority = _MutableModeAuthority({
+        LessonMode.flashcard,
+        LessonMode.cefrReading,
+        LessonMode.associativeReading,
+      });
+      var settled = false;
+
+      final pending = useCases(
+        modeAvailabilityFor: authority.availabilityFor,
+      ).load().whenComplete(() => settled = true);
+      await authority.initialSamplingDone.future;
+
+      expect(settled, isFalse);
+      authority.availableModes.removeAll(const {
+        LessonMode.cefrReading,
+        LessonMode.associativeReading,
+      });
+      final result = await pending;
+
+      expect(result.alternatives, contains(LessonMode.flashcard));
+      expect(
+        result.alternatives,
+        isNot(
+          contains(
+            anyOf(LessonMode.cefrReading, LessonMode.associativeReading),
+          ),
+        ),
+      );
+    },
+  );
+
+  test(
+    'returns unavailable when every mode turns off during a successful read',
+    () async {
+      await _recordAttempt(
+        database,
+        ownerId: 'owner-1',
+        wordId: 'word-1',
+        occurredAtUtc: now.subtract(const Duration(minutes: 5)),
+        isCorrect: true,
+      );
+      final authority = _MutableModeAuthority({LessonMode.flashcard});
+      var settled = false;
+
+      final pending = useCases(
+        modeAvailabilityFor: authority.availabilityFor,
+      ).load().whenComplete(() => settled = true);
+      await authority.initialSamplingDone.future;
+
+      expect(settled, isFalse);
+      authority.availableModes.clear();
+      final result = await pending;
+
+      expect(result.availability, RecommendationResultAvailability.unavailable);
+      expect(result.reason, RecommendationPanelReason.noEligibleActivity);
+      expect(result.alternatives, isEmpty);
+    },
+  );
+
+  test(
+    'returns unavailable when every mode turns off during a corrupt read',
+    () async {
+      await _seedMalformedPreferences(database, ownerId: 'owner-1');
+      final authority = _MutableModeAuthority({LessonMode.flashcard});
+      var settled = false;
+
+      final pending = useCases(
+        modeAvailabilityFor: authority.availabilityFor,
+      ).load().whenComplete(() => settled = true);
+      await authority.initialSamplingDone.future;
+
+      expect(settled, isFalse);
+      authority.availableModes.clear();
+      final result = await pending;
+
+      expect(result.availability, RecommendationResultAvailability.unavailable);
+      expect(result.reason, RecommendationPanelReason.noEligibleActivity);
+      expect(result.freshness, RecommendationEvidenceFreshness.corrupt);
+      expect(result.alternatives, isEmpty);
     },
   );
 
@@ -515,6 +608,22 @@ Future<void> _seedPreferences(
       ),
     );
 
+Future<void> _seedMalformedPreferences(
+  AppDatabase database, {
+  required String ownerId,
+}) => database
+    .into(database.learnerPreferences)
+    .insert(
+      LearnerPreferencesCompanion.insert(
+        ownerId: ownerId,
+        preferenceVersion: 1,
+        goal: LearnerPreferenceGoal.balancedGrowth.name,
+        availableMinutesPerDay: 20,
+        activityPreference: 'malformed-activity-preference',
+        updatedAtUtcMs: 1,
+      ),
+    );
+
 Future<void> _insertCorruptAttempt(
   AppDatabase database, {
   required DateTime now,
@@ -613,3 +722,23 @@ Future<RecommendationPanelResult> _recommendForOwner(
 Future<int> _totalChanges(AppDatabase database) async =>
     (await database.customSelect('SELECT total_changes() AS value').getSingle())
         .read<int>('value');
+
+final class _MutableModeAuthority {
+  _MutableModeAuthority(Set<LessonMode> availableModes)
+    : availableModes = Set<LessonMode>.of(availableModes);
+
+  final Set<LessonMode> availableModes;
+  final Completer<void> initialSamplingDone = Completer<void>();
+  int _sampleCount = 0;
+
+  RecallLadderModeAvailability availabilityFor(LessonMode mode) {
+    _sampleCount += 1;
+    if (_sampleCount == RecommendationUseCases.supportedCanonicalModes.length &&
+        !initialSamplingDone.isCompleted) {
+      initialSamplingDone.complete();
+    }
+    return availableModes.contains(mode)
+        ? RecallLadderModeAvailability.available
+        : RecallLadderModeAvailability.liveOff;
+  }
+}

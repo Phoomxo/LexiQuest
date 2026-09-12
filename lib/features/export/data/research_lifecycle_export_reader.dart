@@ -1,11 +1,15 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../research/domain/research_session_proof.dart';
 import '../domain/export_contracts.dart';
 
 /// Personal evidence projections, read within the archive's owner-pinned
 /// transaction. Withdrawal/tombstones restrict collection, not personal access.
-/// No signature, receipt, issuer key or raw owner field is selected here.
+/// Proof identity/pin fields are read privately for strict codec validation;
+/// only the explicit personal projection leaves this reader.
 final class ResearchLifecycleExportReader {
   const ResearchLifecycleExportReader(this.database);
 
@@ -60,11 +64,63 @@ final class ResearchLifecycleExportReader {
           readsFrom: {database.measurementOpportunities},
         )
         .get();
+    final proofRows = await database
+        .customSelect(
+          'SELECT id, owner_id, measurement_run_id, permit_id, learning_session_id, '
+          'proof_revision, activity_type, session_state, started_at_utc_ms, ended_at_utc_ms, '
+          'app_version, build_id, session_configuration_identity, session_configuration_json, '
+          'pair_start_operation, pair_checkpoint_event_version, pair_owner_lineage_json, '
+          'permit_payload_sha256, permit_revision, is_deleted '
+          'FROM research_session_proofs WHERE owner_id = ? '
+          'ORDER BY started_at_utc_ms, learning_session_id, proof_revision, id',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.researchSessionProofs},
+        )
+        .get();
+    // Decode before projecting, including Pair purpose and configuration. A
+    // storage-shaped matching row alone does not establish learning purpose.
+    final proofs = [for (final row in proofRows) _decodeProof(row)];
+    final sessionAliases = <String, String>{};
+    for (final proof in proofs) {
+      sessionAliases.putIfAbsent(
+        proof.learningSessionId,
+        () => 'research-session-${sessionAliases.length + 1}',
+      );
+    }
     // Local ordinal aliases retain linkage without exposing or hashing IDs.
     // Include every parent, even when withdrawn, revoked or tombstoned.
     final runAliases = _aliases(runs, 'motivation-run');
     final permitAliases = _aliases(permits, 'research-permit');
     return {
+      'research_session_proofs': [
+        {'recordCount': proofs.length},
+        for (var index = 0; index < proofs.length; index++)
+          {
+            'proofAlias': 'research-proof-${index + 1}',
+            'sessionAlias': _requireAlias(
+              sessionAliases,
+              proofs[index].learningSessionId,
+            ),
+            'runAlias': _requireAlias(
+              runAliases,
+              proofs[index].measurementRunId,
+            ),
+            'permitAlias': _requireAlias(permitAliases, proofs[index].permitId),
+            'proofRevision': proofs[index].proofRevision,
+            'activityType': _code(proofs[index].activityType),
+            'sessionState': proofs[index].sessionState,
+            'startedAtUtc': _iso(proofs[index].startedAtUtcMs),
+            'endedAtUtc': _nullableIso(proofs[index].endedAtUtcMs),
+            'appVersion': _code(proofs[index].appVersion),
+            'buildId': _code(proofs[index].buildId),
+            'sessionConfigurationIdentity':
+                proofs[index].sessionConfigurationIdentity,
+            'purpose': proofs[index].activityType == 'matching'
+                ? 'learning'
+                : null,
+            'isDeleted': proofRows[index].read<bool>('is_deleted'),
+          },
+      ],
       'motivation_measurement_runs': [
         {'recordCount': runs.length},
         for (final row in runs)
@@ -158,6 +214,40 @@ final class ResearchLifecycleExportReader {
           },
       ],
     };
+  }
+}
+
+ResearchSessionProof _decodeProof(QueryRow row) {
+  try {
+    final fields = row.data;
+    final lineage = fields['pair_owner_lineage_json'];
+    return ResearchSessionProof.decode({
+      'schema': ResearchSessionProof.schema,
+      'id': fields['id'],
+      'ownerId': fields['owner_id'],
+      'measurementRunId': fields['measurement_run_id'],
+      'permitId': fields['permit_id'],
+      'learningSessionId': fields['learning_session_id'],
+      'proofRevision': fields['proof_revision'],
+      'activityType': fields['activity_type'],
+      'sessionState': fields['session_state'],
+      'startedAtUtcMs': fields['started_at_utc_ms'],
+      'endedAtUtcMs': fields['ended_at_utc_ms'],
+      'appVersion': fields['app_version'],
+      'buildId': fields['build_id'],
+      'sessionConfigurationIdentity': fields['session_configuration_identity'],
+      'sessionConfigurationJson': fields['session_configuration_json'],
+      'pairStartOperation': fields['pair_start_operation'],
+      'pairCheckpointEventVersion': fields['pair_checkpoint_event_version'],
+      'pairOwnerLineage': lineage == null
+          ? null
+          : jsonDecode(lineage as String),
+      'permitPayloadSha256': fields['permit_payload_sha256'],
+      'permitRevision': fields['permit_revision'],
+    });
+  } on Object {
+    // Do not attach raw proof/configuration input to a user-visible error.
+    throw const ExportException(ExportFailureCode.unavailable);
   }
 }
 

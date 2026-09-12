@@ -220,7 +220,6 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     if (_listening) {
-      _listenEpoch += 1;
       _listenPending = false;
       await _speechSession?.stop();
       if (mounted) setState(() => _listening = false);
@@ -255,22 +254,22 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
               _acceptedFinalEpoch == epoch) {
             return;
           }
-          if (event.isFinal) {
-            _acceptedFinalEpoch = epoch;
-            _listenPending = false;
-            activeSession.stop().ignore();
+          if (!event.isFinal) {
+            setState(() => _transcript = event.transcript);
+            return;
           }
+          _acceptedFinalEpoch = epoch;
+          _listenPending = false;
+          activeSession.stop().ignore();
           final reference = _referenceSentence;
           if (reference == null) return;
           final assessment = speech.assess(target: reference, event: event);
           setState(() {
             _transcript = event.transcript;
             _assessment = assessment;
-            if (event.isFinal) _listening = false;
+            _listening = false;
           });
-          if (event.isFinal) {
-            unawaited(_recordEvidence(assessment));
-          }
+          unawaited(_recordEvidence(assessment));
         },
         onFailure: (failure) {
           if (!_acceptsModeOperations ||
@@ -535,8 +534,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                             : _retrySessionClose,
                         child: Text(
                           evidenceRetryRequired
-                              ? 'Retry saved pronunciation'
-                              : 'Retry session completion',
+                              ? 'ลองบันทึกผลการพูดอีกครั้ง'
+                              : 'ลองจบการเรียนอีกครั้ง',
                         ),
                       ),
                     ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/progress/domain/learning_calendar.dart';
+import '../widgets/learning_summary_card.dart';
 
 typedef LearningCalendarLoader = Future<LearningCalendarSnapshot> Function();
 
@@ -71,36 +72,40 @@ final class _LearningCalendarBody extends StatelessWidget {
         Semantics(
           container: true,
           label: 'แกนความพยายาม',
+          explicitChildNodes: true,
           child: _AxisCard(
             title: 'ความพยายาม (เวลาที่เรียนจริง)',
             value: _formatDuration(weekly.effort.activeDuration),
-            detail: 'รวมจากช่วงเวลา active ที่บันทึกไว้',
+            detail: 'รวมจากช่วงเวลาที่บันทึกว่าผู้เรียนทำกิจกรรมจริง',
           ),
         ),
-        const SizedBox(height: 12),
         Semantics(
           container: true,
           label: 'แกนความแม่นยำ',
+          explicitChildNodes: true,
           child: _AxisCard(
             title: 'ความแม่นยำ',
-            value: _formatAccuracy(weekly.accuracy),
+            value: weekly.accuracy.accuracy == null
+                ? null
+                : '${(weekly.accuracy.accuracy! * 100).toStringAsFixed(0)}%',
+            caption: _formatAccuracy(weekly.accuracy),
             detail: 'นับเฉพาะคำตอบการเรียน ไม่รวมผลประเมิน',
           ),
         ),
-        const SizedBox(height: 12),
         Semantics(
           container: true,
           label: 'แกนการกระจายทักษะ',
+          explicitChildNodes: true,
           child: _SkillDistributionCard(weekly.skillDistribution),
         ),
-        const SizedBox(height: 12),
         Semantics(
           container: true,
           label: 'แกนแนวโน้มความแม่นยำ',
+          explicitChildNodes: true,
           child: _AccuracyTrendCard(weekly.accuracyTrend),
         ),
-        const SizedBox(height: 20),
-        Text('รายวัน', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Text('รายวัน', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         for (final day in calendar.days)
           Card(
@@ -122,28 +127,25 @@ final class _AxisCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.detail,
+    this.caption,
   });
 
   final String title;
-  final String value;
+  final String? value;
   final String detail;
+  final String? caption;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(value, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 4),
-            Text(detail),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LearningSummaryCard(title: title, value: value, caption: caption),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text(detail),
         ),
-      ),
+      ],
     );
   }
 }

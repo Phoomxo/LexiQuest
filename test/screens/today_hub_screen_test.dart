@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
+import 'package:vocab_learning_app/features/goals/domain/learning_goal.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
@@ -16,6 +17,206 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/today_hub_screen.dart';
 
 void main() {
+  for (final state in [
+    TodayHubDependencyState.empty,
+    TodayHubDependencyState.unavailable,
+    TodayHubDependencyState.corrupt,
+  ]) {
+    testWidgets(
+      'reader shaped $state snapshot retains ordinary review access',
+      (tester) async {
+        final actions = _Actions();
+        final snapshot = _snapshot(
+          sectionOrder: [TodayHubSectionKind.recommendation],
+          dependencyStates: _states(
+            overrides: {TodayHubDependency.review: state},
+          ),
+        );
+        await tester.pumpWidget(_app(snapshot: snapshot, actions: actions));
+        await tester.pumpAndSettle();
+        final review = find.byKey(const ValueKey('today-hub-open-review'));
+        expect(review, findsOneWidget);
+        if (state != TodayHubDependencyState.empty) {
+          expect(find.text('ยังไม่มีคำที่รอทบทวน'), findsNothing);
+        }
+        await tester.tap(review);
+        await tester.pumpAndSettle();
+        expect(actions.reviewCalls, 1);
+        expect(actions.reviewWork, isEmpty);
+      },
+    );
+  }
+  testWidgets(
+    'unavailable goals do not claim an empty goal list when reminders are ready',
+    (tester) async {
+      await tester.pumpWidget(
+        _app(
+          snapshot: _snapshot(
+            dependencyStates: _states(
+              overrides: {
+                TodayHubDependency.goals: TodayHubDependencyState.unavailable,
+                TodayHubDependency.reminders: TodayHubDependencyState.empty,
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ตั้งเป้าหมายเล็ก ๆ ที่อยากทำให้ได้'), findsNothing);
+      expect(find.text('เป้าหมายการเรียนยังไม่พร้อมใช้งาน'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('today-hub-open-planning')),
+        findsOneWidget,
+      );
+    },
+  );
+  testWidgets(
+    'planning hides unavailable data and rejects captured callbacks after owner replacement',
+    (tester) async {
+      final actions = _Actions();
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+      final first = _snapshot();
+      Widget direct(TodayHubSnapshot snapshot) => MaterialApp(
+        home: Scaffold(
+          body: TodayHubView(
+            snapshot: snapshot,
+            actions: actions,
+            features: registry,
+            assessmentAvailable: false,
+          ),
+        ),
+      );
+      await tester.pumpWidget(direct(first));
+      await tester.pumpAndSettle();
+      final captured = tester
+          .widget<OutlinedButton>(
+            find.byKey(const ValueKey('today-hub-open-planning')),
+          )
+          .onPressed!;
+      await tester.pumpWidget(direct(_snapshot(ownerId: 'synthetic-owner-b')));
+      await tester.pumpAndSettle();
+      captured();
+      await tester.pumpAndSettle();
+      expect(actions.planningOwner, isNull);
+      await tester.tap(find.byKey(const ValueKey('today-hub-open-planning')));
+      await tester.pumpAndSettle();
+      expect(actions.planningOwner, 'synthetic-owner-b');
+      registry.emergencyOff(Feature.studyPlanning);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('today-hub-planning')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('today-hub-open-review')),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(
+        _app(
+          snapshot: _snapshot(
+            dependencyStates: _states(
+              overrides: {
+                TodayHubDependency.goals: TodayHubDependencyState.corrupt,
+                TodayHubDependency.reminders:
+                    TodayHubDependencyState.unavailable,
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('today-hub-open-planning')),
+        findsNothing,
+      );
+      expect(find.text('เป้าหมายการเรียนยังไม่พร้อมใช้งาน'), findsOneWidget);
+    },
+  );
+
+  testWidgets('planning summary keeps the goal and opens its owner bound hub', (
+    tester,
+  ) async {
+    final goal = LearningGoal(
+      id: 'goal:synthetic',
+      kind: LearningGoalKind.personal,
+      title: 'ฝึกคำศัพท์สำหรับการเดินทาง',
+      deadlineAtUtc: _now.add(const Duration(days: 3)),
+      timezone: const LearningGoalTimezoneContext(
+        timezoneId: 'Asia/Bangkok',
+        utcOffsetMinutes: 420,
+      ),
+      status: LearningGoalStatus.active,
+      createdAtUtc: _now,
+      updatedAtUtc: _now,
+    );
+    final actions = _Actions();
+    await tester.pumpWidget(
+      _app(
+        snapshot: _snapshot(goals: [goal]),
+        actions: actions,
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('เป้าหมายของฉัน'), findsOneWidget);
+    expect(find.text(goal.title), findsOneWidget);
+    await _scrollToTodayHubAction(tester, 'today-hub-open-planning');
+    await tester.tap(find.byKey(const ValueKey('today-hub-open-planning')));
+    await tester.pumpAndSettle();
+    expect(actions.planningOwner, _ownerId);
+  });
+
+  testWidgets(
+    'review preview keeps all 120 canonical items behind the action',
+    (tester) async {
+      final work = List.generate(
+        120,
+        (i) => _reviewWork(contentId: 'word:$i', spelling: 'word $i'),
+      );
+      final actions = _Actions();
+      await tester.pumpWidget(
+        _app(
+          snapshot: _snapshot(reviewWork: work),
+          actions: actions,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('รายการทบทวน 120 คำ'), findsOneWidget);
+      expect(find.text('word 3'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('today-hub-open-review')));
+      await tester.pumpAndSettle();
+      expect(actions.reviewWork, orderedEquals(work));
+      expect(actions.reviewWork.last.provenance, same(work.last.provenance));
+      await _scrollToTodayHubAction(tester, 'today-hub-expand-review');
+      await tester.tap(find.byKey(const ValueKey('today-hub-expand-review')));
+      await tester.pumpAndSettle();
+      await _scrollToTodayHubAction(tester, 'today-hub-review:word:3');
+      expect(find.text('word 3'), findsOneWidget);
+      expect(actions.reviewCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'recovery describes the real previous streak without rewriting it',
+    (tester) async {
+      const streak = GentleStreakSnapshot(
+        ownerId: _ownerId,
+        currentStreakDays: 14,
+        longestStreakDays: 21,
+        freezeCount: 0,
+        phase: GentleStreakPhase.recovery,
+        policyVersion: 1,
+      );
+      await tester.pumpWidget(_app(snapshot: _snapshot(gentleStreak: streak)));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('ครั้งก่อนเรียนต่อเนื่อง 14 วัน'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('เคยทำได้สูงสุด 21 วัน'), findsOneWidget);
+      expect(streak.currentStreakDays, 14);
+    },
+  );
+
   test(
     'f42 use cases bind owner time and timezone once without invoking actions',
     () async {
@@ -86,11 +287,15 @@ void main() {
         tester.getTopLeft(reviewCard).dy,
         lessThan(tester.getTopLeft(recommendation).dy),
       );
-      expect(find.text('ถึงกำหนด SRS'), findsOneWidget);
+      expect(find.text('ถึงเวลาทบทวน'), findsOneWidget);
       expect(find.text('เคยตอบผิด'), findsOneWidget);
-      expect(find.text('srs:station'), findsOneWidget);
-      expect(find.text('attempt:station'), findsOneWidget);
-      expect(find.text('หลักฐานยังไม่แข็งแรง'), findsNWidgets(2));
+      expect(find.text('srs:station'), findsNothing);
+      expect(find.text('attempt:station'), findsNothing);
+      expect(review.provenance.map((item) => item.sourceId), [
+        'srs:station',
+        'attempt:station',
+      ]);
+      expect(find.text('ลองฝึกคำนี้อีกครั้ง'), findsNWidgets(2));
       expect(
         review.provenance.map((source) => source.reason),
         <ReviewQueueReason>[
@@ -212,11 +417,15 @@ void main() {
         find.byKey(const ValueKey('today-hub-review:word:station')),
         findsOneWidget,
       );
-      expect(find.text('ถึงกำหนด SRS'), findsOneWidget);
+      expect(find.text('ถึงเวลาทบทวน'), findsOneWidget);
       expect(find.text('เคยตอบผิด'), findsOneWidget);
-      expect(find.text('srs:station'), findsOneWidget);
-      expect(find.text('attempt:station'), findsOneWidget);
-      expect(find.text('หลักฐานยังไม่แข็งแรง'), findsOneWidget);
+      expect(find.text('srs:station'), findsNothing);
+      expect(find.text('attempt:station'), findsNothing);
+      expect(review.provenance.map((source) => source.sourceId), [
+        'srs:station',
+        'attempt:station',
+      ]);
+      expect(find.text('ลองฝึกคำนี้อีกครั้ง'), findsOneWidget);
       expect(
         review.provenance.map((source) => source.reason),
         <ReviewQueueReason>[
@@ -245,7 +454,8 @@ void main() {
             'ข้อมูลคำแนะนำไม่พร้อมใช้งาน',
         RecommendationPanelReason.modeUnavailable:
             'กิจกรรมนี้ยังไม่พร้อมใช้งาน',
-        RecommendationPanelReason.protocolLocked: 'กิจกรรมถูกจำกัดตามโปรโตคอล',
+        RecommendationPanelReason.protocolLocked:
+            'กิจกรรมนี้ใช้ตามเงื่อนไขที่ได้รับมอบหมาย',
         RecommendationPanelReason.canonicalAuthorityUnavailable:
             'ข้อมูลหลักยังไม่พร้อมใช้งาน',
         RecommendationPanelReason.noEligibleActivity:
@@ -346,7 +556,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(
-          find.text('ต่อเนื่อง 3 วัน — พักได้เมื่อจำเป็น แล้วกลับมาเมื่อพร้อม'),
+          find.textContaining('ครั้งก่อนเรียนต่อเนื่อง 3 วัน'),
           findsOneWidget,
         );
         final forbidden = RegExp(
@@ -593,6 +803,9 @@ const _checksum =
 final _now = DateTime.utc(2026, 8, 31, 8);
 
 TodayHubSnapshot _snapshot({
+  List<TodayHubSectionKind> sectionOrder = TodayHubSectionKind.values,
+  String ownerId = _ownerId,
+  List<LearningGoal> goals = const [],
   LearningSessionSummary? resumableSession,
   TodayHubAssignedAssessment? assignedAssessment,
   List<TodayHubReviewWorkItem> reviewWork = const <TodayHubReviewWorkItem>[],
@@ -600,14 +813,15 @@ TodayHubSnapshot _snapshot({
   GentleStreakSnapshot? gentleStreak,
   Map<TodayHubDependency, TodayHubDependencyState>? dependencyStates,
 }) => TodayHubSnapshot(
-  ownerId: _ownerId,
+  ownerId: ownerId,
   evaluatedAtUtc: _now,
-  sectionOrder: TodayHubSectionKind.values,
+  sectionOrder: sectionOrder,
   resumableSession: resumableSession,
   assignedAssessment: assignedAssessment,
   reviewWork: reviewWork,
-  recommendation: recommendation ?? _unavailableRecommendation(),
-  goals: const [],
+  recommendation:
+      recommendation ?? _unavailableRecommendation(ownerId: ownerId),
+  goals: goals,
   reminders: const [],
   quests: const [],
   gentleStreak: gentleStreak,
@@ -635,10 +849,12 @@ LearningSessionSummary _resumableSession() => LearningSessionSummary(
 
 TodayHubReviewWorkItem _reviewWork({
   RecommendationPanelResult? recommendation,
+  String contentId = 'word:station',
+  String spelling = 'station',
 }) {
-  const identity = ContentIdentity(
+  final identity = ContentIdentity(
     type: ContentType.lexicalMetadata,
-    id: 'word:station',
+    id: contentId,
     revision: 1,
   );
   return TodayHubReviewWorkItem(
@@ -646,8 +862,8 @@ TodayHubReviewWorkItem _reviewWork({
       snapshot: ReviewedLexicalContentSnapshot(
         identity: identity,
         categoryId: 'category:travel',
-        spelling: 'station',
-        normalizedSpelling: 'station',
+        spelling: spelling,
+        normalizedSpelling: spelling,
         meaning: 'สถานี',
         normalizedMeaning: 'สถานี',
         partOfSpeech: 'noun',
@@ -693,9 +909,11 @@ TodayHubRecommendation _freshRecommendation({required String contentId}) =>
       mergedInto: null,
     );
 
-TodayHubRecommendation _unavailableRecommendation() => TodayHubRecommendation(
+TodayHubRecommendation _unavailableRecommendation({
+  String ownerId = _ownerId,
+}) => TodayHubRecommendation(
   result: RecommendationPanelResult.unavailable(
-    ownerId: _ownerId,
+    ownerId: ownerId,
     reason: RecommendationPanelReason.noEligibleActivity,
     freshness: RecommendationEvidenceFreshness.missing,
     protocolConstraint: RecommendationProtocolConstraint.open,
@@ -778,6 +996,12 @@ final class _Actions implements TodayHubActionDelegate {
   int reviewCalls = 0;
   int historyCalls = 0;
   int assessmentCalls = 0;
+  String? planningOwner;
+  @override
+  Future<void> openPlanning({required String ownerId}) async {
+    planningOwner = ownerId;
+  }
+
   LearningSessionSummary? resumedSession;
   TodayHubRecommendation? startedRecommendation;
   List<TodayHubReviewWorkItem> reviewWork = const <TodayHubReviewWorkItem>[];

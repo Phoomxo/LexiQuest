@@ -46,127 +46,139 @@ void main() {
     expect(camera.initializeCalls, 0);
   });
 
+  for (final backgroundIndex in <int?>[0, null]) {
+    test(
+      'classifies and persists locally with background index $backgroundIndex',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'scanner-usecase-',
+        );
+        addTearDown(() => directory.delete(recursive: true));
+        final modelBytes = utf8.encode('verified-test-model');
+        final modelFile = File('${directory.path}/model.tflite');
+        await modelFile.writeAsBytes(modelBytes);
+        final manifest = _manifest(
+          modelBytes,
+          backgroundClassIndex: backgroundIndex,
+        );
+        final runtime = _FakeRuntime();
+        if (backgroundIndex == null) {
+          runtime.classifications = const [
+            ModelClassification(index: 0, label: 'Apple', confidence: 0.92),
+          ];
+        }
+        ModelDelegate? openedDelegate;
+        final repository = _ModelRepository(
+          _activeRecord(manifest, modelFile.path),
+        );
+        final deviceModels = DeviceModelUseCases(
+          manifest: manifest,
+          repository: repository,
+          downloadManager: _uncalledManager(repository, directory),
+          openRuntime:
+              ({required path, required manifest, required delegate}) async {
+                openedDelegate = delegate;
+                return runtime;
+              },
+        );
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        var id = 0;
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'owner-${id++}',
+          nowUtc: () => DateTime.utc(2026, 7, 30),
+        );
+        final vocabulary = VocabularyUseCases(
+          owners: owners,
+          vocabulary: DriftVocabularyRepository(database),
+          generateId: () => 'id-${id++}',
+          nowUtc: () => DateTime.utc(2026, 7, 30),
+        );
+        final camera = _FakeCamera();
+        final scanner = ObjectScannerUseCases(
+          camera: camera,
+          deviceModels: deviceModels,
+          vocabulary: vocabulary,
+          preprocessor: _FakePreprocessor(),
+        );
+
+        await scanner.initialize();
+        expect(openedDelegate, ModelDelegate.cpu);
+        final result = await scanner.captureAndClassify();
+        expect(runtime.requestedTopK, 2);
+        final accepted = await scanner.accept(result);
+
+        expect(result.primary.label, 'Apple');
+        expect(result.primary.confidence, 0.92);
+        expect(result.matchedClassification?.label, 'Apple');
+        expect(result.vocabulary?.englishWord, 'apple');
+        expect(result.modelId, manifest.id);
+        expect(
+          accepted.source,
+          'object-scanner:${manifest.id}@${manifest.version}',
+        );
+        expect(
+          await database.select(database.vocabularyWords).get(),
+          hasLength(1),
+        );
+        expect(
+          await database.select(database.outboxOperations).get(),
+          hasLength(2),
+        );
+
+        final duplicate = await scanner.accept(result);
+        expect(duplicate.id, accepted.id);
+        expect(
+          await database.select(database.vocabularyWords).get(),
+          hasLength(1),
+        );
+      },
+    );
+  }
   test(
-    'classifies captured bytes and persists accepted word locally',
+    'does not replace an unmapped primary prediction with a lower mapped one',
     () async {
-      final directory = await Directory.systemTemp.createTemp(
-        'scanner-usecase-',
-      );
+      final directory = await Directory.systemTemp.createTemp('scanner-map-');
       addTearDown(() => directory.delete(recursive: true));
       final modelBytes = utf8.encode('verified-test-model');
       final modelFile = File('${directory.path}/model.tflite');
       await modelFile.writeAsBytes(modelBytes);
       final manifest = _manifest(modelBytes);
-      final runtime = _FakeRuntime();
-      ModelDelegate? openedDelegate;
       final repository = _ModelRepository(
         _activeRecord(manifest, modelFile.path),
       );
-      final deviceModels = DeviceModelUseCases(
-        manifest: manifest,
-        repository: repository,
-        downloadManager: _uncalledManager(repository, directory),
-        openRuntime:
-            ({required path, required manifest, required delegate}) async {
-              openedDelegate = delegate;
-              return runtime;
-            },
-      );
-      final database = AppDatabase(NativeDatabase.memory());
-      addTearDown(database.close);
-      var id = 0;
-      final owners = DriftLocalOwnerRepository(
-        database,
-        generateId: () => 'owner-${id++}',
-        nowUtc: () => DateTime.utc(2026, 7, 30),
-      );
-      final vocabulary = VocabularyUseCases(
-        owners: owners,
-        vocabulary: DriftVocabularyRepository(database),
-        generateId: () => 'id-${id++}',
-        nowUtc: () => DateTime.utc(2026, 7, 30),
-      );
-      final camera = _FakeCamera();
+      final runtime = _FakeRuntime()
+        ..classifications = const [
+          ModelClassification(index: 2, label: 'Unknown', confidence: 0.98),
+          ModelClassification(index: 1, label: 'Apple', confidence: 0.73),
+        ];
       final scanner = ObjectScannerUseCases(
-        camera: camera,
-        deviceModels: deviceModels,
-        vocabulary: vocabulary,
+        camera: _FakeCamera(),
+        deviceModels: DeviceModelUseCases(
+          manifest: manifest,
+          repository: repository,
+          downloadManager: _uncalledManager(repository, directory),
+          openRuntime:
+              ({required path, required manifest, required delegate}) async =>
+                  runtime,
+        ),
+        vocabulary: _throwingVocabulary(),
         preprocessor: _FakePreprocessor(),
       );
 
       await scanner.initialize();
-      expect(openedDelegate, ModelDelegate.cpu);
       final result = await scanner.captureAndClassify();
-      final accepted = await scanner.accept(result);
 
-      expect(result.primary.label, 'Apple');
-      expect(result.primary.confidence, 0.92);
-      expect(result.matchedClassification?.label, 'Apple');
-      expect(result.vocabulary?.englishWord, 'apple');
-      expect(result.modelId, manifest.id);
-      expect(
-        accepted.source,
-        'object-scanner:${manifest.id}@${manifest.version}',
-      );
-      expect(
-        await database.select(database.vocabularyWords).get(),
-        hasLength(1),
-      );
-      expect(
-        await database.select(database.outboxOperations).get(),
-        hasLength(2),
-      );
-
-      final duplicate = await scanner.accept(result);
-      expect(duplicate.id, accepted.id);
-      expect(
-        await database.select(database.vocabularyWords).get(),
-        hasLength(1),
-      );
+      expect(result.primary.label, 'Unknown');
+      expect(result.matchedClassification, isNull);
+      expect(result.vocabulary, isNull);
     },
   );
 
-  test('keeps confidence paired with the classification that mapped', () async {
-    final directory = await Directory.systemTemp.createTemp('scanner-map-');
-    addTearDown(() => directory.delete(recursive: true));
-    final modelBytes = utf8.encode('verified-test-model');
-    final modelFile = File('${directory.path}/model.tflite');
-    await modelFile.writeAsBytes(modelBytes);
-    final manifest = _manifest(modelBytes);
-    final repository = _ModelRepository(
-      _activeRecord(manifest, modelFile.path),
-    );
-    final runtime = _FakeRuntime()
-      ..classifications = const [
-        ModelClassification(index: 2, label: 'Unknown', confidence: 0.98),
-        ModelClassification(index: 1, label: 'Apple', confidence: 0.73),
-      ];
-    final scanner = ObjectScannerUseCases(
-      camera: _FakeCamera(),
-      deviceModels: DeviceModelUseCases(
-        manifest: manifest,
-        repository: repository,
-        downloadManager: _uncalledManager(repository, directory),
-        openRuntime:
-            ({required path, required manifest, required delegate}) async =>
-                runtime,
-      ),
-      vocabulary: _throwingVocabulary(),
-      preprocessor: _FakePreprocessor(),
-    );
-
-    await scanner.initialize();
-    final result = await scanner.captureAndClassify();
-
-    expect(result.primary.label, 'Unknown');
-    expect(result.matchedClassification?.label, 'Apple');
-    expect(result.matchedClassification?.confidence, 0.73);
-    expect(result.vocabulary?.englishWord, 'apple');
-  });
-
-  test('reports an unusable inference as an invalid image', () async {
+  test('reports scores below the minimum as not confident', () async {
     final directory = await Directory.systemTemp.createTemp(
-      'scanner-invalid-image-',
+      'scanner-not-confident-',
     );
     addTearDown(() => directory.delete(recursive: true));
     final modelBytes = utf8.encode('verified-test-model');
@@ -203,11 +215,54 @@ void main() {
         isA<CameraPracticeException>().having(
           (error) => error.code,
           'code',
-          CameraFailureCode.invalidImage,
+          CameraFailureCode.notConfident,
         ),
       ),
     );
   });
+
+  test(
+    'preserves invalid image when captured bytes cannot be decoded',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'scanner-invalid-image-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final modelBytes = utf8.encode('verified-test-model');
+      final modelFile = File('${directory.path}/model.tflite');
+      await modelFile.writeAsBytes(modelBytes);
+      final manifest = _manifest(modelBytes);
+      final repository = _ModelRepository(
+        _activeRecord(manifest, modelFile.path),
+      );
+      final scanner = ObjectScannerUseCases(
+        camera: _FakeCamera(),
+        deviceModels: DeviceModelUseCases(
+          manifest: manifest,
+          repository: repository,
+          downloadManager: _uncalledManager(repository, directory),
+          openRuntime:
+              ({required path, required manifest, required delegate}) async =>
+                  _FakeRuntime(),
+        ),
+        vocabulary: _throwingVocabulary(),
+        preprocessor: const DartImagePreprocessor(),
+      );
+
+      await scanner.initialize();
+
+      await expectLater(
+        scanner.captureAndClassify(),
+        throwsA(
+          isA<CameraPracticeException>().having(
+            (error) => error.code,
+            'code',
+            CameraFailureCode.invalidImage,
+          ),
+        ),
+      );
+    },
+  );
 
   test(
     'dispose drains lease initialization and closes a late runtime',
@@ -266,23 +321,25 @@ void main() {
   );
 }
 
-ModelManifest _manifest(List<int> bytes) => ModelManifest(
-  id: 'scanner-model',
-  version: 'v1',
-  minimumAppVersion: '1.0.0+1',
-  sourceUri: Uri.https('models.example', '/scanner.tflite'),
-  license: 'Apache-2.0',
-  licenseUri: Uri.https('models.example', '/LICENSE'),
-  expectedSha256: sha256.convert(bytes).toString(),
-  expectedBytes: bytes.length,
-  inputShape: const [1, 224, 224, 3],
-  inputType: ModelTensorType.uint8,
-  outputShape: const [1, 2],
-  outputType: ModelTensorType.uint8,
-  inputEncoding: ModelInputEncoding.rawUint8Rgb,
-  labelAssetName: 'labels.txt',
-  supportedDelegates: const {ModelDelegate.cpu, ModelDelegate.xnnpack},
-);
+ModelManifest _manifest(List<int> bytes, {int? backgroundClassIndex = 0}) =>
+    ModelManifest(
+      id: 'scanner-model',
+      version: 'v1',
+      minimumAppVersion: '1.0.0+1',
+      sourceUri: Uri.https('models.example', '/scanner.tflite'),
+      license: 'Apache-2.0',
+      licenseUri: Uri.https('models.example', '/LICENSE'),
+      expectedSha256: sha256.convert(bytes).toString(),
+      expectedBytes: bytes.length,
+      inputShape: const [1, 224, 224, 3],
+      inputType: ModelTensorType.uint8,
+      outputShape: const [1, 2],
+      backgroundClassIndex: backgroundClassIndex,
+      outputType: ModelTensorType.uint8,
+      inputEncoding: ModelInputEncoding.rawUint8Rgb,
+      labelAssetName: 'labels.txt',
+      supportedDelegates: const {ModelDelegate.cpu, ModelDelegate.xnnpack},
+    );
 
 ModelDownloadRecord _activeRecord(ModelManifest manifest, String path) {
   return ModelDownloadRecord(
@@ -380,6 +437,7 @@ final class _FakeRuntime implements ImageClassifierRuntime {
     ModelClassification(index: 0, label: 'background', confidence: 0.05),
   ];
   int closeCalls = 0;
+  int? requestedTopK;
 
   @override
   ModelDelegate get delegate => ModelDelegate.xnnpack;
@@ -388,7 +446,10 @@ final class _FakeRuntime implements ImageClassifierRuntime {
   Future<List<ModelClassification>> classify(
     Uint8List rgbBytes, {
     int topK = 5,
-  }) async => classifications;
+  }) async {
+    requestedTopK = topK;
+    return classifications;
+  }
 
   @override
   void close() {

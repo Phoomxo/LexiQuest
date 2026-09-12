@@ -11,6 +11,44 @@ import '../support/accessibility_semantics_test_support.dart';
 import '../support/fail_once_learning_test_fixture.dart';
 
 void main() {
+  testWidgets(
+    'letter cards expose context and undo returns the same duplicate letter',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: WordScrambleScreen(
+            word: 'aba',
+            meaning: 'คำศัพท์ตัวอย่าง',
+            partOfSpeech: 'noun',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('คำศัพท์ตัวอย่าง'), findsOneWidget);
+      final letters = createStableScramble('aba');
+      final index = letters.indexOf('a');
+      final letter = find.byKey(ValueKey<String>('word-letter-$index'));
+      final slot = find.byKey(const ValueKey<String>('word-slot-0'));
+      await tester.tap(letter);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: slot, matching: find.text('a')),
+        findsOneWidget,
+      );
+      await tester.tap(slot);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: slot, matching: find.text('a')), findsNothing);
+      expect(letter.hitTestable(), findsOneWidget);
+      await tester.tap(letter);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: slot, matching: find.text('a')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   test('f13 word scramble delegates correctness to its typed adapter', () {
     final source = File(
       'lib/screens/word_scramble_screen.dart',

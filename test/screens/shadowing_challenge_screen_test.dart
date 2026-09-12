@@ -28,6 +28,93 @@ import 'package:vocab_learning_app/voice/voice_provider.dart';
 import '../support/accessibility_semantics_test_support.dart';
 
 void main() {
+  testWidgets(
+    'partial then noMatch retains preview without final score or evidence',
+    (tester) async {
+      final repository = _RetryLearningRepository(failAnswerOnce: false);
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-partial',
+        nowUtc: () => DateTime.utc(2026, 9, 9),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final gateway = _ManualSpeechGateway();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ShadowingChallengeScreen(
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(gateway),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('shadowing-listen-button')),
+      );
+      await tester.pump();
+      gateway.emitPartial('Practice makes perfect');
+      gateway.emitFailure(SpeechFailureCode.noMatch);
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('ข้อความที่ได้ยิน: Practice makes perfect'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('100%'), findsNothing);
+      expect(repository.commands, isEmpty);
+    },
+  );
+
+  testWidgets('manual stop accepts one final shadowing assessment', (
+    tester,
+  ) async {
+    final repository = _RetryLearningRepository(failAnswerOnce: false);
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(),
+      repository: repository,
+      generateId: () => 'shadow-stop',
+      nowUtc: () => DateTime.utc(2026, 9, 9),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final gateway = _ManualSpeechGateway(
+      finalOnStopTranscript: 'Practice makes perfect',
+      delayFinalOnStop: true,
+    );
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShadowingChallengeScreen(
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(gateway),
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final listen = find.byKey(
+      const ValueKey<String>('shadowing-listen-button'),
+    );
+    await tester.tap(listen);
+    await tester.pump();
+    await tester.tap(listen);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ความเหมือนของข้อความ: 100%'), findsOneWidget);
+    expect(repository.commands, hasLength(1));
+  });
   test(
     'f13 shadowing delegates evidence capture to its typed native adapter',
     () {
@@ -1014,6 +1101,12 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 }
 
 final class _ManualSpeechGateway implements SpeechRecognitionGateway {
+  _ManualSpeechGateway({
+    this.finalOnStopTranscript,
+    this.delayFinalOnStop = false,
+  });
+  final String? finalOnStopTranscript;
+  final bool delayFinalOnStop;
   SpeechEventCallback? _onEvent;
   SpeechFailureCallback? _onFailure;
   void Function(String status)? _onStatus;
@@ -1078,6 +1171,14 @@ final class _ManualSpeechGateway implements SpeechRecognitionGateway {
   @override
   Future<void> stop() async {
     isListening = false;
+    final transcript = finalOnStopTranscript;
+    if (transcript != null) {
+      if (delayFinalOnStop) {
+        Future<void>.delayed(Duration.zero, () => emitFinal(transcript));
+      } else {
+        emitFinal(transcript);
+      }
+    }
   }
 }
 

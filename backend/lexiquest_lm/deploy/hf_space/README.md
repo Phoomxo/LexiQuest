@@ -1,8 +1,9 @@
 # LexiQuest-LM HuggingFace Space
 
-Serves the fine-tuned LexiQuest-LM model as an OpenAI-compatible chat API on
-HuggingFace Spaces (free CPU tier). This is the production endpoint the
-Flutter app calls — once deployed, the app needs no other LLM.
+Serves the fine-tuned LexiQuest-LM model as a standalone OpenAI-compatible
+chat API on HuggingFace Spaces. Hosting capacity and cost depend on the chosen
+tier and workload. This endpoint does not implement Flutter's `/v1/content`
+contract and is not a drop-in value for `LEXIQUEST_AI_API_URL`.
 
 ## Layout
 
@@ -34,13 +35,15 @@ hf_space/
 6. The Space builds, downloads the adapter on cold start, and exposes:
 
    - `GET /health/live`, `GET /health/ready`
-   - `POST /v1/chat/completions` — OpenAI-compatible (so the Flutter client
-     can reuse the exact same `OmniVoiceProvider`-style HTTP shape).
+   - `POST /v1/chat/completions` — chat messages in, generated choices out.
+     It does not expose a voice route or `/v1/content`.
 
 ## Calling the API
 
 Set `FIREBASE_ID_TOKEN` to a real token obtained from the authenticated
 Firebase client. Never commit or paste a real token into documentation.
+Tokens expire and are checked for revocation; refresh them through the
+authenticated client flow. A permanent bearer string is not supported.
 
 ```bash
 curl -X POST "$SPACE_URL/v1/chat/completions" \
@@ -49,9 +52,25 @@ curl -X POST "$SPACE_URL/v1/chat/completions" \
   -d '{"messages":[{"role":"user","content":"Hello"}]}'
 ```
 
-## Why OpenAI-compatible?
+## Connection to the Flutter content flow
 
-The Flutter `ai_api` backend already speaks OpenAI-compat. Serving
-LexiQuest-LM with the same contract means the app has ONE client codepath
-that works against Gemini, Ollama, **and** LexiQuest-LM — swapping is pure
-configuration, never code.
+Flutter's `HttpContentProvider` calls `backend/ai_api` at `/v1/content` with
+a refreshed Firebase ID token. That service validates the user and translates
+the request to provider chat messages at `/v1/chat/completions`. Its provider
+authorization currently uses the static server configuration
+`LEXIQUEST_AI_LLM_API_KEY`; it does not forward or refresh the app's token.
+
+The implemented local provider path is Flutter → AI content API → Ollama,
+using `LEXIQUEST_AI_LLM_BASE_URL=http://127.0.0.1:11434/v1/`,
+`LEXIQUEST_AI_LLM_MODEL=qwen2.5:3b`, and
+`LEXIQUEST_AI_LLM_API_KEY=ollama`. The `ollama` value is a local placeholder,
+not a Firebase credential. Disable unwanted fallback providers and configure
+the AI API's Firebase verification as described in the repository's
+`backend/lexiquest_lm/scripts/DEPLOY.md`.
+
+Connecting the AI content API to this Space requires a refresh-capable
+authenticated bridge with appropriate issuer/user and revocation handling.
+That bridge is not currently implemented. Do not copy an expiring Firebase
+client token into the static provider-key setting or claim that changing only
+the base URL completes the integration. Direct Flutter-to-Space content
+requests also have a different route and request/response contract.

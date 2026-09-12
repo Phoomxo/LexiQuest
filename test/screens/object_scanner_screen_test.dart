@@ -46,7 +46,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('apple'), findsOneWidget);
-    expect(find.textContaining('91.0%'), findsOneWidget);
+    expect(find.text('คะแนนจากโมเดล: 91.0%'), findsOneWidget);
     expect(find.textContaining('model-v1'), findsOneWidget);
 
     await tester.tap(find.text('เพิ่มเข้าคลัง'));
@@ -156,6 +156,78 @@ void main() {
 
     expect(find.text('apple'), findsNothing);
     expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+  });
+
+  testWidgets('low model score asks the learner to retake the photo', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()
+      ..captureFailure = const CameraPracticeException(
+        CameraFailureCode.notConfident,
+      );
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'ยังระบุวัตถุไม่ได้ กรุณาถ่ายใหม่ให้วัตถุอยู่กลางภาพและมีแสงเพียงพอ',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('รูปภาพนี้ไม่สามารถนำมาวิเคราะห์ได้'), findsNothing);
+  });
+
+  testWidgets('unmapped prediction copy stays bounded to model evidence', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner()..captureResult = _fakeUnmappedScanResult();
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'โมเดลแสดงผลลัพธ์นี้ แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('พบวัตถุจริง แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์'),
+      findsNothing,
+    );
   });
 
   testWidgets('releases and restores camera across app lifecycle', (
@@ -395,6 +467,79 @@ void main() {
   });
 
   testWidgets(
+    'restores model download after initialization fails while inactive',
+    (tester) async {
+      final pending = Completer<void>();
+      final scanner = _FakeScanner()
+        ..initializePending = pending
+        ..modelRuntimeAvailable = false;
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      addTearDown(() {
+        if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            scanner: scanner,
+            voice: VoiceUseCases(
+              provider: _FakeVoice(),
+              disposeProvider: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(scanner.initializeCalls, 1);
+      expect(scanner.acquireCalls, 1);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      pending.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(scanner.pauseCalls, 1);
+      expect(scanner.isReady, isFalse);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      // Resuming the camera cannot manufacture the missing model runtime.
+      expect(scanner.acquireCalls, 1);
+      expect(scanner.isReady, isFalse);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byKey(const ValueKey('camera-preview')), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNull,
+      );
+      final downloadButton = find.byKey(
+        const ValueKey('object-scanner-download-model'),
+      );
+      expect(downloadButton, findsOneWidget);
+      expect(
+        find.textContaining('ยังไม่มีโมเดลที่ตรวจสอบแล้ว'),
+        findsOneWidget,
+      );
+      await tester.ensureVisible(downloadButton);
+      expect(downloadButton.hitTestable(), findsOneWidget);
+      expect(
+        tester.widget<OutlinedButton>(downloadButton).onPressed,
+        isNotNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'stale route initialization cannot pause a newer shared scanner consumer',
     (tester) async {
       final oldPending = Completer<void>();
@@ -613,11 +758,14 @@ void main() {
 final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? initializeFailure;
   CameraPracticeException? captureFailure;
+  ObjectScanResult captureResult = _fakeObjectScanResult();
   Completer<void>? initializePending;
+  bool modelRuntimeAvailable = true;
   final List<Completer<void>> initializePendings = [];
   final List<Completer<ObjectScanResult>> capturePendings = [];
   final List<ModelCancellation?> captureCancellations = [];
   int acceptCalls = 0;
+  int acquireCalls = 0;
   int captureCalls = 0;
   int initializeCalls = 0;
   int pauseCalls = 0;
@@ -635,7 +783,10 @@ final class _FakeScanner implements ObjectScannerController {
       );
 
   @override
-  ObjectScannerLease acquireLease() => _leaseManager.acquire();
+  ObjectScannerLease acquireLease() {
+    acquireCalls += 1;
+    return _leaseManager.acquire();
+  }
 
   @override
   Future<VocabularyWord> accept(ObjectScanResult result) async {
@@ -717,7 +868,7 @@ final class _FakeScanner implements ObjectScannerController {
     if (capturePendings.isNotEmpty) {
       return capturePendings.removeAt(0).future;
     }
-    return _fakeObjectScanResult();
+    return captureResult;
   }
 
   @override
@@ -734,6 +885,9 @@ final class _FakeScanner implements ObjectScannerController {
         ? initializePending
         : initializePendings.removeAt(0);
     if (pending != null) await pending.future;
+    if (!modelRuntimeAvailable) {
+      throw const CameraPracticeException(CameraFailureCode.modelUnavailable);
+    }
     isReady = true;
     lifecycleEvents.add('initialize:$call:ready');
   }
@@ -748,7 +902,7 @@ final class _FakeScanner implements ObjectScannerController {
   @override
   Future<void> resume() async {
     resumeCalls += 1;
-    isReady = true;
+    isReady = modelRuntimeAvailable;
   }
 }
 
@@ -770,6 +924,17 @@ ObjectScanResult _fakeObjectScanResult() => ObjectScanResult(
     label: 'Apple',
     confidence: 0.91,
   ),
+  modelId: 'model',
+  modelVersion: 'model-v1',
+  capturedAtUtc: DateTime.utc(2026, 7, 30),
+);
+
+ObjectScanResult _fakeUnmappedScanResult() => ObjectScanResult(
+  classifications: const [
+    ModelClassification(index: 2, label: 'Unknown', confidence: 0.78),
+  ],
+  vocabulary: null,
+  matchedClassification: null,
   modelId: 'model',
   modelVersion: 'model-v1',
   capturedAtUtc: DateTime.utc(2026, 7, 30),

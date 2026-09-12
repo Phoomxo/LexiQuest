@@ -109,38 +109,47 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.bySemanticsLabel('Travel basics, A1, revision 2'),
+        find.bySemanticsLabel('Travel basics, A1, รุ่น 2'),
         findsOneWidget,
       );
       expect(find.byType(RichLexicalCard), findsNWidgets(2));
       expect(find.text('station'), findsOneWidget);
       expect(find.text('market'), findsOneWidget);
-      expect(find.text('Completed sessions: 0'), findsOneWidget);
+      expect(find.text('กิจกรรมที่เรียนจบ: 0'), findsOneWidget);
       final scrollable = find.byType(Scrollable);
       await tester.scrollUntilVisible(
-        find.text('Meaning quiz'),
+        find.text('แบบทดสอบจากคลังคำศัพท์'),
         200,
         scrollable: scrollable,
       );
       await tester.pump();
-      expect(find.bySemanticsLabel('Meaning quiz: Available'), findsOneWidget);
-      expect(find.text('Matching'), findsNothing);
-      expect(find.bySemanticsLabel('Matching: Unavailable'), findsNothing);
-      await tester.scrollUntilVisible(
-        find.text('Flashcards'),
-        -200,
-        scrollable: scrollable,
+      expect(
+        find.bySemanticsLabel('แบบทดสอบจากคลังคำศัพท์: พร้อมใช้งาน'),
+        findsOneWidget,
       );
-      await tester.pump();
-      expect(find.bySemanticsLabel('Flashcards: Available'), findsOneWidget);
+      expect(find.text('จับคู่คำศัพท์'), findsNothing);
+      expect(
+        find.bySemanticsLabel('จับคู่คำศัพท์: ยังไม่พร้อมใช้งาน'),
+        findsNothing,
+      );
       await tester.scrollUntilVisible(
-        find.text('Associative reading'),
+        find.text('ทบทวนแบบเว้นระยะ (SRS)'),
         -200,
         scrollable: scrollable,
       );
       await tester.pump();
       expect(
-        find.bySemanticsLabel('Associative reading: Available'),
+        find.bySemanticsLabel('ทบทวนแบบเว้นระยะ (SRS): พร้อมใช้งาน'),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.text('อ่านเชื่อมโยงความจำ'),
+        -200,
+        scrollable: scrollable,
+      );
+      await tester.pump();
+      expect(
+        find.bySemanticsLabel('อ่านเชื่อมโยงความจำ: พร้อมใช้งาน'),
         findsOneWidget,
       );
     },
@@ -240,9 +249,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Save for review').first);
+      await tester.tap(find.text('บันทึกไว้ทบทวน').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Save for review').first);
+      await tester.tap(find.text('บันทึกไว้ทบทวน').first);
       await tester.pumpAndSettle();
 
       final saved = await database.select(database.savedLearningItems).get();
@@ -319,12 +328,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Report content').first);
+      await tester.tap(find.text('รายงานเนื้อหา').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Text problem'));
+      await tester.tap(find.text('ปัญหาข้อความ'));
       await tester.pump();
-      await tester.tap(find.text('Submit report'));
-      await tester.tap(find.text('Submit report'), warnIfMissed: false);
+      await tester.tap(find.text('ส่งรายงาน'));
+      await tester.tap(find.text('ส่งรายงาน'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       final reports = await database

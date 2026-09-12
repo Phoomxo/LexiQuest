@@ -27,10 +27,10 @@ void main() {
   test(
     'four research tables have exactly one personal owner lifecycle entry',
     () {
-      expect(ownerLifecycleManifest, hasLength(48));
+      expect(ownerLifecycleManifest, hasLength(49));
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(48),
+        hasLength(49),
       );
       for (final table in researchLifecycleTables) {
         final entries = ownerLifecycleManifest.where(
@@ -121,7 +121,7 @@ void main() {
       final artifact = await exporter.prepareActive();
       final text = utf8.decode(artifact.bytes);
       final tables = archiveTables(artifact);
-      expect(tables, hasLength(48));
+      expect(tables, hasLength(49));
       final run = records(tables, 'motivationMeasurementRuns').last;
       final response = records(tables, 'motivationResponses').last;
       final permit = records(tables, 'researchParticipationPermits').last;

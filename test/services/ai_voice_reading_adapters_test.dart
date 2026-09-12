@@ -5,7 +5,7 @@ import 'package:vocab_learning_app/services/voice_reading_adapter.dart';
 void main() {
   group('B4 AI & Voice Reading Adapters Tests', () {
     test(
-      'AiReadingContentAdapter falls back seamlessly when forced offline',
+      'revised B2 local fallback reports only target words actually present',
       () async {
         final adapter = AiReadingContentAdapter();
         final passage = await adapter.generatePassage(
@@ -15,7 +15,10 @@ void main() {
         );
 
         expect(passage.isFallback, isTrue);
-        expect(passage.passageText, contains('ephemeral'));
+        expect(passage.passageText, isNot(contains('ephemeral')));
+        expect(passage.passageText, contains('resilient'));
+        expect(passage.targetWords, ['resilient']);
+        expect(passage.contentId, 'local-reading-b2-r2');
       },
     );
 

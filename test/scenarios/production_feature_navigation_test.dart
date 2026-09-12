@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest.dart' as timezone_data;
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide
         LocalOwner,
@@ -100,6 +101,7 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 import '../support/inert_research_dependencies.dart';
 
 void main() {
+  setUpAll(timezone_data.initializeTimeZones);
   test('feature-off Pair launch remains absent from production navigation', () {
     final registration = buildLessonModeRegistry().find(LessonMode.matching)!;
 
@@ -146,7 +148,8 @@ void main() {
     const _ProductionEntryCase(
       feature: Feature.weakness,
       id: 'home/weakness',
-      surface: _EntrySurface.bottom,
+      surface: _EntrySurface.mastery,
+      routeName: 'home/weakness',
       destinationType: WeaknessClinicScreen,
     ),
     const _ProductionEntryCase(
@@ -281,6 +284,12 @@ void main() {
       await tester.pumpAndSettle();
 
       switch (entryCase.surface) {
+        case _EntrySurface.mastery:
+          await _openProductionEntry(tester, entryCase);
+          _expectEnabledDestination(tester, entryCase);
+          features.emergencyOff(entryCase.feature);
+          await tester.pumpAndSettle();
+          _expectUnavailableGate(tester, entryCase);
         case _EntrySurface.bottom:
           final entry = find.byKey(ValueKey<String>(entryCase.id));
           expect(entry, findsOneWidget);
@@ -496,10 +505,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(NavigationDestination).at(1));
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
     await tester.pump();
     final readingEntry = find.byKey(
       const ValueKey<String>('home/learn/associative-reading'),
+    );
+    await tester.scrollUntilVisible(
+      readingEntry,
+      150,
+      scrollable: find.descendant(
+        of: find.byType(ChooseModeScreen),
+        matching: find.byType(Scrollable),
+      ),
     );
     expect(readingEntry, findsOneWidget);
     await tester.ensureVisible(readingEntry);
@@ -523,7 +540,7 @@ void main() {
     expect(find.byType(AssociativeReadingLauncherScreen), findsNothing);
     expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey<String>('home/learn/associative-reading')),
@@ -542,9 +559,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(NavigationDestination).at(1));
+    await tester.tap(find.byKey(const ValueKey('home/learn')));
     await tester.pump();
 
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('home/learn/associative-reading')),
+      150,
+      scrollable: find.descendant(
+        of: find.byType(ChooseModeScreen),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(
       find.byKey(const ValueKey<String>('home/learn/associative-reading')),
       findsOneWidget,
@@ -553,7 +578,7 @@ void main() {
       find.text(
         NavigationGlossary.require(
           'home/learn/associative-reading',
-        ).fullThaiLabel,
+        ).shortThaiLabel,
       ),
       findsOneWidget,
     );
@@ -626,7 +651,12 @@ void main() {
       features.emergencyOff(Feature.researchAssessment);
       await tester.pump();
       expect(find.byType(TodayHubScreen), findsOneWidget);
-      expect(find.byKey(const ValueKey<String>('home/today')), findsOneWidget);
+      expect(
+        ModalRoute.of(
+          tester.element(find.byType(TodayHubScreen)),
+        )?.settings.name,
+        'home/today',
+      );
       expect(
         find.byKey(const ValueKey('today-hub-assessment-action')),
         findsNothing,
@@ -635,10 +665,18 @@ void main() {
         find.byKey(const ValueKey('today-hub-open-review')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey('today-hub-open-history')),
-        findsOneWidget,
+      final history = find.byKey(const ValueKey('today-hub-open-history'));
+      await tester.scrollUntilVisible(
+        history,
+        180,
+        scrollable: find
+            .descendant(
+              of: find.byType(TodayHubScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
       );
+      expect(history, findsOneWidget);
       expect(await _f42NavigationAuthorityRows(database), before);
     },
   );
@@ -675,10 +713,22 @@ void main() {
         'today-hub-open-history',
       ]) {
         final action = find.byKey(ValueKey<String>(key));
+        await tester.scrollUntilVisible(
+          action,
+          180,
+          scrollable: find
+              .descendant(
+                of: find.byType(TodayHubScreen),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         expect(action, findsOneWidget);
         expect(tester.widget<OutlinedButton>(action).onPressed, isNotNull);
       }
 
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       await tester.pumpWidget(
         MyApp(
           dependencies: _dependencies(
@@ -741,12 +791,12 @@ void main() {
       await openToday();
       await _tapF42Action(tester, 'today-hub-open-review');
       expect(find.byType(ReviewCenterScreen), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
       await _tapF42Action(tester, 'today-hub-open-history');
       expect(find.byType(LearningHistoryScreen), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
       await _tapF42Action(tester, 'today-hub-assessment-action');
@@ -775,6 +825,11 @@ Future<void> _openProductionEntry(
   _ProductionEntryCase entryCase,
 ) async {
   switch (entryCase.surface) {
+    case _EntrySurface.mastery:
+      await tester.tap(find.byKey(const ValueKey('home/mastery')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ValueKey(entryCase.id)));
+      await tester.pumpAndSettle();
     case _EntrySurface.bottom:
       final entry = find.byKey(ValueKey<String>(entryCase.id));
       expect(entry, findsOneWidget);
@@ -828,9 +883,27 @@ Future<void> _openProductionEntry(
 
 Future<void> _tapF42Action(WidgetTester tester, String key) async {
   final action = find.byKey(ValueKey<String>(key));
-  expect(action, findsOneWidget);
-  await tester.ensureVisible(action);
+  final scrollable = find
+      .descendant(
+        of: find.byType(TodayHubScreen),
+        matching: find.byType(Scrollable),
+      )
+      .first;
+  // Returning from a lower action preserves the lazy list's scroll position.
+  // Traverse from the top so an earlier action can be built and reached again.
+  final position = tester.state<ScrollableState>(scrollable).position;
+  position.jumpTo(position.minScrollExtent);
   await tester.pump();
+  await tester.scrollUntilVisible(
+    action,
+    120,
+    scrollable: scrollable,
+    maxScrolls: 60,
+  );
+  expect(action, findsOneWidget);
+  await Scrollable.ensureVisible(tester.element(action), alignment: 0.5);
+  await tester.pump();
+  expect(action.hitTestable(), findsOneWidget);
   await tester.tap(action);
   await tester.pumpAndSettle();
 }
@@ -864,15 +937,20 @@ void _expectUnavailableGate(
     (widget) =>
         widget is ProductionFeatureUnavailable &&
         widget.feature == entryCase.feature,
+    skipOffstage: entryCase.surface != _EntrySurface.bottom,
   );
   expect(unavailableFinder, findsOneWidget);
+  if (entryCase.surface == _EntrySurface.bottom) {
+    expect(find.byKey(ValueKey(entryCase.id)), findsNothing);
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+  }
   if (entryCase.routeName != null) {
     final route = ModalRoute.of(tester.element(unavailableFinder));
     expect(route?.settings.name, entryCase.routeName);
   }
 }
 
-enum _EntrySurface { bottom, learning, drawer }
+enum _EntrySurface { bottom, learning, mastery, drawer }
 
 final class _ProductionEntryCase {
   const _ProductionEntryCase({
@@ -1529,6 +1607,23 @@ final class _OwnerRepository implements LocalOwnerRepository {
 }
 
 final class _QuestRepositoryFake implements QuestRepository {
+  @override
+  Future<bool> assignForPeriod({
+    required QuestDefinition definition,
+    required QuestInstance instance,
+    required DateTime nowUtc,
+  }) async => false;
+  @override
+  Future<void> expireStaleInstances({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) async {}
+  @override
+  Future<List<QuestInstance>> getProjectionCandidates({
+    required String ownerId,
+    required DateTime occurredAtUtc,
+    required Iterable<String> questIds,
+  }) async => const [];
   int readCalls = 0;
   int? lastLimit;
 

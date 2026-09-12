@@ -676,9 +676,9 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
       expect(
-        tester.getBottomRight(find.text('Try again')).dy,
+        tester.getBottomRight(find.text('ลองอีกครั้ง')).dy,
         lessThanOrEqualTo(480),
       );
     },

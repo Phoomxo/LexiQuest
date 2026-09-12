@@ -55,6 +55,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     'Academic Conference',
     'Hotel Check-in',
   ];
+  static const _scenarioLabels = {
+    'Job Interview': 'สัมภาษณ์งาน',
+    'Airport Check-in': 'เช็กอินที่สนามบิน',
+    'Cafe Ordering': 'สั่งอาหารในคาเฟ่',
+    'Academic Conference': 'ประชุมวิชาการ',
+    'Hotel Check-in': 'เช็กอินโรงแรม',
+  };
 
   VoiceUseCases? _voice;
   AiTutorController? _tutor;
@@ -69,6 +76,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   bool _hasKey = false;
   String? _error;
   int _interactionEpoch = 0;
+  int _voiceAttemptEpoch = 0;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -91,7 +99,9 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   void _bindResolvedDependencies() {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    _voice = widget.voice ?? dependencies?.voice;
+    final resolvedVoice = widget.voice ?? dependencies?.voice;
+    if (!identical(_voice, resolvedVoice)) _voiceAttemptEpoch++;
+    _voice = resolvedVoice;
     refreshRouteVoiceSession();
     final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
     _bindSpeechPractice(widget.speechPractice ?? dependencies?.speechPractice);
@@ -124,6 +134,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   Future<void> onVoiceRouteCovered() async {
+    _voiceAttemptEpoch++;
     final speechSession = _speechSession;
     _speechSession = null;
     await speechSession?.release();
@@ -143,12 +154,12 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     }
   }
 
-  Future<void> _sendMessage([String? spokenText]) async {
+  Future<void> _sendMessage() async {
     final tutor = _tutor;
-    final text = (spokenText ?? _inputController.text).trim();
+    final text = _inputController.text.trim();
     if (text.isEmpty || _isGenerating) return;
     if (tutor == null) {
-      setState(() => _error = 'AI Tutor is unavailable in this build.');
+      setState(() => _error = 'ผู้ช่วยฝึกภาษา AI ยังไม่พร้อมใช้งานในรุ่นนี้');
       return;
     }
     final cancellation = AiCancellation();
@@ -171,14 +182,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       setState(() {
         _messages.add(
           ChatMessage(
-            sender: 'AI Tutor',
+            sender: 'ผู้ช่วย AI',
             text: reply.text,
             isUser: false,
             model: reply.model,
           ),
         );
       });
-      unawaited(_speakAiResponse(reply.text));
     } on AiTutorException catch (error) {
       if (mounted && epoch == _interactionEpoch) {
         setState(() => _error = _aiFailureText(error.code));
@@ -213,10 +223,15 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         onEvent: (event) {
           if (!mounted) return;
           if (event.isFinal) {
-            setState(() => _isListening = false);
-            if (event.transcript.trim().isNotEmpty) {
-              unawaited(_sendMessage(event.transcript));
-            }
+            setState(() {
+              _isListening = false;
+              if (event.transcript.trim().isNotEmpty) {
+                _inputController.text = event.transcript;
+                _inputController.selection = TextSelection.collapsed(
+                  offset: _inputController.text.length,
+                );
+              }
+            });
           }
         },
         onFailure: (failure) {
@@ -237,6 +252,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _speakAiResponse(String text) async {
+    final epoch = ++_voiceAttemptEpoch;
     try {
       await routeVoiceSession?.speak(
         VoiceRequest.create(
@@ -249,9 +265,36 @@ class _AiTutorScreenState extends State<AiTutorScreen>
           contentType: 'ai_tutor',
         ),
       );
-    } on Object {
-      // The verified text reply remains usable when device TTS is unavailable.
+    } on Object catch (error) {
+      _reportVoiceFailure(
+        error,
+        epoch,
+        'อ่านเสียงไม่สำเร็จ คุณยังอ่านคำตอบบนหน้าจอได้',
+      );
     }
+  }
+
+  Future<void> _stopReply() async {
+    final epoch = ++_voiceAttemptEpoch;
+    try {
+      await routeVoiceSession?.stop();
+    } on Object catch (error) {
+      _reportVoiceFailure(
+        error,
+        epoch,
+        'หยุดอ่านเสียงไม่สำเร็จ กรุณาลองอีกครั้ง',
+      );
+    }
+  }
+
+  void _reportVoiceFailure(Object error, int epoch, String message) {
+    if (!mounted ||
+        epoch != _voiceAttemptEpoch ||
+        (error is VoiceFailure &&
+            error.category == VoiceFailureCategory.cancelled)) {
+      return;
+    }
+    setState(() => _error = message);
   }
 
   @override
@@ -261,6 +304,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
+      _voiceAttemptEpoch++;
       _cancelGenerationForLifecycle();
       _cancelSpeechForLifecycle().ignore();
     }
@@ -285,6 +329,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _cancelAudioForLifecycle() async {
+    _voiceAttemptEpoch++;
     await _cancelSpeechForLifecycle();
     try {
       await routeVoiceSession?.stop();
@@ -322,6 +367,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   void dispose() {
+    _voiceAttemptEpoch++;
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _speechSession?.release().ignore();
@@ -334,10 +380,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Tutor'),
+        title: const Text('ฝึกสนทนากับ AI'),
         actions: [
           IconButton(
-            tooltip: 'AI provider settings',
+            tooltip: 'ตั้งค่าผู้ให้บริการ AI',
             onPressed: _openAiSettings,
             icon: const Icon(Icons.key_outlined),
           ),
@@ -350,13 +396,17 @@ class _AiTutorScreenState extends State<AiTutorScreen>
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: DropdownButtonFormField<String>(
                 initialValue: _selectedScenario,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'สถานการณ์สนทนา',
                   border: OutlineInputBorder(),
                 ),
                 items: [
                   for (final scenario in _scenarios)
-                    DropdownMenuItem(value: scenario, child: Text(scenario)),
+                    DropdownMenuItem(
+                      value: scenario,
+                      child: Text(_scenarioLabels[scenario]!),
+                    ),
                 ],
                 onChanged: _isGenerating
                     ? null
@@ -371,8 +421,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 _hasKey
-                    ? 'Messages use the selected provider under saved consent.'
-                    : 'Add a provider API key before starting.',
+                    ? 'ตรวจข้อความก่อนกดส่ง ข้อความจะส่งไปยังผู้ให้บริการตามความยินยอมที่บันทึกไว้ และอาจมีค่าใช้จ่าย'
+                    : 'ตั้งค่าบัญชีและรหัสเชื่อมต่อของผู้ให้บริการ AI ก่อนเริ่ม',
                 key: const ValueKey<String>('ai-tutor-key-status'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -384,7 +434,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                         padding: EdgeInsets.all(24),
                         child: Text(
                           'ยังไม่มีบทสนทนา เลือกสถานการณ์แล้วพิมพ์หรือพูด'
-                          'ภาษาอังกฤษเพื่อเรียก AI provider ที่เลือกไว้',
+                          'ภาษาอังกฤษ ตรวจข้อความแล้วกดส่งเมื่อพร้อม',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -419,10 +469,30 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                                   Text(message.text),
                                   if (message.model != null)
                                     Text(
-                                      'ผู้ให้บริการ: ${message.model}',
+                                      'รุ่น AI: ${message.model}',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodySmall,
+                                    ),
+                                  if (!message.isUser && _voice != null)
+                                    Wrap(
+                                      children: [
+                                        IconButton(
+                                          tooltip: 'ฟังคำตอบ',
+                                          onPressed: () =>
+                                              _speakAiResponse(message.text),
+                                          icon: const Icon(
+                                            Icons.volume_up_outlined,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          tooltip: 'หยุดอ่าน',
+                                          onPressed: _stopReply,
+                                          icon: const Icon(
+                                            Icons.stop_circle_outlined,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                 ],
                               ),
@@ -463,7 +533,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                 children: [
                   IconButton(
                     key: const ValueKey<String>('ai-tutor-mic'),
-                    tooltip: _isListening ? 'หยุดฟัง' : 'พูดภาษาอังกฤษ',
+                    tooltip: _isListening ? 'หยุดฟัง' : 'พูดเพื่อกรอกข้อความ',
                     onPressed: _isGenerating ? null : _toggleMicListening,
                     icon: Icon(_isListening ? Icons.stop : Icons.mic_none),
                   ),
@@ -499,31 +569,37 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   String _aiFailureText(AiFailureCode code) => switch (code) {
-    AiFailureCode.missingKey => 'Add an API key in AI provider settings.',
-    AiFailureCode.missingModel => 'Select an AI model before starting.',
+    AiFailureCode.missingKey => 'เพิ่มรหัสเชื่อมต่อในการตั้งค่าผู้ให้บริการ AI',
+    AiFailureCode.missingModel => 'เลือกรุ่น AI ในการตั้งค่าก่อนเริ่ม',
     AiFailureCode.consentRequired =>
-      'Provider consent is required before sending a message.',
-    AiFailureCode.invalidKey => 'The provider rejected this API key.',
-    AiFailureCode.requestRejected => 'The provider rejected this request.',
-    AiFailureCode.quota => 'The provider quota is exhausted.',
-    AiFailureCode.rateLimited => 'The provider rate limit was reached.',
+      'กรุณาบันทึกความยินยอมในการตั้งค่าก่อนส่งข้อความ',
+    AiFailureCode.invalidKey =>
+      'ผู้ให้บริการไม่ยอมรับรหัสเชื่อมต่อ กรุณาตรวจในการตั้งค่า',
+    AiFailureCode.requestRejected =>
+      'ผู้ให้บริการไม่ยอมรับคำขอนี้ กรุณาตรวจรุ่น AI หรือแก้ข้อความ',
+    AiFailureCode.quota => 'โควตาผู้ให้บริการหมด กรุณาตรวจบัญชีของคุณ',
+    AiFailureCode.rateLimited => 'ส่งคำขอถี่เกินไป กรุณารอสักครู่แล้วลองใหม่',
     AiFailureCode.offline =>
-      'The device is offline. Local learning still works.',
-    AiFailureCode.timeout => 'The provider timed out. Try again.',
+      'ไม่มีอินเทอร์เน็ต คุณยังเรียนด้วยข้อมูลในเครื่องได้',
+    AiFailureCode.timeout => 'ผู้ให้บริการตอบไม่ทันเวลา กรุณาลองใหม่',
     AiFailureCode.providerUnavailable =>
-      'The provider is temporarily unavailable. Local data is unaffected.',
-    AiFailureCode.providerDisabled => 'The selected provider is disabled.',
+      'ผู้ให้บริการไม่พร้อมชั่วคราว ข้อมูลในเครื่องยังอยู่',
+    AiFailureCode.providerDisabled =>
+      'ผู้ให้บริการที่เลือกถูกปิดใช้งาน กรุณาตรวจการตั้งค่า',
     AiFailureCode.circuitOpen =>
-      'The provider is temporarily paused after repeated failures.',
+      'พักการเชื่อมต่อชั่วคราวหลังเกิดข้อผิดพลาดหลายครั้ง กรุณาลองภายหลัง',
     AiFailureCode.localPersistence =>
-      'Local AI accounting is temporarily unavailable.',
+      'บันทึกสถิติ AI ในเครื่องไม่ได้ชั่วคราว กรุณาลองภายหลัง',
     AiFailureCode.malformedResponse =>
-      'The provider returned an invalid reply.',
-    AiFailureCode.blocked => 'The provider blocked this request.',
-    AiFailureCode.cancelled => 'The AI request was cancelled.',
-    AiFailureCode.validation => 'The message is invalid or too long.',
-    AiFailureCode.secureStorage => 'Secure API-key storage is unavailable.',
-    AiFailureCode.unsafeEndpoint => 'The custom provider endpoint is unsafe.',
+      'คำตอบจากผู้ให้บริการอ่านไม่ได้ กรุณาลองใหม่',
+    AiFailureCode.blocked => 'ผู้ให้บริการปฏิเสธข้อความนี้ กรุณาปรับข้อความ',
+    AiFailureCode.cancelled => 'ยกเลิกคำขอ AI แล้ว',
+    AiFailureCode.validation =>
+      'ข้อความไม่ถูกต้องหรือยาวเกินไป กรุณาแก้ข้อความ',
+    AiFailureCode.secureStorage =>
+      'เข้าถึงที่เก็บรหัสเชื่อมต่ออย่างปลอดภัยไม่ได้ กรุณาลองภายหลัง',
+    AiFailureCode.unsafeEndpoint =>
+      'ปลายทางที่กำหนดเองไม่ปลอดภัย กรุณาตรวจการตั้งค่า',
   };
 
   String _speechFailureText(SpeechFailureCode code) => switch (code) {

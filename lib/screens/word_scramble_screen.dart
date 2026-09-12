@@ -29,6 +29,8 @@ List<String> createStableScramble(String word) {
 
 class WordScrambleScreen extends StatefulWidget {
   final String word;
+  final String? meaning;
+  final String? partOfSpeech;
   final String? ownerId;
   final String? sessionId;
   final String? wordId;
@@ -39,6 +41,8 @@ class WordScrambleScreen extends StatefulWidget {
   const WordScrambleScreen({
     super.key,
     required this.word,
+    this.meaning,
+    this.partOfSpeech,
     this.ownerId,
     this.sessionId,
     this.wordId,
@@ -54,6 +58,7 @@ class WordScrambleScreen extends StatefulWidget {
 class _WordScrambleScreenState extends State<WordScrambleScreen> {
   List<String> scrambledLetters = [];
   List<String?> userAnswer = [];
+  List<int?> slotLetterIndexes = [];
   List<int> usedIndexes = [];
   bool _isComplete = false;
   bool? _committedEvaluation;
@@ -95,6 +100,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   void _scrambleWord() {
     scrambledLetters = createStableScramble(widget.word);
     userAnswer = List.filled(scrambledLetters.length, null);
+    slotLetterIndexes = List.filled(scrambledLetters.length, null);
     usedIndexes.clear();
   }
 
@@ -150,8 +156,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   }
 
   void _selectLetter(int letterIndex) {
-    if (_interactionLocked ||
+    if (_isComplete ||
+        _interactionLocked ||
         !_acceptsModeOperations ||
+        letterIndex < 0 ||
+        letterIndex >= scrambledLetters.length ||
         usedIndexes.contains(letterIndex)) {
       return;
     }
@@ -159,7 +168,28 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
     if (slotIndex < 0) return;
     setState(() {
       userAnswer[slotIndex] = scrambledLetters[letterIndex];
+      slotLetterIndexes[slotIndex] = letterIndex;
       usedIndexes.add(letterIndex);
+    });
+  }
+
+  bool _canPlace(int slot, int letter) =>
+      !_isComplete &&
+      !_interactionLocked &&
+      _acceptsModeOperations &&
+      letter >= 0 &&
+      letter < scrambledLetters.length &&
+      userAnswer[slot] == null &&
+      !usedIndexes.contains(letter);
+
+  void _removeLetter(int slot) {
+    if (_isComplete || _interactionLocked || !_acceptsModeOperations) return;
+    final letter = slotLetterIndexes[slot];
+    if (letter == null) return;
+    setState(() {
+      usedIndexes.remove(letter);
+      slotLetterIndexes[slot] = null;
+      userAnswer[slot] = null;
     });
   }
 
@@ -246,55 +276,125 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Card.filled(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          const Icon(Icons.extension_outlined, size: 32),
+                          const SizedBox(height: 12),
+                          Text(
+                            'เรียงตัวอักษรให้เป็นคำ',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          if (widget.meaning?.trim().isNotEmpty ?? false) ...[
+                            const SizedBox(height: 16),
+                            const Text('คำใบ้', textAlign: TextAlign.center),
+                            Text(
+                              widget.meaning!.trim(),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ],
+                          if (widget.partOfSpeech?.trim().isNotEmpty ??
+                              false) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              _partOfSpeechLabel(widget.partOfSpeech!),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          const Text(
+                            'แตะหรือลากตัวอักษรลงช่อง\nแตะตัวอักษรในช่องเพื่อคืนกลับ',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   AccessibilitySemanticRegion(
                     role: AccessibilitySemanticRole.prompt,
                     child: Wrap(
                       alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: List.generate(scrambledLetters.length, (index) {
                         return DragTarget<int>(
+                          key: ValueKey<String>('word-slot-$index'),
                           onWillAcceptWithDetails: (details) =>
-                              !_interactionLocked && userAnswer[index] == null,
+                              _canPlace(index, details.data),
                           onAcceptWithDetails: (details) {
-                            if (_interactionLocked || !_acceptsModeOperations) {
+                            if (!_canPlace(index, details.data)) {
                               return;
                             }
                             setState(() {
                               userAnswer[index] =
                                   scrambledLetters[details.data];
+                              slotLetterIndexes[index] = details.data;
                               usedIndexes.add(details.data);
                             });
                           },
                           builder: (context, candidateData, rejectedData) {
-                            return AnimatedContainer(
-                              duration: reducedMotion
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.all(5),
-                              constraints: const BoxConstraints(
-                                minWidth: 56,
-                                minHeight: 56,
-                              ),
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: userAnswer[index] != null
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.primaryContainer
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
+                            final canRemove =
+                                userAnswer[index] != null &&
+                                !_interactionLocked &&
+                                !_isComplete &&
+                                _acceptsModeOperations;
+                            return Semantics(
+                              button: canRemove,
+                              onTap: canRemove
+                                  ? () => _removeLetter(index)
+                                  : null,
+                              label: userAnswer[index] == null
+                                  ? 'ช่องตัวอักษรที่ ${index + 1} ว่าง'
+                                  : 'คืนตัวอักษร ${userAnswer[index]} จากช่องที่ ${index + 1}',
+                              excludeSemantics: true,
+                              child: InkWell(
+                                onTap: canRemove
+                                    ? () => _removeLetter(index)
+                                    : null,
                                 borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                userAnswer[index] ?? "",
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                                child: AnimatedContainer(
+                                  width:
+                                      MediaQuery.textScalerOf(
+                                        context,
+                                      ).scale(24) *
+                                      2,
+                                  duration: reducedMotion
+                                      ? Duration.zero
+                                      : const Duration(milliseconds: 300),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 56,
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: userAnswer[index] != null
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    userAnswer[index] ?? "",
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
@@ -303,7 +403,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                       }),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+                  Text(
+                    'ใส่แล้ว ${usedIndexes.length} จาก ${scrambledLetters.length} ตัวอักษร',
+                  ),
+                  const SizedBox(height: 24),
                   AccessibilitySemanticRegion(
                     role: AccessibilitySemanticRole.responseAndInput,
                     child: Column(
@@ -311,11 +415,15 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                       children: <Widget>[
                         Wrap(
                           alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 12,
                           children: List.generate(scrambledLetters.length, (
                             index,
                           ) {
                             final canSelect =
+                                !_isComplete &&
                                 !_interactionLocked &&
+                                _acceptsModeOperations &&
                                 !usedIndexes.contains(index);
                             void select() => _selectLetter(index);
                             return Visibility(
@@ -341,12 +449,14 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                                   button: true,
                                   enabled: canSelect,
                                   label:
-                                      'Select letter '
+                                      'เลือกตัวอักษร '
                                       '${scrambledLetters[index]}',
                                   onTap: canSelect ? select : null,
                                   child: GestureDetector(
+                                    key: ValueKey<String>('word-letter-$index'),
                                     onTap: canSelect ? select : null,
                                     child: Draggable<int>(
+                                      maxSimultaneousDrags: canSelect ? 1 : 0,
                                       data: index,
                                       feedback: Material(
                                         child: _buildLetterTile(
@@ -426,9 +536,23 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
     );
   }
 
+  String _partOfSpeechLabel(String value) =>
+      switch (value.trim().toLowerCase()) {
+        'noun' || 'n.' => 'คำนาม',
+        'verb' || 'v.' => 'คำกริยา',
+        'adjective' || 'adj.' => 'คำคุณศัพท์',
+        'adverb' || 'adv.' => 'คำวิเศษณ์',
+        'pronoun' => 'คำสรรพนาม',
+        'preposition' => 'คำบุพบท',
+        'conjunction' => 'คำสันธาน',
+        'interjection' => 'คำอุทาน',
+        _ => value.trim(),
+      };
+
   Widget _buildLetterTile(String letter, {bool isDragging = false}) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+      width: MediaQuery.textScalerOf(context).scale(24) * 2,
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 56),
       padding: const EdgeInsets.all(4),
       alignment: Alignment.center,
       decoration: BoxDecoration(

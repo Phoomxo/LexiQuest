@@ -1,6 +1,9 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import 'package:cloud_firestore/cloud_firestore.dart' as cloud;
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:firebase_core/firebase_core.dart' show FirebaseException;
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +13,7 @@ import 'package:vocab_learning_app/features/consent/data/drift_research_consent_
 import 'package:vocab_learning_app/features/research/data/drift_measurement_opportunity_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/motivation_measurement.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_research_sync_adapter.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
@@ -45,6 +49,7 @@ void main() {
       'research_participation_permits',
       'motivation_measurement_runs',
       'motivation_responses',
+      'research_session_proofs',
       'measurement_opportunities',
       'neutral_events_v2',
     ]);
@@ -339,10 +344,13 @@ void main() {
       () async {
         await presentedEvent();
         final captured = await claim(store());
-        expect(
-          captured.map((c) => c.mutation.collection).toSet(),
-          ResearchSyncContract.collections.toSet(),
-        );
+        expect(captured.map((c) => c.mutation.collection).toSet(), {
+          SyncCollection.researchParticipationPermits,
+          SyncCollection.motivationMeasurementRuns,
+          SyncCollection.motivationResponses,
+          SyncCollection.measurementOpportunities,
+          SyncCollection.neutralEventsV2,
+        });
         for (final c in captured) {
           final encoded = FirestoreSyncCodec.encodeEntity(
             c.mutation,
@@ -745,12 +753,501 @@ void main() {
       f.database,
     ).decide(ownerId: _owner, version: 1, accepted: false, decidedAtUtc: f.now);
 
+    String withdrawalId() =>
+        'research-sync:${ResearchSyncContract.fingerprint({
+          'collection': 'research_withdrawals',
+          'id': 'permit:a',
+          'payload': {'permitId': 'permit:a', 'ownerId': _owner},
+        })}:1';
+
+    for (final withRun in [false, true]) {
+      test(
+        'withdrawal persists denial before enqueue withRun=$withRun',
+        () async {
+          if (!withRun) {
+            await f.database.delete(f.database.motivationMeasurementRuns).go();
+          }
+          await withdrawLocally();
+          final intent =
+              await (f.database.select(f.database.outboxOperations)..where(
+                    (row) => row.entityType.equals('researchWithdrawal'),
+                  ))
+                  .getSingle();
+          expect(intent.operationId, withdrawalId());
+          expect(intent.entityId, 'permit:a');
+          expect(intent.ownerId, _owner);
+          expect(intent.payloadVersion, 1);
+          expect(intent.state, 'pending');
+          f.now = f.now.add(const Duration(seconds: 1));
+          await DriftResearchConsentRepository(f.database).decide(
+            ownerId: _owner,
+            version: 1,
+            accepted: true,
+            decidedAtUtc: f.now,
+          );
+          final retained =
+              await (f.database.select(
+                    f.database.outboxOperations,
+                  )..where((row) => row.operationId.equals(intent.operationId)))
+                  .getSingle();
+          expect(retained.toJson(), intent.toJson());
+          expect(
+            (await f.database.select(f.database.researchConsents).getSingle())
+                .consentState,
+            'accepted',
+          );
+          expect(
+            seen,
+            isEmpty,
+            reason: 'local denial persistence needs no upload authority',
+          );
+        },
+      );
+    }
+
     test(
-      'same public enqueue hook persists withdrawal without an active authorizer',
+      'durable denial remains claimable after reaccept and acknowledged on repeat withdrawal',
+      () async {
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        final s = store(callback: false);
+        // Existing backfill makes the claim boundary independently testable on
+        // the old implementation; the preceding tests require atomic insertion.
+        await s.enqueueResearchChanges(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        final restoredStore = store(callback: false);
+        final denial = (await claim(restoredStore)).single;
+        expect(denial.localOperationId, withdrawalId());
+        expect(denial.mutation.payload, {
+          'permitId': 'permit:a',
+          'ownerId': _owner,
+        });
+        final attempt = (await restoredStore.beginAttempt(
+          claim: denial,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        ))!;
+        expect(
+          await restoredStore.acknowledge(
+            operationId: attempt.mutation.operationId,
+            leaseToken: attempt.leaseToken,
+            ownerGateToken: _gate,
+            nowUtc: f.now,
+            acknowledgement: PushAcknowledged(
+              operationId: attempt.mutation.operationId,
+              resultingRevision: 1,
+              acknowledgedAtUtc: f.now,
+            ),
+          ),
+          isTrue,
+        );
+        expect(
+          (await f.database.select(f.database.researchConsents).getSingle())
+              .consentState,
+          'accepted',
+        );
+        final acknowledged = await (f.database.select(
+          f.database.outboxOperations,
+        )..where((row) => row.operationId.equals(withdrawalId()))).getSingle();
+        expect(acknowledged.state, 'acknowledged');
+        f.now = f.now.add(const Duration(seconds: 1));
+        await withdrawLocally();
+        final repeated =
+            await (f.database.select(f.database.outboxOperations)
+                  ..where((row) => row.entityType.equals('researchWithdrawal')))
+                .getSingle();
+        expect(repeated.toJson(), acknowledged.toJson());
+        expect(await claim(restoredStore), isEmpty);
+      },
+    );
+
+    for (final defect in ['operation-id', 'kind', 'version']) {
+      test('durable denial rejects malformed $defect after reaccept', () async {
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        await store(callback: false).enqueueResearchChanges(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        final adapter = DriftResearchSyncAdapter(
+          f.database,
+          rollout: _rollout,
+          authorizer: null,
+        );
+        final query = f.database.select(f.database.outboxOperations)
+          ..where((row) => row.operationId.equals(withdrawalId()));
+        final valid = await query.getSingle();
+        expect(
+          await adapter.claimAllowed(
+            valid,
+            firebaseUid: _uid,
+            token: _gate,
+            now: f.now,
+          ),
+          isTrue,
+          reason:
+              'A valid durable denial must first be admitted after reaccept.',
+        );
+        await (f.database.update(
+          f.database.outboxOperations,
+        )..where((row) => row.operationId.equals(valid.operationId))).write(
+          OutboxOperationsCompanion(
+            operationId: defect == 'operation-id'
+                ? const Value('forged-denial')
+                : const Value.absent(),
+            operationKind: defect == 'kind'
+                ? const Value('delete')
+                : const Value.absent(),
+            payloadVersion: defect == 'version'
+                ? const Value(2)
+                : const Value.absent(),
+          ),
+        );
+        final malformed = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(
+          await adapter.claimAllowed(
+            malformed,
+            firebaseUid: _uid,
+            token: _gate,
+            now: f.now,
+          ),
+          isFalse,
+        );
+        expect(malformed.attemptCount, valid.attemptCount);
+      });
+    }
+
+    for (final loss in ['expired', 'released', 'owner']) {
+      test('durable denial still requires current $loss authority', () async {
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        await store(callback: false).enqueueResearchChanges(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        final adapter = DriftResearchSyncAdapter(
+          f.database,
+          rollout: _rollout,
+          authorizer: null,
+        );
+        final op = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(
+          await adapter.claimAllowed(
+            op,
+            firebaseUid: _uid,
+            token: _gate,
+            now: f.now,
+          ),
+          isTrue,
+        );
+        if (loss == 'expired') {
+          f.now = f.now.add(const Duration(minutes: 11));
+        } else if (loss == 'released') {
+          await DriftOwnerOperationGate(f.database).release(token: _gate);
+        } else {
+          await (f.database.update(f.database.localOwners)
+                ..where((row) => row.id.equals(_owner)))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+        }
+        expect(
+          await adapter.claimAllowed(
+            op,
+            firebaseUid: _uid,
+            token: _gate,
+            now: f.now,
+          ),
+          isFalse,
+        );
+        expect(
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          op.toJson(),
+        );
+      });
+    }
+
+    test(
+      'offline retry metadata survives reaccept and repeated withdrawal',
+      () async {
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        final s = store(callback: false);
+        final initial = (await claim(s)).single;
+        expect(
+          await s.beginAttempt(
+            claim: initial,
+            ownerGateToken: _gate,
+            nowUtc: f.now,
+          ),
+          isNotNull,
+        );
+        final retryAt = f.now.add(const Duration(minutes: 2));
+        expect(
+          await s.markRetry(
+            operationId: initial.localOperationId,
+            leaseToken: initial.leaseToken,
+            ownerGateToken: _gate,
+            nowUtc: f.now,
+            nextAttemptAtUtc: retryAt,
+            failure: const OfflineSyncFailure(),
+          ),
+          isTrue,
+        );
+        final before = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(before.state, 'retryWaiting');
+        expect(before.attemptCount, 1);
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await withdrawLocally();
+        expect(
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          before.toJson(),
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        final restarted = store(callback: false);
+        expect(
+          await claim(restarted),
+          isEmpty,
+          reason: 'Retry time must not be reset by consent changes.',
+        );
+        f.now = retryAt;
+        final retry = (await claim(restarted)).single;
+        expect(retry.localOperationId, initial.localOperationId);
+        expect(retry.mutation.payload, initial.mutation.payload);
+        expect(
+          (await f.database.select(f.database.researchConsents).getSingle())
+              .consentState,
+          'accepted',
+        );
+      },
+    );
+
+    test(
+      'distinct persisted permit after reaccept does not inherit the old denial',
+      () async {
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        await store(callback: false).enqueueResearchChanges(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        // The real import API correctly forbids two live permits for one protocol.
+        // Retire the old synthetic permit through that API first.
+        final revoked = Map<String, Object?>.from(
+          jsonDecode(f.permit().canonicalPayload()) as Map,
+        );
+        revoked['revokedAtUtc'] = f.now.toIso8601String();
+        revoked['localRevision'] = 2;
+        revoked['cloudRevision'] = 2;
+        await f.participation.importPermit(
+          ResearchSyncContract.permitFromPayload({
+            ...revoked,
+            'payloadSha256': sha256
+                .convert(utf8.encode(jsonEncode(revoked)))
+                .toString(),
+            'signature': 'synthetic-signature',
+          }),
+        );
+        final newPayload = Map<String, Object?>.from(
+          jsonDecode(f.permit(id: 'permit:b').canonicalPayload()) as Map,
+        );
+        newPayload['issuedAtUtc'] = f.now.toIso8601String();
+        final newHash = sha256
+            .convert(utf8.encode(jsonEncode(newPayload)))
+            .toString();
+        final newPermit = ResearchSyncContract.permitFromPayload({
+          ...newPayload,
+          'payloadSha256': newHash,
+          'signature': 'synthetic-signature',
+        });
+        // The old immutable assignment predates reaccept. Re-enrollment is not
+        // authorized by this test: prove that the real API retains that cutoff.
+        await expectLater(
+          f.participation.importPermit(newPermit),
+          throwsA(
+            isA<ResearchCaptureDenied>().having(
+              (error) => error.reason,
+              'reason',
+              ResearchCaptureReason.identityConflict,
+            ),
+          ),
+        );
+        final original = await f.database
+            .select(f.database.researchParticipationPermits)
+            .getSingle();
+        // Trusted SQL fixture for the transport's exact-ID denial boundary only.
+        // It cannot authorize new collection (this store has no authorizer).
+        await f.database
+            .into(f.database.researchParticipationPermits)
+            .insert(
+              original
+                  .toCompanion(true)
+                  .copyWith(
+                    id: const Value('permit:b'),
+                    issuedAtUtcMs: Value(f.now.millisecondsSinceEpoch),
+                    revokedAtUtcMs: const Value(null),
+                    localRevision: const Value(1),
+                    cloudRevision: const Value(1),
+                    payloadSha256: Value(newHash),
+                    signature: const Value('synthetic-signature'),
+                  ),
+            );
+        final restarted = store(callback: false);
+        await restarted.enqueueResearchChanges(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _gate,
+          nowUtc: f.now,
+        );
+        final claims = await claim(restarted);
+        expect(claims.map((c) => c.mutation.entityId), ['permit:a']);
+        expect(
+          (await f.database.select(f.database.outboxOperations).get()).map(
+            (o) => o.entityId,
+          ),
+          ['permit:a'],
+        );
+        expect(
+          (await f.database
+                  .select(f.database.researchParticipationPermits)
+                  .get())
+              .map((p) => p.id)
+              .toSet(),
+          {'permit:a', 'permit:b'},
+        );
+      },
+    );
+
+    test(
+      'denial insert failure rolls back consent and run withdrawal together',
+      () async {
+        final beforeConsent = await f.database
+            .select(f.database.researchConsents)
+            .getSingle();
+        final beforeRun = await f.database
+            .select(f.database.motivationMeasurementRuns)
+            .getSingle();
+        await f.database.customStatement(
+          "CREATE TEMP TRIGGER reject_denial BEFORE INSERT ON outbox_operations WHEN NEW.entity_type = 'researchWithdrawal' BEGIN SELECT RAISE(ABORT, 'synthetic denial persistence failure'); END",
+        );
+        await expectLater(withdrawLocally(), throwsA(anything));
+        expect(
+          (await f.database.select(f.database.researchConsents).getSingle())
+              .toJson(),
+          beforeConsent.toJson(),
+        );
+        expect(
+          (await f.database
+                  .select(f.database.motivationMeasurementRuns)
+                  .getSingle())
+              .toJson(),
+          beforeRun.toJson(),
+        );
+        expect(
+          await f.database.select(f.database.outboxOperations).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'public hook preserves atomic denial and backfills legacy withdrawal without an active authorizer',
       () async {
         await withdrawLocally();
         await DriftOwnerOperationGate(f.database).release(token: _gate);
         final s = store(callback: false);
+        final atomic = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(atomic.operationId, withdrawalId());
+        expect(
+          await s.enqueueResearchForOwner(ownerId: _owner, nowUtc: f.now),
+          0,
+        );
+        expect(
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          atomic.toJson(),
+        );
+        // Model a pre-patch withdrawn participant with no durable intent.
+        // Delete only this synthetic permit's exact denial, retaining consent,
+        // permit and withdrawn run so the public recovery hook must backfill.
+        expect(
+          await (f.database.delete(f.database.outboxOperations)..where(
+                (row) =>
+                    row.operationId.equals(withdrawalId()) &
+                    row.ownerId.equals(_owner) &
+                    row.entityType.equals('researchWithdrawal'),
+              ))
+              .go(),
+          1,
+        );
+        expect(
+          await f.database.select(f.database.outboxOperations).get(),
+          isEmpty,
+        );
+        expect(
+          (await f.database.select(f.database.researchConsents).getSingle())
+              .consentState,
+          'withdrawn',
+        );
         expect(
           await s.enqueueResearchForOwner(ownerId: _owner, nowUtc: f.now),
           1,
@@ -779,10 +1276,32 @@ void main() {
       'withdrawal hook remains off by default and respects a busy owner gate',
       () async {
         await withdrawLocally();
+        final intent = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(intent.attemptCount, 0);
         expect(
           await store().enqueueResearchForOwner(ownerId: _owner, nowUtc: f.now),
           0,
         );
+        expect(
+          await store().claimPending(
+            ownerId: _owner,
+            firebaseUid: _uid,
+            limit: 20,
+            leaseToken: 'blocked-lease',
+            ownerGateToken: 'competing-owner-token',
+            leaseDuration: const Duration(minutes: 1),
+            nowUtc: f.now,
+          ),
+          isEmpty,
+        );
+        expect(
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          intent.toJson(),
+        );
+        expect(await claim(store(enabled: false)), isEmpty);
         await DriftOwnerOperationGate(f.database).release(token: _gate);
         expect(
           await store(
@@ -791,9 +1310,11 @@ void main() {
           0,
         );
         expect(
-          await f.database.select(f.database.outboxOperations).get(),
-          isEmpty,
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          intent.toJson(),
         );
+        expect(seen, isEmpty);
         expect(
           (await f.database.select(f.database.researchConsents).getSingle())
               .consentState,
@@ -807,6 +1328,10 @@ void main() {
       'withdrawal recovery rejects mismatched Firebase binding and actual owner fence',
       () async {
         await withdrawLocally();
+        final intent = await f.database
+            .select(f.database.outboxOperations)
+            .getSingle();
+        expect(intent.attemptCount, 0);
         final s = store(callback: false);
         expect(
           await s.enqueueResearchChanges(
@@ -826,14 +1351,45 @@ void main() {
           ),
           0,
         );
+        final adapter = DriftResearchSyncAdapter(
+          f.database,
+          rollout: _rollout,
+          authorizer: null,
+        );
+        for (final binding in [
+          (uid: 'other-uid', token: _gate),
+          (uid: _uid, token: 'wrong-token'),
+        ]) {
+          expect(
+            await adapter.claimAllowed(
+              intent,
+              firebaseUid: binding.uid,
+              token: binding.token,
+              now: f.now,
+            ),
+            isFalse,
+          );
+        }
+        expect(
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          intent.toJson(),
+        );
         await DriftOwnerOperationGate(
           f.database,
         ).beginOwnerFence(ownerId: _owner, token: _gate, nowUtc: f.now);
         expect(await claim(s), isEmpty);
         expect(
-          await f.database.select(f.database.outboxOperations).get(),
-          isEmpty,
+          (await f.database.select(f.database.outboxOperations).getSingle())
+              .toJson(),
+          intent.toJson(),
         );
+        expect(
+          (await f.database.select(f.database.researchConsents).getSingle())
+              .consentState,
+          'withdrawn',
+        );
+        expect(seen, isEmpty);
       },
     );
     test(
@@ -925,6 +1481,233 @@ void main() {
       },
     );
     test(
+      'offline denial after reaccept blocks a second database through the real gateway',
+      () async {
+        final receiver = MotivationResearchFixture();
+        addTearDown(receiver.database.close);
+        await receiver.initialize();
+        await (receiver.database.update(receiver.database.localOwners)
+              ..where((row) => row.id.equals(_owner)))
+            .write(const LocalOwnersCompanion(firebaseUid: Value(_uid)));
+        final receiverRun = await receiver.measurements.start(
+          const MotivationMeasurementStart(
+            ownerId: _owner,
+            permitId: 'permit:a',
+          ),
+        );
+        expect(
+          await DriftOwnerOperationGate(receiver.database).tryAcquire(
+            token: _gate,
+            nowUtc: receiver.now,
+            leaseDuration: const Duration(minutes: 10),
+          ),
+          isTrue,
+        );
+        final receiverStore = DriftSyncStore(
+          receiver.database,
+          researchMeasurementRollout: _rollout,
+          // Existing synthetic authority seam; server policy is modeled below.
+          researchAuthorizer: (_) async => true,
+        );
+        Future<List<ClaimedSyncOperation>> receiverClaims() =>
+            receiverStore.claimPending(
+              ownerId: _owner,
+              firebaseUid: _uid,
+              limit: 20,
+              leaseToken: 'receiver-lease',
+              ownerGateToken: _gate,
+              leaseDuration: const Duration(minutes: 1),
+              nowUtc: receiver.now,
+            );
+        final server = _DenialServer(() => f.now);
+        final senderGateway = FirestoreSyncGateway(
+          firestore: server,
+          auth: _DenialAuth(),
+          utcClock: () => f.now,
+          researchMeasurementRollout: _rollout,
+        );
+        final receiverGateway = FirestoreSyncGateway(
+          firestore: server,
+          auth: _DenialAuth(),
+          utcClock: () => receiver.now,
+          researchMeasurementRollout: _rollout,
+          researchAuthorizer: (_) async => true,
+        );
+        final before = await receiverClaims();
+        final permit = before.singleWhere(
+          (claim) =>
+              claim.mutation.collection ==
+              SyncCollection.researchParticipationPermits,
+        );
+        final permitPath =
+            'field_users/$_uid/research_participation_permits/permit:a';
+        // Synthetic issuer fixture only; neither client is allowed to issue it.
+        server.documents[permitPath] = Map<String, dynamic>.from(
+          FirestoreSyncCodec.encodeEntity(
+            permit.mutation,
+            serverTimestamp: Timestamp.fromDate(f.now),
+          ),
+        );
+        for (final initial in before) {
+          expect(
+            await receiverStore.beginAttempt(
+              claim: initial,
+              ownerGateToken: _gate,
+              nowUtc: receiver.now,
+            ),
+            isNotNull,
+          );
+          final ack =
+              await receiverGateway.push(initial.mutation) as PushAcknowledged;
+          expect(
+            await receiverStore.acknowledge(
+              operationId: initial.localOperationId,
+              leaseToken: initial.leaseToken,
+              ownerGateToken: _gate,
+              nowUtc: receiver.now,
+              acknowledgement: ack,
+            ),
+            isTrue,
+          );
+        }
+        final runPath =
+            'field_users/$_uid/motivation_measurement_runs/${receiverRun.id}';
+        expect(
+          server.documents.containsKey(runPath),
+          isTrue,
+          reason: 'Receiver research succeeds before the targeted denial.',
+        );
+        final originalPermit = Map<String, dynamic>.from(
+          server.documents[permitPath]!,
+        );
+
+        // No prior enqueue or retained run can backfill this denial after
+        // reaccept. The source must preserve it inside the consent transaction.
+        await f.database.delete(f.database.motivationMeasurementRuns).go();
+        await withdrawLocally();
+        expect(
+          server.markerWrites,
+          0,
+          reason: 'Withdrawal is local while offline.',
+        );
+        f.now = f.now.add(const Duration(seconds: 1));
+        await DriftResearchConsentRepository(f.database).decide(
+          ownerId: _owner,
+          version: 1,
+          accepted: true,
+          decidedAtUtc: f.now,
+        );
+        final senderStore = store(callback: false);
+        final denial = (await claim(senderStore)).single;
+        expect(denial.mutation.collection, SyncCollection.researchWithdrawals);
+        expect(denial.mutation.operationId, withdrawalId());
+        expect(denial.mutation.payload, {
+          'permitId': 'permit:a',
+          'ownerId': _owner,
+        });
+        expect(
+          await senderStore.beginAttempt(
+            claim: denial,
+            ownerGateToken: _gate,
+            nowUtc: f.now,
+          ),
+          isNotNull,
+        );
+        final denialAck =
+            await senderGateway.push(denial.mutation) as PushAcknowledged;
+        final markerPath = 'field_users/$_uid/research_withdrawals/permit:a';
+        final marker = server.documents[markerPath]!;
+        expect(marker, {
+          'schemaVersion': 1,
+          'permitId': 'permit:a',
+          'ownerId': _owner,
+          'withdrawnAt': Timestamp.fromDate(f.now),
+        });
+        final retryAck =
+            await senderGateway.push(denial.mutation) as PushAcknowledged;
+        expect(retryAck.operationId, denialAck.operationId);
+        expect(retryAck.acknowledgedAtUtc, denialAck.acknowledgedAtUtc);
+        expect(
+          server.markerWrites,
+          1,
+          reason: 'Lost ACK reuses the create-once marker.',
+        );
+        expect(
+          await senderStore.acknowledge(
+            operationId: denial.localOperationId,
+            leaseToken: denial.leaseToken,
+            ownerGateToken: _gate,
+            nowUtc: f.now,
+            acknowledgement: retryAck,
+          ),
+          isTrue,
+        );
+
+        receiver.now = f.now;
+        await receiver.measurements.record(
+          MotivationResponse(
+            ownerId: _owner,
+            runId: receiverRun.id,
+            itemId: 'baseline',
+            responseCode: 'high',
+          ),
+        );
+        final attempted = (await receiverClaims()).singleWhere(
+          (claim) =>
+              claim.mutation.collection == SyncCollection.motivationResponses,
+        );
+        expect(
+          await receiverStore.beginAttempt(
+            claim: attempted,
+            ownerGateToken: _gate,
+            nowUtc: receiver.now,
+          ),
+          isNotNull,
+        );
+        final committedBefore = server.documents.map(
+          (path, data) => MapEntry(path, Map<String, dynamic>.from(data)),
+        );
+        await expectLater(
+          receiverGateway.push(attempted.mutation),
+          throwsA(isA<PermissionDeniedSyncFailure>()),
+        );
+        expect(server.deniedResearchWrites, 1);
+        expect(
+          server.documents,
+          committedBefore,
+          reason: 'Neither entity nor acknowledgement may commit after denial.',
+        );
+        final pending =
+            await (receiver.database.select(receiver.database.outboxOperations)
+                  ..where(
+                    (row) => row.operationId.equals(attempted.localOperationId),
+                  ))
+                .getSingle();
+        expect(pending.state, isNot('acknowledged'));
+        expect(server.documents[permitPath], originalPermit);
+        for (final database in [f.database, receiver.database]) {
+          expect(
+            (await database.select(database.researchConsents).getSingle())
+                .consentState,
+            'accepted',
+            reason: 'A denial marker is not a fabricated local consent update.',
+          );
+          expect(
+            (await database
+                    .select(database.researchParticipationPermits)
+                    .getSingle())
+                .revokedAtUtcMs,
+            isNull,
+          );
+        }
+        expect(
+          ResearchSyncContract.collections,
+          isNot(contains(SyncCollection.researchWithdrawals)),
+        );
+      },
+    );
+
+    test(
       'unavailable pull authority cannot advance checkpoint past undelivered facts',
       () async {
         final s = store();
@@ -1006,4 +1789,170 @@ void main() {
       expect(began, isFalse);
     },
   );
+}
+
+// Narrow SDK-shaped driver: production gateway performs serialization,
+// transactions and acknowledgement parsing. The denial write policy below is
+// explicitly modeled, not an execution of Firestore rules; emulator tests own
+// that separate assertion. It does not alter issuer permits or receipt data.
+final class _DenialServer implements cloud.FirebaseFirestore {
+  _DenialServer(this.nowUtc);
+  final DateTime Function() nowUtc;
+  final documents = <String, Map<String, dynamic>>{};
+  int markerWrites = 0;
+  int deniedResearchWrites = 0;
+  @override
+  cloud.Settings get settings =>
+      const cloud.Settings(host: 'localhost:8080', sslEnabled: false);
+  @override
+  cloud.CollectionReference<Map<String, dynamic>> collection(String path) =>
+      _DenialCollection(this, path);
+  @override
+  Future<T> runTransaction<T>(
+    cloud.TransactionHandler<T> handler, {
+    Duration timeout = const Duration(seconds: 30),
+    int maxAttempts = 5,
+  }) async {
+    final transaction = _DenialTransaction(this);
+    final result = await handler(transaction);
+    for (final entry in transaction.pending.entries) {
+      final parts = entry.key.split('/');
+      final collection = parts[2];
+      if (collection == 'research_withdrawals') {
+        final permit =
+            documents['field_users/${parts[1]}/research_participation_permits/${parts[3]}'];
+        final payload = permit?['payload'] as Map?;
+        if (documents.containsKey(entry.key) ||
+            payload?['ownerId'] != entry.value['ownerId'] ||
+            payload?['id'] != entry.value['permitId']) {
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            code: 'permission-denied',
+          );
+        }
+      } else if (collection == 'motivation_measurement_runs' ||
+          collection == 'motivation_responses') {
+        final payload = entry.value['payload'] as Map;
+        if (documents.containsKey(
+          'field_users/${parts[1]}/research_withdrawals/${payload['permitId']}',
+        )) {
+          deniedResearchWrites++;
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            code: 'permission-denied',
+          );
+        }
+      }
+    }
+    markerWrites += transaction.pending.keys
+        .where((path) => path.contains('/research_withdrawals/'))
+        .length;
+    documents.addAll(transaction.pending);
+    return result;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _DenialTransaction implements cloud.Transaction {
+  _DenialTransaction(this.server);
+  final _DenialServer server;
+  final pending = <String, Map<String, dynamic>>{};
+  @override
+  Future<cloud.DocumentSnapshot<T>> get<T extends Object?>(
+    cloud.DocumentReference<T> ref,
+  ) async => _DenialSnapshot<T>(ref.id, server.documents[ref.path] as T?);
+  @override
+  cloud.Transaction set<T>(
+    cloud.DocumentReference<T> ref,
+    T data, [
+    cloud.SetOptions? options,
+  ]) {
+    pending[ref.path] = {
+      for (final entry in (data as Map<String, dynamic>).entries)
+        entry.key: entry.value is cloud.FieldValue
+            ? Timestamp.fromDate(server.nowUtc())
+            : entry.value,
+    };
+    return this;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+// ignore: subtype_of_sealed_class
+final class _DenialCollection
+    implements cloud.CollectionReference<Map<String, dynamic>> {
+  _DenialCollection(this.server, this.path);
+  final _DenialServer server;
+  @override
+  final String path;
+  @override
+  cloud.DocumentReference<Map<String, dynamic>> doc([String? id]) =>
+      _DenialDocument(server, '$path/$id');
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+// ignore: subtype_of_sealed_class
+final class _DenialDocument
+    implements cloud.DocumentReference<Map<String, dynamic>> {
+  _DenialDocument(this.server, this.path);
+  final _DenialServer server;
+  @override
+  final String path;
+  @override
+  String get id => path.split('/').last;
+  @override
+  cloud.CollectionReference<Map<String, dynamic>> collection(String child) =>
+      _DenialCollection(server, '$path/$child');
+  @override
+  Future<cloud.DocumentSnapshot<Map<String, dynamic>>> get([
+    cloud.GetOptions? options,
+  ]) async {
+    expect(options?.source, cloud.Source.server);
+    return _DenialSnapshot(id, server.documents[path]);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+// ignore: subtype_of_sealed_class
+final class _DenialSnapshot<T> implements cloud.DocumentSnapshot<T> {
+  _DenialSnapshot(this.id, this.value);
+  @override
+  final String id;
+  final T? value;
+  @override
+  bool get exists => value != null;
+  @override
+  T? data() => value;
+  @override
+  cloud.SnapshotMetadata get metadata => _DenialMetadata();
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _DenialMetadata extends Fake implements cloud.SnapshotMetadata {
+  @override
+  bool get isFromCache => false;
+  @override
+  bool get hasPendingWrites => false;
+}
+
+final class _DenialAuth implements auth.FirebaseAuth {
+  @override
+  auth.User get currentUser => _DenialUser();
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _DenialUser implements auth.User {
+  @override
+  String get uid => _uid;
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

@@ -6,6 +6,7 @@ import '../domain/vocabulary_import.dart';
 import '../domain/vocabulary_import_repository.dart';
 import '../domain/vocabulary_word.dart';
 import 'drift_vocabulary_repository.dart';
+import 'packaged_starter_access.dart';
 
 final class DriftVocabularyImportRepository
     implements VocabularyImportRepository {
@@ -19,6 +20,20 @@ final class DriftVocabularyImportRepository
     required bool Function() isCancelled,
   }) {
     return database.transaction(() async {
+      PackagedStarterAccess.requireMutable(
+        import.ownerId,
+        categoryId: import.categoryId,
+      );
+      for (final row in import.rows) {
+        final word = row.word;
+        if (word != null) {
+          PackagedStarterAccess.requireMutable(
+            word.ownerId,
+            id: word.id,
+            categoryId: word.categoryId,
+          );
+        }
+      }
       if (isCancelled()) {
         throw const VocabularyImportCancelled();
       }

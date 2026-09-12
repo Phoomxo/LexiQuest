@@ -10,6 +10,7 @@ const currentDatabaseTableInventory = <String>{
   'motivation_responses',
   'research_participation_permits',
   'measurement_opportunities',
+  'research_session_proofs',
   'vocabulary_categories',
   'vocabulary_words',
   'vocabulary_imports',

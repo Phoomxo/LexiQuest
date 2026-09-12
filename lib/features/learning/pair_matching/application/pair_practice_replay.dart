@@ -17,6 +17,15 @@ final class PairPracticeReplay {
     required String appVersion,
     required String buildId,
   }) async {
+    if (!createdAtUtc.isUtc) {
+      throw ArgumentError.value(createdAtUtc, 'createdAtUtc', 'must be UTC');
+    }
+    // Wall clocks include microseconds; persisted Pair plans use exact UTC
+    // milliseconds. Normalize at admission without relaxing the plan contract.
+    final canonicalCreatedAtUtc = DateTime.fromMillisecondsSinceEpoch(
+      createdAtUtc.millisecondsSinceEpoch,
+      isUtc: true,
+    );
     final source = (await reader.read(
       ownerId: ownerId,
       sessionId: sourceSessionId,
@@ -27,7 +36,7 @@ final class PairPracticeReplay {
       throw StateError('Pair replay requires an authenticated terminal source');
     }
     final prior = source.engine.plan;
-    if (createdAtUtc.isBefore(source.terminal!.atUtc)) {
+    if (canonicalCreatedAtUtc.isBefore(source.terminal!.atUtc)) {
       throw StateError('Replay predates its source');
     }
     var seed = int.parse(
@@ -47,7 +56,7 @@ final class PairPracticeReplay {
         learningSessionId: pairSessionId(ownerId, launchOperationId),
         entryKind: prior.entryKind,
         sourceSnapshotId: prior.sourceSnapshotId,
-        createdAtUtc: createdAtUtc,
+        createdAtUtc: canonicalCreatedAtUtc,
         sessionPurpose: PairSessionPurpose.practiceReplay,
         sourceSessionId: sourceSessionId,
       ),

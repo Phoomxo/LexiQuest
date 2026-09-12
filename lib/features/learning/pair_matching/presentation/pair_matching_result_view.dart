@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../widgets/learning_summary_card.dart';
 import '../domain/pair_matching_history_projection.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_active_clock.dart';
@@ -35,7 +36,7 @@ final class PairMatchingResultView extends StatelessWidget {
       _ => copy('ทันเป้าหมายเวลา', 'Within time target'),
     };
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -45,37 +46,32 @@ final class PairMatchingResultView extends StatelessWidget {
               replay
                   ? copy('ผลการฝึกซ้ำ', 'Practice Replay result')
                   : copy('ผลการจับคู่', 'Pair Matching result'),
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          if (replay)
+          if (replay) ...[
+            const SizedBox(height: 8),
             Text(
               copy(
                 'การฝึกซ้ำไม่เพิ่มความก้าวหน้าหรือรางวัล',
                 'Practice Replay does not add progress or rewards',
               ),
             ),
-          const SizedBox(height: 16),
-          Text(
-            copy(
+          ],
+          const SizedBox(height: 24),
+          LearningSummaryCard(
+            title: copy('จำนวนคู่ที่จับได้', 'Matched pairs'),
+            value: '${result.result.matched}',
+            caption: copy(
               'จับคู่แล้ว ${result.result.matched} คู่',
               'Matched ${result.result.matched} pairs',
             ),
           ),
-          Text(
-            copy(
-              'ทำได้เอง ${result.result.independent} คู่',
-              'Independent ${result.result.independent} pairs',
-            ),
-          ),
-          Text(
-            copy(
-              'ใช้ตัวช่วย ${result.result.assisted} คู่',
-              'Assisted ${result.result.assisted} pairs',
-            ),
-          ),
           if (stars == null)
-            Text(copy('ยังไม่มีผลดาว', 'Not scored'))
+            Text(
+              copy('ยังไม่มีผลดาว', 'Not scored'),
+              textAlign: TextAlign.center,
+            )
           else
             Semantics(
               label: copy('ดาว $stars จาก 3', '$stars of 3 stars'),
@@ -98,7 +94,23 @@ final class PairMatchingResultView extends StatelessWidget {
                 ),
               ),
             ),
+          const SizedBox(height: 24),
+          Text(
+            copy(
+              'ทำได้เอง ${result.result.independent} คู่',
+              'Independent ${result.result.independent} pairs',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            copy(
+              'ใช้ตัวช่วย ${result.result.assisted} คู่',
+              'Assisted ${result.result.assisted} pairs',
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(timer),
+          const SizedBox(height: 8),
           Text(
             result.timer.interactiveElapsedMs == null
                 ? copy(
@@ -115,19 +127,23 @@ final class PairMatchingResultView extends StatelessWidget {
                     'Interactive duration ${result.timer.interactiveElapsedMs! ~/ 1000} seconds',
                   ),
           ),
+          const SizedBox(height: 8),
           Text(
             copy(
               'ดาวเป็นผลการทำรอบนี้ ไม่ใช่ระดับความเก่ง',
               'Stars describe this session, not mastery.',
             ),
           ),
-          if (result.timer.mode != PairTimerMode.off)
+          if (result.timer.mode != PairTimerMode.off) ...[
+            const SizedBox(height: 8),
             Text(
               copy(
                 'เวลาที่ตัวจับเวลานับ ${result.timer.elapsedActiveMs ~/ 1000} วินาที',
                 'Challenge timer elapsed ${result.timer.elapsedActiveMs ~/ 1000} seconds',
               ),
             ),
+          ],
+          const SizedBox(height: 12),
           Text(
             result.reviewNext
                 ? copy(
@@ -136,7 +152,7 @@ final class PairMatchingResultView extends StatelessWidget {
                   )
                 : copy('ไปทบทวนคำที่ถึงเวลาได้ต่อไป', 'Review due words next'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           if (onReturn != null)
             FilledButton(
               key: const ValueKey('pair-result-return'),
@@ -146,18 +162,22 @@ final class PairMatchingResultView extends StatelessWidget {
               onPressed: onReturn,
               child: Text(copy('กลับไปเรียนต่อ', 'Return to learning')),
             ),
-          if (onReview != null)
+          if (onReview != null) ...[
+            const SizedBox(height: 8),
             TextButton(
               onPressed: onReview,
               child: Text(copy('ไปทบทวน', 'Review next')),
             ),
+          ],
           if (onPracticeReplay != null) ...[
+            const SizedBox(height: 12),
             Text(
               copy(
                 'ฝึกซ้ำได้โดยไม่เพิ่มความก้าวหน้าหรือรางวัล',
                 'Practice again without additional progress or rewards.',
               ),
             ),
+            const SizedBox(height: 8),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),

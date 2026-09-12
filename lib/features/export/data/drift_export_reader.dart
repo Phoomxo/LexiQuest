@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
 import '../domain/export_contracts.dart';
 
 final class ExportVocabularyRow {
@@ -391,25 +392,38 @@ final class DriftExportReader {
               )
               .get()
         : const <QueryRow>[];
+    // The user-owned answer_attempts table is read through Drift so the
+    // export query retains the same owner and packaged-catalog boundaries as
+    // the rest of the reader.
+    final a = database.answerAttempts;
+    final w = database.vocabularyWords;
     final attemptRows = attempts
-        ? await database
-              .customSelect(
-                '''
-                SELECT a.id, a.session_id, a.word_id, w.spelling,
-                       a.prompt_mode, a.is_correct, a.response_time_ms,
-                       a.occurred_at_utc_ms, a.evidence_class,
-                       a.evidence_context_json
-                FROM answer_attempts a
-                INNER JOIN vocabulary_words w
-                  ON w.id = a.word_id AND w.owner_id = a.owner_id
-                WHERE a.owner_id = ?
-                ORDER BY a.occurred_at_utc_ms, a.id
-                ''',
-                variables: [Variable<String>(ownerId)],
-                readsFrom: {database.answerAttempts, database.vocabularyWords},
-              )
+        ? await (database.selectOnly(a)
+                ..addColumns([
+                  a.id,
+                  a.sessionId,
+                  a.wordId,
+                  w.spelling,
+                  a.promptMode,
+                  a.isCorrect,
+                  a.responseTimeMs,
+                  a.occurredAtUtcMs,
+                  a.evidenceClass,
+                  a.evidenceContextJson,
+                ])
+                ..join([
+                  innerJoin(w, w.id.equalsExp(a.wordId), useColumns: false),
+                ])
+                ..where(
+                  a.ownerId.equals(ownerId) &
+                      PackagedStarterAccess.wordsFor(database, ownerId),
+                )
+                ..orderBy([
+                  OrderingTerm.asc(a.occurredAtUtcMs),
+                  OrderingTerm.asc(a.id),
+                ]))
               .get()
-        : const <QueryRow>[];
+        : const <TypedResult>[];
     final readingRows = reading
         ? await (database.select(database.readingProgressEntries)
                 ..where((row) => row.ownerId.equals(ownerId))
@@ -445,18 +459,21 @@ final class DriftExportReader {
       attempts: attemptRows
           .map(
             (row) => ExportAttemptRow(
-              id: row.read<String>('id'),
-              sessionId: row.read<String>('session_id'),
-              wordId: row.read<String>('word_id'),
-              spelling: row.read<String>('spelling'),
-              promptMode: row.read<String>('prompt_mode'),
-              isCorrect: row.read<bool>('is_correct'),
-              responseTimeMs: row.readNullable<int>('response_time_ms'),
+              id: row.read(a.id)!,
+              sessionId: row.read(a.sessionId)!,
+              wordId: row.read(a.wordId)!,
+              spelling: row.read(w.spelling)!,
+              promptMode: row.read(a.promptMode)!,
+              isCorrect: row.read(a.isCorrect)!,
+              responseTimeMs: row.read(a.responseTimeMs),
               occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
-                row.read<int>('occurred_at_utc_ms'),
+                row.read(a.occurredAtUtcMs)!,
                 isUtc: true,
               ),
-              evidenceContext: _readEvidenceContext(row),
+              evidenceContext: _readEvidenceContext(
+                row.read(a.evidenceClass)!,
+                row.read(a.evidenceContextJson)!,
+              ),
             ),
           )
           .toList(growable: false),
@@ -477,9 +494,10 @@ final class DriftExportReader {
     );
   }
 
-  EvidenceContext _readEvidenceContext(QueryRow row) {
-    final evidenceClass = row.read<String>('evidence_class');
-    final evidenceContextJson = row.read<String>('evidence_context_json');
+  EvidenceContext _readEvidenceContext(
+    String evidenceClass,
+    String evidenceContextJson,
+  ) {
     if (!LearningEvidenceContract.validEvidenceMetadata(
       evidenceClass: evidenceClass,
       evidenceContextJson: evidenceContextJson,

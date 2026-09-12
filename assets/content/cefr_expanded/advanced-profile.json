@@ -1,0 +1,7009 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "18c33a407f2f89f7b8de9671c6d45fe3ea0bce45e7d2d7dcaab48d73e0f7b380",
+  "license": "CC-BY-SA-4.0",
+  "attribution": "Octanove Labs, Vocabulary Profile C1/C2 1.0, via Open Language Profiles",
+  "changes": "Selected 500 C1 and 500 C2 headwords; normalized representation and assigned stable IDs. Adapted level index by LexiQuest contributors under CC BY-SA 4.0.",
+  "entries": [
+    {
+      "id": "octanove10:abound",
+      "word": "abound",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1072
+    },
+    {
+      "id": "octanove10:accustomed",
+      "word": "accustomed",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 21
+    },
+    {
+      "id": "octanove10:acidic",
+      "word": "acidic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 210
+    },
+    {
+      "id": "octanove10:acoustic",
+      "word": "acoustic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 829
+    },
+    {
+      "id": "octanove10:acre",
+      "word": "acre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 314
+    },
+    {
+      "id": "octanove10:acutely",
+      "word": "acutely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 956
+    },
+    {
+      "id": "octanove10:adjustable",
+      "word": "adjustable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 897
+    },
+    {
+      "id": "octanove10:advantageous",
+      "word": "advantageous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 181
+    },
+    {
+      "id": "octanove10:adversary",
+      "word": "adversary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 318
+    },
+    {
+      "id": "octanove10:aesthetic",
+      "word": "aesthetic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 365
+    },
+    {
+      "id": "octanove10:agreeable",
+      "word": "agreeable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 153
+    },
+    {
+      "id": "octanove10:aimless",
+      "word": "aimless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 405
+    },
+    {
+      "id": "octanove10:alienate",
+      "word": "alienate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 216
+    },
+    {
+      "id": "octanove10:align",
+      "word": "align",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 211
+    },
+    {
+      "id": "octanove10:allege",
+      "word": "allege",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 530
+    },
+    {
+      "id": "octanove10:alleviate",
+      "word": "alleviate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 146
+    },
+    {
+      "id": "octanove10:altruism",
+      "word": "altruism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 756
+    },
+    {
+      "id": "octanove10:amid",
+      "word": "amid",
+      "partOfSpeech": "preposition",
+      "cefrLevel": "C1",
+      "sourceRow": 789
+    },
+    {
+      "id": "octanove10:amply",
+      "word": "amply",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 609
+    },
+    {
+      "id": "octanove10:anthropology",
+      "word": "anthropology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 966
+    },
+    {
+      "id": "octanove10:antiquated",
+      "word": "antiquated",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 934
+    },
+    {
+      "id": "octanove10:antiquity",
+      "word": "antiquity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 933
+    },
+    {
+      "id": "octanove10:appalling",
+      "word": "appalling",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1069
+    },
+    {
+      "id": "octanove10:appliance",
+      "word": "appliance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 140
+    },
+    {
+      "id": "octanove10:apprentice",
+      "word": "apprentice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 742
+    },
+    {
+      "id": "octanove10:apt",
+      "word": "apt",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 132
+    },
+    {
+      "id": "octanove10:aqua",
+      "word": "aqua",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 256
+    },
+    {
+      "id": "octanove10:assertion",
+      "word": "assertion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 36
+    },
+    {
+      "id": "octanove10:astray",
+      "word": "astray",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 844
+    },
+    {
+      "id": "octanove10:avid",
+      "word": "avid",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 8
+    },
+    {
+      "id": "octanove10:baldly",
+      "word": "baldly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 323
+    },
+    {
+      "id": "octanove10:battered",
+      "word": "battered",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 611
+    },
+    {
+      "id": "octanove10:beguiling",
+      "word": "beguiling",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 671
+    },
+    {
+      "id": "octanove10:bequeath",
+      "word": "bequeath",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1061
+    },
+    {
+      "id": "octanove10:billiards",
+      "word": "billiards",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1112
+    },
+    {
+      "id": "octanove10:blister",
+      "word": "blister",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 103
+    },
+    {
+      "id": "octanove10:blockbuster",
+      "word": "blockbuster",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 206
+    },
+    {
+      "id": "octanove10:brainwash",
+      "word": "brainwash",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 117
+    },
+    {
+      "id": "octanove10:bribe",
+      "word": "bribe",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 532
+    },
+    {
+      "id": "octanove10:bribery",
+      "word": "bribery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 534
+    },
+    {
+      "id": "octanove10:buffoon",
+      "word": "buffoon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 670
+    },
+    {
+      "id": "octanove10:bulk",
+      "word": "bulk",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1094
+    },
+    {
+      "id": "octanove10:bureaucratic",
+      "word": "bureaucratic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 895
+    },
+    {
+      "id": "octanove10:buzzer",
+      "word": "buzzer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 501
+    },
+    {
+      "id": "octanove10:calorie",
+      "word": "calorie",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 591
+    },
+    {
+      "id": "octanove10:canoe",
+      "word": "canoe",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 948
+    },
+    {
+      "id": "octanove10:carpenter",
+      "word": "carpenter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 911
+    },
+    {
+      "id": "octanove10:carrier",
+      "word": "carrier",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 130
+    },
+    {
+      "id": "octanove10:cavity",
+      "word": "cavity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1031
+    },
+    {
+      "id": "octanove10:ceaseless",
+      "word": "ceaseless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 333
+    },
+    {
+      "id": "octanove10:chaotically",
+      "word": "chaotically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 302
+    },
+    {
+      "id": "octanove10:charter",
+      "word": "charter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 941
+    },
+    {
+      "id": "octanove10:chill",
+      "word": "chill",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 488
+    },
+    {
+      "id": "octanove10:chisel",
+      "word": "chisel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1026
+    },
+    {
+      "id": "octanove10:circulate",
+      "word": "circulate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 915
+    },
+    {
+      "id": "octanove10:citation",
+      "word": "citation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 264
+    },
+    {
+      "id": "octanove10:cite",
+      "word": "cite",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 263
+    },
+    {
+      "id": "octanove10:clammy",
+      "word": "clammy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 353
+    },
+    {
+      "id": "octanove10:classy",
+      "word": "classy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 799
+    },
+    {
+      "id": "octanove10:claustrophobia",
+      "word": "claustrophobia",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 98
+    },
+    {
+      "id": "octanove10:clench",
+      "word": "clench",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 415
+    },
+    {
+      "id": "octanove10:climactic",
+      "word": "climactic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 336
+    },
+    {
+      "id": "octanove10:climax",
+      "word": "climax",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 335
+    },
+    {
+      "id": "octanove10:cloak",
+      "word": "cloak",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 3
+    },
+    {
+      "id": "octanove10:clutter",
+      "word": "clutter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 907
+    },
+    {
+      "id": "octanove10:collaboration",
+      "word": "collaboration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 176
+    },
+    {
+      "id": "octanove10:commend",
+      "word": "commend",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 521
+    },
+    {
+      "id": "octanove10:commendation",
+      "word": "commendation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 522
+    },
+    {
+      "id": "octanove10:compliance",
+      "word": "compliance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 614
+    },
+    {
+      "id": "octanove10:compliant",
+      "word": "compliant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 615
+    },
+    {
+      "id": "octanove10:complimentary",
+      "word": "complimentary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1101
+    },
+    {
+      "id": "octanove10:comprise",
+      "word": "comprise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 67
+    },
+    {
+      "id": "octanove10:compulsion",
+      "word": "compulsion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 33
+    },
+    {
+      "id": "octanove10:conditional",
+      "word": "conditional",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 543
+    },
+    {
+      "id": "octanove10:confide",
+      "word": "confide",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 704
+    },
+    {
+      "id": "octanove10:confinement",
+      "word": "confinement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 219
+    },
+    {
+      "id": "octanove10:conformity",
+      "word": "conformity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 39
+    },
+    {
+      "id": "octanove10:congregate",
+      "word": "congregate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 41
+    },
+    {
+      "id": "octanove10:conscientious",
+      "word": "conscientious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 280
+    },
+    {
+      "id": "octanove10:conservatory",
+      "word": "conservatory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 566
+    },
+    {
+      "id": "octanove10:conserve",
+      "word": "conserve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 565
+    },
+    {
+      "id": "octanove10:consultation",
+      "word": "consultation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 476
+    },
+    {
+      "id": "octanove10:continuity",
+      "word": "continuity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 95
+    },
+    {
+      "id": "octanove10:convict",
+      "word": "convict",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 794
+    },
+    {
+      "id": "octanove10:conviction",
+      "word": "conviction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 796
+    },
+    {
+      "id": "octanove10:convoluted",
+      "word": "convoluted",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1015
+    },
+    {
+      "id": "octanove10:coverage",
+      "word": "coverage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 112
+    },
+    {
+      "id": "octanove10:crave",
+      "word": "crave",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 291
+    },
+    {
+      "id": "octanove10:creamy",
+      "word": "creamy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 578
+    },
+    {
+      "id": "octanove10:credential",
+      "word": "credential",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 955
+    },
+    {
+      "id": "octanove10:credible",
+      "word": "credible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 952
+    },
+    {
+      "id": "octanove10:crudely",
+      "word": "crudely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 810
+    },
+    {
+      "id": "octanove10:crumb",
+      "word": "crumb",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 248
+    },
+    {
+      "id": "octanove10:crumble",
+      "word": "crumble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 247
+    },
+    {
+      "id": "octanove10:cynic",
+      "word": "cynic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 776
+    },
+    {
+      "id": "octanove10:damply",
+      "word": "damply",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 128
+    },
+    {
+      "id": "octanove10:daunt",
+      "word": "daunt",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 832
+    },
+    {
+      "id": "octanove10:daydream",
+      "word": "daydream",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 202
+    },
+    {
+      "id": "octanove10:debut",
+      "word": "debut",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1010
+    },
+    {
+      "id": "octanove10:degradation",
+      "word": "degradation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 787
+    },
+    {
+      "id": "octanove10:degrade",
+      "word": "degrade",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 785
+    },
+    {
+      "id": "octanove10:demise",
+      "word": "demise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 878
+    },
+    {
+      "id": "octanove10:demo",
+      "word": "demo",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 930
+    },
+    {
+      "id": "octanove10:demographic",
+      "word": "demographic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 918
+    },
+    {
+      "id": "octanove10:demolition",
+      "word": "demolition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 929
+    },
+    {
+      "id": "octanove10:depict",
+      "word": "depict",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 194
+    },
+    {
+      "id": "octanove10:deprivation",
+      "word": "deprivation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1018
+    },
+    {
+      "id": "octanove10:descent",
+      "word": "descent",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 343
+    },
+    {
+      "id": "octanove10:desertion",
+      "word": "desertion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 503
+    },
+    {
+      "id": "octanove10:detestable",
+      "word": "detestable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 151
+    },
+    {
+      "id": "octanove10:detriment",
+      "word": "detriment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 724
+    },
+    {
+      "id": "octanove10:detrimental",
+      "word": "detrimental",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 725
+    },
+    {
+      "id": "octanove10:devotee",
+      "word": "devotee",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 688
+    },
+    {
+      "id": "octanove10:discard",
+      "word": "discard",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 396
+    },
+    {
+      "id": "octanove10:disdain",
+      "word": "disdain",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 159
+    },
+    {
+      "id": "octanove10:disillusionment",
+      "word": "disillusionment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 877
+    },
+    {
+      "id": "octanove10:dislodge",
+      "word": "dislodge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 910
+    },
+    {
+      "id": "octanove10:dismay",
+      "word": "dismay",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 238
+    },
+    {
+      "id": "octanove10:dispensary",
+      "word": "dispensary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 357
+    },
+    {
+      "id": "octanove10:dissect",
+      "word": "dissect",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 519
+    },
+    {
+      "id": "octanove10:dissection",
+      "word": "dissection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 520
+    },
+    {
+      "id": "octanove10:diverge",
+      "word": "diverge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 359
+    },
+    {
+      "id": "octanove10:divergent",
+      "word": "divergent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 361
+    },
+    {
+      "id": "octanove10:diversity",
+      "word": "diversity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 273
+    },
+    {
+      "id": "octanove10:docilely",
+      "word": "docilely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 867
+    },
+    {
+      "id": "octanove10:domesticate",
+      "word": "domesticate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 728
+    },
+    {
+      "id": "octanove10:dominant",
+      "word": "dominant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 628
+    },
+    {
+      "id": "octanove10:domination",
+      "word": "domination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 627
+    },
+    {
+      "id": "octanove10:dramatist",
+      "word": "dramatist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1049
+    },
+    {
+      "id": "octanove10:durable",
+      "word": "durable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 846
+    },
+    {
+      "id": "octanove10:duration",
+      "word": "duration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 845
+    },
+    {
+      "id": "octanove10:dutiful",
+      "word": "dutiful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 589
+    },
+    {
+      "id": "octanove10:eclectic",
+      "word": "eclectic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 596
+    },
+    {
+      "id": "octanove10:effortless",
+      "word": "effortless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 57
+    },
+    {
+      "id": "octanove10:ego",
+      "word": "ego",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 106
+    },
+    {
+      "id": "octanove10:elastic",
+      "word": "elastic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1066
+    },
+    {
+      "id": "octanove10:elevate",
+      "word": "elevate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 424
+    },
+    {
+      "id": "octanove10:elongate",
+      "word": "elongate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1029
+    },
+    {
+      "id": "octanove10:elude",
+      "word": "elude",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1023
+    },
+    {
+      "id": "octanove10:elusive",
+      "word": "elusive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1022
+    },
+    {
+      "id": "octanove10:engross",
+      "word": "engross",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 719
+    },
+    {
+      "id": "octanove10:engrossing",
+      "word": "engrossing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 720
+    },
+    {
+      "id": "octanove10:enterprising",
+      "word": "enterprising",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 946
+    },
+    {
+      "id": "octanove10:envisage",
+      "word": "envisage",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 858
+    },
+    {
+      "id": "octanove10:estimation",
+      "word": "estimation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 462
+    },
+    {
+      "id": "octanove10:evoke",
+      "word": "evoke",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 252
+    },
+    {
+      "id": "octanove10:ewe",
+      "word": "ewe",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 317
+    },
+    {
+      "id": "octanove10:exhibitionist",
+      "word": "exhibitionist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 51
+    },
+    {
+      "id": "octanove10:exhilarate",
+      "word": "exhilarate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1038
+    },
+    {
+      "id": "octanove10:exodus",
+      "word": "exodus",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 345
+    },
+    {
+      "id": "octanove10:expire",
+      "word": "expire",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 124
+    },
+    {
+      "id": "octanove10:exploitation",
+      "word": "exploitation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 165
+    },
+    {
+      "id": "octanove10:exterior",
+      "word": "exterior",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 2
+    },
+    {
+      "id": "octanove10:exuberance",
+      "word": "exuberance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 619
+    },
+    {
+      "id": "octanove10:exuberant",
+      "word": "exuberant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 618
+    },
+    {
+      "id": "octanove10:facial",
+      "word": "facial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 552
+    },
+    {
+      "id": "octanove10:faction",
+      "word": "faction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 349
+    },
+    {
+      "id": "octanove10:fanatic",
+      "word": "fanatic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 825
+    },
+    {
+      "id": "octanove10:farce",
+      "word": "farce",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1019
+    },
+    {
+      "id": "octanove10:fatality",
+      "word": "fatality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 397
+    },
+    {
+      "id": "octanove10:ferocious",
+      "word": "ferocious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 234
+    },
+    {
+      "id": "octanove10:ferociously",
+      "word": "ferociously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 235
+    },
+    {
+      "id": "octanove10:fiddle",
+      "word": "fiddle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 818
+    },
+    {
+      "id": "octanove10:fiend",
+      "word": "fiend",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 868
+    },
+    {
+      "id": "octanove10:fiendish",
+      "word": "fiendish",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 869
+    },
+    {
+      "id": "octanove10:fissure",
+      "word": "fissure",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 959
+    },
+    {
+      "id": "octanove10:fixture",
+      "word": "fixture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1093
+    },
+    {
+      "id": "octanove10:flashback",
+      "word": "flashback",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 260
+    },
+    {
+      "id": "octanove10:flattery",
+      "word": "flattery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 404
+    },
+    {
+      "id": "octanove10:flourish",
+      "word": "flourish",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 623
+    },
+    {
+      "id": "octanove10:forensic",
+      "word": "forensic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 17
+    },
+    {
+      "id": "octanove10:formality",
+      "word": "formality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 430
+    },
+    {
+      "id": "octanove10:formulate",
+      "word": "formulate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 88
+    },
+    {
+      "id": "octanove10:fraction",
+      "word": "fraction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 348
+    },
+    {
+      "id": "octanove10:frosty",
+      "word": "frosty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 492
+    },
+    {
+      "id": "octanove10:fuse",
+      "word": "fuse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 285
+    },
+    {
+      "id": "octanove10:gadget",
+      "word": "gadget",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 114
+    },
+    {
+      "id": "octanove10:gape",
+      "word": "gape",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 508
+    },
+    {
+      "id": "octanove10:genome",
+      "word": "genome",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 347
+    },
+    {
+      "id": "octanove10:geological",
+      "word": "geological",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 75
+    },
+    {
+      "id": "octanove10:ghostly",
+      "word": "ghostly",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 129
+    },
+    {
+      "id": "octanove10:glum",
+      "word": "glum",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 516
+    },
+    {
+      "id": "octanove10:gnaw",
+      "word": "gnaw",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1028
+    },
+    {
+      "id": "octanove10:gourmet",
+      "word": "gourmet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 575
+    },
+    {
+      "id": "octanove10:grapefruit",
+      "word": "grapefruit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 569
+    },
+    {
+      "id": "octanove10:grounds",
+      "word": "grounds",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 557
+    },
+    {
+      "id": "octanove10:gruesome",
+      "word": "gruesome",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 856
+    },
+    {
+      "id": "octanove10:gruesomely",
+      "word": "gruesomely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 857
+    },
+    {
+      "id": "octanove10:gush",
+      "word": "gush",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 632
+    },
+    {
+      "id": "octanove10:gushing",
+      "word": "gushing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 633
+    },
+    {
+      "id": "octanove10:gushingly",
+      "word": "gushingly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 635
+    },
+    {
+      "id": "octanove10:gutsy",
+      "word": "gutsy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1017
+    },
+    {
+      "id": "octanove10:haggle",
+      "word": "haggle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 416
+    },
+    {
+      "id": "octanove10:harass",
+      "word": "harass",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 225
+    },
+    {
+      "id": "octanove10:hedgehog",
+      "word": "hedgehog",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 790
+    },
+    {
+      "id": "octanove10:heifer",
+      "word": "heifer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 316
+    },
+    {
+      "id": "octanove10:hence",
+      "word": "hence",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 167
+    },
+    {
+      "id": "octanove10:heroine",
+      "word": "heroine",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 683
+    },
+    {
+      "id": "octanove10:hibernate",
+      "word": "hibernate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 792
+    },
+    {
+      "id": "octanove10:honk",
+      "word": "honk",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 386
+    },
+    {
+      "id": "octanove10:hostess",
+      "word": "hostess",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 48
+    },
+    {
+      "id": "octanove10:hostility",
+      "word": "hostility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 237
+    },
+    {
+      "id": "octanove10:hypocrisy",
+      "word": "hypocrisy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 980
+    },
+    {
+      "id": "octanove10:hypocrite",
+      "word": "hypocrite",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 981
+    },
+    {
+      "id": "octanove10:immense",
+      "word": "immense",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 440
+    },
+    {
+      "id": "octanove10:immensely",
+      "word": "immensely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 441
+    },
+    {
+      "id": "octanove10:imp",
+      "word": "imp",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 642
+    },
+    {
+      "id": "octanove10:impede",
+      "word": "impede",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 655
+    },
+    {
+      "id": "octanove10:impediment",
+      "word": "impediment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 656
+    },
+    {
+      "id": "octanove10:impersonal",
+      "word": "impersonal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 496
+    },
+    {
+      "id": "octanove10:impersonate",
+      "word": "impersonate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 498
+    },
+    {
+      "id": "octanove10:impervious",
+      "word": "impervious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 852
+    },
+    {
+      "id": "octanove10:implicate",
+      "word": "implicate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 119
+    },
+    {
+      "id": "octanove10:impoverished",
+      "word": "impoverished",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 768
+    },
+    {
+      "id": "octanove10:incisor",
+      "word": "incisor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1024
+    },
+    {
+      "id": "octanove10:inclusion",
+      "word": "inclusion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 535
+    },
+    {
+      "id": "octanove10:inclusive",
+      "word": "inclusive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 536
+    },
+    {
+      "id": "octanove10:individuality",
+      "word": "individuality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 37
+    },
+    {
+      "id": "octanove10:induct",
+      "word": "induct",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 71
+    },
+    {
+      "id": "octanove10:inexcusable",
+      "word": "inexcusable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1088
+    },
+    {
+      "id": "octanove10:inexhaustible",
+      "word": "inexhaustible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 313
+    },
+    {
+      "id": "octanove10:inexplicable",
+      "word": "inexplicable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 222
+    },
+    {
+      "id": "octanove10:ingenuity",
+      "word": "ingenuity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1055
+    },
+    {
+      "id": "octanove10:inherent",
+      "word": "inherent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 381
+    },
+    {
+      "id": "octanove10:injustice",
+      "word": "injustice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 767
+    },
+    {
+      "id": "octanove10:innovate",
+      "word": "innovate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 389
+    },
+    {
+      "id": "octanove10:insecure",
+      "word": "insecure",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 450
+    },
+    {
+      "id": "octanove10:insightful",
+      "word": "insightful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 186
+    },
+    {
+      "id": "octanove10:instinctive",
+      "word": "instinctive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 376
+    },
+    {
+      "id": "octanove10:integral",
+      "word": "integral",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 947
+    },
+    {
+      "id": "octanove10:intellect",
+      "word": "intellect",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 342
+    },
+    {
+      "id": "octanove10:interject",
+      "word": "interject",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 630
+    },
+    {
+      "id": "octanove10:intuition",
+      "word": "intuition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 804
+    },
+    {
+      "id": "octanove10:intuitive",
+      "word": "intuitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 805
+    },
+    {
+      "id": "octanove10:invoice",
+      "word": "invoice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 928
+    },
+    {
+      "id": "octanove10:irony",
+      "word": "irony",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 209
+    },
+    {
+      "id": "octanove10:isolate",
+      "word": "isolate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 52
+    },
+    {
+      "id": "octanove10:itinerary",
+      "word": "itinerary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 940
+    },
+    {
+      "id": "octanove10:jurisdiction",
+      "word": "jurisdiction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 20
+    },
+    {
+      "id": "octanove10:justly",
+      "word": "justly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 700
+    },
+    {
+      "id": "octanove10:knowledgeable",
+      "word": "knowledgeable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 83
+    },
+    {
+      "id": "octanove10:lackluster",
+      "word": "lackluster",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1065
+    },
+    {
+      "id": "octanove10:latent",
+      "word": "latent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 797
+    },
+    {
+      "id": "octanove10:lavatory",
+      "word": "lavatory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 447
+    },
+    {
+      "id": "octanove10:legacy",
+      "word": "legacy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1062
+    },
+    {
+      "id": "octanove10:lethargically",
+      "word": "lethargically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 563
+    },
+    {
+      "id": "octanove10:lethargy",
+      "word": "lethargy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 561
+    },
+    {
+      "id": "octanove10:likelihood",
+      "word": "likelihood",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 848
+    },
+    {
+      "id": "octanove10:linear",
+      "word": "linear",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 621
+    },
+    {
+      "id": "octanove10:ludicrous",
+      "word": "ludicrous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 853
+    },
+    {
+      "id": "octanove10:macabre",
+      "word": "macabre",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 647
+    },
+    {
+      "id": "octanove10:magnetic",
+      "word": "magnetic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 949
+    },
+    {
+      "id": "octanove10:magnetism",
+      "word": "magnetism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 950
+    },
+    {
+      "id": "octanove10:manicure",
+      "word": "manicure",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 549
+    },
+    {
+      "id": "octanove10:manipulation",
+      "word": "manipulation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 213
+    },
+    {
+      "id": "octanove10:marginally",
+      "word": "marginally",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 808
+    },
+    {
+      "id": "octanove10:marvel",
+      "word": "marvel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 9
+    },
+    {
+      "id": "octanove10:maternal",
+      "word": "maternal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 763
+    },
+    {
+      "id": "octanove10:meaninglessly",
+      "word": "meaninglessly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 408
+    },
+    {
+      "id": "octanove10:mechanism",
+      "word": "mechanism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 166
+    },
+    {
+      "id": "octanove10:midwife",
+      "word": "midwife",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 984
+    },
+    {
+      "id": "octanove10:mingle",
+      "word": "mingle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 860
+    },
+    {
+      "id": "octanove10:minutiae",
+      "word": "minutiae",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 220
+    },
+    {
+      "id": "octanove10:monotonous",
+      "word": "monotonous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1074
+    },
+    {
+      "id": "octanove10:monotonously",
+      "word": "monotonously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 1075
+    },
+    {
+      "id": "octanove10:motley",
+      "word": "motley",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 695
+    },
+    {
+      "id": "octanove10:mountaineer",
+      "word": "mountaineer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 432
+    },
+    {
+      "id": "octanove10:munch",
+      "word": "munch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 969
+    },
+    {
+      "id": "octanove10:mutually",
+      "word": "mutually",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 904
+    },
+    {
+      "id": "octanove10:mythological",
+      "word": "mythological",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 677
+    },
+    {
+      "id": "octanove10:mythology",
+      "word": "mythology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 678
+    },
+    {
+      "id": "octanove10:naively",
+      "word": "naively",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 850
+    },
+    {
+      "id": "octanove10:naivety",
+      "word": "naivety",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 851
+    },
+    {
+      "id": "octanove10:neglectful",
+      "word": "neglectful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 278
+    },
+    {
+      "id": "octanove10:negligent",
+      "word": "negligent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 753
+    },
+    {
+      "id": "octanove10:negligently",
+      "word": "negligently",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 754
+    },
+    {
+      "id": "octanove10:neutralization",
+      "word": "neutralization",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1081
+    },
+    {
+      "id": "octanove10:neutralize",
+      "word": "neutralize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1080
+    },
+    {
+      "id": "octanove10:nocturnal",
+      "word": "nocturnal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 791
+    },
+    {
+      "id": "octanove10:nondescript",
+      "word": "nondescript",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 750
+    },
+    {
+      "id": "octanove10:notable",
+      "word": "notable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 187
+    },
+    {
+      "id": "octanove10:numb",
+      "word": "numb",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 988
+    },
+    {
+      "id": "octanove10:oblige",
+      "word": "oblige",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 171
+    },
+    {
+      "id": "octanove10:obscurely",
+      "word": "obscurely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 423
+    },
+    {
+      "id": "octanove10:occupant",
+      "word": "occupant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 892
+    },
+    {
+      "id": "octanove10:occupational",
+      "word": "occupational",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 888
+    },
+    {
+      "id": "octanove10:offspring",
+      "word": "offspring",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 168
+    },
+    {
+      "id": "octanove10:orchard",
+      "word": "orchard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 974
+    },
+    {
+      "id": "octanove10:organizational",
+      "word": "organizational",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 12
+    },
+    {
+      "id": "octanove10:ornamental",
+      "word": "ornamental",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 136
+    },
+    {
+      "id": "octanove10:otter",
+      "word": "otter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 352
+    },
+    {
+      "id": "octanove10:overalls",
+      "word": "overalls",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 309
+    },
+    {
+      "id": "octanove10:overdraft",
+      "word": "overdraft",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 882
+    },
+    {
+      "id": "octanove10:oversee",
+      "word": "oversee",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 460
+    },
+    {
+      "id": "octanove10:panorama",
+      "word": "panorama",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1056
+    },
+    {
+      "id": "octanove10:parasite",
+      "word": "parasite",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 182
+    },
+    {
+      "id": "octanove10:pathos",
+      "word": "pathos",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 735
+    },
+    {
+      "id": "octanove10:peacock",
+      "word": "peacock",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 158
+    },
+    {
+      "id": "octanove10:peasant",
+      "word": "peasant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 221
+    },
+    {
+      "id": "octanove10:pendulous",
+      "word": "pendulous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 961
+    },
+    {
+      "id": "octanove10:pendulum",
+      "word": "pendulum",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 329
+    },
+    {
+      "id": "octanove10:perceptive",
+      "word": "perceptive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 714
+    },
+    {
+      "id": "octanove10:perpetuate",
+      "word": "perpetuate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 49
+    },
+    {
+      "id": "octanove10:persecute",
+      "word": "persecute",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 230
+    },
+    {
+      "id": "octanove10:personalize",
+      "word": "personalize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 738
+    },
+    {
+      "id": "octanove10:pertinent",
+      "word": "pertinent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 200
+    },
+    {
+      "id": "octanove10:physique",
+      "word": "physique",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 350
+    },
+    {
+      "id": "octanove10:pinnacle",
+      "word": "pinnacle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 449
+    },
+    {
+      "id": "octanove10:pioneer",
+      "word": "pioneer",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 433
+    },
+    {
+      "id": "octanove10:plaque",
+      "word": "plaque",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1079
+    },
+    {
+      "id": "octanove10:plaster",
+      "word": "plaster",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 68
+    },
+    {
+      "id": "octanove10:plausible",
+      "word": "plausible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 373
+    },
+    {
+      "id": "octanove10:ploy",
+      "word": "ploy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 307
+    },
+    {
+      "id": "octanove10:plumbing",
+      "word": "plumbing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 514
+    },
+    {
+      "id": "octanove10:plunge",
+      "word": "plunge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1008
+    },
+    {
+      "id": "octanove10:poetess",
+      "word": "poetess",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 703
+    },
+    {
+      "id": "octanove10:poise",
+      "word": "poise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 184
+    },
+    {
+      "id": "octanove10:portray",
+      "word": "portray",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1020
+    },
+    {
+      "id": "octanove10:portrayal",
+      "word": "portrayal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1021
+    },
+    {
+      "id": "octanove10:posture",
+      "word": "posture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 581
+    },
+    {
+      "id": "octanove10:pounce",
+      "word": "pounce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1071
+    },
+    {
+      "id": "octanove10:preach",
+      "word": "preach",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 696
+    },
+    {
+      "id": "octanove10:precision",
+      "word": "precision",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 745
+    },
+    {
+      "id": "octanove10:predecessor",
+      "word": "predecessor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 330
+    },
+    {
+      "id": "octanove10:premise",
+      "word": "premise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 180
+    },
+    {
+      "id": "octanove10:premises",
+      "word": "premises",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 595
+    },
+    {
+      "id": "octanove10:principally",
+      "word": "principally",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 755
+    },
+    {
+      "id": "octanove10:profess",
+      "word": "profess",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 456
+    },
+    {
+      "id": "octanove10:professionalism",
+      "word": "professionalism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 326
+    },
+    {
+      "id": "octanove10:profoundly",
+      "word": "profoundly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 322
+    },
+    {
+      "id": "octanove10:prohibitive",
+      "word": "prohibitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 957
+    },
+    {
+      "id": "octanove10:proliferate",
+      "word": "proliferate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 841
+    },
+    {
+      "id": "octanove10:prop",
+      "word": "prop",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 640
+    },
+    {
+      "id": "octanove10:prophet",
+      "word": "prophet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 923
+    },
+    {
+      "id": "octanove10:prospective",
+      "word": "prospective",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 293
+    },
+    {
+      "id": "octanove10:provocative",
+      "word": "provocative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 413
+    },
+    {
+      "id": "octanove10:provoke",
+      "word": "provoke",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 412
+    },
+    {
+      "id": "octanove10:psyche",
+      "word": "psyche",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 38
+    },
+    {
+      "id": "octanove10:psychiatric",
+      "word": "psychiatric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 14
+    },
+    {
+      "id": "octanove10:psychiatrist",
+      "word": "psychiatrist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 13
+    },
+    {
+      "id": "octanove10:quest",
+      "word": "quest",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 435
+    },
+    {
+      "id": "octanove10:quip",
+      "word": "quip",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 369
+    },
+    {
+      "id": "octanove10:quirky",
+      "word": "quirky",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1051
+    },
+    {
+      "id": "octanove10:radiator",
+      "word": "radiator",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 893
+    },
+    {
+      "id": "octanove10:rapport",
+      "word": "rapport",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 474
+    },
+    {
+      "id": "octanove10:raunchy",
+      "word": "raunchy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 879
+    },
+    {
+      "id": "octanove10:readable",
+      "word": "readable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 228
+    },
+    {
+      "id": "octanove10:realist",
+      "word": "realist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 834
+    },
+    {
+      "id": "octanove10:reap",
+      "word": "reap",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 761
+    },
+    {
+      "id": "octanove10:reassurance",
+      "word": "reassurance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 453
+    },
+    {
+      "id": "octanove10:recess",
+      "word": "recess",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 836
+    },
+    {
+      "id": "octanove10:recessive",
+      "word": "recessive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 838
+    },
+    {
+      "id": "octanove10:recharge",
+      "word": "recharge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 540
+    },
+    {
+      "id": "octanove10:rediscover",
+      "word": "rediscover",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 115
+    },
+    {
+      "id": "octanove10:reenact",
+      "word": "reenact",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 160
+    },
+    {
+      "id": "octanove10:refreshing",
+      "word": "refreshing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 684
+    },
+    {
+      "id": "octanove10:refurbish",
+      "word": "refurbish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 555
+    },
+    {
+      "id": "octanove10:relapse",
+      "word": "relapse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 653
+    },
+    {
+      "id": "octanove10:remedial",
+      "word": "remedial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 580
+    },
+    {
+      "id": "octanove10:reminisce",
+      "word": "reminisce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 801
+    },
+    {
+      "id": "octanove10:remorse",
+      "word": "remorse",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1084
+    },
+    {
+      "id": "octanove10:remorseless",
+      "word": "remorseless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1085
+    },
+    {
+      "id": "octanove10:remorselessly",
+      "word": "remorselessly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 1087
+    },
+    {
+      "id": "octanove10:removed",
+      "word": "removed",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 669
+    },
+    {
+      "id": "octanove10:render",
+      "word": "render",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 733
+    },
+    {
+      "id": "octanove10:renown",
+      "word": "renown",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 884
+    },
+    {
+      "id": "octanove10:repel",
+      "word": "repel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 253
+    },
+    {
+      "id": "octanove10:repellant",
+      "word": "repellant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 255
+    },
+    {
+      "id": "octanove10:resent",
+      "word": "resent",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 43
+    },
+    {
+      "id": "octanove10:resilience",
+      "word": "resilience",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 945
+    },
+    {
+      "id": "octanove10:resilient",
+      "word": "resilient",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 944
+    },
+    {
+      "id": "octanove10:resonate",
+      "word": "resonate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 207
+    },
+    {
+      "id": "octanove10:respite",
+      "word": "respite",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 60
+    },
+    {
+      "id": "octanove10:restorative",
+      "word": "restorative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 936
+    },
+    {
+      "id": "octanove10:retention",
+      "word": "retention",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 480
+    },
+    {
+      "id": "octanove10:retrace",
+      "word": "retrace",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 993
+    },
+    {
+      "id": "octanove10:revere",
+      "word": "revere",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 599
+    },
+    {
+      "id": "octanove10:riveting",
+      "word": "riveting",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1007
+    },
+    {
+      "id": "octanove10:rotate",
+      "word": "rotate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 937
+    },
+    {
+      "id": "octanove10:roundup",
+      "word": "roundup",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 279
+    },
+    {
+      "id": "octanove10:rudimentary",
+      "word": "rudimentary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 438
+    },
+    {
+      "id": "octanove10:rumble",
+      "word": "rumble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 276
+    },
+    {
+      "id": "octanove10:ruthless",
+      "word": "ruthless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 241
+    },
+    {
+      "id": "octanove10:salivate",
+      "word": "salivate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 1082
+    },
+    {
+      "id": "octanove10:saloon",
+      "word": "saloon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 108
+    },
+    {
+      "id": "octanove10:salvage",
+      "word": "salvage",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 691
+    },
+    {
+      "id": "octanove10:salve",
+      "word": "salve",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 689
+    },
+    {
+      "id": "octanove10:sanctity",
+      "word": "sanctity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 27
+    },
+    {
+      "id": "octanove10:sarcastic",
+      "word": "sarcastic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 781
+    },
+    {
+      "id": "octanove10:sarcastically",
+      "word": "sarcastically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 782
+    },
+    {
+      "id": "octanove10:sauna",
+      "word": "sauna",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 579
+    },
+    {
+      "id": "octanove10:scenario",
+      "word": "scenario",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 758
+    },
+    {
+      "id": "octanove10:scorn",
+      "word": "scorn",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 417
+    },
+    {
+      "id": "octanove10:scornful",
+      "word": "scornful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 418
+    },
+    {
+      "id": "octanove10:screenwriter",
+      "word": "screenwriter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 859
+    },
+    {
+      "id": "octanove10:scrutinize",
+      "word": "scrutinize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 367
+    },
+    {
+      "id": "octanove10:sedate",
+      "word": "sedate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 582
+    },
+    {
+      "id": "octanove10:sedately",
+      "word": "sedately",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 583
+    },
+    {
+      "id": "octanove10:sedentary",
+      "word": "sedentary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 473
+    },
+    {
+      "id": "octanove10:self-conscious",
+      "word": "self-conscious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 44
+    },
+    {
+      "id": "octanove10:sentient",
+      "word": "sentient",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 705
+    },
+    {
+      "id": "octanove10:sentimental",
+      "word": "sentimental",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 707
+    },
+    {
+      "id": "octanove10:sequel",
+      "word": "sequel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 208
+    },
+    {
+      "id": "octanove10:settee",
+      "word": "settee",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 304
+    },
+    {
+      "id": "octanove10:shed",
+      "word": "shed",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 344
+    },
+    {
+      "id": "octanove10:showy",
+      "word": "showy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 178
+    },
+    {
+      "id": "octanove10:simplicity",
+      "word": "simplicity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 205
+    },
+    {
+      "id": "octanove10:sketchbook",
+      "word": "sketchbook",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 638
+    },
+    {
+      "id": "octanove10:slack",
+      "word": "slack",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 665
+    },
+    {
+      "id": "octanove10:smug",
+      "word": "smug",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 232
+    },
+    {
+      "id": "octanove10:snail",
+      "word": "snail",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 311
+    },
+    {
+      "id": "octanove10:snooze",
+      "word": "snooze",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 798
+    },
+    {
+      "id": "octanove10:somersault",
+      "word": "somersault",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1036
+    },
+    {
+      "id": "octanove10:spacious",
+      "word": "spacious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 573
+    },
+    {
+      "id": "octanove10:specification",
+      "word": "specification",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 482
+    },
+    {
+      "id": "octanove10:specimen",
+      "word": "specimen",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 78
+    },
+    {
+      "id": "octanove10:speculate",
+      "word": "speculate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 155
+    },
+    {
+      "id": "octanove10:speculative",
+      "word": "speculative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 157
+    },
+    {
+      "id": "octanove10:splatter",
+      "word": "splatter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 296
+    },
+    {
+      "id": "octanove10:sprawl",
+      "word": "sprawl",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1053
+    },
+    {
+      "id": "octanove10:sprout",
+      "word": "sprout",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 978
+    },
+    {
+      "id": "octanove10:squander",
+      "word": "squander",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 968
+    },
+    {
+      "id": "octanove10:stamina",
+      "word": "stamina",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 306
+    },
+    {
+      "id": "octanove10:stately",
+      "word": "stately",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 564
+    },
+    {
+      "id": "octanove10:stimuli",
+      "word": "stimuli",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 902
+    },
+    {
+      "id": "octanove10:stoke",
+      "word": "stoke",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 46
+    },
+    {
+      "id": "octanove10:strap",
+      "word": "strap",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 811
+    },
+    {
+      "id": "octanove10:stray",
+      "word": "stray",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 674
+    },
+    {
+      "id": "octanove10:structural",
+      "word": "structural",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 470
+    },
+    {
+      "id": "octanove10:subordinate",
+      "word": "subordinate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 998
+    },
+    {
+      "id": "octanove10:suburban",
+      "word": "suburban",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1047
+    },
+    {
+      "id": "octanove10:succession",
+      "word": "succession",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 429
+    },
+    {
+      "id": "octanove10:suds",
+      "word": "suds",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 152
+    },
+    {
+      "id": "octanove10:suffice",
+      "word": "suffice",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 61
+    },
+    {
+      "id": "octanove10:suitor",
+      "word": "suitor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 214
+    },
+    {
+      "id": "octanove10:superficially",
+      "word": "superficially",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 364
+    },
+    {
+      "id": "octanove10:supple",
+      "word": "supple",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 548
+    },
+    {
+      "id": "octanove10:swap",
+      "word": "swap",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 294
+    },
+    {
+      "id": "octanove10:symptomatic",
+      "word": "symptomatic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 784
+    },
+    {
+      "id": "octanove10:synopsis",
+      "word": "synopsis",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 883
+    },
+    {
+      "id": "octanove10:tact",
+      "word": "tact",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 100
+    },
+    {
+      "id": "octanove10:tactful",
+      "word": "tactful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 101
+    },
+    {
+      "id": "octanove10:tangle",
+      "word": "tangle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 709
+    },
+    {
+      "id": "octanove10:tangled",
+      "word": "tangled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 711
+    },
+    {
+      "id": "octanove10:tantamount",
+      "word": "tantamount",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 649
+    },
+    {
+      "id": "octanove10:taut",
+      "word": "taut",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 657
+    },
+    {
+      "id": "octanove10:tedious",
+      "word": "tedious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 142
+    },
+    {
+      "id": "octanove10:tedium",
+      "word": "tedium",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 143
+    },
+    {
+      "id": "octanove10:telltale",
+      "word": "telltale",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1030
+    },
+    {
+      "id": "octanove10:temperament",
+      "word": "temperament",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 873
+    },
+    {
+      "id": "octanove10:terrain",
+      "word": "terrain",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 943
+    },
+    {
+      "id": "octanove10:testament",
+      "word": "testament",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1104
+    },
+    {
+      "id": "octanove10:thereby",
+      "word": "thereby",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 523
+    },
+    {
+      "id": "octanove10:tinker",
+      "word": "tinker",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 446
+    },
+    {
+      "id": "octanove10:torment",
+      "word": "torment",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 161
+    },
+    {
+      "id": "octanove10:trampoline",
+      "word": "trampoline",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 305
+    },
+    {
+      "id": "octanove10:tranquil",
+      "word": "tranquil",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 1108
+    },
+    {
+      "id": "octanove10:tranquility",
+      "word": "tranquility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1109
+    },
+    {
+      "id": "octanove10:transfix",
+      "word": "transfix",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 871
+    },
+    {
+      "id": "octanove10:transit",
+      "word": "transit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 913
+    },
+    {
+      "id": "octanove10:traumatic",
+      "word": "traumatic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 23
+    },
+    {
+      "id": "octanove10:trying",
+      "word": "trying",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 443
+    },
+    {
+      "id": "octanove10:turmoil",
+      "word": "turmoil",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1012
+    },
+    {
+      "id": "octanove10:tycoon",
+      "word": "tycoon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 717
+    },
+    {
+      "id": "octanove10:unconventional",
+      "word": "unconventional",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 40
+    },
+    {
+      "id": "octanove10:uneventful",
+      "word": "uneventful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 199
+    },
+    {
+      "id": "octanove10:uniformity",
+      "word": "uniformity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 987
+    },
+    {
+      "id": "octanove10:unison",
+      "word": "unison",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 310
+    },
+    {
+      "id": "octanove10:unoccupied",
+      "word": "unoccupied",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 504
+    },
+    {
+      "id": "octanove10:unplug",
+      "word": "unplug",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 113
+    },
+    {
+      "id": "octanove10:unreliably",
+      "word": "unreliably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 607
+    },
+    {
+      "id": "octanove10:untangle",
+      "word": "untangle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 712
+    },
+    {
+      "id": "octanove10:upheaval",
+      "word": "upheaval",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 196
+    },
+    {
+      "id": "octanove10:vegetation",
+      "word": "vegetation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 58
+    },
+    {
+      "id": "octanove10:venerate",
+      "word": "venerate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 679
+    },
+    {
+      "id": "octanove10:veneration",
+      "word": "veneration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 680
+    },
+    {
+      "id": "octanove10:ventilation",
+      "word": "ventilation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 891
+    },
+    {
+      "id": "octanove10:verandah",
+      "word": "verandah",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 887
+    },
+    {
+      "id": "octanove10:versatile",
+      "word": "versatile",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 900
+    },
+    {
+      "id": "octanove10:versatility",
+      "word": "versatility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 901
+    },
+    {
+      "id": "octanove10:vertical",
+      "word": "vertical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 82
+    },
+    {
+      "id": "octanove10:vicious",
+      "word": "vicious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 188
+    },
+    {
+      "id": "octanove10:viciously",
+      "word": "viciously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 189
+    },
+    {
+      "id": "octanove10:victoriously",
+      "word": "victoriously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 320
+    },
+    {
+      "id": "octanove10:violet",
+      "word": "violet",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 300
+    },
+    {
+      "id": "octanove10:vitality",
+      "word": "vitality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 411
+    },
+    {
+      "id": "octanove10:voluntary",
+      "word": "voluntary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 759
+    },
+    {
+      "id": "octanove10:voracious",
+      "word": "voracious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 636
+    },
+    {
+      "id": "octanove10:wares",
+      "word": "wares",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 1103
+    },
+    {
+      "id": "octanove10:wary",
+      "word": "wary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 45
+    },
+    {
+      "id": "octanove10:washtub",
+      "word": "washtub",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 131
+    },
+    {
+      "id": "octanove10:wayside",
+      "word": "wayside",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "sourceRow": 123
+    },
+    {
+      "id": "octanove10:whilst",
+      "word": "whilst",
+      "partOfSpeech": "conjunction",
+      "cefrLevel": "C1",
+      "sourceRow": 1004
+    },
+    {
+      "id": "octanove10:wicked",
+      "word": "wicked",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 645
+    },
+    {
+      "id": "octanove10:withdrawn",
+      "word": "withdrawn",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 191
+    },
+    {
+      "id": "octanove10:wizened",
+      "word": "wizened",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 972
+    },
+    {
+      "id": "octanove10:wooded",
+      "word": "wooded",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "sourceRow": 400
+    },
+    {
+      "id": "octanove10:wrangle",
+      "word": "wrangle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 179
+    },
+    {
+      "id": "octanove10:wrench",
+      "word": "wrench",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "sourceRow": 800
+    },
+    {
+      "id": "octanove10:wryly",
+      "word": "wryly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C1",
+      "sourceRow": 702
+    },
+    {
+      "id": "octanove10:aberration",
+      "word": "aberration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1919
+    },
+    {
+      "id": "octanove10:abhor",
+      "word": "abhor",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1917
+    },
+    {
+      "id": "octanove10:abundantly",
+      "word": "abundantly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1429
+    },
+    {
+      "id": "octanove10:accrue",
+      "word": "accrue",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1267
+    },
+    {
+      "id": "octanove10:acrobatic",
+      "word": "acrobatic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2032
+    },
+    {
+      "id": "octanove10:acrobatics",
+      "word": "acrobatics",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2030
+    },
+    {
+      "id": "octanove10:ad-lib",
+      "word": "ad-lib",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2028
+    },
+    {
+      "id": "octanove10:adept",
+      "word": "adept",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1555
+    },
+    {
+      "id": "octanove10:adhere",
+      "word": "adhere",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1785
+    },
+    {
+      "id": "octanove10:adhesion",
+      "word": "adhesion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1786
+    },
+    {
+      "id": "octanove10:adornment",
+      "word": "adornment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1277
+    },
+    {
+      "id": "octanove10:aghast",
+      "word": "aghast",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2019
+    },
+    {
+      "id": "octanove10:agile",
+      "word": "agile",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2017
+    },
+    {
+      "id": "octanove10:agility",
+      "word": "agility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2018
+    },
+    {
+      "id": "octanove10:allegory",
+      "word": "allegory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2087
+    },
+    {
+      "id": "octanove10:allot",
+      "word": "allot",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1217
+    },
+    {
+      "id": "octanove10:allude",
+      "word": "allude",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1737
+    },
+    {
+      "id": "octanove10:allusion",
+      "word": "allusion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1736
+    },
+    {
+      "id": "octanove10:amorphous",
+      "word": "amorphous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1969
+    },
+    {
+      "id": "octanove10:angular",
+      "word": "angular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1837
+    },
+    {
+      "id": "octanove10:annex",
+      "word": "annex",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1886
+    },
+    {
+      "id": "octanove10:anonymity",
+      "word": "anonymity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1581
+    },
+    {
+      "id": "octanove10:antediluvian",
+      "word": "antediluvian",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1618
+    },
+    {
+      "id": "octanove10:anthology",
+      "word": "anthology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1485
+    },
+    {
+      "id": "octanove10:antidote",
+      "word": "antidote",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1346
+    },
+    {
+      "id": "octanove10:apprehend",
+      "word": "apprehend",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1207
+    },
+    {
+      "id": "octanove10:aptitude",
+      "word": "aptitude",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1942
+    },
+    {
+      "id": "octanove10:arcane",
+      "word": "arcane",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1699
+    },
+    {
+      "id": "octanove10:archetype",
+      "word": "archetype",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1550
+    },
+    {
+      "id": "octanove10:arduous",
+      "word": "arduous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2033
+    },
+    {
+      "id": "octanove10:armory",
+      "word": "armory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2047
+    },
+    {
+      "id": "octanove10:articulation",
+      "word": "articulation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1248
+    },
+    {
+      "id": "octanove10:artifact",
+      "word": "artifact",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1880
+    },
+    {
+      "id": "octanove10:assimilate",
+      "word": "assimilate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1978
+    },
+    {
+      "id": "octanove10:attrition",
+      "word": "attrition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1774
+    },
+    {
+      "id": "octanove10:austere",
+      "word": "austere",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1632
+    },
+    {
+      "id": "octanove10:austerity",
+      "word": "austerity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1634
+    },
+    {
+      "id": "octanove10:autonomous",
+      "word": "autonomous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1336
+    },
+    {
+      "id": "octanove10:axiom",
+      "word": "axiom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1772
+    },
+    {
+      "id": "octanove10:babble",
+      "word": "babble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1447
+    },
+    {
+      "id": "octanove10:banish",
+      "word": "banish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1944
+    },
+    {
+      "id": "octanove10:banishment",
+      "word": "banishment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1945
+    },
+    {
+      "id": "octanove10:bauble",
+      "word": "bauble",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1448
+    },
+    {
+      "id": "octanove10:belligerent",
+      "word": "belligerent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1135
+    },
+    {
+      "id": "octanove10:beneficiary",
+      "word": "beneficiary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1502
+    },
+    {
+      "id": "octanove10:besiege",
+      "word": "besiege",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1883
+    },
+    {
+      "id": "octanove10:blandishment",
+      "word": "blandishment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1269
+    },
+    {
+      "id": "octanove10:blitz",
+      "word": "blitz",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1221
+    },
+    {
+      "id": "octanove10:blubber",
+      "word": "blubber",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2049
+    },
+    {
+      "id": "octanove10:blurb",
+      "word": "blurb",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1533
+    },
+    {
+      "id": "octanove10:bogus",
+      "word": "bogus",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2008
+    },
+    {
+      "id": "octanove10:brandish",
+      "word": "brandish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1258
+    },
+    {
+      "id": "octanove10:breadwinner",
+      "word": "breadwinner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1938
+    },
+    {
+      "id": "octanove10:brevity",
+      "word": "brevity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1440
+    },
+    {
+      "id": "octanove10:brim",
+      "word": "brim",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1874
+    },
+    {
+      "id": "octanove10:brimstone",
+      "word": "brimstone",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1815
+    },
+    {
+      "id": "octanove10:brood",
+      "word": "brood",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1150
+    },
+    {
+      "id": "octanove10:buccaneer",
+      "word": "buccaneer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1841
+    },
+    {
+      "id": "octanove10:buzzard",
+      "word": "buzzard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2007
+    },
+    {
+      "id": "octanove10:calamitous",
+      "word": "calamitous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1629
+    },
+    {
+      "id": "octanove10:callous",
+      "word": "callous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1177
+    },
+    {
+      "id": "octanove10:calorific",
+      "word": "calorific",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1253
+    },
+    {
+      "id": "octanove10:capacious",
+      "word": "capacious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1230
+    },
+    {
+      "id": "octanove10:carbonize",
+      "word": "carbonize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1273
+    },
+    {
+      "id": "octanove10:cay",
+      "word": "cay",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1843
+    },
+    {
+      "id": "octanove10:chrysalis",
+      "word": "chrysalis",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1365
+    },
+    {
+      "id": "octanove10:circumnavigate",
+      "word": "circumnavigate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1240
+    },
+    {
+      "id": "octanove10:clinch",
+      "word": "clinch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1580
+    },
+    {
+      "id": "octanove10:cloister",
+      "word": "cloister",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1884
+    },
+    {
+      "id": "octanove10:cocoon",
+      "word": "cocoon",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1364
+    },
+    {
+      "id": "octanove10:cogent",
+      "word": "cogent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2100
+    },
+    {
+      "id": "octanove10:cognitive",
+      "word": "cognitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1879
+    },
+    {
+      "id": "octanove10:collide",
+      "word": "collide",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1955
+    },
+    {
+      "id": "octanove10:colloquial",
+      "word": "colloquial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1733
+    },
+    {
+      "id": "octanove10:combustion",
+      "word": "combustion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1452
+    },
+    {
+      "id": "octanove10:commensurate",
+      "word": "commensurate",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1166
+    },
+    {
+      "id": "octanove10:commode",
+      "word": "commode",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1868
+    },
+    {
+      "id": "octanove10:commodity",
+      "word": "commodity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1867
+    },
+    {
+      "id": "octanove10:conciliatory",
+      "word": "conciliatory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1858
+    },
+    {
+      "id": "octanove10:concurrence",
+      "word": "concurrence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1119
+    },
+    {
+      "id": "octanove10:condensation",
+      "word": "condensation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1729
+    },
+    {
+      "id": "octanove10:condone",
+      "word": "condone",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1866
+    },
+    {
+      "id": "octanove10:conduit",
+      "word": "conduit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1488
+    },
+    {
+      "id": "octanove10:confabulation",
+      "word": "confabulation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1748
+    },
+    {
+      "id": "octanove10:confection",
+      "word": "confection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1925
+    },
+    {
+      "id": "octanove10:conjecture",
+      "word": "conjecture",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1280
+    },
+    {
+      "id": "octanove10:connotation",
+      "word": "connotation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1478
+    },
+    {
+      "id": "octanove10:consign",
+      "word": "consign",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1796
+    },
+    {
+      "id": "octanove10:consignment",
+      "word": "consignment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1797
+    },
+    {
+      "id": "octanove10:consternation",
+      "word": "consternation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1769
+    },
+    {
+      "id": "octanove10:constrained",
+      "word": "constrained",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1126
+    },
+    {
+      "id": "octanove10:contagion",
+      "word": "contagion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1599
+    },
+    {
+      "id": "octanove10:contemptuously",
+      "word": "contemptuously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1911
+    },
+    {
+      "id": "octanove10:contractual",
+      "word": "contractual",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1243
+    },
+    {
+      "id": "octanove10:contraption",
+      "word": "contraption",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1455
+    },
+    {
+      "id": "octanove10:contrive",
+      "word": "contrive",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1751
+    },
+    {
+      "id": "octanove10:corpus",
+      "word": "corpus",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1998
+    },
+    {
+      "id": "octanove10:correlate",
+      "word": "correlate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1449
+    },
+    {
+      "id": "octanove10:correlation",
+      "word": "correlation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1450
+    },
+    {
+      "id": "octanove10:cosmic",
+      "word": "cosmic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1499
+    },
+    {
+      "id": "octanove10:counsel",
+      "word": "counsel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1940
+    },
+    {
+      "id": "octanove10:crony",
+      "word": "crony",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1789
+    },
+    {
+      "id": "octanove10:crystallization",
+      "word": "crystallization",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1433
+    },
+    {
+      "id": "octanove10:cull",
+      "word": "cull",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1827
+    },
+    {
+      "id": "octanove10:curator",
+      "word": "curator",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1653
+    },
+    {
+      "id": "octanove10:declination",
+      "word": "declination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1412
+    },
+    {
+      "id": "octanove10:deficient",
+      "word": "deficient",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1355
+    },
+    {
+      "id": "octanove10:delicatessen",
+      "word": "delicatessen",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1358
+    },
+    {
+      "id": "octanove10:demystify",
+      "word": "demystify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1519
+    },
+    {
+      "id": "octanove10:denote",
+      "word": "denote",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1408
+    },
+    {
+      "id": "octanove10:denounce",
+      "word": "denounce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1190
+    },
+    {
+      "id": "octanove10:denunciation",
+      "word": "denunciation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1191
+    },
+    {
+      "id": "octanove10:depraved",
+      "word": "depraved",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1693
+    },
+    {
+      "id": "octanove10:depravity",
+      "word": "depravity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1692
+    },
+    {
+      "id": "octanove10:derelict",
+      "word": "derelict",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1179
+    },
+    {
+      "id": "octanove10:derision",
+      "word": "derision",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2009
+    },
+    {
+      "id": "octanove10:derisive",
+      "word": "derisive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2010
+    },
+    {
+      "id": "octanove10:derisively",
+      "word": "derisively",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 2011
+    },
+    {
+      "id": "octanove10:detract",
+      "word": "detract",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1657
+    },
+    {
+      "id": "octanove10:deviant",
+      "word": "deviant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1539
+    },
+    {
+      "id": "octanove10:diffuse",
+      "word": "diffuse",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1321
+    },
+    {
+      "id": "octanove10:diminish",
+      "word": "diminish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1597
+    },
+    {
+      "id": "octanove10:disdainful",
+      "word": "disdainful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1152
+    },
+    {
+      "id": "octanove10:disparagement",
+      "word": "disparagement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1741
+    },
+    {
+      "id": "octanove10:disparaging",
+      "word": "disparaging",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1739
+    },
+    {
+      "id": "octanove10:disperse",
+      "word": "disperse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1328
+    },
+    {
+      "id": "octanove10:dissemble",
+      "word": "dissemble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1586
+    },
+    {
+      "id": "octanove10:dissemination",
+      "word": "dissemination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1585
+    },
+    {
+      "id": "octanove10:dissension",
+      "word": "dissension",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1552
+    },
+    {
+      "id": "octanove10:distill",
+      "word": "distill",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1288
+    },
+    {
+      "id": "octanove10:distillation",
+      "word": "distillation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1289
+    },
+    {
+      "id": "octanove10:divination",
+      "word": "divination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1702
+    },
+    {
+      "id": "octanove10:dribble",
+      "word": "dribble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1790
+    },
+    {
+      "id": "octanove10:drudgery",
+      "word": "drudgery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1403
+    },
+    {
+      "id": "octanove10:dubiously",
+      "word": "dubiously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1651
+    },
+    {
+      "id": "octanove10:ebb",
+      "word": "ebb",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1615
+    },
+    {
+      "id": "octanove10:echolocation",
+      "word": "echolocation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2115
+    },
+    {
+      "id": "octanove10:economize",
+      "word": "economize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1937
+    },
+    {
+      "id": "octanove10:elasticity",
+      "word": "elasticity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2123
+    },
+    {
+      "id": "octanove10:elated",
+      "word": "elated",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1901
+    },
+    {
+      "id": "octanove10:elation",
+      "word": "elation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1902
+    },
+    {
+      "id": "octanove10:elephantine",
+      "word": "elephantine",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1864
+    },
+    {
+      "id": "octanove10:embed",
+      "word": "embed",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1852
+    },
+    {
+      "id": "octanove10:embody",
+      "word": "embody",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2059
+    },
+    {
+      "id": "octanove10:eminence",
+      "word": "eminence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1387
+    },
+    {
+      "id": "octanove10:emolument",
+      "word": "emolument",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1543
+    },
+    {
+      "id": "octanove10:emulate",
+      "word": "emulate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1709
+    },
+    {
+      "id": "octanove10:encompass",
+      "word": "encompass",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1422
+    },
+    {
+      "id": "octanove10:encumber",
+      "word": "encumber",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1156
+    },
+    {
+      "id": "octanove10:encumbrance",
+      "word": "encumbrance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1155
+    },
+    {
+      "id": "octanove10:enthuse",
+      "word": "enthuse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1134
+    },
+    {
+      "id": "octanove10:ephemera",
+      "word": "ephemera",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1685
+    },
+    {
+      "id": "octanove10:ephemeral",
+      "word": "ephemeral",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1684
+    },
+    {
+      "id": "octanove10:epoxy",
+      "word": "epoxy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1834
+    },
+    {
+      "id": "octanove10:equilibrium",
+      "word": "equilibrium",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1492
+    },
+    {
+      "id": "octanove10:etch",
+      "word": "etch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2022
+    },
+    {
+      "id": "octanove10:ethos",
+      "word": "ethos",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1961
+    },
+    {
+      "id": "octanove10:euphemism",
+      "word": "euphemism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1726
+    },
+    {
+      "id": "octanove10:euphoric",
+      "word": "euphoric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1369
+    },
+    {
+      "id": "octanove10:exalted",
+      "word": "exalted",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1553
+    },
+    {
+      "id": "octanove10:exorcist",
+      "word": "exorcist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1648
+    },
+    {
+      "id": "octanove10:extracurricular",
+      "word": "extracurricular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1420
+    },
+    {
+      "id": "octanove10:exude",
+      "word": "exude",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1113
+    },
+    {
+      "id": "octanove10:fabricate",
+      "word": "fabricate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1891
+    },
+    {
+      "id": "octanove10:facsimile",
+      "word": "facsimile",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1144
+    },
+    {
+      "id": "octanove10:fallacy",
+      "word": "fallacy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1674
+    },
+    {
+      "id": "octanove10:feign",
+      "word": "feign",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1929
+    },
+    {
+      "id": "octanove10:fete",
+      "word": "fete",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1798
+    },
+    {
+      "id": "octanove10:flagging",
+      "word": "flagging",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1496
+    },
+    {
+      "id": "octanove10:flightiness",
+      "word": "flightiness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1814
+    },
+    {
+      "id": "octanove10:flighty",
+      "word": "flighty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1813
+    },
+    {
+      "id": "octanove10:flit",
+      "word": "flit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1703
+    },
+    {
+      "id": "octanove10:fluctuation",
+      "word": "fluctuation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1459
+    },
+    {
+      "id": "octanove10:forlorn",
+      "word": "forlorn",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1912
+    },
+    {
+      "id": "octanove10:fractious",
+      "word": "fractious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1976
+    },
+    {
+      "id": "octanove10:frolic",
+      "word": "frolic",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1425
+    },
+    {
+      "id": "octanove10:gale",
+      "word": "gale",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1285
+    },
+    {
+      "id": "octanove10:gambit",
+      "word": "gambit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1446
+    },
+    {
+      "id": "octanove10:gauche",
+      "word": "gauche",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1265
+    },
+    {
+      "id": "octanove10:glitz",
+      "word": "glitz",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1204
+    },
+    {
+      "id": "octanove10:glitzy",
+      "word": "glitzy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1205
+    },
+    {
+      "id": "octanove10:gravitate",
+      "word": "gravitate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1766
+    },
+    {
+      "id": "octanove10:gravitational",
+      "word": "gravitational",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1767
+    },
+    {
+      "id": "octanove10:grievance",
+      "word": "grievance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1296
+    },
+    {
+      "id": "octanove10:habitation",
+      "word": "habitation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1308
+    },
+    {
+      "id": "octanove10:haphazard",
+      "word": "haphazard",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1353
+    },
+    {
+      "id": "octanove10:haphazardly",
+      "word": "haphazardly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1354
+    },
+    {
+      "id": "octanove10:hapless",
+      "word": "hapless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1527
+    },
+    {
+      "id": "octanove10:haughtily",
+      "word": "haughtily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1771
+    },
+    {
+      "id": "octanove10:haughty",
+      "word": "haughty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1770
+    },
+    {
+      "id": "octanove10:helm",
+      "word": "helm",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1385
+    },
+    {
+      "id": "octanove10:herald",
+      "word": "herald",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1479
+    },
+    {
+      "id": "octanove10:hermetic",
+      "word": "hermetic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1380
+    },
+    {
+      "id": "octanove10:hermit",
+      "word": "hermit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1379
+    },
+    {
+      "id": "octanove10:hindrance",
+      "word": "hindrance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2075
+    },
+    {
+      "id": "octanove10:hindsight",
+      "word": "hindsight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1325
+    },
+    {
+      "id": "octanove10:histrionic",
+      "word": "histrionic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2077
+    },
+    {
+      "id": "octanove10:hitch",
+      "word": "hitch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1704
+    },
+    {
+      "id": "octanove10:hitherto",
+      "word": "hitherto",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1558
+    },
+    {
+      "id": "octanove10:homestead",
+      "word": "homestead",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1600
+    },
+    {
+      "id": "octanove10:huddle",
+      "word": "huddle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1742
+    },
+    {
+      "id": "octanove10:hypothesis",
+      "word": "hypothesis",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1157
+    },
+    {
+      "id": "octanove10:hysteria",
+      "word": "hysteria",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1903
+    },
+    {
+      "id": "octanove10:idiosyncrasy",
+      "word": "idiosyncrasy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1635
+    },
+    {
+      "id": "octanove10:ignominious",
+      "word": "ignominious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1366
+    },
+    {
+      "id": "octanove10:impeccable",
+      "word": "impeccable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1816
+    },
+    {
+      "id": "octanove10:imperceptible",
+      "word": "imperceptible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1525
+    },
+    {
+      "id": "octanove10:imposition",
+      "word": "imposition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1213
+    },
+    {
+      "id": "octanove10:inchoate",
+      "word": "inchoate",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1899
+    },
+    {
+      "id": "octanove10:incipient",
+      "word": "incipient",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2114
+    },
+    {
+      "id": "octanove10:incise",
+      "word": "incise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2113
+    },
+    {
+      "id": "octanove10:incongruity",
+      "word": "incongruity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2105
+    },
+    {
+      "id": "octanove10:incumbent",
+      "word": "incumbent",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1602
+    },
+    {
+      "id": "octanove10:indignant",
+      "word": "indignant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1128
+    },
+    {
+      "id": "octanove10:indiscrete",
+      "word": "indiscrete",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1965
+    },
+    {
+      "id": "octanove10:indiscretion",
+      "word": "indiscretion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1966
+    },
+    {
+      "id": "octanove10:individualism",
+      "word": "individualism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1133
+    },
+    {
+      "id": "octanove10:indolent",
+      "word": "indolent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1535
+    },
+    {
+      "id": "octanove10:induce",
+      "word": "induce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1483
+    },
+    {
+      "id": "octanove10:inducement",
+      "word": "inducement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1484
+    },
+    {
+      "id": "octanove10:indulgence",
+      "word": "indulgence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1200
+    },
+    {
+      "id": "octanove10:infallible",
+      "word": "infallible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1690
+    },
+    {
+      "id": "octanove10:infernal",
+      "word": "infernal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1849
+    },
+    {
+      "id": "octanove10:informant",
+      "word": "informant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1290
+    },
+    {
+      "id": "octanove10:ingenuous",
+      "word": "ingenuous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2120
+    },
+    {
+      "id": "octanove10:ingrate",
+      "word": "ingrate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1793
+    },
+    {
+      "id": "octanove10:innuendo",
+      "word": "innuendo",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1482
+    },
+    {
+      "id": "octanove10:inscrutable",
+      "word": "inscrutable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1197
+    },
+    {
+      "id": "octanove10:instantaneous",
+      "word": "instantaneous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2039
+    },
+    {
+      "id": "octanove10:instantaneously",
+      "word": "instantaneously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 2040
+    },
+    {
+      "id": "octanove10:integration",
+      "word": "integration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1418
+    },
+    {
+      "id": "octanove10:interlude",
+      "word": "interlude",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1500
+    },
+    {
+      "id": "octanove10:intermediary",
+      "word": "intermediary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1406
+    },
+    {
+      "id": "octanove10:interrogate",
+      "word": "interrogate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1658
+    },
+    {
+      "id": "octanove10:interrogative",
+      "word": "interrogative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1660
+    },
+    {
+      "id": "octanove10:intersperse",
+      "word": "intersperse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1980
+    },
+    {
+      "id": "octanove10:interweave",
+      "word": "interweave",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1963
+    },
+    {
+      "id": "octanove10:intrinsic",
+      "word": "intrinsic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1575
+    },
+    {
+      "id": "octanove10:ironic",
+      "word": "ironic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1174
+    },
+    {
+      "id": "octanove10:jargon",
+      "word": "jargon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1411
+    },
+    {
+      "id": "octanove10:kinetic",
+      "word": "kinetic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1639
+    },
+    {
+      "id": "octanove10:knack",
+      "word": "knack",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1946
+    },
+    {
+      "id": "octanove10:lament",
+      "word": "lament",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1486
+    },
+    {
+      "id": "octanove10:laryngitis",
+      "word": "laryngitis",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1932
+    },
+    {
+      "id": "octanove10:lassitude",
+      "word": "lassitude",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1613
+    },
+    {
+      "id": "octanove10:laud",
+      "word": "laud",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1203
+    },
+    {
+      "id": "octanove10:laudatory",
+      "word": "laudatory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1202
+    },
+    {
+      "id": "octanove10:leaven",
+      "word": "leaven",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1959
+    },
+    {
+      "id": "octanove10:locomotion",
+      "word": "locomotion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1132
+    },
+    {
+      "id": "octanove10:locomotive",
+      "word": "locomotive",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1131
+    },
+    {
+      "id": "octanove10:loiter",
+      "word": "loiter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1573
+    },
+    {
+      "id": "octanove10:lurid",
+      "word": "lurid",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1672
+    },
+    {
+      "id": "octanove10:maelstrom",
+      "word": "maelstrom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1950
+    },
+    {
+      "id": "octanove10:maggot",
+      "word": "maggot",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1376
+    },
+    {
+      "id": "octanove10:magnanimity",
+      "word": "magnanimity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1721
+    },
+    {
+      "id": "octanove10:magnanimous",
+      "word": "magnanimous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1719
+    },
+    {
+      "id": "octanove10:magnate",
+      "word": "magnate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1718
+    },
+    {
+      "id": "octanove10:malice",
+      "word": "malice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1752
+    },
+    {
+      "id": "octanove10:malicious",
+      "word": "malicious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1753
+    },
+    {
+      "id": "octanove10:maliciously",
+      "word": "maliciously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1754
+    },
+    {
+      "id": "octanove10:malleability",
+      "word": "malleability",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1283
+    },
+    {
+      "id": "octanove10:mangle",
+      "word": "mangle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1587
+    },
+    {
+      "id": "octanove10:mariner",
+      "word": "mariner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1382
+    },
+    {
+      "id": "octanove10:marketability",
+      "word": "marketability",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2079
+    },
+    {
+      "id": "octanove10:materialism",
+      "word": "materialism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1181
+    },
+    {
+      "id": "octanove10:materialistic",
+      "word": "materialistic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1182
+    },
+    {
+      "id": "octanove10:materialize",
+      "word": "materialize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1326
+    },
+    {
+      "id": "octanove10:maverick",
+      "word": "maverick",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1757
+    },
+    {
+      "id": "octanove10:meager",
+      "word": "meager",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1698
+    },
+    {
+      "id": "octanove10:mediate",
+      "word": "mediate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1642
+    },
+    {
+      "id": "octanove10:mediocrity",
+      "word": "mediocrity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1650
+    },
+    {
+      "id": "octanove10:melancholy",
+      "word": "melancholy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1567
+    },
+    {
+      "id": "octanove10:melodious",
+      "word": "melodious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1562
+    },
+    {
+      "id": "octanove10:melodiously",
+      "word": "melodiously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1563
+    },
+    {
+      "id": "octanove10:menace",
+      "word": "menace",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1625
+    },
+    {
+      "id": "octanove10:menacingly",
+      "word": "menacingly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1627
+    },
+    {
+      "id": "octanove10:menial",
+      "word": "menial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1344
+    },
+    {
+      "id": "octanove10:mercantile",
+      "word": "mercantile",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2063
+    },
+    {
+      "id": "octanove10:mercenary",
+      "word": "mercenary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1677
+    },
+    {
+      "id": "octanove10:mesh",
+      "word": "mesh",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1456
+    },
+    {
+      "id": "octanove10:mesmeric",
+      "word": "mesmeric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1607
+    },
+    {
+      "id": "octanove10:metalled",
+      "word": "metalled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1141
+    },
+    {
+      "id": "octanove10:meteorological",
+      "word": "meteorological",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1570
+    },
+    {
+      "id": "octanove10:methodological",
+      "word": "methodological",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1304
+    },
+    {
+      "id": "octanove10:methodology",
+      "word": "methodology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1303
+    },
+    {
+      "id": "octanove10:meticulous",
+      "word": "meticulous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1820
+    },
+    {
+      "id": "octanove10:meticulously",
+      "word": "meticulously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1821
+    },
+    {
+      "id": "octanove10:midwifery",
+      "word": "midwifery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1276
+    },
+    {
+      "id": "octanove10:milieu",
+      "word": "milieu",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2093
+    },
+    {
+      "id": "octanove10:minefield",
+      "word": "minefield",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1426
+    },
+    {
+      "id": "octanove10:misdemeanor",
+      "word": "misdemeanor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1941
+    },
+    {
+      "id": "octanove10:modernism",
+      "word": "modernism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1311
+    },
+    {
+      "id": "octanove10:moor",
+      "word": "moor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1780
+    },
+    {
+      "id": "octanove10:moribund",
+      "word": "moribund",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1464
+    },
+    {
+      "id": "octanove10:mottled",
+      "word": "mottled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1833
+    },
+    {
+      "id": "octanove10:munificence",
+      "word": "munificence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1544
+    },
+    {
+      "id": "octanove10:muscle-bound",
+      "word": "muscle-bound",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1359
+    },
+    {
+      "id": "octanove10:mutinously",
+      "word": "mutinously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1594
+    },
+    {
+      "id": "octanove10:myriad",
+      "word": "myriad",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2076
+    },
+    {
+      "id": "octanove10:mystique",
+      "word": "mystique",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1977
+    },
+    {
+      "id": "octanove10:nascent",
+      "word": "nascent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1996
+    },
+    {
+      "id": "octanove10:nigh",
+      "word": "nigh",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1631
+    },
+    {
+      "id": "octanove10:nonchalant",
+      "word": "nonchalant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1605
+    },
+    {
+      "id": "octanove10:nonchalantly",
+      "word": "nonchalantly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1606
+    },
+    {
+      "id": "octanove10:nostalgia",
+      "word": "nostalgia",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1293
+    },
+    {
+      "id": "octanove10:nostalgic",
+      "word": "nostalgic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1294
+    },
+    {
+      "id": "octanove10:notoriously",
+      "word": "notoriously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1342
+    },
+    {
+      "id": "octanove10:oblique",
+      "word": "oblique",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1143
+    },
+    {
+      "id": "octanove10:octogenarian",
+      "word": "octogenarian",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1256
+    },
+    {
+      "id": "octanove10:opacity",
+      "word": "opacity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1666
+    },
+    {
+      "id": "octanove10:opulence",
+      "word": "opulence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1801
+    },
+    {
+      "id": "octanove10:opulent",
+      "word": "opulent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1800
+    },
+    {
+      "id": "octanove10:ordain",
+      "word": "ordain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1898
+    },
+    {
+      "id": "octanove10:ore",
+      "word": "ore",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1284
+    },
+    {
+      "id": "octanove10:ornate",
+      "word": "ornate",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1310
+    },
+    {
+      "id": "octanove10:ostensibly",
+      "word": "ostensibly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1620
+    },
+    {
+      "id": "octanove10:outmoded",
+      "word": "outmoded",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1338
+    },
+    {
+      "id": "octanove10:overlay",
+      "word": "overlay",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1292
+    },
+    {
+      "id": "octanove10:painstaking",
+      "word": "painstaking",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1453
+    },
+    {
+      "id": "octanove10:palate",
+      "word": "palate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1377
+    },
+    {
+      "id": "octanove10:parable",
+      "word": "parable",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1170
+    },
+    {
+      "id": "octanove10:parameter",
+      "word": "parameter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1656
+    },
+    {
+      "id": "octanove10:paramount",
+      "word": "paramount",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2055
+    },
+    {
+      "id": "octanove10:parasitic",
+      "word": "parasitic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1160
+    },
+    {
+      "id": "octanove10:patchy",
+      "word": "patchy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1893
+    },
+    {
+      "id": "octanove10:patronize",
+      "word": "patronize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2097
+    },
+    {
+      "id": "octanove10:patronizing",
+      "word": "patronizing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2098
+    },
+    {
+      "id": "octanove10:pedestal",
+      "word": "pedestal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1670
+    },
+    {
+      "id": "octanove10:perversity",
+      "word": "perversity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1663
+    },
+    {
+      "id": "octanove10:philanthropic",
+      "word": "philanthropic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1472
+    },
+    {
+      "id": "octanove10:philanthropist",
+      "word": "philanthropist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1471
+    },
+    {
+      "id": "octanove10:philanthropy",
+      "word": "philanthropy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1470
+    },
+    {
+      "id": "octanove10:philistine",
+      "word": "philistine",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1481
+    },
+    {
+      "id": "octanove10:plumage",
+      "word": "plumage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1161
+    },
+    {
+      "id": "octanove10:plume",
+      "word": "plume",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1853
+    },
+    {
+      "id": "octanove10:plutocrat",
+      "word": "plutocrat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1803
+    },
+    {
+      "id": "octanove10:polysyllabic",
+      "word": "polysyllabic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1678
+    },
+    {
+      "id": "octanove10:portraiture",
+      "word": "portraiture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1237
+    },
+    {
+      "id": "octanove10:posit",
+      "word": "posit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1363
+    },
+    {
+      "id": "octanove10:posterity",
+      "word": "posterity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1545
+    },
+    {
+      "id": "octanove10:practitioner",
+      "word": "practitioner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1683
+    },
+    {
+      "id": "octanove10:precocious",
+      "word": "precocious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1474
+    },
+    {
+      "id": "octanove10:predilection",
+      "word": "predilection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1165
+    },
+    {
+      "id": "octanove10:preeminent",
+      "word": "preeminent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1389
+    },
+    {
+      "id": "octanove10:preoccupation",
+      "word": "preoccupation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1398
+    },
+    {
+      "id": "octanove10:preservationist",
+      "word": "preservationist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1881
+    },
+    {
+      "id": "octanove10:presuppose",
+      "word": "presuppose",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1312
+    },
+    {
+      "id": "octanove10:presupposition",
+      "word": "presupposition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1313
+    },
+    {
+      "id": "octanove10:primeval",
+      "word": "primeval",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1223
+    },
+    {
+      "id": "octanove10:prise",
+      "word": "prise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1794
+    },
+    {
+      "id": "octanove10:procedural",
+      "word": "procedural",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1517
+    },
+    {
+      "id": "octanove10:profitability",
+      "word": "profitability",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1410
+    },
+    {
+      "id": "octanove10:proliferation",
+      "word": "proliferation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1268
+    },
+    {
+      "id": "octanove10:prolong",
+      "word": "prolong",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1400
+    },
+    {
+      "id": "octanove10:promenade",
+      "word": "promenade",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1286
+    },
+    {
+      "id": "octanove10:proportional",
+      "word": "proportional",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1306
+    },
+    {
+      "id": "octanove10:proportionally",
+      "word": "proportionally",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1307
+    },
+    {
+      "id": "octanove10:proposition",
+      "word": "proposition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1495
+    },
+    {
+      "id": "octanove10:proprietary",
+      "word": "proprietary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1521
+    },
+    {
+      "id": "octanove10:proscription",
+      "word": "proscription",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1788
+    },
+    {
+      "id": "octanove10:prostrate",
+      "word": "prostrate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1351
+    },
+    {
+      "id": "octanove10:protrude",
+      "word": "protrude",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1514
+    },
+    {
+      "id": "octanove10:protrusion",
+      "word": "protrusion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1515
+    },
+    {
+      "id": "octanove10:proverbial",
+      "word": "proverbial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2038
+    },
+    {
+      "id": "octanove10:provocation",
+      "word": "provocation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1236
+    },
+    {
+      "id": "octanove10:proximal",
+      "word": "proximal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1926
+    },
+    {
+      "id": "octanove10:prurience",
+      "word": "prurience",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2015
+    },
+    {
+      "id": "octanove10:punitive",
+      "word": "punitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2090
+    },
+    {
+      "id": "octanove10:pyre",
+      "word": "pyre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1909
+    },
+    {
+      "id": "octanove10:qualitative",
+      "word": "qualitative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1516
+    },
+    {
+      "id": "octanove10:qualm",
+      "word": "qualm",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1882
+    },
+    {
+      "id": "octanove10:rapture",
+      "word": "rapture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2024
+    },
+    {
+      "id": "octanove10:rapturous",
+      "word": "rapturous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2025
+    },
+    {
+      "id": "octanove10:rebound",
+      "word": "rebound",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1493
+    },
+    {
+      "id": "octanove10:rebuke",
+      "word": "rebuke",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1914
+    },
+    {
+      "id": "octanove10:recitation",
+      "word": "recitation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1187
+    },
+    {
+      "id": "octanove10:recluse",
+      "word": "recluse",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1139
+    },
+    {
+      "id": "octanove10:reconciliation",
+      "word": "reconciliation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1857
+    },
+    {
+      "id": "octanove10:recourse",
+      "word": "recourse",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1669
+    },
+    {
+      "id": "octanove10:recumbent",
+      "word": "recumbent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1604
+    },
+    {
+      "id": "octanove10:recuperate",
+      "word": "recuperate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1503
+    },
+    {
+      "id": "octanove10:recuperation",
+      "word": "recuperation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1504
+    },
+    {
+      "id": "octanove10:redundancy",
+      "word": "redundancy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1731
+    },
+    {
+      "id": "octanove10:regulatory",
+      "word": "regulatory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1319
+    },
+    {
+      "id": "octanove10:reissue",
+      "word": "reissue",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1776
+    },
+    {
+      "id": "octanove10:relegate",
+      "word": "relegate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1371
+    },
+    {
+      "id": "octanove10:remittance",
+      "word": "remittance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1668
+    },
+    {
+      "id": "octanove10:remonstrance",
+      "word": "remonstrance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2130
+    },
+    {
+      "id": "octanove10:remorseful",
+      "word": "remorseful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2128
+    },
+    {
+      "id": "octanove10:reproach",
+      "word": "reproach",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1583
+    },
+    {
+      "id": "octanove10:reptilian",
+      "word": "reptilian",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1596
+    },
+    {
+      "id": "octanove10:requisition",
+      "word": "requisition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1195
+    },
+    {
+      "id": "octanove10:residual",
+      "word": "residual",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1299
+    },
+    {
+      "id": "octanove10:residue",
+      "word": "residue",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1298
+    },
+    {
+      "id": "octanove10:resound",
+      "word": "resound",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1897
+    },
+    {
+      "id": "octanove10:resuscitate",
+      "word": "resuscitate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1888
+    },
+    {
+      "id": "octanove10:resuscitation",
+      "word": "resuscitation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1889
+    },
+    {
+      "id": "octanove10:retrospection",
+      "word": "retrospection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1438
+    },
+    {
+      "id": "octanove10:retrospective",
+      "word": "retrospective",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1437
+    },
+    {
+      "id": "octanove10:revelatory",
+      "word": "revelatory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1350
+    },
+    {
+      "id": "octanove10:reverberate",
+      "word": "reverberate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2119
+    },
+    {
+      "id": "octanove10:reverberation",
+      "word": "reverberation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2118
+    },
+    {
+      "id": "octanove10:revile",
+      "word": "revile",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1696
+    },
+    {
+      "id": "octanove10:revulsion",
+      "word": "revulsion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1697
+    },
+    {
+      "id": "octanove10:rhetorical",
+      "word": "rhetorical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1811
+    },
+    {
+      "id": "octanove10:rickety",
+      "word": "rickety",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1795
+    },
+    {
+      "id": "octanove10:rife",
+      "word": "rife",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1675
+    },
+    {
+      "id": "octanove10:rift",
+      "word": "rift",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1383
+    },
+    {
+      "id": "octanove10:romper",
+      "word": "romper",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1819
+    },
+    {
+      "id": "octanove10:ruminant",
+      "word": "ruminant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2044
+    },
+    {
+      "id": "octanove10:ruminate",
+      "word": "ruminate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2042
+    },
+    {
+      "id": "octanove10:rumination",
+      "word": "rumination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2043
+    },
+    {
+      "id": "octanove10:ruminative",
+      "word": "ruminative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2045
+    },
+    {
+      "id": "octanove10:scholarly",
+      "word": "scholarly",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1877
+    },
+    {
+      "id": "octanove10:scroll",
+      "word": "scroll",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1954
+    },
+    {
+      "id": "octanove10:secular",
+      "word": "secular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1724
+    },
+    {
+      "id": "octanove10:secularly",
+      "word": "secularly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1725
+    },
+    {
+      "id": "octanove10:seismic",
+      "word": "seismic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1507
+    },
+    {
+      "id": "octanove10:self-aggrandizement",
+      "word": "self-aggrandizement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2094
+    },
+    {
+      "id": "octanove10:shamble",
+      "word": "shamble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1145
+    },
+    {
+      "id": "octanove10:sheaf",
+      "word": "sheaf",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1247
+    },
+    {
+      "id": "octanove10:shimmer",
+      "word": "shimmer",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1825
+    },
+    {
+      "id": "octanove10:skew",
+      "word": "skew",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2064
+    },
+    {
+      "id": "octanove10:slab",
+      "word": "slab",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1435
+    },
+    {
+      "id": "octanove10:slither",
+      "word": "slither",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1510
+    },
+    {
+      "id": "octanove10:smattering",
+      "word": "smattering",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1997
+    },
+    {
+      "id": "octanove10:snobbery",
+      "word": "snobbery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1764
+    },
+    {
+      "id": "octanove10:solicit",
+      "word": "solicit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1468
+    },
+    {
+      "id": "octanove10:soliloquize",
+      "word": "soliloquize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1592
+    },
+    {
+      "id": "octanove10:solipsism",
+      "word": "solipsism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1591
+    },
+    {
+      "id": "octanove10:solitary",
+      "word": "solitary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1781
+    },
+    {
+      "id": "octanove10:spatial",
+      "word": "spatial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1414
+    },
+    {
+      "id": "octanove10:splinter",
+      "word": "splinter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1582
+    },
+    {
+      "id": "octanove10:spontaneity",
+      "word": "spontaneity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1235
+    },
+    {
+      "id": "octanove10:spurious",
+      "word": "spurious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1250
+    },
+    {
+      "id": "octanove10:squirm",
+      "word": "squirm",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2056
+    },
+    {
+      "id": "octanove10:stabilize",
+      "word": "stabilize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1332
+    },
+    {
+      "id": "octanove10:standing",
+      "word": "standing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1936
+    },
+    {
+      "id": "octanove10:stipulation",
+      "word": "stipulation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1216
+    },
+    {
+      "id": "octanove10:stoicism",
+      "word": "stoicism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1137
+    },
+    {
+      "id": "octanove10:stringent",
+      "word": "stringent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1933
+    },
+    {
+      "id": "octanove10:stultify",
+      "word": "stultify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1608
+    },
+    {
+      "id": "octanove10:subsidize",
+      "word": "subsidize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2068
+    },
+    {
+      "id": "octanove10:subsidy",
+      "word": "subsidy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2067
+    },
+    {
+      "id": "octanove10:substantiate",
+      "word": "substantiate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1196
+    },
+    {
+      "id": "octanove10:succumb",
+      "word": "succumb",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1372
+    },
+    {
+      "id": "octanove10:suffuse",
+      "word": "suffuse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1907
+    },
+    {
+      "id": "octanove10:sulphur",
+      "word": "sulphur",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1777
+    },
+    {
+      "id": "octanove10:superfluous",
+      "word": "superfluous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1680
+    },
+    {
+      "id": "octanove10:surreptitious",
+      "word": "surreptitious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2085
+    },
+    {
+      "id": "octanove10:swivel",
+      "word": "swivel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1828
+    },
+    {
+      "id": "octanove10:syllabic",
+      "word": "syllabic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1679
+    },
+    {
+      "id": "octanove10:synthesis",
+      "word": "synthesis",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2124
+    },
+    {
+      "id": "octanove10:tacitly",
+      "word": "tacitly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 2082
+    },
+    {
+      "id": "octanove10:taciturn",
+      "word": "taciturn",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2083
+    },
+    {
+      "id": "octanove10:tactic",
+      "word": "tactic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1442
+    },
+    {
+      "id": "octanove10:tactical",
+      "word": "tactical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1443
+    },
+    {
+      "id": "octanove10:tantalize",
+      "word": "tantalize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1948
+    },
+    {
+      "id": "octanove10:tenacious",
+      "word": "tenacious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1225
+    },
+    {
+      "id": "octanove10:tenacity",
+      "word": "tenacity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1224
+    },
+    {
+      "id": "octanove10:testimonial",
+      "word": "testimonial",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1287
+    },
+    {
+      "id": "octanove10:tetchy",
+      "word": "tetchy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2016
+    },
+    {
+      "id": "octanove10:timidity",
+      "word": "timidity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1117
+    },
+    {
+      "id": "octanove10:topographical",
+      "word": "topographical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1745
+    },
+    {
+      "id": "octanove10:topography",
+      "word": "topography",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1744
+    },
+    {
+      "id": "octanove10:topple",
+      "word": "topple",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1574
+    },
+    {
+      "id": "octanove10:torrential",
+      "word": "torrential",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1943
+    },
+    {
+      "id": "octanove10:tranquilize",
+      "word": "tranquilize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 2137
+    },
+    {
+      "id": "octanove10:transmitter",
+      "word": "transmitter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1318
+    },
+    {
+      "id": "octanove10:treacherous",
+      "word": "treacherous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1373
+    },
+    {
+      "id": "octanove10:treachery",
+      "word": "treachery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1375
+    },
+    {
+      "id": "octanove10:truism",
+      "word": "truism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 2012
+    },
+    {
+      "id": "octanove10:turret",
+      "word": "turret",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1761
+    },
+    {
+      "id": "octanove10:uncanny",
+      "word": "uncanny",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1441
+    },
+    {
+      "id": "octanove10:unequivocal",
+      "word": "unequivocal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1233
+    },
+    {
+      "id": "octanove10:utilitarian",
+      "word": "utilitarian",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1162
+    },
+    {
+      "id": "octanove10:utilization",
+      "word": "utilization",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1232
+    },
+    {
+      "id": "octanove10:vandal",
+      "word": "vandal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1928
+    },
+    {
+      "id": "octanove10:vandalize",
+      "word": "vandalize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1927
+    },
+    {
+      "id": "octanove10:venomous",
+      "word": "venomous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1546
+    },
+    {
+      "id": "octanove10:verily",
+      "word": "verily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 1983
+    },
+    {
+      "id": "octanove10:verisimilitude",
+      "word": "verisimilitude",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1985
+    },
+    {
+      "id": "octanove10:veritable",
+      "word": "veritable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1984
+    },
+    {
+      "id": "octanove10:vermin",
+      "word": "vermin",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1707
+    },
+    {
+      "id": "octanove10:vindicate",
+      "word": "vindicate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1168
+    },
+    {
+      "id": "octanove10:vindication",
+      "word": "vindication",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1169
+    },
+    {
+      "id": "octanove10:virtuosity",
+      "word": "virtuosity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1992
+    },
+    {
+      "id": "octanove10:virtuoso",
+      "word": "virtuoso",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1991
+    },
+    {
+      "id": "octanove10:vocational",
+      "word": "vocational",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1413
+    },
+    {
+      "id": "octanove10:vortex",
+      "word": "vortex",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1951
+    },
+    {
+      "id": "octanove10:wallow",
+      "word": "wallow",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1610
+    },
+    {
+      "id": "octanove10:wane",
+      "word": "wane",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1617
+    },
+    {
+      "id": "octanove10:wayward",
+      "word": "wayward",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 1532
+    },
+    {
+      "id": "octanove10:whir",
+      "word": "whir",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "sourceRow": 1146
+    },
+    {
+      "id": "octanove10:whirlwind",
+      "word": "whirlwind",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1722
+    },
+    {
+      "id": "octanove10:wholly",
+      "word": "wholly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 2127
+    },
+    {
+      "id": "octanove10:wistful",
+      "word": "wistful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "sourceRow": 2061
+    },
+    {
+      "id": "octanove10:wistfully",
+      "word": "wistfully",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "C2",
+      "sourceRow": 2062
+    },
+    {
+      "id": "octanove10:zoologist",
+      "word": "zoologist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1153
+    },
+    {
+      "id": "octanove10:zoology",
+      "word": "zoology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "sourceRow": 1154
+    }
+  ]
+}

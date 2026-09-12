@@ -212,6 +212,24 @@ void main() {
       tester,
       'adventure_flashcard_revealed_narrow_text_200_reduced_motion.png',
     );
+    final next = find.byKey(
+      const ValueKey<String>('mixed-review-flashcard-continue'),
+    );
+    await Scrollable.ensureVisible(tester.element(next), alignment: 0.5);
+    await tester.pump();
+    expect(next.hitTestable(), findsOneWidget);
+    expect(tester.getRect(next).bottom, lessThanOrEqualTo(_narrowPhone.height));
+    expect(tester.widget<FilledButton>(next).onPressed, isNotNull);
+    await tester.tap(next);
+    await _pumpUntil(
+      tester,
+      () => find
+          .byKey(const ValueKey<String>('mixed-review-next'))
+          .evaluate()
+          .isNotEmpty,
+    );
+    expect(find.text('ทบทวนคำนี้แล้ว ไปต่อได้เลย'), findsOneWidget);
+    await _goNext(tester, expectedPrompt: 'สนามบิน');
   });
 }
 

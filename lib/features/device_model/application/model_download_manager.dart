@@ -365,46 +365,53 @@ final class ModelDownloadManager {
       if (cancellation.isCancelled || _disposed) {
         throw const ModelLifecycleException(ModelFailureCode.cancelled);
       }
-      final response = await source.open(
-        manifest.sourceUri,
-        start: downloaded,
-        cancellation: cancellation,
-      );
-      final isResume =
-          downloaded > 0 &&
-          response.statusCode == 206 &&
-          response.contentRangeStart == downloaded;
-      final isRestart = response.statusCode == 200;
-      if (!isResume && !isRestart) {
-        throw const ModelLifecycleException(ModelFailureCode.invalidResponse);
-      }
-      if (isRestart) {
-        downloaded = 0;
-      }
-      final sink = partial.openWrite(
-        mode: isResume ? FileMode.append : FileMode.write,
-      );
-      try {
-        await for (final chunk in response.bytes) {
-          sink.add(chunk);
-          downloaded += chunk.length;
-          if (downloaded > manifest.expectedBytes) {
-            throw const ModelLifecycleException(ModelFailureCode.sizeMismatch);
-          }
-          record = record.copyWith(
-            downloadedBytes: downloaded,
-            updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
-          );
-          await repository.save(record);
-          if (cancellation.isCancelled || _disposed) {
-            throw const ModelLifecycleException(ModelFailureCode.cancelled);
-          }
+      // A crash may leave all bytes in the partial file before verification
+      // or rename. Do not issue an EOF range request; use the same SHA and
+      // interpreter checks below before allowing activation.
+      if (downloaded < manifest.expectedBytes) {
+        final response = await source.open(
+          manifest.sourceUri,
+          start: downloaded,
+          cancellation: cancellation,
+        );
+        final isResume =
+            downloaded > 0 &&
+            response.statusCode == 206 &&
+            response.contentRangeStart == downloaded;
+        final isRestart = response.statusCode == 200;
+        if (!isResume && !isRestart) {
+          throw const ModelLifecycleException(ModelFailureCode.invalidResponse);
         }
-        await sink.flush();
-      } on FileSystemException {
-        throw const ModelLifecycleException(ModelFailureCode.writeFailed);
-      } finally {
-        await sink.close();
+        if (isRestart) {
+          downloaded = 0;
+        }
+        final sink = partial.openWrite(
+          mode: isResume ? FileMode.append : FileMode.write,
+        );
+        try {
+          await for (final chunk in response.bytes) {
+            sink.add(chunk);
+            downloaded += chunk.length;
+            if (downloaded > manifest.expectedBytes) {
+              throw const ModelLifecycleException(
+                ModelFailureCode.sizeMismatch,
+              );
+            }
+            record = record.copyWith(
+              downloadedBytes: downloaded,
+              updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
+            );
+            await repository.save(record);
+            if (cancellation.isCancelled || _disposed) {
+              throw const ModelLifecycleException(ModelFailureCode.cancelled);
+            }
+          }
+          await sink.flush();
+        } on FileSystemException {
+          throw const ModelLifecycleException(ModelFailureCode.writeFailed);
+        } finally {
+          await sink.close();
+        }
       }
 
       if (downloaded != manifest.expectedBytes) {
@@ -431,8 +438,14 @@ final class ModelDownloadManager {
           ModelFailureCode.interpreterRejected,
         );
       }
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
       if (await finalFile.exists()) {
         await finalFile.delete();
+      }
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
       }
       await partial.rename(finalFile.path);
       record = record.copyWith(

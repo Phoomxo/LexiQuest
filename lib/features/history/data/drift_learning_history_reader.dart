@@ -480,12 +480,32 @@ SELECT * FROM candidates
     final packIdentity = configuration.packIdentity;
     if (configuration.contentIdentity != identity ||
         configuration.ownerId != session.ownerId ||
-        configuration.mode.id != session.activityType ||
+        !_matchesConfiguredActivity(session.activityType, configuration.mode) ||
         (packIdentity != null &&
             packIdentity.type != ContentType.learningPack)) {
       throw StateError('history session configuration does not match');
     }
     return configuration;
+  }
+
+  bool _matchesConfiguredActivity(String activityType, LessonMode mode) {
+    if (activityType == mode.id) return true;
+    // startQuiz is the established storage path for these configured native
+    // vocabulary modes. The pinned configuration supplies their display mode;
+    // its identity/owner and all canonical answer/event checks still apply.
+    return activityType == 'quiz' &&
+        const {
+          LessonMode.meaningQuiz,
+          LessonMode.typedRecall,
+          LessonMode.definitionQuiz,
+          LessonMode.cloze,
+          LessonMode.dictation,
+          LessonMode.speaking,
+          LessonMode.shadowing,
+          LessonMode.cefrReading,
+          LessonMode.sentenceScramble,
+          LessonMode.wordScramble,
+        }.contains(mode);
   }
 
   LessonMode? _modeForActivityType(String activityType) {

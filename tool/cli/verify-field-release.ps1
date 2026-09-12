@@ -35,14 +35,14 @@ if (-not (Test-Path -LiteralPath $resolvedEvidence -PathType Leaf)) {
 }
 
 $evidence = Get-Content -LiteralPath $resolvedEvidence -Raw -Encoding utf8 |
-    ConvertFrom-Json
+    ConvertFrom-LexiQuestEvidenceJson
 $releaseManifestPath = Join-Path $resolvedPackage 'release-manifest.json'
 if (-not (Test-Path -LiteralPath $releaseManifestPath -PathType Leaf)) {
     throw "Packaged release manifest is missing: $releaseManifestPath"
 }
 $releaseManifest =
     Get-Content -LiteralPath $releaseManifestPath -Raw -Encoding utf8 |
-        ConvertFrom-Json
+        ConvertFrom-LexiQuestEvidenceJson
 $manifestSourceCommit = [string]$releaseManifest.sourceCommit
 if ($manifestSourceCommit -cnotmatch '^[0-9a-f]{40}$') {
     throw 'release-manifest.json sourceCommit is invalid.'

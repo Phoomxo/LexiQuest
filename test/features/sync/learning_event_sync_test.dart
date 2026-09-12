@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
@@ -22,6 +23,8 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_policy_roll
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/srs_operation_identity.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -31,6 +34,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 
 const _declaredEvidenceResearchCatalog = ResearchProtocolModeCatalog(
   mappings: <ResearchProtocolModeMapping>[
@@ -46,6 +50,7 @@ const _declaredEvidenceResearchCatalog = ResearchProtocolModeCatalog(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late AppDatabase database;
   late DriftSyncStore store;
   final now = DateTime.utc(2026, 7, 30, 10);
@@ -1146,6 +1151,156 @@ void main() {
             ))
             .get(),
         isEmpty,
+      );
+    },
+  );
+
+  test(
+    'pulled learner attempt restores against the exact packaged starter word',
+    () async {
+      await _provisionStarterCatalog(database);
+      final starter = PackagedStarterCatalog.words.first;
+      final entity = SyncEntity(
+        collection: SyncCollection.attempts,
+        entityId: 'attempt-packaged-remote',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: now,
+        serverUpdatedAtUtc: now.add(const Duration(seconds: 1)),
+        payload: <String, Object?>{
+          'sessionId': 'session-packaged-remote',
+          'wordId': starter.id,
+          'promptMode': 'typedRecall',
+          'isCorrect': true,
+          'responseTimeMs': 300,
+          'attemptNumber': 1,
+          'occurredAtUtcMs': now.millisecondsSinceEpoch,
+          'providerProvenance': 'keyboard|local|v1',
+        },
+      );
+
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: PullPage(
+          changes: [entity],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+            documentId: entity.entityId,
+          ),
+          hasMore: false,
+        ),
+      );
+
+      final attempt = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals(entity.entityId))).getSingle();
+      expect(attempt.ownerId, 'owner-1');
+      expect(attempt.wordId, starter.id);
+      final srs =
+          await (database.select(database.srsStates)..where(
+                (row) =>
+                    row.ownerId.equals('owner-1') &
+                    row.wordId.equals(starter.id),
+              ))
+              .getSingle();
+      expect(srs.id, 'srs:owner-1:${starter.id}');
+      expect(
+        await store.readCheckpoint('owner-1', SyncCollection.attempts),
+        isNotNull,
+      );
+    },
+  );
+
+  test(
+    'pulled attempt rejects corrupt packaged and foreign private word references',
+    () async {
+      await _provisionStarterCatalog(database);
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(id: 'owner-2', createdAtUtcMs: 2),
+          );
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-owner-2',
+              ownerId: 'owner-2',
+              name: 'Private',
+              normalizedName: 'private',
+              createdAtUtcMs: 2,
+              updatedAtUtcMs: 2,
+            ),
+          );
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'word-owner-2-private',
+              ownerId: 'owner-2',
+              categoryId: 'category-owner-2',
+              spelling: 'secret',
+              normalizedSpelling: 'secret',
+              meaning: 'ส่วนตัว',
+              normalizedMeaning: 'ส่วนตัว',
+              partOfSpeech: 'noun',
+              createdAtUtcMs: 2,
+              updatedAtUtcMs: 2,
+            ),
+          );
+
+      Future<void> apply(String id, String wordId) {
+        final entity = SyncEntity(
+          collection: SyncCollection.attempts,
+          entityId: id,
+          revision: 1,
+          isDeleted: false,
+          payloadVersion: 1,
+          clientUpdatedAtUtc: now,
+          serverUpdatedAtUtc: now.add(const Duration(seconds: 1)),
+          payload: <String, Object?>{
+            'sessionId': 'session-$id',
+            'wordId': wordId,
+            'promptMode': 'typedRecall',
+            'isCorrect': true,
+            'responseTimeMs': 300,
+            'attemptNumber': 1,
+            'occurredAtUtcMs': now.millisecondsSinceEpoch,
+            'providerProvenance': 'keyboard|local|v1',
+          },
+        );
+        return store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.attempts,
+          page: PullPage(
+            changes: [entity],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+              documentId: entity.entityId,
+            ),
+            hasMore: false,
+          ),
+        );
+      }
+
+      await expectLater(
+        apply('attempt-foreign-private', 'word-owner-2-private'),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      final starter = PackagedStarterCatalog.words.first;
+      await (database.update(database.vocabularyWords)
+            ..where((row) => row.id.equals(starter.id)))
+          .write(const VocabularyWordsCompanion(meaning: Value('tampered')));
+      await expectLater(
+        apply('attempt-corrupt-packaged', starter.id),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(
+        await store.readCheckpoint('owner-1', SyncCollection.attempts),
+        isNull,
       );
     },
   );
@@ -2276,6 +2431,21 @@ void main() {
             previousWarningSetting;
       }
     },
+  );
+}
+
+Future<Uint8List?> _starterAsset(ContentIdentity identity) async {
+  final data = await rootBundle.load(
+    'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+  );
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+}
+
+Future<void> _provisionStarterCatalog(AppDatabase database) {
+  return PackagedStarterCatalog.provision(
+    database,
+    DriftContentManifestRepository(database, loadArtifactBytes: _starterAsset),
+    _starterAsset,
   );
 }
 

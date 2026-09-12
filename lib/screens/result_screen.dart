@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../navigation/app_routes.dart';
+import '../widgets/learning_summary_card.dart';
 
 class ResultScreen extends StatelessWidget {
   final int score;
@@ -13,24 +14,17 @@ class ResultScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
         title: const Text('ได้รับคะแนน'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.blue,
-              child: Text(
-                '$score',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            LearningSummaryCard(
+              title: 'ได้รับคะแนน',
+              value: '$score',
+              icon: Icons.school_outlined,
             ),
-            const SizedBox(height: 30),
-            ElevatedButton(
+            const SizedBox(height: 12),
+            FilledButton(
               onPressed: () {
                 AppNavigator.resetTo<void>(context, AppRoute.home);
               },

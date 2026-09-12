@@ -26,6 +26,31 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'withdraw and reaccept without a permit creates no denial outbox',
+    () async {
+      var clock = DateTime.utc(2026, 7, 30, 12);
+      consent = ResearchConsentUseCases(
+        owners: consent.owners,
+        repository: consent.repository,
+        nowUtc: () => clock,
+      );
+      await consent.accept();
+      clock = clock.add(const Duration(seconds: 1));
+      await consent.withdraw();
+      expect((await consent.load()).accepted, isFalse);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+      clock = clock.add(const Duration(seconds: 1));
+      await consent.accept();
+      expect((await consent.load()).accepted, isTrue);
+      expect(
+        await database.select(database.researchParticipationPermits).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
+
+  test(
     'configured consent version and committed withdrawal notify sync without making a queue error a consent failure',
     () async {
       final states = <bool>[];

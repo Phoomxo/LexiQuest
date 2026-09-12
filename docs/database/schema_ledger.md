@@ -454,7 +454,11 @@ must not open a v23 database.
 ### v24 — Consented Motivation Measurement
 **Reserved:** 2026-09-05
 **Branch:** `feature/adventure-research`
-**Status:** RESERVED — implementation and lifecycle verification in progress
+**Status:** IMPLEMENTED — R1–R6 engineering and lifecycle verification completed; production enrollment/rollout remains disabled pending external authority and authorization
+
+Status reconciled on 2026-09-08 against runtime schema24/48tables and the
+[research engineering closure](../development/2026-09-05-research-engineering-status.md).
+This is a ledger correction, not a new migration or research rollout approval.
 
 The user's 2026-09-05 instruction authorizes implementation of Adventure
 research Tasks 5.1–5.4. Adds exactly `motivation_measurement_runs`,
@@ -470,6 +474,81 @@ Previous binaries must not open a v24 database. Runtime capture still requires
 the configured protocol/instrument and active consented signed permit.
 
 ---
+
+## Review Remediation Reservations
+
+### v25 — Durable quest periods and pinned definition history
+
+**Reserved:** 2026-09-09  
+**Branch:** `codex/pair-matching-pm0-pm8`  
+**Status:** IMPLEMENTED AND VERIFIED LOCALLY — not deployed
+
+Approved remediation R02/R10 extends the existing quest instance authority with
+calendar/legacy period identity, pinned timezone and window/deadline metadata,
+canonical-period selection and a bounded immutable definition snapshot. Replace
+the all-state owner/quest uniqueness with canonical-period and canonical-active
+partial uniqueness. The named inventory remains **48 tables**; no parallel
+learning or reward authority is introduced.
+
+Migration24→25 preserves instance IDs, objective progress/source identities,
+existing receipts and reward keys. A stored matching catalog may backfill
+explicit `migrationCatalog` metadata; unverifiable legacy metadata stays unknown
+and cannot reconstruct missing grants. FK-safe atomic parent rebuild, backfill,
+indexes/guard and foreign_key_check are required, including fresh and interrupted
+upgrade paths. Owner merge preserves history and resolves canonical conflicts
+before rewriting owner IDs. Upgrade is forward-only; older binaries must not open
+a v25 database. No rollout, enrollment or real research upload is authorized.
+
+Design: `docs/superpowers/specs/2026-09-09-quest-repair-details.md`.
+
+Verification: foundation/history109pass; owner/calendar integration190pass;
+schema compatibility814pass and local Firestore131pass; lifecycle216pass.
+Broader migration/quest/identity/account/export/learning/runtime gate1662pass
+with one timezone fixture failure, then the corrected complete Pair file9pass.
+Production remained unchanged during that fixture-only correction. All41
+combined source/test hashes are covered by independent bundle reviews; details
+and exact failed/successful commands remain in the remediation result ledger.
+Whole-system release verification and physical-device acceptance remain pending.
+
+### v26 — Historical research session proof mirror
+
+**Reserved:** 2026-09-09  
+**Branch:** `codex/pair-matching-pm0-pm8`  
+**Status:** IMPLEMENTED AND VERIFIED LOCALLY — schema, lifecycle and proof transport; not deployed
+
+Approved R17 remediation adds `research_session_proofs`, increasing the named
+inventory from48 to49 tables. Immutable Started/Completed phase facts preserve
+canonical session, compact validated Pair purpose/configuration/lineage and
+source permit digest/revision. Imported proofs are historical authorization
+mirrors; they never create resumable learning sessions, answers or rewards.
+
+Rebuild `measurement_opportunities` only to replace its canonical-session FK
+with guarded same-owner canonical-or-live-proof authority; retain its other
+FKs, constraints, indexes, rows and event links. FK-OFF-before-transaction atomic
+migration must preserve all historical rows and reject orphan/corrupt authority.
+Fresh/upgraded guard definitions must match, including protection against removal
+of the final authority and immutable sibling/parent pins. Renewal of a permit
+does not rewrite the proof's original digest/revision. Migration is forward-only.
+
+Exact columns, indexes/trigger identities, obsolete guard retirement and staged
+acceptance are recorded in `docs/superpowers/specs/2026-09-09-sync-repair-details.md`
+and `build/verification/review-remediation-20260909/task-6-stage-b-schema-brief.md`.
+The actual25 empty-database DDL was captured before this reservation; migration
+fixtures must use those frozen literals rather than future generated definitions.
+Owner manifest/deletion registration accompanies schema integration; full proof
+export, upgrade fence, consent suppression, sync/rules and source-to-fresh-device
+acceptance are required before engineering completion. No enrollment, real upload
+or deployment is authorized.
+
+Local schema evidence: root59 focused migration tests passed, including raw25
+retained-data/FK rollback, older raw23, repeated latest-layout migration and fresh
+DDL parity. Current database/legacy research export/owner-upgrade gate251passed;
+BYOK schema-authority contract passed on actual PowerShell5.1. Independent frozen
+seven-file core review passed with matching hashes. This establishes schema26/49
+locally. The subsequent full14-field aliased proof export, strict decode,
+withdrawal suppression and owner lifecycle slice passed11focused/255broad cases
+and independent9-file review. Source preparation passed36focused/413broad;
+receiver22 and full Firestore175 pass, with final integrated Flutter gate pending.
 
 ## Conflict Register
 
@@ -496,6 +575,9 @@ the configured protocol/instrument and active consented signed permit.
 | 2026-08-30 | Recorded forward-only v21 learner preferences, raising the named inventory to 44 tables. | LexiQuest integration |
 | 2026-08-30 | Extended the v21 learner preference row with local-only display controls in v22; named inventory remains 44 tables. | LexiQuest integration |
 | 2026-09-04 | Reserved and implemented v23 for Adventure `home_experience` and Learner Preferences v2; migration, lifecycle, sync, rules and export gates passed. | LexiQuest integration |
+| 2026-09-09 | Reserved and locally verified v25 quest periods and immutable definition history; 48-table inventory retained. No deployment. | LexiQuest review remediation |
+| 2026-09-09 | Reserved v26 historical research session proof mirror and guarded opportunity authority before implementation. | LexiQuest review remediation |
+| 2026-09-10 | Implemented and locally verified v26/49 tables, migration, proof lifecycle and transport (receiver22, Firestore175, integrated Flutter5580 PASS). No deployment or real enrollment. | LexiQuest review remediation |
 
 ---
 

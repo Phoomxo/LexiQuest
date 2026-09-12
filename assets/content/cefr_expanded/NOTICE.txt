@@ -1,0 +1,35 @@
+LexiQuest expanded reference vocabulary, revision 1 — 2026-09-12
+
+Main pack: 5,000 headwords A1–C1. Supplement: 500 C2 headwords.
+The original 3,000 headwords and senses are retained without modification.
+Added: 750 B1, 750 B2, 500 C1, 500 C2. Selection is not frequency-ranked.
+Levels apply to source headwords/POS, not every translated sense or learner.
+Thai meanings and example-sentence quality have not been independently reviewed.
+
+A1–B2: The CEFR-J Wordlist Version 1.5, Yukio Tono, TUFS.
+https://github.com/openlanguageprofiles/olp-en-cefrj
+See cefr_starter/NOTICE.txt for original citation and terms.
+
+C1/C2: Octanove Vocabulary Profile C1/C2 Version 1.0, Octanove Labs,
+distributed by Open Language Profiles:
+https://github.com/openlanguageprofiles/olp-en-cefrj/blob/master/octanove-vocabulary-profile-c1c2-1.0.csv
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International:
+https://creativecommons.org/licenses/by-sa/4.0/
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+The unmodified original is included as octanove-source.csv.
+advanced-profile.json is an adaptation: selected 500 C1/500 C2 headwords,
+normalized JSON representation and stable IDs. LexiQuest contributors license
+their contributions to this adapted level index under CC BY-SA 4.0 as well.
+No endorsement is implied. No additional restrictions are imposed on this index.
+
+The translation lookup advanced-translations.json is independently sourced from
+LEXiTRON 2.0, NECTEC, not translated from Octanove and not relicensed under CC.
+It retains the LEXiTRON terms in cefr_starter/LICENSE.txt and LICENSE-th.txt.
+This product is created by the adaptation of LEXiTRON developed by NECTEC (http://www.nectec.or.th/).
+ผลิตภัณฑ์นี้สร้างสรรค์ขึ้นโดยดัดแปลงมาจากพจนานุกรมเล็กซิตรอนซึ่งพัฒนาโดยศูนย์เทคโนโลยีอิเล็กทรอนิกส์และคอมพิวเตอร์แห่งชาติ (http://www.nectec.or.th)
+The application displays the independently licensed level index and dictionary
+side by side, joined by exact spelling and part of speech.
+
+ชุดหลักและชุดเสริมเป็นคลังอ้างอิง ไม่ใช่หลักสูตรรับรอง CEFR
+คำแปลบางความหมายอาจยากกว่าระดับที่กำกับ headword โปรดเลือกความหมายก่อนนำไปฝึก
+ชุดเสริม C2 จำนวน 500 คำ ไม่ได้หมายความว่าครบคำศัพท์ทั้งหมดของระดับ C2

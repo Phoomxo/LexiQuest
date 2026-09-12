@@ -1,5 +1,6 @@
 const { after, before, beforeEach, describe, it } = require('node:test');
 const { createHash } = require('node:crypto');
+const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -30,16 +31,16 @@ const purchaseId = `${alice}_${productId}`;
 let testEnv;
 
 // Synthetic R4b server-issued authority. Not a production receipt/issuer.
-function researchFixture() {
+function researchFixture({minor = false} = {}) {
   const issuedMs = Date.now() - 60000;
   const expiresMs = issuedMs + 86400000;
   const issuedAtUtc = new Date(issuedMs).toISOString();
   const expiresAtUtc = new Date(expiresMs).toISOString();
   const signed = {
     schema: 'lexiquest.research-participation-permit.v1', id: 'permit:a', ownerId: 'owner:a',
-    participantClass: 'adult', ageBandCode: 'adult', assignmentId: 'assignment:a',
+    participantClass: minor ? 'minor' : 'adult', ageBandCode: minor ? 'minor' : 'adult', assignmentId: 'assignment:a',
     assignedTreatment: 'adventure', consentReceiptId: 'receipt:a',
-    guardianPermissionReceiptRef: null, learnerAssentReceiptRef: null,
+    guardianPermissionReceiptRef: minor ? 'guardian:a' : null, learnerAssentReceiptRef: minor ? 'assent:a' : null,
     protocolId: 'motivation', protocolVersion: '1', issuedAtUtc, expiresAtUtc,
     revokedAtUtc: null, issuerKeyId: 'synthetic', localRevision: 1, cloudRevision: 1, isDeleted: false,
   };
@@ -47,7 +48,7 @@ function researchFixture() {
   const permit = {...signed, payloadSha256: digest, signature: 'synthetic-server-signature'};
   const ref = {permitId: permit.id, permitPayloadSha256: digest, permitRevision: 1};
   const authority = {
-    firebaseUid: alice, ownerId: 'owner:a', active: true, rulesRevision: 'research-measurement-v1-r1',
+    firebaseUid: alice, ownerId: 'owner:a', active: true, rulesRevision: 'research-measurement-v1-r2',
     permitPayloadSha256: digest, permitRevision: 1,
     assignmentId: 'assignment:a', protocolId: 'motivation', protocolVersion: '1', treatment: 'adventure',
     issuedAtUtc, expiresAtUtc, issuedAtUtcMs: issuedMs, expiresAtUtcMs: expiresMs,
@@ -139,6 +140,23 @@ function researchEvent(f, type) {
 }
 
 describe('R4b Research trusted sync boundary', () => {
+  for (const version of [24, 25, 26, 23, 27, '25', '26', 25.5, 26.5]) {
+    it(`research schema transport enforces supported version ${version} (${typeof version})`, async () => {
+      const f = researchFixture();
+      f.run.databaseSchemaVersion = version;
+      f.authority.databaseSchemaVersion = version;
+      f.authority.runPins.databaseSchemaVersion = version;
+      await seedResearch(f);
+      const write = writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run);
+      await ([24, 25, 26].includes(version) ? assertSucceeds(write) : assertFails(write));
+    });
+  }
+  it('research schema transport retains the exact trusted issuer schema pin', async () => {
+    const f = researchFixture();
+    await seedResearch(f);
+    await assertFails(writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun',
+      {...f.run, databaseSchemaVersion: 25}));
+  });
   it('withdrawal marker is one-way owner-authorized and blocks active remote receipts', async () => {
     const f = researchFixture(); await seedResearch(f, {run: true, opportunity: true});
     const marker = doc(authDb(), 'field_users', alice, 'research_withdrawals', f.permit.id);
@@ -301,6 +319,242 @@ describe('R4b Research trusted sync boundary', () => {
       operationKind: 'upsert', baseRevision: 0, resultingRevision: 1, acknowledgedAt: serverTimestamp(),
     }));
   });
+});
+
+// Synthetic consistency-valid plain proof. Server-authority fixtures above are
+// emulator-only; these tests do not claim a real session or issuer signature.
+function sessionProofFixture(f, phase = 1) {
+  const proof = {
+    schema: 'lexiquest.research-session-proof.v1',
+    ownerId: f.run.ownerId, measurementRunId: f.run.id,
+    learningSessionId: 'session:proof', proofRevision: phase,
+    activityType: 'quiz', sessionState: phase === 1 ? 'active' : 'completed',
+    startedAtUtcMs: f.authority.issuedAtUtcMs + 3000,
+    endedAtUtcMs: phase === 1 ? null : f.authority.issuedAtUtcMs + 4000,
+    appVersion: f.run.appVersion, buildId: f.run.buildId,
+    sessionConfigurationIdentity: null, sessionConfigurationJson: null,
+    pairStartOperation: null, pairCheckpointEventVersion: null, pairOwnerLineage: null,
+    ...f.ref,
+  };
+  proof.id = 'research-session-proof:' + createHash('sha256').update(JSON.stringify([
+    proof.ownerId, proof.permitId, proof.measurementRunId,
+    proof.learningSessionId, proof.proofRevision,
+  ])).digest('hex');
+  return proof;
+}
+function proofOperationId(proof) {
+  function sorted(value) {
+    if (Array.isArray(value)) return value.map(sorted);
+    if (value !== null && typeof value === 'object') {
+      return Object.fromEntries(Object.keys(value).sort().map(key => [key, sorted(value[key])]));
+    }
+    return value;
+  }
+  return 'research-sync:' + createHash('sha256').update(JSON.stringify(sorted({
+    collection: 'research_session_proofs', id: proof.id, payload: proof,
+  }))).digest('hex') + ':1';
+}
+function proofForSession(proof, learningSessionId) {
+  const changed = {...proof, learningSessionId};
+  changed.id = 'research-session-proof:' + createHash('sha256').update(JSON.stringify([
+    changed.ownerId, changed.permitId, changed.measurementRunId,
+    changed.learningSessionId, changed.proofRevision,
+  ])).digest('hex');
+  return changed;
+}
+function proofWrite(db, proof, {entityOnly = false, operationOnly = false, outer = {}, receipt = {}} = {}) {
+  const operationId = proofOperationId(proof);
+  const batch = writeBatch(db);
+  if (!operationOnly) batch.set(
+    doc(db, 'field_users', alice, 'research_session_proofs', proof.id),
+    {...researchEntity(proof.id, proof, operationId),
+      clientUpdatedAtUtcMs: proof.proofRevision === 1 ? proof.startedAtUtcMs : proof.endedAtUtcMs,
+      ...outer},
+  );
+  if (!entityOnly) batch.set(doc(db, 'field_users', alice, 'operations', operationId), {
+    schemaVersion: 1, operationId, entityType: 'researchSessionProof', entityId: proof.id,
+    operationKind: 'upsert', baseRevision: 0, resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(), ...receipt,
+  });
+  return batch.commit();
+}
+describe('R17 research session proof server boundary', () => {
+  for (const minor of [false, true]) {
+  for (const conflict of [false, true]) {
+  it(`checks both phase documents atomically (minor=${minor}, conflict=${conflict})`, async () => {
+    const f = researchFixture({minor}); await seedResearch(f, {run: true});
+    if (minor) await testEnv.withSecurityRulesDisabled(async ctx => {
+      for (const [id, kind] of [['guardian:a', 'guardianPermission'], ['assent:a', 'learnerAssent']]) {
+        await setDoc(doc(ctx.firestore(), 'field_users', alice, 'research_receipts', id), {
+          ownerId: f.run.ownerId, kind, active: true, expiresAtUtcMs: f.authority.expiresAtUtcMs,
+        });
+      }
+    });
+    const db = authDb(), batch = writeBatch(db);
+    const phases = [sessionProofFixture(f), sessionProofFixture(f, 2)];
+    if (conflict) phases[1].startedAtUtcMs += 1;
+    for (const proof of phases) {
+      const operationId = proofOperationId(proof);
+      batch.set(doc(db, 'field_users', alice, 'research_session_proofs', proof.id), {
+        ...researchEntity(proof.id, proof, operationId),
+        clientUpdatedAtUtcMs: proof.proofRevision === 1 ? proof.startedAtUtcMs : proof.endedAtUtcMs,
+      });
+      batch.set(doc(db, 'field_users', alice, 'operations', operationId), {
+        schemaVersion: 1, operationId, entityType: 'researchSessionProof', entityId: proof.id,
+        operationKind: 'upsert', baseRevision: 0, resultingRevision: 1, acknowledgedAt: serverTimestamp(),
+      });
+    }
+    await (conflict ? assertFails(batch.commit()) : assertSucceeds(batch.commit()));
+    for (const proof of phases) {
+      assert.equal((await getDoc(doc(db, 'field_users', alice, 'research_session_proofs', proof.id))).exists(), !conflict);
+      assert.equal((await getDoc(doc(db, 'field_users', alice, 'operations', proofOperationId(proof)))).exists(), !conflict);
+    }
+  });
+  }
+  }
+  it('denies a matching second phase when trusted server history is tombstoned', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    const started = sessionProofFixture(f);
+    await assertSucceeds(proofWrite(authDb(), started));
+    await testEnv.withSecurityRulesDisabled(ctx => updateDoc(
+      doc(ctx.firestore(), 'field_users', alice, 'research_session_proofs', started.id), {isDeleted: true}));
+    await assertFails(proofWrite(authDb(), sessionProofFixture(f, 2)));
+    assert.equal((await getDoc(doc(authDb(), 'field_users', alice, 'research_session_proofs', started.id))).data().isDeleted, true);
+  });
+  it('accepts two sorted lineage rows and denies reversed or duplicate lineage', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    const current = {ownerId: f.run.ownerId, createdAtUtcMs: f.authority.issuedAtUtcMs - 10000,
+      upgradedAtUtcMs: null, mergedIntoOwnerId: null};
+    const previous = {ownerId: 'owner:prior', createdAtUtcMs: current.createdAtUtcMs - 1000,
+      upgradedAtUtcMs: current.createdAtUtcMs, mergedIntoOwnerId: f.run.ownerId};
+    // Structural policy fixture: full semantic Pair source is exercised in Dart.
+    const shape = {...sessionProofFixture(f), activityType: 'matching', pairStartOperation: '{}',
+      pairCheckpointEventVersion: 1, pairOwnerLineage: [current, previous]};
+    await assertSucceeds(proofWrite(authDb(), shape));
+    await assertFails(proofWrite(authDb(), {...proofForSession(shape, 'session:reverse'), pairOwnerLineage: [previous, current]}));
+    await assertFails(proofWrite(authDb(), {...proofForSession(shape, 'session:duplicate'), pairOwnerLineage: [current, current]}));
+  });
+  it('checks config UTF-8 bytes independently from character count', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    // Deliberately server-shape-only strings. Dart's mandatory decoder separately
+    // validates the real configuration JSON and inner content identity.
+    const exact = proofForSession(sessionProofFixture(f), 'session:config-limit');
+    exact.sessionConfigurationJson = 'ก'.repeat(5461) + 'a';
+    exact.sessionConfigurationIdentity = 'sha256:' + 'a'.repeat(64);
+    assert.equal(Buffer.byteLength(exact.sessionConfigurationJson, 'utf8'), 16384);
+    await assertSucceeds(proofWrite(authDb(), exact));
+    const over = proofForSession(exact, 'session:config-over');
+    over.sessionConfigurationJson += 'a';
+    assert.ok(over.sessionConfigurationJson.length < 16384);
+    await assertFails(proofWrite(authDb(), over));
+  });
+  for (const [label, change] of [
+    ['empty lineage', p => { p.pairOwnerLineage = []; }],
+    ['third lineage row', p => { p.pairOwnerLineage.push({...p.pairOwnerLineage[0]}, {...p.pairOwnerLineage[0]}); }],
+    ['lineage private field', p => { p.pairOwnerLineage[0].firebaseUid = alice; }],
+    ['foreign unmerged lineage', p => { p.pairOwnerLineage[0].ownerId = 'owner:b'; }],
+    ['missing lineage key', p => { delete p.pairOwnerLineage[0].upgradedAtUtcMs; }],
+    ['string checkpoint version', p => { p.pairCheckpointEventVersion = '1'; }],
+    ['unknown checkpoint version', p => { p.pairCheckpointEventVersion = 3; }],
+    ['oversize operation text', p => { p.pairStartOperation = 'a'.repeat(40001); }],
+  ]) {
+    it('enforces compact Pair server shape: ' + label, async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true});
+      // This proves server structural bounds only, not Dart Pair validity. The
+      // actual atomic-start/gateway/receiver test exercises the semantic decoder.
+      const shape = {...sessionProofFixture(f), activityType: 'matching', pairStartOperation: '{}',
+        pairCheckpointEventVersion: 1, pairOwnerLineage: [{ownerId: f.run.ownerId,
+          createdAtUtcMs: f.authority.issuedAtUtcMs - 10000, upgradedAtUtcMs: null, mergedIntoOwnerId: null}]};
+      await assertSucceeds(proofWrite(authDb(), shape));
+      const changed = proofForSession(JSON.parse(JSON.stringify(shape)), 'session:invalid-pair');
+      change(changed);
+      await assertFails(proofWrite(authDb(), changed));
+    });
+  }
+  it('accepts Completed first and later Started as separate immutable phase documents', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    const completed = sessionProofFixture(f, 2), started = sessionProofFixture(f);
+    await assertSucceeds(proofWrite(authDb(), completed));
+    await assertSucceeds(proofWrite(authDb(), started));
+    for (const proof of [completed, started]) {
+      const ref = doc(authDb(), 'field_users', alice, 'research_session_proofs', proof.id);
+      const stored = await assertSucceeds(getDoc(ref));
+      assert.deepEqual(stored.data().payload, proof);
+      assert.equal(stored.data().revision, 1);
+      await assertFails(updateDoc(ref, {'payload.buildId': 'changed'}));
+      await assertFails(deleteDoc(ref));
+      await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'research_session_proofs', proof.id)));
+    }
+  });
+  it('requires one atomic matching entity and operation receipt', async () => {
+    const f = researchFixture(); await seedResearch(f, {run: true});
+    const started = sessionProofFixture(f), completed = sessionProofFixture(f, 2);
+    await assertSucceeds(proofWrite(authDb(), started));
+    await assertFails(proofWrite(authDb(), completed, {entityOnly: true}));
+    await assertFails(proofWrite(authDb(), completed, {operationOnly: true}));
+    await assertFails(proofWrite(authDb(), completed, {receipt: {entityType: 'motivationResponse'}}));
+    await assertFails(proofWrite(authDb(), completed, {receipt: {baseRevision: 1, resultingRevision: 2}}));
+    await assertSucceeds(proofWrite(authDb(), completed));
+  });
+  for (const [label, change] of [
+    ['unknown key', p => {p.answerHistory = [];}],
+    ['missing nullable key', p => {delete p.sessionConfigurationJson;}],
+    ['wrong schema', p => {p.schema = 'lexiquest.research-session-proof.v2';}],
+    ['forged phase id', p => {p.id = 'research-session-proof:' + 'f'.repeat(64);}],
+    ['foreign owner', p => {p.ownerId = 'owner:b';}],
+    ['foreign run', p => {p.measurementRunId = 'run:missing';}],
+    ['wrong permit digest', p => {p.permitPayloadSha256 = 'f'.repeat(64);}],
+    ['string permit revision', p => {p.permitRevision = '1';}],
+    ['string phase', p => {p.proofRevision = '2';}],
+    ['completed missing end', p => {p.endedAtUtcMs = null;}],
+    ['completed reversed end', p => {p.endedAtUtcMs = p.startedAtUtcMs - 1;}],
+    ['inconsistent sibling start', p => {p.startedAtUtcMs += 1;}],
+    ['wrong app pin', p => {p.appVersion = 'different';}],
+    ['partial config', p => {p.sessionConfigurationIdentity = 'sha256:' + 'a'.repeat(64);}],
+    ['Pair fields on quiz', p => {p.pairStartOperation = '{}'; p.pairCheckpointEventVersion = 1; p.pairOwnerLineage = [];}],
+  ]) {
+    it('rejects ' + label + ' after a valid positive control', async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true});
+      await assertSucceeds(proofWrite(authDb(), sessionProofFixture(f)));
+      const changed = sessionProofFixture(f, 2); change(changed);
+      if (label === 'foreign owner' || label === 'foreign run') {
+        changed.id = 'research-session-proof:' + createHash('sha256').update(JSON.stringify([
+          changed.ownerId, changed.permitId, changed.measurementRunId,
+          changed.learningSessionId, changed.proofRevision,
+        ])).digest('hex');
+      }
+      await assertFails(proofWrite(authDb(), changed));
+    });
+  }
+  for (const [label, outer] of [
+    ['phase two is not wire revision two', {revision: 2}],
+    ['tombstone creation', {isDeleted: true}],
+    ['timestamp not matching phase fact', {clientUpdatedAtUtcMs: 0}],
+    ['unknown envelope version', {schemaVersion: 2}],
+  ]) {
+    it('rejects ' + label, async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true});
+      await assertSucceeds(proofWrite(authDb(), sessionProofFixture(f)));
+      await assertFails(proofWrite(authDb(), sessionProofFixture(f, 2), {outer}));
+    });
+  }
+  for (const [label, invalidate] of [
+    ['missing run', async (db, f) => deleteDoc(doc(db, 'field_users', alice, 'motivation_measurement_runs', f.run.id))],
+    ['withdrawal', async (db, f) => setDoc(doc(db, 'field_users', alice, 'research_withdrawals', f.permit.id),
+      {schemaVersion: 1, permitId: f.permit.id, ownerId: f.run.ownerId, withdrawnAt: serverTimestamp()})],
+    ['inactive receipt', async db => updateDoc(doc(db, 'field_users', alice, 'research_receipts', 'receipt:a'), {active: false})],
+    ['expired authority', async (db, f) => updateDoc(doc(db, 'field_users', alice, 'research_sync_authorities', f.permit.id), {expiresAtUtcMs: 0})],
+    ['revoked permit', async (db, f) => updateDoc(doc(db, 'field_users', alice, 'research_participation_permits', f.permit.id), {'payload.revokedAtUtc': new Date().toISOString()})],
+  ]) {
+    it('denies new phase after ' + label + ' without deleting admitted history', async () => {
+      const f = researchFixture(); await seedResearch(f, {run: true});
+      const started = sessionProofFixture(f);
+      await assertSucceeds(proofWrite(authDb(), started));
+      await testEnv.withSecurityRulesDisabled(context => invalidate(context.firestore(), f));
+      await assertFails(proofWrite(authDb(), sessionProofFixture(f, 2)));
+      await assertSucceeds(getDoc(doc(authDb(), 'field_users', alice, 'research_session_proofs', started.id)));
+    });
+  }
 });
 
 function authDb(uid = alice, isAnon = false) {
@@ -2139,6 +2393,64 @@ describe('field sync ownership and atomic revision contract', () => {
     );
   });
 
+  it('accepts learner attempt and SRS for packaged word without uploading a user word document', async () => {
+    const db = authDb();
+    const wordId = 'word:starter-book';
+    const packagedWord = await getDoc(
+      doc(db, 'field_users', alice, 'words', wordId),
+    );
+    if (packagedWord.exists()) {
+      throw new Error('packaged starter word must not be uploaded as user data');
+    }
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-packaged-word',
+        operationId: 'attempt-packaged-word-operation',
+        payload: {
+          sessionId: 'session-packaged-word',
+          wordId,
+          promptMode: 'typedRecall',
+          isCorrect: true,
+          responseTimeMs: 250,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: 'keyboard|local|v1',
+        },
+      }),
+    );
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: wordId,
+        operationId: 'srs-packaged-word-operation',
+        payload: {
+          wordId,
+          stability: 2.5,
+          difficulty: 0.3,
+          intervalDays: 7,
+          repetitions: 3,
+          lapses: 1,
+          lastReviewAtUtcMs: 4000,
+          dueAtUtcMs: 100000,
+          algorithmVersion: 1,
+        },
+      }),
+    );
+    await assertSucceeds(
+      getDoc(doc(db, 'field_users', alice, 'attempts', 'attempt-packaged-word')),
+    );
+    await assertSucceeds(
+      getDoc(doc(db, 'field_users', alice, 'srs_states', wordId)),
+    );
+    await assertFails(
+      getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-packaged-word')),
+    );
+    await assertFails(
+      getDoc(doc(authDb(bob), 'field_users', alice, 'srs_states', wordId)),
+    );
+  });
+
   it('keeps srs_states create-only and owner-isolated', async () => {
     const db = authDb();
     await assertSucceeds(
@@ -2595,7 +2907,7 @@ describe('assessment_runs revisioned research contract', () => {
     }
   });
 
-  it('accepts assessment evidence pinned to supported database schemas through v24', async () => {
+  it('accepts assessment evidence pinned to supported database schemas through v25', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-schema';
     await assertSucceeds(
@@ -2608,7 +2920,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24]) {
+    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -2622,7 +2934,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 25]) {
+    for (const databaseSchemaVersion of [14, 27, '25', '26', 25.5, 26.5]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

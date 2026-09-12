@@ -193,7 +193,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
         unawaited(_confirmExit());
       },
       child: AccessibilityModeScaffold(
-        appBar: AppBar(title: const Text('Definition Quiz')),
+        appBar: AppBar(title: const Text('เลือกคำจากคำอธิบาย')),
         body: FutureBuilder<QuizSession>(
           future: _load,
           builder: (context, snapshot) {
@@ -201,7 +201,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
               return const _DefinitionQuizMessage(
                 icon: Icons.error_outline,
                 message:
-                    'Definition Quiz is unavailable. No learning data changed.',
+                    'กิจกรรมเลือกคำจากคำอธิบายไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง',
               );
             }
             if (!snapshot.hasData) {
@@ -210,7 +210,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
             if (snapshot.data!.isEmpty) {
               return const _DefinitionQuizMessage(
                 icon: Icons.library_add_outlined,
-                message: 'No vocabulary is available for Definition Quiz.',
+                message: 'ยังไม่มีคำศัพท์สำหรับกิจกรรมเลือกคำจากคำอธิบาย',
               );
             }
             final review = _review;
@@ -234,7 +234,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Semantics(
-              label: 'Question ${review.index + 1} of ${review.items.length}',
+              label: 'ข้อ ${review.index + 1} จาก ${review.items.length}',
               child: LinearProgressIndicator(
                 value: (review.index + 1) / review.items.length,
               ),
@@ -261,7 +261,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 child: FilledButton(
                   key: const ValueKey<String>('definition-quiz-skip'),
                   onPressed: _actionLocked ? null : _advance,
-                  child: const Text('Continue'),
+                  child: const Text('ดำเนินต่อ'),
                 ),
               ),
             ] else ...<Widget>[
@@ -311,14 +311,14 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 FilledButton(
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: review.isSaving ? null : _retryEvidence,
-                  child: const Text('Retry saved answer'),
+                  child: const Text('ลองบันทึกคำตอบเดิมอีกครั้ง'),
                 )
               else if (review.phase ==
                   DefinitionQuizReviewPhase.completionRetryRequired)
                 FilledButton(
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: review.isSaving ? null : _retryCompletion,
-                  child: const Text('Retry session completion'),
+                  child: const Text('ลองจบกิจกรรมอีกครั้ง'),
                 ),
               if (review.feedback case final feedback?) ...<Widget>[
                 const SizedBox(height: 12),
@@ -334,8 +334,8 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                   onPressed: _actionLocked ? null : _advance,
                   child: Text(
                     review.index == review.items.length - 1
-                        ? 'View results'
-                        : 'Next question',
+                        ? 'ดูผลการเรียน'
+                        : 'ข้อถัดไป',
                   ),
                 ),
               ],
@@ -355,7 +355,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
         responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
     } on Object {
-      _showFailure('Could not save the answer. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคำตอบไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -365,7 +365,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     try {
       await review.retryEvidence();
     } on Object {
-      _showFailure('Could not save the answer. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคำตอบไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -383,7 +383,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
         ..reset()
         ..start();
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -393,7 +393,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     try {
       await _showScore(await review.retryCompletion());
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -421,16 +421,16 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Leave Definition Quiz?'),
-        content: const Text('The active session will be closed safely.'),
+        title: const Text('ออกจากกิจกรรมเลือกคำจากคำอธิบายหรือไม่'),
+        content: const Text('ระบบจะดำเนินการจบกิจกรรมที่กำลังเรียนอยู่'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep learning'),
+            child: const Text('เรียนต่อ'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Leave'),
+            child: const Text('ออกจากกิจกรรม'),
           ),
         ],
       ),
@@ -458,7 +458,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
     } on Object {
       if (!mounted) return;
       setState(() => _abandoning = false);
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
       return;
     }
     if (mounted) Navigator.of(context).pop();

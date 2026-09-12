@@ -943,7 +943,7 @@ void main() {
     );
     final pending = _requiredMethodBody(
       reconciler,
-      'Future<void> _applyPending(',
+      'Future<bool> _applyPending(',
     );
     final pendingBridgeStart = pending.indexOf('if (v1Receipt != null)');
     final pendingSinkStart = pending.indexOf(
@@ -958,7 +958,7 @@ void main() {
 
     final reward = _requiredMethodBody(
       reconciler,
-      'Future<void> _applyRewardPending(',
+      'Future<bool> _applyRewardPending(',
     );
     final rewardBridgeStart = reward.indexOf('if (v1Receipt != null)');
     final rewardSinkStart = reward.indexOf('final outcome = await sink(');
@@ -1053,7 +1053,7 @@ void main() {
           .map((entry) => entry.tableName)
           .toList(growable: false);
 
-      expect(liveTables, hasLength(48));
+      expect(liveTables, hasLength(49));
       expect(manifestTables, hasLength(liveTables.length));
       expect(manifestTables.toSet(), hasLength(manifestTables.length));
       expect(manifestTables.toSet(), liveTables.toSet());

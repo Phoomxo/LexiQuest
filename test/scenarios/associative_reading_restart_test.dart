@@ -8,6 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide AssociationRecord, AssociativeMemoryState;
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
@@ -15,6 +19,7 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
+import 'package:vocab_learning_app/screens/associative_reading_launcher_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 final class _GuestEntryStateStore implements AppEntryStateStore {
@@ -77,7 +82,7 @@ Future<void> _pumpUntilContinueEnabled(
 }) async {
   final continueFinder = find.widgetWithText(
     FilledButton,
-    'Complete & Continue',
+    'เสร็จแล้ว ไปขั้นถัดไป',
   );
   final associationRetryFinder = find.byKey(
     const ValueKey<String>('current-association-retry'),
@@ -133,6 +138,127 @@ SELECT
 }
 
 void main() {
+  testWidgets(
+    'configured starter reading completes through production bootstrap',
+    (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_flutterTtsChannel, (_) async => 1);
+      final directory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp('reading-complete-'),
+      ))!;
+      AppDependencies? dependencies;
+      try {
+        dependencies = (await tester.runAsync(
+          () => _bootstrap(
+            '${directory.path}/learning.sqlite',
+            directory,
+          ).initialize(),
+        ))!;
+        final owner = (await tester.runAsync(
+          dependencies.localOwners!.getOrCreateActiveOwner,
+        ))!;
+        final registration = dependencies.lessonModes!.find(
+          LessonMode.associativeReading,
+        )!;
+        const policy = SessionConfigurationPolicy();
+        const limits = SessionConfigurationProtocolLimits.standard();
+        final configuration = policy.validate(
+          draft: policy
+              .defaultsFor(registration: registration, limits: limits)
+              .copyWith(itemCount: 1),
+          registration: registration,
+          limits: limits,
+          ownerId: owner.id,
+          availablePackIdentities: const [],
+        );
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              home: AssociativeReadingLauncherScreen(
+                sessionConfiguration: configuration,
+                revalidateSessionConfiguration: (value) async =>
+                    policy.revalidate(
+                      configuration: value,
+                      registration: registration,
+                      limits: limits,
+                      ownerId: owner.id,
+                      availablePackIdentities: const [],
+                    ),
+              ),
+            ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
+        await _pumpUntilFound(
+          tester,
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        final screen = tester.widget<AssociativeReadingSessionScreen>(
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        for (var stage = 2; stage <= 3; stage++) {
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await _pumpUntilFound(tester, find.textContaining('ขั้นที่ $stage:'));
+        }
+        await tester.enterText(
+          find.byType(TextField),
+          screen.targetWords.single,
+        );
+        tester.testTextInput.hide();
+        await tester.pump();
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _pumpUntilFound(tester, find.textContaining('ขั้นที่ 4:'));
+        await tester.enterText(find.byType(TextField), 'synthetic cue');
+        tester.testTextInput.hide();
+        await tester.pump();
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _pumpUntilFound(tester, find.textContaining('ขั้นที่ 5:'));
+        await tester.enterText(
+          find.byType(TextField),
+          'I use ${screen.targetWords.single}.',
+        );
+        tester.testTextInput.hide();
+        await tester.pump();
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _pumpUntilFound(tester, find.text('จบกิจกรรม'));
+        final controller = tester
+            .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+            .controller!;
+        await tester.tap(find.text('จบกิจกรรม'));
+        try {
+          await _pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        } catch (_) {
+          fail(
+            'Completion failed: active time=${controller.lastActiveLearningTimeFailure}; status=${controller.state.status}',
+          );
+        }
+        await tester.runAsync(() async {
+          final sessions = await dependencies!.database!
+              .select(dependencies.database!.learningSessions)
+              .get();
+          expect(sessions, hasLength(1));
+          expect(sessions.single.state, 'completed');
+          final attempts = await dependencies.database!
+              .select(dependencies.database!.answerAttempts)
+              .get();
+          expect(attempts, hasLength(1));
+          expect(attempts.single.isCorrect, isTrue);
+        });
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.runAsync(() async {
+          await dependencies?.dispose();
+          await directory.delete(recursive: true);
+        });
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(_flutterTtsChannel, null);
+      }
+    },
+  );
   testWidgets(
     'production associative reading survives file reopen for active owner only',
     (tester) async {
@@ -197,20 +323,20 @@ void main() {
           ),
         );
         expect(find.byType(AssociativeReadingSessionScreen), findsOneWidget);
-        await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
         const stageTitles = <String>[
-          'Stage 2: Cue Fading',
-          'Stage 3: Active Recall',
-          'Stage 4: Memory Association',
+          'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+          'ขั้นที่ 3: นึกคำจากความจำ',
+          'ขั้นที่ 4: เชื่อมโยงความจำ',
         ];
         for (var index = 0; index < stageTitles.length; index++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(stageTitles[index]));
         }
         await tester.enterText(find.byType(TextField).first, 'spring back');
-        await tester.tap(find.text('Complete & Continue'));
-        await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
 
         final database = first.database!;
         const foreignOwnerId = 'local:foreign-associative-owner';
@@ -370,13 +496,13 @@ void main() {
         }
 
         await tester.pumpWidget(session(first));
-        await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (final title in const [
-          'Stage 2: Cue Fading',
-          'Stage 3: Active Recall',
-          'Stage 4: Memory Association',
+          'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+          'ขั้นที่ 3: นึกคำจากความจำ',
+          'ขั้นที่ 4: เชื่อมโยงความจำ',
         ]) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(title));
         }
         await tester.runAsync(
@@ -389,10 +515,10 @@ END
 '''),
         );
         await tester.enterText(find.byType(TextField).first, 'keeps me steady');
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await _pumpUntilFound(
           tester,
-          find.text('Could not save the memory association. Try again.'),
+          find.text('ยังยืนยันการบันทึกการเชื่อมโยงไม่ได้ กรุณาลองอีกครั้ง'),
         );
         await _pumpUntilContinueEnabled(tester);
         final afterFailure = (await tester.runAsync(
@@ -408,7 +534,7 @@ END
           () => _bootstrap(databasePath, directory).initialize(),
         ))!;
         await tester.pumpWidget(session(reopened));
-        await _pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
         expect(
           tester
               .widget<TextField>(find.byType(TextField).first)
@@ -416,11 +542,11 @@ END
               .text,
           isEmpty,
         );
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await _pumpUntilContinueEnabled(tester);
         final emptyRetryStayed =
-            find.text('Stage 4: Memory Association').evaluate().isNotEmpty &&
-            find.text('Stage 5: Context Transfer').evaluate().isEmpty;
+            find.text('ขั้นที่ 4: เชื่อมโยงความจำ').evaluate().isNotEmpty &&
+            find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่').evaluate().isEmpty;
         final afterEmptyRetry = (await tester.runAsync(
           () => _pairCounts(reopened!.database!),
         ))!;
@@ -436,8 +562,11 @@ END
             find.byType(TextField).first,
             'keeps me steady',
           );
-          await tester.tap(find.text('Complete & Continue'));
-          await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await _pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'),
+          );
           afterRecovery = (await tester.runAsync(
             () => _pairCounts(reopened!.database!),
           ))!;
@@ -540,13 +669,13 @@ END
             ),
           ),
         );
-        await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (final title in const [
-          'Stage 2: Cue Fading',
-          'Stage 3: Active Recall',
-          'Stage 4: Memory Association',
+          'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+          'ขั้นที่ 3: นึกคำจากความจำ',
+          'ขั้นที่ 4: เชื่อมโยงความจำ',
         ]) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await _pumpUntilFound(tester, find.text(title));
         }
         await tester.runAsync(
@@ -561,10 +690,10 @@ END
         );
         await tester.enterText(find.byType(TextField).at(0), 'keeps me steady');
         await tester.enterText(find.byType(TextField).at(1), 'shows the way');
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await _pumpUntilFound(
           tester,
-          find.text('Could not save the memory association. Try again.'),
+          find.text('ยังยืนยันการบันทึกการเชื่อมโยงไม่ได้ กรุณาลองอีกครั้ง'),
         );
         await _pumpUntilContinueEnabled(tester);
 
@@ -596,7 +725,7 @@ END
         await tester.tap(
           find.byKey(const ValueKey<String>('current-association-retry')),
         );
-        await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await _pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
 
         final afterRetry = (await tester.runAsync(() async {
           return (

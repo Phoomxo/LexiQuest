@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../learning_packs/domain/content_manifest.dart';
+import 'packaged_starter_identity.dart';
 
 /// Optional, verified presentation metadata for a pinned vocabulary revision.
 ///
@@ -368,6 +369,8 @@ final class LexicalAudioMetadata {
 }
 
 final class VocabularyWord {
+  bool get isReadOnly =>
+      PackagedStarterIdentity.isReadOnly(ownerId: ownerId, contentId: id);
   const VocabularyWord({
     required this.id,
     required this.ownerId,

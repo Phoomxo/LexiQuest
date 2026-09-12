@@ -51,7 +51,7 @@ final class _LearningPreferenceQuizScreenState
     if (_submitting) return;
     final minutes = int.tryParse(_minutes.text);
     if (minutes == null || minutes < 1 || minutes > 240) {
-      setState(() => _message = 'Enter between 1 and 240 minutes.');
+      setState(() => _message = 'กรุณาระบุเวลาตั้งแต่ 1 ถึง 240 นาที');
       return;
     }
     setState(() {
@@ -68,15 +68,15 @@ final class _LearningPreferenceQuizScreenState
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _message = 'Preferences saved.';
+        _message = 'บันทึกการตั้งค่าการเรียนแล้ว';
       });
     } on Object {
       if (!mounted) return;
       setState(() {
         _submitting = false;
         _message = _mutationAllowed()
-            ? 'Preferences were not saved. Try again.'
-            : 'Learning preferences are unavailable.';
+            ? 'บันทึกการตั้งค่าไม่สำเร็จ กรุณาลองอีกครั้ง'
+            : 'ยังไม่พร้อมตั้งค่าการเรียน';
       });
     }
   }
@@ -93,9 +93,7 @@ final class _LearningPreferenceQuizScreenState
             ).fullThaiLabel,
           ),
         ),
-        body: const Center(
-          child: Text('Learning preferences are unavailable.'),
-        ),
+        body: const Center(child: Text('ยังไม่พร้อมตั้งค่าการเรียน')),
       );
     }
     return Scaffold(
@@ -113,26 +111,34 @@ final class _LearningPreferenceQuizScreenState
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return const Center(
-              child: Text('Learning preferences are unavailable.'),
-            );
+            return const Center(child: Text('ยังไม่พร้อมตั้งค่าการเรียน'));
           }
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
               const Text(
-                'Choose editable defaults for your next learning plan.',
+                'เลือกเป้าหมายและกิจกรรมสำหรับแผนการเรียนครั้งถัดไป คุณเปลี่ยนภายหลังได้',
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<LearnerPreferenceGoal>(
                 key: const ValueKey<String>('learning-preferences/goal'),
                 initialValue: _goal,
-                decoration: const InputDecoration(labelText: 'Goal'),
+                isExpanded: true,
+                itemHeight: null,
+                decoration: const InputDecoration(labelText: 'เป้าหมาย'),
                 items: LearnerPreferenceGoal.values
                     .map(
                       (value) => DropdownMenuItem(
                         value: value,
-                        child: Text(value.name),
+                        child: Text(switch (value) {
+                          LearnerPreferenceGoal.balancedGrowth =>
+                            'พัฒนาทักษะอย่างสมดุล',
+                          LearnerPreferenceGoal.examPreparation => 'เตรียมสอบ',
+                          LearnerPreferenceGoal.conversationConfidence =>
+                            'สนทนาอย่างมั่นใจ',
+                          LearnerPreferenceGoal.vocabularyGrowth =>
+                            'เพิ่มคลังคำศัพท์',
+                        }),
                       ),
                     )
                     .toList(growable: false),
@@ -151,7 +157,7 @@ final class _LearningPreferenceQuizScreenState
                 enabled: !_submitting,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Available minutes per day',
+                  labelText: 'เวลาเรียนต่อวัน (นาที)',
                 ),
               ),
               const SizedBox(height: 12),
@@ -160,14 +166,22 @@ final class _LearningPreferenceQuizScreenState
                   'learning-preferences/activity-preference',
                 ),
                 initialValue: _activity,
-                decoration: const InputDecoration(
-                  labelText: 'Preferred activity',
-                ),
+                isExpanded: true,
+                itemHeight: null,
+                decoration: const InputDecoration(labelText: 'กิจกรรมที่ชอบ'),
                 items: LearnerActivityPreference.values
                     .map(
                       (value) => DropdownMenuItem(
                         value: value,
-                        child: Text(value.name),
+                        child: Text(switch (value) {
+                          LearnerActivityPreference.mixedPractice =>
+                            'ฝึกหลายรูปแบบ',
+                          LearnerActivityPreference.quiz => 'แบบทดสอบ',
+                          LearnerActivityPreference.speaking => 'ฝึกพูด',
+                          LearnerActivityPreference.reading => 'ฝึกอ่าน',
+                          LearnerActivityPreference.vocabulary =>
+                            'เรียนคำศัพท์',
+                        }),
                       ),
                     )
                     .toList(growable: false),
@@ -181,7 +195,7 @@ final class _LearningPreferenceQuizScreenState
               FilledButton(
                 key: const ValueKey<String>('learning-preferences/save'),
                 onPressed: _submitting ? null : () => _save(useCases),
-                child: Text(_submitting ? 'Saving…' : 'Save preferences'),
+                child: Text(_submitting ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'),
               ),
               if (_message != null) ...[
                 const SizedBox(height: 12),

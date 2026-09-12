@@ -148,8 +148,8 @@ void main() {
         await tester.pump();
 
         expect(tester.takeException(), isNull);
-        expect(find.text('Not quite'), findsOneWidget);
-        expect(find.text('Correct answer: station'), findsOneWidget);
+        expect(find.text('ยังไม่ถูก'), findsOneWidget);
+        expect(find.text('คำตอบที่ถูก: station'), findsOneWidget);
       },
     );
   }
@@ -381,10 +381,10 @@ void main() {
         ).highContrast,
         isTrue,
       );
-      expect(find.text('Not quite'), findsOneWidget);
+      expect(find.text('ยังไม่ถูก'), findsOneWidget);
       expect(find.byIcon(Icons.cancel), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Not quite. Correct answer: station. Try again.'),
+        find.bySemanticsLabel('ยังไม่ถูก คำตอบที่ถูก: station ลองอีกครั้ง'),
         findsOneWidget,
       );
     },
@@ -459,8 +459,8 @@ void main() {
         ).reducedMotion,
         isTrue,
       );
-      expect(find.text('Not quite'), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('ยังไม่ถูก'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
     },
   );
 
@@ -504,16 +504,16 @@ void main() {
         );
         expect(
           tester
-              .getSemantics(find.widgetWithText(FilledButton, 'I checked it'))
+              .getSemantics(
+                find.widgetWithText(FilledButton, 'ตรวจด้วยตัวเองแล้ว'),
+              )
               .getSemanticsData()
               .hasAction(SemanticsAction.tap),
           isTrue,
         );
         expect(
           tester
-              .getSemantics(
-                find.widgetWithText(OutlinedButton, 'I need more practice'),
-              )
+              .getSemantics(find.widgetWithText(OutlinedButton, 'อยากฝึกเพิ่ม'))
               .getSemanticsData()
               .hasAction(SemanticsAction.tap),
           isTrue,
@@ -521,7 +521,7 @@ void main() {
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
         expect(FocusManager.instance.primaryFocus, isNot(same(editableFocus)));
-        expect(find.text('Typed accessibility alternative'), findsOneWidget);
+        expect(find.text('พิมพ์แทนการเขียน'), findsOneWidget);
       } finally {
         semanticsHandle.dispose();
       }
@@ -613,7 +613,11 @@ void main() {
 
         for (var index = 0; index < letters.length; index++) {
           final letter = letters[index];
-          final control = find.bySemanticsLabel('Select letter $letter');
+          await tester.ensureVisible(
+            find.byKey(ValueKey<String>('word-letter-$index')),
+          );
+          await tester.pump();
+          final control = find.bySemanticsLabel('เลือกตัวอักษร $letter');
           expect(control, findsOneWidget);
           expect(
             tester
@@ -671,7 +675,7 @@ void main() {
             reason: '${scenario.name} must remain fail closed without media',
           );
           final alternative = find.bySemanticsLabel(
-            'Choose a non-media activity',
+            'เลือกกิจกรรมที่ไม่ใช้เสียงหรือกล้อง',
           );
           expect(
             alternative,
@@ -728,7 +732,13 @@ void main() {
 
         expect(tester.takeException(), isNull);
         for (final letter in letters) {
-          final control = find.bySemanticsLabel('Select letter $letter');
+          await tester.ensureVisible(
+            find.byKey(
+              ValueKey<String>('word-letter-${letters.indexOf(letter)}'),
+            ),
+          );
+          await tester.pump();
+          final control = find.bySemanticsLabel('เลือกตัวอักษร $letter');
           final label = find.descendant(
             of: control,
             matching: find.text(letter),
@@ -756,8 +766,12 @@ void main() {
           );
         }
 
+        await tester.ensureVisible(
+          find.byKey(const ValueKey<String>('word-letter-0')),
+        );
+        await tester.pump();
         await tester.tap(
-          find.bySemanticsLabel('Select letter ${letters.first}'),
+          find.bySemanticsLabel('เลือกตัวอักษร ${letters.first}'),
         );
         await tester.pump();
         expect(
@@ -820,7 +834,7 @@ Future<Future<void> Function()> _pumpCanonicalProductionSurface(
         ownerId: fixture.ownerId,
         targetWordIds: const <String, String>{'station': 'word:station'},
       );
-      ready = find.text('Stage 1: Supported Reading');
+      ready = find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย');
     case LessonMode.meaningQuiz:
       fixture = await _F38ProductionLearningFixture.create(mode);
       screen = QuizScreen(
@@ -873,7 +887,7 @@ Future<Future<void> Function()> _pumpCanonicalProductionSurface(
       throw StateError('flashcard is mounted by its compatibility authority');
     case LessonMode.handwritingScratchpad:
       screen = const Scaffold(body: HandwritingScratchpad());
-      ready = find.text('Typed accessibility alternative');
+      ready = find.text('พิมพ์แทนการเขียน');
     case LessonMode.dictation:
       screen = DictationQuizScreen(
         targetWord: 'station',

@@ -258,26 +258,41 @@ class _WeaknessBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
-            'จัดอันดับจากสัดส่วนคำตอบผิด จำนวนตัวอย่างทั้งหมด '
-            '${progress.sampleSize} • อัลกอริทึมเวอร์ชัน '
-            '${progress.algorithmVersion}',
+            'จัดอันดับจากสัดส่วนคำตอบผิด จาก ${progress.sampleSize} คำตอบ '
+            'คำที่เคยตอบผิดอาจยังไม่ถึงกำหนดทบทวน ปุ่มด้านล่างเปิดเฉพาะคำที่ถึงกำหนดตามตารางเดิม',
           ),
         ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: progress.weaknesses.length,
+            itemCount: progress.weaknesses.length + 1,
             itemBuilder: (context, index) {
+              if (index == progress.weaknesses.length) {
+                return ExpansionTile(
+                  title: const Text('รายละเอียดการวิเคราะห์'),
+                  children: [
+                    Text('อัลกอริทึมเวอร์ชัน ${progress.algorithmVersion}'),
+                  ],
+                );
+              }
               final item = progress.weaknesses[index];
               return Card(
-                child: ListTile(
-                  leading: CircleAvatar(child: Text('${index + 1}')),
-                  title: Text(item.spelling),
-                  subtitle: Text(
-                    '${item.meaning}\nตอบผิด ${item.incorrectCount}/${item.sampleSize} ครั้ง '
-                    '(${(item.errorRate * 100).toStringAsFixed(0)}%)',
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        '${index + 1}. ${item.spelling}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${item.meaning}\nตอบผิด ${item.incorrectCount}/${item.sampleSize} ครั้ง '
+                        '(${(item.errorRate * 100).toStringAsFixed(0)}%)',
+                      ),
+                    ],
                   ),
-                  isThreeLine: true,
                 ),
               );
             },

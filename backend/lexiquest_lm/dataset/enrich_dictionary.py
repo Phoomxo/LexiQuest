@@ -191,6 +191,21 @@ def enrich_words(
     return out
 
 
+def _merge_word_fields(preferred: CefrWord, fallback: CefrWord) -> CefrWord:
+    """Keep populated preferred fields, filling only gaps from the fallback."""
+
+    return CefrWord(
+        word=preferred.word,
+        cefr_level=preferred.cefr_level or fallback.cefr_level,
+        meaning_th=preferred.meaning_th or fallback.meaning_th,
+        part_of_speech=preferred.part_of_speech or fallback.part_of_speech,
+        example_sentence=preferred.example_sentence or fallback.example_sentence,
+        category=preferred.category or fallback.category,
+        tags=preferred.tags or fallback.tags,
+        source=preferred.source or fallback.source,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Enrich words with definitions and examples from free dictionary APIs."
@@ -235,33 +250,37 @@ def main(argv: list[str] | None = None) -> int:
 
     ensure_dirs()
 
-    # Load seed first so its richer fields can be merged over the expanded
-    # wordlist (the seed has hand-written Thai meanings + examples we want to
-    # keep rather than overwrite with API data).
-    seed_by_word: dict[str, CefrWord] = {}
+    # Seed-first insertion order is stable. For duplicate identities, the
+    # first populated field wins; later rows fill gaps. This gives curated
+    # fields precedence while retaining expanded data and seed-only words.
+    words_by_word: dict[str, CefrWord] = {}
     if args.seed.exists():
         for row in read_jsonl(args.seed):
             word = str(row.get("word", "")).strip().casefold()
             if word:
-                seed_by_word[word] = _row_to_cefr_word(row)
+                candidate = _row_to_cefr_word(row)
+                existing = words_by_word.get(word)
+                words_by_word[word] = (
+                    _merge_word_fields(existing, candidate)
+                    if existing is not None else candidate
+                )
 
     if not args.input.exists():
         print(f"ERROR: input file not found: {args.input}", file=sys.stderr)
         return 2
 
-    inputs: list[CefrWord] = []
     for row in read_jsonl(args.input):
-        word_str = str(row.get("word", "")).strip()
-        if not word_str:
+        word = str(row.get("word", "")).strip().casefold()
+        if not word:
             continue
         candidate = _row_to_cefr_word(row)
-        # Override with seed where the seed has data (seed wins on every field
-        # it populated, because seed data is hand-curated and authoritative).
-        seed = seed_by_word.get(candidate.word.casefold())
-        if seed is not None:
-            candidate = seed
-        inputs.append(candidate)
+        existing = words_by_word.get(word)
+        words_by_word[word] = (
+            _merge_word_fields(existing, candidate)
+            if existing is not None else candidate
+        )
 
+    inputs = list(words_by_word.values())
     if args.limit > 0:
         inputs = inputs[: args.limit]
 
@@ -315,7 +334,7 @@ def _row_to_cefr_word(row: dict[str, object]) -> CefrWord:
     tags_raw = row.get("tags") or []
     tags = tuple(str(t) for t in tags_raw) if isinstance(tags_raw, list) else ()
     return CefrWord(
-        word=str(row.get("word", "")),
+        word=str(row.get("word", "")).strip(),
         cefr_level=str(row.get("cefr_level", "")),
         meaning_th=str(row.get("meaning_th", "")),
         part_of_speech=str(row.get("part_of_speech", "")),

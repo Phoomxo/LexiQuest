@@ -22,10 +22,14 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
   Future<void> save(
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
+    String? expectedOwnerId,
   }) async {
     await owners.getOrCreateActiveOwner();
     final changed = await database.transaction(() async {
       final ownerId = await _requireSingleActiveOwnerId();
+      if (expectedOwnerId != null && expectedOwnerId != ownerId) {
+        throw const LearningGoalOwnerChanged();
+      }
       final existing = await (database.select(
         database.learningGoals,
       )..where((row) => row.id.equals(goal.id))).getSingleOrNull();

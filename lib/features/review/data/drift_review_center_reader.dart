@@ -8,6 +8,7 @@ import '../../learning/domain/lexical_prompt_artifact_identity.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../vocabulary/domain/vocabulary_word.dart' as vocabulary_domain;
+import '../../vocabulary/data/packaged_starter_access.dart';
 import '../domain/content_quality_report.dart';
 import '../domain/review_queue_item.dart';
 
@@ -53,7 +54,10 @@ final class DriftReviewCenterReader implements ReviewCenterReader {
     final categories =
         await (database.select(database.vocabularyCategories)..where(
               (row) =>
-                  row.ownerId.equals(filter.ownerId) &
+                  PackagedStarterAccess.categoriesFor(
+                    database,
+                    filter.ownerId,
+                  ) &
                   row.isDeleted.equals(false),
             ))
             .get();
@@ -62,7 +66,7 @@ final class DriftReviewCenterReader implements ReviewCenterReader {
     final words =
         await (database.select(database.vocabularyWords)..where(
               (row) =>
-                  row.ownerId.equals(filter.ownerId) &
+                  PackagedStarterAccess.wordsFor(database, filter.ownerId) &
                   row.isDeleted.equals(false),
             ))
             .get();

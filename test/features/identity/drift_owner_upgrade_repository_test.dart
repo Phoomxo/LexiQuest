@@ -7,6 +7,14 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
+import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
+import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_definition_codec.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart'
+    as quest;
+import 'package:vocab_learning_app/features/quest/domain/quest_period.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_repository.dart';
@@ -46,6 +54,7 @@ import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_s
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
+import 'research_lifecycle_fixtures.dart' show seedLifecycleResearch;
 
 void main() {
   setUpAll(tz.initializeTimeZones);
@@ -78,6 +87,351 @@ void main() {
     await database.close();
   });
 
+  group('owner transition lifecycle under canonical lease', () {
+    final transitionNow = DateTime.utc(2026, 7, 30, 12);
+
+    Future<String> activeOwner() async => (await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).getSingle()).id;
+
+    for (final kind in ['upgrade', 'logout', 'rollback']) {
+      test('$kind wraps the mutation with the same single live token', () async {
+        var source = 'guest-owner';
+        var target = 'account-owner';
+        if (kind != 'upgrade') {
+          await database.customStatement(
+            'UPDATE local_owners SET is_active = 0',
+          );
+          await database.customStatement(
+            "UPDATE local_owners SET is_active = 1 WHERE id = 'account-owner'",
+          );
+          source = 'account-owner';
+          target = 'local:lifecycle-guest';
+        }
+        if (kind == 'rollback') {
+          source =
+              (await repository.createLocalGuestAfterLogout()).targetOwnerId;
+          target = 'account-owner';
+        }
+        final gate = _LifecycleTestGate(DriftOwnerOperationGate(database));
+        final trace = <String>[];
+        final lifecycle = _TestOwnerTransitionLifecycle(
+          before: (ownerId, token) async {
+            expect(ownerId, source);
+            expect(await activeOwner(), source);
+            expect(token, 'lifecycle-token');
+            expect(
+              await gate.isOwned(token: token, nowUtc: transitionNow),
+              isTrue,
+            );
+            expect(deletedSecretOwnerIds, isEmpty);
+            trace.add('before');
+          },
+          after: (ownerId, token) async {
+            expect(ownerId, target);
+            expect(await activeOwner(), target);
+            expect(
+              await gate.isOwned(token: token, nowUtc: transitionNow),
+              isTrue,
+            );
+            trace.add('after');
+          },
+        );
+        final subject = DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => transitionNow,
+          generateConflictId: () => 'lifecycle-conflict-${conflictSequence++}',
+          generateOwnerId: () => 'lifecycle-guest',
+          generateOwnerOperationToken: () => 'lifecycle-token',
+          deleteOwnerSecrets: (ownerId) async {
+            expect(trace, ['before']);
+            expect(
+              await gate.isOwned(
+                token: 'lifecycle-token',
+                nowUtc: transitionNow,
+              ),
+              isTrue,
+            );
+            deletedSecretOwnerIds.add(ownerId);
+            trace.add('secrets');
+          },
+          ownerOperationGate: gate,
+          transitionLifecycle: lifecycle,
+        );
+        try {
+          switch (kind) {
+            case 'upgrade':
+              expect(
+                (await subject.upgrade(
+                  activeOwnerId: source,
+                  firebaseUid: 'firebase-user',
+                )).targetOwnerId,
+                target,
+              );
+            case 'logout':
+              expect(
+                (await subject.createLocalGuestAfterLogout()).targetOwnerId,
+                target,
+              );
+            case 'rollback':
+              await subject.rollbackLocalGuestLogout(
+                previousOwnerId: target,
+                guestOwnerId: source,
+              );
+          }
+          expect(lifecycle.calls, 1);
+          expect(gate.acquired, ['lifecycle-token']);
+          expect(gate.released, ['lifecycle-token']);
+          expect(
+            trace,
+            kind == 'upgrade'
+                ? ['before', 'secrets', 'after']
+                : ['before', 'after'],
+          );
+          expect(
+            await gate.isOwned(token: 'lifecycle-token', nowUtc: transitionNow),
+            isFalse,
+          );
+        } finally {
+          await gate.delegate.release(token: 'lifecycle-token');
+        }
+      });
+    }
+
+    test(
+      'lifecycle waits outside the SQLite transaction while holding its real lease',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'owner-lifecycle-lease-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}state.sqlite',
+        );
+        final primary = AppDatabase(NativeDatabase(file));
+        final independent = AppDatabase(NativeDatabase(file));
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        Future<void>? drained;
+        var settled = false;
+        var secrets = 0;
+        try {
+          await _seedOwners(primary);
+          await independent.customSelect('SELECT 1').get();
+          final subject = DriftOwnerUpgradeRepository(
+            primary,
+            nowUtc: () => transitionNow,
+            generateConflictId: () => 'independent-lifecycle-conflict',
+            generateOwnerId: () => 'unused-independent-owner',
+            generateOwnerOperationToken: () => 'independent-lifecycle-token',
+            deleteOwnerSecrets: (_) async {
+              secrets++;
+            },
+            transitionLifecycle: _TestOwnerTransitionLifecycle(
+              before: (source, token) async {
+                expect(source, 'guest-owner');
+                expect(token, 'independent-lifecycle-token');
+                entered.complete();
+                await release.future;
+              },
+            ),
+          );
+          final pending = subject.upgrade(
+            activeOwnerId: 'guest-owner',
+            firebaseUid: 'firebase-user',
+          );
+          drained = pending.then<void>(
+            (_) {
+              settled = true;
+            },
+            onError: (Object _, StackTrace __) {
+              settled = true;
+            },
+          );
+          await entered.future.timeout(const Duration(seconds: 3));
+          expect(settled, isFalse);
+          expect(secrets, 0);
+          expect(
+            await DriftOwnerOperationGate(independent).isOwned(
+              token: 'independent-lifecycle-token',
+              nowUtc: transitionNow,
+            ),
+            isTrue,
+          );
+          // This write uses a separate SQLite connection while lifecycle work is
+          // still blocked. It cannot complete if the wrapper holds a write TX.
+          await independent
+              .into(independent.runtimeFlags)
+              .insert(
+                RuntimeFlagsCompanion.insert(
+                  key: 'synthetic-independent-write',
+                  boolValue: true,
+                  updatedAtUtcMs: 1,
+                ),
+              )
+              .timeout(const Duration(seconds: 3));
+          expect(settled, isFalse);
+          expect(
+            (await primary
+                    .customSelect(
+                      "SELECT id FROM local_owners WHERE is_active = 1",
+                    )
+                    .getSingle())
+                .read<String>('id'),
+            'guest-owner',
+          );
+          release.complete();
+          expect((await pending).targetOwnerId, 'account-owner');
+          expect(secrets, 1);
+        } finally {
+          if (!release.isCompleted) release.complete();
+          try {
+            await drained?.timeout(const Duration(seconds: 3));
+          } finally {
+            await independent.close();
+            await primary.close();
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'heartbeat failure after commit preserves the durable owner result',
+      () async {
+        final delay = _ManualOwnerGateDelay();
+        final gate = _LifecycleTestGate(DriftOwnerOperationGate(database))
+          ..failRenew = true;
+        final subject = DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => transitionNow,
+          generateConflictId: () => 'heartbeat-lifecycle-conflict',
+          generateOwnerId: () => 'unused-heartbeat-owner',
+          generateOwnerOperationToken: () => 'heartbeat-lifecycle-token',
+          deleteOwnerSecrets: (_) async {},
+          ownerOperationGate: gate,
+          ownerGateDelay: delay.wait,
+          transitionLifecycle: _TestOwnerTransitionLifecycle(
+            after: (target, token) async {
+              expect(target, 'account-owner');
+              expect(await activeOwner(), target);
+              delay.elapseNext();
+              await gate.renewEntered.future.timeout(
+                const Duration(seconds: 3),
+              );
+            },
+          ),
+        );
+        try {
+          final result = await subject.upgrade(
+            activeOwnerId: 'guest-owner',
+            firebaseUid: 'firebase-user',
+          );
+          expect(result.targetOwnerId, 'account-owner');
+          expect(await activeOwner(), 'account-owner');
+          expect(gate.released, ['heartbeat-lifecycle-token']);
+        } finally {
+          await gate.delegate.release(token: 'heartbeat-lifecycle-token');
+        }
+      },
+    );
+
+    test(
+      'research refusal precedes lifecycle native work and secret deletion',
+      () async {
+        await seedLifecycleResearch(database, 'guest-owner');
+        final lifecycle = _TestOwnerTransitionLifecycle();
+        final subject = DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => transitionNow,
+          generateConflictId: () => 'research-lifecycle-conflict',
+          generateOwnerId: () => 'unused-research-owner',
+          generateOwnerOperationToken: () => 'research-lifecycle-token',
+          deleteOwnerSecrets: (owner) async => deletedSecretOwnerIds.add(owner),
+          transitionLifecycle: lifecycle,
+        );
+        await expectLater(
+          subject.upgrade(
+            activeOwnerId: 'guest-owner',
+            firebaseUid: 'firebase-user',
+          ),
+          throwsA(isA<ResearchOwnerUpgradeConflict>()),
+        );
+        expect(lifecycle.calls, 0);
+        expect(deletedSecretOwnerIds, isEmpty);
+        expect(await activeOwner(), 'guest-owner');
+      },
+    );
+
+    test(
+      'pre-mutation lifecycle failure preserves owner and credentials',
+      () async {
+        final failure = StateError('synthetic precancel failure');
+        final gate = _LifecycleTestGate(DriftOwnerOperationGate(database));
+        final subject = DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => transitionNow,
+          generateConflictId: () => 'abort-lifecycle-conflict',
+          generateOwnerId: () => 'unused-abort-owner',
+          generateOwnerOperationToken: () => 'abort-lifecycle-token',
+          deleteOwnerSecrets: (owner) async => deletedSecretOwnerIds.add(owner),
+          ownerOperationGate: gate,
+          transitionLifecycle: _TestOwnerTransitionLifecycle(
+            before: (_, _) async => throw failure,
+          ),
+        );
+        await expectLater(
+          subject.upgrade(
+            activeOwnerId: 'guest-owner',
+            firebaseUid: 'firebase-user',
+          ),
+          throwsA(same(failure)),
+        );
+        expect(await activeOwner(), 'guest-owner');
+        expect(deletedSecretOwnerIds, isEmpty);
+        expect(gate.released, ['abort-lifecycle-token']);
+      },
+    );
+
+    for (final committed in [false, true]) {
+      test(
+        'release failure preserves ${committed ? 'committed result' : 'original operation error'}',
+        () async {
+          final failure = StateError('synthetic operation failure');
+          final gate = _LifecycleTestGate(DriftOwnerOperationGate(database))
+            ..failRelease = true;
+          final subject = DriftOwnerUpgradeRepository(
+            database,
+            nowUtc: () => transitionNow,
+            generateConflictId: () => 'release-lifecycle-conflict',
+            generateOwnerId: () => 'unused-release-owner',
+            generateOwnerOperationToken: () => 'release-lifecycle-token',
+            deleteOwnerSecrets: (_) async {
+              if (!committed) throw failure;
+            },
+            ownerOperationGate: gate,
+            transitionLifecycle: _TestOwnerTransitionLifecycle(),
+          );
+          try {
+            final operation = subject.upgrade(
+              activeOwnerId: 'guest-owner',
+              firebaseUid: 'firebase-user',
+            );
+            if (committed) {
+              expect((await operation).targetOwnerId, 'account-owner');
+              expect(await activeOwner(), 'account-owner');
+            } else {
+              await expectLater(operation, throwsA(same(failure)));
+              expect(await activeOwner(), 'guest-owner');
+            }
+            expect(gate.released, ['release-lifecycle-token']);
+          } finally {
+            await gate.delegate.release(token: 'release-lifecycle-token');
+          }
+        },
+      );
+    }
+  });
+
   test('owner upgrade forwards the identical evidence policy pair', () {
     expect(
       repository.rolloutModeProvider,
@@ -102,6 +456,775 @@ void main() {
 
     expect(identical(injected.evidencePolicy, policy), isTrue);
     expect(identical(injected.rolloutModeProvider, rollout), isTrue);
+  });
+
+  group('durable quest period owner merge', () {
+    DriftLocalOwnerRepository activeOwners() => DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'unused-owner',
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+    );
+    Future<void> seed({
+      required String id,
+      required String ownerId,
+      required String key,
+      required DateTime start,
+      required DateTime? end,
+      DateTime? deadline,
+      quest.QuestInstanceState state = quest.QuestInstanceState.completed,
+      QuestPeriodPolicy policy = QuestPeriodPolicy.localCalendarV1,
+      quest.QuestType type = quest.QuestType.daily,
+      bool known = true,
+      bool canonical = true,
+      int version = 1,
+    }) async {
+      final definition = quest.QuestDefinition(
+        questId: 'period-merge',
+        catalogVersion: version,
+        title: 'Original $version',
+        description: 'Synthetic retained history',
+        type: type,
+        objectives: const [
+          quest.QuestObjective(
+            objectiveId: 'objective',
+            description: 'Answer',
+            targetCount: 3,
+            criteria: quest.ObjectiveCriteria(eventType: 'QuizCompleted'),
+          ),
+        ],
+        reward: quest.RewardSpec(xpAmount: version * 25),
+        expiresIn: deadline?.difference(start),
+      );
+      final repo = DriftQuestRepository(database);
+      await repo.upsertDefinition(definition);
+      await repo.startInstance(
+        quest.QuestInstance(
+          instanceId: id,
+          questId: definition.questId,
+          ownerId: ownerId,
+          catalogVersion: version,
+          assignedAtUtc: start,
+          state: state,
+          completedAtUtc: state == quest.QuestInstanceState.completed
+              ? start.add(const Duration(minutes: 1))
+              : null,
+          period: QuestPeriod(
+            policy: policy,
+            key: key,
+            startAtUtc: start,
+            endAtUtc: end,
+            deadlineAtUtc: deadline ?? end,
+            timezoneId: policy == QuestPeriodPolicy.localCalendarV1
+                ? 'Etc/UTC'
+                : null,
+          ),
+          isCanonical: canonical,
+          definitionSnapshot: known
+              ? QuestDefinitionSnapshot(
+                  definition: definition,
+                  origin: QuestDefinitionSnapshotOrigin.capturedAssignment,
+                )
+              : null,
+          progress: [
+            quest.ObjectiveProgress(
+              objectiveId: 'objective',
+              targetCount: 3,
+              currentCount: state == quest.QuestInstanceState.completed ? 3 : 1,
+              sourceEventIds: ['source:$id'],
+            ),
+          ],
+        ),
+      );
+    }
+
+    Future<void> mergeAndCheck(
+      Set<String> expectedCanonical, {
+      Set<String> abandoned = const {},
+    }) async {
+      final before = await database.select(database.questInstances).get();
+      final children = await database
+          .customSelect('SELECT * FROM quest_objective_progress ORDER BY id')
+          .get();
+      final rewards = await database
+          .customSelect('SELECT * FROM reward_transactions ORDER BY id')
+          .get();
+      final points = await database
+          .customSelect('SELECT * FROM points_ledger_entries ORDER BY id')
+          .get();
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      final after = await database.select(database.questInstances).get();
+      expect(
+        after.map((row) => row.instanceId).toSet(),
+        before.map((row) => row.instanceId).toSet(),
+      );
+      expect(
+        after
+            .where((row) => row.isCanonical)
+            .map((row) => row.instanceId)
+            .toSet(),
+        expectedCanonical,
+      );
+      for (final original in before) {
+        final retained = after.singleWhere(
+          (row) => row.instanceId == original.instanceId,
+        );
+        expect(retained.ownerId, 'account-owner');
+        expect(retained.toJson(), {
+          ...original.toJson(),
+          'ownerId': 'account-owner',
+          'isCanonical': expectedCanonical.contains(original.instanceId),
+          'state': abandoned.contains(original.instanceId)
+              ? 'abandoned'
+              : original.state,
+        });
+      }
+      expect(
+        (await database
+                .customSelect(
+                  'SELECT * FROM quest_objective_progress ORDER BY id',
+                )
+                .get())
+            .map((row) => row.data),
+        children.map((row) => row.data),
+      );
+      expect(
+        (await database
+                .customSelect('SELECT * FROM reward_transactions ORDER BY id')
+                .get())
+            .map((row) => row.data),
+        rewards.map((row) => {...row.data, 'owner_id': 'account-owner'}),
+      );
+      expect(
+        (await database
+                .customSelect('SELECT * FROM points_ledger_entries ORDER BY id')
+                .get())
+            .map((row) => row.data),
+        points.map((row) => {...row.data, 'owner_id': 'account-owner'}),
+      );
+      expect(
+        await database.customSelect('PRAGMA foreign_key_check').get(),
+        isEmpty,
+      );
+    }
+
+    for (final reverse in [false, true]) {
+      final aOwner = reverse ? 'account-owner' : 'guest-owner';
+      final bOwner = reverse ? 'guest-owner' : 'account-owner';
+      test(
+        'distinct completed periods retain identities in reverse=$reverse',
+        () async {
+          await seed(
+            id: 'a',
+            ownerId: aOwner,
+            key: 'daily:2026-07-28',
+            start: DateTime.utc(2026, 7, 28),
+            end: DateTime.utc(2026, 7, 29),
+          );
+          await seed(
+            id: 'b',
+            ownerId: bOwner,
+            key: 'daily:2026-07-29',
+            start: DateTime.utc(2026, 7, 29),
+            end: DateTime.utc(2026, 7, 30),
+            version: 2,
+          );
+          for (final (id, ownerId, amount) in [
+            ('a', aOwner, 25),
+            ('b', bOwner, 50),
+          ]) {
+            await DriftRewardRepository(database).grantQuestXpAndCoins(
+              ownerId: ownerId,
+              sourceEventId: 'quest_complete_${id}_period-merge',
+              xpAmount: amount,
+              occurredAtUtc: DateTime.utc(2026, 7, 29),
+            );
+          }
+          await mergeAndCheck({'a', 'b'});
+        },
+      );
+      for (final activeLoser in [true, false]) {
+        test(
+          'same period rank and stable ID reverse=$reverse activeLoser=$activeLoser',
+          () async {
+            await seed(
+              id: 'a',
+              ownerId: aOwner,
+              key: 'daily:2026-07-29',
+              start: DateTime.utc(2026, 7, 29),
+              end: DateTime.utc(2026, 7, 30),
+            );
+            await seed(
+              id: 'b',
+              ownerId: bOwner,
+              key: 'daily:2026-07-29',
+              start: DateTime.utc(2026, 7, 29),
+              end: DateTime.utc(2026, 7, 30),
+              state: activeLoser
+                  ? quest.QuestInstanceState.active
+                  : quest.QuestInstanceState.completed,
+              version: 2,
+            );
+            if (!activeLoser) {
+              for (final (id, ownerId, amount) in [
+                ('a', aOwner, 25),
+                ('b', bOwner, 50),
+              ]) {
+                await DriftRewardRepository(database).grantQuestXpAndCoins(
+                  ownerId: ownerId,
+                  sourceEventId: 'quest_complete_${id}_period-merge',
+                  xpAmount: amount,
+                  occurredAtUtc: DateTime.utc(2026, 7, 29),
+                );
+              }
+            }
+            await mergeAndCheck({'a'}, abandoned: activeLoser ? {'b'} : {});
+            final conflicts = await database
+                .select(database.syncConflicts)
+                .get();
+            final conflict = conflicts.singleWhere(
+              (row) => row.entityType == 'questInstance',
+            );
+            expect(
+              '${conflict.localSnapshotJson}${conflict.cloudSnapshotJson}',
+              contains('a'),
+            );
+            expect(
+              '${conflict.localSnapshotJson}${conflict.cloudSnapshotJson}',
+              contains('b'),
+            );
+          },
+        );
+      }
+      test(
+        'distinct active periods demote before owner uniqueness reverse=$reverse',
+        () async {
+          await seed(
+            id: 'a',
+            ownerId: aOwner,
+            key: 'daily:2026-07-28',
+            start: DateTime.utc(2026, 7, 28),
+            end: DateTime.utc(2026, 7, 29),
+            state: quest.QuestInstanceState.active,
+          );
+          await seed(
+            id: 'b',
+            ownerId: bOwner,
+            key: 'daily:2026-07-29',
+            start: DateTime.utc(2026, 7, 29),
+            end: DateTime.utc(2026, 7, 30),
+            state: quest.QuestInstanceState.active,
+          );
+          await mergeAndCheck({'a'}, abandoned: {'b'});
+        },
+      );
+      test(
+        'unknown legacy preserves established occupancy reverse=$reverse',
+        () async {
+          await seed(
+            id: 'a-unknown',
+            ownerId: aOwner,
+            key: 'legacy:a-unknown',
+            start: DateTime.utc(2026, 7, 1),
+            end: null,
+            known: false,
+            policy: QuestPeriodPolicy.legacyDuration,
+          );
+          await seed(
+            id: 'b-current',
+            ownerId: bOwner,
+            key: 'daily:2026-07-30',
+            start: DateTime.utc(2026, 7, 30),
+            end: DateTime.utc(2026, 7, 31),
+          );
+          await mergeAndCheck({'b-current'});
+          final repo = DriftQuestRepository(database);
+          final useCases = QuestUseCases(
+            repository: repo,
+            owners: activeOwners(),
+            generateId: () => 'must-not-insert',
+            nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+            timezoneId: 'Etc/UTC',
+          );
+          expect(
+            await useCases.startQuest(
+              (await repo.getDefinition('period-merge'))!,
+            ),
+            isNull,
+          );
+          expect(
+            await useCases.startQuest(
+              (await repo.getDefinition('period-merge'))!,
+            ),
+            isNull,
+          );
+          expect(
+            (await database.select(database.questInstances).get())
+                .map((row) => row.instanceId)
+                .toSet(),
+            {'a-unknown', 'b-current'},
+          );
+        },
+      );
+    }
+
+    test(
+      'known recurring null-duration compatibility cannot absorb retained period replay',
+      () async {
+        await seed(
+          id: 'a-compat',
+          ownerId: 'guest-owner',
+          key: 'legacy:a-compat',
+          start: DateTime.utc(2026, 7, 1),
+          end: null,
+          state: quest.QuestInstanceState.expired,
+          policy: QuestPeriodPolicy.legacyDuration,
+        );
+        await seed(
+          id: 'b-current',
+          ownerId: 'account-owner',
+          key: 'daily:2026-07-30',
+          start: DateTime.utc(2026, 7, 30),
+          end: DateTime.utc(2026, 7, 31),
+        );
+        await seed(
+          id: 'c-past',
+          ownerId: 'account-owner',
+          key: 'daily:2026-07-28',
+          start: DateTime.utc(2026, 7, 28),
+          end: DateTime.utc(2026, 7, 29),
+        );
+        await mergeAndCheck({'b-current', 'c-past'});
+        final repo = DriftQuestRepository(database);
+        final useCases = QuestUseCases(
+          repository: repo,
+          owners: activeOwners(),
+          generateId: () => 'must-not-insert',
+          nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+          timezoneId: 'Etc/UTC',
+          rewardSink:
+              ({
+                required ownerId,
+                required idempotencyKey,
+                required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
+                rewardItemId,
+              }) async {
+                await DriftRewardRepository(database).grantQuestXpAndCoins(
+                  ownerId: ownerId,
+                  sourceEventId: sourceEventId,
+                  xpAmount: xpAmount,
+                  occurredAtUtc: occurredAtUtc,
+                );
+              },
+        );
+        final definition = (await repo.getDefinition('period-merge'))!;
+        expect(await useCases.startQuest(definition), isNull);
+        for (final (id, day) in [('b-current', 30), ('c-past', 28)]) {
+          final occurred = DateTime.utc(2026, 7, day, 0, 1);
+          final event = EventEnvelopeV2(
+            eventId: 'source:$id',
+            eventType: 'QuizCompleted',
+            eventVersion: 2,
+            occurredAtUtc: occurred,
+            recordedAtUtc: occurred,
+            actorIdentity: 'account-owner',
+            ownerIdentity: 'account-owner',
+            aggregateType: 'LearningSession',
+            aggregateId: 'synthetic-session',
+            idempotencyKey: 'source:$id',
+            consentContext: const ConsentContext.none(),
+            appVersion: '1.0.0',
+            buildId: 'quest-merge-test',
+            privacyClassification: PrivacyClassification.anonymized,
+            payload: const {'correct': true},
+          );
+          for (var retry = 0; retry < 2; retry++) {
+            final evaluation = await useCases.projectEvent(event, [definition]);
+            expect(evaluation.completed.single.questInstanceId, id);
+            final payload = useCases.projectionPayload(evaluation, [
+              definition,
+            ]);
+            expect((payload['rewardGrants'] as List), hasLength(1));
+            await useCases.reconcileReward(event, payload);
+          }
+        }
+        expect(
+          (await database.select(database.pointsLedgerEntries).get())
+              .map((row) => row.sourceEventId)
+              .toSet(),
+          {
+            'quest_complete_b-current_period-merge',
+            'quest_complete_c-past_period-merge',
+          },
+        );
+        expect(
+          await database.select(database.rewardTransactions).get(),
+          hasLength(2),
+        );
+        final compatibility = (await repo.getAllInstances(
+          'account-owner',
+        )).singleWhere((row) => row.instanceId == 'a-compat');
+        expect(compatibility.progress.single.currentCount, 1);
+        expect(compatibility.progress.single.sourceEventIds, [
+          'source:a-compat',
+        ]);
+        expect(compatibility.period!.key, 'legacy:a-compat');
+      },
+    );
+
+    for (final reverse in [false, true]) {
+      for (final state in [
+        quest.QuestInstanceState.completed,
+        quest.QuestInstanceState.expired,
+      ]) {
+        test(
+          'calendar occupancy outlasts evidence deadline reverse=$reverse state=${state.name}',
+          () async {
+            final oldOwner = reverse ? 'account-owner' : 'guest-owner';
+            final currentOwner = reverse ? 'guest-owner' : 'account-owner';
+            await seed(
+              id: 'a-unknown',
+              ownerId: oldOwner,
+              key: 'legacy:a-unknown',
+              start: DateTime.utc(2026, 7, 1),
+              end: null,
+              known: false,
+              policy: QuestPeriodPolicy.legacyDuration,
+            );
+            await seed(
+              id: 'b-current',
+              ownerId: currentOwner,
+              key: 'daily:2026-07-30',
+              start: DateTime.utc(2026, 7, 30),
+              deadline: DateTime.utc(2026, 7, 30, 1),
+              end: DateTime.utc(2026, 7, 31),
+              state: state,
+            );
+            await DriftRewardRepository(database).grantQuestXpAndCoins(
+              ownerId: oldOwner,
+              sourceEventId: 'quest_complete_a-unknown_period-merge',
+              xpAmount: 25,
+              occurredAtUtc: DateTime.utc(2026, 7, 1),
+            );
+            await mergeAndCheck({'b-current'});
+            final repo = DriftQuestRepository(database);
+            final useCases = QuestUseCases(
+              repository: repo,
+              owners: activeOwners(),
+              generateId: () => 'must-not-insert',
+              nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+              timezoneId: 'Etc/UTC',
+            );
+            final definition = (await repo.getDefinition('period-merge'))!;
+            expect(await useCases.startQuest(definition), isNull);
+            expect(await useCases.startQuest(definition), isNull);
+            expect(
+              (await database.select(database.questInstances).get())
+                  .map((row) => row.instanceId)
+                  .toSet(),
+              {'a-unknown', 'b-current'},
+            );
+            expect(
+              await database.select(database.pointsLedgerEntries).get(),
+              hasLength(1),
+            );
+            expect(
+              await database.select(database.rewardTransactions).get(),
+              hasLength(1),
+            );
+          },
+        );
+      }
+    }
+
+    for (final reverse in [false, true]) {
+      test(
+        'stale active label does not create current compatibility occupancy reverse=$reverse',
+        () async {
+          await seed(
+            id: 'a-unknown',
+            ownerId: reverse ? 'account-owner' : 'guest-owner',
+            key: 'legacy:a-unknown',
+            start: DateTime.utc(2026, 7, 1),
+            end: null,
+            known: false,
+            policy: QuestPeriodPolicy.legacyDuration,
+          );
+          await seed(
+            id: 'b-stale',
+            ownerId: reverse ? 'guest-owner' : 'account-owner',
+            key: 'daily:2026-07-28',
+            start: DateTime.utc(2026, 7, 28),
+            end: DateTime.utc(2026, 7, 29),
+            state: quest.QuestInstanceState.active,
+          );
+          await mergeAndCheck({'a-unknown', 'b-stale'});
+          final repo = DriftQuestRepository(database);
+          final useCases = QuestUseCases(
+            repository: repo,
+            owners: activeOwners(),
+            generateId: () => 'must-not-insert',
+            nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+            timezoneId: 'Etc/UTC',
+          );
+          final definition = (await repo.getDefinition('period-merge'))!;
+          expect(await useCases.startQuest(definition), isNull);
+          expect(await useCases.startQuest(definition), isNull);
+          final rows = await database.select(database.questInstances).get();
+          expect(rows.map((row) => row.instanceId).toSet(), {
+            'a-unknown',
+            'b-stale',
+          });
+          expect(
+            rows.singleWhere((row) => row.instanceId == 'a-unknown').periodKey,
+            'daily:2026-07-30',
+          );
+          expect(
+            rows
+                .singleWhere((row) => row.instanceId == 'a-unknown')
+                .definitionSnapshotJson,
+            isNull,
+          );
+          expect(
+            rows.singleWhere((row) => row.instanceId == 'b-stale').state,
+            'expired',
+          );
+          expect(
+            await database.select(database.pointsLedgerEntries).get(),
+            isEmpty,
+          );
+          expect(
+            await database.select(database.rewardTransactions).get(),
+            isEmpty,
+          );
+        },
+      );
+    }
+
+    test(
+      'unknown-only legacy chooses one compatibility representative',
+      () async {
+        for (final (id, owner) in [
+          ('a', 'guest-owner'),
+          ('b', 'account-owner'),
+        ]) {
+          await seed(
+            id: id,
+            ownerId: owner,
+            key: 'legacy:$id',
+            start: DateTime.utc(2026, 7, 1),
+            end: null,
+            known: false,
+            policy: QuestPeriodPolicy.legacyDuration,
+          );
+        }
+        await mergeAndCheck({'a'});
+        final repo = DriftQuestRepository(database);
+        final useCases = QuestUseCases(
+          repository: repo,
+          owners: activeOwners(),
+          generateId: () => 'must-not-insert',
+          nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+          timezoneId: 'Etc/UTC',
+        );
+        expect(
+          await useCases.startQuest(
+            (await repo.getDefinition('period-merge'))!,
+          ),
+          isNull,
+        );
+        expect(
+          await useCases.startQuest(
+            (await repo.getDefinition('period-merge'))!,
+          ),
+          isNull,
+        );
+        final rows = await database.select(database.questInstances).get();
+        expect(rows.map((row) => row.instanceId).toSet(), {'a', 'b'});
+        expect(
+          rows.singleWhere((row) => row.instanceId == 'a').periodKey,
+          'daily:2026-07-30',
+        );
+        expect(rows.every((row) => row.definitionSnapshotJson == null), isTrue);
+      },
+    );
+
+    for (final type in [quest.QuestType.milestone, quest.QuestType.story]) {
+      test(
+        'legacy ${type.name} conflicts with once without rewriting history',
+        () async {
+          await seed(
+            id: 'a',
+            ownerId: 'guest-owner',
+            key: 'legacy:a',
+            start: DateTime.utc(2026, 7, 1),
+            end: DateTime.utc(2026, 7, 2),
+            type: type,
+            policy: QuestPeriodPolicy.legacyDuration,
+          );
+          await seed(
+            id: 'b',
+            ownerId: 'account-owner',
+            key: 'once',
+            start: DateTime.utc(2026, 7, 29),
+            end: null,
+            type: type,
+          );
+          await mergeAndCheck({'a'});
+          final repo = DriftQuestRepository(database);
+          final useCases = QuestUseCases(
+            repository: repo,
+            owners: activeOwners(),
+            generateId: () => 'must-not-insert',
+            nowUtc: () => DateTime.utc(2026, 8, 1),
+            timezoneId: 'Etc/UTC',
+          );
+          expect(
+            await useCases.startQuest(
+              (await repo.getDefinition('period-merge'))!,
+            ),
+            isNull,
+          );
+        },
+      );
+    }
+
+    test(
+      'merged historical and noncanonical rows export aggregates and erase transitively',
+      () async {
+        await seed(
+          id: 'a',
+          ownerId: 'guest-owner',
+          key: 'daily:2026-07-28',
+          start: DateTime.utc(2026, 7, 28),
+          end: DateTime.utc(2026, 7, 29),
+        );
+        await seed(
+          id: 'b',
+          ownerId: 'account-owner',
+          key: 'daily:2026-07-28',
+          start: DateTime.utc(2026, 7, 28),
+          end: DateTime.utc(2026, 7, 29),
+        );
+        await seed(
+          id: 'c',
+          ownerId: 'account-owner',
+          key: 'daily:2026-07-29',
+          start: DateTime.utc(2026, 7, 29),
+          end: DateTime.utc(2026, 7, 30),
+        );
+        await mergeAndCheck({'a', 'c'});
+        await database.customStatement(
+          "INSERT INTO local_owners (id,account_state,created_at_utc_ms,is_active) VALUES ('foreign-owner','localGuest',1,0)",
+        );
+        await seed(
+          id: 'foreign',
+          ownerId: 'foreign-owner',
+          key: 'daily:2026-07-28',
+          start: DateTime.utc(2026, 7, 28),
+          end: DateTime.utc(2026, 7, 29),
+        );
+        final foreignBefore = await (database.select(
+          database.questInstances,
+        )..where((row) => row.instanceId.equals('foreign'))).getSingle();
+        final foreignProgress = await database
+            .customSelect(
+              "SELECT * FROM quest_objective_progress WHERE instance_id = 'foreign'",
+            )
+            .getSingle();
+        final archive = await OwnerLifecycleArchiveExporter(
+          database: database,
+          nowUtc: () => DateTime.utc(2026, 7, 30),
+        ).prepareActive();
+        final content =
+            (jsonDecode(utf8.decode(archive.bytes)) as Map)['content'] as Map;
+        final tables = content['tables'] as List;
+        for (final alias in ['questInstances', 'questObjectiveProgress']) {
+          final table = tables.cast<Map>().singleWhere(
+            (row) => row['alias'] == alias,
+          );
+          expect(table['records'], [
+            {'recordCount': 3},
+          ]);
+        }
+        expect(
+          utf8.decode(archive.bytes),
+          isNot(contains('Synthetic retained history')),
+        );
+        await LocalDataDeletion(
+          database,
+          deleteOwnerSecrets: (_) async {},
+        ).eraseAll(ownerId: 'account-owner');
+        final remaining = await database.select(database.questInstances).get();
+        expect(remaining.single.toJson(), foreignBefore.toJson());
+        expect(
+          (await database
+                  .customSelect('SELECT * FROM quest_objective_progress')
+                  .get())
+              .single
+              .data,
+          foreignProgress.data,
+        );
+        expect(
+          await database.customSelect('PRAGMA foreign_key_check').get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'greedy actual-window conflicts retain disjoint ends of overlap chain',
+      () async {
+        final base = DateTime.utc(2026, 7, 29);
+        await seed(
+          id: 'a',
+          ownerId: 'guest-owner',
+          key: 'legacy:a',
+          start: base,
+          end: base.add(const Duration(hours: 2)),
+          state: quest.QuestInstanceState.expired,
+          policy: QuestPeriodPolicy.legacyDuration,
+        );
+        await seed(
+          id: 'b',
+          ownerId: 'account-owner',
+          key: 'daily:b',
+          start: base.add(const Duration(hours: 1)),
+          end: base.add(const Duration(hours: 4)),
+          state: quest.QuestInstanceState.expired,
+        );
+        await seed(
+          id: 'c',
+          ownerId: 'guest-owner',
+          key: 'daily:c',
+          start: base.add(const Duration(hours: 3)),
+          end: base.add(const Duration(hours: 5)),
+          state: quest.QuestInstanceState.expired,
+        );
+        await seed(
+          id: 'old-noncanonical',
+          ownerId: 'guest-owner',
+          key: 'daily:c',
+          start: base.add(const Duration(hours: 3)),
+          end: base.add(const Duration(hours: 5)),
+          canonical: false,
+        );
+        await mergeAndCheck({'a', 'c'});
+        final conflicts = await database.select(database.syncConflicts).get();
+        expect(
+          conflicts.where((row) => row.entityType == 'questInstance'),
+          hasLength(1),
+        );
+        final json = jsonEncode(conflicts.single.toJson());
+        expect(json, contains('overlap'));
+        expect(json, contains('a'));
+        expect(json, contains('b'));
+      },
+    );
   });
 
   test('migration inventory covers every owner-scoped Drift table', () async {
@@ -2047,6 +3170,7 @@ void main() {
       'motivation_responses',
       'research_participation_permits',
       'measurement_opportunities',
+      'research_session_proofs',
     };
     expect(ownerUpgradeInventory, containsAll(nontransferableResearchTables));
     // This fixture exercises ordinary migration. Pinned research blocks owner
@@ -2566,6 +3690,172 @@ void main() {
       ]);
     },
   );
+
+  test(
+    'merged v2 guest frontier cannot hide an older account legacy gap',
+    () async {
+      final firstAt = DateTime.utc(2026, 7, 30, 9);
+      final middleAt = DateTime.utc(2026, 7, 30, 10);
+      final lastAt = DateTime.utc(2026, 7, 30, 11);
+      final guest = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'guest-owner',
+        attemptId: 'merge-frontier-guest',
+        occurredAt: middleAt,
+      );
+      final accountFirst = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'account-owner',
+        attemptId: 'merge-frontier-account-first',
+        occurredAt: firstAt,
+      );
+      final accountLast = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'account-owner',
+        attemptId: 'merge-frontier-account-last',
+        occurredAt: lastAt,
+      );
+      final events = DriftLearningEventStore(database);
+      for (final source in [guest, accountLast]) {
+        await events.markProjectionOutcome(
+          source: source,
+          projection: 'streak',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+        );
+      }
+      // Recreate the genuine later cursor produced before contiguous writes:
+      // the account's first source has no receipt, while its last source does.
+      const accountCursor =
+          'learning-projection-cursor:account-owner:streak:v2';
+      await database
+          .into(database.eventsV2)
+          .insert(
+            EventsV2Companion.insert(
+              eventId: accountCursor,
+              eventType: 'LearningProjectionCursor',
+              eventVersion: 1,
+              occurredAtUtc: lastAt,
+              recordedAtUtc: lastAt,
+              actorIdentity: 'account-owner',
+              ownerId: 'account-owner',
+              aggregateType: 'LearningProjectionCursor',
+              aggregateId: accountLast.eventId,
+              causationId: Value(accountLast.eventId),
+              idempotencyKey: accountCursor,
+              consentContextJson: jsonEncode(
+                const ConsentContext.none().toJson(),
+              ),
+              appVersion: 'learning-projection-cursor-v1',
+              buildId: 'learning-projection-cursor-v1',
+              privacyClassification: 'anonymized',
+              payloadJson: jsonEncode({
+                'sourceEventId': accountLast.eventId,
+                'projection': 'streak',
+                'appliedVersion': 2,
+              }),
+            ),
+          );
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final previousReceipts =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningProjectionApplied'),
+              ))
+              .get();
+      final reopened = DriftLearningEventStore(database);
+      final pending = await reopened.listPendingProjectionEvents(
+        ownerId: 'account-owner',
+        projection: 'streak',
+        appliedVersion: 2,
+        limit: 50,
+      );
+      expect(
+        pending.map((item) => item.event.eventId),
+        contains(accountFirst.eventId),
+        reason:
+            'A frontier trusted for the guest must be audited against the merged account history.',
+      );
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          expect(event.ownerIdentity, 'account-owner');
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('account-owner');
+      await reconciler.reconcileOwner('account-owner');
+      expect(calls, [accountFirst.eventId]);
+      final receipts =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningProjectionApplied'),
+              ))
+              .get();
+      expect(receipts, containsAll(previousReceipts));
+      expect(receipts, hasLength(3));
+      expect(await _ownerCount(database, 'events_v2', 'guest-owner'), 0);
+    },
+  );
+
+  test('owner merge preserves rejection of a mixed cursor producer', () async {
+    final events = DriftLearningEventStore(database);
+    for (final entry in [
+      ('guest-owner', 'mixed-producer-guest', DateTime.utc(2026, 7, 30, 10)),
+      (
+        'account-owner',
+        'mixed-producer-account',
+        DateTime.utc(2026, 7, 30, 11),
+      ),
+    ]) {
+      final source = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: entry.$1,
+        attemptId: entry.$2,
+        occurredAt: entry.$3,
+      );
+      await events.markProjectionOutcome(
+        source: source,
+        projection: 'streak',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+      );
+    }
+    await database.customUpdate(
+      'UPDATE events_v2 SET build_id = ? WHERE event_id = ?',
+      variables: const [
+        Variable<String>('learning-projection-cursor-v1'),
+        Variable<String>('learning-projection-cursor:guest-owner:streak:v2'),
+      ],
+      updates: {database.eventsV2},
+    );
+    await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+    final cursor =
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'learning-projection-cursor:account-owner:streak:v2',
+              ),
+            ))
+            .getSingle();
+    expect(cursor.appVersion, 'learning-projection-cursor-v2');
+    expect(cursor.buildId, 'learning-projection-cursor-v1');
+    await expectLater(
+      DriftLearningEventStore(database).listPendingProjectionEvents(
+        ownerId: 'account-owner',
+        projection: 'streak',
+        appliedVersion: 2,
+        limit: 50,
+      ),
+      throwsStateError,
+    );
+  });
 
   test(
     'guest streak marker crash rebinds and replays once after owner merge',
@@ -4046,6 +5336,78 @@ void main() {
       expect(await _experimentAssignmentOutboxSnapshot(database), outboxBefore);
     },
   );
+}
+
+final class _TestOwnerTransitionLifecycle implements OwnerTransitionLifecycle {
+  _TestOwnerTransitionLifecycle({this.before, this.after});
+  final Future<void> Function(String ownerId, String token)? before;
+  final Future<void> Function(String ownerId, String token)? after;
+  int calls = 0;
+
+  @override
+  Future<T> run<T>({
+    required String sourceOwnerId,
+    required String operationToken,
+    required Future<T> Function() operation,
+    required String Function(T) targetOwnerId,
+  }) async {
+    calls++;
+    await before?.call(sourceOwnerId, operationToken);
+    final result = await operation();
+    await after?.call(targetOwnerId(result), operationToken);
+    return result;
+  }
+}
+
+final class _LifecycleTestGate implements OwnerOperationGate {
+  _LifecycleTestGate(this.delegate);
+  final OwnerOperationGate delegate;
+  final List<String> acquired = [];
+  final List<String> released = [];
+  bool failRelease = false;
+  bool failRenew = false;
+  final renewEntered = Completer<void>();
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final result = await delegate.tryAcquire(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+    if (result) acquired.add(token);
+    return result;
+  }
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    if (!renewEntered.isCompleted) renewEntered.complete();
+    if (failRenew) throw StateError('synthetic heartbeat failure');
+    return delegate.renew(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+  }
+
+  @override
+  Future<void> release({required String token}) async {
+    await delegate.release(token: token);
+    released.add(token);
+    if (failRelease) throw StateError('synthetic lease release failure');
+  }
 }
 
 final class _ManualOwnerGateDelay {

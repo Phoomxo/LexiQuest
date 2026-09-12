@@ -35,6 +35,11 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
     super.dispose();
   }
 
+  void _close() {
+    if (_submitting) return;
+    Navigator.of(context).maybePop();
+  }
+
   Future<void> _submit() async {
     final reason = _reason;
     if (reason == null || _submitting) return;
@@ -42,13 +47,13 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
     final comment = trimmed.isEmpty ? null : trimmed;
     if (comment != null &&
         comment.runes.length > ContentQualityReport.maxCommentRunes) {
-      setState(() => _error = 'Comment is too long');
+      setState(() => _error = 'ความคิดเห็นยาวเกินกำหนด');
       return;
     }
     try {
       canonicalContentReportComment(comment);
     } on ArgumentError {
-      setState(() => _error = 'Comment contains unsupported text');
+      setState(() => _error = 'ความคิดเห็นมีข้อความที่ไม่รองรับ');
       return;
     }
     setState(() {
@@ -61,7 +66,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Unable to submit report');
+      setState(() => _error = 'ยังยืนยันการส่งรายงานไม่ได้');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -85,25 +90,25 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    'Report content',
+                    'รายงานเนื้อหา',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 Semantics(
                   button: true,
-                  label: 'Close content report',
+                  label: 'ปิดการรายงานเนื้อหา',
+                  enabled: !_submitting,
+                  onTap: _submitting ? null : _close,
                   child: ExcludeSemantics(
                     child: IconButton(
-                      onPressed: _submitting
-                          ? null
-                          : () => Navigator.of(context).maybePop(),
+                      onPressed: _submitting ? null : _close,
                       icon: const Icon(Icons.close),
                     ),
                   ),
                 ),
               ],
             ),
-            Text('Revision ${widget.identity.revision}'),
+            Text('รุ่น ${widget.identity.revision}'),
             const SizedBox(height: 8),
             RadioGroup<ContentReportReason>(
               groupValue: _reason,
@@ -128,8 +133,8 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
               minLines: 2,
               maxLines: 4,
               decoration: const InputDecoration(
-                labelText: 'Optional comment',
-                helperText: 'Do not include account, provider, or device data.',
+                labelText: 'ความคิดเห็นเพิ่มเติม (ไม่จำเป็น)',
+                helperText: 'ไม่ระบุข้อมูลบัญชี ผู้ให้บริการ หรืออุปกรณ์',
               ),
             ),
             if (_error case final error?) ...<Widget>[
@@ -142,7 +147,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _reason == null || _submitting ? null : _submit,
-              child: Text(_submitting ? 'Submitting…' : 'Submit report'),
+              child: Text(_submitting ? 'กำลังส่ง…' : 'ส่งรายงาน'),
             ),
           ],
         ),
@@ -152,8 +157,8 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
 }
 
 String _reasonLabel(ContentReportReason reason) => switch (reason) {
-  ContentReportReason.text => 'Text problem',
-  ContentReportReason.audio => 'Audio problem',
-  ContentReportReason.answer => 'Answer problem',
-  ContentReportReason.explanation => 'Explanation problem',
+  ContentReportReason.text => 'ปัญหาข้อความ',
+  ContentReportReason.audio => 'ปัญหาเสียง',
+  ContentReportReason.answer => 'ปัญหาคำตอบ',
+  ContentReportReason.explanation => 'ปัญหาคำอธิบาย',
 };

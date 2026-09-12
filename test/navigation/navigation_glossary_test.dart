@@ -72,9 +72,9 @@ const _expectedEntries = <String, _ExpectedEntry>{
     Icons.menu_book,
   ),
   'home/learn': _ExpectedEntry(
-    'การเรียนรู้',
-    'การเรียนรู้',
-    'เปิดการเรียนรู้',
+    'เรียน',
+    'เรียน',
+    'เปิดหน้าเรียน',
     'เปิดกิจกรรมการเรียนรู้',
     Icons.school_outlined,
     Icons.school,

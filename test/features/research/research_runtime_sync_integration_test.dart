@@ -38,6 +38,14 @@ const _owner = 'owner:a';
 const _uid = 'runtime-sync-synthetic-uid';
 const _token = 'runtime-sync-integration-gate';
 const _attempt = '11111111-1111-4111-8111-111111111111';
+// Presented-only capture has no accepted canonical session and thus no proof.
+const _presentedCollections = {
+  SyncCollection.researchParticipationPermits,
+  SyncCollection.motivationMeasurementRuns,
+  SyncCollection.motivationResponses,
+  SyncCollection.measurementOpportunities,
+  SyncCollection.neutralEventsV2,
+};
 const _rollout = ResearchMeasurementSyncRollout.localEmulatorV1(
   deployedRulesRevision: researchMeasurementV1RulesRevision,
 );
@@ -58,6 +66,7 @@ void main() {
     f.database,
     researchMeasurementRollout: _rollout,
     researchAuthorizer: authorizer.authorize,
+    researchNowUtc: () => f.now,
   );
 
   setUp(() async {
@@ -181,12 +190,13 @@ void main() {
   Future<void> checkDelivery(
     List<ClaimedSyncOperation> claims, {
     ResearchParticipationPermit? expectedPermit,
+    bool expectProofs = false,
   }) async {
     final p = expectedPermit ?? permit;
-    expect(
-      claims.map((c) => c.mutation.collection).toSet(),
-      ResearchSyncContract.collections.toSet(),
-    );
+    expect(claims.map((c) => c.mutation.collection).toSet(), {
+      ..._presentedCollections,
+      if (expectProofs) SyncCollection.researchSessionProofs,
+    });
     for (final c in claims) {
       final mutation = c.mutation;
       expect(mutation.firebaseUid, _uid);
@@ -312,7 +322,7 @@ void main() {
                   ResearchSyncContract.collectionForEntityType(row.entityType),
             )
             .toSet(),
-        ResearchSyncContract.collections.toSet(),
+        _presentedCollections,
         reason: 'must be queued before claim recovery scan',
       );
       final claims = await claim();
@@ -460,8 +470,29 @@ void main() {
               .payload['state'],
           'completed',
         );
-        expect(claims, hasLength(9));
-        await checkDelivery(claims);
+        expect(claims, hasLength(11));
+        final proofs = claims
+            .where(
+              (claim) =>
+                  claim.mutation.collection ==
+                  SyncCollection.researchSessionProofs,
+            )
+            .toList();
+        expect(proofs, hasLength(2));
+        expect(
+          proofs
+              .map((claim) => claim.mutation.payload['proofRevision'])
+              .toSet(),
+          {1, 2},
+        );
+        expect(
+          proofs.every(
+            (claim) =>
+                claim.mutation.payload['learningSessionId'] == canonical.id,
+          ),
+          isTrue,
+        );
+        await checkDelivery(claims, expectProofs: true);
         expect(
           await f.database.select(f.database.learningSessions).getSingle(),
           canonical,
@@ -498,9 +529,18 @@ void main() {
       expect(
         notifications.last,
         0,
-        reason:
-            'busy gate postpones denial marker enqueue, never local withdrawal',
+        reason: 'busy gate postpones transport work, never atomic local denial',
       );
+      final persistedDenial =
+          await (f.database.select(f.database.outboxOperations)..where(
+                (row) =>
+                    row.ownerId.equals(_owner) &
+                    row.entityType.equals('researchWithdrawal') &
+                    row.entityId.equals(permit.id),
+              ))
+              .getSingle();
+      expect(persistedDenial.state, 'pending');
+      expect(persistedDenial.attemptCount, 0);
       for (final c in claims) {
         expect(
           await store.beginAttempt(
@@ -548,15 +588,25 @@ void main() {
       final readsBeforeRecovery = receipts.reads;
       expect(
         await restarted.enqueueResearchForOwner(ownerId: _owner, nowUtc: f.now),
-        1,
+        0,
       );
       expect(
         await restarted.enqueueResearchForOwner(ownerId: _owner, nowUtc: f.now),
         0,
       );
+      expect(
+        (await (f.database.select(f.database.outboxOperations)..where(
+                  (row) => row.operationId.equals(persistedDenial.operationId),
+                ))
+                .getSingle())
+            .toJson(),
+        persistedDenial.toJson(),
+        reason: 'restart and expired receipts preserve the original denial',
+      );
       final recovered = await claim(from: restarted);
       expect(recovered, hasLength(1));
       final denial = recovered.single;
+      expect(denial.localOperationId, persistedDenial.operationId);
       expect(denial.mutation.collection, SyncCollection.researchWithdrawals);
       expect(denial.mutation.payload, {
         'permitId': permit.id,
@@ -737,7 +787,7 @@ void main() {
       );
       expect(
         claims.map((c) => c.mutation.collection).toSet(),
-        ResearchSyncContract.collections.toSet(),
+        _presentedCollections,
       );
       for (final c in claims) {
         expect(
@@ -1051,7 +1101,10 @@ void main() {
         await capture();
         final originalClaims = await claim();
         final remote = [
-          for (final collection in ResearchSyncContract.collections.skip(1))
+          for (final collection in _presentedCollections.where(
+            (collection) =>
+                collection != SyncCollection.researchParticipationPermits,
+          ))
             FirestoreSyncCodec.decodeEntity(
               collection: collection,
               documentId: originalClaims

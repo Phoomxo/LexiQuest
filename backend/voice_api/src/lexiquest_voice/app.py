@@ -6,6 +6,8 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException, status
 from fastapi.responses import JSONResponse, Response
+from starlette.datastructures import Headers
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from lexiquest_voice.auth import TokenVerifier, extract_bearer_token
 from lexiquest_voice.config import Settings
@@ -18,6 +20,70 @@ from lexiquest_voice.errors import (
 from lexiquest_voice.models import SpeechRequest
 
 logger = logging.getLogger(__name__)
+
+_MAX_BODY_BYTES = 100_000
+
+
+class _RequestBodyLimitMiddleware:
+    """Bound actual request bytes before JSON parsing or provider invocation."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or scope["method"] not in ("POST", "PUT", "PATCH"):
+            await self.app(scope, receive, send)
+            return
+
+        declared = Headers(scope=scope).get("content-length")
+        try:
+            declared_size = int(declared) if declared is not None else 0
+        except ValueError:
+            # The transport normally validates this header; actual bytes
+            # remain bounded even if it is absent or cannot be trusted.
+            declared_size = 0
+        if declared_size > _MAX_BODY_BYTES:
+            await self._reject(scope, receive, send)
+            return
+
+        body = bytearray()
+        while True:
+            message = await receive()
+            if message["type"] == "http.disconnect":
+                return
+            chunk = message.get("body", b"")
+            if len(body) + len(chunk) > _MAX_BODY_BYTES:
+                # Never append the offending chunk or drain a remaining body.
+                await self._reject(scope, receive, send)
+                return
+            body.extend(chunk)
+            if not message.get("more_body", False):
+                break
+
+        payload = bytes(body)
+        del body
+        replayed = False
+
+        async def replay() -> Message:
+            nonlocal replayed
+            if not replayed:
+                replayed = True
+                return {"type": "http.request", "body": payload, "more_body": False}
+            return await receive()
+
+        await self.app(scope, replay, send)
+
+    async def _reject(self, scope: Scope, receive: Receive, send: Send) -> None:
+        response = JSONResponse(
+            status_code=413,
+            content={
+                "detail": {
+                    "code": "PAYLOAD_TOO_LARGE",
+                    "message": "Request body size exceeds maximum allowed threshold (100KB).",
+                }
+            },
+        )
+        await response(scope, receive, send)
 
 
 def create_app(
@@ -38,21 +104,7 @@ def create_app(
     )
     app.state.settings = settings
 
-    @app.middleware("http")
-    async def limit_body_size(request, call_next):
-        if request.method in ("POST", "PUT", "PATCH"):
-            content_length = request.headers.get("content-length")
-            if content_length and int(content_length) > 100_000:
-                return JSONResponse(
-                    status_code=413,
-                    content={
-                        "detail": {
-                            "code": "PAYLOAD_TOO_LARGE",
-                            "message": "Request body size exceeds maximum allowed threshold (100KB).",
-                        }
-                    },
-                )
-        return await call_next(request)
+    app.add_middleware(_RequestBodyLimitMiddleware)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

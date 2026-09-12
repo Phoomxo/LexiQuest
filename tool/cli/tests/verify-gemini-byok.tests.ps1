@@ -10,6 +10,7 @@ $gatewayPath = Join-Path $repoRoot 'lib/features/gemini/data/gemini_rest_gateway
 $storePath = Join-Path $repoRoot 'lib/features/gemini/data/secure_gemini_settings_store.dart'
 $aiStorePath = Join-Path $repoRoot 'lib/features/ai_tutor/data/ai_tutor_settings_store.dart'
 $versionIndexPath = Join-Path $repoRoot 'lib/features/ai_tutor/data/ai_credential_version_index.dart'
+$namespacePath = Join-Path $repoRoot 'lib/runtime/runtime_flag_namespaces.dart'
 $bootstrapPath = Join-Path $repoRoot 'lib/runtime/app_bootstrap.dart'
 $tutorPath = Join-Path $repoRoot 'lib/screens/ai_tutor_screen.dart'
 $settingsPath = Join-Path $repoRoot 'lib/screens/ai_tutor_settings_screen.dart'
@@ -25,6 +26,7 @@ foreach ($path in @(
     $storePath,
     $aiStorePath,
     $versionIndexPath,
+    $namespacePath,
     $bootstrapPath,
     $tutorPath,
     $settingsPath,
@@ -93,15 +95,27 @@ foreach ($needle in @(
     }
 }
 
+$namespaces = Get-Content -LiteralPath $namespacePath -Raw -Encoding utf8
+foreach ($declaration in @(
+    "static const aiCredentialPointerPrefix = 'aiCredentialPointer:';",
+    "static const aiCredentialIntentPrefix = 'aiCredentialIntent:';"
+)) {
+    if (-not $namespaces.Contains($declaration)) {
+        Write-Error "Canonical AI credential namespace changed: $declaration"
+    }
+}
+
 $versionIndex = Get-Content -LiteralPath $versionIndexPath -Raw -Encoding utf8
 foreach ($needle in @(
-    "'aiCredentialPointer:'",
-    "'aiCredentialIntent:'",
+    'static const _pointerPrefix = RuntimeFlagNamespaces.aiCredentialPointerPrefix;',
+    'static const _intentPrefix = RuntimeFlagNamespaces.aiCredentialIntentPrefix;',
+    '''$_pointerPrefix${_requiredToken(ownerToken)}''',
+    '''$_intentPrefix${_requiredToken(ownerToken)}:${_requiredToken(operationVersion)}''',
     'UPDATE runtime_flags',
     'DriftOwnerOperationGate.gateKey'
 )) {
     if (-not $versionIndex.Contains($needle)) {
-        Write-Error "Schema-12 AI credential index is missing: $needle"
+        Write-Error "AI credential index namespace or owner fence is missing: $needle"
     }
 }
 
@@ -116,13 +130,14 @@ foreach ($needle in @(
 }
 
 $database = Get-Content -LiteralPath $databasePath -Raw -Encoding utf8
-if (-not $database.Contains('int get schemaVersion => 12')) {
-    Write-Error 'AI credential metadata must remain on schema 12.'
+if (-not $database.Contains('static const int currentSchemaVersion = 26;') -or
+    -not $database.Contains('int get schemaVersion => currentSchemaVersion;')) {
+    Write-Error 'AI credential metadata must use the current schema-26 database authority.'
 }
 
 $secureAiStoreTest = Get-Content -LiteralPath $secureAiStoreTestPath -Raw -Encoding utf8
 foreach ($needle in @(
-    'expect(database.schemaVersion, 12)',
+    'expect(database.schemaVersion, AppDatabase.currentSchemaVersion)',
     'SELECT "key", source FROM runtime_flags',
     "isNot(contains('first-secret'))",
     "isNot(contains('second-secret'))"

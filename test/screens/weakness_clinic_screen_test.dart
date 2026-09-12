@@ -36,7 +36,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('คลินิกจุดอ่อน'), findsOneWidget);
-    expect(find.text('ephemeral'), findsOneWidget);
+    expect(find.text('1. ephemeral'), findsOneWidget);
     expect(find.textContaining('ตอบผิด 2/3 ครั้ง'), findsOneWidget);
     expect(find.text('ทบทวนคำที่ถึงกำหนด (1)'), findsOneWidget);
   });
@@ -144,6 +144,8 @@ void main() {
       expect(find.byType(SrsFlashcardsScreen), findsNothing);
       expect(controllers, isEmpty);
 
+      await tester.tap(find.text('ปรับตัวเลือก'));
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey('session-item-count')),
         '3',

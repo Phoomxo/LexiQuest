@@ -4,6 +4,23 @@ import '../../time_tracking/domain/learning_time_segment.dart';
 
 enum StudyReminderSourceKind { dueReview, goalDeadline }
 
+enum StudyReminderDisplayStatus {
+  disabled,
+  scheduled,
+  pendingRetry,
+  permissionDenied,
+  unavailable,
+  elapsed,
+}
+
+/// A read-only observation, not a receipt that a notification was delivered.
+final class StudyReminderStatusSnapshot {
+  const StudyReminderStatusSnapshot({required this.status, this.reminder});
+
+  final StudyReminderDisplayStatus status;
+  final StudyReminder? reminder;
+}
+
 final class StudyReminderSource {
   const StudyReminderSource.dueReview()
     : kind = StudyReminderSourceKind.dueReview,

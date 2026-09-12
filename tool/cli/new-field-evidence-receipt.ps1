@@ -89,7 +89,7 @@ foreach ($requiredFile in @(
     }
 }
 $manifest = Get-Content -LiteralPath $manifestFile -Raw -Encoding utf8 |
-    ConvertFrom-Json
+    ConvertFrom-LexiQuestEvidenceJson
 $allowedEvidenceRoot = [IO.Path]::GetFullPath(
     (Join-Path $repoRoot 'field/evidence')
 ).TrimEnd('\', '/')
@@ -100,7 +100,7 @@ if (-not $sourceExportFile.StartsWith(
     throw 'SourceExportPath must stay inside an ignored field/evidence input.'
 }
 $sourceEnvelope = Get-Content -LiteralPath $sourceExportFile -Raw `
-    -Encoding utf8 | ConvertFrom-Json
+    -Encoding utf8 | ConvertFrom-LexiQuestEvidenceJson
 $allowedCaptureMethodByOrigin = @{
     'provider-console-export' = 'provider-console-export'
     'beta-ops-export' = 'release-instrumentation-export'

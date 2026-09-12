@@ -1,4 +1,8 @@
+import 'packaged_starter_identity.dart';
+
 final class VocabularyCategory {
+  bool get isReadOnly =>
+      PackagedStarterIdentity.isReadOnly(ownerId: ownerId, contentId: id);
   const VocabularyCategory({
     required this.id,
     required this.ownerId,

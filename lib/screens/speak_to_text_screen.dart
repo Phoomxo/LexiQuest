@@ -60,6 +60,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   bool _listening = false;
   String _transcript = '';
   String? _error;
+  SpeechFailureCode? _recognitionFailure;
   TranscriptPronunciationAssessment? _assessment;
   DateTime? _startedAtUtc;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
@@ -184,7 +185,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final speech = _speech;
     var session = _speechSession;
     if (speech == null) {
-      setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งานบนอุปกรณ์นี้');
+      setState(() => _recognitionFailure = SpeechFailureCode.unavailable);
       return;
     }
     if (session == null || !session.isCurrent) {
@@ -197,7 +198,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     _acceptedFinalEpoch = null;
     _listenPending = true;
     setState(() {
-      _error = null;
+      _recognitionFailure = null;
       _transcript = '';
       _assessment = null;
     });
@@ -214,7 +215,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
           }
           setState(() {
             _listening = false;
-            _error = _speechFailureText(failure);
+            _recognitionFailure = failure;
           });
         },
         onStatus: (status) {
@@ -247,7 +248,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _listenPending = false;
       setState(() {
         _listening = false;
-        _error = _speechFailureText(error.code);
+        _recognitionFailure = error.code;
       });
     }
   }
@@ -258,11 +259,13 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         _acceptedFinalEpoch == epoch) {
       return;
     }
-    if (event.isFinal) {
-      _acceptedFinalEpoch = epoch;
-      _listenPending = false;
-      _speechSession?.stop().ignore();
+    if (!event.isFinal) {
+      setState(() => _transcript = event.transcript);
+      return;
     }
+    _acceptedFinalEpoch = epoch;
+    _listenPending = false;
+    _speechSession?.stop().ignore();
     final assessment = _speech!.assess(
       target: widget.correctWord,
       event: event,
@@ -270,9 +273,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     setState(() {
       _transcript = event.transcript;
       _assessment = assessment;
-      if (event.isFinal) _listening = false;
+      _recognitionFailure = null;
+      _listening = false;
     });
-    if (event.isFinal) unawaited(_recordEvidence(assessment));
+    unawaited(_recordEvidence(assessment));
   }
 
   Future<void> _recordEvidence(
@@ -374,7 +378,6 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _stopListening() async {
-    _listenEpoch += 1;
     _listenPending = false;
     await _speechSession?.stop();
     if (mounted) setState(() => _listening = false);
@@ -404,6 +407,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     _acceptedFinalEpoch = null;
     _listening = false;
     _startedAtUtc = null;
+    _recognitionFailure = null;
     if (notify && mounted) {
       setState(() {
         _transcript = '';
@@ -440,6 +444,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     }
     final assessment = _assessment;
     final evidenceLocked = _persistenceLocked;
+    final errors = <String>[
+      ?_error,
+      if (_recognitionFailure != null) _speechFailureText(_recognitionFailure!),
+    ];
     return PopScope(
       canPop: !evidenceLocked,
       child: AccessibilityModeScaffold(
@@ -506,10 +514,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                   ),
                 ),
               ),
-              if (_error != null) ...[
+              if (errors.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  _error!,
+                  errors.join('\n'),
                   key: const ValueKey<String>('speech-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -538,15 +546,11 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'ความเหมือนของข้อความ: '
+                            'คำที่ได้ยินตรงกับคำเป้าหมาย: '
                             '${assessment.similarityPercent}%',
                           ),
-                          Text(
-                            'วิธีวัด: ${assessment.method}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
                           const Text(
-                            'ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้',
+                            'คะแนนนี้เทียบข้อความที่ระบบได้ยิน การประเมินความชัดเจนของการออกเสียงยังไม่รองรับ',
                           ),
                         ],
                       ),
@@ -559,7 +563,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                 FilledButton(
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: _retryEvidence,
-                  child: const Text('Retry saved pronunciation'),
+                  child: const Text('ลองบันทึกผลออกเสียงเดิมอีกครั้ง'),
                 ),
               ],
               if (_sessionCloseRetryRequired) ...[
@@ -567,7 +571,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                 FilledButton(
                   key: const ValueKey<String>('session-close-retry'),
                   onPressed: _retrySessionClose,
-                  child: const Text('Retry session completion'),
+                  child: const Text('ลองจบกิจกรรมอีกครั้ง'),
                 ),
               ],
               const SizedBox(height: 12),
@@ -594,7 +598,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       'สิทธิ์ไมโครโฟนถูกปิดถาวร กรุณาเปิดจากการตั้งค่าระบบ',
     SpeechFailureCode.noMatch => 'ไม่ได้ยินคำพูดที่ชัดเจน กรุณาลองอีกครั้ง',
     SpeechFailureCode.cancelled => 'ยกเลิกการฟังแล้ว',
-    SpeechFailureCode.unavailable ||
-    SpeechFailureCode.engine => 'ระบบรู้จำเสียงไม่พร้อมใช้งาน',
+    SpeechFailureCode.unavailable => 'ระบบรู้จำเสียงไม่พร้อมใช้งาน',
+    SpeechFailureCode.engine => 'ฟังเสียงครั้งนี้ไม่สำเร็จ ลองพูดอีกครั้งได้',
   };
 }

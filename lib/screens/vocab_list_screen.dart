@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/packaged_starter_identity.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
 import '../navigation/app_routes.dart';
+import '../widgets/cefr_practice_example.dart';
 
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
@@ -43,6 +45,9 @@ class _VocabListScreenState extends State<VocabListScreen> {
     final importer =
         widget.importer ??
         AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
+    final isReadOnlyCategory = PackagedStarterIdentity.isReservedCategoryId(
+      widget.categoryId,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(widget.categoryName)),
       body: useCases == null
@@ -81,26 +86,54 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           )
                           .toList();
                       if (words.isEmpty) {
-                        return const Center(
-                          child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'),
+                        return Center(
+                          child: Text(
+                            snapshot.data!.isEmpty
+                                ? 'ยังไม่มีคำศัพท์ในหมวดนี้'
+                                : 'ไม่พบคำศัพท์ที่ตรงกับคำค้น',
+                          ),
                         );
                       }
                       return ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 96),
+                        // Leave the final row clear of both stacked actions.
+                        padding: EdgeInsets.only(
+                          bottom: isReadOnlyCategory
+                              ? 16
+                              : importer == null
+                              ? 96
+                              : 160,
+                        ),
                         itemCount: words.length,
                         itemBuilder: (context, index) {
                           final word = words[index];
+                          final isReadOnly =
+                              isReadOnlyCategory || word.isReadOnly;
                           return ListTile(
                             title: Text(word.spelling),
                             subtitle: Text(
                               '${word.meaning} · ${word.partOfSpeech}',
                             ),
-                            onTap: () => _openWordEditor(context, word: word),
-                            trailing: IconButton(
-                              tooltip: 'ลบคำศัพท์',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () =>
-                                  _deleteWord(context, useCases, word),
+                            onTap: isReadOnly
+                                ? null
+                                : () => _openWordEditor(context, word: word),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (word.cefrLevel != null)
+                                  IconButton(
+                                    tooltip: 'ดูตัวอย่างการใช้',
+                                    icon: const Icon(Icons.menu_book_outlined),
+                                    onPressed: () =>
+                                        _openExamples(context, word),
+                                  ),
+                                if (!isReadOnly)
+                                  IconButton(
+                                    tooltip: 'ลบคำศัพท์',
+                                    icon: const Icon(Icons.delete_outline),
+                                    onPressed: () =>
+                                        _deleteWord(context, useCases, word),
+                                  ),
+                              ],
                             ),
                           );
                         },
@@ -110,7 +143,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 ),
               ],
             ),
-      floatingActionButton: useCases == null
+      floatingActionButton: useCases == null || isReadOnlyCategory
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,
@@ -154,6 +187,45 @@ class _VocabListScreenState extends State<VocabListScreen> {
         name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
         builder: (_) =>
             AddWordScreen(categoryId: widget.categoryId, word: word),
+      ),
+    );
+  }
+
+  void _openExamples(BuildContext context, VocabularyWord word) {
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'vocabulary/examples',
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text('ตัวอย่างการใช้คำ')),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  word.spelling,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  word.meaning,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text('${word.partOfSpeech} · ${word.cefrLevel}'),
+                CefrPracticeExample(
+                  spelling: word.spelling,
+                  meaning: word.meaning,
+                  partOfSpeech: word.partOfSpeech,
+                  cefrLevel: word.cefrLevel,
+                  revealed: true,
+                  showUnavailable: true,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

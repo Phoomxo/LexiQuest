@@ -11,8 +11,8 @@ import 'identity_tables.dart';
 ///   - [QuestInstances]        — per-learner active/completed instances
 ///   - [QuestObjectiveProgress] — per-objective counters keyed by instance
 ///
-/// All migrations are additive.  Downgrading from v8 to v7 is safe because
-/// only new tables are added.
+/// Schema v25 retains instance history and pins assignment definitions.
+/// Migration is forward-only; older binaries must not open the new layout.
 
 // ─── QuestDefinitions ────────────────────────────────────────────────────────
 
@@ -57,9 +57,8 @@ class QuestDefinitions extends Table {
 /// Owner-scoped; included in [ownerUpgradeInventory] so guest→user upgrade
 /// carries quest progress forward.
 ///
-/// The unique constraint on `(owner_id, quest_id)` prevents duplicate active
-/// instances for the same quest.  When a quest is completed/expired it remains
-/// in the table with a terminal state so history is preserved.
+/// Partial indexes installed by AppDatabase allow one canonical instance per
+/// period and one canonical active instance per owner/quest. History survives.
 class QuestInstances extends Table {
   /// Primary key: matches [QuestInstance.instanceId].
   TextColumn get instanceId => text()();
@@ -77,15 +76,19 @@ class QuestInstances extends Table {
 
   IntColumn get completedAtUtcMs => integer().nullable()();
   IntColumn get expiredAtUtcMs => integer().nullable()();
+  TextColumn get periodPolicy =>
+      text().withDefault(const Constant('legacyDuration'))();
+  TextColumn get periodKey => text().withDefault(const Constant(''))();
+  TextColumn get periodTimezoneId => text().nullable()();
+  IntColumn get periodStartAtUtcMs =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get periodEndAtUtcMs => integer().nullable()();
+  IntColumn get deadlineAtUtcMs => integer().nullable()();
+  BoolColumn get isCanonical => boolean().withDefault(const Constant(true))();
+  TextColumn get definitionSnapshotJson => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {instanceId};
-
-  /// One active instance per quest per owner.
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {ownerId, questId},
-  ];
 }
 
 // ─── QuestObjectiveProgress ───────────────────────────────────────────────────

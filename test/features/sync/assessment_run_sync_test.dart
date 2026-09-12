@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
@@ -29,7 +30,7 @@ import 'package:vocab_learning_app/product/feature_contract/feature_contract_dig
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
-  for (var version = 15; version <= 24; version++) {
+  for (var version = 15; version <= 26; version++) {
     test('assessment payload preserves supported database schema $version', () {
       final run = _run();
       final payload = {
@@ -48,6 +49,28 @@ void main() {
         returnsNormally,
       );
     });
+  }
+  for (final version in <Object>[14, 27, '25', 25.0, 25.5, '26', 26.0, 26.5]) {
+    test(
+      'assessment payload rejects unsupported schema $version (${version.runtimeType})',
+      () {
+        final run = _run();
+        expect(
+          () => AssessmentRunSyncPayloadContract.requireCanonical(
+            payload: {
+              ..._cloudRunPayload(run),
+              'databaseSchemaVersion': version,
+            },
+            expectedEntityId: run.id,
+            expectedOwnerId: run.ownerId,
+            revision: 1,
+            isDeleted: false,
+            clientUpdatedAtUtcMs: run.startedAtUtc.millisecondsSinceEpoch,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      },
+    );
   }
   test(
     'run id boundary keeps both canonical operation ids within 256 runes',

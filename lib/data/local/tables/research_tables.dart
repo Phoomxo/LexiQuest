@@ -194,8 +194,8 @@ class MeasurementOpportunities extends ResearchOwnedRecord {
   TextColumn get assignedTreatment => text()();
   TextColumn get effectivePresentation => text()();
   TextColumn get presentedEventId => text().nullable()();
-  TextColumn get learningSessionId =>
-      text().references(LearningSessions, #id).nullable()();
+  // Cross-row guards accept canonical sessions or an exact historical proof.
+  TextColumn get learningSessionId => text().nullable()();
   TextColumn get startedEventId => text().nullable()();
   TextColumn get completedEventId => text().nullable()();
   IntColumn get lastSwitchOrdinal => integer().withDefault(const Constant(0))();
@@ -217,5 +217,42 @@ class MeasurementOpportunities extends ResearchOwnedRecord {
     'CHECK (opened_at_utc_ms >= 0 AND (closed_at_utc_ms IS NULL OR closed_at_utc_ms >= opened_at_utc_ms))',
     'CHECK (started_event_id IS NULL OR learning_session_id IS NOT NULL)',
     'CHECK (completed_event_id IS NULL OR (started_event_id IS NOT NULL AND closed_at_utc_ms IS NOT NULL))',
+  ];
+}
+
+/// Historical transport mirror only. Importing this record creates no playable
+/// session, checkpoint, answer or reward authority.
+@DataClassName('ResearchSessionProofRow')
+class ResearchSessionProofs extends ResearchOwnedRecord {
+  TextColumn get measurementRunId =>
+      text().references(MotivationMeasurementRuns, #id)();
+  TextColumn get permitId =>
+      text().references(ResearchParticipationPermits, #id)();
+  TextColumn get learningSessionId => text().withLength(min: 1, max: 128)();
+  IntColumn get proofRevision => integer()();
+  TextColumn get activityType => text().withLength(min: 1, max: 128)();
+  TextColumn get sessionState => text()();
+  IntColumn get startedAtUtcMs => integer()();
+  IntColumn get endedAtUtcMs => integer().nullable()();
+  TextColumn get appVersion => text().withLength(min: 1, max: 128)();
+  TextColumn get buildId => text().withLength(min: 1, max: 128)();
+  TextColumn get sessionConfigurationIdentity => text().nullable()();
+  TextColumn get sessionConfigurationJson => text().nullable()();
+  TextColumn get pairStartOperation => text().nullable()();
+  IntColumn get pairCheckpointEventVersion => integer().nullable()();
+  TextColumn get pairOwnerLineageJson => text().nullable()();
+  TextColumn get permitPayloadSha256 => text()();
+  IntColumn get permitRevision => integer()();
+
+  // The phase tuple is enforced by the single named v26 unique index.
+  @override
+  List<String> get customConstraints => [
+    "CHECK (typeof(proof_revision) = 'integer' AND proof_revision IN (1, 2))",
+    "CHECK (typeof(started_at_utc_ms) = 'integer' AND started_at_utc_ms >= 0)",
+    "CHECK ((proof_revision = 1 AND session_state = 'active' AND ended_at_utc_ms IS NULL) OR (proof_revision = 2 AND session_state = 'completed' AND ended_at_utc_ms IS NOT NULL AND typeof(ended_at_utc_ms) = 'integer' AND ended_at_utc_ms >= started_at_utc_ms))",
+    'CHECK ((session_configuration_identity IS NULL AND session_configuration_json IS NULL) OR (session_configuration_identity IS NOT NULL AND session_configuration_json IS NOT NULL))',
+    "CHECK ((activity_type = 'matching' AND pair_start_operation IS NOT NULL AND pair_checkpoint_event_version IS NOT NULL AND typeof(pair_checkpoint_event_version) = 'integer' AND pair_checkpoint_event_version IN (1, 2) AND pair_owner_lineage_json IS NOT NULL) OR (activity_type <> 'matching' AND pair_start_operation IS NULL AND pair_checkpoint_event_version IS NULL AND pair_owner_lineage_json IS NULL))",
+    "CHECK (typeof(permit_payload_sha256) = 'text' AND length(permit_payload_sha256) = 64 AND instr(permit_payload_sha256, char(0)) = 0 AND permit_payload_sha256 NOT GLOB '*[^0-9a-f]*')",
+    "CHECK (typeof(permit_revision) = 'integer' AND permit_revision > 0)",
   ];
 }

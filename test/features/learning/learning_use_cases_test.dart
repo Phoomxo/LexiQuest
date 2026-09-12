@@ -19,6 +19,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/associative_reading_checkpoint.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
@@ -90,6 +91,255 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  group('daily quest admission boundary', () {
+    LearningUseCases subject(Future<void> Function(String) hook) =>
+        LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: () => '${++nextId}',
+          nowUtc: () => now,
+          buildInfo: const AppBuildInfo(
+            version: '1.2.3',
+            buildId: 'test-build',
+          ),
+          beforeSessionStart: hook,
+        );
+
+    Future<void> changeOwner() async {
+      await database.customStatement('UPDATE local_owners SET is_active = 0');
+      await database.customStatement(
+        "INSERT INTO local_owners (id,account_state,created_at_utc_ms,is_active) VALUES ('replacement','localGuest',1,1)",
+      );
+    }
+
+    Future<void> launch(
+      String kind,
+      LearningUseCases learning, {
+      LearningActivityInitialState? initialState,
+    }) async {
+      final state =
+          initialState ??
+          (_) => kind == 'checkpointed-reading'
+              ? AssociativeReadingCheckpoint(
+                  documentId: 'synthetic-entry-reading',
+                  documentRevision: 1,
+                  cefrLevel: 'A1',
+                  passage: 'The station is nearby.',
+                  stage: 1,
+                  words: [
+                    ReadingWordPin(
+                      id: 'word-1',
+                      spelling: 'station',
+                      canonicalAnswer: 'station',
+                      revision: 1,
+                      checksum: _pin('word-1').checksumSha256,
+                      normalizationRevision: 'vocabulary-text-v1',
+                    ),
+                  ],
+                ).toJson()
+              : const <String, Object?>{'schemaVersion': 1};
+      switch (kind) {
+        case 'quiz':
+          await learning.startQuiz(limit: 1);
+        case 'checkpoint':
+          await learning.startCheckpointedQuiz(
+            activityType: 'adventureQuiz',
+            limit: 1,
+            initialState: state,
+          );
+        case 'due':
+          await database
+              .into(database.srsStates)
+              .insert(
+                SrsStatesCompanion.insert(
+                  id: 'due',
+                  ownerId: 'local:guest',
+                  wordId: 'word-1',
+                  dueAtUtcMs: 1,
+                  algorithmVersion: 2,
+                ),
+              );
+          await learning.startDueReview(limit: 1);
+        case 'weakness':
+          await learning.startWeaknessPractice(wordIds: const ['word-1']);
+        case 'reading':
+          await learning.startAssociativeReadingSessionHandle();
+        case 'checkpointed-reading':
+          await learning.startAssociativeReadingSessionHandle(
+            pinnedContent: [_pin('word-1')],
+            initialState: state,
+          );
+        case 'pinned-review':
+          await database.customStatement(
+            'UPDATE vocabulary_words SET content_checksum_sha256 = ? WHERE id = ?',
+            [_pin('word-1').checksumSha256, 'word-1'],
+          );
+          await learning.startPinnedReviewSession(
+            ownerId: 'local:guest',
+            items: [
+              ReviewedLexicalContentSnapshot(
+                identity: _pin('word-1').identity,
+                categoryId: 'category-1',
+                spelling: 'station',
+                normalizedSpelling: 'station',
+                meaning: 'สถานี',
+                normalizedMeaning: 'สถานี',
+                partOfSpeech: 'noun',
+                cefrLevel: null,
+                source: 'manual',
+                isGlobal: false,
+                coreChecksumSha256: _pin('word-1').checksumSha256,
+                provenance: ContentProvenance.userAuthored,
+                reviewState: ContentReviewState.unreviewed,
+                publicationState: ContentPublicationState.private,
+                artifact: null,
+              ),
+            ],
+          );
+        default:
+          throw StateError('unknown test launch path');
+      }
+    }
+
+    for (final kind in [
+      'quiz',
+      'pinned-review',
+      'checkpoint',
+      'due',
+      'weakness',
+      'reading',
+      'checkpointed-reading',
+    ]) {
+      test(
+        '$kind awaits exactly one refresh before final session time',
+        () async {
+          final entered = Completer<void>();
+          final release = Completer<void>();
+          var calls = 0;
+          final learning = subject((expectedOwnerId) async {
+            expect(expectedOwnerId, 'local:guest');
+            calls++;
+            entered.complete();
+            await release.future;
+          });
+          final pending = launch(kind, learning);
+          final drained = pending.then<void>(
+            (_) {},
+            onError: (Object _, StackTrace __) {},
+          );
+          try {
+            await entered.future.timeout(const Duration(seconds: 3));
+            expect(
+              await database.select(database.learningSessions).get(),
+              isEmpty,
+            );
+            expect(nextId, 0);
+            now = now.add(const Duration(days: 1));
+            release.complete();
+            await pending;
+            expect(calls, 1);
+            final row = await database
+                .select(database.learningSessions)
+                .getSingle();
+            expect(row.ownerId, 'local:guest');
+            expect(row.startedAtUtcMs, now.millisecondsSinceEpoch);
+          } finally {
+            if (!release.isCompleted) release.complete();
+            await drained.timeout(const Duration(seconds: 3));
+          }
+        },
+      );
+      test(
+        '$kind rejects owner drift across refresh before admission',
+        () async {
+          final learning = subject((expectedOwnerId) async {
+            expect(expectedOwnerId, 'local:guest');
+            await changeOwner();
+          });
+          await expectLater(launch(kind, learning), throwsStateError);
+          expect(
+            await database.select(database.learningSessions).get(),
+            isEmpty,
+          );
+        },
+      );
+    }
+
+    test(
+      'authority failure from refresh is not swallowed by learning',
+      () async {
+        await expectLater(
+          subject(
+            (_) async => throw StateError('synthetic lease lost'),
+          ).startQuiz(limit: 1),
+          throwsStateError,
+        );
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+      },
+    );
+    test(
+      'empty content does not invoke a refresh or admit a session',
+      () async {
+        var calls = 0;
+        await subject((_) async {
+          calls++;
+        }).startQuiz(categoryId: 'missing', limit: 1);
+        expect(calls, 0);
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+      },
+    );
+    for (final kind in ['checkpoint', 'checkpointed-reading']) {
+      test('$kind revalidates owner after awaited initial state', () async {
+        var calls = 0;
+        await expectLater(
+          launch(
+            kind,
+            subject((_) async {
+              calls++;
+            }),
+            initialState: (_) async {
+              await changeOwner();
+              return const <String, Object?>{'schemaVersion': 1};
+            },
+          ),
+          throwsStateError,
+        );
+        expect(calls, 1);
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+      });
+    }
+  });
+
+  test('review distractor read returns empty without an alternative', () async {
+    final ownerId = (await owners.getOrCreateActiveOwner()).id;
+    final distractors = await useCases.readReviewDistractors(
+      ownerId: ownerId,
+      excludingWordIds: const <String>['word-1', 'word-2', 'word-3', 'word-4'],
+    );
+    expect(distractors, isEmpty);
+  });
+
+  test('review distractor read rejects owner drift', () async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final drifting = LearningUseCases(
+      owners: _SequenceOwnerRepository(<identity.LocalOwner>[
+        owner,
+        identity.LocalOwner(id: 'local:other-owner', createdAtUtc: now),
+      ]),
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    await expectLater(
+      drifting.readReviewDistractors(
+        ownerId: owner.id,
+        excludingWordIds: const <String>['word-1'],
+      ),
+      throwsStateError,
+    );
+  });
 
   test(
     'starts quiz from local words with deterministic unique options',
@@ -1712,6 +1962,26 @@ final class _CountingLocalOwnerRepository implements LocalOwnerRepository {
   ) => delegate.bindFirebaseUid(ownerId, firebaseUid);
 }
 
+final class _SequenceOwnerRepository implements LocalOwnerRepository {
+  _SequenceOwnerRepository(this.owners);
+
+  final List<identity.LocalOwner> owners;
+  int _index = 0;
+
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async {
+    final index = _index.clamp(0, owners.length - 1);
+    _index += 1;
+    return owners[index];
+  }
+
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) => throw UnimplementedError();
+}
+
 final class _GatedLocalOwnerRepository implements LocalOwnerRepository {
   _GatedLocalOwnerRepository(this.delegate);
 
@@ -1725,7 +1995,7 @@ final class _GatedLocalOwnerRepository implements LocalOwnerRepository {
 
   @override
   Future<identity.LocalOwner> getOrCreateActiveOwner() async {
-    _resolutionRequested.complete();
+    if (!_resolutionRequested.isCompleted) _resolutionRequested.complete();
     await _resolutionGate.future;
     return delegate.getOrCreateActiveOwner();
   }

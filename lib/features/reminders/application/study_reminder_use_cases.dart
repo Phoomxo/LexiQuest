@@ -97,6 +97,9 @@ final class StudyReminderUseCases {
   bool _initialized = false;
   StudyReminderAvailability _availability = StudyReminderAvailability.available;
   Set<StudyReminderFailureKind> _lastFailureKinds = const {};
+  // Set only by the serialized lifecycle while its caller holds the actual
+  // canonical lease. Native repair shares that proof through every await.
+  Future<void> Function()? _transitionNativeGuard;
 
   StudyReminderAvailability get availability => _availability;
 
@@ -149,11 +152,94 @@ final class StudyReminderUseCases {
     }
   }
 
+  /// Observe desired state and native scheduling without prompting, repairing,
+  /// acknowledging an intent, or changing the learner's reminder preference.
+  Future<StudyReminderStatusSnapshot> loadStatus({
+    required String expectedOwnerId,
+    required StudyReminderSource source,
+  }) async {
+    final ownerId = _canonicalIdentifier(expectedOwnerId, 'expectedOwnerId');
+    await _requireStatusOwner(ownerId);
+    StudyReminderDesiredState? observed;
+    var status = StudyReminderDisplayStatus.unavailable;
+    var stable = false;
+    try {
+      final states = (await repository.listForOwner(
+        ownerId,
+      )).where((state) => state.reminder.source == source).toList();
+      if (states.length > 1) throw StateError('Reminder source is ambiguous.');
+      observed = states.firstOrNull;
+      final eligibility = await loadFeatureEligibility();
+      final allowed = await _ownerOperationAllows(ownerId);
+      final reminder = observed?.reminder;
+      if (eligibility.enabled && allowed) {
+        if (reminder == null || !reminder.isEnabled || reminder.isDeleted) {
+          status = StudyReminderDisplayStatus.disabled;
+        } else if (await _ensureInitialized() &&
+            await scheduler.isSupported()) {
+          final permission = await scheduler.permissionState();
+          if (permission == ReminderPermissionState.denied) {
+            status = StudyReminderDisplayStatus.permissionDenied;
+          } else if (permission == ReminderPermissionState.granted) {
+            final native = await _pendingNativeEntries();
+            final intents = await repository.pendingPlatformIntentsForOwner(
+              ownerId,
+            );
+            final pending = intents.any(
+              (intent) => intent.reminderId == reminder.id,
+            );
+            final platformId = studyReminderPlatformId(ownerId, reminder.id);
+            final matchingEntry = native.any(
+              (entry) =>
+                  entry.platformId == platformId &&
+                  entry.ownerId == ownerId &&
+                  entry.reminderId == reminder.id,
+            );
+            if (!reminder.effectiveScheduledAtUtc.isAfter(_utcNow())) {
+              status = StudyReminderDisplayStatus.elapsed;
+            } else {
+              status = !pending && matchingEntry
+                  ? StudyReminderDisplayStatus.scheduled
+                  : StudyReminderDisplayStatus.pendingRetry;
+            }
+          }
+        }
+      }
+      // A read can span another worker's revision or feature change. Do not
+      // combine an old native observation with a newer desired schedule.
+      final latest = (await repository.listForOwner(
+        ownerId,
+      )).where((state) => state.reminder.source == source).toList();
+      final latestEligibility = await loadFeatureEligibility();
+      stable =
+          latest.length <= 1 &&
+          _sameRevision(observed, latest.firstOrNull) &&
+          latestEligibility.enabled == eligibility.enabled &&
+          latestEligibility.epoch == eligibility.epoch &&
+          await _ownerOperationAllows(ownerId) == allowed;
+    } on Object {
+      status = StudyReminderDisplayStatus.unavailable;
+    }
+    // Owner mismatch is an admission failure, not a native availability state.
+    await _requireStatusOwner(ownerId);
+    return StudyReminderStatusSnapshot(
+      status: stable ? status : StudyReminderDisplayStatus.unavailable,
+      reminder: stable ? observed?.reminder : null,
+    );
+  }
+
+  Future<void> _requireStatusOwner(String expectedOwnerId) async {
+    if (await repository.activeOwnerId() != expectedOwnerId) {
+      throw const StudyReminderMutationUnavailable();
+    }
+  }
+
   Future<StudyReminderOptInResult> optIn({
     required StudyReminderSource source,
     required DateTime scheduledAtUtc,
     required String timezoneId,
     ReminderQuietHours? quietHours,
+    String? expectedOwnerId,
     required StudyReminderMutationGuard mutationAllowed,
   }) => _serialize(() async {
     if (!mutationAllowed()) {
@@ -168,6 +254,9 @@ final class StudyReminderUseCases {
     );
     if (context == null) return StudyReminderOptInResult.invalidSchedule;
     final ownerId = await repository.activeOwnerId();
+    if (expectedOwnerId != null && expectedOwnerId != ownerId) {
+      throw const StudyReminderMutationUnavailable();
+    }
     if (!await _ownerOperationAllows(ownerId)) {
       throw const StudyReminderMutationUnavailable();
     }
@@ -284,51 +373,232 @@ final class StudyReminderUseCases {
     // Persisted IANA zones are authoritative. Follow-device semantics do not
     // exist in this model, so the legacy runtime hint cannot rebase reminders.
     final _ = currentTimezoneId;
-    return _reconcileOwner(
-      await repository.activeOwnerId(),
-      featureEnabled: featureEnabled,
+    var scheduled = 0;
+    var cancelled = 0;
+    var failed = 0;
+    var availability = StudyReminderAvailability.available;
+    final failureKinds = <StudyReminderFailureKind>{};
+    // Native calls cannot be recalled once issued. If their owner/fence
+    // boundary retires, make at most one pass from fresh canonical state.
+    // This stays inside the current serializer and never acquires a lease.
+    for (var pass = 0; pass < 2; pass++) {
+      var needsCurrentOwnerRepair = false;
+      final ownerId = await repository.activeOwnerId();
+      final result = await _reconcileOwner(
+        ownerId,
+        featureEnabled: featureEnabled,
+        requestCurrentOwnerRepair: () => needsCurrentOwnerRepair = true,
+      );
+      final orphans = await _repairInactiveOwnerEntries(ownerId);
+      scheduled += result.scheduled;
+      cancelled += result.cancelled + orphans.cancelled;
+      failed += result.failed + orphans.failed;
+      availability = result.availability;
+      failureKinds.addAll(result.failureKinds);
+      if (orphans.failed > 0) {
+        failureKinds.add(StudyReminderFailureKind.platformSideEffect);
+      }
+      needsCurrentOwnerRepair |= orphans.needsCurrentOwnerRepair;
+      if (!needsCurrentOwnerRepair) break;
+      if (pass == 1) {
+        failed++;
+        failureKinds.add(StudyReminderFailureKind.durableState);
+      }
+    }
+    return _completeResult(
+      StudyReminderReconcileResult(
+        scheduled: scheduled,
+        cancelled: cancelled,
+        failed: failed,
+        availability: failed > 0 || failureKinds.isNotEmpty
+            ? StudyReminderAvailability.degraded
+            : availability,
+        failureKinds: Set<StudyReminderFailureKind>.unmodifiable(failureKinds),
+      ),
     );
   });
 
   Future<T> coordinateOwnerChange<T>({
     required String sourceOwnerId,
+    required String operationToken,
     required Future<T> Function() operation,
     required String Function(T result) targetOwnerId,
     required bool featureEnabled,
   }) => _serialize(() async {
     final source = _canonicalIdentifier(sourceOwnerId, 'sourceOwnerId');
-    if (await repository.activeOwnerId() != source) {
-      throw StateError('reminder owner change source is not active');
-    }
-    await _cancelOwnerPlatformEntries(source);
-    late final T result;
+    final token = _canonicalIdentifier(operationToken, 'operationToken');
+    var expectedOwner = source;
+    Future<void> requireAuthority() =>
+        _requireTransitionAuthority(expectedOwner, token);
+    await requireAuthority();
+    _transitionNativeGuard = requireAuthority;
+    var fenceEnded = false;
     try {
-      result = await operation();
-    } catch (error, stackTrace) {
+      await repository.beginOwnerOperationFence(
+        ownerId: source,
+        operationToken: token,
+        nowUtc: _utcNow(),
+      );
+      final captured = <int>{};
+      final cleanupFailures = <StudyReminderFailureKind>{};
+      late final T result;
+      Object? operationError;
+      StackTrace? operationStack;
       try {
-        if (await repository.activeOwnerId() == source) {
-          await _reconcileOwner(source, featureEnabled: featureEnabled);
+        captured.addAll(await _ownerPlatformIds(source));
+        await requireAuthority();
+        await _cancelPlatformIds(
+          captured,
+          failOnError: true,
+          entryOwner: source,
+        );
+        await requireAuthority();
+        result = await operation();
+        expectedOwner = _canonicalIdentifier(
+          targetOwnerId(result),
+          'targetOwnerId',
+        );
+      } catch (error, stackTrace) {
+        operationError = error;
+        operationStack = stackTrace;
+      }
+      try {
+        await requireAuthority();
+        final swept = await _cancelPlatformIds(
+          captured,
+          failOnError: false,
+          entryOwner: source,
+        );
+        if (!swept) {
+          cleanupFailures.add(StudyReminderFailureKind.platformSideEffect);
         }
       } on Object {
-        // Preserve the canonical owner-change failure.
+        cleanupFailures.add(StudyReminderFailureKind.platformSideEffect);
+        _recordFailure(StudyReminderFailureKind.platformSideEffect);
       }
-      Error.throwWithStackTrace(error, stackTrace);
-    }
-    try {
-      final target = _canonicalIdentifier(
-        targetOwnerId(result),
-        'targetOwnerId',
-      );
-      if (await repository.activeOwnerId() != target) {
-        throw StateError('reminder owner change target is not active');
+      try {
+        await repository.endOwnerOperationFence(
+          ownerId: source,
+          operationToken: token,
+        );
+        fenceEnded = true;
+      } on Object {
+        cleanupFailures.add(StudyReminderFailureKind.durableState);
+        _recordFailure(StudyReminderFailureKind.durableState);
       }
-      await _reconcileOwner(target, featureEnabled: featureEnabled);
-    } on Object {
-      // The owner transition is already durable. Target platform repair is
-      // best-effort and will replay from desired state on the next trigger.
+      try {
+        // Restoration is legal only after removing our marker and while the
+        // same token still owns the canonical lease, including same-owner races.
+        await requireAuthority();
+        if (fenceEnded) {
+          await _reconcileOwner(expectedOwner, featureEnabled: featureEnabled);
+        }
+      } on Object {
+        cleanupFailures.add(StudyReminderFailureKind.platformSideEffect);
+        _recordFailure(StudyReminderFailureKind.platformSideEffect);
+      }
+      if (cleanupFailures.isNotEmpty) {
+        // Target desired state can converge while a captured source native ID
+        // still needs retry. Keep both observations in the reported status.
+        _availability = StudyReminderAvailability.degraded;
+        _lastFailureKinds = Set<StudyReminderFailureKind>.unmodifiable({
+          ..._lastFailureKinds,
+          ...cleanupFailures,
+        });
+      }
+      if (operationError != null) {
+        Error.throwWithStackTrace(operationError, operationStack!);
+      }
+      return result;
+    } finally {
+      if (!fenceEnded) {
+        try {
+          await repository.endOwnerOperationFence(
+            ownerId: source,
+            operationToken: token,
+          );
+        } on Object {
+          // The exact marker becomes inert when this lease expires/releases.
+        }
+      }
+      _transitionNativeGuard = null;
     }
-    return result;
   });
+
+  Future<void> _requireTransitionAuthority(String ownerId, String token) async {
+    if (!await repository.isOwnerOperationTokenOwned(
+      operationToken: token,
+      nowUtc: _utcNow(),
+    ))
+      throw StateError('reminder owner-operation lease was lost');
+    if (await repository.activeOwnerId() != ownerId ||
+        !await repository.isOwnerOperationTokenOwned(
+          operationToken: token,
+          nowUtc: _utcNow(),
+        ))
+      throw StateError('reminder owner-operation authority changed');
+  }
+
+  Future<_PlatformDelta> _repairInactiveOwnerEntries(String activeOwner) async {
+    var cancelled = 0;
+    var failed = 0;
+    var needsCurrentOwnerRepair = false;
+    try {
+      if (!await _orphanCleanupAllows(activeOwner)) {
+        return const _PlatformDelta();
+      }
+      final entries = await _pendingNativeEntries();
+      if (!await _orphanCleanupAllows(activeOwner)) {
+        return const _PlatformDelta();
+      }
+      for (final entry in entries) {
+        if (entry.ownerId == activeOwner) continue;
+        if (!await _orphanCleanupAllows(activeOwner, entry.ownerId)) break;
+        // Payloads can be replaced at the same native ID while enumeration is
+        // pending. Revalidate the decoded identity, never derive a new hash.
+        final latest = await _pendingNativeEntries();
+        if (!latest.any(
+          (candidate) =>
+              candidate.platformId == entry.platformId &&
+              candidate.ownerId == entry.ownerId &&
+              candidate.reminderId == entry.reminderId,
+        ))
+          continue;
+        if (!await _orphanCleanupAllows(activeOwner, entry.ownerId)) break;
+        try {
+          await _cancelNative(entry.platformId);
+          cancelled++;
+        } on Object {
+          failed++;
+        }
+        if (!await _orphanCleanupAllows(activeOwner, entry.ownerId)) {
+          needsCurrentOwnerRepair = true;
+          break;
+        }
+      }
+    } on Object {
+      failed++;
+    }
+    return _PlatformDelta(
+      cancelled: cancelled,
+      failed: failed,
+      needsCurrentOwnerRepair: needsCurrentOwnerRepair,
+    );
+  }
+
+  Future<bool> _orphanCleanupAllows(
+    String activeOwner, [
+    String? payloadOwner,
+  ]) async {
+    if (await repository.activeOwnerId() != activeOwner ||
+        !await _ownerOperationAllows(activeOwner))
+      return false;
+    if (payloadOwner != null && !await _ownerOperationAllows(payloadOwner))
+      return false;
+    // Fence reads are asynchronous too. Never continue using the owner sample
+    // from before those reads when another transition has already committed.
+    return await repository.activeOwnerId() == activeOwner;
+  }
 
   Future<void> cancelOwnerPlatformEntries(String ownerId) =>
       _serialize(() => _cancelOwnerPlatformEntries(ownerId));
@@ -377,12 +647,18 @@ final class StudyReminderUseCases {
   Future<StudyReminderReconcileResult> _reconcileOwner(
     String ownerId, {
     required bool featureEnabled,
+    void Function()? requestCurrentOwnerRepair,
   }) async {
     // The live registry value is only a wake-up hint. Cross-isolate
     // correctness comes from the durable eligibility decision below.
     final _ = featureEnabled;
     if (!await _ownerOperationAllows(ownerId)) {
-      return _completeResult(await _cancelFencedOwnerPlatformEntries(ownerId));
+      return _completeResult(
+        await _cancelFencedOwnerPlatformEntries(
+          ownerId,
+          requestCurrentOwnerRepair: requestCurrentOwnerRepair,
+        ),
+      );
     }
     late final StudyReminderFeatureEligibility eligibility;
     try {
@@ -452,7 +728,7 @@ final class StudyReminderUseCases {
 
     late final List<ReminderPlatformEntry> platformEntries;
     try {
-      platformEntries = await scheduler.pendingEntries();
+      platformEntries = await _pendingNativeEntries();
     } on Object {
       return _completeResult(
         const StudyReminderReconcileResult(
@@ -604,7 +880,7 @@ final class StudyReminderUseCases {
       }
     }
     try {
-      for (final entry in await scheduler.pendingEntries()) {
+      for (final entry in await _pendingNativeEntries()) {
         if (entry.ownerId == ownerId) platformIds.add(entry.platformId);
       }
     } on Object {
@@ -613,7 +889,7 @@ final class StudyReminderUseCases {
     }
     for (final platformId in platformIds) {
       try {
-        await scheduler.cancel(platformId);
+        await _cancelNative(platformId);
         cancelled += 1;
       } on Object {
         failed += 1;
@@ -672,7 +948,7 @@ final class StudyReminderUseCases {
     var cancelled = 0;
     try {
       if (!await _ownerOperationAllows(intent.ownerId)) {
-        await scheduler.cancel(platformId);
+        await _cancelNative(platformId);
         return const _PlatformDelta(cancelled: 1);
       }
       final resolved = await repository.resolvePlatformIntent(intent);
@@ -713,7 +989,7 @@ final class StudyReminderUseCases {
           );
         }
       } else {
-        await scheduler.cancel(platformId);
+        await _cancelNative(platformId);
         cancelled += 1;
       }
       final afterSideEffect = await repository.resolvePlatformIntent(intent);
@@ -727,7 +1003,7 @@ final class StudyReminderUseCases {
       if (!_sameRevision(current, afterSideEffect) ||
           shouldScheduleAfter != shouldSchedule) {
         if (shouldSchedule) {
-          await scheduler.cancel(platformId);
+          await _cancelNative(platformId);
           cancelled += 1;
         }
         final repair = await _repairPlatformEntry(
@@ -770,7 +1046,7 @@ final class StudyReminderUseCases {
         // Preserve fail-closed platform cleanup below.
       }
       try {
-        await scheduler.cancel(platformId);
+        await _cancelNative(platformId);
         return const _PlatformDelta(cancelled: 1, failed: 1);
       } on Object {
         return const _PlatformDelta(failed: 1);
@@ -796,7 +1072,7 @@ final class StudyReminderUseCases {
           supported: supported,
           permission: permission,
         );
-        final isPending = (await scheduler.pendingEntries()).any(
+        final isPending = (await _pendingNativeEntries()).any(
           (entry) =>
               entry.platformId == platformId &&
               entry.ownerId == ownerId &&
@@ -835,7 +1111,7 @@ final class StudyReminderUseCases {
           }
           appliedRevision = checked.localRevision;
         } else {
-          await scheduler.cancel(platformId);
+          await _cancelNative(platformId);
           cancelled += 1;
           appliedRevision = null;
         }
@@ -855,7 +1131,7 @@ final class StudyReminderUseCases {
       }
       // Bounded fail-closed terminal action: never let a stale schedule be the
       // last platform effect if desired state churns outside this coordinator.
-      await scheduler.cancel(platformId);
+      await _cancelNative(platformId);
       cancelled += 1;
       return _PlatformDelta(
         scheduled: scheduled,
@@ -864,7 +1140,7 @@ final class StudyReminderUseCases {
       );
     } on Object {
       try {
-        await scheduler.cancel(platformId);
+        await _cancelNative(platformId);
         return _PlatformDelta(
           scheduled: scheduled,
           cancelled: cancelled + 1,
@@ -905,7 +1181,7 @@ final class StudyReminderUseCases {
       );
     }
 
-    await scheduler.schedule(request);
+    await _scheduleNative(request);
 
     late final StudyReminderFeatureEligibility after;
     try {
@@ -936,7 +1212,7 @@ final class StudyReminderUseCases {
     int scheduled = 0,
   }) async {
     try {
-      await scheduler.cancel(platformId);
+      await _cancelNative(platformId);
       return _FeatureFencedSchedule(
         status: status,
         scheduled: scheduled,
@@ -953,7 +1229,7 @@ final class StudyReminderUseCases {
   }
 
   Future<Set<int>> _ownerPlatformIds(String ownerId) async {
-    final platformEntries = await scheduler.pendingEntries();
+    final platformEntries = await _pendingNativeEntries();
     final reminderIds = await repository.reminderIdsForOwner(ownerId);
     return <int>{
       for (final reminderId in reminderIds)
@@ -963,14 +1239,24 @@ final class StudyReminderUseCases {
     };
   }
 
-  Future<void> _cancelPlatformIds(
+  Future<bool> _cancelPlatformIds(
     Set<int> platformIds, {
     required bool failOnError,
+    String? entryOwner,
   }) async {
     final failures = <Object>[];
     for (final platformId in platformIds) {
+      await _transitionNativeGuard?.call();
       try {
-        await scheduler.cancel(platformId);
+        if (entryOwner != null) {
+          final entries = await _pendingNativeEntries();
+          if (entries.any(
+            (entry) =>
+                entry.platformId == platformId && entry.ownerId != entryOwner,
+          ))
+            continue;
+        }
+        await _cancelNative(platformId);
       } on Object catch (error) {
         failures.add(error);
       }
@@ -978,36 +1264,101 @@ final class StudyReminderUseCases {
     if (failOnError && failures.isNotEmpty) {
       throw StateError('source-owner reminder platform cleanup failed');
     }
+    if (failures.isNotEmpty) {
+      _recordFailure(StudyReminderFailureKind.platformSideEffect);
+    }
+    return failures.isEmpty;
+  }
+
+  Future<List<ReminderPlatformEntry>> _pendingNativeEntries() async {
+    await _transitionNativeGuard?.call();
+    final entries = await scheduler.pendingEntries();
+    await _transitionNativeGuard?.call();
+    return entries;
+  }
+
+  Future<void> _cancelNative(int platformId) async {
+    await _transitionNativeGuard?.call();
+    await scheduler.cancel(platformId);
+    await _transitionNativeGuard?.call();
+  }
+
+  Future<void> _scheduleNative(ReminderScheduleRequest request) async {
+    await _transitionNativeGuard?.call();
+    await scheduler.schedule(request);
+    await _transitionNativeGuard?.call();
   }
 
   Future<StudyReminderReconcileResult> _cancelFencedOwnerPlatformEntries(
-    String ownerId,
-  ) async {
+    String ownerId, {
+    void Function()? requestCurrentOwnerRepair,
+  }) async {
     var cancelled = 0;
     var failed = 0;
+    var invalidated = false;
+    final failureKinds = <StudyReminderFailureKind>{};
+    Future<bool> stillFenced() async =>
+        await repository.activeOwnerId() == ownerId &&
+        await repository.isOwnerOperationFenced(
+          ownerId: ownerId,
+          nowUtc: _utcNow(),
+        ) &&
+        await repository.activeOwnerId() == ownerId;
     late final List<ReminderPlatformEntry> entries;
     try {
-      entries = await scheduler.pendingEntries();
+      entries = await _pendingNativeEntries();
     } on Object {
       return const StudyReminderReconcileResult(
         scheduled: 0,
         cancelled: 0,
         failed: 1,
+        availability: StudyReminderAvailability.degraded,
+        failureKinds: {StudyReminderFailureKind.pendingEntries},
       );
     }
-    for (final entry in entries) {
-      if (entry.ownerId != ownerId) continue;
-      try {
-        await scheduler.cancel(entry.platformId);
-        cancelled += 1;
-      } on Object {
-        failed += 1;
+    try {
+      if (!await stillFenced()) {
+        invalidated = true;
+      } else {
+        for (final entry in entries) {
+          if (entry.ownerId != ownerId) continue;
+          if (!await stillFenced()) {
+            invalidated = true;
+            break;
+          }
+          try {
+            await _cancelNative(entry.platformId);
+            cancelled++;
+          } on Object {
+            failed++;
+            failureKinds.add(StudyReminderFailureKind.platformSideEffect);
+          }
+          if (!await stillFenced()) {
+            invalidated = true;
+            break;
+          }
+        }
+      }
+    } on Object {
+      failed++;
+      failureKinds.add(StudyReminderFailureKind.durableState);
+    }
+    if (invalidated) {
+      if (requestCurrentOwnerRepair != null) {
+        requestCurrentOwnerRepair();
+      } else {
+        failed++;
+        failureKinds.add(StudyReminderFailureKind.durableState);
       }
     }
     return StudyReminderReconcileResult(
       scheduled: 0,
       cancelled: cancelled,
       failed: failed,
+      availability: failed > 0
+          ? StudyReminderAvailability.degraded
+          : StudyReminderAvailability.available,
+      failureKinds: Set<StudyReminderFailureKind>.unmodifiable(failureKinds),
     );
   }
 
@@ -1191,12 +1542,14 @@ final class _PlatformDelta {
     this.cancelled = 0,
     this.failed = 0,
     this.featureEligibilityFailed = false,
+    this.needsCurrentOwnerRepair = false,
   });
 
   final int scheduled;
   final int cancelled;
   final int failed;
   final bool featureEligibilityFailed;
+  final bool needsCurrentOwnerRepair;
 }
 
 enum _FeatureFencedScheduleStatus { landed, featureChanged, unavailable }

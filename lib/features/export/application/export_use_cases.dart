@@ -384,7 +384,7 @@ final class ExportUseCases {
         .first;
     final extension = switch (format) {
       ExportFormat.csv => 'csv',
-      ExportFormat.anki => 'txt',
+      ExportFormat.anki => 'tsv',
       ExportFormat.researchJson => 'json',
       ExportFormat.pdf => 'pdf',
       ExportFormat.ownerArchiveJson => 'json',

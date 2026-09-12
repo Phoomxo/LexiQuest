@@ -20,6 +20,9 @@ void main() {
       final result2 = db.lookupByMlLabel('laptop');
       expect(result2, isNotNull);
       expect(result2!.englishWord, 'laptop');
+
+      final trimmed = db.lookupByMlLabel('  LaPToP  ');
+      expect(trimmed, same(result));
     });
 
     test('lookupByMlLabel returns null for unknown label', () {
@@ -27,10 +30,26 @@ void main() {
       expect(result, isNull);
     });
 
-    test('lookupByMlLabel supports partial match fallback', () {
+    test('lookupByMlLabel maps reviewed coffee cup alias to cup', () {
       final result = db.lookupByMlLabel('coffee cup');
       expect(result, isNotNull);
-      // Should match either 'Coffee' or 'Cup'
+      expect(result!.mlLabel, 'Cup');
+      expect(result.englishWord, 'cup');
+      expect(db.lookupByMlLabel('  CoFfEe CuP  '), same(result));
+    });
+
+    for (final label in const ['screwdriver', 'triceratops', 'king penguin']) {
+      test(
+        'lookupByMlLabel rejects unreviewed substring mapping for $label',
+        () {
+          expect(db.lookupByMlLabel(label), isNull);
+        },
+      );
+    }
+
+    test('lookupByMlLabel rejects empty and whitespace labels', () {
+      expect(db.lookupByMlLabel(''), isNull);
+      expect(db.lookupByMlLabel(' \t\n '), isNull);
     });
 
     test('getByCategory returns entries in specific category', () {

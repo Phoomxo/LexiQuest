@@ -903,11 +903,16 @@ void main() {
         // Signed research pins intentionally prevent guest upgrades (covered
         // by research_owner_upgrade_test). This success journey must be a
         // nonparticipant, while retaining positive coverage of every ordinary
-        // owner table and explicit zero coverage of all four research tables.
+        // owner table and explicit zero coverage of all five pinned research
+        // tables, including proofs that must never be fabricated for this seed.
+        const nontransferableResearchTables = <String>{
+          ...researchLifecycleTables,
+          'research_session_proofs',
+        };
         for (final entry in seededCounts.entries) {
           expect(
             entry.value,
-            researchLifecycleTables.contains(entry.key)
+            nontransferableResearchTables.contains(entry.key)
                 ? equals(0)
                 : greaterThanOrEqualTo(1),
             reason: entry.key,
@@ -1499,6 +1504,88 @@ void main() {
         );
         final foreignBefore = await _foreignOwnerSnapshot(database);
 
+        // Both fixtures are unknown legacy periods. Keep their distinct catalog
+        // pins and children; the active guest is the compatibility representative.
+        final guestQuestBefore =
+            await (database.select(database.questInstances)
+                  ..where((row) => row.instanceId.equals('quest-instance-1')))
+                .getSingle();
+        final targetQuestBefore =
+            await (database.select(database.questInstances)..where(
+                  (row) => row.instanceId.equals('target:quest-instance-1'),
+                ))
+                .getSingle();
+        expect(guestQuestBefore.catalogVersion, 1);
+        expect(guestQuestBefore.state, 'active');
+        expect(targetQuestBefore.catalogVersion, 2);
+        expect(targetQuestBefore.state, 'expired');
+        for (final quest in [guestQuestBefore, targetQuestBefore]) {
+          expect(quest.periodPolicy, 'legacyDuration');
+          expect(quest.periodKey, '');
+          expect(quest.definitionSnapshotJson, isNull);
+          expect(quest.deadlineAtUtcMs, isNull);
+          expect(quest.isCanonical, isTrue);
+        }
+        final questProgressBefore =
+            await (database.select(database.questObjectiveProgress)
+                  ..where(
+                    (row) => row.instanceId.isIn([
+                      'quest-instance-1',
+                      'target:quest-instance-1',
+                    ]),
+                  )
+                  ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+                .get();
+        expect(questProgressBefore.map((row) => row.id), [
+          'guest-only-objective',
+          'objective-1',
+          'target:objective-1',
+        ]);
+        expect(
+          questProgressBefore.map(
+            (row) => (
+              row.instanceId,
+              row.objectiveId,
+              row.currentCount,
+              row.targetCount,
+              row.sourceEventIdsJson,
+            ),
+          ),
+          [
+            ('quest-instance-1', 'guest-only', 2, 3, '["guest-only-event"]'),
+            ('quest-instance-1', 'answer-once', 1, 1, '["event-source-1"]'),
+            (
+              'target:quest-instance-1',
+              'answer-once',
+              2,
+              2,
+              '["event-source-1"]',
+            ),
+          ],
+        );
+        Future<void> expectMergedQuestHistory(AppDatabase current) async {
+          final quests =
+              await (current.select(current.questInstances)
+                    ..where((row) => row.ownerId.equals('account-owner'))
+                    ..orderBy([(row) => OrderingTerm.asc(row.instanceId)]))
+                  .get();
+          expect(quests, [
+            guestQuestBefore.copyWith(ownerId: 'account-owner'),
+            targetQuestBefore.copyWith(isCanonical: false),
+          ]);
+          final progress =
+              await (current.select(current.questObjectiveProgress)
+                    ..where(
+                      (row) => row.instanceId.isIn([
+                        'quest-instance-1',
+                        'target:quest-instance-1',
+                      ]),
+                    )
+                    ..orderBy([(row) => OrderingTerm.asc(row.id)]))
+                  .get();
+          expect(progress, questProgressBefore);
+        }
+
         final result = await UpgradeGuestOwner(
           DriftOwnerUpgradeRepository(
             database,
@@ -1556,31 +1643,7 @@ void main() {
         expect(memory.id, 'target:memory-1');
         expect(memory.stability, 9);
         expect(memory.lastReviewedAtUtcMs, 200);
-        final quest = await (database.select(
-          database.questInstances,
-        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
-        expect(quest.instanceId, 'target:quest-instance-1');
-        expect(quest.state, 'active');
-        final objectives =
-            await (database.select(database.questObjectiveProgress)
-                  ..where(
-                    (row) => row.instanceId.equals('target:quest-instance-1'),
-                  )
-                  ..orderBy([(row) => OrderingTerm.asc(row.objectiveId)]))
-                .get();
-        expect(objectives, hasLength(2));
-        final objective = objectives.singleWhere(
-          (row) => row.objectiveId == 'answer-once',
-        );
-        expect(objective.id, 'target:objective-1');
-        expect(objective.currentCount, 1);
-        expect(objective.targetCount, 1);
-        final guestOnlyObjective = objectives.singleWhere(
-          (row) => row.objectiveId == 'guest-only',
-        );
-        expect(guestOnlyObjective.id, 'target:quest-instance-1:guest-only');
-        expect(guestOnlyObjective.currentCount, 2);
-        expect(guestOnlyObjective.targetCount, 3);
+        await expectMergedQuestHistory(database);
         final importHashes = await database
             .customSelect(
               'SELECT source_hash FROM vocabulary_imports '
@@ -1654,7 +1717,7 @@ void main() {
             'quest_instances',
             'account-owner',
           ),
-          1,
+          2,
         );
         expect(
           await database
@@ -1698,6 +1761,7 @@ void main() {
           ),
         )(activeOwnerId: 'account-owner', firebaseUid: 'firebase-new');
         expect(replay.mode, OwnerUpgradeMode.alreadyBound);
+        await expectMergedQuestHistory(database);
         await _expectWithdrawnResearchConsent(database, nowUtc);
         final firstRun = await buildEngine(database).run();
         expect(firstRun.status, SyncRunStatus.completed);
@@ -1717,6 +1781,7 @@ void main() {
 
         expect(secondRun.status, SyncRunStatus.completed);
         expect(secondRun.pushed, 0);
+        await expectMergedQuestHistory(database);
         await _expectWithdrawnResearchConsent(database, nowUtc);
         expect(gateway.pushFirebaseUids, hasLength(pushesAfterFirstRun));
         expect(
@@ -2161,6 +2226,7 @@ const Map<String, String> _inventoryIdentityColumns = <String, String>{
   'motivation_measurement_runs': 'id',
   'motivation_responses': 'id',
   'research_participation_permits': 'id',
+  'research_session_proofs': 'id',
   'measurement_opportunities': 'id',
   'saved_learning_items': 'id',
   'content_quality_reports': 'id',

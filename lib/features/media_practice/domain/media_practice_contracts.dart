@@ -18,6 +18,7 @@ enum CameraFailureCode {
   captureFailed,
   modelUnavailable,
   invalidImage,
+  notConfident,
   cancelled,
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -12,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/config/research_runtime_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/main.dart' as application;
+import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
@@ -31,12 +34,19 @@ import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/history/application/learning_history_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/review/data/drift_review_center_reader.dart';
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
+import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
@@ -84,6 +94,7 @@ import 'package:vocab_learning_app/features/time_tracking/application/focus_time
 import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
 import 'package:vocab_learning_app/features/today_hub/application/today_hub_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
@@ -97,6 +108,7 @@ import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_board_view.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/voice/standard_voice_pack_download_manager.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -106,6 +118,57 @@ class _StubGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async {
     return const GuestSessionFailed(GuestSessionFailure.unknown);
+  }
+}
+
+final class _QuestGuardReadInterceptor extends QueryInterceptor {
+  bool armed = false;
+  bool retired = false;
+  int readsAfterRetirement = 0;
+  final entered = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    if (retired) readsAfterRetirement++;
+    final result = await executor.runSelect(statement, args);
+    if (armed &&
+        statement.contains('local_owners') &&
+        statement.contains('is_active')) {
+      armed = false;
+      entered.complete();
+      await release.future;
+    }
+    return result;
+  }
+}
+
+final class _ReadingOffFeatureRegistry implements FeatureRegistry {
+  const _ReadingOffFeatureRegistry();
+
+  static const _base = BuildFeatureRegistry.fieldDefaults();
+
+  @override
+  FeatureState stateOf(Feature feature) => feature == Feature.reading
+      ? FeatureState.disabled
+      : _base.stateOf(feature);
+
+  @override
+  bool isVisible(Feature feature) {
+    final state = stateOf(feature);
+    return state != FeatureState.hidden &&
+        state != FeatureState.disabled &&
+        state != FeatureState.emergencyOff;
+  }
+
+  @override
+  bool isEnabled(Feature feature) {
+    final state = stateOf(feature);
+    return state == FeatureState.enabled || state == FeatureState.limited;
   }
 }
 
@@ -471,6 +534,479 @@ EvidenceContext _bootstrapMissingAssessmentEvidence() {
 void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
+
+    if (const bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW')) {
+      testWidgets('CEFR chooses eligible vocabulary before opening a session', (tester) async {
+        final dependencies = (await tester.runAsync(() => AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {}, initializeSupabase: () async {},
+          loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+        ).initialize()))!;
+        addTearDown(dependencies.dispose);
+        await tester.runAsync(() async {
+          final category = await dependencies.vocabulary!.createCategory('Synthetic reading');
+          await dependencies.vocabulary!.createWord(CreateWordCommand(
+            categoryId: category.id, spelling: 'station', meaning: 'สถานี',
+            partOfSpeech: 'noun', cefrLevel: 'A1',
+          ));
+        });
+        await tester.pumpWidget(AppDependenciesScope(dependencies: dependencies,
+          child: MaterialApp(home: ChooseModeScreen())));
+        await tester.pumpAndSettle();
+        Future<void> tap(Finder finder) async {
+          if (finder.evaluate().isEmpty) {
+            await tester.scrollUntilVisible(finder, 400,
+              scrollable: find.byType(Scrollable).first);
+          }
+          await tester.ensureVisible(finder);
+          await tester.pumpAndSettle();
+          await tester.tap(finder);
+          for (var i = 0; i < 40; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          }
+        }
+        await tap(find.byKey(const ValueKey('home/learn/reading/cefr')));
+        await tap(find.text('ฝึกจากคำศัพท์ที่มีระดับ'));
+        await tap(find.text('เริ่มเรียน'));
+        final load = tester.widget<FutureBuilder<QuizSession>>(find.byType(FutureBuilder<QuizSession>)).future;
+        await tester.runAsync(() => load!);
+        expect(find.text('A book for May'), findsOneWidget);
+        final sessions = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).get());
+        expect(sessions, hasLength(1));
+        expect(sessions!.single.state, isNot('abandoned'));
+        await tester.pumpWidget(const SizedBox.shrink());
+        for (var i = 0; i < 30; i++) {
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        }
+      });
+
+      testWidgets('learning preview matching opens the real Pair setup', (tester) async {
+        final dependencies = (await tester.runAsync(() => AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          cloudSyncEnabled: false,
+        ).initialize()))!;
+        addTearDown(dependencies.dispose);
+        await tester.pumpWidget(AppDependenciesScope(
+          dependencies: dependencies,
+          child: MaterialApp(home: ChooseModeScreen()),
+        ));
+        await tester.pumpAndSettle();
+        final entry = find.byKey(const ValueKey('home/learn/quiz/matching'));
+        await tester.ensureVisible(entry);
+        await tester.pumpAndSettle();
+        await tester.tap(entry, warnIfMissed: true);
+        for (var i = 0; i < 100; i++) {
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          if (find.byKey(const ValueKey('pair-density-4')).evaluate().isNotEmpty) break;
+        }
+        expect(find.byKey(const ValueKey('pair-density-4')), findsOneWidget);
+        expect(find.byKey(const ValueKey('pair-density-6')), findsOneWidget);
+        Future<void> ready(Finder finder) async {
+          for (var i = 0; i < 200; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+            if (finder.evaluate().isNotEmpty) return;
+          }
+          expect(finder, findsOneWidget);
+        }
+        Future<void> tapVisible(Finder finder) async {
+          await tester.ensureVisible(finder);
+          await tester.pump(const Duration(milliseconds: 500));
+          await tester.tap(finder);
+          for (var i = 0; i < 25; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          }
+        }
+        await tapVisible(find.byKey(const ValueKey('pair-density-4')));
+        await tapVisible(find.byKey(const ValueKey('pair-start')));
+        await ready(find.byType(PairBoardView));
+        final board = tester.widget<PairBoardView>(find.byType(PairBoardView));
+        final ids = board.model.state.plan.orderedLexicalItems.map((item) => item.wordId).toList();
+        expect(ids, hasLength(4));
+        for (final id in ids) {
+          await tapVisible(find.byKey(ValueKey('pair-tile:prompt:$id')));
+          await tapVisible(find.byKey(ValueKey('pair-tile:target:$id')));
+        }
+        await ready(find.byKey(const ValueKey('pair-result-return')));
+        expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 1);
+        expect(find.byType(FocusTimerWidget), findsNothing);
+        final sessions = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).get());
+        expect(sessions!.where((s) => s.activityType == 'matching').single.state, 'completed');
+        final projections = await tester.runAsync(() => dependencies.learningHistory!.loadPairResults(
+          sessions.where((s) => s.activityType == 'matching').map((s) => s.id),
+        ));
+        expect(projections, hasLength(1));
+        expect(projections!.single.result.matched, 4);
+        await tapVisible(find.byKey(const ValueKey('pair-result-return')));
+        await ready(entry);
+        await tapVisible(entry);
+        await ready(find.byKey(const ValueKey('pair-density-4')));
+        await tester.pumpWidget(const SizedBox.shrink());
+        for (var i = 0; i < 30; i++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          await tester.pump(const Duration(milliseconds: 30));
+        }
+      });
+    }
+
+    test('learning preview build composes only approved capabilities', () async {
+      const preview = bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW');
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        cloudSyncEnabled: false,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(
+        dependencies.lessonModes!.resolve(LessonMode.matching) != null,
+        preview,
+      );
+      expect(dependencies.features.isEnabled(Feature.dailyContinuity), preview);
+      expect(dependencies.todayHub, isNotNull);
+      expect(dependencies.features.isEnabled(Feature.adventureMotivation), isFalse);
+      expect(dependencies.features.isEnabled(Feature.researchAssessment), isFalse);
+      expect(dependencies.learningTimeCaptureRollout.allowsCapture, preview);
+      final quiz = dependencies.lessonModes!.resolve(LessonMode.meaningQuiz)!;
+      final controller = dependencies.createLessonController!(quiz.adapter);
+      expect(controller.focusTimer != null, preview);
+      controller.dispose();
+      final features = dependencies.features as RuntimeFeatureRegistry;
+      features.emergencyOff(Feature.dailyContinuity);
+      expect(features.isEnabled(Feature.dailyContinuity), isFalse);
+    });
+
+    test(
+      'daily quest bootstrap remains available under an existing canonical transition',
+      () async {
+        final database = _testDatabase();
+        final clock = DateTime.now().toUtc();
+        await database.customStatement(
+          "INSERT INTO local_owners (id,account_state,created_at_utc_ms,is_active) VALUES ('existing-guest','localGuest',1,1)",
+        );
+        final gate = DriftOwnerOperationGate(database);
+        expect(
+          await gate.tryAcquire(
+            token: 'existing-transition',
+            nowUtc: clock,
+            leaseDuration: const Duration(minutes: 1),
+          ),
+          isTrue,
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await AppBootstrap(
+            createDatabase: () => database,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            runtimeFeatureNowUtc: () => clock,
+          ).initialize().timeout(const Duration(seconds: 10));
+          expect(dependencies.learning, isNotNull);
+          expect(await database.select(database.questInstances).get(), isEmpty);
+          await expectLater(
+            dependencies.learning!.startAssociativeReadingSessionHandle(),
+            throwsA(anything),
+          );
+          expect(
+            await database.select(database.learningSessions).get(),
+            isEmpty,
+          );
+          await gate.release(token: 'existing-transition');
+          await dependencies.learning!.startAssociativeReadingSessionHandle();
+          expect(
+            await database.select(database.learningSessions).get(),
+            hasLength(1),
+          );
+          expect(
+            await database.select(database.questInstances).get(),
+            hasLength(1),
+          );
+        } finally {
+          if (dependencies != null) {
+            await gate.release(token: 'existing-transition');
+            await dependencies.dispose();
+          }
+        }
+      },
+    );
+
+    test(
+      'daily quest actual runtime guard stops internal reads after quest disposal',
+      () async {
+        final interceptor = _QuestGuardReadInterceptor();
+        final database = AppDatabase(
+          NativeDatabase.memory().interceptWith(interceptor),
+        );
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        ).initialize();
+        try {
+          await dependencies.learningReconciliation!.dispose();
+          await dependencies.syncTrigger?.dispose();
+          final owner = await dependencies.localOwners!
+              .getOrCreateActiveOwner();
+          interceptor.armed = true;
+          final pending = dependencies.quest.authorityGuard!(owner.id);
+          await interceptor.entered.future.timeout(const Duration(seconds: 3));
+          dependencies.quest.dispose();
+          interceptor.retired = true;
+          interceptor.release.complete();
+          await expectLater(pending, throwsStateError);
+          expect(interceptor.readsAfterRetirement, 0);
+        } finally {
+          if (!interceptor.release.isCompleted) interceptor.release.complete();
+          interceptor.retired = false;
+          await dependencies.dispose();
+        }
+      },
+    );
+
+    testWidgets(
+      'daily quest bootstrap and actual app resume share the injected calendar clock',
+      (tester) async {
+        final database = _testDatabase();
+        var clock = DateTime.utc(2026, 8, 4, 10);
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          runtimeFeatureNowUtc: () => clock,
+          learningTimezoneId: () => 'Asia/Bangkok',
+        );
+        final dependencies = (await tester.runAsync(bootstrap.initialize))!;
+        addTearDown(dependencies.dispose);
+        final first = (await tester.runAsync(
+          () => database.select(database.questInstances).get(),
+        ))!.single;
+        expect(first.periodKey, 'daily:2026-08-04');
+        await tester.pumpWidget(
+          application.MyApp(
+            dependencies: dependencies,
+            ownsDependencies: false,
+          ),
+        );
+        await tester.pumpAndSettle();
+        final refreshed = Completer<void>();
+        final appContext = tester.element(find.byType(Navigator).first);
+        expect(Localizations.localeOf(appContext).languageCode, 'th');
+        expect(MaterialLocalizations.of(appContext).backButtonTooltip, 'กลับ');
+        void listener() {
+          if (!refreshed.isCompleted) refreshed.complete();
+        }
+
+        dependencies.quest.addStatusListener(listener);
+        clock = clock.add(const Duration(days: 1));
+        try {
+          await tester.runAsync(() async {
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.inactive,
+            );
+            tester.binding.handleAppLifecycleStateChanged(
+              AppLifecycleState.resumed,
+            );
+          });
+          // Mounting can leave owner reads on the fake-zone serialization
+          // queue. Advance that queue as well as native database I/O instead
+          // of suspending the fake zone for the entire notification wait.
+          final wait = Stopwatch()..start();
+          while (!refreshed.isCompleted &&
+              wait.elapsed < const Duration(seconds: 3)) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 1)),
+            );
+            await tester.pump();
+          }
+          expect(
+            refreshed.isCompleted,
+            isTrue,
+            reason: 'Actual app resume must complete its daily quest refresh.',
+          );
+        } finally {
+          dependencies.quest.removeStatusListener(listener);
+        }
+        await tester.pumpAndSettle();
+        await tester.runAsync(
+          () => dependencies.learning!.startAssociativeReadingSessionHandle(),
+        );
+        final rows = (await tester.runAsync(
+          () => database.select(database.questInstances).get(),
+        ))!;
+        expect(rows, hasLength(2));
+        expect(
+          rows.map((row) => row.questId).toSet(),
+          QuestCatalogProvider.dailyQuests
+              .map((definition) => definition.questId)
+              .toSet(),
+        );
+        expect(
+          rows.singleWhere((row) => row.instanceId == first.instanceId).state,
+          'expired',
+        );
+        expect(
+          rows.singleWhere((row) => row.state == 'active').periodKey,
+          'daily:2026-08-05',
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.pointsLedgerEntries).get(),
+          ))!,
+          isEmpty,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    test(
+      'daily quest runtime rejects an observed canonical transition before session admission',
+      () async {
+        final database = _testDatabase();
+        final clock = DateTime.utc(2026, 8, 4, 10);
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          runtimeFeatureNowUtc: () => clock,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        final gate = DriftOwnerOperationGate(database);
+        addTearDown(() => gate.release(token: 'synthetic-transition'));
+        expect(
+          await gate.tryAcquire(
+            token: 'synthetic-transition',
+            nowUtc: clock,
+            leaseDuration: const Duration(minutes: 1),
+          ),
+          isTrue,
+        );
+        await expectLater(
+          dependencies.learning!.startAssociativeReadingSessionHandle(),
+          throwsA(anything),
+        );
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+        await gate.release(token: 'synthetic-transition');
+        await dependencies.learning!.startAssociativeReadingSessionHandle();
+        expect(
+          await database.select(database.learningSessions).get(),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'daily quest runtime rejects actual same-owner token loss after scheduling await',
+      () async {
+        final database = _testDatabase();
+        var clock = DateTime.utc(2026, 8, 4, 10);
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          runtimeFeatureNowUtc: () => clock,
+          learningTimezoneId: () => 'Asia/Bangkok',
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        final gate = DriftOwnerOperationGate(database);
+        final coordinator = OwnerOperationCoordinator(
+          gate: gate,
+          activeOwnerId: () async => owner.id,
+          nowUtc: () => clock,
+          generateToken: () => 'synthetic-entry-token',
+        );
+        await coordinator.run(
+          AiCancellation(),
+          (_) => dependencies.learning!.startAssociativeReadingSessionHandle(),
+        );
+        final firstSession = await database
+            .select(database.learningSessions)
+            .getSingle();
+        clock = clock.add(const Duration(days: 1));
+        await database.customStatement(
+          '''CREATE TEMP TRIGGER lose_quest_entry_token AFTER INSERT ON quest_instances
+        BEGIN DELETE FROM runtime_flags WHERE "key" = '${DriftOwnerOperationGate.gateKey}'; END''',
+        );
+        var boundaryRejected = false;
+        await expectLater(
+          coordinator.run(AiCancellation(), (_) async {
+            try {
+              await dependencies.learning!
+                  .startAssociativeReadingSessionHandle();
+            } catch (_) {
+              boundaryRejected = true;
+              rethrow;
+            }
+          }),
+          throwsA(anything),
+        );
+        expect(
+          boundaryRejected,
+          isTrue,
+          reason:
+              'session boundary must reject before the outer coordinator completes',
+        );
+        expect(
+          (await dependencies.localOwners!.getOrCreateActiveOwner()).id,
+          owner.id,
+        );
+        expect(
+          (await database.select(database.learningSessions).get()).single
+              .toJson(),
+          firstSession.toJson(),
+        );
+        final questRows = await database.select(database.questInstances).get();
+        expect(
+          questRows,
+          hasLength(2),
+          reason:
+              'Day2 insertion must reach the AFTER INSERT token-loss trigger',
+        );
+        expect(
+          questRows.singleWhere((row) => row.state == 'active').periodKey,
+          'daily:2026-08-05',
+        );
+        expect(
+          await (database.select(database.runtimeFlags)..where(
+                (row) => row.key.equals(DriftOwnerOperationGate.gateKey),
+              ))
+              .get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          isEmpty,
+        );
+      },
+    );
 
     test(
       'research configuration failure propagates before composition',
@@ -857,8 +1393,17 @@ void main() {
 
         expect(adapter.supports(manifest), isTrue);
         expect(
-          await database.select(database.contentManifests).get(),
+          await (database.select(database.contentManifests)..where(
+                (row) => row.contentType.equals('lexicalMetadata').not(),
+              ))
+              .get(),
           hasLength(2),
+        );
+        expect(
+          await (database.select(
+            database.contentManifests,
+          )..where((row) => row.contentType.equals('lexicalMetadata'))).get(),
+          hasLength(12),
         );
         expect(supportDirectoryCalls, 1);
         await dependencies.dispose();
@@ -943,6 +1488,85 @@ void main() {
         );
 
         expect(reasons, <SyncTriggerReason>[SyncTriggerReason.localMutation]);
+      },
+    );
+
+    test(
+      'bootstrap recommendations include reading and follow the live feature authority',
+      () async {
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.learnerPreferences!.save(
+          goal: LearnerPreferenceGoal.balancedGrowth,
+          availableMinutesPerDay: 20,
+          activityPreference: LearnerActivityPreference.reading,
+        );
+
+        final enabled = await dependencies.todayHub!.load();
+
+        expect(enabled.recommendation.result.alternatives.take(2), [
+          LessonMode.cefrReading,
+          LessonMode.associativeReading,
+        ]);
+
+        await dependencies.featureControls!.emergencyOff(Feature.reading);
+        final disabled = await dependencies.todayHub!.load();
+
+        expect(
+          disabled.recommendation.result.alternatives,
+          isNot(
+            contains(
+              anyOf(LessonMode.cefrReading, LessonMode.associativeReading),
+            ),
+          ),
+        );
+        expect(
+          disabled.recommendation.result.alternatives,
+          contains(LessonMode.flashcard),
+        );
+      },
+    );
+
+    test(
+      'bootstrap recommendations respect reading being off at build time',
+      () async {
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          buildFeatureRegistry: const _ReadingOffFeatureRegistry(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.learnerPreferences!.save(
+          goal: LearnerPreferenceGoal.balancedGrowth,
+          availableMinutesPerDay: 20,
+          activityPreference: LearnerActivityPreference.reading,
+        );
+
+        final snapshot = await dependencies.todayHub!.load();
+
+        expect(
+          snapshot.recommendation.result.alternatives,
+          isNot(
+            contains(
+              anyOf(LessonMode.cefrReading, LessonMode.associativeReading),
+            ),
+          ),
+        );
+        expect(
+          snapshot.recommendation.result.alternatives,
+          contains(LessonMode.flashcard),
+        );
       },
     );
 
@@ -1640,8 +2264,13 @@ void main() {
         final owners = await database.select(database.localOwners).get();
 
         expect(dependencies.localOwners, isNotNull);
-        expect(owners, hasLength(1));
-        expect(owners.single.isActive, isTrue);
+        expect(owners, hasLength(2));
+        expect(owners.where((owner) => owner.isActive), hasLength(1));
+        final packaged = owners.singleWhere(
+          (owner) => owner.id == PackagedStarterCatalog.ownerId,
+        );
+        expect(packaged.isActive, isFalse);
+        expect(packaged.firebaseUid, isNull);
       },
     );
 
@@ -3321,6 +3950,14 @@ void main() {
           sessionConfigurationSheet,
         );
         expect(sessionConfigurationSheet, findsOneWidget);
+        await settle('session configuration animation');
+        await bounded('expand session options', () async {
+          await tester.ensureVisible(find.text('ปรับตัวเลือก'));
+          await tester.pump();
+          expect(find.text('ปรับตัวเลือก').hitTestable(), findsOneWidget);
+          await tester.tap(find.text('ปรับตัวเลือก'));
+        });
+        await settle('session options expanded');
         await bounded(
           'session item-count input',
           () => tester.enterText(
@@ -3735,6 +4372,282 @@ void main() {
       },
     );
 
+    for (final kind in ['upgrade', 'logout', 'rollback']) {
+      for (final phase in [
+        'before-commit',
+        'before-final-sweep',
+        'after-sweep',
+      ]) {
+        test('independent reminder worker converges across $kind $phase', () async {
+          if (kind == 'upgrade') _installNoOpSecureStorage();
+          final directory = await Directory.systemTemp.createTemp(
+            'reminder-owner-worker-',
+          );
+          final file = File(
+            '${directory.path}${Platform.pathSeparator}app.sqlite',
+          );
+          final scheduler = _BootstrapReminderScheduler()
+            ..permission = ReminderPermissionState.granted;
+          AppDependencies? foreground;
+          AppDependencies? background;
+          final boundary = Completer<void>();
+          final releaseBoundary = Completer<void>();
+          Future<void>? workerDrain;
+          Future<void>? transitionDrain;
+          try {
+            foreground = await _reminderRaceBootstrap(file, scheduler);
+            background = await _reminderRaceBootstrap(file, scheduler);
+            final primary = foreground;
+            final worker = background;
+            final originalOwner =
+                (await primary.localOwners!.getOrCreateActiveOwner()).id;
+            var sourceOwner = originalOwner;
+            if (kind == 'rollback') {
+              sourceOwner =
+                  (await primary.upgradeGuestOwner!.createLocalGuestAfterLogout(
+                    sourceOwnerId: originalOwner,
+                  )).targetOwnerId;
+            }
+            if (kind == 'upgrade') {
+              await primary.database!
+                  .into(primary.database!.localOwners)
+                  .insert(
+                    LocalOwnersCompanion.insert(
+                      id: 'synthetic-reminder-upgrade-target',
+                      firebaseUid: const Value('synthetic-reminder-account'),
+                      accountState: const Value('firebaseBound'),
+                      createdAtUtcMs: 1,
+                      isActive: const Value(false),
+                    ),
+                  );
+            }
+            expect(
+              await primary.studyReminders!.optIn(
+                source: const StudyReminderSource.dueReview(),
+                scheduledAtUtc: DateTime.now().toUtc().add(
+                  const Duration(days: 1),
+                ),
+                timezoneId: 'Asia/Bangkok',
+                mutationAllowed: () => true,
+              ),
+              StudyReminderOptInResult.scheduled,
+            );
+            final captured = scheduler.pending.values.single;
+            expect(captured.ownerId, sourceOwner);
+            scheduler.pending.clear();
+            scheduler.cancelled.clear();
+            scheduler.blockNextSchedule();
+            final stale = worker.studyReminders!.reconcile(
+              featureEnabled: true,
+            );
+            workerDrain = stale.then<void>(
+              (_) {},
+              onError: (Object _, StackTrace __) {},
+            );
+            final request = await scheduler.blockedScheduleStarted.timeout(
+              const Duration(seconds: 3),
+            );
+            expect(request.ownerId, sourceOwner);
+            expect(request.platformId, captured.platformId);
+            if (kind == 'rollback') {
+              // Rollback only removes an empty temporary guest. Model a worker
+              // holding a native call whose synthetic desired rows were already
+              // removed, while its original native payload is still visible.
+              await primary.database!.customStatement(
+                'DELETE FROM outbox_operations WHERE owner_id = ? AND entity_type = ?',
+                [sourceOwner, studyReminderPlatformOutboxEntityType],
+              );
+              await primary.database!.customStatement(
+                'DELETE FROM study_reminders WHERE owner_id = ?',
+                [sourceOwner],
+              );
+              scheduler.pending[captured.platformId] = captured;
+            }
+            var heldBoundary = false;
+            var postCommitSweeps = 0;
+            scheduler.beforeCancel = (id) async {
+              if (id != captured.platformId) return;
+              final active =
+                  (await worker.localOwners!.getOrCreateActiveOwner()).id;
+              final committed = active != sourceOwner;
+              if (committed) postCommitSweeps++;
+              final shouldHold = phase == 'before-commit'
+                  ? !committed
+                  : phase == 'before-final-sweep' && committed;
+              if (shouldHold && !heldBoundary) {
+                heldBoundary = true;
+                boundary.complete();
+                await releaseBoundary.future;
+              }
+            };
+            var transitionSettled = false;
+            final transition = () async {
+              switch (kind) {
+                case 'upgrade':
+                  await primary.upgradeGuestOwner!(
+                    activeOwnerId: sourceOwner,
+                    firebaseUid: 'synthetic-reminder-account',
+                  );
+                case 'logout':
+                  await primary.upgradeGuestOwner!.createLocalGuestAfterLogout(
+                    sourceOwnerId: sourceOwner,
+                  );
+                case 'rollback':
+                  await primary.upgradeGuestOwner!.rollbackLocalGuestLogout(
+                    previousOwnerId: originalOwner,
+                    guestOwnerId: sourceOwner,
+                  );
+              }
+            }();
+            transitionDrain = transition.then<void>(
+              (_) {
+                transitionSettled = true;
+              },
+              onError: (Object _, StackTrace __) {
+                transitionSettled = true;
+              },
+            );
+            if (phase == 'after-sweep') {
+              await transition.timeout(const Duration(seconds: 3));
+              expect(
+                postCommitSweeps,
+                greaterThan(0),
+                reason:
+                    'A captured-ID final sweep must occur before transition completion.',
+              );
+              scheduler.releaseBlockedSchedule();
+              await stale.timeout(const Duration(seconds: 3));
+            } else {
+              await boundary.future.timeout(const Duration(seconds: 3));
+              expect(transitionSettled, isFalse);
+              final gateRow = await worker.database!
+                  .customSelect(
+                    'SELECT source FROM runtime_flags WHERE "key" = ?',
+                    variables: [
+                      const Variable<String>(DriftOwnerOperationGate.gateKey),
+                    ],
+                  )
+                  .getSingleOrNull();
+              expect(
+                gateRow,
+                isNotNull,
+                reason:
+                    'Native cancellation must run inside the acquired canonical lease.',
+              );
+              expect(
+                await DriftOwnerOperationGate(worker.database!).isOwned(
+                  token: gateRow!.read<String>('source'),
+                  nowUtc: DateTime.now().toUtc(),
+                ),
+                isTrue,
+              );
+              expect(
+                await DriftOwnerOperationGate(worker.database!).isOwnerFenced(
+                  ownerId: sourceOwner,
+                  nowUtc: DateTime.now().toUtc(),
+                ),
+                isTrue,
+              );
+              scheduler.releaseBlockedSchedule();
+              await stale.timeout(const Duration(seconds: 3));
+              expect(
+                scheduler.pending.values.where(
+                  (entry) => entry.ownerId == sourceOwner,
+                ),
+                isEmpty,
+              );
+              releaseBoundary.complete();
+              await transition.timeout(const Duration(seconds: 3));
+            }
+            expect(
+              scheduler.pending.values.where(
+                (entry) => entry.ownerId == sourceOwner,
+              ),
+              isEmpty,
+            );
+            final target =
+                (await primary.localOwners!.getOrCreateActiveOwner()).id;
+            expect(target, isNot(sourceOwner));
+            if (kind == 'rollback') expect(target, originalOwner);
+            await worker.studyReminders!.reconcile(featureEnabled: true);
+            expect(
+              scheduler.pending.values.every(
+                (entry) => entry.ownerId == target,
+              ),
+              isTrue,
+            );
+            expect(scheduler.permissionRequests, 0);
+            expect(await _ownerOperationRuntimeRows(primary.database!), 0);
+          } finally {
+            if (!releaseBoundary.isCompleted) releaseBoundary.complete();
+            scheduler.releaseBlockedSchedule();
+            scheduler.releaseBlockedCancel();
+            try {
+              await Future.wait<void>([
+                if (workerDrain != null) workerDrain,
+                if (transitionDrain != null) transitionDrain,
+              ]).timeout(const Duration(seconds: 3));
+            } finally {
+              await background?.dispose();
+              await foreground?.dispose();
+              await directory.delete(recursive: true);
+            }
+          }
+        });
+      }
+    }
+
+    test(
+      'actual account sign-out failure restores original owner reminder after rollback',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final gateway = _BootstrapAccountGateway(
+          currentSession: const AccountSession(
+            uid: 'rollback-reminder-account',
+            email: 'synthetic@example.com',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        );
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          accountGatewayFactory: () => gateway,
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        try {
+          await dependencies.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final original = scheduler.pending.values.single;
+          final failure = StateError('synthetic provider sign-out failure');
+          gateway.signOutFailure = failure;
+          await expectLater(
+            dependencies.account!.signOutToLocalGuest(),
+            throwsA(same(failure)),
+          );
+          expect(
+            (await dependencies.localOwners!.getOrCreateActiveOwner()).id,
+            original.ownerId,
+          );
+          expect(scheduler.pending.values.toList(), [original]);
+          expect(scheduler.permissionRequests, 0);
+          expect(await _ownerOperationRuntimeRows(dependencies.database!), 0);
+        } finally {
+          await dependencies.dispose();
+        }
+      },
+    );
+
     test(
       'logout cancels the exact source-owner reminder before switching owners',
       () async {
@@ -3819,10 +4732,19 @@ void main() {
         );
         final oldOwnerId = scheduler.pending.values.single.ownerId;
         final sourcePlatformId = scheduler.pending.keys.single;
-        scheduler.failPendingEntriesOnCall = scheduler.pendingEntriesCalls + 2;
+        var postCommitFailureInjected = false;
+        scheduler.beforePendingEntries = () async {
+          final currentOwner =
+              (await dependencies.localOwners!.getOrCreateActiveOwner()).id;
+          if (currentOwner != oldOwnerId && !postCommitFailureInjected) {
+            postCommitFailureInjected = true;
+            throw StateError('injected target reminder read failure');
+          }
+        };
 
         final result = await dependencies.account!.signOutToLocalGuest();
 
+        expect(postCommitFailureInjected, isTrue);
         expect(result.mode, OwnerUpgradeMode.localGuestCreated);
         expect(gateway.signOutCalls, 1);
         expect(entryState.mode, AppEntryMode.signedOut);
@@ -4156,7 +5078,7 @@ void main() {
     );
 
     test(
-      'background bootstrap after deletion leaves other-owner platform work untouched',
+      'background bootstrap after deletion preserves the active replacement owner native entry',
       () async {
         final directory = await Directory.systemTemp.createTemp(
           'lexiquest-reminder-deleted-bootstrap-',
@@ -4188,21 +5110,29 @@ void main() {
           ).eraseAll(ownerId: deletedOwnerId);
           await secretDeletionStarted.future;
 
-          final otherPlatformId = studyReminderPlatformId(
-            'owner-not-being-erased',
-            'reminder:other-owner-after-delete',
+          final replacementOwnerId =
+              (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+          expect(
+            await foreground.studyReminders!.optIn(
+              source: const StudyReminderSource.dueReview(),
+              scheduledAtUtc: DateTime.now().toUtc().add(
+                const Duration(days: 1),
+              ),
+              timezoneId: 'Asia/Bangkok',
+              mutationAllowed: () => true,
+            ),
+            StudyReminderOptInResult.scheduled,
           );
-          scheduler.pending[otherPlatformId] = ReminderPlatformEntry(
-            platformId: otherPlatformId,
-            ownerId: 'owner-not-being-erased',
-            reminderId: 'reminder:other-owner-after-delete',
-          );
+          final replacementEntry = scheduler.pending.values.single;
+          expect(replacementEntry.ownerId, replacementOwnerId);
+          final otherPlatformId = replacementEntry.platformId;
 
           background = await _reminderRaceBootstrap(file, scheduler);
           final newOwner = await background.localOwners!
               .getOrCreateActiveOwner();
 
           expect(newOwner.id, isNot(deletedOwnerId));
+          expect(newOwner.id, replacementOwnerId);
           expect(scheduler.pending, contains(otherPlatformId));
           expect(scheduler.cancelled, isNot(contains(otherPlatformId)));
         } finally {
@@ -5204,6 +6134,366 @@ void main() {
     );
 
     test(
+      'ordinary bootstrap makes packaged starter words playable without lexical injection',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await bootstrap.initialize();
+          final vocabulary = dependencies.vocabulary!;
+          final words = await vocabulary.getGameWords(limit: 100);
+          expect(
+            words,
+            hasLength(12),
+            reason: 'An ordinary installation needs a bounded starter set.',
+          );
+          final categories = await vocabulary.watchCategories().first;
+          expect(categories, hasLength(1));
+          expect(
+            await vocabulary.watchWords(categories.single.id).first,
+            hasLength(12),
+          );
+          final session = await dependencies.learning!.startQuiz(
+            categoryId: categories.single.id,
+            limit: 12,
+          );
+          expect(session.questions, hasLength(12));
+          final pinned = await vocabulary.readPinnedByIds(
+            session.questions.map((question) => question.word.id),
+          );
+          expect(pinned.every((word) => word.richMetadata != null), isTrue);
+          final cloze = const ClozeModeAdapter().pinItems(
+            session: session,
+            lexicalWords: pinned,
+          );
+          final definitions = const DefinitionQuizModeAdapter().pinItems(
+            session: session,
+            lexicalWords: pinned,
+          );
+          expect(cloze.every((item) => item.question != null), isTrue);
+          expect(definitions.every((item) => item.question != null), isTrue);
+          final firstIds = words.map((word) => word.id).toSet();
+          expect(await bootstrap.initialize(), same(dependencies));
+          expect(
+            (await vocabulary.getGameWords(
+              limit: 100,
+            )).map((word) => word.id).toSet(),
+            firstIds,
+          );
+          expect(await database.select(database.answerAttempts).get(), isEmpty);
+        } finally {
+          await dependencies?.dispose();
+        }
+      },
+    );
+
+    test(
+      'packaged starter learning survives reopen and isolates evidence export and erasure',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-starter-reopen-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        AppDependencies? current;
+        Future<AppDependencies> reopen() => AppBootstrap(
+          createDatabase: () => AppDatabase(NativeDatabase(file)),
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        ).initialize();
+        Future<void> completeStarter(
+          AppDependencies dependencies, {
+          required bool firstWrong,
+        }) async {
+          final session = await dependencies.learning!.startQuiz(
+            categoryId: PackagedStarterCatalog.categoryId,
+            limit: 12,
+          );
+          final words = await dependencies.vocabulary!.readPinnedByIds(
+            session.questions.map((question) => question.word.id),
+          );
+          final review = const ClozeModeAdapter().createReview(
+            session: session,
+            lexicalWords: words,
+            learning: dependencies.learning!,
+            evidence: dependencies.currentActivityEvidence!,
+            hintUsage: () => const HintUsageSnapshot.known(0),
+          );
+          try {
+            for (var index = 0; index < 12; index++) {
+              final question = review.currentItem.question!;
+              final answer = firstWrong && index == 0
+                  ? 'wrong-answer'
+                  : question.correctAnswer;
+              expect(
+                (await review.answerTyped(
+                  text: answer,
+                  responseTimeMs: 1000,
+                )).inserted,
+                isTrue,
+              );
+              await review.advance();
+            }
+            expect(review.phase, ClozeReviewPhase.completed);
+          } finally {
+            review.dispose();
+          }
+        }
+
+        try {
+          current = await reopen();
+          expect(current.runtimeStatus.starterContentFailure, isNull);
+          final ownerA =
+              (await current.localOwners!.getOrCreateActiveOwner()).id;
+          final initialCatalog = await current.database!
+              .select(current.database!.vocabularyWords)
+              .get();
+          await completeStarter(current, firstWrong: true);
+          expect((await current.progress!.load()).sampleSize, 12);
+          await current.dispose();
+          current = await reopen();
+          final database = current.database!;
+          expect(
+            await database.select(database.vocabularyWords).get(),
+            initialCatalog,
+          );
+          expect(
+            await current.vocabulary!.getGameWords(limit: 100),
+            hasLength(12),
+          );
+          expect((await current.progress!.load()).sampleSize, 12);
+          final now = DateTime.now().toUtc().add(const Duration(days: 3));
+          final reviewItems =
+              await DriftReviewCenterReader(
+                database,
+                contentManifests: current.contentManifests,
+              ).compose(
+                ReviewQueueFilter(
+                  ownerId: ownerA,
+                  evaluatedAtUtc: now,
+                  timezoneId: 'Asia/Bangkok',
+                  includeReasons: {ReviewQueueReason.incorrectAnswer},
+                ),
+              );
+          expect(reviewItems, hasLength(1));
+          expect(
+            await DriftProgressQueries(
+              database,
+            ).loadFlashcardFirstDecisions(ownerId: ownerA, nowUtc: now),
+            isEmpty,
+            reason:
+                'Frozen f14-v1 requires personal content ownership; shared SRS/review remains available.',
+          );
+          await database.transaction(() async {
+            await (database.update(database.localOwners)
+                  ..where((owner) => owner.id.equals(ownerA)))
+                .write(const LocalOwnersCompanion(isActive: Value(false)));
+            await database
+                .into(database.localOwners)
+                .insert(
+                  LocalOwnersCompanion.insert(
+                    id: 'starter-learner-b',
+                    createdAtUtcMs: 1,
+                  ),
+                );
+          });
+          expect((await current.progress!.load()).sampleSize, 0);
+          await completeStarter(current, firstWrong: false);
+          final attempts = await database.select(database.answerAttempts).get();
+          expect(attempts, hasLength(24));
+          expect(
+            attempts.where((attempt) => attempt.ownerId == ownerA),
+            hasLength(12),
+          );
+          expect(
+            attempts.where((attempt) => attempt.ownerId == 'starter-learner-b'),
+            hasLength(12),
+          );
+          final srs = await database.select(database.srsStates).get();
+          expect(srs.where((row) => row.ownerId == ownerA), hasLength(12));
+          expect(
+            srs.where((row) => row.ownerId == 'starter-learner-b'),
+            hasLength(12),
+          );
+          expect(srs.map((row) => row.id).toSet(), hasLength(24));
+          final exportReader = DriftExportReader(database);
+          for (final owner in [ownerA, 'starter-learner-b']) {
+            final exported = await exportReader.load(
+              ownerId: owner,
+              vocabulary: true,
+              attempts: true,
+              reading: false,
+            );
+            expect(exported.vocabulary, isEmpty);
+            expect(exported.attempts, hasLength(12));
+            final expectedIds = attempts
+                .where((row) => row.ownerId == owner)
+                .map((row) => row.id)
+                .toSet();
+            expect(exported.attempts.map((row) => row.id).toSet(), expectedIds);
+          }
+          await LocalDataDeletion(
+            database,
+            deleteOwnerSecrets: (_) async {},
+          ).eraseAll(ownerId: ownerA);
+          expect(
+            await database.select(database.vocabularyWords).get(),
+            initialCatalog,
+          );
+          expect(
+            (await database.select(database.answerAttempts).get()).every(
+              (row) => row.ownerId == 'starter-learner-b',
+            ),
+            isTrue,
+          );
+          expect((await current.progress!.load()).sampleSize, 12);
+          await current.dispose();
+          current = await reopen();
+          expect(
+            await current.database!
+                .select(current.database!.vocabularyWords)
+                .get(),
+            initialCatalog,
+          );
+          expect((await current.progress!.load()).sampleSize, 12);
+        } finally {
+          await current?.dispose();
+          await directory.delete(recursive: true);
+        }
+      },
+    );
+
+    for (final corrupt in [false, true]) {
+      test(
+        'starter reopen preserves trusted core but rejects ${corrupt ? 'corrupt' : 'missing'} lexical artifact',
+        () async {
+          final directory = await Directory.systemTemp.createTemp(
+            'lexiquest-starter-quarantine-',
+          );
+          final file = File(
+            '${directory.path}${Platform.pathSeparator}app.sqlite',
+          );
+          AppDependencies? dependencies;
+          AppBootstrap create({ContentArtifactBytesLoader? loader}) =>
+              AppBootstrap(
+                createDatabase: () => AppDatabase(NativeDatabase(file)),
+                initializeFirebase: () async {},
+                initializeSupabase: () async {},
+                loadConfig: _validConfig,
+                guestSessionService: _StubGuestSessionService(),
+                createEntryStateStore: _createSignedOutEntryState,
+                loadContentArtifactBytes: loader,
+              );
+          try {
+            dependencies = await create().initialize();
+            final vocabulary = dependencies.vocabulary!;
+            final privateCategory = await vocabulary.createCategory(
+              'My private practice',
+            );
+            final privateWord = await vocabulary.createWord(
+              CreateWordCommand(
+                categoryId: privateCategory.id,
+                spelling: 'personal',
+                meaning: 'ส่วนตัว',
+                partOfSpeech: 'adjective',
+              ),
+            );
+            final before = await dependencies.database!
+                .select(dependencies.database!.vocabularyWords)
+                .get();
+            await dependencies.dispose();
+            final target = PackagedStarterCatalog.words.first.identity;
+            Future<Uint8List?> loader(ContentIdentity identity) async {
+              if (identity.type == ContentType.offlineArtifact) {
+                final voices = OfflineVoicePackManifestCatalog.production;
+                return voices.resolve(identity) == null
+                    ? null
+                    : voices.requireReceiptBytes(identity);
+              }
+              if (identity.type != ContentType.lexicalMetadata) return null;
+              if (identity == target && !corrupt) return null;
+              final data = await rootBundle.load(
+                'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+              );
+              final bytes = Uint8List.fromList(
+                data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+              );
+              if (identity == target) bytes[0] ^= 1;
+              return bytes;
+            }
+
+            dependencies = await create(loader: loader).initialize();
+            expect(
+              dependencies.runtimeStatus.starterContentFailure,
+              corrupt
+                  ? ContentQualityFailureCode.checksumMismatch
+                  : ContentQualityFailureCode.missingReference,
+            );
+            expect(
+              await dependencies.database!
+                  .select(dependencies.database!.vocabularyWords)
+                  .get(),
+              before,
+            );
+            expect(
+              (await dependencies.learning!.startQuiz(
+                categoryId: privateCategory.id,
+                limit: 1,
+              )).questions.single.word.id,
+              privateWord.id,
+            );
+            final session = await dependencies.learning!.startQuiz(
+              categoryId: PackagedStarterCatalog.categoryId,
+              limit: 12,
+            );
+            expect(
+              session.questions,
+              hasLength(12),
+              reason:
+                  'Previously verified basic core vocabulary remains usable.',
+            );
+            final pinned = await dependencies.vocabulary!.readPinnedByIds(
+              session.questions.map((q) => q.word.id),
+            );
+            final targetIndex = session.questions.indexWhere(
+              (q) => q.word.id == target.id,
+            );
+            final cloze = const ClozeModeAdapter().pinItems(
+              session: session,
+              lexicalWords: pinned,
+            );
+            final definitions = const DefinitionQuizModeAdapter().pinItems(
+              session: session,
+              lexicalWords: pinned,
+            );
+            expect(cloze[targetIndex].question, isNull);
+            expect(definitions[targetIndex].question, isNull);
+            expect(cloze.where((item) => item.question != null), hasLength(11));
+            expect(
+              definitions.where((item) => item.question != null),
+              hasLength(11),
+            );
+          } finally {
+            await dependencies?.dispose();
+            await directory.delete(recursive: true);
+          }
+        },
+      );
+    }
+
+    test(
       'composes verified bundled lexical bytes into pinned vocabulary reads',
       () async {
         final database = AppDatabase(NativeDatabase.memory());
@@ -5235,6 +6525,7 @@ void main() {
           ]);
 
           expect(requested, <ContentIdentity>[
+            PackagedStarterCatalog.words.first.identity,
             PackagedAdventureWorldCatalog.contentIdentity,
             voiceIdentity,
             _lexicalIdentity,
@@ -5405,7 +6696,7 @@ Future<void> _seedPackagedLexicalArtifact(
   );
   await database.customInsert(
     "INSERT INTO local_owners(id, account_state, created_at_utc_ms, is_active) "
-    "VALUES ('packaged-owner', 'localGuest', $createdAt, 0)",
+    "VALUES ('packaged-owner', 'localGuest', $createdAt, 1)",
   );
   await database.customInsert(
     "INSERT INTO vocabulary_categories "
@@ -5689,6 +6980,7 @@ final class _BootstrapAccountGateway implements AccountGateway {
   _BootstrapAccountGateway({this.currentSession});
 
   int signOutCalls = 0;
+  Object? signOutFailure;
 
   @override
   AccountSession? currentSession;
@@ -5713,6 +7005,8 @@ final class _BootstrapAccountGateway implements AccountGateway {
   @override
   Future<void> signOut() async {
     signOutCalls += 1;
+    final failure = signOutFailure;
+    if (failure != null) throw failure;
     currentSession = null;
   }
 
@@ -6055,11 +7349,13 @@ final class _BootstrapReminderScheduler implements ReminderScheduler {
   final List<int> cancelled = [];
   int schedules = 0;
   int pendingEntriesCalls = 0;
-  int? failPendingEntriesOnCall;
+  Future<void> Function()? beforePendingEntries;
+  Future<void> Function(int platformId)? beforeCancel;
   final Map<_BootstrapReminderFailure, int> _remainingFailures = {};
   final Map<_BootstrapReminderFailure, Completer<void>> _failureObservers = {};
   Completer<ReminderScheduleRequest>? _blockedScheduleStarted;
   Completer<void>? _blockedScheduleRelease;
+  bool _blockedScheduleClaimed = false;
   Completer<int>? _blockedCancelStarted;
   Completer<void>? _blockedCancelRelease;
 
@@ -6086,6 +7382,7 @@ final class _BootstrapReminderScheduler implements ReminderScheduler {
     }
     _blockedScheduleStarted = Completer<ReminderScheduleRequest>();
     _blockedScheduleRelease = Completer<void>();
+    _blockedScheduleClaimed = false;
   }
 
   Future<ReminderScheduleRequest> get blockedScheduleStarted {
@@ -6150,9 +7447,7 @@ final class _BootstrapReminderScheduler implements ReminderScheduler {
   Future<List<ReminderPlatformEntry>> pendingEntries() async {
     pendingEntriesCalls += 1;
     _throwIfConfigured(_BootstrapReminderFailure.pendingEntries);
-    if (pendingEntriesCalls == failPendingEntriesOnCall) {
-      throw StateError('injected target reminder read failure');
-    }
+    await beforePendingEntries?.call();
     return pending.values.toList(growable: false);
   }
 
@@ -6162,12 +7457,16 @@ final class _BootstrapReminderScheduler implements ReminderScheduler {
     _throwIfConfigured(_BootstrapReminderFailure.schedule);
     final started = _blockedScheduleStarted;
     final release = _blockedScheduleRelease;
-    if (started != null && release != null) {
+    if (started != null && release != null && !_blockedScheduleClaimed) {
+      // Only the requested next native call waits. A later foreground restore
+      // must not join the independent worker's already-issued call barrier.
+      _blockedScheduleClaimed = true;
       if (!started.isCompleted) started.complete(request);
       await release.future;
       if (identical(release, _blockedScheduleRelease)) {
         _blockedScheduleStarted = null;
         _blockedScheduleRelease = null;
+        _blockedScheduleClaimed = false;
       }
     }
     pending[request.platformId] = ReminderPlatformEntry(
@@ -6179,6 +7478,7 @@ final class _BootstrapReminderScheduler implements ReminderScheduler {
 
   @override
   Future<void> cancel(int platformId) async {
+    await beforeCancel?.call(platformId);
     _throwIfConfigured(_BootstrapReminderFailure.cancel);
     final started = _blockedCancelStarted;
     final release = _blockedCancelRelease;

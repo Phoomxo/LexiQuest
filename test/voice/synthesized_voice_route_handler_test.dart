@@ -7,6 +7,7 @@
 // bypass, engine-mismatch guarding, and cancellation honoured both before and
 // after synthesis. No plugins or network are exercised; deterministic recording
 // fakes stand in for the synthesis provider, audio player, and audio cache.
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -195,6 +196,57 @@ VoiceProviderDescriptor _mirrorDescriptor() => VoiceProviderDescriptor(
 );
 
 void main() {
+  test(
+    'fresh playback returns at start with a distinct natural completion future',
+    () async {
+      final player = _CompletionRecordingAudioPlayer();
+      final handler = SynthesizedVoiceRouteHandler(
+        provider: _RecordingSynthesisProvider(
+          descriptor: _standardDescriptor(),
+        ),
+        audioPlayer: player,
+        audioCache: _RecordingAudioCache(),
+        modelVersion: _modelVersion,
+      );
+
+      final result = await handler.speak(_request(), _NeverCancelledToken());
+      var completed = false;
+      result.playbackCompleted!.then((_) => completed = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        completed,
+        isFalse,
+        reason: 'play start must not equal natural completion',
+      );
+      player.completeNaturally();
+      await result.playbackCompleted;
+      expect(completed, isTrue);
+    },
+  );
+
+  test(
+    'cached playback exposes the new play natural completion future',
+    () async {
+      final player = _CompletionRecordingAudioPlayer();
+      final cache = _RecordingAudioCache();
+      final handler = SynthesizedVoiceRouteHandler(
+        provider: _RecordingSynthesisProvider(
+          descriptor: _standardDescriptor(),
+        ),
+        audioPlayer: player,
+        audioCache: cache,
+        modelVersion: _modelVersion,
+      );
+      final first = await handler.speak(_request(), _NeverCancelledToken());
+      player.completeNaturally();
+      await first.playbackCompleted;
+
+      final second = await handler.speak(_request(), _NeverCancelledToken());
+      expect(second.cacheHit, isTrue);
+      expect(second.playbackCompleted, isNotNull);
+      expect(second.playbackCompleted, same(player.currentCompletion));
+    },
+  );
   group('descriptor', () {
     test('forwards the provider descriptor verbatim', () {
       final provider = _RecordingSynthesisProvider(
@@ -407,4 +459,26 @@ void main() {
       expect(player.stopCount, 1);
     });
   });
+}
+
+final class _CompletionRecordingAudioPlayer
+    implements VoiceAudioPlayer, VoiceAudioPlayerWithCompletion {
+  Completer<void> _completion = Completer<void>();
+  Future<void> get currentCompletion => _completion.future;
+  void completeNaturally() => _completion.complete();
+  @override
+  Future<VoiceAudioPlayback> playWithCompletion(Uint8List bytes) async {
+    _completion = Completer<void>();
+    return VoiceAudioPlayback(completed: _completion.future);
+  }
+
+  @override
+  Future<void> play(Uint8List bytes) async {
+    await playWithCompletion(bytes);
+  }
+
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
 }

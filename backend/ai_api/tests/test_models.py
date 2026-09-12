@@ -171,6 +171,26 @@ def test_settings_base_url_error_never_echoes_credentials() -> None:
     assert secret not in str(exc_info.value)
 
 
+@pytest.mark.parametrize("field", _BASE_URL_FIELDS)
+@pytest.mark.parametrize("canary", ["R21tiny", "R21-long-" + "synthetic-" * 40])
+def test_settings_invalid_base_url_hides_short_and_long_inputs(
+    field: str, canary: str,
+) -> None:
+    # Short credentials defeat repr truncation; the long case also checks
+    # that no input prefix/suffix remains in the rendered validation error.
+    url = f"https://u:{canary}@example.com/v1/"
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(_env_file=None, **{field: url})
+
+    message = str(exc_info.value)
+    assert field in message
+    assert "LLM base URL is malformed" in message
+    assert canary not in message
+    assert "input_value=" not in message
+    assert "https://u:" not in message
+    assert "example.com/v1/" not in message
+
+
 def test_content_request_normalizes_text() -> None:
     request = ContentRequest(
         text="  The   cat is sleeping.  ",

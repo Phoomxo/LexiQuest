@@ -238,9 +238,9 @@ final class DriftLearningEventStore {
   static const int appliedProjectionVersion =
       LearningEvidenceContract.currentProjectionAppliedVersion;
   static const String _projectionCursorAppVersion =
-      'learning-projection-cursor-v1';
+      'learning-projection-cursor-v2';
   static const String _projectionCursorBuildId =
-      'learning-projection-cursor-v1';
+      'learning-projection-cursor-v2';
   static const List<String> _projectionNames = [
     'coins',
     'quest',
@@ -922,10 +922,27 @@ final class DriftLearningEventStore {
     final source = _toEvent(predecessor);
     for (final cursor in lateCursors) {
       final payload = jsonDecode(cursor.payloadJson) as Map<String, dynamic>;
+      final projection = payload['projection'] as String;
+      final version = payload['appliedVersion'] as int;
+      final receipt = await readProjectionReceipt(
+        source: source,
+        projection: projection,
+        appliedVersion: version,
+      );
+      if (receipt == null) {
+        // Another source may still be waiting for this projection. It cannot
+        // authenticate a cursor; restart this projection through its immutable
+        // receipts instead of manufacturing a receiptless predecessor cursor.
+        await (database.delete(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(cursor.eventId))).go();
+        continue;
+      }
       await _writeProjectionCursor(
         source: source,
-        projection: payload['projection'] as String,
-        appliedVersion: payload['appliedVersion'] as int,
+        projection: projection,
+        appliedVersion: version,
+        rewind: true,
       );
     }
   }
@@ -1450,20 +1467,92 @@ final class DriftLearningEventStore {
     required EventEnvelopeV2 source,
     required String projection,
     required int appliedVersion,
+    bool rewind = false,
   }) async {
     final key = _cursorKey(
       ownerId: source.ownerIdentity,
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    final cursor = _projectionCursorEvent(
-      source: source,
-      key: key,
+    final previous = await _readProjectionCursor(
+      ownerId: source.ownerIdentity,
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    await _readProjectionCursor(
-      ownerId: source.ownerIdentity,
+    final sourceRow = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(source.eventId))).getSingleOrNull();
+    if (sourceRow == null ||
+        !_isExactStoredEvent(sourceRow, source) ||
+        !source.idempotencyKey.startsWith('learning-attempt:') ||
+        await readProjectionReceipt(
+              source: source,
+              projection: projection,
+              appliedVersion: appliedVersion,
+            ) ==
+            null) {
+      throw StateError('learning projection cursor source receipt is missing');
+    }
+    EventEnvelopeV2? frontier = source;
+    if (!rewind) {
+      if (previous != null &&
+          (previous.occurredAtUtc.isAfter(source.occurredAtUtc) ||
+              (previous.occurredAtUtc == source.occurredAtUtc &&
+                  previous.aggregateId.compareTo(source.eventId) >= 0))) {
+        return;
+      }
+      // The reconciler reads a batch before executing its sinks. A concurrent
+      // late insertion can make that batch stale, so a completed sink may only
+      // advance through a contiguous, actually verified receipt prefix. Seek
+      // from the fixed cursor and inspect at most one ordinary 50-source page;
+      // later calls continue from the last authenticated source.
+      final after = previous == null
+          ? ''
+          : '''AND (occurred_at_utc > ? OR
+                 (occurred_at_utc = ? AND event_id > ?))''';
+      final ids = await database
+          .customSelect(
+            '''SELECT event_id FROM events_v2 INDEXED BY idx_events_v2_owner_occurred
+           WHERE owner_id = ? AND idempotency_key LIKE 'learning-attempt:%'
+             $after
+             AND (occurred_at_utc < ? OR
+                  (occurred_at_utc = ? AND event_id <= ?))
+           ORDER BY occurred_at_utc ASC, event_id ASC LIMIT 50''',
+            variables: <Variable<Object>>[
+              Variable<String>(source.ownerIdentity),
+              if (previous != null) ...[
+                Variable<DateTime>(previous.occurredAtUtc),
+                Variable<DateTime>(previous.occurredAtUtc),
+                Variable<String>(previous.aggregateId),
+              ],
+              Variable<DateTime>(source.occurredAtUtc),
+              Variable<DateTime>(source.occurredAtUtc),
+              Variable<String>(source.eventId),
+            ],
+            readsFrom: {database.eventsV2},
+          )
+          .get();
+      frontier = null;
+      for (final id in ids) {
+        final row =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals(id.read<String>('event_id')),
+                ))
+                .getSingle();
+        final candidate = _toEvent(row);
+        final receipt = await readProjectionReceipt(
+          source: candidate,
+          projection: projection,
+          appliedVersion: appliedVersion,
+        );
+        if (receipt == null) break;
+        frontier = candidate;
+      }
+      if (frontier == null) return;
+    }
+    final cursor = _projectionCursorEvent(
+      source: frontier,
+      key: key,
       projection: projection,
       appliedVersion: appliedVersion,
     );
@@ -1549,8 +1638,116 @@ final class DriftLearningEventStore {
       projection: projection,
       appliedVersion: appliedVersion,
     );
+    if (rows.single.appVersion == 'learning-projection-cursor-v1') {
+      return _repairLegacyProjectionFrontier(
+        ownerId: ownerId,
+        projection: projection,
+        appliedVersion: appliedVersion,
+      );
+    }
     return rows.single;
   }
+
+  /// Older producers could persist a genuine terminal receipt/cursor beyond
+  /// an unfinished source. Audit missing receipt identities once for that
+  /// producer revision, using indexed lookups and returning at most one gap.
+  /// The durable v2 producer stamp avoids rescanning history on every answer
+  /// and rolls back with the cursor if a caller's outer transaction fails.
+  Future<db.EventsV2Data?> _repairLegacyProjectionFrontier({
+    required String ownerId,
+    required String projection,
+    required int appliedVersion,
+  }) => database.transaction(() async {
+    final key = _cursorKey(
+      ownerId: ownerId,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    final rows = await _rowsForBothIdentities(key: key, ownerId: ownerId);
+    _requireCanonicalCursorRows(
+      rows: rows,
+      key: key,
+      ownerId: ownerId,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    if (rows.isEmpty) return null;
+    final cursor = rows.single;
+    await _requireProjectionCursorProvenance(
+      cursorRow: cursor,
+      ownerId: ownerId,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    if (cursor.appVersion != 'learning-projection-cursor-v1') return cursor;
+    final gap = await database
+        .customSelect(
+          '''SELECT source.event_id
+         FROM events_v2 source INDEXED BY idx_events_v2_owner_occurred
+         WHERE source.owner_id = ?
+           AND source.idempotency_key LIKE 'learning-attempt:%'
+           AND (source.occurred_at_utc < ? OR
+                (source.occurred_at_utc = ? AND source.event_id < ?))
+           AND NOT EXISTS (
+             SELECT 1 FROM events_v2 receipt
+             WHERE receipt.event_id = ? || source.event_id || ?
+               AND receipt.owner_id = source.owner_id
+               AND receipt.idempotency_key = receipt.event_id
+           )
+         ORDER BY source.occurred_at_utc ASC, source.event_id ASC LIMIT 1''',
+          variables: <Variable<Object>>[
+            Variable<String>(ownerId),
+            Variable<DateTime>(cursor.occurredAtUtc),
+            Variable<DateTime>(cursor.occurredAtUtc),
+            Variable<String>(cursor.aggregateId),
+            Variable<String>('learning-projection:$projection:'),
+            Variable<String>(':v$appliedVersion'),
+          ],
+          readsFrom: {database.eventsV2},
+        )
+        .getSingleOrNull();
+    if (gap != null) {
+      final source =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(gap.read<String>('event_id')),
+              ))
+              .getSingle();
+      // A malformed or colliding receipt is not a missing receipt: keep the
+      // original cursor/evidence and reject the affected projection.
+      if (await readProjectionReceipt(
+            source: _toEvent(source),
+            projection: projection,
+            appliedVersion: appliedVersion,
+          ) !=
+          null) {
+        throw StateError('legacy projection gap identity changed');
+      }
+      await (database.delete(database.eventsV2)..where(
+            (row) => row.eventId.equals(key) & row.ownerId.equals(ownerId),
+          ))
+          .go();
+      return null;
+    }
+    final source = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(cursor.aggregateId))).getSingle();
+    final upgraded = _projectionCursorEvent(
+      source: _toEvent(source),
+      key: key,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    await database
+        .into(database.eventsV2)
+        .insertOnConflictUpdate(_companion(upgraded));
+    final stored = await _rowsForBothIdentities(key: key, ownerId: ownerId);
+    _requireExactStoredEvent(
+      rows: stored,
+      expected: upgraded,
+      conflict: 'learning projection cursor identity conflict',
+    );
+    return stored.single;
+  });
 
   Future<void> _requireProjectionCursorProvenance({
     required db.EventsV2Data cursorRow,
@@ -1647,8 +1844,10 @@ final class DriftLearningEventStore {
           event.providerProvenance == null &&
           jsonEncode(event.consentContext.toJson()) ==
               jsonEncode(const ConsentContext.none().toJson()) &&
-          event.appVersion == _projectionCursorAppVersion &&
-          event.buildId == _projectionCursorBuildId &&
+          ((event.appVersion == _projectionCursorAppVersion &&
+                  event.buildId == _projectionCursorBuildId) ||
+              (event.appVersion == 'learning-projection-cursor-v1' &&
+                  event.buildId == 'learning-projection-cursor-v1')) &&
           event.privacyClassification == PrivacyClassification.anonymized &&
           payload.length == payloadKeys.length &&
           payload.keys.every(payloadKeys.contains) &&

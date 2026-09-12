@@ -105,7 +105,7 @@ void main() {
         find.text('A place where aircraft arrive and depart.'),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('Correct answer: airport'), findsNothing);
+      expect(find.text('คำตอบที่ถูก: airport'), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('definition-quiz-prompt')),
         findsOneWidget,
@@ -113,7 +113,7 @@ void main() {
 
       await tester.ensureVisible(find.text('airport'));
       await tester.tap(find.text('airport'));
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final root = find.byType(DefinitionQuizScreen);
       expectInsideAccessibilityRole(
@@ -183,7 +183,7 @@ void main() {
       );
       expect(
         find.bySemanticsLabel(
-          'Skipped. The English definition has not been approved.',
+          'ข้ามข้อนี้ เนื่องจากคำจำกัดความภาษาอังกฤษยังไม่ผ่านการตรวจทาน',
         ),
         findsOneWidget,
       );
@@ -191,7 +191,7 @@ void main() {
       expectInsideAccessibilityRole(
         scope: root,
         descendant: find.bySemanticsLabel(
-          'Skipped. The English definition has not been approved.',
+          'ข้ามข้อนี้ เนื่องจากคำจำกัดความภาษาอังกฤษยังไม่ผ่านการตรวจทาน',
         ),
         role: AccessibilitySemanticRole.prompt,
         reason: 'a valid skip state still owns an announced prompt',
@@ -238,16 +238,16 @@ void main() {
       ),
     );
 
-    await _pumpUntilFound(tester, find.text('Show strategy'));
-    await tester.tap(find.text('Show strategy'));
+    await _pumpUntilFound(tester, find.text('ดูวิธีคิด'));
+    await tester.tap(find.text('ดูวิธีคิด'));
     await tester.pump();
     expect(
-      find.text('Use the part of speech and the definition wording as clues.'),
+      find.text('ใช้ชนิดของคำและข้อความในคำจำกัดความเป็นตัวช่วย'),
       findsOneWidget,
     );
     await tester.ensureVisible(find.text('airport'));
     await tester.tap(find.text('airport'));
-    await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+    await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
     final attempt =
         (await database.select(database.answerAttempts).get()).single;
@@ -259,7 +259,7 @@ void main() {
     expect(context.hintLevel, 1);
     expect(await database.select(database.srsStates).get(), isEmpty);
     expect(
-      find.text('Show strategy'),
+      find.text('ดูวิธีคิด'),
       findsOneWidget,
       reason: 'the shell resets hint state only after durable evidence',
     );
@@ -343,7 +343,9 @@ void main() {
 
       await _pumpUntilFound(
         tester,
-        find.text('Definition Quiz is unavailable. No learning data changed.'),
+        find.text(
+          'กิจกรรมเลือกคำจากคำอธิบายไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง',
+        ),
       );
 
       final sessions = await database.select(database.learningSessions).get();

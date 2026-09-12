@@ -1,5 +1,6 @@
 import '../../learning_packs/domain/content_manifest.dart';
 import 'learning_models.dart';
+import 'associative_reading_checkpoint.dart';
 import '../pair_matching/domain/pair_matching_plan.dart';
 
 abstract interface class PairPinnedLearningActivityRepository {
@@ -172,12 +173,34 @@ abstract interface class LearningActivityRecoveryRepository {
   });
 }
 
+abstract interface class AssociativeReadingRecoveryRepository {
+  Future<LearningActivityRecovery?> loadReadingRecovery({
+    required String ownerId,
+    required AssociativeReadingCheckpoint content,
+  });
+
+  Future<ReadingProgressSnapshot> saveReadingCheckpoint({
+    required ReadingProgressCommand progress,
+    required LearningActivityCheckpoint checkpoint,
+  });
+}
+
 /// Read model for bounded recovery scans that must not be displaced by newer
 /// sessions from unrelated activity types.
 abstract interface class LearningActivitySessionHistoryRepository {
   Future<List<LearningSessionSummary>> listCompletedActivitySessionHistory({
     required String ownerId,
     required String activityType,
+    required int limit,
+  });
+}
+
+/// Keyset scan for candidate discovery; canonical admission still owns starts.
+abstract interface class PagedQuizWordRepository {
+  Future<List<QuizWord>> listQuizWordPage({
+    required String ownerId,
+    String? categoryId,
+    String? afterId,
     required int limit,
   });
 }

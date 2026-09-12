@@ -10,7 +10,20 @@ import '../navigation/app_routes.dart';
 import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
+import '../widgets/local_study_datetime_field.dart';
 import 'study_reminder_settings_screen.dart';
+
+String _goalKindLabel(LearningGoalKind kind) => switch (kind) {
+  LearningGoalKind.languageTest => 'สอบภาษา',
+  LearningGoalKind.course => 'รายวิชา',
+  LearningGoalKind.personal => 'เป้าหมายส่วนตัว',
+};
+
+String _goalStatusLabel(LearningGoalStatus status) => switch (status) {
+  LearningGoalStatus.active => 'กำลังทำ',
+  LearningGoalStatus.completed => 'สำเร็จแล้ว',
+  LearningGoalStatus.cancelled => 'ยกเลิกแล้ว',
+};
 
 final class LearningGoalsScreen extends StatefulWidget {
   const LearningGoalsScreen({
@@ -115,12 +128,15 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
     FeatureRegistry? registry,
     LearningGoalMutationGuard mutationAllowed,
   ) async {
+    final openingOwnerId = await useCases.activeOwnerId();
+    if (!mounted || !mutationAllowed()) return;
     final created = await showDialog<LearningGoal>(
       context: context,
       builder: (_) => _CreateLearningGoalDialog(
         useCases: useCases,
         registry: registry,
         mutationAllowed: mutationAllowed,
+        openingOwnerId: openingOwnerId,
       ),
     );
     if (created != null && mounted) _reload(useCases);
@@ -132,6 +148,9 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
     final reminders = _resolveReminderUseCases();
     final registry = _resolveFeatureRegistry();
     final allowWithoutRegistry = widget.useCases != null;
+    final compactAddButton =
+        MediaQuery.sizeOf(context).width < 360 ||
+        MediaQuery.textScalerOf(context).scale(16) >= 24;
     bool mutationAllowed() =>
         registry?.isEnabled(Feature.studyPlanning) ?? allowWithoutRegistry;
     return Scaffold(
@@ -142,14 +161,21 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
       ),
       floatingActionButton: useCases == null
           ? null
+          : compactAddButton
+          ? FloatingActionButton(
+              key: const ValueKey<String>('learning-goals/add'),
+              tooltip: 'เพิ่มเป้าหมาย',
+              onPressed: () => _createGoal(useCases, registry, mutationAllowed),
+              child: const Icon(Icons.add),
+            )
           : FloatingActionButton.extended(
               key: const ValueKey<String>('learning-goals/add'),
               onPressed: () => _createGoal(useCases, registry, mutationAllowed),
               icon: const Icon(Icons.add),
-              label: const Text('Add goal'),
+              label: const Text('เพิ่มเป้าหมาย'),
             ),
       body: useCases == null
-          ? const Center(child: Text('Learning goals are unavailable.'))
+          ? const Center(child: Text('เป้าหมายการเรียนไม่พร้อมใช้งาน'))
           : FutureBuilder<List<LearningGoal>>(
               future: _goals,
               builder: (context, snapshot) {
@@ -158,63 +184,82 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
                 }
                 if (snapshot.hasError) {
                   return const Center(
-                    child: Text('Learning goals unavailable.'),
+                    child: Text('โหลดเป้าหมายการเรียนไม่ได้'),
                   );
                 }
                 final goals = snapshot.data ?? const <LearningGoal>[];
                 if (goals.isEmpty) {
                   return const Center(
-                    child: Text('No language-learning deadlines yet.'),
+                    child: Text('ยังไม่ได้กำหนดเป้าหมายการเรียน'),
                   );
                 }
                 return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                   itemCount: goals.length,
                   itemBuilder: (context, index) {
                     final goal = goals[index];
                     final countdown = useCases.countdown(goal);
                     final label = switch (countdown.state) {
                       LearningGoalDeadlineState.future =>
-                        '${countdown.days} days remaining',
-                      LearningGoalDeadlineState.today => 'Due today',
+                        'เหลือ ${countdown.days} วัน',
+                      LearningGoalDeadlineState.today => 'ครบกำหนดวันนี้',
                       LearningGoalDeadlineState.past =>
-                        '${countdown.days} days past deadline',
+                        'เลยกำหนด ${countdown.days} วัน',
                     };
-                    return ListTile(
+                    return Card(
                       key: ValueKey<String>('learning-goal/${goal.id}'),
-                      title: Text(goal.title),
-                      subtitle: Text('${goal.kind.name} · $label'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (reminders != null)
-                            FutureBuilder<bool>(
-                              future: _reminderEntryAvailable,
-                              builder: (context, snapshot) =>
-                                  snapshot.data == true
-                                  ? IconButton(
-                                      key: ValueKey<String>(
-                                        'learning-goal/${goal.id}/reminder',
-                                      ),
-                                      tooltip: 'Set a study reminder',
-                                      onPressed: () => _openReminder(
-                                        goal,
-                                        reminders,
-                                        mutationAllowed,
-                                      ),
-                                      icon: const Icon(
-                                        Icons.notifications_outlined,
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              goal.title,
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                          _LearningGoalStatusMenu(
-                            goal: goal,
-                            useCases: useCases,
-                            registry: registry,
-                            mutationAllowed: mutationAllowed,
-                            onChanged: () => _reload(useCases),
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            Text(
+                              '${_goalKindLabel(goal.kind)} · $label',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              alignment: WrapAlignment.end,
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                if (reminders != null)
+                                  FutureBuilder<bool>(
+                                    future: _reminderEntryAvailable,
+                                    builder: (context, snapshot) =>
+                                        snapshot.data == true
+                                        ? IconButton(
+                                            key: ValueKey<String>(
+                                              'learning-goal/${goal.id}/reminder',
+                                            ),
+                                            tooltip: 'ตั้งเวลาเตือนเรียน',
+                                            onPressed: () => _openReminder(
+                                              goal,
+                                              reminders,
+                                              mutationAllowed,
+                                            ),
+                                            icon: const Icon(
+                                              Icons.notifications_outlined,
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                _LearningGoalStatusMenu(
+                                  goal: goal,
+                                  useCases: useCases,
+                                  registry: registry,
+                                  mutationAllowed: mutationAllowed,
+                                  onChanged: () => _reload(useCases),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
@@ -236,11 +281,13 @@ final class _CreateLearningGoalDialog extends StatefulWidget {
     required this.useCases,
     required this.registry,
     required this.mutationAllowed,
+    required this.openingOwnerId,
   });
 
   final LearningGoalUseCases useCases;
   final FeatureRegistry? registry;
   final LearningGoalMutationGuard mutationAllowed;
+  final String openingOwnerId;
 
   @override
   State<_CreateLearningGoalDialog> createState() =>
@@ -250,8 +297,8 @@ final class _CreateLearningGoalDialog extends StatefulWidget {
 final class _CreateLearningGoalDialogState
     extends State<_CreateLearningGoalDialog> {
   final TextEditingController _title = TextEditingController();
-  final TextEditingController _deadline = TextEditingController();
-  final TextEditingController _timezone = TextEditingController();
+  DateTime? _deadlineUtc;
+  String _timezoneId = 'Asia/Bangkok';
   LearningGoalKind _kind = LearningGoalKind.languageTest;
   LearningGoalCreateCommand? _pendingCommand;
   bool _submitting = false;
@@ -276,8 +323,6 @@ final class _CreateLearningGoalDialogState
   void dispose() {
     _registryChanges?.removeListener(_onRegistryChanged);
     _title.dispose();
-    _deadline.dispose();
-    _timezone.dispose();
     super.dispose();
   }
 
@@ -294,17 +339,16 @@ final class _CreateLearningGoalDialogState
     try {
       var command = _pendingCommand;
       if (command == null) {
-        final deadline = DateTime.parse(_deadline.text);
-        if (!deadline.isUtc || !_deadline.text.endsWith('Z')) {
-          throw const FormatException(
-            'Deadline must use an explicit UTC Z suffix.',
-          );
+        final deadline = _deadlineUtc;
+        if (deadline == null) {
+          throw const FormatException('Choose date and time');
         }
         final timezone = LearningGoalUseCases.timezoneContext(
-          _timezone.text,
+          _timezoneId,
           deadline,
         );
-        command = widget.useCases.prepareCreate(
+        command = await widget.useCases.prepareCreate(
+          expectedOwnerId: widget.openingOwnerId,
           kind: _kind,
           title: _title.text,
           deadlineAtUtc: deadline,
@@ -320,6 +364,9 @@ final class _CreateLearningGoalDialogState
         mutationAllowed: widget.mutationAllowed,
       );
       if (mounted) Navigator.of(context).pop(goal);
+    } on LearningGoalOwnerChanged {
+      _pendingCommand = null;
+      if (mounted) Navigator.of(context).pop();
     } on LearningGoalMutationUnavailable {
       if (mounted) Navigator.of(context).maybePop();
     } on Object {
@@ -327,8 +374,8 @@ final class _CreateLearningGoalDialogState
       setState(() {
         _submitting = false;
         _validationMessage = _pendingCommand == null
-            ? 'Enter a canonical title, UTC deadline, and timezone.'
-            : 'Creation was not confirmed. Retry uses the same details.';
+            ? 'กรุณาระบุชื่อเป้าหมาย เลือกวันที่ เวลา และเขตเวลาให้ครบ'
+            : 'ยังยืนยันการสร้างเป้าหมายไม่ได้ การลองอีกครั้งจะใช้รายละเอียดเดิม';
       });
     }
   }
@@ -337,73 +384,75 @@ final class _CreateLearningGoalDialogState
   Widget build(BuildContext context) {
     final fieldsEnabled = _pendingCommand == null && !_submitting;
     return AlertDialog(
-      title: const Text('Add learning goal'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<LearningGoalKind>(
-              key: const ValueKey<String>('learning-goals/kind'),
-              initialValue: _kind,
-              decoration: const InputDecoration(labelText: 'Goal type'),
-              items: LearningGoalKind.values
-                  .map(
-                    (value) =>
-                        DropdownMenuItem(value: value, child: Text(value.name)),
-                  )
-                  .toList(growable: false),
-              onChanged: fieldsEnabled
-                  ? (value) {
-                      if (value != null) _kind = value;
-                    }
-                  : null,
-            ),
-            TextField(
-              key: const ValueKey<String>('learning-goals/title'),
-              controller: _title,
-              enabled: fieldsEnabled,
-              maxLength: 120,
-              decoration: const InputDecoration(labelText: 'Title'),
-            ),
-            TextField(
-              key: const ValueKey<String>('learning-goals/deadline'),
-              controller: _deadline,
-              enabled: fieldsEnabled,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Deadline (UTC)',
-                hintText: '2026-09-01T05:00:00Z',
+      scrollable: true,
+      insetPadding: const EdgeInsets.all(16),
+      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: const Text('เพิ่มเป้าหมายการเรียน'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<LearningGoalKind>(
+            key: const ValueKey<String>('learning-goals/kind'),
+            initialValue: _kind,
+            isExpanded: true,
+            itemHeight: null,
+            decoration: const InputDecoration(labelText: 'ประเภทเป้าหมาย'),
+            items: LearningGoalKind.values
+                .map(
+                  (value) => DropdownMenuItem(
+                    value: value,
+                    child: Text(_goalKindLabel(value)),
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: fieldsEnabled
+                ? (value) {
+                    if (value != null) _kind = value;
+                  }
+                : null,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey<String>('learning-goals/title'),
+            controller: _title,
+            enabled: fieldsEnabled,
+            maxLength: 120,
+            decoration: const InputDecoration(labelText: 'ชื่อเป้าหมาย'),
+          ),
+          const SizedBox(height: 12),
+          LocalStudyDateTimeField(
+            fieldKey: 'learning-goals/deadline',
+            referenceUtc: widget.useCases.nowUtc(),
+            enabled: fieldsEnabled,
+            onChanged: (instant, zone) {
+              _deadlineUtc = instant;
+              _timezoneId = zone;
+            },
+          ),
+          if (_validationMessage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                _validationMessage!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
-            TextField(
-              key: const ValueKey<String>('learning-goals/timezone'),
-              controller: _timezone,
-              enabled: fieldsEnabled,
-              decoration: const InputDecoration(
-                labelText: 'Learning timezone',
-                hintText: 'Asia/Bangkok',
-              ),
-            ),
-            if (_validationMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  _validationMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('ยกเลิก'),
         ),
         FilledButton(
           key: const ValueKey<String>('learning-goals/create'),
           onPressed: _submitting ? null : _submit,
-          child: Text(_pendingCommand == null ? 'Create' : 'Retry'),
+          child: Text(
+            _pendingCommand == null ? 'สร้างเป้าหมาย' : 'ลองอีกครั้ง',
+          ),
         ),
       ],
     );
@@ -489,17 +538,20 @@ final class _LearningGoalStatusMenuState
   Widget build(BuildContext context) {
     return PopupMenuButton<LearningGoalStatus>(
       key: ValueKey<String>('learning-goal/${widget.goal.id}/status'),
-      tooltip: 'Update goal status',
+      tooltip: 'เปลี่ยนสถานะเป้าหมาย',
       onOpened: () => _menuOpen = true,
       onCanceled: () => _menuOpen = false,
       onSelected: _update,
       itemBuilder: (_) => LearningGoalStatus.values
           .where((status) => status != widget.goal.status)
           .map(
-            (status) => PopupMenuItem(value: status, child: Text(status.name)),
+            (status) => PopupMenuItem(
+              value: status,
+              child: Text(_goalStatusLabel(status)),
+            ),
           )
           .toList(growable: false),
-      child: Text(widget.goal.status.name),
+      child: Text(_goalStatusLabel(widget.goal.status)),
     );
   }
 }

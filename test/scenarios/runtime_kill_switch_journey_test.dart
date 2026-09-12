@@ -156,7 +156,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('AI provider settings'));
+    await tester.tap(find.byTooltip('ตั้งค่าผู้ให้บริการ AI'));
     await tester.pumpAndSettle();
     expect(find.byType(AiTutorSettingsScreen), findsOneWidget);
     final callsBeforeKill = tutor.totalCalls;

@@ -14,9 +14,9 @@ void main() {
         NativeDatabase.memory(setup: createSchemaTwentyThreeFixture),
       );
       addTearDown(database.close);
-      expect(AppDatabase.currentSchemaVersion, 24);
+      expect(AppDatabase.currentSchemaVersion, 26);
       await expectCurrentDatabaseContract(database);
-      expect(await currentDatabaseTableNames(database), hasLength(48));
+      expect(await currentDatabaseTableNames(database), hasLength(49));
       for (final table in researchTables) {
         expect(
           await database.customSelect('SELECT * FROM $table').get(),
@@ -643,7 +643,7 @@ void main() {
       );
 
       test(
-        'v24 beforeOpen adds forward guards beside existing owner triggers',
+        'current beforeOpen replaces retired v24 opportunity guards and preserves other owner guards',
         () async {
           await seedResearchReversePinGraph(db);
           final legacyNames = <String>{
@@ -660,6 +660,22 @@ void main() {
             for (final row in triggers)
               if (legacyNames.contains(row.read<String>('name')))
                 row.read<String>('name'): row.read<String>('sql'),
+            // Explicit pre-proof predicate: the historical guard accepts only
+            // a canonical same-owner session. Do not derive it from v26 SQL.
+            for (final operation in ['INSERT', 'UPDATE'])
+              'measurement_opportunities_owner_${operation.toLowerCase()}':
+                  '''CREATE TRIGGER measurement_opportunities_owner_${operation.toLowerCase()}
+        BEFORE $operation ON measurement_opportunities WHEN NOT EXISTS (
+      SELECT 1 FROM motivation_measurement_runs r
+      JOIN research_participation_permits p ON p.id = NEW.permit_id
+      WHERE r.id = NEW.measurement_run_id AND r.owner_id = NEW.owner_id
+      AND p.owner_id = NEW.owner_id AND p.assignment_id = r.assignment_id
+      AND p.protocol_id = r.protocol_id AND p.protocol_version = r.protocol_version
+      AND p.assigned_treatment = r.treatment AND r.treatment = NEW.assigned_treatment)
+      OR (NEW.learning_session_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM learning_sessions s WHERE s.id = NEW.learning_session_id
+        AND s.owner_id = NEW.owner_id))
+        BEGIN SELECT RAISE(ABORT, 'research_owner_or_assignment_mismatch'); END''',
           };
           expect(legacySql.keys.toSet(), legacyNames);
           final guardedTables = {
@@ -677,6 +693,21 @@ void main() {
               await db.customStatement('DROP TRIGGER "$quotedName"');
             }
           }
+          for (final operation in ['insert', 'update']) {
+            await db.customStatement(
+              legacySql['measurement_opportunities_owner_$operation']!,
+            );
+          }
+          expect(
+            (await db
+                    .customSelect(
+                      "SELECT name FROM sqlite_master WHERE type='trigger'",
+                    )
+                    .get())
+                .map((row) => row.read<String>('name'))
+                .toSet(),
+            containsAll(legacyNames),
+          );
           final before = await researchSqlSnapshot(db);
           for (var reopening = 0; reopening < 2; reopening++) {
             await db.migration.beforeOpen!(const OpeningDetails(24, 24));
@@ -687,6 +718,13 @@ void main() {
               )
               .get();
           for (final old in legacySql.entries) {
+            if (old.key.startsWith('measurement_opportunities_owner_')) {
+              expect(
+                installed.map((row) => row.read<String>('name')),
+                isNot(contains(old.key)),
+              );
+              continue;
+            }
             expect(
               installed
                   .singleWhere((row) => row.read<String>('name') == old.key)
@@ -694,9 +732,34 @@ void main() {
               old.value,
             );
           }
+          expect(
+            installed.map((row) => row.read<String>('name')),
+            containsAll([
+              'measurement_opportunities_owner_v26_insert',
+              'measurement_opportunities_owner_v26_update',
+              'motivation_measurement_runs_referenced_pins_v26_update',
+              'research_participation_permits_referenced_pins_v26_update',
+            ]),
+          );
+          expect(
+            installed.map((row) => row.read<String>('name')),
+            isNot(
+              contains(
+                'motivation_measurement_runs_referenced_pins_v24_update',
+              ),
+            ),
+          );
+          expect(
+            installed.map((row) => row.read<String>('name')),
+            isNot(
+              contains(
+                'research_participation_permits_referenced_pins_v24_update',
+              ),
+            ),
+          );
           expect(await researchSqlSnapshot(db), before);
           await expectCurrentDatabaseContract(db);
-          expect(await currentDatabaseTableNames(db), hasLength(48));
+          expect(await currentDatabaseTableNames(db), hasLength(49));
           await expectResearchSqlRejected(
             db,
             () => updateResearchTestRow(

@@ -7,6 +7,7 @@ import '../domain/vocabulary_category.dart';
 import '../domain/vocabulary_failure.dart';
 import '../domain/vocabulary_repository.dart';
 import '../domain/vocabulary_word.dart';
+import 'packaged_starter_access.dart';
 
 final class DriftVocabularyRepository implements VocabularyRepository {
   DriftVocabularyRepository(this.database, {this.contentManifests});
@@ -20,7 +21,9 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   Stream<List<VocabularyCategory>> watchCategories(String ownerId) {
     final query = database.select(database.vocabularyCategories)
       ..where(
-        (row) => row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
+        (row) =>
+            PackagedStarterAccess.categoriesFor(database, ownerId) &
+            row.isDeleted.equals(false),
       )
       ..orderBy([
         (row) => OrderingTerm.asc(row.sortOrder),
@@ -36,7 +39,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     final query = database.select(database.vocabularyWords)
       ..where(
         (row) =>
-            row.ownerId.equals(ownerId) &
+            PackagedStarterAccess.wordsFor(database, ownerId) &
             row.categoryId.equals(categoryId) &
             row.isDeleted.equals(false),
       )
@@ -50,7 +53,9 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   Future<List<VocabularyWord>> listAllWords(String ownerId) async {
     final query = database.select(database.vocabularyWords)
       ..where(
-        (row) => row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
+        (row) =>
+            PackagedStarterAccess.wordsFor(database, ownerId) &
+            row.isDeleted.equals(false),
       )
       ..orderBy([(row) => OrderingTerm.asc(row.normalizedSpelling)]);
     final rows = await query.get();
@@ -69,9 +74,22 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     }
     if (ids.isEmpty) return const <VocabularyWord>[];
 
-    final rows = await (database.select(
-      database.vocabularyWords,
-    )..where((row) => row.id.isIn(ids) & row.isDeleted.equals(false))).get();
+    final activeOwners =
+        await (database.select(database.localOwners)
+              ..where((row) => row.isActive.equals(true))
+              ..limit(2))
+            .get();
+    if (activeOwners.length != 1) throw const VocabularyNotFoundFailure();
+    final ownerId = activeOwners.single.id;
+
+    final rows =
+        await (database.select(database.vocabularyWords)..where(
+              (row) =>
+                  row.id.isIn(ids) &
+                  row.isDeleted.equals(false) &
+                  PackagedStarterAccess.wordsFor(database, ownerId),
+            ))
+            .get();
     final byId = <String, db.VocabularyWord>{
       for (final row in rows) row.id: row,
     };
@@ -88,6 +106,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
 
   @override
   Future<VocabularyCategory> createCategory(VocabularyCategory category) async {
+    PackagedStarterAccess.requireMutable(category.ownerId, id: category.id);
     _requireUtc(category.createdAtUtc);
     _requireUtc(category.updatedAtUtc);
     return database.transaction(() async {
@@ -236,6 +255,11 @@ final class DriftVocabularyRepository implements VocabularyRepository {
 
   @override
   Future<VocabularyWord> createWord(VocabularyWord word) async {
+    PackagedStarterAccess.requireMutable(
+      word.ownerId,
+      id: word.id,
+      categoryId: word.categoryId,
+    );
     _requireUtc(word.createdAtUtc);
     _requireUtc(word.updatedAtUtc);
     return database.transaction(() async {
@@ -299,6 +323,11 @@ final class DriftVocabularyRepository implements VocabularyRepository {
 
   @override
   Future<VocabularyWord> updateWord(VocabularyWord word) async {
+    PackagedStarterAccess.requireMutable(
+      word.ownerId,
+      id: word.id,
+      categoryId: word.categoryId,
+    );
     _requireUtc(word.updatedAtUtc);
     return database.transaction(() async {
       final current = await _activeWord(word.ownerId, word.id);
@@ -414,6 +443,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     String ownerId,
     String categoryId,
   ) {
+    PackagedStarterAccess.requireMutable(ownerId, categoryId: categoryId);
     return (database.select(database.vocabularyCategories)..where(
           (row) =>
               row.id.equals(categoryId) &
@@ -444,6 +474,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   }
 
   Future<db.VocabularyWord?> _activeWord(String ownerId, String wordId) {
+    PackagedStarterAccess.requireMutable(ownerId, id: wordId);
     return (database.select(database.vocabularyWords)..where(
           (row) =>
               row.id.equals(wordId) &

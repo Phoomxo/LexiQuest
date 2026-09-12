@@ -12,6 +12,7 @@ import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
+import '../features/learning/presentation/sentence_practice_panel.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../navigation/app_routes.dart';
@@ -55,6 +56,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
   QuizSession? _session;
   ClozeReviewController? _review;
   ClozeInputMode? _inputMode;
+  String? _selectedAnswer;
   bool _loadSettled = false;
   bool _completionCommitted = false;
   bool _abandoning = false;
@@ -196,14 +198,15 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         unawaited(_confirmExit());
       },
       child: AccessibilityModeScaffold(
-        appBar: AppBar(title: const Text('Cloze Test')),
+        appBar: AppBar(title: const Text('เติมคำในประโยค')),
         body: FutureBuilder<QuizSession>(
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return const _ClozeMessage(
                 icon: Icons.error_outline,
-                message: 'Cloze Test is unavailable. No learning data changed.',
+                message:
+                    'กิจกรรมเติมคำไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง',
               );
             }
             if (!snapshot.hasData) {
@@ -212,7 +215,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
             if (snapshot.data!.isEmpty) {
               return const _ClozeMessage(
                 icon: Icons.library_add_outlined,
-                message: 'No vocabulary is available for Cloze Test.',
+                message: 'ยังไม่มีคำศัพท์สำหรับกิจกรรมเติมคำ',
               );
             }
             final review = _review;
@@ -236,7 +239,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Semantics(
-              label: 'Question ${review.index + 1} of ${review.items.length}',
+              label: 'ข้อ ${review.index + 1} จาก ${review.items.length}',
               child: LinearProgressIndicator(
                 value: (review.index + 1) / review.items.length,
               ),
@@ -263,17 +266,31 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 child: FilledButton(
                   key: const ValueKey<String>('cloze-skip'),
                   onPressed: _actionLocked ? null : _advance,
-                  child: const Text('Continue'),
+                  child: const Text('ดำเนินต่อ'),
                 ),
               ),
             ] else ...<Widget>[
               AccessibilitySemanticRegion(
                 role: AccessibilitySemanticRole.prompt,
-                child: Text(
-                  question.prompt,
-                  key: const ValueKey<String>('cloze-prompt'),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
+                child: Card.filled(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: <Widget>[
+                        const Icon(Icons.chat_bubble_outline, size: 32),
+                        const SizedBox(height: 12),
+                        const Text('เติมคำให้ประโยคสมบูรณ์'),
+                        const SizedBox(height: 20),
+                        Text(
+                          question.prompt,
+                          key: const ValueKey<String>('cloze-prompt'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -294,7 +311,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                                     () => _inputMode = ClozeInputMode.selected,
                                   ),
                             icon: const Icon(Icons.touch_app_outlined),
-                            label: const Text('Choose'),
+                            label: const Text('เลือกคำตอบ'),
                           ),
                           FilledButton.tonalIcon(
                             key: const ValueKey<String>('cloze-mode-typed'),
@@ -304,19 +321,19 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                                     () => _inputMode = ClozeInputMode.typed,
                                   ),
                             icon: const Icon(Icons.keyboard_outlined),
-                            label: const Text('Type'),
+                            label: const Text('พิมพ์คำตอบ'),
                           ),
                         ],
                       )
                     : Semantics(
                         key: const ValueKey<String>('cloze-input-mode'),
                         label: _inputMode == ClozeInputMode.selected
-                            ? 'Selected response mode: Choose'
-                            : 'Selected response mode: Type',
+                            ? 'รูปแบบคำตอบที่เลือก: เลือกคำตอบ'
+                            : 'รูปแบบคำตอบที่เลือก: พิมพ์คำตอบ',
                         child: Text(
                           _inputMode == ClozeInputMode.selected
-                              ? 'Choose the missing word'
-                              : 'Type the missing word',
+                              ? 'เลือกคำที่หายไป'
+                              : 'พิมพ์คำที่หายไป',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -328,22 +345,60 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      for (final option in question.options)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: FilledButton.tonal(
-                            key: ValueKey<String>(
-                              'cloze-option-${question.wordId}-$option',
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: <Widget>[
+                          for (final option in question.options)
+                            FilledButton.tonal(
+                              key: ValueKey<String>(
+                                'cloze-option-${question.wordId}-$option',
+                              ),
+                              onPressed: review.isAnswered || _actionLocked
+                                  ? null
+                                  : () => _chooseOption(option, question),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(80, 52),
+                                backgroundColor: _selectedAnswer == option
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer
+                                    : null,
+                                side: _selectedAnswer == option
+                                    ? BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        width: 2,
+                                      )
+                                    : null,
+                              ),
+                              child: Semantics(
+                                selected: _selectedAnswer == option,
+                                child: Text(option),
+                              ),
                             ),
-                            onPressed: review.isAnswered || _actionLocked
-                                ? null
-                                : () => _recordSelected(option),
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(52),
-                            ),
-                            child: Text(option),
-                          ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _selectedAnswer == null
+                            ? 'แตะเลือกคำ แล้วกดตรวจคำตอบ'
+                            : 'คำที่เลือก: $_selectedAnswer',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        key: const ValueKey<String>('cloze-submit-selected'),
+                        onPressed:
+                            review.isAnswered ||
+                                _actionLocked ||
+                                _selectedAnswer == null
+                            ? null
+                            : () => _confirmSelected(question),
+                        child: const Text('ตรวจคำตอบ'),
+                      ),
                     ],
                   ),
                 )
@@ -360,7 +415,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                         autocorrect: false,
                         textInputAction: TextInputAction.done,
                         decoration: const InputDecoration(
-                          labelText: 'Type the missing word',
+                          labelText: 'พิมพ์คำที่หายไป',
                           border: OutlineInputBorder(),
                         ),
                         onSubmitted: (_) => _recordTyped(),
@@ -371,7 +426,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                         onPressed: review.isAnswered || _actionLocked
                             ? null
                             : _recordTyped,
-                        child: const Text('Check answer'),
+                        child: const Text('ตรวจคำตอบ'),
                       ),
                     ],
                   ),
@@ -381,13 +436,13 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 FilledButton(
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: review.isSaving ? null : _retryEvidence,
-                  child: const Text('Retry saved answer'),
+                  child: const Text('ลองบันทึกคำตอบเดิมอีกครั้ง'),
                 )
               else if (review.phase == ClozeReviewPhase.completionRetryRequired)
                 FilledButton(
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: review.isSaving ? null : _retryCompletion,
-                  child: const Text('Retry session completion'),
+                  child: const Text('ลองจบกิจกรรมอีกครั้ง'),
                 ),
               if (review.feedback case final feedback?) ...<Widget>[
                 const SizedBox(height: 12),
@@ -397,14 +452,31 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 ),
               ],
               if (review.isAnswered) ...<Widget>[
+                const SizedBox(height: 20),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.feedback,
+                  child: SentencePracticePanel(
+                    key: ValueKey<String>(
+                      'sentence-${question.contentRevision}',
+                    ),
+                    identity:
+                        '${_session!.ownerId}/${_session!.id}/${question.wordId}/${question.contentRevision}',
+                    text: question.completeSentence,
+                    canInteract: () =>
+                        mounted &&
+                        identical(_review?.currentItem.question, question) &&
+                        _review?.isAnswered == true &&
+                        !_actionLocked,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 FilledButton(
                   key: const ValueKey<String>('cloze-next'),
                   onPressed: _actionLocked ? null : _advance,
                   child: Text(
                     review.index == review.items.length - 1
-                        ? 'View results'
-                        : 'Next question',
+                        ? 'ดูผลการเรียน'
+                        : 'ข้อถัดไป',
                   ),
                 ),
               ],
@@ -413,6 +485,27 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         ),
       ),
     );
+  }
+
+  void _chooseOption(String option, ClozeQuestion question) {
+    if (!mounted ||
+        _actionLocked ||
+        _review?.isAnswered == true ||
+        !identical(_review?.currentItem.question, question)) {
+      return;
+    }
+    setState(() => _selectedAnswer = option);
+  }
+
+  Future<void> _confirmSelected(ClozeQuestion question) async {
+    if (!mounted ||
+        _actionLocked ||
+        _review?.isAnswered == true ||
+        !identical(_review?.currentItem.question, question)) {
+      return;
+    }
+    final option = _selectedAnswer;
+    if (option != null) await _recordSelected(option);
   }
 
   Future<void> _recordSelected(String option) async {
@@ -424,7 +517,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
     } on Object {
-      _showFailure('Could not save the answer. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคำตอบไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -437,7 +530,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
     } on Object {
-      _showFailure('Could not save the answer. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคำตอบไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -447,7 +540,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
     try {
       await review.retryEvidence();
     } on Object {
-      _showFailure('Could not save the answer. Please retry.');
+      _showFailure('ยังยืนยันการบันทึกคำตอบไม่ได้ กรุณาลองบันทึกอีกครั้ง');
     }
   }
 
@@ -463,11 +556,12 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
       }
       _typedAnswer.clear();
       _inputMode = null;
+      _selectedAnswer = null;
       _responseStopwatch
         ..reset()
         ..start();
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -477,7 +571,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
     try {
       await _showScore(await review.retryCompletion());
     } on Object {
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
     }
   }
 
@@ -505,16 +599,16 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Leave Cloze Test?'),
-        content: const Text('The active session will be closed safely.'),
+        title: const Text('ออกจากกิจกรรมเติมคำหรือไม่'),
+        content: const Text('ระบบจะดำเนินการจบกิจกรรมที่กำลังเรียนอยู่'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Keep learning'),
+            child: const Text('เรียนต่อ'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Leave'),
+            child: const Text('ออกจากกิจกรรม'),
           ),
         ],
       ),
@@ -542,7 +636,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
     } on Object {
       if (!mounted) return;
       setState(() => _abandoning = false);
-      _showFailure('Could not close the session. Please retry.');
+      _showFailure('ยังจบกิจกรรมไม่ได้ กรุณาลองอีกครั้ง');
       return;
     }
     if (mounted) Navigator.of(context).pop();

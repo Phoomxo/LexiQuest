@@ -7,26 +7,60 @@ import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import 'vocab_list_screen.dart';
 
-class CategoriesPage extends StatelessWidget {
+class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key, this.vocabulary});
 
   final VocabularyUseCases? vocabulary;
 
-  VocabularyUseCases? _useCases(BuildContext context) =>
-      vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+  @override
+  State<CategoriesPage> createState() => _CategoriesPageState();
+}
+
+class _CategoriesPageState extends State<CategoriesPage> {
+  VocabularyUseCases? _vocabulary;
+  Stream<List<VocabularyCategory>>? _categories;
+
+  void _bindVocabulary() {
+    final next =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    if (identical(next, _vocabulary)) return;
+    _vocabulary = next;
+    _categories = next?.watchCategories();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bindVocabulary();
+  }
+
+  @override
+  void didUpdateWidget(CategoriesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindVocabulary();
+  }
+
+  void _retry() {
+    setState(() {
+      // A new subscription resolves the active owner again, even when the
+      // injected use-case object has not changed.
+      _categories = _vocabulary?.watchCategories();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final useCases = _useCases(context);
+    final useCases = _vocabulary;
     return Scaffold(
       appBar: AppBar(title: const Text('คลังคำศัพท์')),
       body: useCases == null
           ? const _LocalDataUnavailable()
           : StreamBuilder<List<VocabularyCategory>>(
-              stream: useCases.watchCategories(),
+              key: ObjectKey(_categories),
+              stream: _categories,
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return _FailureState(onRetry: () {});
+                  return _FailureState(onRetry: _retry);
                 }
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -51,12 +85,14 @@ class CategoriesPage extends StatelessWidget {
                         leading: const Icon(Icons.folder_outlined),
                         title: Text(category.name),
                         subtitle: const Text('แตะเพื่อดูคำศัพท์'),
-                        trailing: IconButton(
-                          tooltip: 'ลบหมวดหมู่',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () =>
-                              _confirmDelete(context, useCases, category),
-                        ),
+                        trailing: category.isReadOnly
+                            ? null
+                            : IconButton(
+                                tooltip: 'ลบหมวดหมู่',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () =>
+                                    _confirmDelete(context, useCases, category),
+                              ),
                         onTap: () {
                           AppNavigator.pushPage<void>(
                             context,
@@ -183,6 +219,7 @@ class _AddCategoryDialogState extends State<_AddCategoryDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('เพิ่มหมวดหมู่'),
+      scrollable: true,
       content: TextField(
         key: const ValueKey('category-name-field'),
         controller: _controller,

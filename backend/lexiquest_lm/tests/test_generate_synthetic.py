@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import random
 
+import pytest
+
 from generate_synthetic import (
     GeminiAugmenter,
     _explanation_response,
@@ -54,6 +56,52 @@ def test_pos_family_maps_common_variants() -> None:
 # ---------------------------------------------------------------------------
 # Template selection
 # ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("label", ["Pronoun", "Personal Pronoun", "Possessive Pronoun"])
+def test_pronoun_family_is_not_the_noun_substring(label) -> None:
+    assert _pos_family(label) == "function"
+
+
+@pytest.mark.parametrize(
+    ("label", "word"),
+    [("Pronoun", "they"), ("Personal Pronoun", "she"), ("Possessive Pronoun", "hers")],
+)
+def test_generated_pronoun_sentences_never_use_noun_slots(label, word) -> None:
+    entry = _word(word=word, part_of_speech=label, tags=())
+    rows = generate_template_rows(entry, rng=random.Random(19))
+    sentences = [row["response"] for row in rows if row["kind"] == "sentence"]
+    noun_sentences = {
+        f"The {word} is here.",
+        f"She has a {word}.",
+        f"Look at the {word}.",
+        f"This {word} is new.",
+        f"We see a {word} today.",
+    }
+    assert sentences
+    assert all(word in sentence for sentence in sentences)
+    assert not noun_sentences.intersection(sentences), sentences
+    assert rows == generate_template_rows(entry, rng=random.Random(19))
+
+
+@pytest.mark.parametrize(
+    ("label", "word"),
+    [("Pronoun", "they"), ("Personal Pronoun", "she"), ("Possessive Pronoun", "hers")],
+)
+def test_generated_pronouns_use_universal_sentences_not_preposition_slots(
+    label, word
+) -> None:
+    entry = _word(word=word, part_of_speech=label, tags=())
+    rows = generate_template_rows(entry, rng=random.Random(19))
+    sentences = [row["response"] for row in rows if row["kind"] == "sentence"]
+    # Existing A1 universal templates discuss the word without putting a
+    # personal/possessive pronoun into a noun or preposition-shaped slot.
+    assert set(sentences) == {
+        f"I like the word {word}.",
+        f"I learned the word {word} in class.",
+    }
+    assert len(sentences) == 2
+    assert rows == generate_template_rows(entry, rng=random.Random(19))
 
 
 def test_templates_return_pos_match_when_available() -> None:

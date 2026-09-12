@@ -8,6 +8,41 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/screens/learning_preference_quiz_screen.dart';
 
 void main() {
+  testWidgets('device regression: preferences fit phone at 200 percent text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(393, 833);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final useCases = LearnerPreferencesUseCases(
+      repository: _Preferences(),
+      owners: _Owner(),
+      nowUtc: () => DateTime.utc(2026, 9, 10),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: LearningPreferenceQuizScreen(useCases: useCases),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final activity = find.byKey(
+      const ValueKey('learning-preferences/activity-preference'),
+    );
+    await tester.ensureVisible(activity);
+    await tester.tap(activity);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('แบบทดสอบ').last);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('f35 quiz edits goal time and activity without style labels', (
     tester,
   ) async {
@@ -23,6 +58,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppBar, 'การตั้งค่าการเรียน'), findsOneWidget);
+    expect(find.text('balancedGrowth'), findsNothing);
+    expect(find.text('mixedPractice'), findsNothing);
+    expect(find.text('พัฒนาทักษะอย่างสมดุล'), findsWidgets);
     expect(find.textContaining('learning style'), findsNothing);
     expect(find.textContaining('personality'), findsNothing);
     final goal = tester.widget<DropdownButtonFormField<LearnerPreferenceGoal>>(
@@ -54,7 +92,7 @@ void main() {
       repository.current.activityPreference,
       LearnerActivityPreference.quiz,
     );
-    expect(find.text('Preferences saved.'), findsOneWidget);
+    expect(find.text('บันทึกการตั้งค่าการเรียนแล้ว'), findsOneWidget);
   });
 
   testWidgets('f35 quiz rejects invalid time without mutating authority', (
@@ -83,7 +121,7 @@ void main() {
     await tester.pump();
 
     expect(repository.saveCount, 0);
-    expect(find.text('Enter between 1 and 240 minutes.'), findsOneWidget);
+    expect(find.text('กรุณาระบุเวลาตั้งแต่ 1 ถึง 240 นาที'), findsOneWidget);
   });
 
   testWidgets('f35 general constructor fails closed without dependency', (
@@ -94,7 +132,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Learning preferences are unavailable.'), findsOneWidget);
+    expect(find.text('ยังไม่พร้อมตั้งค่าการเรียน'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('learning-preferences/save')),
       findsNothing,

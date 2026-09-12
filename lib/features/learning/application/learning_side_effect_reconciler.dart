@@ -71,26 +71,44 @@ final class LearningSideEffectReconciler {
   final int pendingBatchSize;
 
   Future<void> reconcileOwner(String ownerId) async {
-    await _applyPending(
-      ownerId,
-      'coins',
-      null,
-      evidenceSink: coinsSink,
-      bridgeV1: false,
-    );
-    await _applyPending(ownerId, 'quest', questSink);
-    await _applyPending(ownerId, 'streak', streakSink);
-    await _applyRewardPending(ownerId);
+    await _reconcileOwnerBatch(ownerId);
   }
 
-  Future<void> _applyPending(
+  /// Returns only projections whose durable frontier advanced and still has
+  /// work. A failed sink or invalid receipt is retried by a later request.
+  Future<Set<String>> _reconcileOwnerBatch(
+    String ownerId, {
+    Set<String>? projections,
+  }) async {
+    final continuing = <String>{};
+    for (final projection in ['coins', 'quest', 'streak', 'reward']) {
+      if (projections != null && !projections.contains(projection)) continue;
+      final hasMore = switch (projection) {
+        'coins' => await _applyPending(
+          ownerId,
+          projection,
+          null,
+          evidenceSink: coinsSink,
+          bridgeV1: false,
+        ),
+        'quest' => await _applyPending(ownerId, projection, questSink),
+        'streak' => await _applyPending(ownerId, projection, streakSink),
+        'reward' => await _applyRewardPending(ownerId),
+        _ => false,
+      };
+      if (hasMore) continuing.add(projection);
+    }
+    return continuing;
+  }
+
+  Future<bool> _applyPending(
     String ownerId,
     String projection,
     LearningProjectionSink? sink, {
     LearningEvidenceProjectionSink? evidenceSink,
     bool bridgeV1 = true,
   }) async {
-    if (sink == null && evidenceSink == null) return;
+    if (sink == null && evidenceSink == null) return false;
     late final List<PendingLearningProjectionEvent> events;
     try {
       events = await _events.listPendingProjectionEvents(
@@ -100,7 +118,7 @@ final class LearningSideEffectReconciler {
         limit: pendingBatchSize,
       );
     } on StateError {
-      return;
+      return false;
     }
     for (final pending in events) {
       late final bool shouldProject;
@@ -111,7 +129,7 @@ final class LearningSideEffectReconciler {
           appliedVersion: appliedVersion,
         );
       } on StateError {
-        break;
+        return false;
       }
       if (!shouldProject) continue;
       final resolution = await _events.resolveEvidenceForSource(pending.event);
@@ -203,14 +221,15 @@ final class LearningSideEffectReconciler {
         );
       } catch (_) {
         // Preserve chronological ordering: the next event cannot overtake it.
-        break;
+        return false;
       }
     }
+    return _hasAdvancedPending(ownerId, projection, events);
   }
 
-  Future<void> _applyRewardPending(String ownerId) async {
+  Future<bool> _applyRewardPending(String ownerId) async {
     final sink = rewardSink;
-    if (sink == null) return;
+    if (sink == null) return false;
     late final List<PendingLearningProjectionEvent> events;
     try {
       events = await _events.listPendingProjectionEvents(
@@ -221,7 +240,7 @@ final class LearningSideEffectReconciler {
         prerequisiteProjection: 'quest',
       );
     } on StateError {
-      return;
+      return false;
     }
     for (final pending in events) {
       late final bool shouldProject;
@@ -232,7 +251,7 @@ final class LearningSideEffectReconciler {
           appliedVersion: appliedVersion,
         );
       } on StateError {
-        break;
+        return false;
       }
       if (!shouldProject) continue;
       final resolution = await _events.resolveEvidenceForSource(pending.event);
@@ -264,7 +283,7 @@ final class LearningSideEffectReconciler {
       if (prerequisite == null) {
         // The prerequisite projection owns the same contiguous source prefix.
         // Do not let a later joined receipt advance reward beyond a gap.
-        break;
+        return false;
       }
       if (prerequisite.outcome == LearningProjectionOutcome.blocked) {
         await _events.markProjectionOutcome(
@@ -381,8 +400,33 @@ final class LearningSideEffectReconciler {
           decision: decisionPayload,
         );
       } catch (_) {
-        break;
+        return false;
       }
+    }
+    return _hasAdvancedPending(ownerId, 'reward', events);
+  }
+
+  Future<bool> _hasAdvancedPending(
+    String ownerId,
+    String projection,
+    List<PendingLearningProjectionEvent> previous,
+  ) async {
+    if (previous.isEmpty) return false;
+    try {
+      final pending = await _events.listPendingProjectionEvents(
+        ownerId: ownerId,
+        projection: projection,
+        appliedVersion: appliedVersion,
+        limit: 1,
+      );
+      if (pending.isEmpty) return false;
+      final before = previous.first.event;
+      final after = pending.single.event;
+      final time = after.occurredAtUtc.compareTo(before.occurredAtUtc);
+      return time > 0 ||
+          (time == 0 && after.eventId.compareTo(before.eventId) > 0);
+    } on StateError {
+      return false;
     }
   }
 
@@ -484,7 +528,18 @@ final class LearningReconciliationScheduler {
         final owner = _pendingOwners.first;
         _pendingOwners.remove(owner);
         try {
-          await _reconciler.reconcileOwner(owner);
+          Set<String>? continuing;
+          do {
+            continuing = await _reconciler._reconcileOwnerBatch(
+              owner,
+              projections: continuing,
+            );
+            if (_disposed || continuing.isEmpty) break;
+            // Yield between bounded pages so long receipt replays do not keep
+            // the UI on one event-loop turn. Each projection must prove fresh
+            // durable progress before it can receive another page.
+            await Future<void>(() {});
+          } while (!_disposed);
         } catch (_) {
           // A later lifecycle/answer request retries the same durable batch.
         }

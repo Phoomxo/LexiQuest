@@ -13,6 +13,52 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  for (final restart in [false, true]) {
+    testWidgets(
+      'intentional pending voice cancellation is silent restart=$restart',
+      (tester) async {
+        final gate = Completer<void>();
+        final provider = _FakeVoice()
+          ..firstSpeakGate = gate
+          ..firstSpeakFailure = StateError('synthetic stale failure');
+        final voice = VoiceUseCases(
+          provider: provider,
+          disposeProvider: () async {},
+        );
+        try {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: AiTutorScreen(aiTutor: _FakeAiTutor(), voice: voice),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.enterText(
+            find.byKey(const ValueKey('ai-tutor-input')),
+            'Hello',
+          );
+          await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byTooltip('ฟังคำตอบ'));
+          await tester.pump();
+          expect(provider.requests, hasLength(1));
+          await tester.tap(find.byTooltip(restart ? 'ฟังคำตอบ' : 'หยุดอ่าน'));
+          await tester.pumpAndSettle();
+          expect(provider.stopCalls, greaterThanOrEqualTo(1));
+          expect(provider.requests, hasLength(restart ? 2 : 1));
+          expect(find.byKey(const ValueKey('ai-tutor-error')), findsNothing);
+          gate.complete();
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('ai-tutor-error')), findsNothing);
+          expect(tester.takeException(), isNull);
+        } finally {
+          if (!gate.isCompleted) gate.complete();
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+          await tester.runAsync(() => voice.dispose());
+        }
+      },
+    );
+  }
   testWidgets(
     'BYOK disclosure states bounded Gemini retry and no provider fallback',
     (tester) async {
@@ -21,9 +67,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('up to 3 total attempts'), findsOneWidget);
+      final details = find.text('รายละเอียดการเชื่อมต่อและการเก็บรหัส');
+      await tester.scrollUntilVisible(
+        details,
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(details);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('รวมไม่เกิน 3 ครั้ง'), findsOneWidget);
       expect(
-        find.textContaining('never fall back to a different provider'),
+        find.textContaining('จะไม่เปลี่ยนไปใช้ผู้ให้บริการอื่น'),
         findsOneWidget,
       );
       expect(
@@ -60,7 +114,7 @@ void main() {
 
     expect(tutor.messages, ['My name is Phet and I am a developer']);
     expect(find.text('Live Gemini reply'), findsOneWidget);
-    expect(find.text('ผู้ให้บริการ: gemini-test'), findsOneWidget);
+    expect(find.text('รุ่น AI: gemini-test'), findsOneWidget);
     expect(find.textContaining('Grammar:'), findsNothing);
   });
 
@@ -99,7 +153,7 @@ void main() {
     expect(find.text('Live Gemini reply'), findsNothing);
   });
 
-  testWidgets('microphone transcript comes from speech adapter', (
+  testWidgets('microphone transcript is editable and waits for explicit send', (
     tester,
   ) async {
     final speechGateway = _FakeSpeechGateway();
@@ -121,8 +175,53 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
     await tester.pumpAndSettle();
 
-    expect(tutor.messages, ['I have real project experience']);
+    expect(tutor.messages, isEmpty);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('ai-tutor-input')))
+          .controller!
+          .text,
+      'I have real project experience',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'Reviewed transcript',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pumpAndSettle();
+    expect(tutor.messages, ['Reviewed transcript']);
     expect(find.text('Live Gemini reply'), findsOneWidget);
+  });
+
+  testWidgets('reply playback waits for play and offers stop', (tester) async {
+    final provider = _FakeVoice();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiTutorScreen(
+          aiTutor: _FakeAiTutor(),
+          voice: VoiceUseCases(
+            provider: provider,
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'Hello',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pumpAndSettle();
+    expect(provider.requests, isEmpty);
+    await tester.tap(find.byTooltip('ฟังคำตอบ'));
+    await tester.pumpAndSettle();
+    expect(provider.requests.single.text, 'Live Gemini reply');
+    await tester.tap(find.byTooltip('หยุดอ่าน'));
+    await tester.pumpAndSettle();
+    expect(provider.stopCalls, greaterThanOrEqualTo(1));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   testWidgets('backgrounding cancels microphone', (tester) async {
@@ -205,6 +304,8 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
         await tester.pump();
         await tester.pump();
+        await tester.tap(find.byTooltip('ฟังคำตอบ'));
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
         await tester.pump();
 
@@ -396,7 +497,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
     await tester.pump();
 
-    await tester.tap(find.byTooltip('AI provider settings'));
+    await tester.tap(find.byTooltip('ตั้งค่าผู้ให้บริการ AI'));
     await tester.pumpAndSettle();
 
     expect(speechGateway.cancelCalls, 1);
@@ -434,7 +535,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
     await tester.pump();
 
-    await tester.tap(find.byTooltip('AI provider settings'));
+    await tester.tap(find.byTooltip('ตั้งค่าผู้ให้บริการ AI'));
     await tester.pumpAndSettle();
     gate.complete();
     await tester.pumpAndSettle();
@@ -593,6 +694,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 }
 
 final class _FakeVoice implements VoiceProvider {
+  Completer<void>? firstSpeakGate;
+  Object? firstSpeakFailure;
   final List<VoiceRequest> requests = [];
   final Completer<void> stopEntered = Completer<void>();
   int stopCalls = 0;
@@ -600,6 +703,11 @@ final class _FakeVoice implements VoiceProvider {
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     requests.add(request);
+    if (requests.length == 1) {
+      await firstSpeakGate?.future;
+      final failure = firstSpeakFailure;
+      if (failure != null) throw failure;
+    }
     return const VoicePlaybackResult(
       requestedEngine: VoiceEngine.nativeTts,
       actualEngine: VoiceEngine.nativeTts,

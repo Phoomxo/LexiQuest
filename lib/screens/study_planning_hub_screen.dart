@@ -69,15 +69,15 @@ final class StudyPlanningHubScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(hubEntry.fullThaiLabel)),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
                 'เลือกชุดเนื้อหาที่ตรวจสอบแล้วเพื่อวางแผนการฝึกครั้งถัดไป',
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               _glossaryAction(

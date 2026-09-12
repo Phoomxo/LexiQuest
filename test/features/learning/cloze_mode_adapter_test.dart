@@ -19,6 +19,23 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
+  test('sentence practice pins original case and literal underscore text', () {
+    const adapter = ClozeModeAdapter();
+    final items = adapter.pinItems(
+      session: _session(<QuizWord>[_quizWord('word:station')]),
+      lexicalWords: <VocabularyWord>[
+        _lexicalWord(
+          id: 'word:station',
+          examples: const <String>['  STATION has a sign ____ today.  '],
+        ),
+      ],
+    );
+    final question = items.single.question!;
+    expect(question.prompt, '_____ has a sign ____ today.');
+    expect(question.completeSentence, 'STATION has a sign ____ today.');
+    expect(question.correctAnswer, 'station');
+  });
+
   const adapter = ClozeModeAdapter();
 
   test('pins one reviewed lexical example at the session revision', () {

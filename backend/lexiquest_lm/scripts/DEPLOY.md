@@ -1,17 +1,18 @@
 # LexiQuest-LM Deploy Guide
 
-End-to-end guide to take the trained model from your workstation to a public
-API that the Flutter app calls. Total time: ~20 minutes.
+This guide packages a trained adapter for a standalone chat API and explains
+the separate content API used by Flutter. The Space is not a drop-in value for
+`LEXIQUEST_AI_API_URL`: the request contract and authentication differ.
 
 ## Prerequisites
 
 - A trained adapter at `backend/lexiquest_lm/checkpoints/lora_adapter/`
   (produced by `lora_finetune.py --train`).
-- A free HuggingFace account: https://huggingface.co/join
+- A HuggingFace account and hosting capacity appropriate for the model.
 
 ---
 
-## Step 1: Upload the adapter to HuggingFace (~5 min)
+## Step 1: Upload the adapter to HuggingFace
 
 ### 1a. Create a write token
 
@@ -46,7 +47,7 @@ Note the **full repo ID** (e.g. `phet1910/lexiquest-lm`) — you'll need it in S
 
 ---
 
-## Step 2: Deploy the HuggingFace Space (~10 min)
+## Step 2: Deploy the standalone HuggingFace Space
 
 The Space serves your model as an OpenAI-compatible API. The app files are
 already prepared at `backend/lexiquest_lm/deploy/hf_space/`.
@@ -58,7 +59,7 @@ already prepared at `backend/lexiquest_lm/deploy/hf_space/`.
 3. **Space name**: `lexiquest-lm-api`
 4. **License**: MIT (or your choice)
 5. **SDK**: **Docker**
-6. **Hardware**: **CPU basic** (free, 16GB RAM — plenty for a 0.5B model)
+6. **Hardware**: choose a tier after checking the model's memory and latency needs.
 7. Click **Create Space**
 
 ### 2b. Upload the Space files
@@ -94,7 +95,7 @@ values as repository secrets so they are not hard-coded:
 Optional Space variables `MAX_INPUT_TOKENS` and `MAX_NEW_TOKENS` control the
 positive per-request resource limits. Their defaults are `1024` and `128`.
 
-### 2d. Wait for build (~3-5 min)
+### 2d. Wait for build
 
 The Space will build (installs torch + transformers from `requirements.txt`),
 download your adapter on first start, then go **Running**.
@@ -109,31 +110,85 @@ $SPACE_URL = "https://<your-username>-lexiquest-lm-api.hf.space"
 # Export FIREBASE_ID_TOKEN from a signed-in client before running this command.
 if (-not $env:FIREBASE_ID_TOKEN) { throw "FIREBASE_ID_TOKEN is required" }
 
-curl -X POST "$SPACE_URL/v1/chat/completions" `
-  -H "Authorization: Bearer $env:FIREBASE_ID_TOKEN" `
-  -H "Content-Type: application/json" `
-  -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Write ONE example sentence using the word cat.\"}]}'
+$requestBody = @{
+  messages = @(@{
+    role = 'user'
+    content = 'Write ONE example sentence using the word cat.'
+  })
+} | ConvertTo-Json -Depth 4
+Invoke-RestMethod -Method Post -Uri "$SPACE_URL/v1/chat/completions" `
+  -Headers @{ Authorization = "Bearer $env:FIREBASE_ID_TOKEN" } `
+  -ContentType 'application/json' -Body $requestBody
 ```
 
 You should get JSON with `choices[0].message.content` containing a sentence.
 
-**Note the full Space URL** — you'll need it in Step 3.
+This checks the standalone chat endpoint. It does not verify the Flutter
+content flow or establish a refresh-capable server connection to the Space.
 
 ---
 
-## Step 3: Build the APK pointing at your Space (~5 min)
+## Step 3: Connect Flutter to the content API
 
-```powershell
-# Replace <your-username> with your HF username
-flutter build apk --debug `
-  --dart-define=LEXIQUEST_VOICE_API_URL=https://your-voice-api.example.com `
-  --dart-define=LEXIQUEST_AI_API_URL=https://<your-username>-lexiquest-lm-api.hf.space
+The implemented local path is:
+
+- Flutter `HttpContentProvider` sends content requests to the AI API's
+  `POST /v1/content`, using the signed-in user's Firebase ID token and refresh flow.
+- `backend/ai_api` validates that token, builds a teaching prompt, and calls
+  the configured provider's `POST /v1/chat/completions` with a static server-side
+  `LEXIQUEST_AI_LLM_API_KEY`.
+- Local Ollama can serve that provider endpoint. The requested model must
+  already be available in the running Ollama service.
+
+For an isolated local provider configuration, use these existing Settings
+names in `backend/ai_api/.env` (ensure process environment overrides do not
+enable a different provider or fallback):
+
+```dotenv
+LEXIQUEST_AI_LLM_BASE_URL=http://127.0.0.1:11434/v1/
+LEXIQUEST_AI_LLM_MODEL=qwen2.5:3b
+LEXIQUEST_AI_LLM_API_KEY=ollama
+LEXIQUEST_AI_FALLBACK_LLM_MODEL=
+LEXIQUEST_AI_GEMINI_KEYS=
 ```
 
-The APK installs on any Android phone. When a learner taps a word in the AI
-Tutor or fill-in-the-blanks screen, the app calls your Space, which runs
-LexiQuest-LM, which returns a teaching sentence. No third-party API key, no
-per-request cost, no dependency on your workstation being online.
+`ollama` is a local placeholder key, not a Firebase token. The AI API still
+requires its existing Firebase Admin application-default credentials and
+project configuration to verify app requests; local inference does not disable
+authentication. Keep real credentials out of source files and APK defines.
+
+From the repository root, using the already installed AI environment:
+
+```powershell
+& backend/ai_api/.venv/Scripts/python.exe -m uvicorn lexiquest_ai.main:app `
+  --app-dir backend/ai_api/src --host 127.0.0.1 --port 8000
+```
+
+Build for an Android emulator with the AI API URL, and configure the Voice API
+separately if needed:
+
+```powershell
+flutter build apk --debug `
+  --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
+```
+
+The emulator host address and physical-device LAN setup are documented in
+[Android LAN Development](../../../docs/runbooks/android-lan-development.md).
+The local backend and Ollama must remain available while using this path.
+Release builds require an HTTPS AI API endpoint.
+
+### Remote AI API to Space: missing authentication bridge
+
+The Space accepts an expiring Firebase ID token and checks revocation. The AI
+API's configured provider key is static and does not forward or refresh the
+Flutter token. A base-URL change alone cannot create a working long-lived
+AI API-to-Space connection. Do not store a copied client Firebase token as
+`LEXIQUEST_AI_LLM_API_KEY`.
+
+A refresh-capable authenticated bridge with the appropriate user/issuer and
+revocation handling is still a deployment dependency. It is not implemented
+by this guide. Pointing Flutter directly at the Space also fails the endpoint
+contract: the Space does not expose `/v1/content`.
 
 ### Install on a phone
 
@@ -144,23 +199,19 @@ flutter install
 
 ---
 
-## Cost summary
+## Capacity and cost
 
-| Component | Cost |
-|---|---|
-| HuggingFace model repo (public) | Free |
-| HuggingFace Space (CPU basic) | Free |
-| Per-request inference | Free (CPU) |
-| Training (already done) | 50 min of your RTX 3050 |
-| **Total ongoing** | **$0/month forever** |
+Hosting terms, runtime cost, memory requirements, cold-start duration, and
+inference latency depend on the selected model and infrastructure. Check the
+chosen service's current terms and measure the deployed workload; this guide
+does not guarantee free operation or a fixed deployment/training duration.
 
 ## Troubleshooting
 
 - **Space stays "Building" forever**: check Logs. Usually a typo in
   `requirements.txt` or an invalid `MODEL_ID` secret.
-- **First request is slow (~30-60s)**: Spaces sleep when idle; the first
-  request after sleep pays a cold-start model-load. Subsequent requests are
-  fast (~1-3s).
+- **First request is slow**: inspect startup/model-load logs and measure the
+  selected hardware before setting client timeouts or latency expectations.
 - **Generation loops / repeats**: ensure the latest `app.py` is deployed
   (it passes `<|im_end|>` as the eos token to stop cleanly).
 - **401 from the Space**: obtain a fresh Firebase ID token from a signed-in

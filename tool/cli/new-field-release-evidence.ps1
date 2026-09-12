@@ -21,6 +21,7 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'lib\field-release-evidence.ps1')
 
 function Resolve-RepositoryPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -48,7 +49,7 @@ function Read-OptionalJsonRecord {
         return $null
     }
     return Get-Content -LiteralPath $resolved -Raw -Encoding utf8 |
-        ConvertFrom-Json
+        ConvertFrom-LexiQuestEvidenceJson
 }
 
 $manifestPath = Resolve-RepositoryPath $ReleaseManifestPath
@@ -58,7 +59,7 @@ if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw "Release manifest is missing: $manifestPath"
 }
 $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding utf8 |
-    ConvertFrom-Json
+    ConvertFrom-LexiQuestEvidenceJson
 $devices = @()
 if (Test-Path -LiteralPath $deviceDirectory -PathType Container) {
     $devices = @(
@@ -66,7 +67,7 @@ if (Test-Path -LiteralPath $deviceDirectory -PathType Container) {
             Sort-Object Name |
             ForEach-Object {
                 Get-Content -LiteralPath $_.FullName -Raw -Encoding utf8 |
-                    ConvertFrom-Json
+                    ConvertFrom-LexiQuestEvidenceJson
             }
     )
 }

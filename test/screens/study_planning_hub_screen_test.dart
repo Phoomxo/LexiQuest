@@ -383,14 +383,7 @@ void main() {
       find.byKey(const ValueKey('learning-goals/title')),
       'IELTS practice target',
     );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/deadline')),
-      '2026-09-01T05:00:00Z',
-    );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/timezone')),
-      'Asia/Bangkok',
-    );
+    await _selectGoalLocalDateTime(tester);
     final staleSubmit = tester
         .widget<FilledButton>(
           find.byKey(const ValueKey('learning-goals/create')),
@@ -544,6 +537,7 @@ AppDependencies _dependencies(
     learningGoals:
         learningGoals ??
         LearningGoalUseCases(
+          activeOwnerId: () async => 'synthetic-owner-a',
           repository: _Goals(),
           nowUtc: () => DateTime.utc(2026, 8, 25),
           generateId: () => 'goal:test',
@@ -573,12 +567,41 @@ Future<LearningGoalUseCases> _realGoalUseCases(
     owners: owners,
   );
   return LearningGoalUseCases(
+    activeOwnerId: () async => (await owners.getOrCreateActiveOwner()).id,
     repository: onSaveAttempt == null
         ? durableRepository
         : _ObservedGoals(durableRepository, onSaveAttempt),
     nowUtc: () => DateTime.utc(2026, 8, 25, 12),
     generateId: () => 'goal:real',
   );
+}
+
+Future<void> _selectGoalLocalDateTime(WidgetTester tester) async {
+  final date = find.byKey(const ValueKey('learning-goals/deadline/date'));
+  await tester.ensureVisible(date);
+  await tester.tap(date);
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find
+        .descendant(
+          of: find.byType(DatePickerDialog),
+          matching: find.byType(TextField),
+        )
+        .first,
+    '09/01/2026',
+  );
+  await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('learning-goals/deadline/time')));
+  await tester.pumpAndSettle();
+  final times = find.descendant(
+    of: find.byType(TimePickerDialog),
+    matching: find.byType(TextField),
+  );
+  await tester.enterText(times.at(0), '12');
+  await tester.enterText(times.at(1), '00');
+  await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+  await tester.pumpAndSettle();
 }
 
 final class _ObservedGoals implements LearningGoalRepository {
@@ -594,9 +617,14 @@ final class _ObservedGoals implements LearningGoalRepository {
   Future<void> save(
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
+    String? expectedOwnerId,
   }) {
     onSaveAttempt();
-    return delegate.save(goal, mutationAllowed: mutationAllowed);
+    return delegate.save(
+      goal,
+      mutationAllowed: mutationAllowed,
+      expectedOwnerId: expectedOwnerId,
+    );
   }
 }
 
@@ -608,6 +636,7 @@ final class _Goals implements LearningGoalRepository {
   Future<void> save(
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
+    String? expectedOwnerId,
   }) async {}
 }
 

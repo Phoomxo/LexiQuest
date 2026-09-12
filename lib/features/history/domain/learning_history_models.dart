@@ -11,6 +11,16 @@ enum LearningHistoryTerminalState { completed, abandoned }
 
 enum LearningHistoryContentAvailability { available, unavailable }
 
+/// Describes the recorded activity, not a content revision or replay permit.
+/// Historic local CEFR configurations did not pin a passage title or level.
+final class LearningHistoryLocalCefrPresentation {
+  const LearningHistoryLocalCefrPresentation._();
+
+  String get titleThai => 'กิจกรรมอ่านตามระดับ CEFR';
+  String get detailThai =>
+      'รอบนี้บันทึกการฝึกอ่านไว้ แต่ไม่ได้บันทึกชื่อบทอ่านหรือระดับที่เลือก';
+}
+
 final class HistoryFilter {
   const HistoryFilter({
     required this.ownerId,
@@ -257,6 +267,19 @@ final class LearningHistoryEntry {
   final LearningHistoryAssessmentSummary? assessmentSummary;
   final PairMatchingHistoryProjection? pairSummary;
   final bool pairPurposeUnavailable;
+
+  /// Only the validated configuration identifies this local activity. Do not
+  /// infer historical content from today's catalog or mutable vocabulary.
+  LearningHistoryLocalCefrPresentation? get localCefrPresentation {
+    final configuration = sessionConfiguration;
+    if (assessmentSummary != null ||
+        configuration == null ||
+        configuration.mode != LessonMode.cefrReading ||
+        configuration.packIdentity != null) {
+      return null;
+    }
+    return const LearningHistoryLocalCefrPresentation._();
+  }
 }
 
 abstract interface class LearningHistoryReader {

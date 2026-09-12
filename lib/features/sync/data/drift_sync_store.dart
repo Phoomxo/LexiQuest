@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
@@ -27,6 +28,8 @@ import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/avatar_progression_policy.dart';
 import '../../rewards/domain/economy_transaction_policy.dart';
 import '../../rewards/domain/reward_models.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
+import '../../vocabulary/domain/packaged_starter_identity.dart';
 import '../domain/sync_entity.dart';
 import '../domain/research_sync.dart';
 import '../domain/sync_failure.dart';
@@ -47,6 +50,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
     this.researchMeasurementRollout =
         const ResearchMeasurementSyncRollout.off(),
     this.researchAuthorizer,
+    DateTime Function()? researchNowUtc,
     this.savedLearningItemSyncRollout =
         const SavedLearningItemSyncRollout.off(),
     this.contentQualityReportSyncRollout =
@@ -58,7 +62,8 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
         const LearnerPreferenceSyncRollout.off(),
     this.consentRegistry = const NoOpConsentRegistry(),
     DriftAvatarProgressionEligibility? avatarProgressionEligibility,
-  }) : projections = DriftLearningProjectionRebuilder(
+  }) : _researchNowUtc = researchNowUtc ?? (() => DateTime.now().toUtc()),
+       projections = DriftLearningProjectionRebuilder(
          database,
          evidencePolicy: evidencePolicy,
          rolloutModeProvider: rolloutModeProvider,
@@ -86,10 +91,12 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
   @override
   final ResearchMeasurementSyncRollout researchMeasurementRollout;
   final ResearchSyncAuthorizer? researchAuthorizer;
+  final DateTime Function() _researchNowUtc;
   late final _research = DriftResearchSyncAdapter(
     database,
     rollout: researchMeasurementRollout,
     authorizer: researchAuthorizer,
+    researchNowUtc: _researchNowUtc,
   );
   final SavedLearningItemSyncRollout savedLearningItemSyncRollout;
   final ContentQualityReportSyncRollout contentQualityReportSyncRollout;
@@ -398,6 +405,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
             WHEN candidate.entity_type = 'researchParticipationPermit' THEN 1
             WHEN candidate.entity_type = 'motivationMeasurementRun' THEN 2
             WHEN candidate.entity_type = 'motivationResponse' THEN 3
+            WHEN candidate.entity_type = 'researchSessionProof' THEN 3
             WHEN candidate.entity_type = 'measurementOpportunity' THEN 4
             WHEN candidate.entity_type IN ('TodayExperiencePresented',
               'TodayExperiencePresentationChanged','TodayExperienceMissionStarted',
@@ -1368,6 +1376,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
         case SyncCollection.learningTimeSegments:
         case SyncCollection.motivationMeasurementRuns:
         case SyncCollection.motivationResponses:
+        case SyncCollection.researchSessionProofs:
         case SyncCollection.researchParticipationPermits:
         case SyncCollection.measurementOpportunities:
         case SyncCollection.neutralEventsV2:
@@ -1520,6 +1529,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
               throw const InvalidSyncPayloadFailure();
             case SyncCollection.motivationMeasurementRuns:
             case SyncCollection.motivationResponses:
+            case SyncCollection.researchSessionProofs:
             case SyncCollection.researchParticipationPermits:
             case SyncCollection.measurementOpportunities:
             case SyncCollection.neutralEventsV2:
@@ -2952,6 +2962,19 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
     SyncEntity entity, {
     bool handlePendingConflict = true,
   }) async {
+    if (PackagedStarterIdentity.isReadOnly(
+      ownerId: ownerId,
+      contentId: entity.entityId,
+    )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final existing =
+        await (database.select(database.vocabularyCategories)
+              ..where((category) => category.id.equals(entity.entityId)))
+            .getSingleOrNull();
+    if (existing != null && existing.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
     if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
       return;
     }
@@ -2997,18 +3020,30 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
       isDeleted: entity.isDeleted,
       clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
     );
+    final payload = entity.payload;
+    final categoryId = payload['categoryId']! as String;
+    if (PackagedStarterIdentity.isReadOnly(
+          ownerId: ownerId,
+          contentId: entity.entityId,
+        ) ||
+        PackagedStarterIdentity.isReservedId(categoryId)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final existing = await (database.select(
+      database.vocabularyWords,
+    )..where((word) => word.id.equals(entity.entityId))).getSingleOrNull();
+    if (existing != null && existing.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
     if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
       return;
     }
-    final payload = entity.payload;
-    final existing =
-        await (database.select(database.vocabularyWords)..where(
-              (word) =>
-                  word.id.equals(entity.entityId) &
-                  word.ownerId.equals(ownerId),
-            ))
-            .getSingleOrNull();
-    final categoryId = payload['categoryId']! as String;
+    final category = await (database.select(
+      database.vocabularyCategories,
+    )..where((category) => category.id.equals(categoryId))).getSingleOrNull();
+    if (category == null || category.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
     final spelling = payload['spelling']! as String;
     final normalizedSpelling = payload['normalizedSpelling']! as String;
     final meaning = payload['meaning']! as String;
@@ -3116,7 +3151,10 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
           .into(database.savedLearningItems)
           .insert(
             db.SavedLearningItemsCompanion.insert(
-              id: entity.entityId,
+              // Cloud IDs are content identities shared across owners. Only a
+              // newly restored local row gets this owner-specific identity;
+              // the natural-key update path preserves every existing local ID.
+              id: 'saved-local:${sha256.convert(utf8.encode(jsonEncode([ownerId, entity.entityId])))}',
               ownerId: ownerId,
               contentType: payload['contentType']! as String,
               contentId: payload['contentId']! as String,
@@ -4103,7 +4141,9 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
     }
     final word =
         await (database.select(database.vocabularyWords)..where(
-              (row) => row.id.equals(wordId) & row.ownerId.equals(ownerId),
+              (row) =>
+                  row.id.equals(wordId) &
+                  PackagedStarterAccess.wordsFor(database, ownerId),
             ))
             .getSingleOrNull();
     if (word == null) throw const InvalidSyncPayloadFailure();
@@ -4693,10 +4733,13 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
     final dueAtUtcMs = _requiredInt(payload, 'dueAtUtcMs');
     final algorithmVersion = _requiredInt(payload, 'algorithmVersion');
 
-    // Verify word belongs to owner.
+    // Accept personal content or the exact intact packaged catalog.
     final word =
-        await (database.select(database.vocabularyWords)
-              ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
+        await (database.select(database.vocabularyWords)..where(
+              (r) =>
+                  r.id.equals(wordId) &
+                  PackagedStarterAccess.wordsFor(database, ownerId),
+            ))
             .getSingleOrNull();
     if (word == null) throw const InvalidSyncPayloadFailure();
 
@@ -4732,7 +4775,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
           .into(database.srsStates)
           .insert(
             db.SrsStatesCompanion.insert(
-              id: entity.entityId,
+              id: 'srs:$ownerId:$wordId',
               ownerId: ownerId,
               wordId: wordId,
               stability: Value(stability),
@@ -5499,6 +5542,7 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
       case SyncCollection.learningTimeSegments:
       case SyncCollection.motivationMeasurementRuns:
       case SyncCollection.motivationResponses:
+      case SyncCollection.researchSessionProofs:
       case SyncCollection.researchParticipationPermits:
       case SyncCollection.measurementOpportunities:
       case SyncCollection.neutralEventsV2:

@@ -811,8 +811,8 @@ void main() {
       expect(cursor.contentRevision, isNull);
       expect(cursor.policyVersion, isNull);
       expect(cursor.providerProvenanceJson, isNull);
-      expect(cursor.appVersion, 'learning-projection-cursor-v1');
-      expect(cursor.buildId, 'learning-projection-cursor-v1');
+      expect(cursor.appVersion, 'learning-projection-cursor-v2');
+      expect(cursor.buildId, 'learning-projection-cursor-v2');
 
       await reconciler.reconcileOwner('owner-reconcile');
 
@@ -1110,6 +1110,135 @@ void main() {
       await reconciler.reconcileOwner('owner-reconcile');
       expect(calls, 2);
       expect(await applied('streak'), hasLength(2));
+    },
+  );
+
+  test(
+    'scheduler drains more than two replay pages before the newest source',
+    () async {
+      final at = DateTime.utc(2026, 8, 9, 12);
+      for (var number = 1; number <= 120; number++) {
+        await addEvent(number, occurredAt: at.add(Duration(seconds: number)));
+      }
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      // Establish the old immutable receipts using the existing bounded API.
+      for (var page = 0; page < 3; page++) {
+        await reconciler.reconcileOwner('owner-reconcile');
+      }
+      expect(calls, hasLength(120));
+      final originalReceipts =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningProjectionApplied'),
+              ))
+              .get();
+      calls.clear();
+      await addEvent(121, occurredAt: at.subtract(const Duration(seconds: 1)));
+      await addEvent(122, occurredAt: at.add(const Duration(seconds: 122)));
+      final scheduler = LearningReconciliationScheduler(reconciler);
+      try {
+        scheduler.request('owner-reconcile');
+        await scheduler.drain();
+        expect(
+          calls,
+          ['learning-event:attempt-121', 'learning-event:attempt-122'],
+          reason:
+              'A single request must advance past complete receipt pages without replaying their sinks.',
+        );
+        final store = DriftLearningEventStore(database);
+        expect(
+          await store.listPendingProjectionEvents(
+            ownerId: 'owner-reconcile',
+            projection: 'streak',
+            appliedVersion: LearningSideEffectReconciler.appliedVersion,
+            limit: 50,
+          ),
+          isEmpty,
+        );
+        final receipts =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventType.equals('LearningProjectionApplied'),
+                ))
+                .get();
+        expect(receipts, hasLength(122));
+        expect(receipts, containsAll(originalReceipts));
+      } finally {
+        await scheduler.dispose();
+      }
+    },
+  );
+
+  test(
+    'scheduler advances terminal blocked pages without retrying a failed sink',
+    () async {
+      for (var number = 1; number <= 5; number++) {
+        await addEvent(number);
+      }
+      var streakCalls = 0;
+      var questCalls = 0;
+      var rewardCalls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        pendingBatchSize: 2,
+        streakSink: (_) async {
+          streakCalls++;
+          throw StateError('synthetic temporarily unavailable sink');
+        },
+        questSink: (event) async {
+          questCalls++;
+          return event.eventId == 'learning-event:attempt-1'
+              ? const LearningProjectionResult.blocked(
+                  reasonCode: 'syntheticEvidenceUnavailable',
+                )
+              : const LearningProjectionResult.notApplicable(
+                  payload: {'eligible': false, 'rewardGrants': <Object>[]},
+                );
+        },
+        rewardSink: (_, _) async {
+          rewardCalls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+      final scheduler = LearningReconciliationScheduler(reconciler);
+      try {
+        scheduler.request('owner-reconcile');
+        await scheduler.drain();
+        expect(questCalls, 5);
+        expect(streakCalls, 1);
+        expect(rewardCalls, 0);
+        final store = DriftLearningEventStore(database);
+        for (final projection in ['quest', 'reward']) {
+          expect(
+            await store.listPendingProjectionEvents(
+              ownerId: 'owner-reconcile',
+              projection: projection,
+              appliedVersion: LearningSideEffectReconciler.appliedVersion,
+              limit: 50,
+            ),
+            isEmpty,
+          );
+          final receipt = await store.readProjectionReceipt(
+            source: (await store.listPendingProjectionEvents(
+              ownerId: 'owner-reconcile',
+              projection: 'streak',
+              appliedVersion: LearningSideEffectReconciler.appliedVersion,
+              limit: 1,
+            )).single.event,
+            projection: projection,
+            appliedVersion: LearningSideEffectReconciler.appliedVersion,
+          );
+          expect(receipt!.outcome, LearningProjectionOutcome.blocked);
+        }
+        expect(await applied('streak'), isEmpty);
+      } finally {
+        await scheduler.dispose();
+      }
     },
   );
 

@@ -891,9 +891,15 @@ final class PairMatchingSessionCoordinator {
     }
     if (!state.complete) throw StateError('Pair planned completion required');
     if (_snapshot.terminal?.acknowledged == true) return;
-    final close = _close ??= learning.captureSessionClose(
+    final close = _close ??= learning.restoreSessionClose(
       sessionId: operation.plan.learningSessionId,
       ownerId: runtimeOwnerId,
+      // Canonical session storage retains milliseconds. Pin that same instant
+      // before writing the terminal checkpoint so completion and reopen agree.
+      completedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        learning.nowUtc().millisecondsSinceEpoch,
+        isUtc: true,
+      ),
     );
     if (!_closeOwned) {
       ownClose?.call(close, _ensureCloseCheckpoint);

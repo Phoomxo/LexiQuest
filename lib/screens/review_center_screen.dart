@@ -8,7 +8,7 @@ import '../navigation/app_routes.dart';
 import '../navigation/navigation_glossary.dart';
 
 typedef ReviewLessonShellBuilder =
-    UnifiedLessonShellLease Function(ReviewQueueItem item);
+    UnifiedLessonShellLease Function(ReviewLessonLaunchRequest request);
 
 /// G1 f22 surface. f42 remains the sole future production parent.
 final class ReviewCenterScreen extends StatefulWidget {
@@ -108,7 +108,7 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
     var launchFailed = false;
     try {
       request = await widget.useCases.launch(item);
-      destination = widget.lessonShellBuilder(request.item);
+      destination = widget.lessonShellBuilder(request);
       if (!destination.usesLearningAuthority(
         widget.useCases.sessionAuthorityIdentity,
       )) {

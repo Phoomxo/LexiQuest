@@ -20,6 +20,7 @@ import '../runtime/registries/feature_registry.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../voice/voice_models.dart';
+import '../widgets/cefr_practice_example.dart';
 
 /// Owner-scoped gateway for historical transient decks.
 ///
@@ -606,9 +607,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                             ),
                           },
                           child: Semantics(
-                            label: _visibleFlipped
-                                ? 'Answer for ${word.spelling}'
-                                : 'Reveal answer for ${word.spelling}',
+                            label:
+                                Localizations.localeOf(context).languageCode ==
+                                    'th'
+                                ? (_visibleFlipped
+                                      ? 'คำแปลของ ${word.spelling}'
+                                      : 'เปิดคำแปลของ ${word.spelling}')
+                                : (_visibleFlipped
+                                      ? 'Answer for ${word.spelling}'
+                                      : 'Reveal answer for ${word.spelling}'),
                             button: canReveal,
                             enabled: canReveal,
                             onTap: canReveal ? _flipCard : null,
@@ -664,6 +671,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
+                CefrPracticeExample(
+                  spelling: word.spelling,
+                  meaning: word.meaning,
+                  partOfSpeech: word.partOfSpeech,
+                  cefrLevel: word.cefrLevel,
+                  revealed: _visibleFlipped,
+                ),
                 if (_saving)
                   const LinearProgressIndicator()
                 else if (_review?.requiresRetry ?? false)
@@ -672,8 +686,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                     onPressed: _retryReview,
                     child: Text(
                       _review!.requiresCompletionRetry
-                          ? 'Retry session completion'
-                          : 'Retry saved review',
+                          ? 'ลองจบกิจกรรมอีกครั้ง'
+                          : 'ลองบันทึกผลทบทวนเดิมอีกครั้ง',
                     ),
                   )
                 else if (_completionCommitted)
@@ -691,7 +705,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                       child: FilledButton(
                         key: const ValueKey<String>('flashcard-continue'),
                         onPressed: _advanceAfterReveal,
-                        child: const Text('Continue'),
+                        child: const Text('ดำเนินต่อ'),
                       ),
                     ),
                   )

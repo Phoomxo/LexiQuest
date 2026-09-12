@@ -569,6 +569,72 @@ void main() {
   );
 
   test(
+    'typed Cloze incorrect evidence remains eligible for normal review',
+    () async {
+      final words = <vocabulary_domain.VocabularyWord>[];
+      for (final entry in [
+        ('typed-cloze', 'ticket', 'Keep your ticket until the journey ends.'),
+        (
+          'typed-cloze-distractor',
+          'passport',
+          'Show your passport at the border.',
+        ),
+      ]) {
+        await _insertWord(
+          database,
+          id: entry.$1,
+          spelling: entry.$2,
+          packaged: true,
+        );
+        final checksum = await _insertLexicalArtifact(
+          database,
+          artifacts: lexicalArtifacts,
+          wordId: entry.$1,
+          examples: [entry.$3],
+        );
+        words.add(
+          _packagedWord(
+            id: entry.$1,
+            spelling: entry.$2,
+            artifactChecksum: checksum,
+            example: entry.$3,
+          ),
+        );
+      }
+      final learning = _learningUseCases(database);
+      await _recordClozeIncorrect(
+        database: database,
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+        target: words.first,
+        distractor: words.last,
+        typed: true,
+      );
+      final attempt = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      expect(attempt.promptMode, 'clozeTyped');
+      expect(attempt.isCorrect, isFalse);
+      final queue = await reader.compose(
+        _filter(includeReasons: const {ReviewQueueReason.incorrectAnswer}),
+      );
+      expect(queue, hasLength(1));
+      expect(queue.single.identity.id, words.first.id);
+      expect(
+        (await reader.compose(
+          ReviewQueueFilter(
+            ownerId: 'owner-2',
+            evaluatedAtUtc: _now,
+            timezoneId: 'Asia/Bangkok',
+            includeReasons: const {ReviewQueueReason.incorrectAnswer},
+          ),
+        )),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
     'rejects validly shaped wrong rich checksum and prompt artifact identity',
     () async {
       final artifactChecksums = <String, String>{};
@@ -1463,6 +1529,7 @@ Future<void> _recordClozeIncorrect({
   required CurrentActivityEvidenceAdapter evidence,
   required vocabulary_domain.VocabularyWord target,
   required vocabulary_domain.VocabularyWord distractor,
+  bool typed = false,
 }) async {
   final session = await _adapterSession(
     database,
@@ -1481,12 +1548,16 @@ Future<void> _recordClozeIncorrect({
   );
   try {
     final question = review.currentItem.question!;
-    await review.answerSelected(
-      option: question.options.singleWhere(
-        (option) => option != question.correctAnswer,
-      ),
-      responseTimeMs: 100,
-    );
+    if (typed) {
+      await review.answerTyped(text: 'wrong-answer', responseTimeMs: 100);
+    } else {
+      await review.answerSelected(
+        option: question.options.singleWhere(
+          (option) => option != question.correctAnswer,
+        ),
+        responseTimeMs: 100,
+      );
+    }
   } finally {
     review.dispose();
   }

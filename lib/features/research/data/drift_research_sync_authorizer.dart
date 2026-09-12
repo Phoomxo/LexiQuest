@@ -13,7 +13,9 @@ import '../application/research_participation_permit_validator.dart';
 import '../domain/motivation_study_protocol.dart';
 import '../domain/research_event_identity.dart';
 import '../domain/research_participation_permit.dart';
+import '../domain/research_session_proof.dart';
 import 'drift_experiment_assignment_repository.dart';
+import 'drift_research_session_proof_repository.dart';
 
 /// Read-only authorization inside the caller's existing Sync lease.
 ///
@@ -254,7 +256,9 @@ final class DriftResearchSyncAuthorizer {
         }
       } else {
         _require(localRun != null);
-        if (r.collection == SyncCollection.motivationResponses) {
+        if (r.collection == SyncCollection.researchSessionProofs) {
+          await _proof(r, localRun!, p, assignment!, reads);
+        } else if (r.collection == SyncCollection.motivationResponses) {
           _response(incoming, localRun!, p);
           final existing = await reads.row('motivation_responses', r.entityId);
           _existing(r, existing, ResearchSyncContract.responseKeys);
@@ -274,6 +278,7 @@ final class DriftResearchSyncAuthorizer {
             localRun!,
             p,
             reads,
+            request: r,
             allowMissingEvents: r.phase == ResearchSyncPhase.pull,
             historicalReferences: historical,
           );
@@ -331,6 +336,283 @@ final class DriftResearchSyncAuthorizer {
     );
   }
 
+  Future<void> _proof(
+    ResearchSyncRequest r,
+    Map<String, Object?> run,
+    ResearchParticipationPermit permit,
+    Map<String, Object?> assignment,
+    _Reads reads,
+  ) async {
+    if (r.phase == ResearchSyncPhase.pull) {
+      await _pullProof(r, run, permit, reads);
+      return;
+    }
+    _require(r.payload['measurementRunId'] == run['id']);
+    final source = await readResearchSessionProofSource(
+      read: reads.all,
+      ownerId: r.ownerId,
+      runId: run['id']! as String,
+      permitId: permit.id,
+      sessionId: r.payload['learningSessionId']! as String,
+      phase: r.payload['proofRevision']! as int,
+    );
+    _require(ResearchSyncContract.same(source.proof.toJson(), r.payload));
+    // The only missing-row exception is a DB-derived canonical enqueue. Claim
+    // and push require the exact live immutable phase already persisted.
+    _require(source.existing != null || r.phase == ResearchSyncPhase.enqueue);
+    _timestamp(source.proof.startedAtUtcMs, permit);
+    if (source.proof.endedAtUtcMs != null) {
+      _timestamp(source.proof.endedAtUtcMs, permit);
+    }
+    // Validate authentic accepted linkage with the existing neutral-event
+    // authority, including study/consent/configuration, deterministic identities
+    // and full Pair purpose reads. _Reads records every dependency for replay
+    // after the external receipt await, including absent proof/outbox rows.
+    for (final event in source.events) {
+      final eventRequest = ResearchSyncRequest(
+        phase: r.phase,
+        ownerId: r.ownerId,
+        firebaseUid: r.firebaseUid,
+        ownerGateToken: r.ownerGateToken,
+        collection: SyncCollection.neutralEventsV2,
+        entityId: event['event_id']! as String,
+        payload: {
+          ...ResearchSyncContract.reference(permit),
+          'envelope': _eventMap(event),
+        },
+        evaluatedAtUtc: r.evaluatedAtUtc,
+      );
+      await _event(eventRequest, run, permit, assignment, reads);
+    }
+  }
+
+  Future<void> _pullProof(
+    ResearchSyncRequest r,
+    Map<String, Object?> run,
+    ResearchParticipationPermit permit,
+    _Reads reads,
+  ) async {
+    final proof = ResearchSessionProof.decode(r.payload);
+    _proofPins(proof, run, permit);
+    final known = await _knownProofAdmission(proof, reads);
+    // Canonical agreement validates consistency, not trust in a new received
+    // JSON document. A new mirror must cross the bound server-read boundary.
+    _require(r.serverReadProvenance != null || known);
+    final siblings = await _proofSiblings(
+      proof.ownerId,
+      run['id']! as String,
+      permit.id,
+      proof.learningSessionId,
+      reads,
+    );
+    for (final row in siblings) {
+      final sibling = researchSessionProofFromRow(row);
+      _require(sibling.hasSameStartCore(proof));
+      if (sibling.id == proof.id) {
+        _require(
+          row['is_deleted'] == 0 &&
+              ResearchSyncContract.same(sibling.toJson(), proof.toJson()),
+        );
+      }
+    }
+    final canonical = await _canonicalSource(r, proof.learningSessionId, reads);
+    if (canonical != null) {
+      _require(
+        ResearchSyncContract.same(
+          canonical.project(proof).toJson(),
+          proof.toJson(),
+        ),
+      );
+    }
+  }
+
+  void _proofPins(
+    ResearchSessionProof proof,
+    Map<String, Object?> run,
+    ResearchParticipationPermit permit,
+  ) {
+    _require(
+      proof.ownerId == permit.ownerId &&
+          proof.permitId == permit.id &&
+          proof.measurementRunId == run['id'] &&
+          proof.appVersion == run['app_version'] &&
+          proof.buildId == run['build_id'] &&
+          proof.startedAtUtcMs >= (run['started_at_utc_ms']! as int),
+    );
+    final closed = run['closed_at_utc_ms'] as int?;
+    _require(
+      closed == null ||
+          (proof.startedAtUtcMs <= closed &&
+              (proof.endedAtUtcMs == null || proof.endedAtUtcMs! <= closed)),
+    );
+    _timestamp(proof.startedAtUtcMs, permit);
+    if (proof.endedAtUtcMs != null) _timestamp(proof.endedAtUtcMs, permit);
+  }
+
+  Future<List<Map<String, Object?>>> _proofSiblings(
+    String owner,
+    String run,
+    String permit,
+    String session,
+    _Reads reads,
+  ) => reads.all(
+    'SELECT * FROM research_session_proofs WHERE owner_id = ? AND measurement_run_id = ? '
+    'AND permit_id = ? AND learning_session_id = ? ORDER BY proof_revision, id',
+    [owner, run, permit, session],
+  );
+
+  Future<bool> _knownProofAdmission(
+    ResearchSessionProof proof,
+    _Reads reads,
+  ) async {
+    final row = await reads.row('research_session_proofs', proof.id);
+    final id = ResearchSyncContract.operationIdFor(
+      collection: SyncCollection.researchSessionProofs,
+      entityId: proof.id,
+      payload: proof.toJson(),
+      revision: 1,
+    );
+    final operation = await reads.row(
+      'outbox_operations',
+      id,
+      key: 'operation_id',
+    );
+    if (row == null) return false;
+    _liveRow(row, proof.ownerId);
+    _require(
+      row['local_revision'] == 1 &&
+          ResearchSyncContract.same(
+            researchSessionProofFromRow(row).toJson(),
+            proof.toJson(),
+          ),
+    );
+    return operation != null &&
+        operation['owner_id'] == proof.ownerId &&
+        operation['entity_id'] == proof.id &&
+        operation['entity_type'] == 'researchSessionProof' &&
+        operation['operation_kind'] == 'upsert' &&
+        operation['payload_version'] == 1 &&
+        operation['base_revision'] == 0;
+  }
+
+  Future<_CanonicalProofSource?> _canonicalSource(
+    ResearchSyncRequest r,
+    String sessionId,
+    _Reads reads,
+  ) async {
+    final session = await reads.row('learning_sessions', sessionId);
+    if (session == null) return null;
+    _require(session['owner_id'] == r.ownerId);
+    if (session['activity_type'] == 'syncedEvidence' ||
+        session['state'] == 'syncedEvidence') {
+      _require(
+        r.phase == ResearchSyncPhase.pull &&
+            session['activity_type'] == 'syncedEvidence' &&
+            session['state'] == 'syncedEvidence' &&
+            session['app_version'] == 'unknown' &&
+            session['build_id'] == 'synced' &&
+            session['ended_at_utc_ms'] == null &&
+            session['session_configuration_identity'] == null &&
+            session['session_configuration_json'] == null,
+      );
+      final query = PairMatchingSessionPurpose.checkpointQuery(
+        r.ownerId,
+        sessionId,
+      );
+      _require((await reads.all(query.sql, query.args)).isEmpty);
+      return null;
+    }
+    final query = PairMatchingSessionPurpose.checkpointQuery(
+      r.ownerId,
+      sessionId,
+    );
+    final checkpoints = session['activity_type'] == 'matching'
+        ? await reads.all(query.sql, query.args)
+        : <Map<String, Object?>>[];
+    final actors = PairMatchingSessionPurpose.historicalOwnerQuery(
+      r.ownerId,
+      checkpoints,
+    );
+    final owners = await reads.all(actors.sql, actors.args);
+    return _CanonicalProofSource(session, checkpoints, owners);
+  }
+
+  /// One authority path for both opportunity linkage and mission timestamps.
+  /// Compact admitted mirrors are pull-only; capture and outbound retain their
+  /// full canonical source requirement. No projection is written to learning.
+  Future<Map<String, Object?>> _sessionAuthority(
+    ResearchSyncRequest r,
+    Map<String, Object?> run,
+    ResearchParticipationPermit permit,
+    String sessionId,
+    int phase,
+    _Reads reads,
+  ) async {
+    final canonical = await _canonicalSource(r, sessionId, reads);
+    final rows = await _proofSiblings(
+      r.ownerId,
+      run['id']! as String,
+      permit.id,
+      sessionId,
+      reads,
+    );
+    final proofs = [for (final row in rows) researchSessionProofFromRow(row)];
+    for (var index = 0; index < proofs.length; index++) {
+      final proof = proofs[index];
+      _proofPins(proof, run, permit);
+      _require(proofs.every(proof.hasSameStartCore));
+      if (canonical != null) {
+        _require(
+          ResearchSyncContract.same(
+            canonical.project(proof).toJson(),
+            proof.toJson(),
+          ),
+        );
+      }
+    }
+    if (canonical != null) {
+      final proof = ResearchSessionProof.fromCanonicalSnapshot(
+        ownerId: r.ownerId,
+        permitId: permit.id,
+        permitPayloadSha256: permit.payloadSha256,
+        permitRevision: permit.localRevision,
+        measurementRunId: run['id']! as String,
+        proofRevision: phase,
+        session: canonical.session,
+        checkpoints: canonical.checkpoints,
+        historicalOwners: canonical.owners,
+      );
+      _proofPins(proof, run, permit);
+      return proof.toSessionProjection();
+    }
+    _require(r.phase == ResearchSyncPhase.pull);
+    ResearchSessionProof? selected;
+    for (var index = 0; index < proofs.length; index++) {
+      final proof = proofs[index];
+      if (rows[index]['is_deleted'] != 0 || proof.proofRevision < phase)
+        continue;
+      _require(await _knownProofAdmission(proof, reads));
+      // Historical mirror pins rely on their own prior admission, not the
+      // provenance marker of a different opportunity or event payload.
+      final proofRequest = ResearchSyncRequest(
+        phase: ResearchSyncPhase.pull,
+        ownerId: r.ownerId,
+        firebaseUid: r.firebaseUid,
+        ownerGateToken: r.ownerGateToken,
+        collection: SyncCollection.researchSessionProofs,
+        entityId: proof.id,
+        payload: proof.toJson(),
+        evaluatedAtUtc: r.evaluatedAtUtc,
+      );
+      await _historicalReferences(proofRequest, permit, reads);
+      selected ??= proof;
+    }
+    _require(selected != null);
+    // The strict codec has already validated compact Pair purpose. Re-running
+    // full terminal-prefix validation against this initial mirror is invalid.
+    return selected!.toSessionProjection();
+  }
+
   /// Old references are transport metadata, never a substitute for validating
   /// the current signed permit. New-device history relies on the authenticated
   /// server-read boundary and admission rules. Unmarked lost-ACK recovery needs
@@ -353,6 +635,15 @@ final class DriftResearchSyncAuthorizer {
     );
     ResearchSyncContract.digest(r.payload['permitPayloadSha256']);
     if (r.serverReadProvenance != null) return true; // Bound in each snapshot.
+    if (r.collection == SyncCollection.researchSessionProofs) {
+      _require(
+        await _knownProofAdmission(
+          ResearchSessionProof.decode(r.payload),
+          reads,
+        ),
+      );
+      return true;
+    }
     final events = r.collection == SyncCollection.neutralEventsV2;
     final row = await reads.row(
       events ? 'events_v2' : r.collection.wireName,
@@ -546,6 +837,7 @@ final class DriftResearchSyncAuthorizer {
     Map<String, Object?> run,
     ResearchParticipationPermit p,
     _Reads reads, {
+    required ResearchSyncRequest request,
     required bool allowMissingEvents,
     bool historicalReferences = false,
   }) async {
@@ -573,13 +865,16 @@ final class DriftResearchSyncAuthorizer {
               (closed == null || closed <= (run['closed_at_utc_ms']! as int))),
     );
     if (o['learningSessionId'] != null) {
-      final session = await reads.row(
-        'learning_sessions',
+      final session = await _sessionAuthority(
+        request,
+        run,
+        p,
         o['learningSessionId']! as String,
+        o['completedEventId'] == null ? 1 : 2,
+        reads,
       );
       _require(
-        session != null &&
-            session['owner_id'] == p.ownerId &&
+        session['owner_id'] == p.ownerId &&
             (session['started_at_utc_ms']! as int) >= opened,
       );
     }
@@ -633,6 +928,7 @@ final class DriftResearchSyncAuthorizer {
       run,
       p,
       reads,
+      request: r,
       allowMissingEvents: r.phase == ResearchSyncPhase.pull,
     );
     final occurred = e.occurredAtUtc.millisecondsSinceEpoch;
@@ -682,30 +978,13 @@ final class DriftResearchSyncAuthorizer {
         _require(
           o[complete ? 'completedEventId' : 'startedEventId'] == e.eventId,
         );
-        final session = await reads.row('learning_sessions', e.aggregateId);
-        _require(session != null && session['owner_id'] == p.ownerId);
-        final query = PairMatchingSessionPurpose.checkpointQuery(
-          p.ownerId,
+        final session = await _sessionAuthority(
+          r,
+          run,
+          p,
           e.aggregateId,
-        );
-        final checkpoints = session!['activity_type'] == 'matching'
-            ? await reads.all(query.sql, query.args)
-            : <Map<String, Object?>>[];
-        final actorsQuery = PairMatchingSessionPurpose.historicalOwnerQuery(
-          p.ownerId,
-          checkpoints,
-        );
-        final historicalOwners = await reads.all(
-          actorsQuery.sql,
-          actorsQuery.args,
-        );
-        _require(
-          PairMatchingSessionPurpose.decode(
-            ownerId: p.ownerId,
-            session: session,
-            checkpoints: checkpoints,
-            historicalOwners: historicalOwners,
-          ).allowsLearningAuthority,
+          complete ? 2 : 1,
+          reads,
         );
         _require(
           occurred ==
@@ -871,6 +1150,25 @@ Map<String, dynamic> _eventMap(Map<String, Object?> row) {
   };
   ResearchSyncContract.validateEvent(envelope, row['event_id']! as String);
   return envelope;
+}
+
+final class _CanonicalProofSource {
+  const _CanonicalProofSource(this.session, this.checkpoints, this.owners);
+  final Map<String, Object?> session;
+  final List<Map<String, Object?>> checkpoints, owners;
+
+  ResearchSessionProof project(ResearchSessionProof pins) =>
+      ResearchSessionProof.fromCanonicalSnapshot(
+        ownerId: pins.ownerId,
+        permitId: pins.permitId,
+        permitPayloadSha256: pins.permitPayloadSha256,
+        permitRevision: pins.permitRevision,
+        measurementRunId: pins.measurementRunId,
+        proofRevision: pins.proofRevision,
+        session: session,
+        checkpoints: checkpoints,
+        historicalOwners: owners,
+      );
 }
 
 final class _AuthorizationSnapshot {

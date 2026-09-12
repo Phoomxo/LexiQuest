@@ -18,6 +18,7 @@ void main() {
     final snapshot = _currentBoundary(database);
 
     expect(() => _validateBoundary(snapshot), returnsNormally);
+    expect(snapshot.tableNames, contains('research_session_proofs'));
     expect(snapshot.registration.isDeliverable, isFalse);
   });
 
@@ -30,6 +31,10 @@ void main() {
       ),
       baseline.copyWith(
         tableNames: <String>[...baseline.tableNames, 'pair_stars'],
+      ),
+      // A same-count substitution must still trip the star-authority ban.
+      baseline.copyWith(
+        tableNames: <String>[...baseline.tableNames.skip(1), 'matching_stars'],
       ),
     ];
 
@@ -75,7 +80,7 @@ void _validateBoundary(_PairBoundarySnapshot snapshot) {
       snapshot.appRoutes.join(',') != 'login,register,emailVerification,home') {
     throw StateError('Pair Matching must not create a main destination.');
   }
-  if (snapshot.tableNames.length != 48 ||
+  if (snapshot.tableNames.length != 49 ||
       snapshot.tableNames.any(
         (name) => name.contains('pair_star') || name.contains('matching_star'),
       )) {

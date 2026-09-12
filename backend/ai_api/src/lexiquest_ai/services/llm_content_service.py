@@ -93,6 +93,7 @@ class HttpClient(Protocol):
 class HttpResponse(Protocol):
     status: int
     body: bytes
+    headers: dict[str, str]
 
 
 class ProviderUnavailable(Exception):
@@ -141,11 +142,14 @@ def _urllib_client() -> HttpClient:
     import urllib.request
 
     class _StdlibResponse:
-        __slots__ = ("status", "body")
+        __slots__ = ("status", "body", "headers")
 
-        def __init__(self, status: int, body: bytes) -> None:
+        def __init__(
+            self, status: int, body: bytes, headers: dict[str, str]
+        ) -> None:
             self.status = status
             self.body = body
+            self.headers = headers
 
     class _StdlibClient:
         def request(
@@ -159,14 +163,22 @@ def _urllib_client() -> HttpClient:
             req = urllib.request.Request(url, data=data, headers=headers)
             try:
                 with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 - trusted operator-configured URL
-                    return _StdlibResponse(resp.status, resp.read())
+                    response_headers = {
+                        name.lower(): value for name, value in resp.headers.items()
+                    }
+                    return _StdlibResponse(resp.status, resp.read(), response_headers)
             except urllib.error.HTTPError as error:
+                response_headers = {
+                    name.lower(): value for name, value in (error.headers or {}).items()
+                }
                 body = b""
                 try:
                     body = error.read() or b""
                 except Exception:  # pragma: no cover - defensive
                     body = b""
-                return _StdlibResponse(error.code, body)
+                finally:
+                    error.close()
+                return _StdlibResponse(error.code, body, response_headers)
             except (urllib.error.URLError, TimeoutError, OSError) as error:
                 raise ProviderUnavailable(
                     "LLM provider transport error"
@@ -403,8 +415,7 @@ class LlmContentService:
         providers we target emit seconds.
         """
 
-        # HttpResponse is a Protocol without header access; peek at an optional
-        # ``headers`` attribute if the concrete client exposes one.
+        # Retain compatibility with injected clients that omit headers.
         headers = getattr(response, "headers", None)
         if not headers:
             return 0

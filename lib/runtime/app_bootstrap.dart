@@ -2,7 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'learning_preview_feature_registry.dart';
+import '../features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:drift/drift.dart'
+    show BooleanExpressionOperators, ComparableExpr;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -91,6 +96,7 @@ import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/learning_packs/data/drift_learning_pack_repository.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
+import '../features/learning_packs/domain/content_quality_policy.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -108,6 +114,7 @@ import '../features/offline_content/domain/offline_content_repository.dart';
 import '../features/quest/application/quest_catalog_provider.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/quest/data/drift_quest_repository.dart';
+import '../features/quest/domain/quest_repository.dart' show QuestOwnerChanged;
 import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
@@ -120,7 +127,8 @@ import '../features/rewards/data/drift_reward_projection_rebuilder.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/recommendation/application/recommendation_use_cases.dart';
 import '../features/recommendation/data/drift_recommendation_reader.dart';
-import '../features/recommendation/domain/active_recall_ladder.dart';
+import '../features/recommendation/domain/active_recall_ladder.dart'
+    show RecallLadderModeAvailability;
 import '../features/review/application/review_center_use_cases.dart';
 import '../features/review/data/drift_review_center_reader.dart';
 import '../features/review/application/learner_intent_use_cases.dart';
@@ -162,6 +170,7 @@ import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
+import '../features/vocabulary/data/packaged_starter_catalog.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -405,7 +414,10 @@ final class AppBootstrap {
     this.observeSyncTriggerRequest,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
-    this.buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
+    FeatureRegistry buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
+    this.learningPreviewEnabled = const bool.fromEnvironment(
+      'LEXIQUEST_LEARNING_PREVIEW',
+    ),
     DateTime Function()? runtimeFeatureNowUtc,
     DateTime Function()? aiNowUtc,
     String Function()? learningTimezoneId,
@@ -429,9 +441,9 @@ final class AppBootstrap {
     this.voicePackAvailableBytesOverride,
     LearningTimeMonotonicMicros? learningTimeMonotonicMicros,
     this.activeLearningIdleTimeout = const Duration(minutes: 5),
-    this.learningTimeCaptureRollout =
+    LearningTimeCaptureRollout learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
-    this.focusTimerRollout = const FocusTimerRollout.implementedOff(),
+    FocusTimerRollout focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
@@ -439,7 +451,18 @@ final class AppBootstrap {
     this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
     this.learnerPreferenceSyncRollout =
         const LearnerPreferenceSyncRollout.off(),
-  }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
+  }) : buildFeatureRegistry = learningPreviewEnabled
+           ? LearningPreviewFeatureRegistry(buildFeatureRegistry)
+           : buildFeatureRegistry,
+       learningTimeCaptureRollout = learningPreviewEnabled
+           ? LearningTimeCaptureRollout.internal(
+               emergencyOff: learningTimeCaptureRollout.emergencyOff,
+             )
+           : learningTimeCaptureRollout,
+       focusTimerRollout = learningPreviewEnabled
+           ? FocusTimerRollout.internal(emergencyOff: focusTimerRollout.emergencyOff)
+           : focusTimerRollout,
+       exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
            speechRecognitionGatewayFactory ??
@@ -534,6 +557,7 @@ final class AppBootstrap {
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
   final FeatureRegistry buildFeatureRegistry;
+  final bool learningPreviewEnabled;
   final DateTime Function() runtimeFeatureNowUtc;
   final DateTime Function() aiNowUtc;
   final String Function() learningTimezoneId;
@@ -754,6 +778,10 @@ final class AppBootstrap {
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
       deleteOwnerSecretsFenced: eraseOwnerCredentialsWithLease,
       ownerOperationGate: ownerOperationGate,
+      transitionLifecycle: _ReminderOwnerTransitionLifecycle(
+        studyReminders,
+        () => reminderFeatureEnabled,
+      ),
       evidencePolicy: evidencePolicy,
       rolloutModeProvider: evidenceRolloutModeProvider,
     );
@@ -769,12 +797,7 @@ final class AppBootstrap {
                 operation,
                 (result) => result.targetOwnerId,
               );
-        return studyReminders.coordinateOwnerChange(
-          sourceOwnerId: sourceOwnerId,
-          operation: coordinateLearning,
-          targetOwnerId: (result) => result.targetOwnerId,
-          featureEnabled: reminderFeatureEnabled,
-        );
+        return coordinateLearning();
       },
       coordinateRollback: (previousOwnerId, guestOwnerId, operation) {
         final scheduler = ownerLearningReconciliation;
@@ -785,12 +808,7 @@ final class AppBootstrap {
                 operation,
                 (_) => previousOwnerId,
               );
-        return studyReminders.coordinateOwnerChange(
-          sourceOwnerId: guestOwnerId,
-          operation: coordinateLearning,
-          targetOwnerId: (_) => previousOwnerId,
-          featureEnabled: reminderFeatureEnabled,
-        );
+        return coordinateLearning();
       },
     );
     var firebase = await _availability(initializeFirebase);
@@ -959,6 +977,7 @@ final class AppBootstrap {
         learnerPreferenceSyncRollout: learnerPreferenceSyncRollout,
         researchMeasurementRollout: researchMeasurementSyncRollout,
         researchAuthorizer: researchAuthorizer,
+        researchNowUtc: runtimeFeatureNowUtc,
       );
       researchSyncStore = store;
       syncEngine = SyncEngine(
@@ -1037,6 +1056,19 @@ final class AppBootstrap {
       database,
       loadArtifactBytes: loadContentArtifactBytes,
     );
+    ContentQualityFailureCode? starterContentFailure;
+    try {
+      await PackagedStarterCatalog.provision(
+        database,
+        contentManifests,
+        loadContentArtifactBytes,
+      );
+    } on ContentQualityFailure catch (failure) {
+      // Rich starter artifacts remain unavailable. Previously verified core
+      // words may still support basic games; Cloze/Definition must reload and
+      // verify their exact artifacts. Personal words remain usable.
+      starterContentFailure = failure.code;
+    }
     final productionVoicePackCatalog =
         OfflineVoicePackManifestCatalog.production;
     for (final identity in productionVoicePackCatalog.identities) {
@@ -1080,6 +1112,7 @@ final class AppBootstrap {
       progress: progress,
     );
     final learningGoals = LearningGoalUseCases(
+      activeOwnerId: activeOwnerId,
       repository: DriftLearningGoalRepository(
         database,
         owners: localOwners,
@@ -1127,12 +1160,64 @@ final class AppBootstrap {
     // ── V2 Quest pipeline (must precede learning wiring) ─────────────────
     final questRepository = DriftQuestRepository(database);
     final buildInfo = const AppBuildInfo.fromEnvironment();
-    final quest = QuestUseCases(
+    late final QuestUseCases quest;
+    void requireQuestLifetime() {
+      if (quest.isDisposed)
+        throw StateError('Quest runtime has been disposed.');
+    }
+
+    Future<void> requireQuestAuthority(String expectedOwnerId) async {
+      requireQuestLifetime();
+      final heldToken = OwnerOperationCoordinator.currentLeaseToken;
+      final ownerBefore = await localOwners.getOrCreateActiveOwner();
+      requireQuestLifetime();
+      if (ownerBefore.id != expectedOwnerId) {
+        throw QuestOwnerChanged();
+      }
+      final now = runtimeFeatureNowUtc();
+      final fenced = await ownerOperationGate.isOwnerFenced(
+        ownerId: expectedOwnerId,
+        nowUtc: now,
+      );
+      requireQuestLifetime();
+      if (fenced) {
+        throw StateError('Quest entry owner is fenced by a transition.');
+      }
+      if (heldToken != null) {
+        await ownerOperationGate.requireOwned(token: heldToken, nowUtc: now);
+        requireQuestLifetime();
+      } else {
+        // Observe the existing canonical transition; do not invent or nest a
+        // lease. These boundary checks do not establish an owner generation.
+        final transition =
+            await (database.select(database.runtimeFlags)..where(
+                  (row) =>
+                      row.key.equals(DriftOwnerOperationGate.gateKey) &
+                      row.boolValue.equals(true) &
+                      row.expiresAtUtcMs.isBiggerThanValue(
+                        now.millisecondsSinceEpoch,
+                      ),
+                ))
+                .getSingleOrNull();
+        requireQuestLifetime();
+        if (transition != null)
+          throw StateError('Quest entry owner transition is active.');
+      }
+      requireQuestLifetime();
+      final ownerAfter = await localOwners.getOrCreateActiveOwner();
+      requireQuestLifetime();
+      if (ownerAfter.id != expectedOwnerId) {
+        throw QuestOwnerChanged();
+      }
+    }
+
+    quest = QuestUseCases(
       repository: questRepository,
       owners: localOwners,
       generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: runtimeFeatureNowUtc,
       timezoneId: resolvedLearningTimezoneId,
+      authorityGuard: requireQuestAuthority,
       rewardSink:
           ({
             required ownerId,
@@ -1159,6 +1244,8 @@ final class AppBootstrap {
           },
     );
 
+    resources.own(quest.dispose);
+
     // ── Streak tracking (must precede learning wiring) ───────────────────
     final streak = StreakUseCases(
       repository: streakRepository,
@@ -1175,9 +1262,13 @@ final class AppBootstrap {
     // Seed before scheduling historical replay so pre-assignment evidence is
     // deterministically skipped instead of racing a newly created quest.
     try {
-      await quest.startQuest(QuestCatalogProvider.dailyCorrectAnswers);
+      await quest.refreshDaily(
+        expectedOwnerId: (await localOwners.getOrCreateActiveOwner()).id,
+      );
     } catch (_) {
-      // Best-effort; catalog is also seeded on first quest start.
+      // Bootstrap composition remains usable while optional scheduling or an
+      // owner transition is unavailable. Session admission still awaits the
+      // uncaught authority guard through the same refresh API below.
     }
 
     final learningReconciler = LearningSideEffectReconciler(
@@ -1286,19 +1377,27 @@ final class AppBootstrap {
       owners: localOwners,
       repository: learningRepository,
       generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: runtimeFeatureNowUtc,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
       eventAdapter: eventAdapter,
       eventContextProvider: currentResearchStateProvider,
       onSideEffectsPending: learningReconciliation.request,
+      beforeSessionStart: (ownerId) async {
+        await quest.refreshDaily(expectedOwnerId: ownerId);
+      },
     );
     final currentActivityEvidence = CurrentActivityEvidenceAdapter(
       learning: learning,
       rolloutModeProvider: evidenceRolloutModeProvider,
       researchStateProvider: currentResearchStateProvider,
     );
-    final lessonModes = buildLessonModeRegistry();
+    final lessonModes = buildLessonModeRegistry(
+      internalPairMatching: learningPreviewEnabled,
+      matchingDeliveryState: learningPreviewEnabled
+          ? LessonModeDeliveryState.enabled
+          : LessonModeDeliveryState.implementedOff,
+    );
     final learningTime = DriftLearningTimeRepository(
       database,
       owners: localOwners,
@@ -1331,6 +1430,7 @@ final class AppBootstrap {
     final learningHistory = LearningHistoryUseCases(
       owners: localOwners,
       reader: learningHistoryReader,
+      pairReader: DriftPairMatchingSessionPurposeReader(database),
       sessionLauncher: _BootstrapLearningHistorySessionLauncher(
         learning: learning,
         repository: learningRepository,
@@ -1345,17 +1445,14 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: resolvedLearningTimezoneId,
       activeOwnerId: () => activeOwnerIdentities.requireSingleActiveOwnerId(),
-      modeAvailability: <LessonMode, RecallLadderModeAvailability>{
-        for (final mode in ActiveRecallLadder.canonicalModes)
-          mode: switch (lessonModes.find(mode)) {
-            null => RecallLadderModeAvailability.missing,
-            final registration when !registration.isDeliverable =>
-              RecallLadderModeAvailability.implementedOff,
-            final registration
-                when !runtimeFeatures.isEnabled(registration.feature) =>
-              RecallLadderModeAvailability.liveOff,
-            _ => RecallLadderModeAvailability.available,
-          },
+      modeAvailabilityFor: (mode) => switch (lessonModes.find(mode)) {
+        null => RecallLadderModeAvailability.missing,
+        final registration when !registration.isDeliverable =>
+          RecallLadderModeAvailability.implementedOff,
+        final registration
+            when !runtimeFeatures.isEnabled(registration.feature) =>
+          RecallLadderModeAvailability.liveOff,
+        _ => RecallLadderModeAvailability.available,
       },
     );
     final todayHub = TodayHubUseCases(
@@ -1687,6 +1784,7 @@ final class AppBootstrap {
     return AppDependencies(
       initialRoute: initialRoute,
       runtimeStatus: AppRuntimeStatus(
+        starterContentFailure: starterContentFailure,
         localData: RuntimeAvailability.ready,
         firebase: firebase,
         supabase: supabase,
@@ -1836,6 +1934,28 @@ final class AppBootstrap {
       return null;
     }
   }
+}
+
+final class _ReminderOwnerTransitionLifecycle
+    implements OwnerTransitionLifecycle {
+  const _ReminderOwnerTransitionLifecycle(this.reminders, this.featureEnabled);
+
+  final StudyReminderUseCases reminders;
+  final bool Function() featureEnabled;
+
+  @override
+  Future<T> run<T>({
+    required String sourceOwnerId,
+    required String operationToken,
+    required Future<T> Function() operation,
+    required String Function(T result) targetOwnerId,
+  }) => reminders.coordinateOwnerChange(
+    sourceOwnerId: sourceOwnerId,
+    operationToken: operationToken,
+    operation: operation,
+    targetOwnerId: targetOwnerId,
+    featureEnabled: featureEnabled(),
+  );
 }
 
 final class _BootstrapLearningHistorySessionLauncher

@@ -4,6 +4,9 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning_packs/domain/content_quality_policy.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
+import '../../vocabulary/data/packaged_starter_catalog.dart';
 import '../../recommendation/domain/recommendation_models.dart';
 import '../../recommendation/domain/recommendation_policy.dart';
 import '../../rewards/domain/avatar_progression_policy.dart';
@@ -58,17 +61,10 @@ final class DriftProgressQueries {
     final completedSessions = completedRows
         .where((session) => practiceSessionIds.contains(session.id))
         .length;
-    final dueCountExpression = database.srsStates.id.count();
-    final dueRow =
-        await (database.selectOnly(database.srsStates)
-              ..addColumns([dueCountExpression])
-              ..where(
-                database.srsStates.ownerId.equals(ownerId) &
-                    database.srsStates.dueAtUtcMs.isSmallerOrEqualValue(
-                      nowUtc.millisecondsSinceEpoch,
-                    ),
-              ))
-            .getSingle();
+    final dueReviewCount = await _loadActionableDueReviewCount(
+      ownerId: ownerId,
+      nowUtc: nowUtc,
+    );
     final masteredCountExpression = database.srsStates.id.count();
     final masteredRow =
         await (database.selectOnly(database.srsStates)
@@ -109,7 +105,7 @@ final class DriftProgressQueries {
               )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull())
               ?.currentStreakDays ??
           0,
-      dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
+      dueReviewCount: dueReviewCount,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: durableAchievementRows.length,
       gameLevel: avatarProgression.level,
@@ -248,9 +244,20 @@ final class DriftProgressQueries {
 
   Future<List<_FlashcardRecommendationCandidate>>
   _loadFlashcardRecommendationCandidates(String ownerId) async {
-    final weaknesses = await _loadWeaknesses(ownerId, limit: 5);
+    final weaknesses = await _loadWeaknesses(ownerId);
+    // f14-v1 requires content ownership. Shared starter words retain ordinary
+    // progress/SRS/review but need a separately versioned policy before they
+    // can become personalized f14 candidates; never relabel their owner.
+    final personalWords = await (database.select(
+      database.vocabularyWords,
+    )..where((word) => word.ownerId.equals(ownerId))).get();
+    final personalIds = personalWords.map((word) => word.id).toSet();
     final weaknessByWordId = {
-      for (final weakness in weaknesses) weakness.wordId: weakness,
+      for (final weakness
+          in weaknesses
+              .where((word) => personalIds.contains(word.wordId))
+              .take(5))
+        weakness.wordId: weakness,
     };
     final attempts = await _loadValidatedPracticeAttempts(
       ownerId,
@@ -318,18 +325,18 @@ final class DriftProgressQueries {
     )..where((row) => row.id.isIn(sessionIds.toList(growable: false)))).get();
     final words =
         await (database.select(database.vocabularyWords)..where(
-              (row) => row.id.isIn(referencedWordIds.toList(growable: false)),
+              (row) =>
+                  row.id.isIn(referencedWordIds.toList(growable: false)) &
+                  PackagedStarterAccess.wordsFor(database, ownerId),
             ))
             .get();
     final sessionOwners = <String, String>{
       for (final session in sessions) session.id: session.ownerId,
     };
-    final wordOwners = <String, String>{
-      for (final word in words) word.id: word.ownerId,
-    };
+    final authorizedWordIds = words.map((word) => word.id).toSet();
     for (final attempt in storedAttempts) {
       if (sessionOwners[attempt.sessionId] != ownerId ||
-          wordOwners[attempt.wordId] != ownerId) {
+          !authorizedWordIds.contains(attempt.wordId)) {
         throw const FormatException(
           'attempt session and word references must match the attempt owner',
         );
@@ -355,11 +362,81 @@ final class DriftProgressQueries {
     });
   }
 
+  Future<int> _loadActionableDueReviewCount({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) async {
+    final categories =
+        await (database.select(database.vocabularyCategories)..where(
+              (row) =>
+                  PackagedStarterAccess.categoriesFor(database, ownerId) &
+                  row.isDeleted.equals(false),
+            ))
+            .get();
+    final categoryIds = categories.map((row) => row.id).toSet();
+    if (categoryIds.isEmpty) return 0;
+    final words =
+        await (database.select(database.vocabularyWords)..where(
+              (row) =>
+                  PackagedStarterAccess.wordsFor(database, ownerId) &
+                  row.isDeleted.equals(false),
+            ))
+            .get();
+    final availableWordIds = words
+        .where(
+          (word) => ContentQualityPolicy.isAvailableVocabulary(
+            categoryAvailable: categoryIds.contains(word.categoryId),
+            id: word.id,
+            categoryId: word.categoryId,
+            spelling: word.spelling,
+            normalizedSpelling: word.normalizedSpelling,
+            meaning: word.meaning,
+            normalizedMeaning: word.normalizedMeaning,
+            partOfSpeech: word.partOfSpeech,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
+            isGlobal: word.isGlobal,
+            contentRevision: word.contentRevision,
+            contentChecksumSha256: word.contentChecksumSha256,
+            contentProvenance: word.contentProvenance,
+            contentReviewState: word.contentReviewState,
+            contentPublicationState: word.contentPublicationState,
+            isDeleted: word.isDeleted,
+          ),
+        )
+        .map((word) => word.id)
+        .toSet();
+    if (availableWordIds.isEmpty) return 0;
+    final dueRows =
+        await (database.select(database.srsStates)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.dueAtUtcMs.isBiggerOrEqualValue(0) &
+                  row.dueAtUtcMs.isSmallerOrEqualValue(
+                    nowUtc.millisecondsSinceEpoch,
+                  ),
+            ))
+            .get();
+    return dueRows.where((row) => availableWordIds.contains(row.wordId)).length;
+  }
+
   Future<List<WeaknessEvidence>> _loadWeaknesses(
     String ownerId, {
     int? limit,
   }) async {
     if (limit != null && limit <= 0) return const <WeaknessEvidence>[];
+    final authorizedWords =
+        await (database.select(database.vocabularyWords)..where(
+              (_) => PackagedStarterAccess.wordsFor(
+                database,
+                PackagedStarterCatalog.ownerId,
+              ),
+            ))
+            .get();
+    final authorizedIds = authorizedWords.map((word) => word.id).toList();
+    final allowedIdSql = authorizedIds.isEmpty
+        ? 'NULL'
+        : List.filled(authorizedIds.length, '?').join(',');
     final limitSql = limit == null ? '' : 'LIMIT ?';
     final rows = await database
         .customSelect(
@@ -373,7 +450,7 @@ final class DriftProgressQueries {
         s.due_at_utc_ms AS due_at_utc_ms
       FROM answer_attempts a
       INNER JOIN vocabulary_words w
-        ON w.id = a.word_id AND w.owner_id = a.owner_id
+        ON w.id = a.word_id AND (w.owner_id = a.owner_id OR w.id IN ($allowedIdSql))
       LEFT JOIN srs_states s
         ON s.word_id = a.word_id AND s.owner_id = a.owner_id
       WHERE a.owner_id = ? AND w.is_deleted = 0
@@ -390,6 +467,7 @@ final class DriftProgressQueries {
       $limitSql
       ''',
           variables: [
+            for (final id in authorizedIds) Variable<String>(id),
             Variable<String>(ownerId),
             if (limit != null) Variable<int>(limit),
           ],
@@ -423,12 +501,22 @@ final class DriftProgressQueries {
   List<SkillEvidence> _skills(List<AnswerAttempt> attempts) {
     const definitions = <(String, String, Set<String>)>[
       ('listening', 'Listening', {'listening', 'dictation'}),
-      ('pronunciation', 'Pronunciation', {'pronunciation', 'shadowing'}),
+      (
+        'pronunciation',
+        'Pronunciation',
+        {'pronunciation', 'pronunciationTranscript', 'shadowing'},
+      ),
       ('spelling', 'Spelling', {'spelling', 'dictation'}),
       (
         'retention',
         'Retention',
-        {'meaningChoice', 'srsRecall', 'activeRecall'},
+        {
+          'meaningChoice',
+          'srsRecall',
+          'activeRecall',
+          'typedRecall',
+          'associativeRecall',
+        },
       ),
     ];
     return definitions

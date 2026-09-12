@@ -4,14 +4,26 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/review/data/drift_review_center_reader.dart';
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
   late AppDatabase database;
@@ -75,6 +87,261 @@ void main() {
       expect(result.streakDays, 0);
       expect(result.weaknesses, isEmpty);
       expect(result.recommendations, isEmpty);
+    },
+  );
+
+  test(
+    'canonical prompt modes contribute to their maintained skills',
+    () async {
+      await database
+          .into(database.learningSessions)
+          .insert(
+            LearningSessionsCompanion.insert(
+              id: 'session-canonical-skills',
+              ownerId: 'owner-1',
+              activityType: 'mixedPractice',
+              state: 'completed',
+              startedAtUtcMs: 1,
+              appVersion: 'test',
+              buildId: 'test',
+            ),
+          );
+      final modes = <String>[
+        'pronunciation',
+        'shadowing',
+        'pronunciationTranscript',
+        'meaningChoice',
+        'srsRecall',
+        'activeRecall',
+        'typedRecall',
+        'associativeRecall',
+      ];
+      for (var index = 0; index < modes.length; index++) {
+        await database
+            .into(database.answerAttempts)
+            .insert(
+              AnswerAttemptsCompanion.insert(
+                id: 'attempt-canonical-skill-$index',
+                ownerId: 'owner-1',
+                sessionId: 'session-canonical-skills',
+                wordId: index.isEven ? 'word-1' : 'word-2',
+                promptMode: modes[index],
+                isCorrect: true,
+                attemptNumber: index + 1,
+                occurredAtUtcMs: index + 2,
+              ),
+            );
+      }
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 9, 9),
+      );
+
+      final pronunciation = result.skills.singleWhere(
+        (skill) => skill.key == 'pronunciation',
+      );
+      final retention = result.skills.singleWhere(
+        (skill) => skill.key == 'retention',
+      );
+      expect(pronunciation.sampleSize, 3);
+      expect(pronunciation.accuracy, 1);
+      expect(retention.sampleSize, 5);
+      expect(retention.accuracy, 1);
+    },
+  );
+
+  test(
+    'canonical speaking and recall adapters commit into progress skills',
+    () async {
+      await _insertAvailableWord(database, id: 'word-adapter-progress');
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'unused-progress-owner',
+        nowUtc: () => DateTime.utc(2026, 9, 9),
+      );
+      var nextId = 0;
+      final useCases = LearningUseCases(
+        owners: owners,
+        repository: learning,
+        generateId: () => 'progress-adapter-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 9, 9, 0, 0, nextId),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'progress-adapters',
+        ),
+      );
+      final session = await useCases.startQuiz(
+        categoryId: 'category-1',
+        limit: 1,
+      );
+      final word = session.questions.single.word;
+      final evidence = CurrentActivityEvidenceAdapter(learning: useCases);
+      await const SpeakingModeAdapter()
+          .capture(
+            evidence: evidence,
+            ownerId: 'owner-1',
+            sessionId: session.id,
+            wordId: word.id,
+            assessment: TranscriptPronunciationAssessment(
+              target: word.spelling,
+              transcript: word.spelling,
+              similarityPercent: 100,
+              isExactMatch: true,
+              method: 'exact',
+              engine: 'synthetic',
+              locale: 'en-US',
+              occurredAtUtc: DateTime.utc(2026, 9, 9),
+            ),
+            responseTimeMs: 10,
+            attemptNumber: 1,
+          )
+          .pending
+          .record();
+      for (final entry in const <(TypedRecallPromptKind, int)>[
+        (TypedRecallPromptKind.meaning, 2),
+        (TypedRecallPromptKind.context, 3),
+      ]) {
+        await const TypedRecallModeAdapter()
+            .capture(
+              evidence: evidence,
+              ownerId: 'owner-1',
+              sessionId: session.id,
+              prompt: TypedRecallPrompt(
+                wordId: word.id,
+                canonicalAnswer: word.spelling,
+                promptKind: entry.$1,
+                normalizationRevision: typedRecallNormalizationRevisionV1,
+                contentRevision: word.contentRevision!,
+                contentChecksumSha256: word.contentChecksumSha256!,
+              ),
+              response: word.spelling,
+              responseTimeMs: 10,
+              attemptNumber: entry.$2,
+              support: const TypedRecallSupport.unassisted(),
+            )
+            .pending
+            .record();
+      }
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 9, 9, 1),
+      );
+
+      expect(result.sampleSize, 3);
+      expect(
+        result.skills
+            .singleWhere((skill) => skill.key == 'pronunciation')
+            .sampleSize,
+        1,
+      );
+      expect(
+        result.skills
+            .singleWhere((skill) => skill.key == 'retention')
+            .sampleSize,
+        2,
+      );
+    },
+  );
+
+  test(
+    'due count matches the actionable Review Center queue without deleting history',
+    () async {
+      final nowUtc = DateTime.utc(2026, 9, 9);
+      await _insertAvailableWord(database, id: 'word-due-active');
+      await _insertAvailableWord(
+        database,
+        id: 'word-due-deleted',
+        deleted: true,
+      );
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-deleted',
+              ownerId: 'owner-1',
+              name: 'Deleted',
+              normalizedName: 'deleted',
+              isDeleted: const Value(true),
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await _insertAvailableWord(
+        database,
+        id: 'word-deleted-category',
+        categoryId: 'category-deleted',
+      );
+      await _insertAvailableWord(
+        database,
+        id: 'word-unpublished',
+        publicationState: ContentPublicationState.published.name,
+      );
+      await _insertAvailableWord(
+        database,
+        id: 'word-invalid-core',
+        checksumSha256:
+            '0000000000000000000000000000000000000000000000000000000000000000',
+      );
+      await _insertAvailableWord(database, id: 'word-negative-due');
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'owner-2',
+              createdAtUtcMs: 1,
+              isActive: const Value(false),
+            ),
+          );
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-owner-2',
+              ownerId: 'owner-2',
+              name: 'Private',
+              normalizedName: 'private',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await _insertAvailableWord(
+        database,
+        id: 'word-owner-2',
+        ownerId: 'owner-2',
+        categoryId: 'category-owner-2',
+      );
+      final packagedWordId = await _insertExactPackagedStarterWord(database);
+      for (final entry in <(String, int)>[
+        ('word-due-active', nowUtc.millisecondsSinceEpoch),
+        ('word-due-deleted', nowUtc.millisecondsSinceEpoch),
+        ('word-deleted-category', nowUtc.millisecondsSinceEpoch),
+        ('word-unpublished', nowUtc.millisecondsSinceEpoch),
+        ('word-invalid-core', nowUtc.millisecondsSinceEpoch),
+        ('word-owner-2', nowUtc.millisecondsSinceEpoch),
+        ('word-negative-due', -1),
+        (packagedWordId, nowUtc.millisecondsSinceEpoch),
+      ]) {
+        await _insertDueState(database, wordId: entry.$1, dueAtUtcMs: entry.$2);
+      }
+
+      final queue = await DriftReviewCenterReader(database).compose(
+        ReviewQueueFilter(
+          ownerId: 'owner-1',
+          evaluatedAtUtc: nowUtc,
+          timezoneId: 'Asia/Bangkok',
+          includeReasons: const {ReviewQueueReason.dueSrs},
+        ),
+      );
+      final snapshot = await progress.load(ownerId: 'owner-1', nowUtc: nowUtc);
+
+      expect(queue.map((item) => item.identity.id).toSet(), {
+        'word-due-active',
+        packagedWordId,
+      });
+      expect(snapshot.dueReviewCount, queue.length);
+      expect(await database.select(database.srsStates).get(), hasLength(8));
     },
   );
 
@@ -511,3 +778,121 @@ EvidenceContext _recreationalEvidence() => EvidenceContext.forNewEvidence(
   rolloutMode: EvidencePolicyRolloutMode.legacy,
   engagementAllowed: true,
 );
+
+Future<void> _insertAvailableWord(
+  AppDatabase database, {
+  required String id,
+  String ownerId = 'owner-1',
+  String categoryId = 'category-1',
+  bool deleted = false,
+  String publicationState = 'private',
+  String? checksumSha256,
+}) async {
+  final spelling = id.replaceFirst('word-', '');
+  final meaning = 'meaning-$spelling';
+  const source = 'manual';
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: id,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: spelling,
+          normalizedSpelling: spelling,
+          meaning: meaning,
+          normalizedMeaning: meaning,
+          partOfSpeech: 'noun',
+          source: const Value(source),
+          contentChecksumSha256: Value(
+            checksumSha256 ??
+                ContentQualityPolicy.vocabularyChecksumSha256(
+                  categoryId: categoryId,
+                  spelling: spelling,
+                  normalizedSpelling: spelling,
+                  meaning: meaning,
+                  normalizedMeaning: meaning,
+                  partOfSpeech: 'noun',
+                  cefrLevel: null,
+                  source: source,
+                  isGlobal: false,
+                ),
+          ),
+          contentPublicationState: Value(publicationState),
+          isDeleted: Value(deleted),
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+}
+
+Future<String> _insertExactPackagedStarterWord(AppDatabase database) async {
+  final word = PackagedStarterCatalog.words.first;
+  final manifest = word.manifest;
+  await database
+      .into(database.localOwners)
+      .insert(
+        LocalOwnersCompanion.insert(
+          id: PackagedStarterCatalog.ownerId,
+          accountState: const Value('localGuest'),
+          createdAtUtcMs:
+              PackagedStarterCatalog.timestamp.millisecondsSinceEpoch,
+          isActive: const Value(false),
+        ),
+      );
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: PackagedStarterCatalog.categoryId,
+          ownerId: PackagedStarterCatalog.ownerId,
+          name: PackagedStarterCatalog.categoryName,
+          normalizedName: PackagedStarterCatalog.categoryName,
+          createdAtUtcMs:
+              PackagedStarterCatalog.timestamp.millisecondsSinceEpoch,
+          updatedAtUtcMs:
+              PackagedStarterCatalog.timestamp.millisecondsSinceEpoch,
+        ),
+      );
+  await database.into(database.vocabularyWords).insert(word.insert);
+  await database
+      .into(database.contentManifests)
+      .insert(
+        ContentManifestsCompanion.insert(
+          id: manifest.storageId,
+          contentType: manifest.identity.type.name,
+          contentId: manifest.identity.id,
+          revision: manifest.identity.revision,
+          checksumSha256: manifest.checksumSha256,
+          byteLength: manifest.byteLength,
+          provenance: manifest.provenance.name,
+          sourceUri: manifest.sourceUri,
+          reviewState: manifest.reviewState.name,
+          publicationState: manifest.publicationState.name,
+          createdAtUtcMs: manifest.createdAtUtc.millisecondsSinceEpoch,
+          reviewedAtUtcMs: Value(
+            manifest.reviewedAtUtc?.millisecondsSinceEpoch,
+          ),
+          publishedAtUtcMs: Value(
+            manifest.publishedAtUtc?.millisecondsSinceEpoch,
+          ),
+        ),
+      );
+  return word.id;
+}
+
+Future<void> _insertDueState(
+  AppDatabase database, {
+  required String wordId,
+  required int dueAtUtcMs,
+}) => database
+    .into(database.srsStates)
+    .insert(
+      SrsStatesCompanion.insert(
+        id: 'srs:owner-1:$wordId',
+        ownerId: 'owner-1',
+        wordId: wordId,
+        dueAtUtcMs: dueAtUtcMs,
+        algorithmVersion: 1,
+      ),
+    );

@@ -19,6 +19,7 @@ final class ModelManifest {
     required this.inputType,
     required List<int> outputShape,
     required this.outputType,
+    this.backgroundClassIndex = 0,
     required this.inputEncoding,
     required this.labelAssetName,
     required Set<ModelDelegate> supportedDelegates,
@@ -28,6 +29,7 @@ final class ModelManifest {
          supportedDelegates,
        ) {
     final shaPattern = RegExp(r'^[0-9a-f]{64}$');
+    final backgroundIndex = backgroundClassIndex;
     final versionPattern = RegExp(r'^[0-9]+\.[0-9]+\.[0-9]+(?:\+[0-9]+)?$');
     if (id.trim().isEmpty ||
         version.trim().isEmpty ||
@@ -42,6 +44,8 @@ final class ModelManifest {
         inputShape.any((dimension) => dimension <= 0) ||
         outputShape.isEmpty ||
         outputShape.any((dimension) => dimension <= 0) ||
+        (backgroundIndex != null &&
+            (backgroundIndex < 0 || backgroundIndex >= outputShape.last)) ||
         labelAssetName.trim().isEmpty ||
         supportedDelegates.isEmpty ||
         !supportedDelegates.contains(ModelDelegate.cpu)) {
@@ -86,6 +90,9 @@ final class ModelManifest {
   final ModelTensorType inputType;
   final List<int> outputShape;
   final ModelTensorType outputType;
+
+  /// Null means every output is a real class. Legacy ImageNet reserves zero.
+  final int? backgroundClassIndex;
   final ModelInputEncoding inputEncoding;
   final String labelAssetName;
   final Set<ModelDelegate> supportedDelegates;

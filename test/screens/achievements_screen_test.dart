@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/achievements/application/achievement_share_card_use_cases.dart';
@@ -5,6 +6,96 @@ import 'package:vocab_learning_app/features/progress/domain/progress_models.dart
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
 
 void main() {
+  testWidgets('achievement retry exposes pending and prevents another read', (
+    tester,
+  ) async {
+    final pending = Completer<ProgressSnapshot>();
+    var reads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () {
+            reads++;
+            return reads == 1
+                ? Future.error(StateError('synthetic'))
+                : pending.future;
+          },
+          onOpenQuests: () {},
+          onOpenShop: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ลองใหม่'));
+    await tester.pump();
+    expect(find.text('ลองใหม่'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byKey(const ValueKey('rewards-open-quests')), findsOneWidget);
+    expect(find.byKey(const ValueKey('rewards-open-shop')), findsOneWidget);
+    expect(reads, 2);
+    pending.complete(_empty);
+    await tester.pumpAndSettle();
+    expect(find.text('ความสำเร็จ'), findsOneWidget);
+    expect(reads, 2);
+  });
+  testWidgets(
+    'reward hub callbacks stay available when progress cannot load and hide when absent',
+    (tester) async {
+      var quests = 0;
+      var shop = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AchievementsScreen(
+            loader: () =>
+                Future.error(StateError('synthetic progress unavailable')),
+            onOpenQuests: () => quests++,
+            onOpenShop: () => shop++,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('rewards-open-quests')));
+      await tester.tap(find.byKey(const ValueKey('rewards-open-shop')));
+      expect([quests, shop], [1, 1]);
+      await tester.pumpWidget(
+        MaterialApp(home: AchievementsScreen(loader: () async => _empty)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('rewards-open-quests')), findsNothing);
+      expect(find.byKey(const ValueKey('rewards-open-shop')), findsNothing);
+    },
+  );
+
+  testWidgets('no unlocked badges preserves nonzero answer evidence', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => const ProgressSnapshot(
+            sampleSize: 6,
+            correctCount: 0,
+            wrongCount: 6,
+            accuracy: 0,
+            totalXp: 0,
+            completedSessions: 0,
+            streakDays: 0,
+            dueReviewCount: 0,
+            masteredWordCount: 0,
+            achievementCount: 0,
+            gameLevel: 1,
+            skills: [],
+            weaknesses: [],
+            recommendations: [],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('จำนวนหลักฐาน: 6'), findsOneWidget);
+    expect(find.textContaining('จำนวนหลักฐาน: 0'), findsNothing);
+    expect(find.byIcon(Icons.workspace_premium_outlined), findsNothing);
+  });
   testWidgets('renders durable achievement evidence without redefining it', (
     tester,
   ) async {
@@ -17,6 +108,11 @@ void main() {
 
     expect(find.text('ความสำเร็จ'), findsOneWidget);
     expect(find.text('เรียนจบเซสชันแรก'), findsOneWidget);
+    expect(find.textContaining('session-1'), findsNothing);
+    await tester.tap(
+      find.byKey(const ValueKey('achievement-details/first_session')),
+    );
+    await tester.pumpAndSettle();
     expect(find.textContaining('session-1'), findsOneWidget);
     expect(find.textContaining('นิยาม v7'), findsOneWidget);
   });

@@ -7931,9 +7931,6 @@ class $MeasurementOpportunitiesTable extends MeasurementOpportunities
         true,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES learning_sessions (id)',
-        ),
       );
   static const VerificationMeta _startedEventIdMeta = const VerificationMeta(
     'startedEventId',
@@ -8986,6 +8983,1504 @@ class MeasurementOpportunitiesCompanion
           ..write('suppressedSwitchCount: $suppressedSwitchCount, ')
           ..write('openedAtUtcMs: $openedAtUtcMs, ')
           ..write('closedAtUtcMs: $closedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ResearchSessionProofsTable extends ResearchSessionProofs
+    with TableInfo<$ResearchSessionProofsTable, ResearchSessionProofRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ResearchSessionProofsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 1 CHECK (local_revision > 0)',
+    defaultValue: const CustomExpression('1'),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL DEFAULT 0 CHECK (cloud_revision >= 0)',
+    defaultValue: const CustomExpression('0'),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int>
+  lastAcknowledgedAtUtcMs = GeneratedColumn<int>(
+    'last_acknowledged_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'CHECK (last_acknowledged_at_utc_ms IS NULL OR last_acknowledged_at_utc_ms >= 0)',
+  );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'CHECK (server_updated_at_utc_ms IS NULL OR server_updated_at_utc_ms >= 0)',
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _measurementRunIdMeta = const VerificationMeta(
+    'measurementRunId',
+  );
+  @override
+  late final GeneratedColumn<String> measurementRunId = GeneratedColumn<String>(
+    'measurement_run_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES motivation_measurement_runs (id)',
+    ),
+  );
+  static const VerificationMeta _permitIdMeta = const VerificationMeta(
+    'permitId',
+  );
+  @override
+  late final GeneratedColumn<String> permitId = GeneratedColumn<String>(
+    'permit_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES research_participation_permits (id)',
+    ),
+  );
+  static const VerificationMeta _learningSessionIdMeta = const VerificationMeta(
+    'learningSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> learningSessionId =
+      GeneratedColumn<String>(
+        'learning_session_id',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 1,
+          maxTextLength: 128,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _proofRevisionMeta = const VerificationMeta(
+    'proofRevision',
+  );
+  @override
+  late final GeneratedColumn<int> proofRevision = GeneratedColumn<int>(
+    'proof_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityTypeMeta = const VerificationMeta(
+    'activityType',
+  );
+  @override
+  late final GeneratedColumn<String> activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionStateMeta = const VerificationMeta(
+    'sessionState',
+  );
+  @override
+  late final GeneratedColumn<String> sessionState = GeneratedColumn<String>(
+    'session_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtUtcMsMeta = const VerificationMeta(
+    'startedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtUtcMs = GeneratedColumn<int>(
+    'started_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endedAtUtcMsMeta = const VerificationMeta(
+    'endedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> endedAtUtcMs = GeneratedColumn<int>(
+    'ended_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _appVersionMeta = const VerificationMeta(
+    'appVersion',
+  );
+  @override
+  late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
+    'app_version',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _buildIdMeta = const VerificationMeta(
+    'buildId',
+  );
+  @override
+  late final GeneratedColumn<String> buildId = GeneratedColumn<String>(
+    'build_id',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 128,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionConfigurationIdentityMeta =
+      const VerificationMeta('sessionConfigurationIdentity');
+  @override
+  late final GeneratedColumn<String> sessionConfigurationIdentity =
+      GeneratedColumn<String>(
+        'session_configuration_identity',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sessionConfigurationJsonMeta =
+      const VerificationMeta('sessionConfigurationJson');
+  @override
+  late final GeneratedColumn<String> sessionConfigurationJson =
+      GeneratedColumn<String>(
+        'session_configuration_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _pairStartOperationMeta =
+      const VerificationMeta('pairStartOperation');
+  @override
+  late final GeneratedColumn<String> pairStartOperation =
+      GeneratedColumn<String>(
+        'pair_start_operation',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _pairCheckpointEventVersionMeta =
+      const VerificationMeta('pairCheckpointEventVersion');
+  @override
+  late final GeneratedColumn<int> pairCheckpointEventVersion =
+      GeneratedColumn<int>(
+        'pair_checkpoint_event_version',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _pairOwnerLineageJsonMeta =
+      const VerificationMeta('pairOwnerLineageJson');
+  @override
+  late final GeneratedColumn<String> pairOwnerLineageJson =
+      GeneratedColumn<String>(
+        'pair_owner_lineage_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _permitPayloadSha256Meta =
+      const VerificationMeta('permitPayloadSha256');
+  @override
+  late final GeneratedColumn<String> permitPayloadSha256 =
+      GeneratedColumn<String>(
+        'permit_payload_sha256',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _permitRevisionMeta = const VerificationMeta(
+    'permitRevision',
+  );
+  @override
+  late final GeneratedColumn<int> permitRevision = GeneratedColumn<int>(
+    'permit_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+    measurementRunId,
+    permitId,
+    learningSessionId,
+    proofRevision,
+    activityType,
+    sessionState,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    appVersion,
+    buildId,
+    sessionConfigurationIdentity,
+    sessionConfigurationJson,
+    pairStartOperation,
+    pairCheckpointEventVersion,
+    pairOwnerLineageJson,
+    permitPayloadSha256,
+    permitRevision,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'research_session_proofs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ResearchSessionProofRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    if (data.containsKey('measurement_run_id')) {
+      context.handle(
+        _measurementRunIdMeta,
+        measurementRunId.isAcceptableOrUnknown(
+          data['measurement_run_id']!,
+          _measurementRunIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_measurementRunIdMeta);
+    }
+    if (data.containsKey('permit_id')) {
+      context.handle(
+        _permitIdMeta,
+        permitId.isAcceptableOrUnknown(data['permit_id']!, _permitIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_permitIdMeta);
+    }
+    if (data.containsKey('learning_session_id')) {
+      context.handle(
+        _learningSessionIdMeta,
+        learningSessionId.isAcceptableOrUnknown(
+          data['learning_session_id']!,
+          _learningSessionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningSessionIdMeta);
+    }
+    if (data.containsKey('proof_revision')) {
+      context.handle(
+        _proofRevisionMeta,
+        proofRevision.isAcceptableOrUnknown(
+          data['proof_revision']!,
+          _proofRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_proofRevisionMeta);
+    }
+    if (data.containsKey('activity_type')) {
+      context.handle(
+        _activityTypeMeta,
+        activityType.isAcceptableOrUnknown(
+          data['activity_type']!,
+          _activityTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activityTypeMeta);
+    }
+    if (data.containsKey('session_state')) {
+      context.handle(
+        _sessionStateMeta,
+        sessionState.isAcceptableOrUnknown(
+          data['session_state']!,
+          _sessionStateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionStateMeta);
+    }
+    if (data.containsKey('started_at_utc_ms')) {
+      context.handle(
+        _startedAtUtcMsMeta,
+        startedAtUtcMs.isAcceptableOrUnknown(
+          data['started_at_utc_ms']!,
+          _startedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMsMeta);
+    }
+    if (data.containsKey('ended_at_utc_ms')) {
+      context.handle(
+        _endedAtUtcMsMeta,
+        endedAtUtcMs.isAcceptableOrUnknown(
+          data['ended_at_utc_ms']!,
+          _endedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('app_version')) {
+      context.handle(
+        _appVersionMeta,
+        appVersion.isAcceptableOrUnknown(data['app_version']!, _appVersionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_appVersionMeta);
+    }
+    if (data.containsKey('build_id')) {
+      context.handle(
+        _buildIdMeta,
+        buildId.isAcceptableOrUnknown(data['build_id']!, _buildIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_buildIdMeta);
+    }
+    if (data.containsKey('session_configuration_identity')) {
+      context.handle(
+        _sessionConfigurationIdentityMeta,
+        sessionConfigurationIdentity.isAcceptableOrUnknown(
+          data['session_configuration_identity']!,
+          _sessionConfigurationIdentityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('session_configuration_json')) {
+      context.handle(
+        _sessionConfigurationJsonMeta,
+        sessionConfigurationJson.isAcceptableOrUnknown(
+          data['session_configuration_json']!,
+          _sessionConfigurationJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pair_start_operation')) {
+      context.handle(
+        _pairStartOperationMeta,
+        pairStartOperation.isAcceptableOrUnknown(
+          data['pair_start_operation']!,
+          _pairStartOperationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pair_checkpoint_event_version')) {
+      context.handle(
+        _pairCheckpointEventVersionMeta,
+        pairCheckpointEventVersion.isAcceptableOrUnknown(
+          data['pair_checkpoint_event_version']!,
+          _pairCheckpointEventVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pair_owner_lineage_json')) {
+      context.handle(
+        _pairOwnerLineageJsonMeta,
+        pairOwnerLineageJson.isAcceptableOrUnknown(
+          data['pair_owner_lineage_json']!,
+          _pairOwnerLineageJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('permit_payload_sha256')) {
+      context.handle(
+        _permitPayloadSha256Meta,
+        permitPayloadSha256.isAcceptableOrUnknown(
+          data['permit_payload_sha256']!,
+          _permitPayloadSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_permitPayloadSha256Meta);
+    }
+    if (data.containsKey('permit_revision')) {
+      context.handle(
+        _permitRevisionMeta,
+        permitRevision.isAcceptableOrUnknown(
+          data['permit_revision']!,
+          _permitRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_permitRevisionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ResearchSessionProofRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ResearchSessionProofRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+      measurementRunId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}measurement_run_id'],
+      )!,
+      permitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}permit_id'],
+      )!,
+      learningSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_session_id'],
+      )!,
+      proofRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}proof_revision'],
+      )!,
+      activityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_type'],
+      )!,
+      sessionState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_state'],
+      )!,
+      startedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_utc_ms'],
+      )!,
+      endedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at_utc_ms'],
+      ),
+      appVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_version'],
+      )!,
+      buildId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}build_id'],
+      )!,
+      sessionConfigurationIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_configuration_identity'],
+      ),
+      sessionConfigurationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_configuration_json'],
+      ),
+      pairStartOperation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pair_start_operation'],
+      ),
+      pairCheckpointEventVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pair_checkpoint_event_version'],
+      ),
+      pairOwnerLineageJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pair_owner_lineage_json'],
+      ),
+      permitPayloadSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}permit_payload_sha256'],
+      )!,
+      permitRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}permit_revision'],
+      )!,
+    );
+  }
+
+  @override
+  $ResearchSessionProofsTable createAlias(String alias) {
+    return $ResearchSessionProofsTable(attachedDatabase, alias);
+  }
+}
+
+class ResearchSessionProofRow extends DataClass
+    implements Insertable<ResearchSessionProofRow> {
+  final String id;
+  final String ownerId;
+  final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
+  final bool isDeleted;
+  final String measurementRunId;
+  final String permitId;
+  final String learningSessionId;
+  final int proofRevision;
+  final String activityType;
+  final String sessionState;
+  final int startedAtUtcMs;
+  final int? endedAtUtcMs;
+  final String appVersion;
+  final String buildId;
+  final String? sessionConfigurationIdentity;
+  final String? sessionConfigurationJson;
+  final String? pairStartOperation;
+  final int? pairCheckpointEventVersion;
+  final String? pairOwnerLineageJson;
+  final String permitPayloadSha256;
+  final int permitRevision;
+  const ResearchSessionProofRow({
+    required this.id,
+    required this.ownerId,
+    required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
+    required this.isDeleted,
+    required this.measurementRunId,
+    required this.permitId,
+    required this.learningSessionId,
+    required this.proofRevision,
+    required this.activityType,
+    required this.sessionState,
+    required this.startedAtUtcMs,
+    this.endedAtUtcMs,
+    required this.appVersion,
+    required this.buildId,
+    this.sessionConfigurationIdentity,
+    this.sessionConfigurationJson,
+    this.pairStartOperation,
+    this.pairCheckpointEventVersion,
+    this.pairOwnerLineageJson,
+    required this.permitPayloadSha256,
+    required this.permitRevision,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    map['measurement_run_id'] = Variable<String>(measurementRunId);
+    map['permit_id'] = Variable<String>(permitId);
+    map['learning_session_id'] = Variable<String>(learningSessionId);
+    map['proof_revision'] = Variable<int>(proofRevision);
+    map['activity_type'] = Variable<String>(activityType);
+    map['session_state'] = Variable<String>(sessionState);
+    map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs);
+    if (!nullToAbsent || endedAtUtcMs != null) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs);
+    }
+    map['app_version'] = Variable<String>(appVersion);
+    map['build_id'] = Variable<String>(buildId);
+    if (!nullToAbsent || sessionConfigurationIdentity != null) {
+      map['session_configuration_identity'] = Variable<String>(
+        sessionConfigurationIdentity,
+      );
+    }
+    if (!nullToAbsent || sessionConfigurationJson != null) {
+      map['session_configuration_json'] = Variable<String>(
+        sessionConfigurationJson,
+      );
+    }
+    if (!nullToAbsent || pairStartOperation != null) {
+      map['pair_start_operation'] = Variable<String>(pairStartOperation);
+    }
+    if (!nullToAbsent || pairCheckpointEventVersion != null) {
+      map['pair_checkpoint_event_version'] = Variable<int>(
+        pairCheckpointEventVersion,
+      );
+    }
+    if (!nullToAbsent || pairOwnerLineageJson != null) {
+      map['pair_owner_lineage_json'] = Variable<String>(pairOwnerLineageJson);
+    }
+    map['permit_payload_sha256'] = Variable<String>(permitPayloadSha256);
+    map['permit_revision'] = Variable<int>(permitRevision);
+    return map;
+  }
+
+  ResearchSessionProofsCompanion toCompanion(bool nullToAbsent) {
+    return ResearchSessionProofsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
+      isDeleted: Value(isDeleted),
+      measurementRunId: Value(measurementRunId),
+      permitId: Value(permitId),
+      learningSessionId: Value(learningSessionId),
+      proofRevision: Value(proofRevision),
+      activityType: Value(activityType),
+      sessionState: Value(sessionState),
+      startedAtUtcMs: Value(startedAtUtcMs),
+      endedAtUtcMs: endedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endedAtUtcMs),
+      appVersion: Value(appVersion),
+      buildId: Value(buildId),
+      sessionConfigurationIdentity:
+          sessionConfigurationIdentity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionConfigurationIdentity),
+      sessionConfigurationJson: sessionConfigurationJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionConfigurationJson),
+      pairStartOperation: pairStartOperation == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pairStartOperation),
+      pairCheckpointEventVersion:
+          pairCheckpointEventVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pairCheckpointEventVersion),
+      pairOwnerLineageJson: pairOwnerLineageJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pairOwnerLineageJson),
+      permitPayloadSha256: Value(permitPayloadSha256),
+      permitRevision: Value(permitRevision),
+    );
+  }
+
+  factory ResearchSessionProofRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ResearchSessionProofRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      measurementRunId: serializer.fromJson<String>(json['measurementRunId']),
+      permitId: serializer.fromJson<String>(json['permitId']),
+      learningSessionId: serializer.fromJson<String>(json['learningSessionId']),
+      proofRevision: serializer.fromJson<int>(json['proofRevision']),
+      activityType: serializer.fromJson<String>(json['activityType']),
+      sessionState: serializer.fromJson<String>(json['sessionState']),
+      startedAtUtcMs: serializer.fromJson<int>(json['startedAtUtcMs']),
+      endedAtUtcMs: serializer.fromJson<int?>(json['endedAtUtcMs']),
+      appVersion: serializer.fromJson<String>(json['appVersion']),
+      buildId: serializer.fromJson<String>(json['buildId']),
+      sessionConfigurationIdentity: serializer.fromJson<String?>(
+        json['sessionConfigurationIdentity'],
+      ),
+      sessionConfigurationJson: serializer.fromJson<String?>(
+        json['sessionConfigurationJson'],
+      ),
+      pairStartOperation: serializer.fromJson<String?>(
+        json['pairStartOperation'],
+      ),
+      pairCheckpointEventVersion: serializer.fromJson<int?>(
+        json['pairCheckpointEventVersion'],
+      ),
+      pairOwnerLineageJson: serializer.fromJson<String?>(
+        json['pairOwnerLineageJson'],
+      ),
+      permitPayloadSha256: serializer.fromJson<String>(
+        json['permitPayloadSha256'],
+      ),
+      permitRevision: serializer.fromJson<int>(json['permitRevision']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'measurementRunId': serializer.toJson<String>(measurementRunId),
+      'permitId': serializer.toJson<String>(permitId),
+      'learningSessionId': serializer.toJson<String>(learningSessionId),
+      'proofRevision': serializer.toJson<int>(proofRevision),
+      'activityType': serializer.toJson<String>(activityType),
+      'sessionState': serializer.toJson<String>(sessionState),
+      'startedAtUtcMs': serializer.toJson<int>(startedAtUtcMs),
+      'endedAtUtcMs': serializer.toJson<int?>(endedAtUtcMs),
+      'appVersion': serializer.toJson<String>(appVersion),
+      'buildId': serializer.toJson<String>(buildId),
+      'sessionConfigurationIdentity': serializer.toJson<String?>(
+        sessionConfigurationIdentity,
+      ),
+      'sessionConfigurationJson': serializer.toJson<String?>(
+        sessionConfigurationJson,
+      ),
+      'pairStartOperation': serializer.toJson<String?>(pairStartOperation),
+      'pairCheckpointEventVersion': serializer.toJson<int?>(
+        pairCheckpointEventVersion,
+      ),
+      'pairOwnerLineageJson': serializer.toJson<String?>(pairOwnerLineageJson),
+      'permitPayloadSha256': serializer.toJson<String>(permitPayloadSha256),
+      'permitRevision': serializer.toJson<int>(permitRevision),
+    };
+  }
+
+  ResearchSessionProofRow copyWith({
+    String? id,
+    String? ownerId,
+    int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+    bool? isDeleted,
+    String? measurementRunId,
+    String? permitId,
+    String? learningSessionId,
+    int? proofRevision,
+    String? activityType,
+    String? sessionState,
+    int? startedAtUtcMs,
+    Value<int?> endedAtUtcMs = const Value.absent(),
+    String? appVersion,
+    String? buildId,
+    Value<String?> sessionConfigurationIdentity = const Value.absent(),
+    Value<String?> sessionConfigurationJson = const Value.absent(),
+    Value<String?> pairStartOperation = const Value.absent(),
+    Value<int?> pairCheckpointEventVersion = const Value.absent(),
+    Value<String?> pairOwnerLineageJson = const Value.absent(),
+    String? permitPayloadSha256,
+    int? permitRevision,
+  }) => ResearchSessionProofRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
+    isDeleted: isDeleted ?? this.isDeleted,
+    measurementRunId: measurementRunId ?? this.measurementRunId,
+    permitId: permitId ?? this.permitId,
+    learningSessionId: learningSessionId ?? this.learningSessionId,
+    proofRevision: proofRevision ?? this.proofRevision,
+    activityType: activityType ?? this.activityType,
+    sessionState: sessionState ?? this.sessionState,
+    startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+    endedAtUtcMs: endedAtUtcMs.present ? endedAtUtcMs.value : this.endedAtUtcMs,
+    appVersion: appVersion ?? this.appVersion,
+    buildId: buildId ?? this.buildId,
+    sessionConfigurationIdentity: sessionConfigurationIdentity.present
+        ? sessionConfigurationIdentity.value
+        : this.sessionConfigurationIdentity,
+    sessionConfigurationJson: sessionConfigurationJson.present
+        ? sessionConfigurationJson.value
+        : this.sessionConfigurationJson,
+    pairStartOperation: pairStartOperation.present
+        ? pairStartOperation.value
+        : this.pairStartOperation,
+    pairCheckpointEventVersion: pairCheckpointEventVersion.present
+        ? pairCheckpointEventVersion.value
+        : this.pairCheckpointEventVersion,
+    pairOwnerLineageJson: pairOwnerLineageJson.present
+        ? pairOwnerLineageJson.value
+        : this.pairOwnerLineageJson,
+    permitPayloadSha256: permitPayloadSha256 ?? this.permitPayloadSha256,
+    permitRevision: permitRevision ?? this.permitRevision,
+  );
+  ResearchSessionProofRow copyWithCompanion(
+    ResearchSessionProofsCompanion data,
+  ) {
+    return ResearchSessionProofRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      measurementRunId: data.measurementRunId.present
+          ? data.measurementRunId.value
+          : this.measurementRunId,
+      permitId: data.permitId.present ? data.permitId.value : this.permitId,
+      learningSessionId: data.learningSessionId.present
+          ? data.learningSessionId.value
+          : this.learningSessionId,
+      proofRevision: data.proofRevision.present
+          ? data.proofRevision.value
+          : this.proofRevision,
+      activityType: data.activityType.present
+          ? data.activityType.value
+          : this.activityType,
+      sessionState: data.sessionState.present
+          ? data.sessionState.value
+          : this.sessionState,
+      startedAtUtcMs: data.startedAtUtcMs.present
+          ? data.startedAtUtcMs.value
+          : this.startedAtUtcMs,
+      endedAtUtcMs: data.endedAtUtcMs.present
+          ? data.endedAtUtcMs.value
+          : this.endedAtUtcMs,
+      appVersion: data.appVersion.present
+          ? data.appVersion.value
+          : this.appVersion,
+      buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      sessionConfigurationIdentity: data.sessionConfigurationIdentity.present
+          ? data.sessionConfigurationIdentity.value
+          : this.sessionConfigurationIdentity,
+      sessionConfigurationJson: data.sessionConfigurationJson.present
+          ? data.sessionConfigurationJson.value
+          : this.sessionConfigurationJson,
+      pairStartOperation: data.pairStartOperation.present
+          ? data.pairStartOperation.value
+          : this.pairStartOperation,
+      pairCheckpointEventVersion: data.pairCheckpointEventVersion.present
+          ? data.pairCheckpointEventVersion.value
+          : this.pairCheckpointEventVersion,
+      pairOwnerLineageJson: data.pairOwnerLineageJson.present
+          ? data.pairOwnerLineageJson.value
+          : this.pairOwnerLineageJson,
+      permitPayloadSha256: data.permitPayloadSha256.present
+          ? data.permitPayloadSha256.value
+          : this.permitPayloadSha256,
+      permitRevision: data.permitRevision.present
+          ? data.permitRevision.value
+          : this.permitRevision,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchSessionProofRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('measurementRunId: $measurementRunId, ')
+          ..write('permitId: $permitId, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write('proofRevision: $proofRevision, ')
+          ..write('activityType: $activityType, ')
+          ..write('sessionState: $sessionState, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write(
+            'sessionConfigurationIdentity: $sessionConfigurationIdentity, ',
+          )
+          ..write('sessionConfigurationJson: $sessionConfigurationJson, ')
+          ..write('pairStartOperation: $pairStartOperation, ')
+          ..write('pairCheckpointEventVersion: $pairCheckpointEventVersion, ')
+          ..write('pairOwnerLineageJson: $pairOwnerLineageJson, ')
+          ..write('permitPayloadSha256: $permitPayloadSha256, ')
+          ..write('permitRevision: $permitRevision')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    ownerId,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+    measurementRunId,
+    permitId,
+    learningSessionId,
+    proofRevision,
+    activityType,
+    sessionState,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    appVersion,
+    buildId,
+    sessionConfigurationIdentity,
+    sessionConfigurationJson,
+    pairStartOperation,
+    pairCheckpointEventVersion,
+    pairOwnerLineageJson,
+    permitPayloadSha256,
+    permitRevision,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ResearchSessionProofRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
+          other.isDeleted == this.isDeleted &&
+          other.measurementRunId == this.measurementRunId &&
+          other.permitId == this.permitId &&
+          other.learningSessionId == this.learningSessionId &&
+          other.proofRevision == this.proofRevision &&
+          other.activityType == this.activityType &&
+          other.sessionState == this.sessionState &&
+          other.startedAtUtcMs == this.startedAtUtcMs &&
+          other.endedAtUtcMs == this.endedAtUtcMs &&
+          other.appVersion == this.appVersion &&
+          other.buildId == this.buildId &&
+          other.sessionConfigurationIdentity ==
+              this.sessionConfigurationIdentity &&
+          other.sessionConfigurationJson == this.sessionConfigurationJson &&
+          other.pairStartOperation == this.pairStartOperation &&
+          other.pairCheckpointEventVersion == this.pairCheckpointEventVersion &&
+          other.pairOwnerLineageJson == this.pairOwnerLineageJson &&
+          other.permitPayloadSha256 == this.permitPayloadSha256 &&
+          other.permitRevision == this.permitRevision);
+}
+
+class ResearchSessionProofsCompanion
+    extends UpdateCompanion<ResearchSessionProofRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
+  final Value<bool> isDeleted;
+  final Value<String> measurementRunId;
+  final Value<String> permitId;
+  final Value<String> learningSessionId;
+  final Value<int> proofRevision;
+  final Value<String> activityType;
+  final Value<String> sessionState;
+  final Value<int> startedAtUtcMs;
+  final Value<int?> endedAtUtcMs;
+  final Value<String> appVersion;
+  final Value<String> buildId;
+  final Value<String?> sessionConfigurationIdentity;
+  final Value<String?> sessionConfigurationJson;
+  final Value<String?> pairStartOperation;
+  final Value<int?> pairCheckpointEventVersion;
+  final Value<String?> pairOwnerLineageJson;
+  final Value<String> permitPayloadSha256;
+  final Value<int> permitRevision;
+  final Value<int> rowid;
+  const ResearchSessionProofsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.measurementRunId = const Value.absent(),
+    this.permitId = const Value.absent(),
+    this.learningSessionId = const Value.absent(),
+    this.proofRevision = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.sessionState = const Value.absent(),
+    this.startedAtUtcMs = const Value.absent(),
+    this.endedAtUtcMs = const Value.absent(),
+    this.appVersion = const Value.absent(),
+    this.buildId = const Value.absent(),
+    this.sessionConfigurationIdentity = const Value.absent(),
+    this.sessionConfigurationJson = const Value.absent(),
+    this.pairStartOperation = const Value.absent(),
+    this.pairCheckpointEventVersion = const Value.absent(),
+    this.pairOwnerLineageJson = const Value.absent(),
+    this.permitPayloadSha256 = const Value.absent(),
+    this.permitRevision = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ResearchSessionProofsCompanion.insert({
+    required String id,
+    required String ownerId,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    required String measurementRunId,
+    required String permitId,
+    required String learningSessionId,
+    required int proofRevision,
+    required String activityType,
+    required String sessionState,
+    required int startedAtUtcMs,
+    this.endedAtUtcMs = const Value.absent(),
+    required String appVersion,
+    required String buildId,
+    this.sessionConfigurationIdentity = const Value.absent(),
+    this.sessionConfigurationJson = const Value.absent(),
+    this.pairStartOperation = const Value.absent(),
+    this.pairCheckpointEventVersion = const Value.absent(),
+    this.pairOwnerLineageJson = const Value.absent(),
+    required String permitPayloadSha256,
+    required int permitRevision,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       measurementRunId = Value(measurementRunId),
+       permitId = Value(permitId),
+       learningSessionId = Value(learningSessionId),
+       proofRevision = Value(proofRevision),
+       activityType = Value(activityType),
+       sessionState = Value(sessionState),
+       startedAtUtcMs = Value(startedAtUtcMs),
+       appVersion = Value(appVersion),
+       buildId = Value(buildId),
+       permitPayloadSha256 = Value(permitPayloadSha256),
+       permitRevision = Value(permitRevision);
+  static Insertable<ResearchSessionProofRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
+    Expression<bool>? isDeleted,
+    Expression<String>? measurementRunId,
+    Expression<String>? permitId,
+    Expression<String>? learningSessionId,
+    Expression<int>? proofRevision,
+    Expression<String>? activityType,
+    Expression<String>? sessionState,
+    Expression<int>? startedAtUtcMs,
+    Expression<int>? endedAtUtcMs,
+    Expression<String>? appVersion,
+    Expression<String>? buildId,
+    Expression<String>? sessionConfigurationIdentity,
+    Expression<String>? sessionConfigurationJson,
+    Expression<String>? pairStartOperation,
+    Expression<int>? pairCheckpointEventVersion,
+    Expression<String>? pairOwnerLineageJson,
+    Expression<String>? permitPayloadSha256,
+    Expression<int>? permitRevision,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (measurementRunId != null) 'measurement_run_id': measurementRunId,
+      if (permitId != null) 'permit_id': permitId,
+      if (learningSessionId != null) 'learning_session_id': learningSessionId,
+      if (proofRevision != null) 'proof_revision': proofRevision,
+      if (activityType != null) 'activity_type': activityType,
+      if (sessionState != null) 'session_state': sessionState,
+      if (startedAtUtcMs != null) 'started_at_utc_ms': startedAtUtcMs,
+      if (endedAtUtcMs != null) 'ended_at_utc_ms': endedAtUtcMs,
+      if (appVersion != null) 'app_version': appVersion,
+      if (buildId != null) 'build_id': buildId,
+      if (sessionConfigurationIdentity != null)
+        'session_configuration_identity': sessionConfigurationIdentity,
+      if (sessionConfigurationJson != null)
+        'session_configuration_json': sessionConfigurationJson,
+      if (pairStartOperation != null)
+        'pair_start_operation': pairStartOperation,
+      if (pairCheckpointEventVersion != null)
+        'pair_checkpoint_event_version': pairCheckpointEventVersion,
+      if (pairOwnerLineageJson != null)
+        'pair_owner_lineage_json': pairOwnerLineageJson,
+      if (permitPayloadSha256 != null)
+        'permit_payload_sha256': permitPayloadSha256,
+      if (permitRevision != null) 'permit_revision': permitRevision,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ResearchSessionProofsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
+    Value<bool>? isDeleted,
+    Value<String>? measurementRunId,
+    Value<String>? permitId,
+    Value<String>? learningSessionId,
+    Value<int>? proofRevision,
+    Value<String>? activityType,
+    Value<String>? sessionState,
+    Value<int>? startedAtUtcMs,
+    Value<int?>? endedAtUtcMs,
+    Value<String>? appVersion,
+    Value<String>? buildId,
+    Value<String?>? sessionConfigurationIdentity,
+    Value<String?>? sessionConfigurationJson,
+    Value<String?>? pairStartOperation,
+    Value<int?>? pairCheckpointEventVersion,
+    Value<String?>? pairOwnerLineageJson,
+    Value<String>? permitPayloadSha256,
+    Value<int>? permitRevision,
+    Value<int>? rowid,
+  }) {
+    return ResearchSessionProofsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
+      isDeleted: isDeleted ?? this.isDeleted,
+      measurementRunId: measurementRunId ?? this.measurementRunId,
+      permitId: permitId ?? this.permitId,
+      learningSessionId: learningSessionId ?? this.learningSessionId,
+      proofRevision: proofRevision ?? this.proofRevision,
+      activityType: activityType ?? this.activityType,
+      sessionState: sessionState ?? this.sessionState,
+      startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+      endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+      appVersion: appVersion ?? this.appVersion,
+      buildId: buildId ?? this.buildId,
+      sessionConfigurationIdentity:
+          sessionConfigurationIdentity ?? this.sessionConfigurationIdentity,
+      sessionConfigurationJson:
+          sessionConfigurationJson ?? this.sessionConfigurationJson,
+      pairStartOperation: pairStartOperation ?? this.pairStartOperation,
+      pairCheckpointEventVersion:
+          pairCheckpointEventVersion ?? this.pairCheckpointEventVersion,
+      pairOwnerLineageJson: pairOwnerLineageJson ?? this.pairOwnerLineageJson,
+      permitPayloadSha256: permitPayloadSha256 ?? this.permitPayloadSha256,
+      permitRevision: permitRevision ?? this.permitRevision,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (measurementRunId.present) {
+      map['measurement_run_id'] = Variable<String>(measurementRunId.value);
+    }
+    if (permitId.present) {
+      map['permit_id'] = Variable<String>(permitId.value);
+    }
+    if (learningSessionId.present) {
+      map['learning_session_id'] = Variable<String>(learningSessionId.value);
+    }
+    if (proofRevision.present) {
+      map['proof_revision'] = Variable<int>(proofRevision.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(activityType.value);
+    }
+    if (sessionState.present) {
+      map['session_state'] = Variable<String>(sessionState.value);
+    }
+    if (startedAtUtcMs.present) {
+      map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs.value);
+    }
+    if (endedAtUtcMs.present) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs.value);
+    }
+    if (appVersion.present) {
+      map['app_version'] = Variable<String>(appVersion.value);
+    }
+    if (buildId.present) {
+      map['build_id'] = Variable<String>(buildId.value);
+    }
+    if (sessionConfigurationIdentity.present) {
+      map['session_configuration_identity'] = Variable<String>(
+        sessionConfigurationIdentity.value,
+      );
+    }
+    if (sessionConfigurationJson.present) {
+      map['session_configuration_json'] = Variable<String>(
+        sessionConfigurationJson.value,
+      );
+    }
+    if (pairStartOperation.present) {
+      map['pair_start_operation'] = Variable<String>(pairStartOperation.value);
+    }
+    if (pairCheckpointEventVersion.present) {
+      map['pair_checkpoint_event_version'] = Variable<int>(
+        pairCheckpointEventVersion.value,
+      );
+    }
+    if (pairOwnerLineageJson.present) {
+      map['pair_owner_lineage_json'] = Variable<String>(
+        pairOwnerLineageJson.value,
+      );
+    }
+    if (permitPayloadSha256.present) {
+      map['permit_payload_sha256'] = Variable<String>(
+        permitPayloadSha256.value,
+      );
+    }
+    if (permitRevision.present) {
+      map['permit_revision'] = Variable<int>(permitRevision.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ResearchSessionProofsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('measurementRunId: $measurementRunId, ')
+          ..write('permitId: $permitId, ')
+          ..write('learningSessionId: $learningSessionId, ')
+          ..write('proofRevision: $proofRevision, ')
+          ..write('activityType: $activityType, ')
+          ..write('sessionState: $sessionState, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write(
+            'sessionConfigurationIdentity: $sessionConfigurationIdentity, ',
+          )
+          ..write('sessionConfigurationJson: $sessionConfigurationJson, ')
+          ..write('pairStartOperation: $pairStartOperation, ')
+          ..write('pairCheckpointEventVersion: $pairCheckpointEventVersion, ')
+          ..write('pairOwnerLineageJson: $pairOwnerLineageJson, ')
+          ..write('permitPayloadSha256: $permitPayloadSha256, ')
+          ..write('permitRevision: $permitRevision, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -24959,6 +26454,100 @@ class $QuestInstancesTable extends QuestInstances
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _periodPolicyMeta = const VerificationMeta(
+    'periodPolicy',
+  );
+  @override
+  late final GeneratedColumn<String> periodPolicy = GeneratedColumn<String>(
+    'period_policy',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('legacyDuration'),
+  );
+  static const VerificationMeta _periodKeyMeta = const VerificationMeta(
+    'periodKey',
+  );
+  @override
+  late final GeneratedColumn<String> periodKey = GeneratedColumn<String>(
+    'period_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _periodTimezoneIdMeta = const VerificationMeta(
+    'periodTimezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> periodTimezoneId = GeneratedColumn<String>(
+    'period_timezone_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _periodStartAtUtcMsMeta =
+      const VerificationMeta('periodStartAtUtcMs');
+  @override
+  late final GeneratedColumn<int> periodStartAtUtcMs = GeneratedColumn<int>(
+    'period_start_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _periodEndAtUtcMsMeta = const VerificationMeta(
+    'periodEndAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> periodEndAtUtcMs = GeneratedColumn<int>(
+    'period_end_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _deadlineAtUtcMsMeta = const VerificationMeta(
+    'deadlineAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> deadlineAtUtcMs = GeneratedColumn<int>(
+    'deadline_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isCanonicalMeta = const VerificationMeta(
+    'isCanonical',
+  );
+  @override
+  late final GeneratedColumn<bool> isCanonical = GeneratedColumn<bool>(
+    'is_canonical',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_canonical" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _definitionSnapshotJsonMeta =
+      const VerificationMeta('definitionSnapshotJson');
+  @override
+  late final GeneratedColumn<String> definitionSnapshotJson =
+      GeneratedColumn<String>(
+        'definition_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     instanceId,
@@ -24969,6 +26558,14 @@ class $QuestInstancesTable extends QuestInstances
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    periodPolicy,
+    periodKey,
+    periodTimezoneId,
+    periodStartAtUtcMs,
+    periodEndAtUtcMs,
+    deadlineAtUtcMs,
+    isCanonical,
+    definitionSnapshotJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -25054,15 +26651,80 @@ class $QuestInstancesTable extends QuestInstances
         ),
       );
     }
+    if (data.containsKey('period_policy')) {
+      context.handle(
+        _periodPolicyMeta,
+        periodPolicy.isAcceptableOrUnknown(
+          data['period_policy']!,
+          _periodPolicyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('period_key')) {
+      context.handle(
+        _periodKeyMeta,
+        periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
+      );
+    }
+    if (data.containsKey('period_timezone_id')) {
+      context.handle(
+        _periodTimezoneIdMeta,
+        periodTimezoneId.isAcceptableOrUnknown(
+          data['period_timezone_id']!,
+          _periodTimezoneIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('period_start_at_utc_ms')) {
+      context.handle(
+        _periodStartAtUtcMsMeta,
+        periodStartAtUtcMs.isAcceptableOrUnknown(
+          data['period_start_at_utc_ms']!,
+          _periodStartAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('period_end_at_utc_ms')) {
+      context.handle(
+        _periodEndAtUtcMsMeta,
+        periodEndAtUtcMs.isAcceptableOrUnknown(
+          data['period_end_at_utc_ms']!,
+          _periodEndAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('deadline_at_utc_ms')) {
+      context.handle(
+        _deadlineAtUtcMsMeta,
+        deadlineAtUtcMs.isAcceptableOrUnknown(
+          data['deadline_at_utc_ms']!,
+          _deadlineAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_canonical')) {
+      context.handle(
+        _isCanonicalMeta,
+        isCanonical.isAcceptableOrUnknown(
+          data['is_canonical']!,
+          _isCanonicalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('definition_snapshot_json')) {
+      context.handle(
+        _definitionSnapshotJsonMeta,
+        definitionSnapshotJson.isAcceptableOrUnknown(
+          data['definition_snapshot_json']!,
+          _definitionSnapshotJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {instanceId};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {ownerId, questId},
-  ];
   @override
   QuestInstance map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -25099,6 +26761,38 @@ class $QuestInstancesTable extends QuestInstances
         DriftSqlType.int,
         data['${effectivePrefix}expired_at_utc_ms'],
       ),
+      periodPolicy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_policy'],
+      )!,
+      periodKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_key'],
+      )!,
+      periodTimezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_timezone_id'],
+      ),
+      periodStartAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}period_start_at_utc_ms'],
+      )!,
+      periodEndAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}period_end_at_utc_ms'],
+      ),
+      deadlineAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deadline_at_utc_ms'],
+      ),
+      isCanonical: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_canonical'],
+      )!,
+      definitionSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}definition_snapshot_json'],
+      ),
     );
   }
 
@@ -25120,6 +26814,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
   final String state;
   final int? completedAtUtcMs;
   final int? expiredAtUtcMs;
+  final String periodPolicy;
+  final String periodKey;
+  final String? periodTimezoneId;
+  final int periodStartAtUtcMs;
+  final int? periodEndAtUtcMs;
+  final int? deadlineAtUtcMs;
+  final bool isCanonical;
+  final String? definitionSnapshotJson;
   const QuestInstance({
     required this.instanceId,
     required this.questId,
@@ -25129,6 +26831,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     required this.state,
     this.completedAtUtcMs,
     this.expiredAtUtcMs,
+    required this.periodPolicy,
+    required this.periodKey,
+    this.periodTimezoneId,
+    required this.periodStartAtUtcMs,
+    this.periodEndAtUtcMs,
+    this.deadlineAtUtcMs,
+    required this.isCanonical,
+    this.definitionSnapshotJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -25144,6 +26854,24 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     }
     if (!nullToAbsent || expiredAtUtcMs != null) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs);
+    }
+    map['period_policy'] = Variable<String>(periodPolicy);
+    map['period_key'] = Variable<String>(periodKey);
+    if (!nullToAbsent || periodTimezoneId != null) {
+      map['period_timezone_id'] = Variable<String>(periodTimezoneId);
+    }
+    map['period_start_at_utc_ms'] = Variable<int>(periodStartAtUtcMs);
+    if (!nullToAbsent || periodEndAtUtcMs != null) {
+      map['period_end_at_utc_ms'] = Variable<int>(periodEndAtUtcMs);
+    }
+    if (!nullToAbsent || deadlineAtUtcMs != null) {
+      map['deadline_at_utc_ms'] = Variable<int>(deadlineAtUtcMs);
+    }
+    map['is_canonical'] = Variable<bool>(isCanonical);
+    if (!nullToAbsent || definitionSnapshotJson != null) {
+      map['definition_snapshot_json'] = Variable<String>(
+        definitionSnapshotJson,
+      );
     }
     return map;
   }
@@ -25162,6 +26890,22 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: expiredAtUtcMs == null && nullToAbsent
           ? const Value.absent()
           : Value(expiredAtUtcMs),
+      periodPolicy: Value(periodPolicy),
+      periodKey: Value(periodKey),
+      periodTimezoneId: periodTimezoneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodTimezoneId),
+      periodStartAtUtcMs: Value(periodStartAtUtcMs),
+      periodEndAtUtcMs: periodEndAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodEndAtUtcMs),
+      deadlineAtUtcMs: deadlineAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadlineAtUtcMs),
+      isCanonical: Value(isCanonical),
+      definitionSnapshotJson: definitionSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(definitionSnapshotJson),
     );
   }
 
@@ -25179,6 +26923,16 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       state: serializer.fromJson<String>(json['state']),
       completedAtUtcMs: serializer.fromJson<int?>(json['completedAtUtcMs']),
       expiredAtUtcMs: serializer.fromJson<int?>(json['expiredAtUtcMs']),
+      periodPolicy: serializer.fromJson<String>(json['periodPolicy']),
+      periodKey: serializer.fromJson<String>(json['periodKey']),
+      periodTimezoneId: serializer.fromJson<String?>(json['periodTimezoneId']),
+      periodStartAtUtcMs: serializer.fromJson<int>(json['periodStartAtUtcMs']),
+      periodEndAtUtcMs: serializer.fromJson<int?>(json['periodEndAtUtcMs']),
+      deadlineAtUtcMs: serializer.fromJson<int?>(json['deadlineAtUtcMs']),
+      isCanonical: serializer.fromJson<bool>(json['isCanonical']),
+      definitionSnapshotJson: serializer.fromJson<String?>(
+        json['definitionSnapshotJson'],
+      ),
     );
   }
   @override
@@ -25193,6 +26947,16 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       'state': serializer.toJson<String>(state),
       'completedAtUtcMs': serializer.toJson<int?>(completedAtUtcMs),
       'expiredAtUtcMs': serializer.toJson<int?>(expiredAtUtcMs),
+      'periodPolicy': serializer.toJson<String>(periodPolicy),
+      'periodKey': serializer.toJson<String>(periodKey),
+      'periodTimezoneId': serializer.toJson<String?>(periodTimezoneId),
+      'periodStartAtUtcMs': serializer.toJson<int>(periodStartAtUtcMs),
+      'periodEndAtUtcMs': serializer.toJson<int?>(periodEndAtUtcMs),
+      'deadlineAtUtcMs': serializer.toJson<int?>(deadlineAtUtcMs),
+      'isCanonical': serializer.toJson<bool>(isCanonical),
+      'definitionSnapshotJson': serializer.toJson<String?>(
+        definitionSnapshotJson,
+      ),
     };
   }
 
@@ -25205,6 +26969,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     String? state,
     Value<int?> completedAtUtcMs = const Value.absent(),
     Value<int?> expiredAtUtcMs = const Value.absent(),
+    String? periodPolicy,
+    String? periodKey,
+    Value<String?> periodTimezoneId = const Value.absent(),
+    int? periodStartAtUtcMs,
+    Value<int?> periodEndAtUtcMs = const Value.absent(),
+    Value<int?> deadlineAtUtcMs = const Value.absent(),
+    bool? isCanonical,
+    Value<String?> definitionSnapshotJson = const Value.absent(),
   }) => QuestInstance(
     instanceId: instanceId ?? this.instanceId,
     questId: questId ?? this.questId,
@@ -25218,6 +26990,22 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     expiredAtUtcMs: expiredAtUtcMs.present
         ? expiredAtUtcMs.value
         : this.expiredAtUtcMs,
+    periodPolicy: periodPolicy ?? this.periodPolicy,
+    periodKey: periodKey ?? this.periodKey,
+    periodTimezoneId: periodTimezoneId.present
+        ? periodTimezoneId.value
+        : this.periodTimezoneId,
+    periodStartAtUtcMs: periodStartAtUtcMs ?? this.periodStartAtUtcMs,
+    periodEndAtUtcMs: periodEndAtUtcMs.present
+        ? periodEndAtUtcMs.value
+        : this.periodEndAtUtcMs,
+    deadlineAtUtcMs: deadlineAtUtcMs.present
+        ? deadlineAtUtcMs.value
+        : this.deadlineAtUtcMs,
+    isCanonical: isCanonical ?? this.isCanonical,
+    definitionSnapshotJson: definitionSnapshotJson.present
+        ? definitionSnapshotJson.value
+        : this.definitionSnapshotJson,
   );
   QuestInstance copyWithCompanion(QuestInstancesCompanion data) {
     return QuestInstance(
@@ -25239,6 +27027,28 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
       expiredAtUtcMs: data.expiredAtUtcMs.present
           ? data.expiredAtUtcMs.value
           : this.expiredAtUtcMs,
+      periodPolicy: data.periodPolicy.present
+          ? data.periodPolicy.value
+          : this.periodPolicy,
+      periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      periodTimezoneId: data.periodTimezoneId.present
+          ? data.periodTimezoneId.value
+          : this.periodTimezoneId,
+      periodStartAtUtcMs: data.periodStartAtUtcMs.present
+          ? data.periodStartAtUtcMs.value
+          : this.periodStartAtUtcMs,
+      periodEndAtUtcMs: data.periodEndAtUtcMs.present
+          ? data.periodEndAtUtcMs.value
+          : this.periodEndAtUtcMs,
+      deadlineAtUtcMs: data.deadlineAtUtcMs.present
+          ? data.deadlineAtUtcMs.value
+          : this.deadlineAtUtcMs,
+      isCanonical: data.isCanonical.present
+          ? data.isCanonical.value
+          : this.isCanonical,
+      definitionSnapshotJson: data.definitionSnapshotJson.present
+          ? data.definitionSnapshotJson.value
+          : this.definitionSnapshotJson,
     );
   }
 
@@ -25252,7 +27062,15 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
-          ..write('expiredAtUtcMs: $expiredAtUtcMs')
+          ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('periodPolicy: $periodPolicy, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('periodTimezoneId: $periodTimezoneId, ')
+          ..write('periodStartAtUtcMs: $periodStartAtUtcMs, ')
+          ..write('periodEndAtUtcMs: $periodEndAtUtcMs, ')
+          ..write('deadlineAtUtcMs: $deadlineAtUtcMs, ')
+          ..write('isCanonical: $isCanonical, ')
+          ..write('definitionSnapshotJson: $definitionSnapshotJson')
           ..write(')'))
         .toString();
   }
@@ -25267,6 +27085,14 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
     state,
     completedAtUtcMs,
     expiredAtUtcMs,
+    periodPolicy,
+    periodKey,
+    periodTimezoneId,
+    periodStartAtUtcMs,
+    periodEndAtUtcMs,
+    deadlineAtUtcMs,
+    isCanonical,
+    definitionSnapshotJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -25279,7 +27105,15 @@ class QuestInstance extends DataClass implements Insertable<QuestInstance> {
           other.assignedAtUtcMs == this.assignedAtUtcMs &&
           other.state == this.state &&
           other.completedAtUtcMs == this.completedAtUtcMs &&
-          other.expiredAtUtcMs == this.expiredAtUtcMs);
+          other.expiredAtUtcMs == this.expiredAtUtcMs &&
+          other.periodPolicy == this.periodPolicy &&
+          other.periodKey == this.periodKey &&
+          other.periodTimezoneId == this.periodTimezoneId &&
+          other.periodStartAtUtcMs == this.periodStartAtUtcMs &&
+          other.periodEndAtUtcMs == this.periodEndAtUtcMs &&
+          other.deadlineAtUtcMs == this.deadlineAtUtcMs &&
+          other.isCanonical == this.isCanonical &&
+          other.definitionSnapshotJson == this.definitionSnapshotJson);
 }
 
 class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
@@ -25291,6 +27125,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
   final Value<String> state;
   final Value<int?> completedAtUtcMs;
   final Value<int?> expiredAtUtcMs;
+  final Value<String> periodPolicy;
+  final Value<String> periodKey;
+  final Value<String?> periodTimezoneId;
+  final Value<int> periodStartAtUtcMs;
+  final Value<int?> periodEndAtUtcMs;
+  final Value<int?> deadlineAtUtcMs;
+  final Value<bool> isCanonical;
+  final Value<String?> definitionSnapshotJson;
   final Value<int> rowid;
   const QuestInstancesCompanion({
     this.instanceId = const Value.absent(),
@@ -25301,6 +27143,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     this.state = const Value.absent(),
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.periodPolicy = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.periodTimezoneId = const Value.absent(),
+    this.periodStartAtUtcMs = const Value.absent(),
+    this.periodEndAtUtcMs = const Value.absent(),
+    this.deadlineAtUtcMs = const Value.absent(),
+    this.isCanonical = const Value.absent(),
+    this.definitionSnapshotJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuestInstancesCompanion.insert({
@@ -25312,6 +27162,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     required String state,
     this.completedAtUtcMs = const Value.absent(),
     this.expiredAtUtcMs = const Value.absent(),
+    this.periodPolicy = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.periodTimezoneId = const Value.absent(),
+    this.periodStartAtUtcMs = const Value.absent(),
+    this.periodEndAtUtcMs = const Value.absent(),
+    this.deadlineAtUtcMs = const Value.absent(),
+    this.isCanonical = const Value.absent(),
+    this.definitionSnapshotJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : instanceId = Value(instanceId),
        questId = Value(questId),
@@ -25328,6 +27186,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Expression<String>? state,
     Expression<int>? completedAtUtcMs,
     Expression<int>? expiredAtUtcMs,
+    Expression<String>? periodPolicy,
+    Expression<String>? periodKey,
+    Expression<String>? periodTimezoneId,
+    Expression<int>? periodStartAtUtcMs,
+    Expression<int>? periodEndAtUtcMs,
+    Expression<int>? deadlineAtUtcMs,
+    Expression<bool>? isCanonical,
+    Expression<String>? definitionSnapshotJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -25339,6 +27205,16 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       if (state != null) 'state': state,
       if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
       if (expiredAtUtcMs != null) 'expired_at_utc_ms': expiredAtUtcMs,
+      if (periodPolicy != null) 'period_policy': periodPolicy,
+      if (periodKey != null) 'period_key': periodKey,
+      if (periodTimezoneId != null) 'period_timezone_id': periodTimezoneId,
+      if (periodStartAtUtcMs != null)
+        'period_start_at_utc_ms': periodStartAtUtcMs,
+      if (periodEndAtUtcMs != null) 'period_end_at_utc_ms': periodEndAtUtcMs,
+      if (deadlineAtUtcMs != null) 'deadline_at_utc_ms': deadlineAtUtcMs,
+      if (isCanonical != null) 'is_canonical': isCanonical,
+      if (definitionSnapshotJson != null)
+        'definition_snapshot_json': definitionSnapshotJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -25352,6 +27228,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     Value<String>? state,
     Value<int?>? completedAtUtcMs,
     Value<int?>? expiredAtUtcMs,
+    Value<String>? periodPolicy,
+    Value<String>? periodKey,
+    Value<String?>? periodTimezoneId,
+    Value<int>? periodStartAtUtcMs,
+    Value<int?>? periodEndAtUtcMs,
+    Value<int?>? deadlineAtUtcMs,
+    Value<bool>? isCanonical,
+    Value<String?>? definitionSnapshotJson,
     Value<int>? rowid,
   }) {
     return QuestInstancesCompanion(
@@ -25363,6 +27247,15 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
       state: state ?? this.state,
       completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
       expiredAtUtcMs: expiredAtUtcMs ?? this.expiredAtUtcMs,
+      periodPolicy: periodPolicy ?? this.periodPolicy,
+      periodKey: periodKey ?? this.periodKey,
+      periodTimezoneId: periodTimezoneId ?? this.periodTimezoneId,
+      periodStartAtUtcMs: periodStartAtUtcMs ?? this.periodStartAtUtcMs,
+      periodEndAtUtcMs: periodEndAtUtcMs ?? this.periodEndAtUtcMs,
+      deadlineAtUtcMs: deadlineAtUtcMs ?? this.deadlineAtUtcMs,
+      isCanonical: isCanonical ?? this.isCanonical,
+      definitionSnapshotJson:
+          definitionSnapshotJson ?? this.definitionSnapshotJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -25394,6 +27287,32 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
     if (expiredAtUtcMs.present) {
       map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs.value);
     }
+    if (periodPolicy.present) {
+      map['period_policy'] = Variable<String>(periodPolicy.value);
+    }
+    if (periodKey.present) {
+      map['period_key'] = Variable<String>(periodKey.value);
+    }
+    if (periodTimezoneId.present) {
+      map['period_timezone_id'] = Variable<String>(periodTimezoneId.value);
+    }
+    if (periodStartAtUtcMs.present) {
+      map['period_start_at_utc_ms'] = Variable<int>(periodStartAtUtcMs.value);
+    }
+    if (periodEndAtUtcMs.present) {
+      map['period_end_at_utc_ms'] = Variable<int>(periodEndAtUtcMs.value);
+    }
+    if (deadlineAtUtcMs.present) {
+      map['deadline_at_utc_ms'] = Variable<int>(deadlineAtUtcMs.value);
+    }
+    if (isCanonical.present) {
+      map['is_canonical'] = Variable<bool>(isCanonical.value);
+    }
+    if (definitionSnapshotJson.present) {
+      map['definition_snapshot_json'] = Variable<String>(
+        definitionSnapshotJson.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -25411,6 +27330,14 @@ class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
           ..write('state: $state, ')
           ..write('completedAtUtcMs: $completedAtUtcMs, ')
           ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('periodPolicy: $periodPolicy, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('periodTimezoneId: $periodTimezoneId, ')
+          ..write('periodStartAtUtcMs: $periodStartAtUtcMs, ')
+          ..write('periodEndAtUtcMs: $periodEndAtUtcMs, ')
+          ..write('deadlineAtUtcMs: $deadlineAtUtcMs, ')
+          ..write('isCanonical: $isCanonical, ')
+          ..write('definitionSnapshotJson: $definitionSnapshotJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -34577,6 +36504,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ResearchParticipationPermitsTable(this);
   late final $MeasurementOpportunitiesTable measurementOpportunities =
       $MeasurementOpportunitiesTable(this);
+  late final $ResearchSessionProofsTable researchSessionProofs =
+      $ResearchSessionProofsTable(this);
   late final $VocabularyCategoriesTable vocabularyCategories =
       $VocabularyCategoriesTable(this);
   late final $VocabularyWordsTable vocabularyWords = $VocabularyWordsTable(
@@ -34660,6 +36589,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     motivationResponses,
     researchParticipationPermits,
     measurementOpportunities,
+    researchSessionProofs,
     vocabularyCategories,
     vocabularyWords,
     vocabularyImports,
@@ -34751,6 +36681,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('measurement_opportunities', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_owners',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('research_session_proofs', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -35014,6 +36951,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _measurementOpportunitiesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ResearchSessionProofsTable,
+    List<ResearchSessionProofRow>
+  >
+  _researchSessionProofsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.researchSessionProofs,
+        aliasName: 'local_owners__id__research_session_proofs__owner_id',
+      );
+
+  $$ResearchSessionProofsTableProcessedTableManager
+  get researchSessionProofsRefs {
+    final manager = $$ResearchSessionProofsTableTableManager(
+      $_db,
+      $_db.researchSessionProofs,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _researchSessionProofsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -35883,6 +37845,32 @@ class $$LocalOwnersTableFilterComposer
               }) => $$MeasurementOpportunitiesTableFilterComposer(
                 $db: $db,
                 $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> researchSessionProofsRefs(
+    Expression<bool> Function($$ResearchSessionProofsTableFilterComposer f) f,
+  ) {
+    final $$ResearchSessionProofsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -36932,6 +38920,32 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> researchSessionProofsRefs<T extends Object>(
+    Expression<T> Function($$ResearchSessionProofsTableAnnotationComposer a) f,
+  ) {
+    final $$ResearchSessionProofsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> vocabularyCategoriesRefs<T extends Object>(
     Expression<T> Function($$VocabularyCategoriesTableAnnotationComposer a) f,
   ) {
@@ -37720,6 +39734,7 @@ class $$LocalOwnersTableTableManager
             bool motivationResponsesRefs,
             bool researchParticipationPermitsRefs,
             bool measurementOpportunitiesRefs,
+            bool researchSessionProofsRefs,
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
             bool vocabularyImportsRefs,
@@ -37817,6 +39832,7 @@ class $$LocalOwnersTableTableManager
                 motivationResponsesRefs = false,
                 researchParticipationPermitsRefs = false,
                 measurementOpportunitiesRefs = false,
+                researchSessionProofsRefs = false,
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
                 vocabularyImportsRefs = false,
@@ -37862,6 +39878,7 @@ class $$LocalOwnersTableTableManager
                       db.researchParticipationPermits,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (researchSessionProofsRefs) db.researchSessionProofs,
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
@@ -38058,6 +40075,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).measurementOpportunitiesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (researchSessionProofsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ResearchSessionProofRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._researchSessionProofsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).researchSessionProofsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -38723,6 +40761,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool motivationResponsesRefs,
         bool researchParticipationPermitsRefs,
         bool measurementOpportunitiesRefs,
+        bool researchSessionProofsRefs,
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
         bool vocabularyImportsRefs,
@@ -39897,36 +41936,6 @@ final class $$LearningSessionsTableReferences
     );
   }
 
-  static MultiTypedResultKey<
-    $MeasurementOpportunitiesTable,
-    List<MeasurementOpportunityRow>
-  >
-  _measurementOpportunitiesRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.measurementOpportunities,
-    aliasName:
-        'learning_sessions__id__measurement_opportunities__learning_session_id',
-  );
-
-  $$MeasurementOpportunitiesTableProcessedTableManager
-  get measurementOpportunitiesRefs {
-    final manager =
-        $$MeasurementOpportunitiesTableTableManager(
-          $_db,
-          $_db.measurementOpportunities,
-        ).filter(
-          (f) => f.learningSessionId.id.sqlEquals($_itemColumn<String>('id')!),
-        );
-
-    final cache = $_typedResult.readTableOrNull(
-      _measurementOpportunitiesRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
   static MultiTypedResultKey<$AnswerAttemptsTable, List<AnswerAttempt>>
   _answerAttemptsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.answerAttempts,
@@ -40108,33 +42117,6 @@ class $$LearningSessionsTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
-    return f(composer);
-  }
-
-  Expression<bool> measurementOpportunitiesRefs(
-    Expression<bool> Function($$MeasurementOpportunitiesTableFilterComposer f)
-    f,
-  ) {
-    final $$MeasurementOpportunitiesTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.measurementOpportunities,
-          getReferencedColumn: (t) => t.learningSessionId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$MeasurementOpportunitiesTableFilterComposer(
-                $db: $db,
-                $table: $db.measurementOpportunities,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
     return f(composer);
   }
 
@@ -40428,33 +42410,6 @@ class $$LearningSessionsTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> measurementOpportunitiesRefs<T extends Object>(
-    Expression<T> Function($$MeasurementOpportunitiesTableAnnotationComposer a)
-    f,
-  ) {
-    final $$MeasurementOpportunitiesTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.measurementOpportunities,
-          getReferencedColumn: (t) => t.learningSessionId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$MeasurementOpportunitiesTableAnnotationComposer(
-                $db: $db,
-                $table: $db.measurementOpportunities,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
   Expression<T> answerAttemptsRefs<T extends Object>(
     Expression<T> Function($$AnswerAttemptsTableAnnotationComposer a) f,
   ) {
@@ -40548,7 +42503,6 @@ class $$LearningSessionsTableTableManager
           PrefetchHooks Function({
             bool ownerId,
             bool assessmentRunsRefs,
-            bool measurementOpportunitiesRefs,
             bool answerAttemptsRefs,
             bool speechEvidenceRefs,
             bool learningTimeSegmentsRefs,
@@ -40649,7 +42603,6 @@ class $$LearningSessionsTableTableManager
               ({
                 ownerId = false,
                 assessmentRunsRefs = false,
-                measurementOpportunitiesRefs = false,
                 answerAttemptsRefs = false,
                 speechEvidenceRefs = false,
                 learningTimeSegmentsRefs = false,
@@ -40658,8 +42611,6 @@ class $$LearningSessionsTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (assessmentRunsRefs) db.assessmentRuns,
-                    if (measurementOpportunitiesRefs)
-                      db.measurementOpportunities,
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (speechEvidenceRefs) db.speechEvidence,
                     if (learningTimeSegmentsRefs) db.learningTimeSegments,
@@ -40715,27 +42666,6 @@ class $$LearningSessionsTableTableManager
                                 table,
                                 p0,
                               ).assessmentRunsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.learningSessionId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (measurementOpportunitiesRefs)
-                        await $_getPrefetchedData<
-                          LearningSession,
-                          $LearningSessionsTable,
-                          MeasurementOpportunityRow
-                        >(
-                          currentTable: table,
-                          referencedTable: $$LearningSessionsTableReferences
-                              ._measurementOpportunitiesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$LearningSessionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).measurementOpportunitiesRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.learningSessionId == item.id,
@@ -40828,7 +42758,6 @@ typedef $$LearningSessionsTableProcessedTableManager =
       PrefetchHooks Function({
         bool ownerId,
         bool assessmentRunsRefs,
-        bool measurementOpportunitiesRefs,
         bool answerAttemptsRefs,
         bool speechEvidenceRefs,
         bool learningTimeSegmentsRefs,
@@ -42036,6 +43965,36 @@ final class $$MotivationMeasurementRunsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ResearchSessionProofsTable,
+    List<ResearchSessionProofRow>
+  >
+  _researchSessionProofsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.researchSessionProofs,
+    aliasName:
+        'motivation_measurement_runs__id__research_session_proofs__measurement_run_id',
+  );
+
+  $$ResearchSessionProofsTableProcessedTableManager
+  get researchSessionProofsRefs {
+    final manager =
+        $$ResearchSessionProofsTableTableManager(
+          $_db,
+          $_db.researchSessionProofs,
+        ).filter(
+          (f) => f.measurementRunId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _researchSessionProofsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$MotivationMeasurementRunsTableFilterComposer
@@ -42252,6 +44211,32 @@ class $$MotivationMeasurementRunsTableFilterComposer
               }) => $$MeasurementOpportunitiesTableFilterComposer(
                 $db: $db,
                 $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> researchSessionProofsRefs(
+    Expression<bool> Function($$ResearchSessionProofsTableFilterComposer f) f,
+  ) {
+    final $$ResearchSessionProofsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.measurementRunId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -42645,6 +44630,32 @@ class $$MotivationMeasurementRunsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> researchSessionProofsRefs<T extends Object>(
+    Expression<T> Function($$ResearchSessionProofsTableAnnotationComposer a) f,
+  ) {
+    final $$ResearchSessionProofsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.measurementRunId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$MotivationMeasurementRunsTableTableManager
@@ -42668,6 +44679,7 @@ class $$MotivationMeasurementRunsTableTableManager
             bool assignmentId,
             bool motivationResponsesRefs,
             bool measurementOpportunitiesRefs,
+            bool researchSessionProofsRefs,
           })
         > {
   $$MotivationMeasurementRunsTableTableManager(
@@ -42818,6 +44830,7 @@ class $$MotivationMeasurementRunsTableTableManager
                 assignmentId = false,
                 motivationResponsesRefs = false,
                 measurementOpportunitiesRefs = false,
+                researchSessionProofsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -42825,6 +44838,7 @@ class $$MotivationMeasurementRunsTableTableManager
                     if (motivationResponsesRefs) db.motivationResponses,
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (researchSessionProofsRefs) db.researchSessionProofs,
                   ],
                   addJoins:
                       <
@@ -42921,6 +44935,28 @@ class $$MotivationMeasurementRunsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (researchSessionProofsRefs)
+                        await $_getPrefetchedData<
+                          MotivationMeasurementRunRow,
+                          $MotivationMeasurementRunsTable,
+                          ResearchSessionProofRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$MotivationMeasurementRunsTableReferences
+                                  ._researchSessionProofsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MotivationMeasurementRunsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).researchSessionProofsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.measurementRunId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -42946,6 +44982,7 @@ typedef $$MotivationMeasurementRunsTableProcessedTableManager =
         bool assignmentId,
         bool motivationResponsesRefs,
         bool measurementOpportunitiesRefs,
+        bool researchSessionProofsRefs,
       })
     >;
 typedef $$MotivationResponsesTableCreateCompanionBuilder =
@@ -43676,6 +45713,33 @@ final class $$ResearchParticipationPermitsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ResearchSessionProofsTable,
+    List<ResearchSessionProofRow>
+  >
+  _researchSessionProofsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.researchSessionProofs,
+    aliasName:
+        'research_participation_permits__id__research_session_proofs__permit_id',
+  );
+
+  $$ResearchSessionProofsTableProcessedTableManager
+  get researchSessionProofsRefs {
+    final manager = $$ResearchSessionProofsTableTableManager(
+      $_db,
+      $_db.researchSessionProofs,
+    ).filter((f) => f.permitId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _researchSessionProofsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ResearchParticipationPermitsTableFilterComposer
@@ -43852,6 +45916,32 @@ class $$ResearchParticipationPermitsTableFilterComposer
               }) => $$MeasurementOpportunitiesTableFilterComposer(
                 $db: $db,
                 $table: $db.measurementOpportunities,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> researchSessionProofsRefs(
+    Expression<bool> Function($$ResearchSessionProofsTableFilterComposer f) f,
+  ) {
+    final $$ResearchSessionProofsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.permitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -44197,6 +46287,32 @@ class $$ResearchParticipationPermitsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> researchSessionProofsRefs<T extends Object>(
+    Expression<T> Function($$ResearchSessionProofsTableAnnotationComposer a) f,
+  ) {
+    final $$ResearchSessionProofsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.researchSessionProofs,
+          getReferencedColumn: (t) => t.permitId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchSessionProofsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchSessionProofs,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ResearchParticipationPermitsTableTableManager
@@ -44219,6 +46335,7 @@ class $$ResearchParticipationPermitsTableTableManager
             bool ownerId,
             bool assignmentId,
             bool measurementOpportunitiesRefs,
+            bool researchSessionProofsRefs,
           })
         > {
   $$ResearchParticipationPermitsTableTableManager(
@@ -44358,12 +46475,14 @@ class $$ResearchParticipationPermitsTableTableManager
                 ownerId = false,
                 assignmentId = false,
                 measurementOpportunitiesRefs = false,
+                researchSessionProofsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (measurementOpportunitiesRefs)
                       db.measurementOpportunities,
+                    if (researchSessionProofsRefs) db.researchSessionProofs,
                   ],
                   addJoins:
                       <
@@ -44438,6 +46557,28 @@ class $$ResearchParticipationPermitsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (researchSessionProofsRefs)
+                        await $_getPrefetchedData<
+                          ResearchParticipationPermitRow,
+                          $ResearchParticipationPermitsTable,
+                          ResearchSessionProofRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$ResearchParticipationPermitsTableReferences
+                                  ._researchSessionProofsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ResearchParticipationPermitsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).researchSessionProofsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.permitId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -44465,6 +46606,7 @@ typedef $$ResearchParticipationPermitsTableProcessedTableManager =
         bool ownerId,
         bool assignmentId,
         bool measurementOpportunitiesRefs,
+        bool researchSessionProofsRefs,
       })
     >;
 typedef $$MeasurementOpportunitiesTableCreateCompanionBuilder =
@@ -44585,25 +46727,6 @@ final class $$MeasurementOpportunitiesTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
-
-  static $LearningSessionsTable _learningSessionIdTable(_$AppDatabase db) =>
-      db.learningSessions.createAlias(
-        'measurement_opportunities__learning_session_id__learning_sessions__id',
-      );
-
-  $$LearningSessionsTableProcessedTableManager? get learningSessionId {
-    final $_column = $_itemColumn<String>('learning_session_id');
-    if ($_column == null) return null;
-    final manager = $$LearningSessionsTableTableManager(
-      $_db,
-      $_db.learningSessions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_learningSessionIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
 }
 
 class $$MeasurementOpportunitiesTableFilterComposer
@@ -44662,6 +46785,11 @@ class $$MeasurementOpportunitiesTableFilterComposer
 
   ColumnFilters<String> get presentedEventId => $composableBuilder(
     column: $table.presentedEventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -44765,29 +46893,6 @@ class $$MeasurementOpportunitiesTableFilterComposer
         );
     return composer;
   }
-
-  $$LearningSessionsTableFilterComposer get learningSessionId {
-    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.learningSessionId,
-      referencedTable: $db.learningSessions,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LearningSessionsTableFilterComposer(
-            $db: $db,
-            $table: $db.learningSessions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MeasurementOpportunitiesTableOrderingComposer
@@ -44846,6 +46951,11 @@ class $$MeasurementOpportunitiesTableOrderingComposer
 
   ColumnOrderings<String> get presentedEventId => $composableBuilder(
     column: $table.presentedEventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -44949,29 +47059,6 @@ class $$MeasurementOpportunitiesTableOrderingComposer
         );
     return composer;
   }
-
-  $$LearningSessionsTableOrderingComposer get learningSessionId {
-    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.learningSessionId,
-      referencedTable: $db.learningSessions,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LearningSessionsTableOrderingComposer(
-            $db: $db,
-            $table: $db.learningSessions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MeasurementOpportunitiesTableAnnotationComposer
@@ -45026,6 +47113,11 @@ class $$MeasurementOpportunitiesTableAnnotationComposer
 
   GeneratedColumn<String> get presentedEventId => $composableBuilder(
     column: $table.presentedEventId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
     builder: (column) => column,
   );
 
@@ -45129,29 +47221,6 @@ class $$MeasurementOpportunitiesTableAnnotationComposer
         );
     return composer;
   }
-
-  $$LearningSessionsTableAnnotationComposer get learningSessionId {
-    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.learningSessionId,
-      referencedTable: $db.learningSessions,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$LearningSessionsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.learningSessions,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
 }
 
 class $$MeasurementOpportunitiesTableTableManager
@@ -45174,7 +47243,6 @@ class $$MeasurementOpportunitiesTableTableManager
             bool ownerId,
             bool measurementRunId,
             bool permitId,
-            bool learningSessionId,
           })
         > {
   $$MeasurementOpportunitiesTableTableManager(
@@ -45300,12 +47368,7 @@ class $$MeasurementOpportunitiesTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({
-                ownerId = false,
-                measurementRunId = false,
-                permitId = false,
-                learningSessionId = false,
-              }) {
+              ({ownerId = false, measurementRunId = false, permitId = false}) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [],
@@ -45370,21 +47433,6 @@ class $$MeasurementOpportunitiesTableTableManager
                                   )
                                   as T;
                         }
-                        if (learningSessionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.learningSessionId,
-                                    referencedTable:
-                                        $$MeasurementOpportunitiesTableReferences
-                                            ._learningSessionIdTable(db),
-                                    referencedColumn:
-                                        $$MeasurementOpportunitiesTableReferences
-                                            ._learningSessionIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
 
                         return state;
                       },
@@ -45413,7 +47461,943 @@ typedef $$MeasurementOpportunitiesTableProcessedTableManager =
         bool ownerId,
         bool measurementRunId,
         bool permitId,
-        bool learningSessionId,
+      })
+    >;
+typedef $$ResearchSessionProofsTableCreateCompanionBuilder =
+    ResearchSessionProofsCompanion Function({
+      required String id,
+      required String ownerId,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      required String measurementRunId,
+      required String permitId,
+      required String learningSessionId,
+      required int proofRevision,
+      required String activityType,
+      required String sessionState,
+      required int startedAtUtcMs,
+      Value<int?> endedAtUtcMs,
+      required String appVersion,
+      required String buildId,
+      Value<String?> sessionConfigurationIdentity,
+      Value<String?> sessionConfigurationJson,
+      Value<String?> pairStartOperation,
+      Value<int?> pairCheckpointEventVersion,
+      Value<String?> pairOwnerLineageJson,
+      required String permitPayloadSha256,
+      required int permitRevision,
+      Value<int> rowid,
+    });
+typedef $$ResearchSessionProofsTableUpdateCompanionBuilder =
+    ResearchSessionProofsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<String> measurementRunId,
+      Value<String> permitId,
+      Value<String> learningSessionId,
+      Value<int> proofRevision,
+      Value<String> activityType,
+      Value<String> sessionState,
+      Value<int> startedAtUtcMs,
+      Value<int?> endedAtUtcMs,
+      Value<String> appVersion,
+      Value<String> buildId,
+      Value<String?> sessionConfigurationIdentity,
+      Value<String?> sessionConfigurationJson,
+      Value<String?> pairStartOperation,
+      Value<int?> pairCheckpointEventVersion,
+      Value<String?> pairOwnerLineageJson,
+      Value<String> permitPayloadSha256,
+      Value<int> permitRevision,
+      Value<int> rowid,
+    });
+
+final class $$ResearchSessionProofsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ResearchSessionProofsTable,
+          ResearchSessionProofRow
+        > {
+  $$ResearchSessionProofsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('research_session_proofs__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $MotivationMeasurementRunsTable _measurementRunIdTable(
+    _$AppDatabase db,
+  ) => db.motivationMeasurementRuns.createAlias(
+    'research_session_proofs__measurement_run_id__motivation_measurement_runs__id',
+  );
+
+  $$MotivationMeasurementRunsTableProcessedTableManager get measurementRunId {
+    final $_column = $_itemColumn<String>('measurement_run_id')!;
+
+    final manager = $$MotivationMeasurementRunsTableTableManager(
+      $_db,
+      $_db.motivationMeasurementRuns,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_measurementRunIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ResearchParticipationPermitsTable _permitIdTable(
+    _$AppDatabase db,
+  ) => db.researchParticipationPermits.createAlias(
+    'research_session_proofs__permit_id__research_participation_permits__id',
+  );
+
+  $$ResearchParticipationPermitsTableProcessedTableManager get permitId {
+    final $_column = $_itemColumn<String>('permit_id')!;
+
+    final manager = $$ResearchParticipationPermitsTableTableManager(
+      $_db,
+      $_db.researchParticipationPermits,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_permitIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ResearchSessionProofsTableFilterComposer
+    extends Composer<_$AppDatabase, $ResearchSessionProofsTable> {
+  $$ResearchSessionProofsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get proofRevision => $composableBuilder(
+    column: $table.proofRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionState => $composableBuilder(
+    column: $table.sessionState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionConfigurationIdentity => $composableBuilder(
+    column: $table.sessionConfigurationIdentity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pairStartOperation => $composableBuilder(
+    column: $table.pairStartOperation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pairCheckpointEventVersion => $composableBuilder(
+    column: $table.pairCheckpointEventVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pairOwnerLineageJson => $composableBuilder(
+    column: $table.pairOwnerLineageJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get permitPayloadSha256 => $composableBuilder(
+    column: $table.permitPayloadSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get permitRevision => $composableBuilder(
+    column: $table.permitRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableFilterComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableFilterComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableFilterComposer get permitId {
+    final $$ResearchParticipationPermitsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableFilterComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchSessionProofsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ResearchSessionProofsTable> {
+  $$ResearchSessionProofsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get proofRevision => $composableBuilder(
+    column: $table.proofRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionState => $composableBuilder(
+    column: $table.sessionState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionConfigurationIdentity =>
+      $composableBuilder(
+        column: $table.sessionConfigurationIdentity,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pairStartOperation => $composableBuilder(
+    column: $table.pairStartOperation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pairCheckpointEventVersion => $composableBuilder(
+    column: $table.pairCheckpointEventVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pairOwnerLineageJson => $composableBuilder(
+    column: $table.pairOwnerLineageJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permitPayloadSha256 => $composableBuilder(
+    column: $table.permitPayloadSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get permitRevision => $composableBuilder(
+    column: $table.permitRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableOrderingComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableOrderingComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableOrderingComposer get permitId {
+    final $$ResearchParticipationPermitsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableOrderingComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchSessionProofsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ResearchSessionProofsTable> {
+  $$ResearchSessionProofsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<String> get learningSessionId => $composableBuilder(
+    column: $table.learningSessionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get proofRevision => $composableBuilder(
+    column: $table.proofRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sessionState => $composableBuilder(
+    column: $table.sessionState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get buildId =>
+      $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionConfigurationIdentity =>
+      $composableBuilder(
+        column: $table.sessionConfigurationIdentity,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pairStartOperation => $composableBuilder(
+    column: $table.pairStartOperation,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pairCheckpointEventVersion => $composableBuilder(
+    column: $table.pairCheckpointEventVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pairOwnerLineageJson => $composableBuilder(
+    column: $table.pairOwnerLineageJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get permitPayloadSha256 => $composableBuilder(
+    column: $table.permitPayloadSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get permitRevision => $composableBuilder(
+    column: $table.permitRevision,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$MotivationMeasurementRunsTableAnnotationComposer get measurementRunId {
+    final $$MotivationMeasurementRunsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.measurementRunId,
+          referencedTable: $db.motivationMeasurementRuns,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MotivationMeasurementRunsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.motivationMeasurementRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  $$ResearchParticipationPermitsTableAnnotationComposer get permitId {
+    final $$ResearchParticipationPermitsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.permitId,
+          referencedTable: $db.researchParticipationPermits,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ResearchParticipationPermitsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.researchParticipationPermits,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ResearchSessionProofsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ResearchSessionProofsTable,
+          ResearchSessionProofRow,
+          $$ResearchSessionProofsTableFilterComposer,
+          $$ResearchSessionProofsTableOrderingComposer,
+          $$ResearchSessionProofsTableAnnotationComposer,
+          $$ResearchSessionProofsTableCreateCompanionBuilder,
+          $$ResearchSessionProofsTableUpdateCompanionBuilder,
+          (ResearchSessionProofRow, $$ResearchSessionProofsTableReferences),
+          ResearchSessionProofRow,
+          PrefetchHooks Function({
+            bool ownerId,
+            bool measurementRunId,
+            bool permitId,
+          })
+        > {
+  $$ResearchSessionProofsTableTableManager(
+    _$AppDatabase db,
+    $ResearchSessionProofsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ResearchSessionProofsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ResearchSessionProofsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ResearchSessionProofsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<String> measurementRunId = const Value.absent(),
+                Value<String> permitId = const Value.absent(),
+                Value<String> learningSessionId = const Value.absent(),
+                Value<int> proofRevision = const Value.absent(),
+                Value<String> activityType = const Value.absent(),
+                Value<String> sessionState = const Value.absent(),
+                Value<int> startedAtUtcMs = const Value.absent(),
+                Value<int?> endedAtUtcMs = const Value.absent(),
+                Value<String> appVersion = const Value.absent(),
+                Value<String> buildId = const Value.absent(),
+                Value<String?> sessionConfigurationIdentity =
+                    const Value.absent(),
+                Value<String?> sessionConfigurationJson = const Value.absent(),
+                Value<String?> pairStartOperation = const Value.absent(),
+                Value<int?> pairCheckpointEventVersion = const Value.absent(),
+                Value<String?> pairOwnerLineageJson = const Value.absent(),
+                Value<String> permitPayloadSha256 = const Value.absent(),
+                Value<int> permitRevision = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchSessionProofsCompanion(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                measurementRunId: measurementRunId,
+                permitId: permitId,
+                learningSessionId: learningSessionId,
+                proofRevision: proofRevision,
+                activityType: activityType,
+                sessionState: sessionState,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                appVersion: appVersion,
+                buildId: buildId,
+                sessionConfigurationIdentity: sessionConfigurationIdentity,
+                sessionConfigurationJson: sessionConfigurationJson,
+                pairStartOperation: pairStartOperation,
+                pairCheckpointEventVersion: pairCheckpointEventVersion,
+                pairOwnerLineageJson: pairOwnerLineageJson,
+                permitPayloadSha256: permitPayloadSha256,
+                permitRevision: permitRevision,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                required String measurementRunId,
+                required String permitId,
+                required String learningSessionId,
+                required int proofRevision,
+                required String activityType,
+                required String sessionState,
+                required int startedAtUtcMs,
+                Value<int?> endedAtUtcMs = const Value.absent(),
+                required String appVersion,
+                required String buildId,
+                Value<String?> sessionConfigurationIdentity =
+                    const Value.absent(),
+                Value<String?> sessionConfigurationJson = const Value.absent(),
+                Value<String?> pairStartOperation = const Value.absent(),
+                Value<int?> pairCheckpointEventVersion = const Value.absent(),
+                Value<String?> pairOwnerLineageJson = const Value.absent(),
+                required String permitPayloadSha256,
+                required int permitRevision,
+                Value<int> rowid = const Value.absent(),
+              }) => ResearchSessionProofsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                measurementRunId: measurementRunId,
+                permitId: permitId,
+                learningSessionId: learningSessionId,
+                proofRevision: proofRevision,
+                activityType: activityType,
+                sessionState: sessionState,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                appVersion: appVersion,
+                buildId: buildId,
+                sessionConfigurationIdentity: sessionConfigurationIdentity,
+                sessionConfigurationJson: sessionConfigurationJson,
+                pairStartOperation: pairStartOperation,
+                pairCheckpointEventVersion: pairCheckpointEventVersion,
+                pairOwnerLineageJson: pairOwnerLineageJson,
+                permitPayloadSha256: permitPayloadSha256,
+                permitRevision: permitRevision,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ResearchSessionProofsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, measurementRunId = false, permitId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (measurementRunId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.measurementRunId,
+                                    referencedTable:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._measurementRunIdTable(db),
+                                    referencedColumn:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._measurementRunIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (permitId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.permitId,
+                                    referencedTable:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._permitIdTable(db),
+                                    referencedColumn:
+                                        $$ResearchSessionProofsTableReferences
+                                            ._permitIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ResearchSessionProofsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ResearchSessionProofsTable,
+      ResearchSessionProofRow,
+      $$ResearchSessionProofsTableFilterComposer,
+      $$ResearchSessionProofsTableOrderingComposer,
+      $$ResearchSessionProofsTableAnnotationComposer,
+      $$ResearchSessionProofsTableCreateCompanionBuilder,
+      $$ResearchSessionProofsTableUpdateCompanionBuilder,
+      (ResearchSessionProofRow, $$ResearchSessionProofsTableReferences),
+      ResearchSessionProofRow,
+      PrefetchHooks Function({
+        bool ownerId,
+        bool measurementRunId,
+        bool permitId,
       })
     >;
 typedef $$VocabularyCategoriesTableCreateCompanionBuilder =
@@ -57358,6 +60342,14 @@ typedef $$QuestInstancesTableCreateCompanionBuilder =
       required String state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String> periodPolicy,
+      Value<String> periodKey,
+      Value<String?> periodTimezoneId,
+      Value<int> periodStartAtUtcMs,
+      Value<int?> periodEndAtUtcMs,
+      Value<int?> deadlineAtUtcMs,
+      Value<bool> isCanonical,
+      Value<String?> definitionSnapshotJson,
       Value<int> rowid,
     });
 typedef $$QuestInstancesTableUpdateCompanionBuilder =
@@ -57370,6 +60362,14 @@ typedef $$QuestInstancesTableUpdateCompanionBuilder =
       Value<String> state,
       Value<int?> completedAtUtcMs,
       Value<int?> expiredAtUtcMs,
+      Value<String> periodPolicy,
+      Value<String> periodKey,
+      Value<String?> periodTimezoneId,
+      Value<int> periodStartAtUtcMs,
+      Value<int?> periodEndAtUtcMs,
+      Value<int?> deadlineAtUtcMs,
+      Value<bool> isCanonical,
+      Value<String?> definitionSnapshotJson,
       Value<int> rowid,
     });
 
@@ -57488,6 +60488,46 @@ class $$QuestInstancesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get periodPolicy => $composableBuilder(
+    column: $table.periodPolicy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodTimezoneId => $composableBuilder(
+    column: $table.periodTimezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get periodStartAtUtcMs => $composableBuilder(
+    column: $table.periodStartAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get periodEndAtUtcMs => $composableBuilder(
+    column: $table.periodEndAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$QuestDefinitionsTableFilterComposer get questId {
     final $$QuestDefinitionsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -57600,6 +60640,46 @@ class $$QuestInstancesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get periodPolicy => $composableBuilder(
+    column: $table.periodPolicy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodTimezoneId => $composableBuilder(
+    column: $table.periodTimezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get periodStartAtUtcMs => $composableBuilder(
+    column: $table.periodStartAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get periodEndAtUtcMs => $composableBuilder(
+    column: $table.periodEndAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$QuestDefinitionsTableOrderingComposer get questId {
     final $$QuestDefinitionsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -57681,6 +60761,44 @@ class $$QuestInstancesTableAnnotationComposer
 
   GeneratedColumn<int> get expiredAtUtcMs => $composableBuilder(
     column: $table.expiredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get periodPolicy => $composableBuilder(
+    column: $table.periodPolicy,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get periodKey =>
+      $composableBuilder(column: $table.periodKey, builder: (column) => column);
+
+  GeneratedColumn<String> get periodTimezoneId => $composableBuilder(
+    column: $table.periodTimezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get periodStartAtUtcMs => $composableBuilder(
+    column: $table.periodStartAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get periodEndAtUtcMs => $composableBuilder(
+    column: $table.periodEndAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isCanonical => $composableBuilder(
+    column: $table.isCanonical,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get definitionSnapshotJson => $composableBuilder(
+    column: $table.definitionSnapshotJson,
     builder: (column) => column,
   );
 
@@ -57799,6 +60917,14 @@ class $$QuestInstancesTableTableManager
                 Value<String> state = const Value.absent(),
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String> periodPolicy = const Value.absent(),
+                Value<String> periodKey = const Value.absent(),
+                Value<String?> periodTimezoneId = const Value.absent(),
+                Value<int> periodStartAtUtcMs = const Value.absent(),
+                Value<int?> periodEndAtUtcMs = const Value.absent(),
+                Value<int?> deadlineAtUtcMs = const Value.absent(),
+                Value<bool> isCanonical = const Value.absent(),
+                Value<String?> definitionSnapshotJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion(
                 instanceId: instanceId,
@@ -57809,6 +60935,14 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                periodPolicy: periodPolicy,
+                periodKey: periodKey,
+                periodTimezoneId: periodTimezoneId,
+                periodStartAtUtcMs: periodStartAtUtcMs,
+                periodEndAtUtcMs: periodEndAtUtcMs,
+                deadlineAtUtcMs: deadlineAtUtcMs,
+                isCanonical: isCanonical,
+                definitionSnapshotJson: definitionSnapshotJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -57821,6 +60955,14 @@ class $$QuestInstancesTableTableManager
                 required String state,
                 Value<int?> completedAtUtcMs = const Value.absent(),
                 Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<String> periodPolicy = const Value.absent(),
+                Value<String> periodKey = const Value.absent(),
+                Value<String?> periodTimezoneId = const Value.absent(),
+                Value<int> periodStartAtUtcMs = const Value.absent(),
+                Value<int?> periodEndAtUtcMs = const Value.absent(),
+                Value<int?> deadlineAtUtcMs = const Value.absent(),
+                Value<bool> isCanonical = const Value.absent(),
+                Value<String?> definitionSnapshotJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestInstancesCompanion.insert(
                 instanceId: instanceId,
@@ -57831,6 +60973,14 @@ class $$QuestInstancesTableTableManager
                 state: state,
                 completedAtUtcMs: completedAtUtcMs,
                 expiredAtUtcMs: expiredAtUtcMs,
+                periodPolicy: periodPolicy,
+                periodKey: periodKey,
+                periodTimezoneId: periodTimezoneId,
+                periodStartAtUtcMs: periodStartAtUtcMs,
+                periodEndAtUtcMs: periodEndAtUtcMs,
+                deadlineAtUtcMs: deadlineAtUtcMs,
+                isCanonical: isCanonical,
+                definitionSnapshotJson: definitionSnapshotJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -64357,6 +67507,8 @@ class $AppDatabaseManager {
         _db,
         _db.measurementOpportunities,
       );
+  $$ResearchSessionProofsTableTableManager get researchSessionProofs =>
+      $$ResearchSessionProofsTableTableManager(_db, _db.researchSessionProofs);
   $$VocabularyCategoriesTableTableManager get vocabularyCategories =>
       $$VocabularyCategoriesTableTableManager(_db, _db.vocabularyCategories);
   $$VocabularyWordsTableTableManager get vocabularyWords =>

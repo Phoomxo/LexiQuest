@@ -172,7 +172,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gemini BYOK')),
+      appBar: AppBar(title: const Text('ตั้งค่ากุญแจ Gemini')),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())

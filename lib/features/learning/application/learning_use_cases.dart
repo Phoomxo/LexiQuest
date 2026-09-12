@@ -11,6 +11,7 @@ import '../domain/contrastive_explanation.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
+import '../domain/associative_reading_checkpoint.dart';
 import '../domain/learning_repository.dart';
 import '../domain/session_configuration.dart';
 
@@ -19,6 +20,8 @@ typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
 typedef LearningActivityInitialState =
     FutureOr<Map<String, Object?>> Function(QuizSession session);
+
+const int maxReviewDistractorCount = 20;
 
 /// Immutable response semantics captured by the UI before any provider wait.
 final class FrozenLearningEvidenceCommand {
@@ -230,6 +233,7 @@ final class PendingReadingProgress {
     required this.position,
     required this.isCompleted,
     required this.occurredAtUtc,
+    this.activityCheckpoint,
   });
 
   final LearningUseCases _learning;
@@ -239,6 +243,7 @@ final class PendingReadingProgress {
   final int position;
   final bool isCompleted;
   final DateTime occurredAtUtc;
+  final LearningActivityCheckpoint? activityCheckpoint;
 
   PendingReadingProgressStatus _status = PendingReadingProgressStatus.captured;
   String? _ownerId;
@@ -297,7 +302,10 @@ final class PendingReadingProgress {
         occurredAtUtc: occurredAtUtc,
       );
       _status = PendingReadingProgressStatus.writing;
-      final result = await _learning._saveCapturedReadingProgress(command);
+      final result = await _learning._saveCapturedReadingProgress(
+        command,
+        activityCheckpoint,
+      );
       _result = result;
       _status = PendingReadingProgressStatus.committed;
       return result;
@@ -339,6 +347,7 @@ final class LearningUseCases {
     EventV1ToV2Adapter? eventAdapter,
     LearningEventContextProvider? eventContextProvider,
     this.onSideEffectsPending,
+    this.beforeSessionStart,
   }) : eventAdapter =
            eventAdapter ??
            EventV1ToV2Adapter(
@@ -367,6 +376,23 @@ final class LearningUseCases {
 
   /// Schedules a bounded durable replay batch without delaying this answer.
   final void Function(String ownerId)? onSideEffectsPending;
+
+  /// Optional bounded scheduling boundary. Authority failures propagate;
+  /// recoverable scheduling availability is handled by the injected refresh.
+  final Future<void> Function(String expectedOwnerId)? beforeSessionStart;
+
+  Future<void> _beforeSessionAdmission(String expectedOwnerId) async {
+    final hook = beforeSessionStart;
+    if (hook == null) return;
+    await hook(expectedOwnerId);
+    await _requireAdmissionOwner(expectedOwnerId);
+  }
+
+  Future<void> _requireAdmissionOwner(String expectedOwnerId) async {
+    if ((await owners.getOrCreateActiveOwner()).id != expectedOwnerId) {
+      throw StateError('Learning session owner changed before admission.');
+    }
+  }
 
   Future<QuizSession> startQuiz({
     String? categoryId,
@@ -411,6 +437,7 @@ final class LearningUseCases {
     if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    await _beforeSessionAdmission(owner.id);
     final now = _now();
     if (now.millisecondsSinceEpoch < 0) {
       throw ArgumentError.value(
@@ -468,6 +495,7 @@ final class LearningUseCases {
         );
       }
     }
+    await _beforeSessionAdmission(canonicalOwnerId);
     final sessionId = _reviewSessionId();
     final now = _now();
     if (now.millisecondsSinceEpoch < 0) {
@@ -553,8 +581,10 @@ final class LearningUseCases {
     if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    await _beforeSessionAdmission(owner.id);
     final now = _now();
-    final sessionId = 'session:${_nextId()}';
+    final sessionId =
+        '${activity == 'associativeReading' ? 'reading' : 'session'}:${_nextId()}';
     final session = QuizSession(
       id: sessionId,
       ownerId: owner.id,
@@ -569,6 +599,7 @@ final class LearningUseCases {
       occurredAtUtc: now,
       state: await initialState(session),
     );
+    await _requireAdmissionOwner(owner.id);
     final draft = LearningSessionDraft(
       id: sessionId,
       ownerId: owner.id,
@@ -726,10 +757,10 @@ final class LearningUseCases {
       ownerId: owner.id,
       itemCount: limit,
     );
-    final now = _now();
+    final selectionTime = _now();
     final words = await repository.listDueWords(
       ownerId: owner.id,
-      nowUtc: now,
+      nowUtc: selectionTime,
       limit: limit,
     );
     if (words.isEmpty) {
@@ -738,6 +769,8 @@ final class LearningUseCases {
     if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    await _beforeSessionAdmission(owner.id);
+    final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
       LearningSessionDraft(
@@ -756,6 +789,42 @@ final class LearningUseCases {
       questions: _questions(words),
       startedAtUtc: now,
       sessionConfiguration: sessionConfiguration,
+    );
+  }
+
+  Future<List<QuizWord>> readReviewDistractors({
+    required String ownerId,
+    required Iterable<String> excludingWordIds,
+    int limit = maxReviewDistractorCount,
+  }) async {
+    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
+    if (limit < 1 || limit > maxReviewDistractorCount) {
+      throw RangeError.range(limit, 1, maxReviewDistractorCount, 'limit');
+    }
+    final before = await owners.getOrCreateActiveOwner();
+    if (before.id != canonicalOwnerId) {
+      throw StateError('Review distractor owner is no longer active.');
+    }
+    final excluded = excludingWordIds
+        .map((id) => _requiredId(id, 'wordId'))
+        .toSet();
+    if (excluded.length > 100) {
+      throw ArgumentError.value(
+        excludingWordIds,
+        'excludingWordIds',
+        'must contain at most 100 unique IDs',
+      );
+    }
+    final words = await repository.listQuizWords(
+      ownerId: canonicalOwnerId,
+      limit: 100,
+    );
+    final after = await owners.getOrCreateActiveOwner();
+    if (after.id != canonicalOwnerId) {
+      throw StateError('Review distractor owner changed during the read.');
+    }
+    return List<QuizWord>.unmodifiable(
+      words.where((word) => !excluded.contains(word.id)).take(limit),
     );
   }
 
@@ -779,6 +848,7 @@ final class LearningUseCases {
     if (selected.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    await _beforeSessionAdmission(owner.id);
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
@@ -802,11 +872,59 @@ final class LearningUseCases {
   Future<String> startAssociativeReadingSession() async =>
       (await startAssociativeReadingSessionHandle()).id;
 
+  Future<LearningActivityRecovery?> loadReadingRecovery(
+    AssociativeReadingCheckpoint content,
+  ) async {
+    final source = repository;
+    if (source is! AssociativeReadingRecoveryRepository) {
+      throw StateError('Reading recovery authority is unavailable');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    return (source as AssociativeReadingRecoveryRepository).loadReadingRecovery(
+      ownerId: owner.id,
+      content: content,
+    );
+  }
+
+  Future<void> revalidateReadingSessionOwner(String ownerId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != ownerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
+  }
+
   Future<LearningSessionHandle> startAssociativeReadingSessionHandle({
     SessionConfiguration? sessionConfiguration,
+    List<PinnedQuizContent>? pinnedContent,
+    LearningActivityInitialState? initialState,
   }) async {
+    if (pinnedContent != null && initialState != null) {
+      final session = await startCheckpointedQuiz(
+        activityType: 'associativeReading',
+        initialState: initialState,
+        pinnedContent: pinnedContent,
+        limit: pinnedContent.length,
+        sessionConfiguration: sessionConfiguration,
+      );
+      if (session.id.isEmpty ||
+          session.ownerId == null ||
+          session.startedAtUtc == null) {
+        throw StateError('Reading pinned content is unavailable');
+      }
+      return LearningSessionHandle(
+        id: session.id,
+        ownerId: session.ownerId!,
+        startedAtUtc: session.startedAtUtc!,
+      );
+    }
+    if (pinnedContent != null || initialState != null) {
+      throw StateError('Reading checkpoint authority is incomplete');
+    }
     final owner = await owners.getOrCreateActiveOwner();
     _requireSessionConfiguration(sessionConfiguration, ownerId: owner.id);
+    await _beforeSessionAdmission(owner.id);
     final startedAtUtc = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
@@ -1412,6 +1530,7 @@ final class LearningUseCases {
     required int documentRevision,
     required int position,
     required bool isCompleted,
+    LearningActivityCheckpoint? activityCheckpoint,
   }) {
     return PendingReadingProgress._(
       learning: this,
@@ -1422,13 +1541,22 @@ final class LearningUseCases {
       position: position,
       isCompleted: isCompleted,
       occurredAtUtc: _now(),
+      activityCheckpoint: activityCheckpoint,
     );
   }
 
   Future<ReadingProgressSnapshot> _saveCapturedReadingProgress(
     ReadingProgressCommand command,
+    LearningActivityCheckpoint? checkpoint,
   ) async {
-    final result = await repository.saveReadingProgress(command);
+    final source = repository;
+    if (checkpoint != null && source is! AssociativeReadingRecoveryRepository) {
+      throw StateError('Reading checkpoint persistence is unavailable');
+    }
+    final result = checkpoint == null
+        ? await repository.saveReadingProgress(command)
+        : await (source as AssociativeReadingRecoveryRepository)
+              .saveReadingCheckpoint(progress: command, checkpoint: checkpoint);
     onLocalMutation?.call();
     return result;
   }

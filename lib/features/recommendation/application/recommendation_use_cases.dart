@@ -7,6 +7,8 @@ import '../domain/recommendation_policy.dart';
 
 typedef RecommendationUtcNow = DateTime Function();
 typedef RecommendationActiveOwnerId = Future<String?> Function();
+typedef RecommendationModeAvailability =
+    RecallLadderModeAvailability Function(LessonMode mode);
 
 enum RecommendationEvidenceFreshness { current, stale, missing, corrupt }
 
@@ -118,17 +120,37 @@ final class RecommendationUseCases {
     required this.nowUtc,
     required this.timezoneId,
     required this.activeOwnerId,
-    required Map<LessonMode, RecallLadderModeAvailability> modeAvailability,
+    Map<LessonMode, RecallLadderModeAvailability> modeAvailability = const {},
+    RecommendationModeAvailability? modeAvailabilityFor,
   }) : _modeAvailability =
            Map<LessonMode, RecallLadderModeAvailability>.unmodifiable(
              modeAvailability,
-           );
+           ),
+       _modeAvailabilityFor = modeAvailabilityFor;
+
+  static const List<LessonMode> supportedCanonicalModes = <LessonMode>[
+    LessonMode.flashcard,
+    LessonMode.meaningQuiz,
+    LessonMode.typedRecall,
+    LessonMode.definitionQuiz,
+    LessonMode.cloze,
+    LessonMode.matching,
+    LessonMode.dictation,
+    LessonMode.speaking,
+    LessonMode.shadowing,
+    LessonMode.cefrReading,
+    LessonMode.associativeReading,
+    LessonMode.sentenceScramble,
+    LessonMode.wordScramble,
+    LessonMode.handwritingScratchpad,
+  ];
 
   final DriftRecommendationReader reader;
   final RecommendationUtcNow nowUtc;
   final String timezoneId;
   final RecommendationActiveOwnerId activeOwnerId;
   final Map<LessonMode, RecallLadderModeAvailability> _modeAvailability;
+  final RecommendationModeAvailability? _modeAvailabilityFor;
 
   Future<RecommendationPanelResult> load({
     RecallLadderProtocolLimits? protocol,
@@ -237,25 +259,14 @@ final class RecommendationUseCases {
       );
     }
 
-    final safeModes = _safeModes(protocol: protocol);
-    if (!_canonicalModeOrder.any(_isAvailable)) {
-      return RecommendationPanelResult.unavailable(
-        ownerId: ownerId,
-        reason: RecommendationPanelReason.noEligibleActivity,
-        freshness: RecommendationEvidenceFreshness.missing,
-        protocolConstraint: _protocolState(protocol),
-      );
-    }
-    if (safeModes.isEmpty) {
-      return RecommendationPanelResult.unavailable(
-        ownerId: ownerId,
-        reason: protocol != null
-            ? RecommendationPanelReason.protocolLocked
-            : RecommendationPanelReason.noEligibleActivity,
-        freshness: RecommendationEvidenceFreshness.missing,
-        protocolConstraint: _protocolState(protocol),
-      );
-    }
+    var safeModes = _safeModes(protocol: protocol);
+    final initialUnavailable = _unavailableForEmptySafeModes(
+      ownerId: ownerId,
+      freshness: RecommendationEvidenceFreshness.missing,
+      protocol: protocol,
+      safeModes: safeModes,
+    );
+    if (initialUnavailable != null) return initialUnavailable;
 
     RecommendationReadModel snapshot;
     try {
@@ -265,20 +276,18 @@ final class RecommendationUseCases {
         timezoneId: requestTimezoneId,
       );
     } on FormatException {
-      return _neutral(
+      return _neutralWithCurrentModes(
         ownerId: ownerId,
         reason: RecommendationPanelReason.corruptEvidence,
         freshness: RecommendationEvidenceFreshness.corrupt,
         protocol: protocol,
-        alternatives: safeModes,
       );
     } on LearnerPreferencesValidationFailure {
-      return _neutral(
+      return _neutralWithCurrentModes(
         ownerId: ownerId,
         reason: RecommendationPanelReason.corruptEvidence,
         freshness: RecommendationEvidenceFreshness.corrupt,
         protocol: protocol,
-        alternatives: safeModes,
       );
     } catch (_) {
       return RecommendationPanelResult.unavailable(
@@ -288,6 +297,15 @@ final class RecommendationUseCases {
         protocolConstraint: _protocolState(protocol),
       );
     }
+    safeModes = _safeModes(protocol: protocol);
+    final currentFreshness = _freshness(snapshot, now);
+    final currentUnavailable = _unavailableForEmptySafeModes(
+      ownerId: ownerId,
+      freshness: currentFreshness,
+      protocol: protocol,
+      safeModes: safeModes,
+    );
+    if (currentUnavailable != null) return currentUnavailable;
     if (snapshot.ownerId != ownerId ||
         snapshot.profile.ownerId != ownerId ||
         snapshot.preferences.ownerId != ownerId) {
@@ -304,7 +322,7 @@ final class RecommendationUseCases {
       safeModes,
       snapshot.preferences.activityPreference,
     );
-    final freshness = _freshness(snapshot, now);
+    final freshness = currentFreshness;
 
     if (learnerOverride != null) {
       if (protocol != null && !protocol.allows(learnerOverride)) {
@@ -448,13 +466,14 @@ final class RecommendationUseCases {
 
   List<LessonMode> _safeModes({
     required RecallLadderProtocolLimits? protocol,
-  }) => _canonicalModeOrder
+  }) => supportedCanonicalModes
       .where(_isAvailable)
       .where((mode) => protocol?.allows(mode) ?? true)
       .toList(growable: false);
 
   bool _isAvailable(LessonMode mode) =>
-      _modeAvailability[mode] == RecallLadderModeAvailability.available;
+      (_modeAvailabilityFor?.call(mode) ?? _modeAvailability[mode]) ==
+      RecallLadderModeAvailability.available;
 
   List<LessonMode> _orderedModes(
     List<LessonMode> safeModes,
@@ -508,29 +527,53 @@ final class RecommendationUseCases {
           alternatives: alternatives,
         );
 
+  RecommendationPanelResult _neutralWithCurrentModes({
+    required String ownerId,
+    required RecommendationPanelReason reason,
+    required RecommendationEvidenceFreshness freshness,
+    required RecallLadderProtocolLimits? protocol,
+  }) {
+    final safeModes = _safeModes(protocol: protocol);
+    final unavailable = _unavailableForEmptySafeModes(
+      ownerId: ownerId,
+      freshness: freshness,
+      protocol: protocol,
+      safeModes: safeModes,
+    );
+    return unavailable ??
+        _neutral(
+          ownerId: ownerId,
+          reason: reason,
+          freshness: freshness,
+          protocol: protocol,
+          alternatives: safeModes,
+        );
+  }
+
+  RecommendationPanelResult? _unavailableForEmptySafeModes({
+    required String ownerId,
+    required RecommendationEvidenceFreshness freshness,
+    required RecallLadderProtocolLimits? protocol,
+    required List<LessonMode> safeModes,
+  }) {
+    if (safeModes.isNotEmpty) return null;
+    final hasAvailableMode = supportedCanonicalModes.any(_isAvailable);
+    return RecommendationPanelResult.unavailable(
+      ownerId: ownerId,
+      reason: protocol != null && hasAvailableMode
+          ? RecommendationPanelReason.protocolLocked
+          : RecommendationPanelReason.noEligibleActivity,
+      freshness: freshness,
+      protocolConstraint: _protocolState(protocol),
+    );
+  }
+
   RecommendationProtocolConstraint _protocolState(
     RecallLadderProtocolLimits? protocol,
   ) => protocol != null
       ? RecommendationProtocolConstraint.constrained
       : RecommendationProtocolConstraint.open;
 }
-
-const List<LessonMode> _canonicalModeOrder = <LessonMode>[
-  LessonMode.flashcard,
-  LessonMode.meaningQuiz,
-  LessonMode.typedRecall,
-  LessonMode.definitionQuiz,
-  LessonMode.cloze,
-  LessonMode.matching,
-  LessonMode.dictation,
-  LessonMode.speaking,
-  LessonMode.shadowing,
-  LessonMode.cefrReading,
-  LessonMode.associativeReading,
-  LessonMode.sentenceScramble,
-  LessonMode.wordScramble,
-  LessonMode.handwritingScratchpad,
-];
 
 String _canonicalIdentifier(String value, String name) {
   if (value.isEmpty || value.trim() != value || value.runes.length > 256) {

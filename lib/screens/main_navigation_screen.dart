@@ -30,7 +30,7 @@ import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
-import '../features/review/domain/review_queue_item.dart';
+import '../features/review/application/review_center_use_cases.dart';
 import '../features/rewards/domain/reward_models.dart';
 import '../features/today_hub/domain/today_hub_models.dart';
 import '../runtime/app_dependencies.dart';
@@ -49,10 +49,12 @@ import 'ghost_shadow_duel_screen.dart';
 import 'export_center_screen.dart';
 import 'learning_history_screen.dart';
 import 'object_scanner_screen.dart';
+import 'pair_matching_learn_screen.dart';
 import 'profile_settings_screen.dart';
 import 'pre_post_assessment_screen.dart';
 import 'quest_status_screen.dart';
 import 'review_center_screen.dart';
+import 'quiz_screen.dart';
 import 'score_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
@@ -68,6 +70,8 @@ class MainNavigationScreen extends StatefulWidget {
     this.featureRegistry,
   });
 
+  /// Index within the currently visible primary destinations, in this order:
+  /// learning, vocabulary, mastery, achievements, profile. Out-of-range clamps.
   final int initialIndex;
   final FeatureRegistry? featureRegistry;
 
@@ -133,8 +137,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _selectionInitialized = true;
       return;
     }
-    if (!_entries.any((entry) => entry.id == _selectedEntryId)) {
-      _selectedEntryId = _visibleEntries.first.id;
+    if (!_visibleEntries.any((entry) => entry.id == _selectedEntryId)) {
+      _selectedEntryId = _visibleEntries.any((entry) => entry.id == 'learning')
+          ? 'learning'
+          : _visibleEntries.first.id;
     }
   }
 
@@ -149,91 +155,148 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         AppDependenciesScope.maybeOf(context)?.features;
   }
 
-  List<_NavigationEntry> _buildEntries() {
-    return [
-      _NavigationEntry(
-        id: 'vocabulary',
-        productionEntryId: 'home/vocabulary',
-        visibilityFeatures: const [Feature.vocabulary],
-        screen: _gate(
-          'vocabulary',
-          Feature.vocabulary,
-          (_) => CategoriesPage(),
+  List<_NavigationEntry> _buildEntries() => [
+    _NavigationEntry(
+      id: 'learning',
+      productionEntryId: 'home/learn',
+      visibilityFeatures: const [Feature.quiz, Feature.srs, Feature.reading],
+      screen: KeyedSubtree(
+        key: const ValueKey<String>('production-feature-view-learning'),
+        child: _buildLearningSurface(),
+      ),
+      glossary: NavigationGlossary.require('home/learn'),
+    ),
+    _NavigationEntry(
+      id: 'vocabulary',
+      productionEntryId: 'home/vocabulary',
+      visibilityFeatures: const [Feature.vocabulary],
+      screen: _gate('vocabulary', Feature.vocabulary, (_) => CategoriesPage()),
+      glossary: NavigationGlossary.require('home/vocabulary'),
+    ),
+    _NavigationEntry(
+      id: 'mastery',
+      productionEntryId: 'home/mastery',
+      visibilityFeatures: const [Feature.mastery],
+      screen: _gate('mastery', Feature.mastery, (_) => _buildMasterySurface()),
+      glossary: NavigationGlossary.require('home/mastery'),
+    ),
+    _NavigationEntry(
+      id: 'achievements',
+      productionEntryId: 'home/achievements',
+      visibilityFeatures: const [Feature.achievements],
+      screen: _gate(
+        'achievements',
+        Feature.achievements,
+        (_) => AchievementsScreen(
+          onOpenQuests: _secondaryAvailable(Feature.questV2)
+              ? _openQuests
+              : null,
+          onOpenShop: _secondaryAvailable(Feature.shop) ? _openShop : null,
         ),
-        glossary: NavigationGlossary.require('home/vocabulary'),
       ),
-      _NavigationEntry(
-        id: 'learning',
-        productionEntryId: 'home/learn',
-        showUnavailableWhenHidden: true,
-        visibilityFeatures: const [Feature.quiz, Feature.srs, Feature.reading],
-        screen: KeyedSubtree(
-          key: const ValueKey<String>('production-feature-view-learning'),
-          child: _buildLearningSurface(),
+      glossary: NavigationGlossary.require('home/achievements'),
+    ),
+    _NavigationEntry(
+      id: 'profile',
+      productionEntryId: 'home/profile',
+      alwaysVisible: true,
+      screen: ProfileSettingsScreen(
+        onOpenMastery: _secondaryAvailable(Feature.mastery)
+            ? _selectMastery
+            : null,
+      ),
+      glossary: NavigationGlossary.require('home/profile'),
+    ),
+  ];
+
+  bool _secondaryAvailable(
+    Feature feature, {
+    bool requireComposition = false,
+  }) =>
+      _features(context)?.isVisible(feature) == true &&
+      (!requireComposition ||
+          AppDependenciesScope.maybeOf(
+                context,
+              )?.hasComposedDependencyFor(feature) ==
+              true);
+
+  bool get _learningVisible => const [
+    Feature.quiz,
+    Feature.srs,
+    Feature.reading,
+  ].any((feature) => _features(context)?.isVisible(feature) == true);
+
+  void _openToday() => _pushFeatureDestination(
+    'home/today',
+    Feature.dailyContinuity,
+    _buildTodayHub,
+  );
+  void _openPlanning() => _pushFeatureDestination(
+    'home/study-planning',
+    Feature.studyPlanning,
+    (_) => const StudyPlanningHubScreen(),
+  );
+  void _openWeakness() => _pushFeatureDestination(
+    'home/weakness',
+    Feature.weakness,
+    (_) => const WeaknessClinicScreen(),
+  );
+  void _openQuests() => _pushFeatureDestination(
+    'rewards/quests',
+    Feature.questV2,
+    (_) => const QuestStatusScreen(),
+  );
+  void _openShop() => _pushFeatureDestination(
+    'rewards/shop',
+    Feature.shop,
+    (_) => const ShopPage(),
+  );
+
+  Widget _secondaryTile(String id, String description, VoidCallback onTap) {
+    final entry = NavigationGlossary.require(id);
+    return Card(
+      key: ValueKey<String>(id),
+      margin: EdgeInsets.zero,
+      child: Tooltip(
+        message: entry.tooltip,
+        child: Semantics(
+          button: true,
+          label: entry.semanticsLabel,
+          onTap: onTap,
+          excludeSemantics: true,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            leading: Icon(entry.icon),
+            title: Text(entry.fullThaiLabel),
+            subtitle: Text(description),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: onTap,
+          ),
         ),
-        glossary: NavigationGlossary.require('home/learn'),
       ),
-      _NavigationEntry(
-        id: 'today',
-        productionEntryId: 'home/today',
-        visibilityFeatures: const [Feature.dailyContinuity],
-        requiresComposedDependency: true,
-        screen: _gate('today', Feature.dailyContinuity, _buildTodayHub),
-        glossary: NavigationGlossary.require('home/today'),
-      ),
-      _NavigationEntry(
-        id: 'study-planning',
-        productionEntryId: 'home/study-planning',
-        visibilityFeatures: const [Feature.studyPlanning],
-        requiresComposedDependency: true,
-        screen: _gate(
-          'study-planning',
-          Feature.studyPlanning,
-          (_) => const StudyPlanningHubScreen(),
-        ),
-        glossary: NavigationGlossary.require('home/study-planning'),
-      ),
-      _NavigationEntry(
-        id: 'mastery',
-        productionEntryId: 'home/mastery',
-        visibilityFeatures: const [Feature.mastery],
-        screen: _gate(
-          'mastery',
-          Feature.mastery,
-          (_) => const MasteryDashboardScreen(),
-        ),
-        glossary: NavigationGlossary.require('home/mastery'),
-      ),
-      _NavigationEntry(
-        id: 'weakness',
-        productionEntryId: 'home/weakness',
-        visibilityFeatures: const [Feature.weakness],
-        screen: _gate(
-          'weakness',
-          Feature.weakness,
-          (_) => const WeaknessClinicScreen(),
-        ),
-        glossary: NavigationGlossary.require('home/weakness'),
-      ),
-      _NavigationEntry(
-        id: 'achievements',
-        productionEntryId: 'home/achievements',
-        visibilityFeatures: const [Feature.achievements],
-        screen: _gate(
-          'achievements',
-          Feature.achievements,
-          (_) => const AchievementsScreen(),
-        ),
-        glossary: NavigationGlossary.require('home/achievements'),
-      ),
-      _NavigationEntry(
-        id: 'profile',
-        productionEntryId: 'home/profile',
-        alwaysVisible: true,
-        screen: ProfileSettingsScreen(),
-        glossary: NavigationGlossary.require('home/profile'),
-      ),
-    ];
+    );
+  }
+
+  Widget _buildMasterySurface() => MasteryDashboardScreen(
+    onOpenWeakness: _secondaryAvailable(Feature.weakness)
+        ? _openWeakness
+        : null,
+    onOpenReview:
+        _secondaryAvailable(Feature.dailyContinuity, requireComposition: true)
+        ? _openReview
+        : null,
+  );
+
+  void _selectMastery() {
+    if (!mounted ||
+        !_secondaryAvailable(Feature.mastery) ||
+        !_visibleEntries.any((entry) => entry.id == 'mastery')) {
+      return;
+    }
+    setState(() => _selectedEntryId = 'mastery');
   }
 
   Widget _buildLearningSurface() {
@@ -267,6 +330,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               return discovery.findLatestPendingTerminal(ownerId: ownerId);
             },
             onResume: _resumeFromToday,
+          ),
+      ],
+      secondaryCards: <Widget>[
+        if (_secondaryAvailable(
+          Feature.dailyContinuity,
+          requireComposition: true,
+        ))
+          _secondaryTile(
+            'home/today',
+            'ดูสิ่งที่เรียนค้างและรายการทบทวนวันนี้',
+            _openToday,
+          ),
+        if (_secondaryAvailable(
+          Feature.studyPlanning,
+          requireComposition: true,
+        ))
+          _secondaryTile(
+            'home/study-planning',
+            'เลือกชุดคำศัพท์ ตั้งเป้าหมาย และปรับแผนเรียน',
+            _openPlanning,
           ),
         if (eligible) AdventureTodayEntryCard(onOpen: _openTodayExperience),
       ],
@@ -758,21 +841,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         Navigator.of(resultContext).pop();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            unawaited(_openTodayReview(const <TodayHubReviewWorkItem>[]));
+            _openReview();
           }
         });
       },
     );
   }
 
-  _MainNavigationTodayHubActions _todayActions() =>
-      _MainNavigationTodayHubActions(
-        resume: _resumeFromToday,
-        startRecommendation: _startTodayRecommendation,
-        openReview: _openTodayReview,
-        openHistory: _openTodayHistory,
-        startAssessment: _openTodayAssessment,
-      );
+  _MainNavigationTodayHubActions _todayActions({
+    VoidCallback? returnToLearning,
+  }) => _MainNavigationTodayHubActions(
+    resume: (session) =>
+        _resumeFromToday(session, returnToLearning: returnToLearning),
+    startRecommendation: (recommendation) => _startTodayRecommendation(
+      recommendation,
+      returnToLearning: returnToLearning,
+    ),
+    openReview: _openTodayReview,
+    openHistory: _openTodayHistory,
+    startAssessment: _openTodayAssessment,
+    openPlanning: _openTodayPlanning,
+  );
+
+  Future<void> _openTodayPlanning(String ownerId) async {
+    if (!await _todayOwnerMatches(ownerId) || !mounted) return;
+    if (!_secondaryAvailable(Feature.studyPlanning, requireComposition: true) ||
+        _features(context)?.isEnabled(Feature.studyPlanning) != true) {
+      return;
+    }
+    _openPlanning();
+  }
 
   Widget _gate(String id, Feature feature, WidgetBuilder builder) {
     return ProductionFeatureGate(
@@ -796,13 +894,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
     return TodayHubScreen(
       useCases: todayHub,
-      actions: _todayActions(),
+      actions: _todayActions(
+        returnToLearning: () =>
+            _selectLearningFromToday(fromTodayRoute: context),
+      ),
       features: widget.featureRegistry ?? dependencies.features,
       assessmentAvailable: dependencies.assessment != null,
     );
   }
 
-  Future<void> _resumeFromToday(LearningSessionSummary session) async {
+  Future<void> _resumeFromToday(
+    LearningSessionSummary session, {
+    VoidCallback? returnToLearning,
+  }) async {
     if (!await _todayOwnerMatches(session.ownerId) || !mounted) {
       throw StateError('Today resume no longer belongs to the active owner.');
     }
@@ -855,12 +959,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       );
       return;
     }
-    _selectLearningFromToday();
+    (returnToLearning ?? _selectLearningFromToday)();
   }
 
   Future<void> _startTodayRecommendation(
-    TodayHubRecommendation recommendation,
-  ) async {
+    TodayHubRecommendation recommendation, {
+    VoidCallback? returnToLearning,
+  }) async {
     final ownerId = recommendation.result.ownerId;
     if (!recommendation.isAuthoritative ||
         ownerId == null ||
@@ -877,12 +982,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         dependencies?.features.isEnabled(registration.feature) != true) {
       throw StateError('Today recommendation mode is unavailable.');
     }
-    _selectLearningFromToday();
+    (returnToLearning ?? _selectLearningFromToday)();
   }
 
-  void _selectLearningFromToday() {
+  void _selectLearningFromToday({BuildContext? fromTodayRoute}) {
     if (!_visibleEntries.any((entry) => entry.id == 'learning')) {
       throw StateError('The canonical learning destination is unavailable.');
+    }
+    if (fromTodayRoute != null) {
+      if (!fromTodayRoute.mounted) return;
+      final route = ModalRoute.of(fromTodayRoute);
+      if (route?.settings.name != 'home/today' || route?.isCurrent != true) {
+        return;
+      }
+      Navigator.of(fromTodayRoute).pop();
     }
     setState(() => _selectedEntryId = 'learning');
   }
@@ -900,24 +1013,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Future<void> _openTodayReview(List<TodayHubReviewWorkItem> work) async {
+    _openReview();
+  }
+
+  void _openReview() {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final reviewCenter = dependencies?.reviewCenter;
     if (reviewCenter == null || !mounted) {
       throw StateError('Review Center is unavailable.');
     }
-    _pushDestination(
-      'home/today/review',
-      (_) => ReviewCenterScreen(
-        useCases: reviewCenter,
-        lessonShellBuilder: (item) =>
-            _buildTodayReviewLesson(dependencies!, item),
-      ),
-    );
+    _pushFeatureDestination('home/today/review', Feature.dailyContinuity, (
+      routeContext,
+    ) {
+      final currentDependencies = AppDependenciesScope.of(routeContext);
+      return ReviewCenterScreen(
+        useCases: currentDependencies.reviewCenter!,
+        lessonShellBuilder: (request) =>
+            _buildTodayReviewLesson(currentDependencies, request),
+      );
+    });
   }
 
   UnifiedLessonShellLease _buildTodayReviewLesson(
     AppDependencies dependencies,
-    ReviewQueueItem item,
+    ReviewLessonLaunchRequest request,
   ) {
     final learning = dependencies.learning;
     final createController = dependencies.createLessonController;
@@ -933,26 +1052,64 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       learning: learning,
       nowUtc: () => DateTime.now().toUtc(),
       contrastiveFeedback: dependencies.contrastiveFeedback,
-      builder: (_) => Scaffold(
-        appBar: AppBar(title: const Text('ทบทวนคำศัพท์')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('${item.spelling}\n${item.meaning}'),
-          ),
-        ),
+      builder: (_) => QuizScreen(
+        learning: learning,
+        evidenceAdapter: dependencies.currentActivityEvidence,
+        modeAdapter: registration.adapter is MeaningQuizModeAdapter
+            ? registration.adapter as MeaningQuizModeAdapter
+            : null,
+        attachedSession: request.session,
       ),
     );
   }
 
   Future<void> _openTodayHistory() async {
-    final history = AppDependenciesScope.maybeOf(context)?.learningHistory;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final history = dependencies?.learningHistory;
     if (history == null || !mounted) {
       throw StateError('Learning History is unavailable.');
     }
+    final owner = await dependencies?.activeOwnerIdentities
+        ?.requireSingleActiveOwnerId();
+    if (!mounted) return;
     _pushDestination(
       'home/today/history',
-      (_) => LearningHistoryScreen(useCases: history),
+      (_) => LearningHistoryScreen(
+        useCases: history,
+        onPairReplay: owner == null
+            ? null
+            : (source, operationId) async {
+                if (!mounted ||
+                    !identical(
+                      AppDependenciesScope.maybeOf(context),
+                      dependencies,
+                    ) ||
+                    _features(context)?.isEnabled(Feature.quiz) != true ||
+                    !await _todayOwnerMatches(owner) ||
+                    !mounted) {
+                  throw StateError(
+                    'Pair replay is unavailable for this owner.',
+                  );
+                }
+                await AppNavigator.pushPage<void>(
+                  context,
+                  AppPage<void>(
+                    name: 'home/today/history/pair-replay',
+                    builder: (_) => ProductionFeatureGate(
+                      feature: Feature.quiz,
+                      registry:
+                          widget.featureRegistry ?? dependencies!.features,
+                      builder: (_) => PairMatchingLearnScreen.practiceReplay(
+                        dependencies: dependencies!,
+                        source: source,
+                        replayOperationId: operationId,
+                        expectedOwnerId: owner,
+                      ),
+                    ),
+                  ),
+                );
+              },
+      ),
     );
   }
 
@@ -996,18 +1153,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     if (status == null) {
       return 'โหมดทดสอบ · ระบบภายนอกอาจยังไม่พร้อมใช้งาน';
     }
+    if (status.localData != RuntimeAvailability.ready) {
+      return 'ข้อมูลในเครื่อง${status.localData == RuntimeAvailability.degraded ? 'ทำงานได้บางส่วน' : 'ไม่พร้อมใช้งาน'} กรุณาตรวจสถานะก่อนเริ่มเรียน';
+    }
     if (status.isFullyReady) {
       return 'ระบบภายนอกพร้อมใช้งาน';
     }
 
     final unavailable = <String>[
-      if (status.firebase != RuntimeAvailability.ready) 'Firebase',
-      if (status.aiTutor != RuntimeAvailability.ready) 'AI Tutor',
-      if (status.voice != RuntimeAvailability.ready) 'Voice',
-      if (status.backends != RuntimeAvailability.ready) 'Cloud voice add-ons',
+      if (status.firebase != RuntimeAvailability.ready) 'บัญชีออนไลน์',
+      if (status.aiTutor != RuntimeAvailability.ready) 'ผู้ช่วยสอน AI',
+      if (status.voice != RuntimeAvailability.ready) 'เสียงอ่าน',
+      if (status.backends != RuntimeAvailability.ready) 'บริการเสียงออนไลน์',
     ];
     return '${unavailable.join(' · ')} ยังไม่พร้อม — การเรียนในเครื่องยังใช้ได้';
   }
+
+  String _localStatusSummary(AppRuntimeStatus status) =>
+      switch (status.localData) {
+        RuntimeAvailability.ready => 'ข้อมูลในเครื่องพร้อมใช้',
+        RuntimeAvailability.degraded => 'ข้อมูลในเครื่องใช้ได้บางส่วน',
+        RuntimeAvailability.unavailable => 'ข้อมูลในเครื่องไม่พร้อมใช้งาน',
+      };
+
+  Widget _drawerSection(String title) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+    child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+  );
 
   String _buildIdentity(BuildContext context) {
     final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
@@ -1045,7 +1217,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
     if (registration?.adapter is! ShadowingModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This lesson mode is unavailable.')),
+        const SnackBar(content: Text('กิจกรรมนี้ยังไม่พร้อมใช้งาน')),
       );
       return;
     }
@@ -1292,86 +1464,75 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final selectedDestinationIndex = _visibleEntries.indexWhere(
       (entry) => entry.id == _selectedEntryId,
     );
-    final selectedEntry = _entries[selectedStackIndex];
-    final showAggregateUnavailable =
-        selectedEntry.showUnavailableWhenHidden &&
-        !selectedEntry.isVisible(
-          features,
-          AppDependenciesScope.maybeOf(context),
-        );
     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
-    final showBanner = status != null && !status.isFullyReady;
+    final showBanner = status != null;
     return Scaffold(
       key: _scaffoldKey,
-      body: Column(
-        children: [
-          if (showBanner)
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
             Material(
-              color: Theme.of(context).colorScheme.errorContainer,
+              color: Theme.of(context).colorScheme.surfaceContainerHigh,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.cloud_off,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    IconButton(
+                      key: const ValueKey<String>('legacy-drawer-button'),
+                      tooltip: 'เปิดเมนูเพิ่มเติม',
+                      onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                      icon: const Icon(Icons.menu),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _runtimeStatusSummary(context),
-                        key: const ValueKey<String>('runtime-status-banner'),
+                        showBanner ? _localStatusSummary(status) : 'LexiQuest',
+                        key: showBanner
+                            ? const ValueKey<String>('runtime-status-banner')
+                            : null,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
+                    ),
+                    IconButton(
+                      tooltip: 'รายละเอียดสถานะระบบ',
+                      key: const ValueKey('runtime-status-details'),
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('สถานะระบบ'),
+                          content: Text(_runtimeStatusSummary(context)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('ปิด'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      icon: const Icon(Icons.info_outline),
                     ),
                   ],
                 ),
               ),
             ),
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Offstage(
-                  offstage: showAggregateUnavailable,
-                  child: IndexedStack(
-                    index: selectedStackIndex,
-                    children: [
-                      for (var index = 0; index < _entries.length; index++)
-                        TickerMode(
-                          enabled: index == selectedStackIndex,
-                          child: _entries[index].screen,
-                        ),
-                    ],
-                  ),
-                ),
-                if (showAggregateUnavailable)
-                  ProductionFeatureUnavailable(
-                    feature: selectedEntry.visibilityFeatures.first,
-                    reason: ProductionFeatureUnavailableReason.unavailableState,
-                    state: features?.stateOf(
-                      selectedEntry.visibilityFeatures.first,
+            Expanded(
+              child: IndexedStack(
+                index: selectedStackIndex,
+                children: [
+                  for (var index = 0; index < _entries.length; index++)
+                    TickerMode(
+                      enabled: index == selectedStackIndex,
+                      child: _entries[index].screen,
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.small(
-        key: const ValueKey<String>('legacy-drawer-button'),
-        heroTag: 'main-navigation-drawer',
-        tooltip: 'เปิดเมนูเพิ่มเติม',
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        child: const Icon(Icons.menu),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
       drawer: Drawer(
         child: SafeArea(
           child: ListView(
@@ -1389,25 +1550,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               ),
-              if (features?.isVisible(Feature.vocabulary) == true)
+              _drawerSection('กิจกรรมและการเรียน'),
+              if (!_learningVisible &&
+                  _secondaryAvailable(
+                    Feature.dailyContinuity,
+                    requireComposition: true,
+                  ))
                 _glossaryDrawerTile(
-                  entry: NavigationGlossary.require('home/vocabulary'),
-                  onTap: () {
-                    _scaffoldKey.currentState?.closeDrawer();
-                    setState(() {
-                      _selectedEntryId = 'vocabulary';
-                    });
-                  },
+                  key: const ValueKey('home/today'),
+                  entry: NavigationGlossary.require('home/today'),
+                  onTap: _openToday,
                 ),
-              if (features?.isVisible(Feature.shop) == true)
+              if (!_learningVisible &&
+                  _secondaryAvailable(
+                    Feature.studyPlanning,
+                    requireComposition: true,
+                  ))
                 _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/rewards/shop'),
-                  entry: NavigationGlossary.require('drawer/rewards/shop'),
-                  onTap: () => _pushFeatureDestination(
-                    'rewards/shop',
-                    Feature.shop,
-                    (_) => const ShopPage(),
-                  ),
+                  key: const ValueKey('home/study-planning'),
+                  entry: NavigationGlossary.require('home/study-planning'),
+                  onTap: _openPlanning,
+                ),
+              if (!_secondaryAvailable(Feature.mastery) &&
+                  _secondaryAvailable(Feature.weakness))
+                _glossaryDrawerTile(
+                  key: const ValueKey('home/weakness'),
+                  entry: NavigationGlossary.require('home/weakness'),
+                  onTap: _openWeakness,
                 ),
               if (features?.isVisible(Feature.objectScanner) == true)
                 _glossaryDrawerTile(
@@ -1462,6 +1631,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               ],
+              if (features?.isVisible(Feature.questV2) == true)
+                _glossaryDrawerTile(
+                  key: const ValueKey<String>('drawer/rewards/quests'),
+                  entry: NavigationGlossary.require('drawer/rewards/quests'),
+                  onTap: _openQuests,
+                ),
+              if (features?.isVisible(Feature.shop) == true)
+                _glossaryDrawerTile(
+                  key: const ValueKey<String>('drawer/rewards/shop'),
+                  entry: NavigationGlossary.require('drawer/rewards/shop'),
+                  onTap: _openShop,
+                ),
+              _drawerSection('ข้อมูลของฉัน'),
+              if (features?.isVisible(Feature.vocabulary) == true)
+                _glossaryDrawerTile(
+                  entry: NavigationGlossary.require('home/vocabulary'),
+                  onTap: () {
+                    _scaffoldKey.currentState?.closeDrawer();
+                    setState(() {
+                      _selectedEntryId = 'vocabulary';
+                    });
+                  },
+                ),
               if (features?.isVisible(Feature.export) == true)
                 _glossaryDrawerTile(
                   key: const ValueKey<String>('drawer/export/center'),
@@ -1472,16 +1664,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     (_) => const ExportCenterScreen(),
                   ),
                 ),
-              if (features?.isVisible(Feature.questV2) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/rewards/quests'),
-                  entry: NavigationGlossary.require('drawer/rewards/quests'),
-                  onTap: () => _pushFeatureDestination(
-                    'rewards/quests',
-                    Feature.questV2,
-                    (_) => const QuestStatusScreen(),
-                  ),
-                ),
+              _drawerSection('การตั้งค่า'),
               _glossaryDrawerTile(
                 key: const ValueKey<String>('drawer/settings'),
                 entry: NavigationGlossary.require('drawer/settings'),
@@ -1549,6 +1732,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
             )
           : NavigationBar(
+              labelTextStyle: const WidgetStatePropertyAll(
+                TextStyle(fontSize: 12, height: 1.2),
+              ),
               selectedIndex: selectedDestinationIndex < 0
                   ? 0
                   : selectedDestinationIndex,
@@ -1901,6 +2087,7 @@ final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {
     required this._openReview,
     required this._openHistory,
     required this._startAssessment,
+    required this._openPlanning,
   });
 
   final Future<void> Function(LearningSessionSummary session) _resume;
@@ -1908,6 +2095,7 @@ final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {
   _startRecommendation;
   final Future<void> Function(List<TodayHubReviewWorkItem> work) _openReview;
   final Future<void> Function() _openHistory;
+  final Future<void> Function(String ownerId) _openPlanning;
   final Future<void> Function(TodayHubAssignedAssessment assessment)
   _startAssessment;
 
@@ -1924,6 +2112,10 @@ final class _MainNavigationTodayHubActions implements TodayHubActionDelegate {
 
   @override
   Future<void> openHistory() => _openHistory();
+
+  @override
+  Future<void> openPlanning({required String ownerId}) =>
+      _openPlanning(ownerId);
 
   @override
   Future<void> startAssessment(TodayHubAssignedAssessment assessment) =>
@@ -1978,8 +2170,6 @@ final class _NavigationEntry {
     required this.glossary,
     this.visibilityFeatures = const [],
     this.alwaysVisible = false,
-    this.showUnavailableWhenHidden = false,
-    this.requiresComposedDependency = false,
   });
 
   final String id;
@@ -1988,15 +2178,10 @@ final class _NavigationEntry {
   final NavigationGlossaryEntry glossary;
   final List<Feature> visibilityFeatures;
   final bool alwaysVisible;
-  final bool showUnavailableWhenHidden;
-  final bool requiresComposedDependency;
 
   bool isVisible(FeatureRegistry? features, AppDependencies? dependencies) {
     if (alwaysVisible) return true;
     if (features == null) return false;
-    return visibilityFeatures.any(features.isVisible) &&
-        (!requiresComposedDependency ||
-            dependencies?.hasComposedDependencyFor(visibilityFeatures.single) ==
-                true);
+    return visibilityFeatures.any(features.isVisible);
   }
 }

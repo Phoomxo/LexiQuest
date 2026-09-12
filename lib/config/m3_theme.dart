@@ -12,6 +12,43 @@ class M3Theme {
   /// Font family for proper Thai rendering across all screens.
   static const String thaiFontFamily = 'NotoSansThai';
 
+  // Role sizes are shared by both themes. MediaQuery still owns text scaling.
+  static TextTheme _learnerTextTheme(TextTheme base) => base.copyWith(
+    titleLarge: base.titleLarge?.copyWith(
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      height: 1.4,
+      letterSpacing: 0,
+    ),
+    titleMedium: base.titleMedium?.copyWith(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.5,
+      letterSpacing: 0,
+    ),
+    titleSmall: base.titleSmall?.copyWith(fontSize: 14, height: 1.5),
+    bodyLarge: base.bodyLarge?.copyWith(
+      fontSize: 16,
+      height: 1.5,
+      letterSpacing: 0,
+    ),
+    bodyMedium: base.bodyMedium?.copyWith(
+      fontSize: 16,
+      height: 1.5,
+      letterSpacing: 0,
+    ),
+    bodySmall: base.bodySmall?.copyWith(
+      fontSize: 14,
+      height: 1.5,
+      letterSpacing: 0,
+    ),
+    headlineLarge: base.headlineLarge?.copyWith(
+      fontSize: 32,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    ),
+  );
+
   /// Applies the learner override without ever disabling a platform request
   /// for reduced motion.
   static MediaQueryData applyReducedMotionPreference(
@@ -40,13 +77,22 @@ class M3Theme {
     );
 
     return base.copyWith(
+      textTheme: _learnerTextTheme(base.textTheme),
+      dialogTheme: DialogThemeData(
+        titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
+      ),
       cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: base.colorScheme.outlineVariant),
+        ),
         color: cardSurface,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
+        titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
@@ -77,11 +123,23 @@ class M3Theme {
     );
 
     return base.copyWith(
-      cardTheme: CardThemeData(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      textTheme: _learnerTextTheme(base.textTheme),
+      dialogTheme: DialogThemeData(
+        titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
       ),
-      appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: base.colorScheme.outlineVariant),
+        ),
+      ),
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+        titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
       ),

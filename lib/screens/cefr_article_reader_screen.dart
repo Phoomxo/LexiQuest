@@ -17,6 +17,7 @@ class CefrArticleReaderScreen extends StatefulWidget {
   final String title;
   final String content;
   final String cefrLevel;
+  final String? contentNotice;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
   final String? ownerId;
@@ -31,6 +32,7 @@ class CefrArticleReaderScreen extends StatefulWidget {
     required this.title,
     required this.content,
     required this.cefrLevel,
+    this.contentNotice,
     this.voice,
     this.learning,
     this.ownerId,
@@ -226,16 +228,17 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
                 role: AccessibilitySemanticRole.prompt,
                 child: Text(
                   widget.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
+              if (widget.contentNotice != null) Text(widget.contentNotice!),
               const Text(
-                'แตะที่คำศัพท์เพื่อฟังเสียงอ่าน AI:',
+                'แตะที่คำศัพท์เพื่อฟังเสียงอ่าน:',
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 12),
@@ -301,7 +304,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
                           child: Semantics(
                             button: true,
                             enabled: canReplay,
-                            label: 'Replay $cleanWord',
+                            label: 'ฟังคำว่า $cleanWord อีกครั้ง',
                             onTap: canReplay ? replay : null,
                             child: GestureDetector(
                               excludeFromSemantics: true,
@@ -331,7 +334,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Replay selected word',
+                        tooltip: 'ฟังคำที่เลือกอีกครั้ง',
                         icon: const Icon(
                           Icons.volume_up,
                           color: Colors.indigo,

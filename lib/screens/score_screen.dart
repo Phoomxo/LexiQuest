@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/learning_summary_card.dart';
+
 class ScoreScreen extends StatelessWidget {
   const ScoreScreen({
     super.key,
@@ -25,40 +27,48 @@ class ScoreScreen extends StatelessWidget {
         score ?? (total == 0 ? 0 : ((correctAnswers * 100) / total).round());
     return Scaffold(
       appBar: AppBar(title: const Text('ผลการเรียน')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$resolvedScore%',
-                style: Theme.of(context).textTheme.displayMedium,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            LearningSummaryCard(
+              title: 'ผลการเรียนรอบนี้',
+              value: '$resolvedScore%',
+              caption: total == 0 ? 'ยังไม่มีคำตอบในรอบนี้' : null,
+              icon: Icons.school_outlined,
+            ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _ResultRow(
+                      label: 'ตอบถูก',
+                      value: correctAnswers,
+                      icon: Icons.check_circle_outline,
+                    ),
+                    _ResultRow(
+                      label: 'ตอบผิด',
+                      value: wrongAnswers,
+                      icon: Icons.cancel_outlined,
+                    ),
+                    _ResultRow(
+                      label: 'จำนวนตัวอย่าง',
+                      value: total,
+                      icon: Icons.dataset_outlined,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20),
-              _ResultRow(
-                label: 'ตอบถูก',
-                value: correctAnswers,
-                icon: Icons.check_circle_outline,
-              ),
-              _ResultRow(
-                label: 'ตอบผิด',
-                value: wrongAnswers,
-                icon: Icons.cancel_outlined,
-              ),
-              _ResultRow(
-                label: 'จำนวนตัวอย่าง',
-                value: total,
-                icon: Icons.dataset_outlined,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('กลับไปเลือกกิจกรรม'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('กลับไปเลือกกิจกรรม'),
+            ),
+          ],
         ),
       ),
     );
@@ -78,10 +88,25 @@ class _ResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      trailing: Text('$value'),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ExcludeSemantics(child: Icon(icon)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label),
+                const SizedBox(height: 4),
+                Text('$value', style: Theme.of(context).textTheme.titleLarge),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

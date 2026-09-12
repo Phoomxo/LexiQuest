@@ -74,6 +74,68 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  testWidgets('lesson progress semantics describe lifecycle in Thai', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            builder: (_) => const Text('บทเรียนทดสอบ'),
+          ),
+        ),
+      );
+      expect(
+        find.bySemanticsLabel('บทเรียน: พร้อมเริ่ม ความคืบหน้า 0 เปอร์เซ็นต์'),
+        findsOneWidget,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      await tester.pump();
+      expect(
+        find.bySemanticsLabel('บทเรียน: กำลังเรียน ความคืบหน้า 0 เปอร์เซ็นต์'),
+        findsOneWidget,
+      );
+      await fixture.controller.pause(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+      await tester.pump();
+      expect(
+        find.bySemanticsLabel('บทเรียน: หยุดพัก ความคืบหน้า 0 เปอร์เซ็นต์'),
+        findsOneWidget,
+      );
+      await fixture.controller.resume(
+        fixture.now.add(const Duration(seconds: 2)),
+      );
+      await fixture.controller.submit(fixture.submission());
+      await tester.pump();
+      expect(
+        find.bySemanticsLabel(
+          'บทเรียน: กำลังเรียน ความคืบหน้า 100 เปอร์เซ็นต์',
+        ),
+        findsOneWidget,
+      );
+      await fixture.controller.complete(
+        fixture.now.add(const Duration(seconds: 3)),
+      );
+      await tester.pump();
+      expect(
+        find.bySemanticsLabel(
+          'บทเรียน: เรียนจบแล้ว ความคืบหน้า 100 เปอร์เซ็นต์',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(RegExp(r'Lesson |percent|planned|completed')),
+        findsNothing,
+      );
+    } finally {
+      handle.dispose();
+    }
+  });
+
   test('presentation-only skip notifies without creating evidence', () async {
     final fixture = await _fixture();
     await fixture.controller.start(fixture.startCommand);
@@ -288,7 +350,7 @@ void main() {
 
     expect(fixture.controller.configurationLimitReached, isTrue);
     expect(route.acceptsOperations, isFalse);
-    expect(find.text('Session limit reached'), findsOneWidget);
+    expect(find.text('ถึงขีดจำกัดของกิจกรรมแล้ว'), findsOneWidget);
     await expectLater(
       fixture.controller.submit(fixture.submission()),
       throwsA(isA<SessionConfigurationLimitReached>()),
@@ -2281,17 +2343,14 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('Welcome back. Let\'s take one step at a time.'),
-        findsOneWidget,
-      );
+      expect(find.text('ค่อย ๆ เรียนไปทีละขั้น'), findsOneWidget);
       final submission = fixture.controller.submit(
         fixture.submission(isCorrect: false),
       );
       await fixture.repository.recordStarted.future;
       await tester.pump();
       expect(
-        find.text('That attempt is saved. Try once more when you\'re ready.'),
+        find.text('บันทึกคำตอบแล้ว พร้อมเมื่อไรลองอีกครั้งได้'),
         findsNothing,
       );
 
@@ -2301,7 +2360,7 @@ void main() {
 
       expect(find.byType(ContextualCompanionWidget), findsOneWidget);
       expect(
-        find.text('That attempt is saved. Try once more when you\'re ready.'),
+        find.text('บันทึกคำตอบแล้ว พร้อมเมื่อไรลองอีกครั้งได้'),
         findsOneWidget,
       );
     },
@@ -2662,6 +2721,91 @@ void main() {
       expect(fixture.controller.state.committedResponseCount, 0);
     },
   );
+
+  for (final systemInset in <double>[0, 24]) {
+    testWidgets(
+      'lesson shell respects $systemInset system insets without doubling nested app bar padding',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        tester.view.padding = FakeViewPadding(
+          top: systemInset,
+          bottom: systemInset,
+        );
+        tester.view.viewPadding = FakeViewPadding(
+          top: systemInset,
+          bottom: systemInset,
+        );
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetPadding);
+        addTearDown(tester.view.resetViewPadding);
+
+        final fixture = await _fixture();
+        await fixture.controller.start(fixture.startCommand);
+        const appBarKey = ValueKey<String>('inset-regression-app-bar');
+        const actionKey = ValueKey<String>('inset-regression-bottom-action');
+        var taps = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => Scaffold(
+                appBar: AppBar(
+                  key: appBarKey,
+                  title: const Text('Nested lesson mode'),
+                ),
+                body: SafeArea(
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: FilledButton(
+                      key: actionKey,
+                      onPressed: () => taps += 1,
+                      child: const Text('Continue lesson'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final progress = tester.getRect(find.byType(LinearProgressIndicator));
+        final companion = tester.getRect(
+          find.byType(ContextualCompanionWidget),
+        );
+        final appBar = tester.getRect(find.byKey(appBarKey));
+        final action = tester.getRect(find.byKey(actionKey));
+        expect(
+          progress.top,
+          closeTo(systemInset, 0.01),
+          reason: 'The shared header must start below the system status bar.',
+        );
+        expect(companion.top, greaterThanOrEqualTo(progress.bottom));
+        expect(
+          appBar.top,
+          closeTo(companion.bottom, 0.01),
+          reason: 'The mode app bar follows the shared header without a gap.',
+        );
+        expect(
+          appBar.height,
+          closeTo(kToolbarHeight, 0.01),
+          reason: 'The nested app bar must not consume the top inset again.',
+        );
+        expect(
+          action.bottom,
+          closeTo(844 - systemInset, 0.01),
+          reason: 'The bottom inset must be respected exactly once.',
+        );
+        expect(find.byKey(actionKey).hitTestable(), findsOneWidget);
+        await tester.tap(find.byKey(actionKey));
+        await tester.pump();
+        expect(taps, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('background lifecycle pauses one active lesson', (tester) async {
     final fixture = await _fixture();
@@ -3440,9 +3584,9 @@ void main() {
     );
 
     expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
-    expect(find.text('Not quite'), findsOneWidget);
-    expect(find.text('Correct answer: บทเรียน'), findsOneWidget);
-    expect(find.text('Save for review'), findsNothing);
+    expect(find.text('ยังไม่ถูก'), findsOneWidget);
+    expect(find.text('คำตอบที่ถูก: บทเรียน'), findsOneWidget);
+    expect(find.text('บันทึกไว้ทบทวน'), findsNothing);
   });
 
   testWidgets(
@@ -4007,10 +4151,10 @@ void main() {
         ),
       );
 
-      expect(find.text('Save for review'), findsOneWidget);
-      await tester.tap(find.text('Save for review'));
+      expect(find.text('บันทึกไว้ทบทวน'), findsOneWidget);
+      await tester.tap(find.text('บันทึกไว้ทบทวน'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Save for review'));
+      await tester.tap(find.text('บันทึกไว้ทบทวน'));
       await tester.pumpAndSettle();
 
       final saved = await fixture.database
@@ -4096,12 +4240,12 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Report content'));
+      await tester.tap(find.text('รายงานเนื้อหา'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Answer problem'));
+      await tester.tap(find.text('ปัญหาคำตอบ'));
       await tester.pump();
-      await tester.tap(find.text('Submit report'));
-      await tester.tap(find.text('Submit report'), warnIfMissed: false);
+      await tester.tap(find.text('ส่งรายงาน'));
+      await tester.tap(find.text('ส่งรายงาน'), warnIfMissed: false);
       await tester.pumpAndSettle();
 
       final reports = await fixture.database
@@ -4164,7 +4308,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('Show strategy'));
+      await tester.tap(find.text('ดูวิธีคิด'));
       await tester.pump();
 
       expect(find.byType(HintPanel), findsOneWidget);
@@ -4205,7 +4349,7 @@ void main() {
     await tester.pump();
 
     final blockedButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Reveal context'),
+      find.widgetWithText(FilledButton, 'ดูบริบทเพิ่ม'),
     );
     expect(blockedButton.onPressed, isNull);
     expect(fixture.controller.canRevealHint, isFalse);
@@ -4214,7 +4358,7 @@ void main() {
     await submit;
     await tester.pump();
     expect(fixture.controller.canRevealHint, isTrue);
-    expect(find.text('Show strategy'), findsOneWidget);
+    expect(find.text('ดูวิธีคิด'), findsOneWidget);
   });
 
   test(

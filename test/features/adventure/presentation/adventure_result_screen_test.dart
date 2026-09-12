@@ -4,6 +4,48 @@ import 'package:vocab_learning_app/features/adventure/domain/adventure_result.da
 import 'package:vocab_learning_app/features/adventure/presentation/adventure_result_screen.dart';
 
 void main() {
+  for (final state in AdventureCanonicalRewardState.values) {
+    testWidgets(
+      'receipt state $state preserves next action and hides technical IDs',
+      (tester) async {
+        var calls = 0;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AdventureResultScreen(
+              result: _result(rewardState: state),
+              onNextAction: () => calls++,
+            ),
+          ),
+        );
+        final action = find.byKey(
+          const ValueKey('adventure-result-next-action'),
+        );
+        await tester.ensureVisible(action);
+        await tester.pump();
+        await tester.tap(action);
+        expect(calls, 1);
+        expect(find.textContaining('synthetic-receipt'), findsNothing);
+        expect(
+          find.text('รางวัลหลักได้รับการยืนยันแล้ว'),
+          state == AdventureCanonicalRewardState.accepted
+              ? findsOneWidget
+              : findsNothing,
+        );
+        expect(
+          find.text('การเรียนบันทึกแล้ว รางวัลหลักกำลังยืนยัน'),
+          state == AdventureCanonicalRewardState.pending
+              ? findsOneWidget
+              : findsNothing,
+        );
+        expect(
+          find.text('ยังไม่สามารถแสดงรางวัลหลักได้'),
+          state == AdventureCanonicalRewardState.unavailable
+              ? findsOneWidget
+              : findsNothing,
+        );
+      },
+    );
+  }
   testWidgets(
     'renders separate result sections and pending reward truthfully',
     (tester) async {
@@ -15,20 +57,42 @@ void main() {
 
       for (final key in <String>[
         'adventure-result-learning',
+        'adventure-result-reward',
         'adventure-result-effort',
         'adventure-result-engagement',
         'adventure-result-motivation',
-        'adventure-result-reward',
       ]) {
+        await tester.scrollUntilVisible(find.byKey(ValueKey<String>(key)), 160);
+        await tester.pump();
         expect(find.byKey(ValueKey<String>(key)), findsOneWidget);
       }
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-reward')),
+        -160,
+      );
+      await tester.pump();
       expect(
         find.text('การเรียนบันทึกแล้ว รางวัลหลักกำลังยืนยัน'),
         findsOneWidget,
       );
-      expect(find.text('Quest: ยืนยันแล้ว · daily-quest'), findsOneWidget);
-      expect(find.text('Streak: ยืนยันแล้ว · daily-streak'), findsOneWidget);
-      expect(find.text('Achievement: ไม่มีรายการใหม่'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('adventure-result-motivation')),
+        160,
+      );
+      expect(find.text('ภารกิจ: ยืนยันแล้ว'), findsOneWidget);
+      expect(find.text('ความต่อเนื่อง: ยืนยันแล้ว'), findsOneWidget);
+      expect(find.text('ความสำเร็จ: ไม่มีรายการใหม่'), findsOneWidget);
+      expect(find.text('daily-quest'), findsNothing);
+      final details = find.byKey(const ValueKey('adventure-result-details'));
+      await tester.scrollUntilVisible(details, 160);
+      await tester.pump();
+      await tester.ensureVisible(details);
+      await tester.pump();
+      expect(details.hitTestable(), findsOneWidget);
+      await tester.tap(details);
+      await tester.pumpAndSettle();
+      expect(find.text('daily-quest'), findsOneWidget);
+      expect(find.text('daily-streak'), findsOneWidget);
       expect(
         find.textContaining(
           RegExp(
@@ -56,15 +120,27 @@ void main() {
         ),
       );
       await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('adventure-result-technical')),
+        find.byKey(const ValueKey('adventure-result-details')),
         160,
         scrollable: find.byType(Scrollable),
       );
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('adventure-result-details')),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('adventure-result-details')));
+      await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('adventure-result-technical')),
         findsOneWidget,
       );
       final action = find.byKey(const ValueKey('adventure-result-next-action'));
+      tester
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .jumpTo(0);
+      await tester.pump();
       await tester.ensureVisible(action);
       await tester.tap(action);
       expect(calls, 1);
@@ -102,6 +178,11 @@ void main() {
         'adventure-result-next-action',
       ]) {
         final finder = find.byKey(ValueKey<String>(key));
+        tester
+            .state<ScrollableState>(find.byType(Scrollable).first)
+            .position
+            .jumpTo(0);
+        await tester.pump();
         await tester.scrollUntilVisible(
           finder,
           120,
@@ -114,7 +195,11 @@ void main() {
   );
 }
 
-AdventureResult _result({String? technicalMessage}) => AdventureResult(
+AdventureResult _result({
+  String? technicalMessage,
+  AdventureCanonicalRewardState rewardState =
+      AdventureCanonicalRewardState.pending,
+}) => AdventureResult(
   ownerId: 'owner:one',
   sessionId: 'session:one',
   learning: const AdventureLearningResult(
@@ -137,8 +222,11 @@ AdventureResult _result({String? technicalMessage}) => AdventureResult(
     questCodes: const <String>['daily-quest'],
     streakCodes: const <String>['daily-streak'],
   ),
-  reward: const AdventureRewardReceiptView(
-    state: AdventureCanonicalRewardState.pending,
+  reward: AdventureRewardReceiptView(
+    state: rewardState,
+    receiptId: rewardState == AdventureCanonicalRewardState.accepted
+        ? 'synthetic-receipt'
+        : null,
   ),
   nextAction: AdventureNextAction.reviewCenter,
   technicalMessage: technicalMessage,

@@ -1049,6 +1049,7 @@ Future<void> _expectNoResearch(
 
 DriftSyncStore _enabledStore(PairMeasurementFixture f) => DriftSyncStore(
   f.database,
+  researchNowUtc: () => f.now,
   researchMeasurementRollout:
       const ResearchMeasurementSyncRollout.localEmulatorV1(
         deployedRulesRevision: researchMeasurementV1RulesRevision,
@@ -1070,12 +1071,44 @@ Future<String?> _withdrawalBaseline(
         ..where((r) => r.id.equals(PairMeasurementFixture.owner)))
       .write(const LocalOwnersCompanion(firebaseUid: Value(uid)));
   final store = _enabledStore(f);
+  final beforeEnqueue =
+      await (f.database.select(f.database.outboxOperations)..where(
+            (row) =>
+                row.ownerId.equals(PairMeasurementFixture.owner) &
+                row.entityType.equals('researchWithdrawal'),
+          ))
+          .get();
+  expect(beforeEnqueue, hasLength(1));
+  expect(beforeEnqueue.single.state, 'pending');
+  expect(
+    beforeEnqueue.single.operationId,
+    ResearchSyncContract.operationIdFor(
+      collection: SyncCollection.researchWithdrawals,
+      entityId: f.permit.id,
+      payload: {
+        'permitId': f.permit.id,
+        'ownerId': PairMeasurementFixture.owner,
+      },
+      revision: 1,
+    ),
+  );
   expect(
     await store.enqueueResearchForOwner(
       ownerId: PairMeasurementFixture.owner,
       nowUtc: f.now,
     ),
-    1,
+    0,
+  );
+  expect(
+    await (f.database.select(f.database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(PairMeasurementFixture.owner) &
+              row.entityType.equals('researchWithdrawal'),
+        ))
+        .get(),
+    beforeEnqueue,
+    reason:
+        'Enqueue must preserve the exact denial already committed at withdrawal',
   );
   const token = 'pm7-withdrawal-baseline-gate';
   final gate = DriftOwnerOperationGate(f.database);
@@ -1314,6 +1347,8 @@ final class _Rewards implements RewardAccountReader {
 }
 
 final class _Actions implements TodayHubActionDelegate {
+  @override
+  Future<void> openPlanning({required String ownerId}) async {}
   @override
   Future<void> openHistory() async {}
   @override

@@ -20,6 +20,7 @@ import 'package:vocab_learning_app/features/research/domain/research_event_ident
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 
 import '../../support/motivation_research_fixture.dart';
 import '../../support/pair_purpose_fixture.dart';
@@ -835,6 +836,64 @@ void main() {
         f.now = f.now.add(const Duration(seconds: 1));
       };
       expect(await authorizer.authorize(request()), isFalse);
+    },
+  );
+  for (final version in <Object>[
+    24,
+    25,
+    26,
+    23,
+    27,
+    '25',
+    25.0,
+    25.5,
+    '26',
+    26.0,
+    26.5,
+  ]) {
+    test(
+      'research schema transport keeps explicit version $version (${version.runtimeType})',
+      () {
+        final payload = run({'databaseSchemaVersion': version});
+        void validate() => ResearchSyncContract.validate(
+          collection: SyncCollection.motivationMeasurementRuns,
+          entityId: runId(),
+          payload: payload,
+          revision: 1,
+          isDeleted: false,
+        );
+        expect(
+          validate,
+          version is int && (version == 24 || version == 25 || version == 26)
+              ? returnsNormally
+              : throwsA(isA<SyncFailure>()),
+        );
+        expect(payload['databaseSchemaVersion'], version);
+      },
+    );
+  }
+  test(
+    'historical schema remains pinned and cannot authorize a current run',
+    () async {
+      final payload = run({'databaseSchemaVersion': 24});
+      await seed('motivation_measurement_runs', payload);
+      expect(
+        await authorizer.authorize(
+          request(
+            collection: SyncCollection.motivationMeasurementRuns,
+            payload: payload,
+          ),
+        ),
+        isFalse,
+      );
+      expect(payload['databaseSchemaVersion'], 24);
+      final stored = await f.database
+          .customSelect(
+            'SELECT database_schema_version FROM motivation_measurement_runs WHERE id = ?',
+            variables: [Variable(runId())],
+          )
+          .getSingle();
+      expect(stored.read<int>('database_schema_version'), 24);
     },
   );
   for (final state in ['started', 'completed', 'skipped', 'abandoned']) {

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
@@ -85,6 +86,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('th'),
+          supportedLocales: const [Locale('th')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,
@@ -99,13 +103,13 @@ void main() {
         find.byKey(const ValueKey<String>('matching-word-word:airport')),
       );
       expect(tester.takeException(), isNull);
-      expect(find.bySemanticsLabel('0 of 3 pairs matched'), findsOneWidget);
-      expect(find.bySemanticsLabel('Word airport'), findsOneWidget);
+      expect(find.bySemanticsLabel('จับคู่แล้ว 0 จาก 3 คู่'), findsOneWidget);
+      expect(find.bySemanticsLabel('คำศัพท์ airport'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Meaning place for flights'),
+        find.bySemanticsLabel('ความหมาย place for flights'),
         findsOneWidget,
       );
-      expect(find.text('Correct answer: place for flights'), findsNothing);
+      expect(find.text('คำตอบที่ถูก: place for flights'), findsNothing);
 
       await tester.ensureVisible(
         find.byKey(const ValueKey<String>('matching-word-word:airport')),
@@ -121,7 +125,7 @@ void main() {
       );
       await _pumpUntilFound(
         tester,
-        find.text('Correct answer: place for flights'),
+        find.text('คำตอบที่ถูก: place for flights'),
       );
 
       final root = find.byType(MatchingModeScreen);
@@ -167,18 +171,15 @@ void main() {
         ),
       ),
     );
-    await _pumpUntilFound(tester, find.text('Show strategy'));
-    await tester.tap(find.text('Show strategy'));
+    await _pumpUntilFound(tester, find.text('ดูวิธีคิด'));
+    await tester.tap(find.text('ดูวิธีคิด'));
     await tester.tap(
       find.byKey(const ValueKey<String>('matching-word-word:airport')),
     );
     await tester.tap(
       find.byKey(const ValueKey<String>('matching-meaning-word:airport')),
     );
-    await _pumpUntilFound(
-      tester,
-      find.text('Correct answer: place for flights'),
-    );
+    await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: place for flights'));
 
     final attempt =
         (await database.select(database.answerAttempts).get()).single;
@@ -249,7 +250,7 @@ void main() {
     );
     expect(find.text('place for flights'), findsOneWidget);
     expect(find.textContaining('20 min'), findsNothing);
-    expect(find.textContaining('Time remaining:'), findsOneWidget);
+    expect(find.textContaining('เวลาที่เหลือ:'), findsOneWidget);
     final sessions = await database.select(database.learningSessions).get();
     expect(sessions, hasLength(1));
     expect(sessions.single.id, original.id);
@@ -260,17 +261,17 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(MaterialApp(home: _screen(learning)));
-    await _pumpUntilFound(tester, find.text('Matching'));
+    await _pumpUntilFound(tester, find.text('จับคู่คำศัพท์'));
     await _pumpUntilFound(
       tester,
       find.byKey(const ValueKey<String>('matching-word-word:airport')),
     );
 
-    expect(find.text('Matching'), findsOneWidget);
-    expect(find.text('Words'), findsOneWidget);
-    expect(find.text('Meanings'), findsOneWidget);
+    expect(find.text('จับคู่คำศัพท์'), findsOneWidget);
+    expect(find.text('คำศัพท์'), findsOneWidget);
+    expect(find.text('ความหมาย'), findsOneWidget);
     expect(find.bySemanticsLabel('0 of 3 pairs matched'), findsOneWidget);
-    expect(find.textContaining('Time remaining:'), findsOneWidget);
+    expect(find.textContaining('เวลาที่เหลือ:'), findsOneWidget);
     expect(find.textContaining('star'), findsNothing);
   });
 
@@ -316,12 +317,12 @@ void main() {
     );
     await _pumpUntilEither(
       tester,
-      find.text('Matching is unavailable. No learning data changed.'),
+      find.text('กิจกรรมจับคู่ไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง'),
       find.byKey(const ValueKey<String>('matching-word-word:airport')),
     );
 
     expect(
-      find.text('Matching is unavailable. No learning data changed.'),
+      find.text('กิจกรรมจับคู่ไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง'),
       findsOneWidget,
     );
     expect(await database.select(database.learningSessions).get(), isEmpty);

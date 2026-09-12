@@ -52,6 +52,7 @@ import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
+import 'package:vocab_learning_app/screens/local_reading_library_screen.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
@@ -117,7 +118,7 @@ void _expectSingleThaiGlossaryAction({
   );
   expect(tooltip, findsOneWidget);
   expect(
-    find.descendant(of: tooltip, matching: find.text(entry.fullThaiLabel)),
+    find.descendant(of: tooltip, matching: find.text(entry.shortThaiLabel)),
     findsOneWidget,
   );
   final semanticActions = find
@@ -146,9 +147,40 @@ Future<void> _openConfiguredMode(
   int? timeLimitSeconds,
   bool untimed = false,
 }) async {
+  await tester.scrollUntilVisible(
+    modeEntry,
+    160,
+    scrollable: find
+        .descendant(
+          of: find.byType(ChooseModeScreen),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pump();
+  final opensReadingLibrary =
+      tester.widget(modeEntry).key ==
+      const ValueKey<String>('home/learn/reading/cefr');
   await tester.tap(modeEntry);
   await tester.pumpAndSettle();
+  if (opensReadingLibrary) {
+    expect(find.byType(LocalReadingLibraryScreen), findsOneWidget);
+    final practice = find.text('ฝึกจากคำศัพท์ที่มีระดับ');
+    await tester.scrollUntilVisible(practice, 200);
+    await tester.pumpAndSettle();
+    await tester.tap(practice);
+    await tester.pumpAndSettle();
+  }
   expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+  if (itemCount != null ||
+      direction != null ||
+      packLabel != null ||
+      hintBudget != null ||
+      timeLimitSeconds != null ||
+      untimed) {
+    await tester.tap(find.text('ปรับตัวเลือก'));
+    await tester.pumpAndSettle();
+  }
   if (itemCount != null) {
     await tester.enterText(
       find.byKey(const ValueKey('session-item-count')),
@@ -161,9 +193,9 @@ Future<void> _openConfiguredMode(
     await tester.tap(directionField);
     await tester.pumpAndSettle();
     final label = switch (direction) {
-      SessionDirection.forward => 'Prompt to answer',
-      SessionDirection.reverse => 'Answer to prompt',
-      SessionDirection.mixed => 'Mixed directions',
+      SessionDirection.forward => 'ทิศทางปกติ',
+      SessionDirection.reverse => 'ย้อนทิศทาง',
+      SessionDirection.mixed => 'สลับทิศทาง',
     };
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
@@ -210,6 +242,66 @@ Future<void> _openConfiguredMode(
 }
 
 void main() {
+  testWidgets('clear starter launches the existing configured meaning quiz', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create();
+    addTearDown(harness.close);
+    await harness.pump(tester);
+    final starter = find.byKey(const ValueKey('learn-starter'));
+    expect(starter, findsOneWidget);
+    await _openConfiguredMode(
+      tester,
+      starter,
+      itemCount: 1,
+      direction: SessionDirection.reverse,
+    );
+    expect(find.byType(QuizScreen), findsOneWidget);
+    final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+    expect(screen.sessionConfiguration?.itemCount, 1);
+    expect(screen.sessionConfiguration?.direction, SessionDirection.reverse);
+    expect(harness.controllers.single.state.itemCount, 1);
+  });
+  testWidgets(
+    'menu cards stay separated on a narrow screen with large Thai text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const ChooseModeScreen(
+            featureRegistry: BuildFeatureRegistry.allEnabled(),
+          ),
+        ),
+      );
+      await _scrollToModeEntry(tester, 'home/learn/quiz');
+      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.pump();
+      final cards = find.byType(Card);
+      final first = tester.getRect(
+        find.descendant(of: cards.at(0), matching: find.byType(Material)).first,
+      );
+      final second = tester.getRect(
+        find.descendant(of: cards.at(1), matching: find.byType(Material)).first,
+      );
+      expect(second.top - first.bottom, greaterThanOrEqualTo(12));
+      await _scrollToModeEntry(tester, 'home/learn/associative-reading');
+      expect(
+        find.byKey(const ValueKey('home/learn/associative-reading')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'f16 validated count and reverse direction govern delivered meaning quiz',
     (tester) async {
@@ -282,10 +374,7 @@ void main() {
       find.byKey(const ValueKey('session-configuration-reset-prompt')),
       findsOneWidget,
     );
-    expect(
-      find.text('The selected learning-pack revision is no longer available.'),
-      findsOneWidget,
-    );
+    expect(find.text('ไม่พบชุดเนื้อหาการเรียนรุ่นที่เลือกไว้'), findsOneWidget);
     expect(
       harness.controllers.single.state.status,
       LessonSessionStatus.planned,
@@ -328,9 +417,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        'The study protocol changed after this session was configured.',
-      ),
+      find.text('ขอบเขตการเรียนเปลี่ยนไปหลังจากตั้งค่ากิจกรรมนี้'),
       findsOneWidget,
     );
   });
@@ -350,9 +437,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        'The study protocol changed after this session was configured.',
-      ),
+      find.text('ขอบเขตการเรียนเปลี่ยนไปหลังจากตั้งค่ากิจกรรมนี้'),
       findsOneWidget,
     );
 
@@ -563,12 +648,15 @@ void main() {
           Icons.record_voice_over_outlined,
         ),
       ];
-      for (final (id, label, icon) in cases) {
+      for (final (id, _, icon) in cases) {
         await _scrollToModeEntry(tester, id);
         final tile = find.byKey(ValueKey<String>(id));
         expect(tile, findsOneWidget);
         expect(
-          find.descendant(of: tile, matching: find.text(label)),
+          find.descendant(
+            of: tile,
+            matching: find.text(NavigationGlossary.require(id).shortThaiLabel),
+          ),
           findsOneWidget,
         );
         expect(
@@ -644,37 +732,30 @@ void main() {
         ),
       );
 
+      for (final id in [
+        'home/learn/quiz',
+        'home/learn/srs',
+        'home/learn/quiz/definition',
+        'home/learn/associative-reading',
+        'home/learn/quiz/cloze',
+      ]) {
+        await _scrollToModeEntry(tester, id);
+        expect(find.byKey(ValueKey(id)), findsOneWidget);
+      }
       expect(
-        find.byKey(const ValueKey<String>('home/learn/associative-reading')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('home/learn/quiz')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+        find.byKey(const ValueKey('learn-starter')),
         findsNothing,
-        reason: 'typed recall stays hidden without its registry authority',
+        reason: 'No configured starter without a learning adapter',
       );
       expect(
-        find.byKey(const ValueKey<String>('home/learn/srs')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('home/learn/quiz/definition')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        find.byKey(const ValueKey('home/learn/quiz/typed-recall')),
         findsNothing,
-        reason: 'f10 remains implemented-off by default',
       );
-      expect(find.byType(ListTile), findsNWidgets(5));
+      expect(
+        find.byKey(const ValueKey('home/learn/quiz/matching')),
+        findsNothing,
+      );
+      await _scrollToModeEntry(tester, 'home/learn/quiz');
 
       await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
       await tester.pumpAndSettle();
@@ -899,7 +980,7 @@ void main() {
           );
           expect(controllerBuilds, 0);
           expect(find.byType(UnifiedLessonShell), findsNothing);
-          await tester.tap(find.text('Start reading'));
+          await tester.tap(find.text('เริ่มอ่าน'));
           await tester.pumpAndSettle();
         }
 
@@ -1089,6 +1170,13 @@ void main() {
             tester.element(find.byType(ProductionFeatureUnavailable)),
           ).pop();
           await tester.pumpAndSettle();
+          if (routeCase.mode == LessonMode.cefrReading) {
+            expect(find.byType(LocalReadingLibraryScreen), findsOneWidget);
+            Navigator.of(
+              tester.element(find.byType(LocalReadingLibraryScreen)),
+            ).pop();
+            await tester.pumpAndSettle();
+          }
           continue;
         }
 
@@ -1104,7 +1192,7 @@ void main() {
         Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
         await tester.pumpAndSettle();
         if (routeCase.mode == LessonMode.associativeReading) {
-          Navigator.of(tester.element(find.text('Start reading'))).pop();
+          Navigator.of(tester.element(find.text('เริ่มอ่าน'))).pop();
           await tester.pumpAndSettle();
         }
       }
@@ -1119,7 +1207,7 @@ void main() {
       await harness.pump(tester);
 
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(
         tester,
@@ -1166,35 +1254,40 @@ void main() {
     },
   );
 
-  testWidgets(
-    'unclassified CEFR word keeps shell and reconciles its pinned session',
-    (tester) async {
-      final harness = await _SrsGateHarness.create(vocabularyCefrLevel: null);
-      addTearDown(harness.close);
-      await harness.pump(tester);
+  testWidgets('unclassified CEFR word creates no durable vocabulary session', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(vocabularyCefrLevel: null);
+    addTearDown(harness.close);
+    await harness.pump(tester);
 
-      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
-      await _openConfiguredMode(
-        tester,
-        find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
-      );
+    await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
+    );
 
-      expect(find.byType(CefrArticleReaderScreen), findsNothing);
-      expect(find.byType(UnifiedLessonShell), findsOneWidget);
-      expect(
-        harness.controllers.single.state.status,
-        LessonSessionStatus.abandoned,
-      );
-      final sessions = await harness.database
-          .select(harness.database.learningSessions)
-          .get();
-      expect(sessions.where((session) => session.state == 'active'), isEmpty);
-      expect(
-        sessions.where((session) => session.state == 'abandoned'),
-        hasLength(1),
-      );
-    },
-  );
+    expect(find.byType(CefrArticleReaderScreen), findsNothing);
+    expect(
+      find.text('ยังไม่มีคำศัพท์ที่เข้าเงื่อนไขของกิจกรรมนี้'),
+      findsOneWidget,
+    );
+    expect(find.byType(UnifiedLessonShell), findsOneWidget);
+    expect(
+      harness.controllers.single.state.status,
+      LessonSessionStatus.planned,
+    );
+    final sessions = await harness.database
+        .select(harness.database.learningSessions)
+        .get();
+    expect(sessions.where((session) => session.state == 'active'), isEmpty);
+    expect(sessions, hasLength(1), reason: 'only the completed seed remains');
+    expect(sessions.single.state, 'completed');
+    expect(
+      await harness.database.select(harness.database.answerAttempts).get(),
+      hasLength(1),
+    );
+  });
 
   testWidgets(
     'canonical A2 through C2 CEFR routes preserve pinned word and session identity',
@@ -1228,6 +1321,68 @@ void main() {
       }
     },
   );
+
+  for (final insideWindow in [false, true]) {
+    testWidgets(
+      'CEFR scans all candidate pages with eligible word inside first page=$insideWindow',
+      (tester) async {
+        final harness = await _SrsGateHarness.create();
+        addTearDown(harness.close);
+        var nextId = 0;
+        final vocabulary = VocabularyUseCases(
+          owners: harness.dependencies.localOwners!,
+          vocabulary: DriftVocabularyRepository(harness.database),
+          generateId: () =>
+              'a-boundary-${(nextId++).toString().padLeft(3, '0')}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 15),
+        );
+        String? categoryId;
+        String? eligibleInsideId;
+        for (var i = 0; i < 100; i++) {
+          if (i % 40 == 0) {
+            categoryId = (await vocabulary.createCategory(
+              'Boundary group $i',
+            )).id;
+          }
+          final word = await vocabulary.createWord(
+            CreateWordCommand(
+              categoryId: categoryId!,
+              spelling: 'candidate$i',
+              meaning: 'synthetic candidate $i',
+              partOfSpeech: 'noun',
+              cefrLevel: insideWindow && i == 99 ? 'A2' : null,
+            ),
+          );
+          if (insideWindow && i == 99) eligibleInsideId = word.id;
+        }
+        await harness.pump(tester);
+        await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+        await _openConfiguredMode(
+          tester,
+          find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
+        );
+        final reader = tester.widget<CefrArticleReaderScreen>(
+          find.byType(CefrArticleReaderScreen),
+        );
+        expect(
+          reader.wordId,
+          insideWindow ? eligibleInsideId : 'word:srs-gate-vocabulary',
+        );
+        expect(reader.cefrLevel, insideWindow ? 'A2' : 'A1');
+        harness.features.emergencyOff(Feature.reading);
+        await tester.pumpAndSettle();
+        expect(
+          await harness.database.select(harness.database.answerAttempts).get(),
+          hasLength(1),
+          reason: 'opening or rejecting the route must not invent an answer',
+        );
+        final sessions = await harness.database
+            .select(harness.database.learningSessions)
+            .get();
+        expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      },
+    );
+  }
 
   testWidgets(
     'Definition Quiz emergency-off terminally closes its durable shell session',
@@ -1651,7 +1806,7 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(tester, srsTile, itemCount: 1);
 
@@ -1815,7 +1970,7 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(
         tester,
@@ -1938,9 +2093,7 @@ void main() {
       );
 
       expect(
-        find.text(
-          'Untimed accessibility session. Active effort remains bounded.',
-        ),
+        find.text('กิจกรรมแบบไม่แสดงเวลานับถอยหลัง ยังมีขีดจำกัดเวลาเรียนจริง'),
         findsOneWidget,
       );
       await tester.pump(const Duration(hours: 1));
@@ -1961,7 +2114,7 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(
         tester,
@@ -2042,7 +2195,7 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(tester, srsTile, itemCount: 1);
 
@@ -2113,7 +2266,7 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
-      await tester.ensureVisible(srsTile);
+      await _scrollToModeEntry(tester, 'home/learn/srs');
       await tester.pump();
       await _openConfiguredMode(tester, srsTile, itemCount: 1);
 
@@ -2356,7 +2509,7 @@ void main() {
         hintBudget: 2,
       );
       final controller = harness.controllers.single;
-      final showStrategy = find.widgetWithText(FilledButton, 'Show strategy');
+      final showStrategy = find.widgetWithText(FilledButton, 'ดูวิธีคิด');
       tester.widget<FilledButton>(showStrategy).onPressed!();
       await tester.pump();
       expect(controller.hintState!.hintLevel, 1);
@@ -2374,7 +2527,7 @@ void main() {
           const Duration(seconds: 1),
         ),
       );
-      final revealContext = find.widgetWithText(FilledButton, 'Reveal context');
+      final revealContext = find.widgetWithText(FilledButton, 'ดูบริบทเพิ่ม');
       tester.widget<FilledButton>(revealContext).onPressed!();
       await tester.pump();
       expect(controller.hintState!.hintLevel, 2);
@@ -2468,9 +2621,7 @@ void main() {
 
       expect(find.text('able to recover'), findsOneWidget);
       tester
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Show strategy'),
-          )
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'ดูวิธีคิด'))
           .onPressed!();
       await tester.pump();
       expect(
@@ -2499,7 +2650,7 @@ void main() {
       );
       tester
           .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Reveal context'),
+            find.widgetWithText(FilledButton, 'ดูบริบทเพิ่ม'),
           )
           .onPressed!();
       await tester.pump();
@@ -2547,12 +2698,12 @@ void main() {
       }))!;
       expect(srsAfter, srsBefore);
       expect(controller.hintState!.hintLevel, 0);
-      expect(find.text('Show strategy'), findsOneWidget);
+      expect(find.text('ดูวิธีคิด'), findsOneWidget);
 
       tester.widget<FilledButton>(next).onPressed!();
       await tester.pump();
       expect(controller.hintState!.hintLevel, 0);
-      expect(find.text('Show strategy'), findsOneWidget);
+      expect(find.text('ดูวิธีคิด'), findsOneWidget);
     },
   );
 
@@ -2587,9 +2738,9 @@ void main() {
     for (var pump = 0; pump < 50 && input.evaluate().isEmpty; pump++) {
       await tester.pump(const Duration(milliseconds: 1));
     }
-    await tester.tap(find.text('Show strategy'));
+    await tester.tap(find.text('ดูวิธีคิด'));
     await tester.pump();
-    await tester.tap(find.text('Reveal context'));
+    await tester.tap(find.text('ดูบริบทเพิ่ม'));
     await tester.pump();
     expect(harness.controllers.single.hintState!.hintLevel, 2);
     await tester.enterText(input, 'stable');
@@ -3143,6 +3294,7 @@ final class _SrsGateHarness {
 final class _CoordinatedLearningRepository
     implements
         LearningRepository,
+        PagedQuizWordRepository,
         LearningSessionLifecycleRepository,
         SessionConfiguredLearningRepository,
         LearningActivityRecoveryRepository,
@@ -3191,6 +3343,25 @@ final class _CoordinatedLearningRepository
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
 
   void armAnswerBlock() => blockAnswer = true;
+
+  @override
+  Future<List<QuizWord>> listQuizWordPage({
+    required String ownerId,
+    String? categoryId,
+    String? afterId,
+    required int limit,
+  }) async {
+    if (delayQuiz) {
+      if (!quizEntered.isCompleted) quizEntered.complete();
+      await quizRelease.future;
+    }
+    return (delegate as PagedQuizWordRepository).listQuizWordPage(
+      ownerId: ownerId,
+      categoryId: categoryId,
+      afterId: afterId,
+      limit: limit,
+    );
+  }
 
   Future<void> get configurationEffortEntered =>
       _configurationEffortEntered!.future;

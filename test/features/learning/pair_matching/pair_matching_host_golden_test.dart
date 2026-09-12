@@ -232,7 +232,23 @@ void main() {
       await tester.pumpAndSettle();
       micros = 5000000;
       await answerSet();
-      await tester.pumpWidget(_app(host, locale: const Locale('en')));
+      const thaiCompletion = 'จบการฝึกรอบนี้แล้ว';
+      const englishCompletion =
+          'Session complete. You showed up for your learning.';
+      expect(find.text(thaiCompletion), findsOneWidget);
+      // Reusing the same host must update companion copy in both directions.
+      for (final languageCode in ['en', 'th', 'en']) {
+        await tester.pumpWidget(_app(host, locale: Locale(languageCode)));
+        await tester.pumpAndSettle();
+        expect(
+          find.text(languageCode == 'en' ? englishCompletion : thaiCompletion),
+          findsOneWidget,
+        );
+        expect(
+          find.text(languageCode == 'en' ? thaiCompletion : englishCompletion),
+          findsNothing,
+        );
+      }
       await _golden(tester, 'host_replay_result_english.png');
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

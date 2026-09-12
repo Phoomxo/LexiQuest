@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   firebase_core: ^4.12.1
   firebase_auth: ^6.5.6
   firebase_app_check: 0.4.5+2
@@ -57,7 +59,38 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/content/cefr_editorial/batch-1.json
+    - assets/content/cefr_editorial/batch-2.json
+    - assets/content/cefr_editorial/batch-3.json
+    - assets/content/cefr_editorial/complete-1.json
+    - assets/content/cefr_editorial/complete-2.json
+    - assets/content/cefr_editorial/complete-3.json
+    - assets/content/cefr_editorial/sense-review-1.json
+    - assets/content/cefr_editorial/sense-review-2.json
+    - assets/content/cefr_editorial/sense-review-3.json
+    - assets/content/cefr_editorial/NOTICE.txt
+    - assets/content/cefr_expanded/core-extension.json
+    - assets/content/cefr_expanded/advanced-profile.json
+    - assets/content/cefr_expanded/advanced-translations.json
+    - assets/content/cefr_expanded/octanove-source.csv
+    - assets/content/cefr_expanded/NOTICE.txt
+    - assets/content/cefr_starter/catalog.json
+    - assets/content/cefr_starter/NOTICE.txt
+    - assets/content/cefr_starter/LICENSE.txt
+    - assets/content/cefr_starter/LICENSE-th.txt
     - assets/fonts/NotoSansThai-Variable.ttf
+    - assets/content/lexical_metadata/starter-book/r1.json
+    - assets/content/lexical_metadata/starter-pencil/r1.json
+    - assets/content/lexical_metadata/starter-chair/r1.json
+    - assets/content/lexical_metadata/starter-door/r1.json
+    - assets/content/lexical_metadata/starter-window/r1.json
+    - assets/content/lexical_metadata/starter-bottle/r1.json
+    - assets/content/lexical_metadata/starter-cup/r1.json
+    - assets/content/lexical_metadata/starter-spoon/r1.json
+    - assets/content/lexical_metadata/starter-plate/r1.json
+    - assets/content/lexical_metadata/starter-bag/r1.json
+    - assets/content/lexical_metadata/starter-clock/r1.json
+    - assets/content/lexical_metadata/starter-key/r1.json
 
   fonts:
     - family: NotoSansThai

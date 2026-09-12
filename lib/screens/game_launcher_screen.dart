@@ -164,6 +164,8 @@ class _GameLauncherScreenState extends State<GameLauncherScreen> {
             builder: (_, session, question) => switch (mode) {
               LessonMode.wordScramble => WordScrambleScreen(
                 word: question.word.spelling,
+                meaning: question.word.meaning,
+                partOfSpeech: question.word.partOfSpeech,
                 sessionId: session.id,
                 wordId: question.word.id,
                 modeAdapter: registration.adapter as WordScrambleModeAdapter,
@@ -193,14 +195,14 @@ class GameLauncherUnavailable extends StatelessWidget {
   Widget build(BuildContext context) {
     final message = switch (reason) {
       GameLauncherUnavailableReason.missingDependency =>
-        'Vocabulary is unavailable for this game.',
+        'คลังคำศัพท์สำหรับเกมนี้ไม่พร้อมใช้งาน',
       GameLauncherUnavailableReason.emptyInventory =>
-        'Save at least one vocabulary word before playing.',
+        'บันทึกคำศัพท์อย่างน้อยหนึ่งคำก่อนเล่น',
       GameLauncherUnavailableReason.loadFailure =>
-        'Vocabulary could not be loaded for this game.',
+        'โหลดคำศัพท์สำหรับเกมนี้ไม่ได้',
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Game unavailable')),
+      appBar: AppBar(title: const Text('เกมยังไม่พร้อมใช้งาน')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -213,7 +215,7 @@ class GameLauncherUnavailable extends StatelessWidget {
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => Navigator.maybePop(context),
-                child: const Text('Back'),
+                child: const Text('กลับ'),
               ),
             ],
           ),

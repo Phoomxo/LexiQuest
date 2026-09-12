@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/contrastive_explanation.dart';
@@ -10,6 +11,57 @@ import 'package:vocab_learning_app/features/review/domain/content_quality_report
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 
 void main() {
+  testWidgets(
+    'Task5 feedback semantic bookmark and report retain committed identity',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        ContentIdentity? bookmarked;
+        ContentIdentity? reported;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AnswerFeedbackPanel(
+                feedback: AnswerFeedback.fromCommittedResult(
+                  result: const AnswerRecordResult(
+                    inserted: true,
+                    isCorrect: false,
+                    srs: null,
+                  ),
+                  context: const AnswerFeedbackContext(
+                    canonicalCorrectAnswer: 'station',
+                  ),
+                ),
+                bookmarkIdentity: _bookmarkIdentity,
+                onBookmark: (identity) async => bookmarked = identity,
+                reportIdentity: _bookmarkIdentity,
+                onReport:
+                    ({required identity, required reason, comment}) async =>
+                        reported = identity,
+              ),
+            ),
+          ),
+        );
+        for (final label in ['บันทึกไว้ทบทวน', 'รายงานเนื้อหา']) {
+          final node = tester.getSemantics(find.bySemanticsLabel(label));
+          expect(
+            node.getSemanticsData().hasAction(SemanticsAction.tap),
+            isTrue,
+          );
+          node.owner!.performAction(node.id, SemanticsAction.tap);
+          await tester.pumpAndSettle();
+        }
+        expect(bookmarked, _bookmarkIdentity);
+        await tester.tap(find.text('ปัญหาคำตอบ'));
+        await tester.pump();
+        await tester.tap(find.text('ส่งรายงาน'));
+        await tester.pumpAndSettle();
+        expect(reported, _bookmarkIdentity);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
   testWidgets(
     'announces a correct committed answer with a non-color cue and next action',
     (tester) async {
@@ -33,19 +85,16 @@ void main() {
       );
 
       expect(find.byIcon(Icons.check_circle), findsOneWidget);
-      expect(find.text('Correct'), findsOneWidget);
-      expect(find.text('Correct answer: station'), findsOneWidget);
-      expect(find.text('Next question'), findsOneWidget);
+      expect(find.text('ถูกต้อง'), findsOneWidget);
+      expect(find.text('คำตอบที่ถูก: station'), findsOneWidget);
+      expect(find.text('ข้อถัดไป'), findsOneWidget);
       final semantics = tester.getSemantics(
         find.byKey(const ValueKey<String>('answer-feedback-panel')),
       );
-      expect(
-        semantics.label,
-        'Correct. Correct answer: station. Next question.',
-      );
+      expect(semantics.label, 'ถูกต้อง คำตอบที่ถูก: station ข้อถัดไป');
       expect(semantics.flagsCollection.isLiveRegion, isTrue);
 
-      await tester.tap(find.text('Next question'));
+      await tester.tap(find.text('ข้อถัดไป'));
       expect(nextPressed, isTrue);
       semanticsHandle.dispose();
     },
@@ -73,11 +122,11 @@ void main() {
       );
 
       expect(find.byIcon(Icons.cancel), findsOneWidget);
-      expect(find.text('Not quite'), findsOneWidget);
-      expect(find.text('Correct answer: station'), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('ยังไม่ถูก'), findsOneWidget);
+      expect(find.text('คำตอบที่ถูก: station'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
 
-      await tester.tap(find.text('Try again'));
+      await tester.tap(find.text('ลองอีกครั้ง'));
       expect(retryPressed, isTrue);
     },
   );
@@ -105,7 +154,7 @@ void main() {
 
     expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
     expect(find.byType(AnimatedSwitcher), findsNothing);
-    expect(find.text('Not quite'), findsOneWidget);
+    expect(find.text('ยังไม่ถูก'), findsOneWidget);
   });
 
   testWidgets('bookmark action carries the answered content revision', (
@@ -129,7 +178,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.bySemanticsLabel('Save for review'));
+    await tester.tap(find.bySemanticsLabel('บันทึกไว้ทบทวน'));
     await tester.pump();
     expect(bookmarked, _bookmarkIdentity);
   });
@@ -159,11 +208,11 @@ void main() {
       ),
     );
 
-    await tester.tap(find.bySemanticsLabel('Report content'));
+    await tester.tap(find.bySemanticsLabel('รายงานเนื้อหา'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Answer problem'));
+    await tester.tap(find.text('ปัญหาคำตอบ'));
     await tester.pump();
-    await tester.tap(find.text('Submit report'));
+    await tester.tap(find.text('ส่งรายงาน'));
     await tester.pumpAndSettle();
 
     expect(reportedIdentity, _bookmarkIdentity);
@@ -189,7 +238,7 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('Report content'), findsNothing);
+    expect(find.bySemanticsLabel('รายงานเนื้อหา'), findsNothing);
   });
 
   testWidgets(
@@ -226,16 +275,16 @@ void main() {
       final semantics = tester.getSemantics(
         find.byKey(const ValueKey<String>('contrastive-feedback-panel')),
       );
-      expect(semantics.label, 'Contrastive feedback');
-      expect(
-        find.bySemanticsLabel('Why the correct answer works'),
-        findsOneWidget,
-      );
+      expect(semantics.label, 'คำอธิบายเปรียบเทียบคำตอบ');
+      expect(find.bySemanticsLabel('เหตุผลของคำตอบที่ถูก'), findsOneWidget);
       expect(
         find.bySemanticsLabel('A station is where trains stop.'),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('Why your choice differs'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('คำตอบที่เลือกต่างกันอย่างไร'),
+        findsOneWidget,
+      );
       expect(
         find.bySemanticsLabel(
           'A terminal is broader than the requested train stop.',

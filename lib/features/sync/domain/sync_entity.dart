@@ -13,6 +13,7 @@ import '../../time_tracking/domain/learning_time_segment.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
+const String researchMeasurementV1RulesRevision = 'research-measurement-v1-r2';
 const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
 const String vocabularyWordV2RulesRevision = 'vocabulary-word-v2-r1';
 const String experimentAssignmentV1RulesRevision =
@@ -70,6 +71,7 @@ enum SyncCollection {
   motivationMeasurementRuns,
   motivationResponses,
   researchParticipationPermits,
+  researchSessionProofs,
   measurementOpportunities,
   neutralEventsV2,
 
@@ -95,6 +97,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learnerPreferences => 'learner_preferences',
     SyncCollection.motivationMeasurementRuns => 'motivation_measurement_runs',
     SyncCollection.motivationResponses => 'motivation_responses',
+    SyncCollection.researchSessionProofs => 'research_session_proofs',
     SyncCollection.researchParticipationPermits =>
       'research_participation_permits',
     SyncCollection.measurementOpportunities => 'measurement_opportunities',
@@ -119,6 +122,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learnerPreferences => 'learnerPreference',
     SyncCollection.motivationMeasurementRuns => 'motivationMeasurementRun',
     SyncCollection.motivationResponses => 'motivationResponse',
+    SyncCollection.researchSessionProofs => 'researchSessionProof',
     SyncCollection.researchParticipationPermits =>
       'researchParticipationPermit',
     SyncCollection.measurementOpportunities => 'measurementOpportunity',
@@ -142,6 +146,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.learnerPreferences => const <int>{1, 2},
     SyncCollection.motivationMeasurementRuns ||
     SyncCollection.motivationResponses ||
+    SyncCollection.researchSessionProofs ||
     SyncCollection.researchParticipationPermits ||
     SyncCollection.measurementOpportunities ||
     SyncCollection.neutralEventsV2 ||
@@ -196,6 +201,7 @@ final class SyncPayloadRollout {
     SyncCollection.learnerPreferences => collection.defaultWritePayloadVersion,
     SyncCollection.motivationMeasurementRuns ||
     SyncCollection.motivationResponses ||
+    SyncCollection.researchSessionProofs ||
     SyncCollection.researchParticipationPermits ||
     SyncCollection.measurementOpportunities ||
     SyncCollection.neutralEventsV2 ||
@@ -1376,6 +1382,8 @@ abstract final class AssessmentRunSyncPayloadContract {
             22,
             23,
             24,
+            25,
+            26,
           }.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||

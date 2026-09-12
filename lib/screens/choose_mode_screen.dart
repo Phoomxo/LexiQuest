@@ -13,23 +13,27 @@ import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/learning_repository.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../navigation/app_routes.dart';
+import '../services/local_reading_catalog.dart';
 import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'associative_reading_launcher_screen.dart';
 import 'cefr_article_reader_screen.dart';
+import 'local_reading_library_screen.dart';
 import 'definition_quiz_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
 import 'matching_mode_screen.dart';
+import 'pair_matching_learn_screen.dart';
 import 'sentence_scramble_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'speak_to_text_screen.dart';
@@ -43,12 +47,14 @@ class ChooseModeScreen extends StatefulWidget {
     this.lessonModes,
     this.sessionConfigurationPolicy = const SessionConfigurationPolicy(),
     this.leadingCards = const <Widget>[],
+    this.secondaryCards = const <Widget>[],
   });
 
   final FeatureRegistry? featureRegistry;
   final LessonModeRegistry? lessonModes;
   final SessionConfigurationPolicy sessionConfigurationPolicy;
   final List<Widget> leadingCards;
+  final List<Widget> secondaryCards;
 
   @override
   State<ChooseModeScreen> createState() => _ChooseModeScreenState();
@@ -70,268 +76,412 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     final cefrReading = modes?.resolve(LessonMode.cefrReading);
     final sentenceScramble = modes?.resolve(LessonMode.sentenceScramble);
     final wordScramble = modes?.resolve(LessonMode.wordScramble);
+    final tiles = <_LearningTile>[
+      if (features?.isVisible(Feature.reading) == true)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/associative-reading'),
+          glossary: NavigationGlossary.require(
+            'home/learn/associative-reading',
+          ),
+          onTap: () => _openMode(
+            context,
+            LessonMode.associativeReading,
+            (_, _, configuration, revalidateConfiguration) =>
+                AssociativeReadingLauncherScreen(
+                  sessionConfiguration: configuration,
+                  revalidateSessionConfiguration: revalidateConfiguration,
+                ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz'),
+          glossary: NavigationGlossary.require('home/learn/quiz'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.meaningQuiz,
+            (_, adapter, configuration, _) => QuizScreen(
+              modeAdapter: adapter as MeaningQuizModeAdapter,
+              sessionConfiguration: configuration,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true && typedRecall != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/typed-recall'),
+          glossary: NavigationGlossary.require('home/learn/quiz/typed-recall'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.typedRecall,
+            (_, adapter, configuration, _) => QuizScreen.typedRecall(
+              modeAdapter: adapter as TypedRecallModeAdapter,
+              sessionConfiguration: configuration,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true && matching != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/matching'),
+          glossary: NavigationGlossary.require('home/learn/quiz/matching'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.matching,
+            (_, adapter, configuration, _) => MatchingModeScreen(
+              modeAdapter: adapter as MatchingModeAdapter,
+              sessionConfiguration: configuration,
+              timeLimit: configuration.timing.timedLimit,
+              showCountdown: !configuration.timing.isUntimedAlternative,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/cloze'),
+          glossary: NavigationGlossary.require('home/learn/quiz/cloze'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.cloze,
+            (_, adapter, configuration, _) => FillInTheBlanksScreen(
+              modeAdapter: adapter as ClozeModeAdapter,
+              sessionConfiguration: configuration,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/definition'),
+          glossary: NavigationGlossary.require('home/learn/quiz/definition'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.definitionQuiz,
+            (_, adapter, configuration, _) => DefinitionQuizScreen(
+              modeAdapter: adapter as DefinitionQuizModeAdapter,
+              sessionConfiguration: configuration,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.srs) == true)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/srs'),
+          glossary: NavigationGlossary.require('home/learn/srs'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.flashcard,
+            (_, adapter, configuration, _) => SrsFlashcardsScreen(
+              modeAdapter: adapter as FlashcardModeAdapter,
+              sessionConfiguration: configuration,
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.reading) == true && cefrReading != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/reading/cefr'),
+          glossary: NavigationGlossary.require('home/learn/reading/cefr'),
+          onTap: () => _openReadingLibrary(
+            context,
+            () => _openMode(context, LessonMode.cefrReading, (
+              _,
+              adapter,
+              configuration,
+              _,
+            ) {
+              final cefrAdapter = adapter as CefrReadingModeAdapter;
+              return NativeVocabularyLessonModeLoader(
+                sessionConfiguration: configuration,
+                isQuestionAvailable: (question) {
+                  try {
+                    cefrAdapter.requireCanonicalCefrLevel(
+                      question.word.cefrLevel,
+                    );
+                    return true;
+                  } on StateError {
+                    return false;
+                  }
+                },
+                builder: (_, session, question) => CefrArticleReaderScreen(
+                  title: LocalReadingCatalog.forLevel(
+                    question.word.cefrLevel!,
+                  ).title,
+                  contentNotice: LocalReadingCatalog.notice,
+                  content:
+                      '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).text}\n\n'
+                      '${LocalReadingCatalog.forLevel(question.word.cefrLevel!).reflection}\n\n'
+                      '${question.word.spelling} means ${question.word.meaning}.',
+                  cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
+                    question.word.cefrLevel,
+                  ),
+                  ownerId: session.ownerId,
+                  sessionId: session.id,
+                  wordId: question.word.id,
+                  modeAdapter: cefrAdapter,
+                ),
+              );
+            }),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true && dictation != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/dictation'),
+          glossary: NavigationGlossary.require('home/learn/quiz/dictation'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.dictation,
+            (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
+              sessionConfiguration: configuration,
+              builder: (_, session, question) => DictationQuizScreen(
+                targetWord: question.word.spelling,
+                ownerId: session.ownerId,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: adapter as DictationModeAdapter,
+              ),
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true && sentenceScramble != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/sentence-scramble'),
+          glossary: NavigationGlossary.require(
+            'home/learn/quiz/sentence-scramble',
+          ),
+          onTap: () => _openMode(
+            context,
+            LessonMode.sentenceScramble,
+            (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
+              sessionConfiguration: configuration,
+              builder: (_, session, question) => SentenceScrambleScreen(
+                targetSentence:
+                    '${question.word.spelling} means '
+                    '${question.word.meaning}',
+                translation: question.word.meaning,
+                ownerId: session.ownerId,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: adapter as SentenceScrambleModeAdapter,
+              ),
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.quiz) == true && wordScramble != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/quiz/word-scramble'),
+          glossary: NavigationGlossary.require('home/learn/quiz/word-scramble'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.wordScramble,
+            (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
+              sessionConfiguration: configuration,
+              builder: (_, session, question) => WordScrambleScreen(
+                word: question.word.spelling,
+                meaning: question.word.meaning,
+                partOfSpeech: question.word.partOfSpeech,
+                ownerId: session.ownerId,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: adapter as WordScrambleModeAdapter,
+              ),
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.speechPractice) == true &&
+          speaking != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/speech/speaking'),
+          glossary: NavigationGlossary.require('home/learn/speech/speaking'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.speaking,
+            (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
+              sessionConfiguration: configuration,
+              builder: (_, session, question) => SpeakToTextScreen(
+                correctWord: question.word.spelling,
+                ownerId: session.ownerId,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: adapter as SpeakingModeAdapter,
+              ),
+            ),
+          ),
+        ),
+      if (features?.isVisible(Feature.speechPractice) == true &&
+          shadowing != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/speech/shadowing'),
+          glossary: NavigationGlossary.require('home/learn/speech/shadowing'),
+          onTap: () => _openMode(
+            context,
+            LessonMode.shadowing,
+            (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
+              sessionConfiguration: configuration,
+              builder: (_, session, question) => ShadowingChallengeScreen(
+                referenceSentence: question.word.spelling,
+                ownerId: session.ownerId,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: adapter as ShadowingModeAdapter,
+              ),
+            ),
+          ),
+        ),
+    ];
+    const groups = <String, List<String>>{
+      'จำคำศัพท์': [
+        'home/learn/quiz',
+        'home/learn/quiz/typed-recall',
+        'home/learn/quiz/matching',
+        'home/learn/quiz/definition',
+        'home/learn/srs',
+        'home/learn/quiz/word-scramble',
+      ],
+      'อ่านและประโยค': [
+        'home/learn/associative-reading',
+        'home/learn/quiz/cloze',
+        'home/learn/reading/cefr',
+        'home/learn/quiz/sentence-scramble',
+      ],
+      'ฟังและพูด': [
+        'home/learn/quiz/dictation',
+        'home/learn/speech/speaking',
+        'home/learn/speech/shadowing',
+      ],
+    };
+    _LearningTile? starter;
+    if (dependencies?.learning != null &&
+        dependencies?.createLessonController != null) {
+      for (final candidate in const {
+        'home/learn/quiz': LessonMode.meaningQuiz,
+        'home/learn/srs': LessonMode.flashcard,
+        'home/learn/associative-reading': LessonMode.associativeReading,
+      }.entries) {
+        if (modes?.resolve(candidate.value) == null ||
+            (candidate.value == LessonMode.associativeReading &&
+                typedRecall == null)) {
+          continue;
+        }
+        for (final tile in tiles) {
+          if (tile.glossary.id == candidate.key) starter = tile;
+        }
+        if (starter != null) break;
+      }
+    }
+    final visibleGroups = groups.entries
+        .where(
+          (group) =>
+              tiles.any((tile) => group.value.contains(tile.glossary.id)),
+        )
+        .toList(growable: false);
     return Scaffold(
-      appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
+      appBar: AppBar(title: const Text('เรียน')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          ...widget.leadingCards,
-          if (features?.isVisible(Feature.reading) == true)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/associative-reading'),
-              glossary: NavigationGlossary.require(
-                'home/learn/associative-reading',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.associativeReading,
-                (_, _, configuration, revalidateConfiguration) =>
-                    AssociativeReadingLauncherScreen(
-                      sessionConfiguration: configuration,
-                      revalidateSessionConfiguration: revalidateConfiguration,
-                    ),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz'),
-              glossary: NavigationGlossary.require('home/learn/quiz'),
-              onTap: () => _openMode(
-                context,
-                LessonMode.meaningQuiz,
-                (_, adapter, configuration, _) => QuizScreen(
-                  modeAdapter: adapter as MeaningQuizModeAdapter,
-                  sessionConfiguration: configuration,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true && typedRecall != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/typed-recall'),
-              glossary: NavigationGlossary.require(
-                'home/learn/quiz/typed-recall',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.typedRecall,
-                (_, adapter, configuration, _) => QuizScreen.typedRecall(
-                  modeAdapter: adapter as TypedRecallModeAdapter,
-                  sessionConfiguration: configuration,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true && matching != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/matching'),
-              glossary: NavigationGlossary.require('home/learn/quiz/matching'),
-              onTap: () => _openMode(
-                context,
-                LessonMode.matching,
-                (_, adapter, configuration, _) => MatchingModeScreen(
-                  modeAdapter: adapter as MatchingModeAdapter,
-                  sessionConfiguration: configuration,
-                  timeLimit: configuration.timing.timedLimit,
-                  showCountdown: !configuration.timing.isUntimedAlternative,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/cloze'),
-              glossary: NavigationGlossary.require('home/learn/quiz/cloze'),
-              onTap: () => _openMode(
-                context,
-                LessonMode.cloze,
-                (_, adapter, configuration, _) => FillInTheBlanksScreen(
-                  modeAdapter: adapter as ClozeModeAdapter,
-                  sessionConfiguration: configuration,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/definition'),
-              glossary: NavigationGlossary.require(
-                'home/learn/quiz/definition',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.definitionQuiz,
-                (_, adapter, configuration, _) => DefinitionQuizScreen(
-                  modeAdapter: adapter as DefinitionQuizModeAdapter,
-                  sessionConfiguration: configuration,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.srs) == true)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/srs'),
-              glossary: NavigationGlossary.require('home/learn/srs'),
-              onTap: () => _openMode(
-                context,
-                LessonMode.flashcard,
-                (_, adapter, configuration, _) => SrsFlashcardsScreen(
-                  modeAdapter: adapter as FlashcardModeAdapter,
-                  sessionConfiguration: configuration,
-                ),
-              ),
-            ),
-          if (features?.isVisible(Feature.reading) == true &&
-              cefrReading != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/reading/cefr'),
-              glossary: NavigationGlossary.require('home/learn/reading/cefr'),
-              onTap: () => _openMode(context, LessonMode.cefrReading, (
-                _,
-                adapter,
-                configuration,
-                _,
-              ) {
-                final cefrAdapter = adapter as CefrReadingModeAdapter;
-                return NativeVocabularyLessonModeLoader(
-                  sessionConfiguration: configuration,
-                  isQuestionAvailable: (question) {
-                    try {
-                      cefrAdapter.requireCanonicalCefrLevel(
-                        question.word.cefrLevel,
-                      );
-                      return true;
-                    } on StateError {
-                      return false;
-                    }
-                  },
-                  builder: (_, session, question) => CefrArticleReaderScreen(
-                    title: 'Vocabulary reading',
-                    content:
-                        '${question.word.spelling} means '
-                        '${question.word.meaning}.',
-                    cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
-                      question.word.cefrLevel,
-                    ),
-                    ownerId: session.ownerId,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: cefrAdapter,
-                  ),
-                );
-              }),
-            ),
-          if (features?.isVisible(Feature.quiz) == true && dictation != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/dictation'),
-              glossary: NavigationGlossary.require('home/learn/quiz/dictation'),
-              onTap: () => _openMode(
-                context,
-                LessonMode.dictation,
-                (_, adapter, configuration, _) =>
-                    NativeVocabularyLessonModeLoader(
-                      sessionConfiguration: configuration,
-                      builder: (_, session, question) => DictationQuizScreen(
-                        targetWord: question.word.spelling,
-                        ownerId: session.ownerId,
-                        sessionId: session.id,
-                        wordId: question.word.id,
-                        modeAdapter: adapter as DictationModeAdapter,
+          for (final card in widget.leadingCards)
+            _supplementaryCard(context, card),
+          if (starter != null) ...[
+            Card(
+              margin: EdgeInsets.zero,
+              elevation: 0,
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'เริ่มฝึกสั้น ๆ',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    Text(_modeDescription(starter.glossary.id)),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const ValueKey('learn-starter'),
+                      onPressed: _openingMode ? null : starter.onTap,
+                      icon: const Icon(Icons.play_arrow),
+                      label: Text('เริ่ม${starter.glossary.shortThaiLabel}'),
+                    ),
+                  ],
+                ),
               ),
             ),
-          if (features?.isVisible(Feature.quiz) == true &&
-              sentenceScramble != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/sentence-scramble'),
-              glossary: NavigationGlossary.require(
-                'home/learn/quiz/sentence-scramble',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.sentenceScramble,
-                (_, adapter, configuration, _) =>
-                    NativeVocabularyLessonModeLoader(
-                      sessionConfiguration: configuration,
-                      builder: (_, session, question) => SentenceScrambleScreen(
-                        targetSentence:
-                            '${question.word.spelling} means '
-                            '${question.word.meaning}',
-                        translation: question.word.meaning,
-                        ownerId: session.ownerId,
-                        sessionId: session.id,
-                        wordId: question.word.id,
-                        modeAdapter: adapter as SentenceScrambleModeAdapter,
-                      ),
-                    ),
+            const SizedBox(height: 24),
+          ],
+          if (widget.secondaryCards.isNotEmpty) ...[
+            Semantics(
+              header: true,
+              child: Text(
+                'แผนและรายการของฉัน',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
-          if (features?.isVisible(Feature.quiz) == true && wordScramble != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/quiz/word-scramble'),
-              glossary: NavigationGlossary.require(
-                'home/learn/quiz/word-scramble',
+            const SizedBox(height: 12),
+            for (final card in widget.secondaryCards)
+              _supplementaryCard(context, card),
+            const SizedBox(height: 12),
+          ],
+          Semantics(
+            header: true,
+            child: Text(
+              'เลือกฝึกเอง',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'เลือกตามสิ่งที่อยากฝึก แต่ละกิจกรรมใช้คำศัพท์และความก้าวหน้าที่มีอยู่',
+          ),
+          for (final group in visibleGroups) ...[
+            Padding(
+              padding: EdgeInsets.only(
+                top: group == visibleGroups.first ? 24 : 12,
+                bottom: 12,
               ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.wordScramble,
-                (_, adapter, configuration, _) =>
-                    NativeVocabularyLessonModeLoader(
-                      sessionConfiguration: configuration,
-                      builder: (_, session, question) => WordScrambleScreen(
-                        word: question.word.spelling,
-                        ownerId: session.ownerId,
-                        sessionId: session.id,
-                        wordId: question.word.id,
-                        modeAdapter: adapter as WordScrambleModeAdapter,
-                      ),
-                    ),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  group.key,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
             ),
-          if (features?.isVisible(Feature.speechPractice) == true &&
-              speaking != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/speech/speaking'),
-              glossary: NavigationGlossary.require(
-                'home/learn/speech/speaking',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.speaking,
-                (_, adapter, configuration, _) =>
-                    NativeVocabularyLessonModeLoader(
-                      sessionConfiguration: configuration,
-                      builder: (_, session, question) => SpeakToTextScreen(
-                        correctWord: question.word.spelling,
-                        ownerId: session.ownerId,
-                        sessionId: session.id,
-                        wordId: question.word.id,
-                        modeAdapter: adapter as SpeakingModeAdapter,
-                      ),
-                    ),
-              ),
-            ),
-          if (features?.isVisible(Feature.speechPractice) == true &&
-              shadowing != null)
-            _LearningTile(
-              key: const ValueKey<String>('home/learn/speech/shadowing'),
-              glossary: NavigationGlossary.require(
-                'home/learn/speech/shadowing',
-              ),
-              onTap: () => _openMode(
-                context,
-                LessonMode.shadowing,
-                (_, adapter, configuration, _) =>
-                    NativeVocabularyLessonModeLoader(
-                      sessionConfiguration: configuration,
-                      builder: (_, session, question) =>
-                          ShadowingChallengeScreen(
-                            referenceSentence: question.word.spelling,
-                            ownerId: session.ownerId,
-                            sessionId: session.id,
-                            wordId: question.word.id,
-                            modeAdapter: adapter as ShadowingModeAdapter,
-                          ),
-                    ),
-              ),
+            for (final id in group.value)
+              for (final tile in tiles)
+                if (tile.glossary.id == id) tile,
+          ],
+          if (tiles.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _supplementaryCard(BuildContext context, Widget card) => CardTheme(
+    data: Theme.of(context).cardTheme.copyWith(margin: EdgeInsets.zero),
+    child: Padding(padding: const EdgeInsets.only(bottom: 12), child: card),
+  );
+
+  Future<void> _openReadingLibrary(
+    BuildContext context,
+    VoidCallback onVocabularyPractice,
+  ) async {
+    final registry =
+        widget.featureRegistry ??
+        AppDependenciesScope.maybeOf(context)?.features;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ProductionFeatureGate(
+          feature: Feature.reading,
+          registry: registry,
+          builder: (_) => LocalReadingLibraryScreen(
+            onVocabularyPractice: onVocabularyPractice,
+          ),
+        ),
       ),
     );
   }
@@ -418,6 +568,34 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     }
     setState(() => _openingMode = true);
     try {
+      if (mode == LessonMode.matching &&
+          (registration.adapter as MatchingModeAdapter).internalPairMatching &&
+          dependencies?.learning != null &&
+          dependencies?.activeOwnerIdentities != null) {
+        final owner = await dependencies!.activeOwnerIdentities!
+            .requireSingleActiveOwnerId();
+        final saved = await dependencies.learning!.loadActivityRecovery(
+          activityType: 'matching',
+          ownerId: owner,
+        );
+        // Legacy checkpoints retain the existing configuration and renderer.
+        if (saved == null || saved.checkpoint?.state['schemaVersion'] == 6) {
+          if (!context.mounted) return;
+          await AppNavigator.pushPage<void>(
+            context,
+            AppPage<void>(
+              name: registration.routeName,
+              builder: (_) => ProductionFeatureGate(
+                feature: Feature.quiz,
+                registry: features,
+                builder: (_) =>
+                    PairMatchingLearnScreen(dependencies: dependencies),
+              ),
+            ),
+          );
+          return;
+        }
+      }
       final configurationContext = await _loadConfigurationContext(
         dependencies,
         mode,
@@ -785,9 +963,45 @@ class _NativeVocabularyModeLoaderState
     LearningUseCases learning,
     UnifiedLessonSessionLifecycle lifecycle,
   ) async {
+    List<String>? eligibleWordIds;
+    final availability = widget.isQuestionAvailable;
+    if (availability != null) {
+      final owner = await learning.owners.getOrCreateActiveOwner();
+      // Scan bounded pages instead of treating the first page as the inventory.
+      // Canonical pinned admission below still rechecks owner/content identity.
+      final repository = learning.repository;
+      final wanted = widget.sessionConfiguration?.itemCount ?? 1;
+      eligibleWordIds = <String>[];
+      String? cursor;
+      while (eligibleWordIds.length < wanted) {
+        final candidates = repository is PagedQuizWordRepository
+            ? await (repository as PagedQuizWordRepository).listQuizWordPage(
+                ownerId: owner.id,
+                afterId: cursor,
+                limit: 100,
+              )
+            : await repository.listQuizWords(ownerId: owner.id, limit: 100);
+        if (candidates.isEmpty) break;
+        eligibleWordIds.addAll(
+          canonicalQuizQuestions(candidates)
+              .where(availability)
+              .map((question) => question.word.id)
+              .take(wanted - eligibleWordIds.length),
+        );
+        if (repository is! PagedQuizWordRepository || candidates.length < 100) {
+          break;
+        }
+        final next = candidates.last.id;
+        if (cursor != null && next.compareTo(cursor) <= 0) {
+          throw StateError('Candidate page did not advance');
+        }
+        cursor = next;
+      }
+    }
     final session = await lifecycle.initializeSession(
       learning.startQuiz(
         limit: widget.sessionConfiguration?.itemCount ?? 1,
+        pinnedWordIds: eligibleWordIds,
         sessionConfiguration: widget.sessionConfiguration,
       ),
     );
@@ -805,8 +1019,9 @@ class _NativeVocabularyModeLoaderState
       future: _load,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text('โหมดการเรียนนี้ยังไม่พร้อมใช้งาน')),
+          return Scaffold(
+            appBar: AppBar(title: const Text('กิจกรรมการเรียน')),
+            body: const Center(child: Text('โหมดการเรียนนี้ยังไม่พร้อมใช้งาน')),
           );
         }
         final session = snapshot.data;
@@ -816,8 +1031,19 @@ class _NativeVocabularyModeLoaderState
           );
         }
         if (session.isEmpty) {
-          return const Scaffold(
-            body: Center(child: Text('Add vocabulary before starting.')),
+          return Scaffold(
+            appBar: AppBar(title: const Text('กิจกรรมการเรียน')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  widget.isQuestionAvailable == null
+                      ? 'เพิ่มคำศัพท์ก่อนเริ่มเรียน'
+                      : 'ยังไม่มีคำศัพท์ที่เข้าเงื่อนไขของกิจกรรมนี้',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           );
         }
         final modeSurface = widget.builder(
@@ -851,6 +1077,12 @@ class _LearningTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
       child: Tooltip(
         message: glossary.tooltip,
         child: Semantics(
@@ -859,10 +1091,19 @@ class _LearningTile extends StatelessWidget {
           onTap: onTap,
           excludeSemantics: true,
           child: ListTile(
-            minVerticalPadding: 16,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
             leading: Icon(glossary.icon),
-            title: Text(glossary.fullThaiLabel),
-            subtitle: Text(glossary.tooltip),
+            title: Text(
+              glossary.shortThaiLabel,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: Text(
+              _modeDescription(glossary.id),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: onTap,
           ),
@@ -871,3 +1112,20 @@ class _LearningTile extends StatelessWidget {
     );
   }
 }
+
+String _modeDescription(String id) => switch (id) {
+  'home/learn/quiz' => 'เลือกความหมายของคำศัพท์ แล้วดูคำตอบที่ถูกต้อง',
+  'home/learn/quiz/typed-recall' => 'นึกคำศัพท์แล้วพิมพ์คำตอบด้วยตัวเอง',
+  'home/learn/quiz/matching' => 'จับคู่คำศัพท์กับความหมายให้ตรงกัน',
+  'home/learn/quiz/definition' => 'อ่านคำนิยามแล้วเลือกคำศัพท์ที่ตรงกัน',
+  'home/learn/srs' => 'พลิกบัตรคำและทบทวนคำศัพท์แบบเว้นระยะ',
+  'home/learn/quiz/word-scramble' => 'เรียงตัวอักษรให้เป็นคำศัพท์',
+  'home/learn/associative-reading' => 'อ่านเนื้อหาและเชื่อมคำศัพท์กับความหมาย',
+  'home/learn/quiz/cloze' => 'เลือกคำเติมช่องว่างให้ประโยคสมบูรณ์',
+  'home/learn/reading/cefr' => 'ฝึกอ่านเนื้อหาตามระดับภาษา',
+  'home/learn/quiz/sentence-scramble' => 'เรียงคำให้เป็นประโยคที่ถูกต้อง',
+  'home/learn/quiz/dictation' => 'ฟังคำศัพท์แล้วพิมพ์สิ่งที่ได้ยิน',
+  'home/learn/speech/speaking' => 'พูดคำศัพท์และตรวจข้อความที่ระบบได้ยิน',
+  'home/learn/speech/shadowing' => 'ฟังต้นแบบแล้วฝึกพูดตาม',
+  _ => throw StateError('Missing learning description for $id'),
+};

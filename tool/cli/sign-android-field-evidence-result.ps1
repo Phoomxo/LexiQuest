@@ -61,9 +61,9 @@ foreach ($requiredFile in @(
     }
 }
 $device = Get-Content -LiteralPath $deviceFile -Raw -Encoding utf8 |
-    ConvertFrom-Json
+    ConvertFrom-LexiQuestEvidenceJson
 $manifest = Get-Content -LiteralPath $manifestFile -Raw -Encoding utf8 |
-    ConvertFrom-Json
+    ConvertFrom-LexiQuestEvidenceJson
 $allowedEvidenceRoot = [IO.Path]::GetFullPath(
     (Join-Path $repoRoot 'field/evidence')
 ).TrimEnd('\', '/')
@@ -74,30 +74,9 @@ if (-not $instrumentedResultFile.StartsWith(
     throw 'InstrumentedResultPath must stay inside ignored field/evidence.'
 }
 $sourceEnvelope = Get-Content -LiteralPath $instrumentedResultFile -Raw `
-    -Encoding utf8 | ConvertFrom-Json
-if (
-    $device.physical -ne $true -or
-    [string]$device.collector.origin -cne 'physical-android-collector' -or
-    [string]$device.release.sourceCommit -cne [string]$manifest.sourceCommit -or
-    [string]$device.release.manifestGeneratedAtUtc -cne
-        [string]$manifest.generatedAtUtc -or
-    [string]$device.release.apkSha256 -cne
-        [string]$manifest.artifact.apkSha256 -or
-    [string]$device.release.signingCertificateSha256 -cne
-        [string]$manifest.artifact.signingCertificateSha256 -or
-    [string]$device.release.packageName -cne
-        [string]$manifest.artifact.packageName -or
-    [string]$device.release.versionName -cne
-        [string]$manifest.artifact.versionName -or
-    [string]$device.release.buildId -cne
-        [string]$manifest.artifact.buildId -or
-    [string]$device.release.versionCode -cne
-        [string]$manifest.artifact.versionCode -or
-    [string]$device.release.modelSha256 -cne
-        [string]$manifest.artifact.modelSha256 -or
-    [string]$device.collector.verifiedApkSha256 -cne
-        [string]$manifest.artifact.apkSha256
-) {
+    -Encoding utf8 | ConvertFrom-LexiQuestEvidenceJson
+if (-not (Test-LexiQuestDeviceCollectorEnvelope `
+    -DeviceEvidence $device -ReleaseManifest $manifest)) {
     throw 'The device record is not bound to the current release manifest.'
 }
 

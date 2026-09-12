@@ -182,8 +182,8 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
   @override
   Widget build(BuildContext context) {
     final title = switch (widget.command.phase) {
-      AssessmentPhase.pre => 'Pre-assessment',
-      AssessmentPhase.post => 'Post-assessment',
+      AssessmentPhase.pre => 'แบบประเมินก่อนเรียน',
+      AssessmentPhase.post => 'แบบประเมินหลังเรียน',
     };
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -200,11 +200,11 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Assessment unavailable. Your saved work was not removed.',
+                'แบบประเมินไม่พร้อมใช้งาน งานที่บันทึกไว้ไม่ได้ถูกลบ',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: _load, child: const Text('Try again')),
+              FilledButton(onPressed: _load, child: const Text('ลองอีกครั้ง')),
             ],
           ),
         ),
@@ -220,7 +220,7 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
       return Center(
         child: FilledButton(
           onPressed: _submitting ? null : _finish,
-          child: const Text('Finish assessment'),
+          child: const Text('จบแบบประเมิน'),
         ),
       );
     }
@@ -229,13 +229,13 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
       padding: const EdgeInsets.all(24),
       children: [
         Text(
-          'Instrument ${presentation.run.instrumentVersion} · '
-          'Form ${presentation.run.formVersion}',
+          'เครื่องมือ ${presentation.run.instrumentVersion} · '
+          'แบบประเมิน ${presentation.run.formVersion}',
           style: Theme.of(context).textTheme.labelLarge,
         ),
         const SizedBox(height: 12),
         Text(
-          'Question ${_itemIndex + 1} of ${presentation.items.length}',
+          'ข้อ ${_itemIndex + 1} จาก ${presentation.items.length}',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         const SizedBox(height: 20),
@@ -268,13 +268,13 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
   Widget _completedBody(AssessmentPresentationCompletion completion) {
     final comparisonMessage = switch (completion.comparison) {
       AssessmentComparisonReady result =>
-        'Pre ${_percent(result.preOutcome.accuracy)} · '
-            'Post ${_percent(result.postOutcome.accuracy)} · '
-            'Change ${_signedPercent(result.comparison.accuracyDelta)}',
+        'ก่อนเรียน ${_percent(result.preOutcome.accuracy)} · '
+            'หลังเรียน ${_percent(result.postOutcome.accuracy)} · '
+            'เปลี่ยนแปลง ${_signedPercent(result.comparison.accuracyDelta)}',
       AssessmentComparisonMissingPair() =>
-        'Comparison will appear after both compatible assessments are complete.',
+        'จะแสดงผลเปรียบเทียบเมื่อทำแบบประเมินก่อนและหลังที่ใช้เปรียบเทียบกันได้ครบแล้ว',
       AssessmentComparisonIncompatibleMetadata() =>
-        'Comparison unavailable because the pinned metadata does not match.',
+        'เปรียบเทียบไม่ได้ เนื่องจากข้อมูลรุ่นแบบประเมินที่กำหนดไว้ไม่ตรงกัน',
     };
     return ListView(
       padding: const EdgeInsets.all(24),
@@ -286,7 +286,7 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
         ),
         const SizedBox(height: 16),
         Text(
-          'Assessment complete',
+          'ทำแบบประเมินเสร็จแล้ว',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall,
         ),

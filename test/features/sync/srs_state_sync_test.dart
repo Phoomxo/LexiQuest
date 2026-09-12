@@ -1,9 +1,15 @@
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/packaged_starter_catalog.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +62,7 @@ SyncEntity _srsEntity({String? wordId, int revision = 1}) => SyncEntity(
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late db.AppDatabase database;
   late DriftSyncStore store;
 
@@ -68,27 +75,150 @@ void main() {
   tearDown(() async => database.close());
 
   group('SrsState sync — D6.2', () {
-    test('applyPullPage inserts new SRS state row', () async {
-      await store.applyPullPage(
-        ownerId: _ownerId,
-        collection: SyncCollection.srsStates,
-        page: PullPage(
-          changes: [_srsEntity()],
-          nextCursor: SyncCursor(
-            serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
-            documentId: _wordId,
+    test(
+      'pull without local evidence preserves the version-one cloud cache',
+      () async {
+        await store.applyPullPage(
+          ownerId: _ownerId,
+          collection: SyncCollection.srsStates,
+          page: PullPage(
+            changes: [_srsEntity()],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+              documentId: _wordId,
+            ),
+            hasMore: false,
           ),
-          hasMore: false,
-        ),
-      );
+        );
 
-      final rows = await (database.select(
-        database.srsStates,
-      )..where((r) => r.wordId.equals(_wordId))).get();
-      expect(rows, hasLength(1));
-      expect(rows.first.intervalDays, 3);
-      expect(rows.first.repetitions, 1);
-    });
+        final rows = await (database.select(
+          database.srsStates,
+        )..where((r) => r.wordId.equals(_wordId))).get();
+        expect(rows, hasLength(1));
+        expect(rows.first.intervalDays, 3);
+        expect(rows.first.repetitions, 1);
+        expect(rows.first.algorithmVersion, 1);
+      },
+    );
+
+    test(
+      'two learners restore isolated SRS rows for one packaged starter word',
+      () async {
+        await PackagedStarterCatalog.provision(
+          database,
+          DriftContentManifestRepository(
+            database,
+            loadArtifactBytes: _starterAsset,
+          ),
+          _starterAsset,
+        );
+        const secondOwner = 'owner-srs-second';
+        await database.customInsert(
+          "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+          "VALUES ('$secondOwner', 'localGuest', 1722758400001)",
+        );
+        final starterId = PackagedStarterCatalog.words.first.id;
+
+        for (final entry in <(String, double)>[
+          (_ownerId, 2.5),
+          (secondOwner, 7.5),
+        ]) {
+          final entity = _packagedSrsEntity(
+            wordId: starterId,
+            stability: entry.$2,
+          );
+          for (var delivery = 0; delivery < 2; delivery++) {
+            await store.applyPullPage(
+              ownerId: entry.$1,
+              collection: SyncCollection.srsStates,
+              page: PullPage(
+                changes: [entity],
+                nextCursor: SyncCursor(
+                  serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+                  documentId: entity.entityId,
+                ),
+                hasMore: false,
+              ),
+            );
+          }
+        }
+
+        final rows = await (database.select(
+          database.srsStates,
+        )..where((row) => row.wordId.equals(starterId))).get();
+        expect(rows, hasLength(2));
+        expect(
+          {for (final row in rows) row.ownerId: (row.id, row.stability)},
+          {
+            _ownerId: ('srs:$_ownerId:$starterId', 2.5),
+            secondOwner: ('srs:$secondOwner:$starterId', 7.5),
+          },
+        );
+      },
+    );
+
+    for (final source in ['corrupt packaged', 'foreign private']) {
+      test(
+        'SRS pull rejects a $source word without advancing the cursor',
+        () async {
+          late final String wordId;
+          if (source == 'corrupt packaged') {
+            await PackagedStarterCatalog.provision(
+              database,
+              DriftContentManifestRepository(
+                database,
+                loadArtifactBytes: _starterAsset,
+              ),
+              _starterAsset,
+            );
+            wordId = PackagedStarterCatalog.words.first.id;
+            await (database.update(
+              database.vocabularyWords,
+            )..where((row) => row.id.equals(wordId))).write(
+              const db.VocabularyWordsCompanion(
+                meaning: Value('synthetic corrupted meaning'),
+              ),
+            );
+          } else {
+            wordId = _wordId;
+            await database.customInsert(
+              "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+              "VALUES ('foreign-owner', 'localGuest', 1722758400001)",
+            );
+            await database.customUpdate(
+              "UPDATE vocabulary_categories SET owner_id = 'foreign-owner' "
+              "WHERE id = 'cat-1'",
+            );
+            await database.customUpdate(
+              "UPDATE vocabulary_words SET owner_id = 'foreign-owner', is_global = 1 "
+              "WHERE id = '$_wordId'",
+            );
+          }
+          final entity = _packagedSrsEntity(wordId: wordId, stability: 7.5);
+
+          await expectLater(
+            store.applyPullPage(
+              ownerId: _ownerId,
+              collection: SyncCollection.srsStates,
+              page: PullPage(
+                changes: [entity],
+                nextCursor: SyncCursor(
+                  serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+                  documentId: entity.entityId,
+                ),
+                hasMore: false,
+              ),
+            ),
+            throwsA(isA<InvalidSyncPayloadFailure>()),
+          );
+          expect(await database.select(database.srsStates).get(), isEmpty);
+          expect(
+            await store.readCheckpoint(_ownerId, SyncCollection.srsStates),
+            isNull,
+          );
+        },
+      );
+    }
 
     test('applyPullPage accepts a mutable revision-two SRS state', () async {
       final entity = _srsEntity(revision: 2);
@@ -143,6 +273,7 @@ void main() {
           database.srsStates,
         )..where((r) => r.wordId.equals(_wordId))).get();
         expect(rows, hasLength(1));
+        expect(rows.first.id, _srsId);
         expect(rows.first.stability, closeTo(2.5, 0.001));
         expect(
           rows.first.intervalDays,
@@ -198,6 +329,7 @@ void main() {
         expect(rebuilt.lapses, 1);
         expect(rebuilt.lastReviewAtUtcMs, 20);
         expect(rebuilt.intervalDays, 1);
+        expect(rebuilt.algorithmVersion, 2);
         expect(
           rebuilt.stability,
           isNot(2.5),
@@ -214,4 +346,35 @@ void main() {
       expect(outboxBefore, isEmpty, reason: 'no srsState outbox before answer');
     });
   });
+}
+
+SyncEntity _packagedSrsEntity({
+  required String wordId,
+  required double stability,
+}) => SyncEntity(
+  collection: SyncCollection.srsStates,
+  entityId: wordId,
+  revision: 1,
+  isDeleted: false,
+  payloadVersion: 1,
+  clientUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10),
+  serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+  payload: <String, Object?>{
+    'wordId': wordId,
+    'stability': stability,
+    'difficulty': 0.5,
+    'intervalDays': 3,
+    'repetitions': 1,
+    'lapses': 0,
+    'lastReviewAtUtcMs': 1722758400000,
+    'dueAtUtcMs': 1723017600000,
+    'algorithmVersion': 1,
+  },
+);
+
+Future<Uint8List?> _starterAsset(ContentIdentity identity) async {
+  final data = await rootBundle.load(
+    'assets/content/lexical_metadata/${identity.id.substring(5)}/r${identity.revision}.json',
+  );
+  return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 }

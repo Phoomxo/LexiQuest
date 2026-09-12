@@ -347,6 +347,10 @@ void main() {
         isCurrent: () => current,
       );
       final first = contextualize();
+      await first.openPlanning(ownerId: 'synthetic-wrong-owner');
+      expect(fallback.planningOwners, isEmpty);
+      await first.openPlanning(ownerId: f.today.ownerId);
+      expect(fallback.planningOwners, [f.today.ownerId]);
       final count = f.ids;
       final one = first.openReview(f.today.reviewWork);
       final two = contextualize().openReview(f.today.reviewWork);
@@ -362,6 +366,8 @@ void main() {
       await Future.wait([one, two]);
       current = false;
       await first.openReview(f.today.reviewWork);
+      await first.openPlanning(ownerId: f.today.ownerId);
+      expect(fallback.planningOwners, [f.today.ownerId]);
       expect(navigations, 1);
       expect(fallback.reviews, 0);
       await first.openHistory();
@@ -588,6 +594,12 @@ class _Fixture {
 }
 
 class _Fallback implements TodayHubActionDelegate {
+  final planningOwners = <String>[];
+  @override
+  Future<void> openPlanning({required String ownerId}) async {
+    planningOwners.add(ownerId);
+  }
+
   int reviews = 0, history = 0;
   List<TodayHubReviewWorkItem>? lastReview;
   final recommendations = <TodayHubRecommendation>[];

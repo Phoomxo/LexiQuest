@@ -900,8 +900,10 @@ final class OwnerLifecycleArchiveExporter {
                    AS failure_count,
                  SUM(CASE WHEN outcome = 'indeterminate' THEN 1 ELSE 0 END)
                    AS indeterminate_count,
-                 SUM(COALESCE(total_tokens, 0))
-                   AS total_tokens,
+                 CASE WHEN COUNT(total_tokens) = COUNT(*)
+                   THEN SUM(total_tokens) ELSE NULL END AS total_tokens,
+                 SUM(COALESCE(total_tokens, 0)) AS known_tokens,
+                 COUNT(total_tokens) AS token_reported_request_count,
                  SUM(latency_ms) AS total_latency_ms,
                  CASE
                    WHEN COUNT(provider_reported_cost_micros_usd) = COUNT(*)
@@ -927,7 +929,11 @@ final class OwnerLifecycleArchiveExporter {
           'successCount': row.read<int>('success_count'),
           'failureCount': row.read<int>('failure_count'),
           'indeterminateCount': row.read<int>('indeterminate_count'),
-          'totalTokens': row.read<int>('total_tokens'),
+          'totalTokens': row.readNullable<int>('total_tokens'),
+          'knownTokens': row.read<int>('known_tokens'),
+          'tokenReportedRequestCount': row.read<int>(
+            'token_reported_request_count',
+          ),
           'totalLatencyMs': row.read<int>('total_latency_ms'),
           'providerReportedCostMicrosUsd': row.readNullable<int>(
             'provider_cost',

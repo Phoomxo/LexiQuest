@@ -17,14 +17,27 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artifact_identity.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import '../support/accessibility_semantics_test_support.dart';
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 void main() {
   late AppDatabase database;
@@ -80,6 +93,224 @@ void main() {
   tearDown(() => database.close());
 
   testWidgets(
+    'optional sentence media preserves two-answer cloze evidence and final close',
+    (tester) async {
+      final provider = _ClozeVoiceProvider();
+      final voice = VoiceUseCases(
+        provider: provider,
+        disposeProvider: () async {},
+      );
+      final gateway = _ClozeSpeechGateway();
+      final speech = SpeechPracticeUseCases(gateway);
+      final research = InertResearchDependencies(database);
+      final dependencies = AppDependencies(
+        initialRoute: AppRoute.home,
+        runtimeStatus: const AppRuntimeStatus(
+          localData: RuntimeAvailability.ready,
+          firebase: RuntimeAvailability.ready,
+          supabase: RuntimeAvailability.ready,
+          backends: RuntimeAvailability.ready,
+        ),
+        config: null,
+        guestSessionService: _ClozeGuestSessionService(),
+        quest: testQuestUseCases(),
+        features: const BuildFeatureRegistry({
+          Feature.speechPractice: FeatureState.enabled,
+        }),
+        voice: voice,
+        speechPractice: speech,
+        experiments: research.experiments,
+        consents: research.consents,
+        experimentAssignments: research.experimentAssignments,
+        assignedLearningEventContext: research.assignedLearningEventContext,
+        evidencePolicyRolloutModeProvider:
+            research.evidencePolicyRolloutModeProvider,
+      );
+      try {
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: dependencies,
+            child: MaterialApp(
+              navigatorObservers: [appRouteObserver],
+              home: UnifiedLessonModeHost(
+                adapter: const ClozeModeAdapter(),
+                learning: learning,
+                createController: (adapter) => UnifiedLessonController(
+                  learning: learning,
+                  adapter: adapter,
+                ),
+                builder: (_) => _screen(learning),
+              ),
+            ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('The _____ is busy.'));
+        expect(find.byKey(const Key('sentence-practice-listen')), findsNothing);
+        expect(find.byKey(const Key('sentence-practice-speak')), findsNothing);
+        await _tapClozeControl(tester, 'cloze-mode-selected');
+        await _tapClozeControl(tester, 'cloze-option-word:airport-airport');
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        expect(provider.requests, isEmpty);
+        expect(gateway.starts, 0);
+        expect(find.byKey(const Key('sentence-practice-listen')), findsNothing);
+        await _tapClozeControl(tester, 'cloze-submit-selected');
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+        final attempts = await database.select(database.answerAttempts).get();
+        expect(attempts, hasLength(1));
+        final sessionId = attempts.single.sessionId;
+        final pointsBefore = await database
+            .select(database.pointsLedgerEntries)
+            .get();
+        final rewardsBefore = await database
+            .select(database.rewardTransactions)
+            .get();
+        final srsBefore = await database.select(database.srsStates).get();
+
+        await _tapClozeControl(tester, 'sentence-practice-listen');
+        await tester.pumpAndSettle();
+        expect(provider.requests.single.text, 'The airport is busy.');
+        await _tapClozeControl(tester, 'sentence-practice-speak');
+        await tester.pumpAndSettle();
+        expect(gateway.starts, 1);
+        final firstCallback = gateway.onEvent!;
+        firstCallback(_clozeSpeechEvent('The airport is busy.'));
+        await tester.pumpAndSettle();
+        expect(
+          find.textContaining('ระบบได้ยินว่า… The airport is busy.'),
+          findsOneWidget,
+        );
+        await _tapClozeControl(tester, 'sentence-practice-speak');
+        await tester.pumpAndSettle();
+        expect(gateway.starts, 2);
+        final lateCallback = gateway.onEvent!;
+        await _tapClozeControl(tester, 'sentence-practice-skip');
+        await tester.pumpAndSettle();
+        expect(find.textContaining('ระบบได้ยินว่า'), findsNothing);
+        expect(await database.select(database.answerAttempts).get(), attempts);
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          pointsBefore,
+        );
+        expect(
+          await database.select(database.rewardTransactions).get(),
+          rewardsBefore,
+        );
+        expect(await database.select(database.srsStates).get(), srsBefore);
+        expect(await database.select(database.speechEvidence).get(), isEmpty);
+        final sessionsBefore = await database
+            .select(database.learningSessions)
+            .get();
+        expect(sessionsBefore, hasLength(1));
+        expect(sessionsBefore.single.state, 'active');
+
+        gateway.permission = Completer<MediaPermissionState>();
+        await _tapClozeControl(tester, 'sentence-practice-speak');
+        await tester.pumpAndSettle();
+        expect(gateway.permissionRequests, 3);
+        expect(gateway.starts, 2);
+        await _tapClozeControl(tester, 'cloze-next');
+        await _pumpUntilFound(tester, find.text('The _____ closes.'));
+        gateway.permission!.complete(MediaPermissionState.granted);
+        lateCallback(_clozeSpeechEvent('stale airport transcript'));
+        await tester.pumpAndSettle();
+        expect(gateway.starts, 2);
+        expect(find.textContaining('stale airport transcript'), findsNothing);
+        expect(find.byKey(const Key('sentence-practice-speak')), findsNothing);
+        expect(await database.select(database.answerAttempts).get(), attempts);
+
+        await _tapClozeControl(tester, 'cloze-mode-selected');
+        await _tapClozeControl(tester, 'cloze-option-word:station-station');
+        await _tapClozeControl(tester, 'cloze-submit-selected');
+        await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
+        expect(find.text('The station closes.'), findsOneWidget);
+        lateCallback(_clozeSpeechEvent('stale airport transcript'));
+        await tester.pump();
+        expect(find.textContaining('stale airport transcript'), findsNothing);
+        await _tapClozeControl(tester, 'cloze-next');
+        await _pumpUntilFound(tester, find.byType(ScoreScreen));
+        final finalAttempts = await database
+            .select(database.answerAttempts)
+            .get();
+        expect(finalAttempts, hasLength(2));
+        expect(finalAttempts.map((attempt) => attempt.sessionId).toSet(), {
+          sessionId,
+        });
+        expect(
+          finalAttempts.every(
+            (attempt) => attempt.promptMode == 'clozeSelected',
+          ),
+          isTrue,
+        );
+        final sessions = await database.select(database.learningSessions).get();
+        expect(sessions, hasLength(1));
+        expect(sessions.single.state, 'completed');
+        expect(await database.select(database.speechEvidence).get(), isEmpty);
+        expect(tester.takeException(), isNull);
+      } finally {
+        final permission = gateway.permission;
+        if (permission != null && !permission.isCompleted) {
+          permission.complete(MediaPermissionState.granted);
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await speech.dispose();
+        await voice.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'word cards can change before explicit confirmation and practice is optional',
+    (tester) async {
+      await tester.pumpWidget(MaterialApp(home: _screen(learning)));
+      await _pumpUntilFound(tester, find.text('The _____ is busy.'));
+      expect(find.text('The airport is busy.'), findsNothing);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('cloze-mode-selected')),
+      );
+      await tester.pump();
+      final wrong = find.byKey(
+        const ValueKey<String>('cloze-option-word:airport-station'),
+      );
+      await tester.ensureVisible(wrong);
+      await tester.pump();
+      await tester.tap(wrong);
+      await tester.pump();
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      final correct = find.byKey(
+        const ValueKey<String>('cloze-option-word:airport-airport'),
+      );
+      await tester.ensureVisible(correct);
+      await tester.pump();
+      await tester.tap(correct);
+      await tester.pump();
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      final confirm = find.byKey(
+        const ValueKey<String>('cloze-submit-selected'),
+      );
+      await tester.ensureVisible(confirm);
+      await tester.pump();
+      await tester.tap(confirm);
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(find.text('The airport is busy.'), findsOneWidget);
+      final next = find.byKey(const ValueKey<String>('cloze-next'));
+      await tester.ensureVisible(next);
+      await tester.pump();
+      await tester.tap(next);
+      await _pumpUntilFound(tester, find.text('The _____ closes.'));
+      expect(find.text('The airport is busy.'), findsNothing);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
     'f38 ultra review: selected cloze controls stay in response semantics',
     (tester) async {
       await tester.pumpWidget(
@@ -96,7 +327,7 @@ void main() {
 
       await _pumpUntilFound(tester, find.text('The _____ is busy.'));
       expect(tester.takeException(), isNull);
-      expect(find.text('Correct answer: airport'), findsNothing);
+      expect(find.text('คำตอบที่ถูก: airport'), findsNothing);
 
       final option = find.byKey(
         const ValueKey<String>('cloze-option-word:airport-airport'),
@@ -118,7 +349,14 @@ void main() {
       );
       await tester.ensureVisible(option);
       await tester.tap(option);
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await tester.pump();
+      final confirm = find.byKey(
+        const ValueKey<String>('cloze-submit-selected'),
+      );
+      await tester.ensureVisible(confirm);
+      await tester.pump();
+      await tester.tap(confirm);
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final attempt =
           (await database.select(database.answerAttempts).get()).single;
@@ -156,7 +394,14 @@ void main() {
       );
       await tester.ensureVisible(option);
       await tester.tap(option);
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await tester.pump();
+      final confirm = find.byKey(
+        const ValueKey<String>('cloze-submit-selected'),
+      );
+      await tester.ensureVisible(confirm);
+      await tester.pump();
+      await tester.tap(confirm);
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final root = find.byType(FillInTheBlanksScreen);
       expectInsideAccessibilityRole(
@@ -220,7 +465,7 @@ void main() {
       await tester.tap(
         find.byKey(const ValueKey<String>('cloze-submit-typed')),
       );
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       var attempts = await database.select(database.answerAttempts).get();
       expect(attempts, hasLength(1));
@@ -231,19 +476,27 @@ void main() {
       );
       expect(await database.select(database.srsStates).get(), hasLength(1));
 
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-next')),
+      );
+      await tester.pump();
       await tester.tap(find.byKey(const ValueKey<String>('cloze-next')));
       await _pumpUntilFound(tester, find.text('The _____ closes.'));
-      await tester.tap(find.text('Show strategy'));
+      await tester.tap(find.text('ดูวิธีคิด'));
       await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
       await tester.pump();
       await tester.enterText(
         find.byKey(const ValueKey<String>('cloze-typed-answer')),
         'station',
       );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')),
+      );
+      await tester.pump();
       await tester.tap(
         find.byKey(const ValueKey<String>('cloze-submit-typed')),
       );
-      await _pumpUntilFound(tester, find.text('Correct answer: station'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: station'));
 
       attempts = await database.select(database.answerAttempts).get();
       expect(attempts, hasLength(2));
@@ -279,7 +532,7 @@ void main() {
       );
       expect(
         find.bySemanticsLabel(
-          'Skipped. The cloze example has not been approved.',
+          'ข้ามข้อนี้ เนื่องจากตัวอย่างเติมคำยังไม่ผ่านการตรวจทาน',
         ),
         findsOneWidget,
       );
@@ -287,7 +540,7 @@ void main() {
       expectInsideAccessibilityRole(
         scope: root,
         descendant: find.bySemanticsLabel(
-          'Skipped. The cloze example has not been approved.',
+          'ข้ามข้อนี้ เนื่องจากตัวอย่างเติมคำยังไม่ผ่านการตรวจทาน',
         ),
         role: AccessibilitySemanticRole.prompt,
       );
@@ -336,7 +589,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-selected')));
     await tester.pump();
     expect(option, findsOneWidget);
-    final retained = tester.widget<FilledButton>(option).onPressed!;
+    await tester.ensureVisible(option);
+    await tester.tap(option);
+    await tester.pump();
+    final retained = tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey<String>('cloze-submit-selected')),
+        )
+        .onPressed!;
 
     final terminal = routeLifecycle.retire();
     retained();
@@ -437,7 +697,7 @@ void main() {
     );
     await _pumpUntilFound(
       tester,
-      find.text('Cloze Test is unavailable. No learning data changed.'),
+      find.text('กิจกรรมเติมคำไม่พร้อมใช้งาน ข้อมูลการเรียนไม่เปลี่ยนแปลง'),
     );
     final sessions = await database.select(database.learningSessions).get();
     expect(sessions.where((session) => session.state == 'active'), isEmpty);
@@ -589,6 +849,93 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
     if (finder.evaluate().isNotEmpty) return;
   }
   fail('Timed out waiting for $finder');
+}
+
+Future<void> _tapClozeControl(WidgetTester tester, String key) async {
+  final finder = find.byKey(ValueKey<String>(key));
+  await tester.ensureVisible(finder);
+  await tester.pump();
+  await tester.tap(finder);
+  await tester.pump();
+}
+
+SpeechRecognitionEvent _clozeSpeechEvent(String transcript) =>
+    SpeechRecognitionEvent(
+      transcript: transcript,
+      isFinal: true,
+      recognizedAtUtc: DateTime.utc(2026, 9, 8),
+      engine: 'synthetic-cloze-test',
+      locale: 'en-US',
+      recognitionConfidence: 0.98,
+    );
+
+class _ClozeSpeechGateway implements SpeechRecognitionGateway {
+  Completer<MediaPermissionState>? permission;
+  SpeechEventCallback? onEvent;
+  int starts = 0;
+  int permissionRequests = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<MediaPermissionState> requestPermission() async {
+    permissionRequests++;
+    return permission == null
+        ? MediaPermissionState.granted
+        : permission!.future;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String) onStatus,
+  }) async {}
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    starts++;
+    isListening = true;
+    this.onEvent = onEvent;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+
+  @override
+  Future<void> cancel() async {
+    isListening = false;
+  }
+}
+
+class _ClozeVoiceProvider implements VoiceProvider {
+  final requests = <VoiceRequest>[];
+
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    requests.add(request);
+    return VoicePlaybackResult(
+      requestedEngine: VoiceEngine.nativeTts,
+      actualEngine: VoiceEngine.nativeTts,
+      usedFallback: false,
+      cacheHit: false,
+      playbackCompleted: Future<void>.value(),
+    );
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
+class _ClozeGuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'synthetic-cloze-media');
 }
 
 const _checksumA =

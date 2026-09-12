@@ -4,7 +4,10 @@ import '../features/progress/domain/learning_calendar.dart';
 import '../features/progress/domain/personal_learning_profile.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../navigation/app_routes.dart';
+import '../navigation/navigation_glossary.dart';
 import '../runtime/app_dependencies.dart';
+import '../utils/local_study_datetime.dart';
+import '../widgets/learning_summary_card.dart';
 import 'learning_calendar_screen.dart';
 
 typedef ProgressLoader = Future<ProgressSnapshot> Function();
@@ -20,10 +23,14 @@ class MasteryDashboardScreen extends StatefulWidget {
     super.key,
     this.loader,
     this.openLearningCalendar,
+    this.onOpenWeakness,
+    this.onOpenReview,
   });
 
   final MasteryProfileLoader? loader;
   final OpenLearningCalendarAction? openLearningCalendar;
+  final VoidCallback? onOpenWeakness;
+  final VoidCallback? onOpenReview;
 
   @override
   State<MasteryDashboardScreen> createState() => _MasteryDashboardScreenState();
@@ -31,27 +38,47 @@ class MasteryDashboardScreen extends StatefulWidget {
 
 class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
   Future<PersonalLearningProfile>? _load;
+  AppDependencies? _dependencies;
   var _wasActive = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final isActive = TickerMode.valuesOf(context).enabled;
-    if (!isActive || (_wasActive && _load != null)) {
-      _wasActive = isActive;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final dependencyChanged = !identical(_dependencies, dependencies);
+    _dependencies = dependencies;
+    if (!isActive) {
+      _wasActive = false;
       return;
     }
+    if (!_wasActive ||
+        _load == null ||
+        (widget.loader == null && dependencyChanged)) {
+      _reload();
+    }
+    _wasActive = true;
+  }
+
+  @override
+  void didUpdateWidget(MasteryDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.loader, widget.loader) &&
+        TickerMode.valuesOf(context).enabled) {
+      _reload();
+      // A loader replacement and tab activation can occur in the same frame.
+      _wasActive = true;
+    }
+  }
+
+  void _reload() {
     final loader =
-        widget.loader ??
-        AppDependenciesScope.maybeOf(
-          context,
-        )?.progress?.loadPersonalLearningProfile;
+        widget.loader ?? _dependencies?.progress?.loadPersonalLearningProfile;
     _load = loader == null
         ? Future<PersonalLearningProfile>.error(
             StateError('personal learning profile dependency unavailable'),
           )
         : loader();
-    _wasActive = true;
   }
 
   @override
@@ -61,6 +88,9 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
       body: FutureBuilder<PersonalLearningProfile>(
         future: _load,
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
           if (snapshot.hasError) {
             return const _DashboardMessage(
               'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
@@ -71,6 +101,8 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
           }
           return _DashboardBody(
             snapshot.data!,
+            onOpenWeakness: widget.onOpenWeakness,
+            onOpenReview: widget.onOpenReview,
             openLearningCalendar:
                 widget.openLearningCalendar ?? _openLearningCalendar,
           );
@@ -81,16 +113,61 @@ class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
 }
 
 class _DashboardBody extends StatelessWidget {
-  const _DashboardBody(this.profile, {required this.openLearningCalendar});
+  const _DashboardBody(
+    this.profile, {
+    required this.openLearningCalendar,
+    this.onOpenWeakness,
+    this.onOpenReview,
+  });
 
   final PersonalLearningProfile profile;
   final OpenLearningCalendarAction openLearningCalendar;
+  final VoidCallback? onOpenWeakness;
+  final VoidCallback? onOpenReview;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _WeeklyEvidenceSummary(profile: profile),
+        const SizedBox(height: 24),
+        Text('สิ่งที่ควรทำต่อ', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        const Text(
+          'คำที่เคยตอบผิดช่วยบอกจุดที่ควรฝึก ส่วนคำถึงกำหนดทบทวนมาจากตารางทบทวนเดิม',
+        ),
+        if (onOpenReview != null) ...[
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            key: const ValueKey('mastery-open-review'),
+            onPressed: onOpenReview,
+            icon: const Icon(Icons.event_repeat),
+            label: const Text('เปิดศูนย์ทบทวน'),
+          ),
+        ],
+        if (onOpenWeakness != null) ...[
+          const SizedBox(height: 12),
+          Tooltip(
+            message: NavigationGlossary.require('home/weakness').tooltip,
+            child: Semantics(
+              button: true,
+              enabled: true,
+              label: NavigationGlossary.require('home/weakness').semanticsLabel,
+              onTap: onOpenWeakness,
+              excludeSemantics: true,
+              child: OutlinedButton.icon(
+                key: const ValueKey('home/weakness'),
+                onPressed: onOpenWeakness,
+                icon: const Icon(Icons.psychology_outlined),
+                label: Text(
+                  NavigationGlossary.require('home/weakness').fullThaiLabel,
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 24),
         if (profile.isEmpty)
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
@@ -100,11 +177,12 @@ class _DashboardBody extends StatelessWidget {
             ),
           ),
         _AxisSection(
-          title: 'Mastery',
+          title: 'ความชำนาญ',
           child:
               profile.mastery.availability == ProfileAxisAvailability.noEvidence
               ? const _NoEvidence()
               : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _MetricRow(
                       label: 'คำที่ชำนาญ',
@@ -116,10 +194,11 @@ class _DashboardBody extends StatelessWidget {
                 ),
         ),
         _AxisSection(
-          title: 'SRS',
+          title: 'ทบทวนแบบเว้นระยะ',
           child: profile.srs.availability == ProfileAxisAvailability.noEvidence
               ? const _NoEvidence()
               : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _MetricRow(
                       label: 'คำที่ติดตาม',
@@ -133,17 +212,17 @@ class _DashboardBody extends StatelessWidget {
                 ),
         ),
         _AxisSection(
-          title: 'Effort',
+          title: 'เวลาเรียนจริง',
           child:
               profile.effort.availability == ProfileAxisAvailability.noEvidence
               ? const _NoEvidence()
               : _MetricRow(
-                  label: 'เวลาเรียนที่ active สัปดาห์นี้',
+                  label: 'เวลาที่ลงมือเรียนสัปดาห์นี้',
                   value: _duration(profile.effort.activeDuration),
                 ),
         ),
         _AxisSection(
-          title: 'Accuracy',
+          title: 'ความแม่นยำ',
           child: profile.accuracy.value == null
               ? const _NoEvidence()
               : _MetricRow(
@@ -154,7 +233,7 @@ class _DashboardBody extends StatelessWidget {
                 ),
         ),
         _AxisSection(
-          title: 'Weakness',
+          title: 'จุดที่ควรฝึกเพิ่ม',
           child:
               profile.weakness.availability ==
                   ProfileAxisAvailability.noEvidence
@@ -162,6 +241,7 @@ class _DashboardBody extends StatelessWidget {
               : profile.weakness.items.isEmpty
               ? const Text('ไม่พบจุดอ่อนในหลักฐานปัจจุบัน')
               : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final item in profile.weakness.items)
                       ListTile(
@@ -175,23 +255,24 @@ class _DashboardBody extends StatelessWidget {
                 ),
         ),
         _AxisSection(
-          title: 'Engagement',
+          title: 'ความต่อเนื่องในการเรียน',
           child:
               profile.engagement.availability ==
                   ProfileAxisAvailability.noEvidence
               ? const _NoEvidence()
               : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _MetricRow(
                       label: 'XP',
                       value: '${profile.engagement.totalXp}',
                     ),
                     _MetricRow(
-                      label: 'Streak',
+                      label: 'เรียนต่อเนื่อง',
                       value: '${profile.engagement.currentStreakDays} วัน',
                     ),
                     _MetricRow(
-                      label: 'Quest ที่สำเร็จ',
+                      label: 'ภารกิจที่สำเร็จ',
                       value: '${profile.engagement.completedQuestCount}',
                     ),
                     _MetricRow(
@@ -201,13 +282,66 @@ class _DashboardBody extends StatelessWidget {
                   ],
                 ),
         ),
-        const SizedBox(height: 8),
         FilledButton.tonalIcon(
           key: const Key('learning-calendar-action'),
           onPressed: () => openLearningCalendar(context, profile.calendar),
           icon: const Icon(Icons.calendar_month_outlined),
           label: const Text('เปิดปฏิทินการเรียน'),
         ),
+      ],
+    );
+  }
+}
+
+class _WeeklyEvidenceSummary extends StatelessWidget {
+  const _WeeklyEvidenceSummary({required this.profile});
+
+  final PersonalLearningProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final accuracy = profile.accuracy;
+    final calendar = profile.calendar;
+    final weekEnd = calendar.weekStart.add(const Duration(days: 6));
+    final period =
+        '${formatStudyCalendarDate(calendar.weekStart)} – '
+        '${formatStudyCalendarDate(weekEnd)}';
+    final timezone = studyTimezoneLabel(calendar.timezoneId);
+    final hasEvidence =
+        accuracy.availability == ProfileAxisAvailability.available &&
+        accuracy.sampleSize > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        LearningSummaryCard(
+          icon: Icons.school_outlined,
+          title: hasEvidence ? 'คำตอบสัปดาห์นี้' : 'ยังไม่มีคำตอบในสัปดาห์นี้',
+          value: hasEvidence
+              ? '${accuracy.correctCount} / ${accuracy.sampleSize}'
+              : null,
+          caption: hasEvidence
+              ? 'ตอบถูก ${accuracy.correctCount} จาก ${accuracy.sampleSize} คำตอบ'
+              : null,
+        ),
+        Text(
+          '$period · เวลา$timezone (${calendar.timezoneId})',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        if (!hasEvidence)
+          const Text('เริ่มฝึกเมื่อพร้อม แล้วกลับมาดูผลได้')
+        else ...<Widget>[
+          Text(
+            accuracy.sampleSize == 1
+                ? 'มีเพียง 1 คำตอบ จึงมีข้อมูลน้อย'
+                : 'คำตอบอาจมาจากกิจกรรมหลายรูปแบบ',
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'ข้อมูลนี้ยังใช้สรุปว่าจำคำศัพท์ได้เองไม่ได้ และยังไม่มีผลก่อนและหลังที่เปรียบเทียบกันได้',
+          ),
+        ],
       ],
     );
   }
@@ -255,7 +389,7 @@ class _MetricRow extends StatelessWidget {
         children: [
           Text(label),
           const SizedBox(height: 4),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
+          Text(value, style: Theme.of(context).textTheme.titleLarge),
         ],
       ),
     );
@@ -275,18 +409,15 @@ class _SkillRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(child: Text(skill.label)),
-              Text(
-                accuracy == null
-                    ? 'ยังไม่มีข้อมูล'
-                    : '${(accuracy * 100).toStringAsFixed(0)}%',
-              ),
-            ],
+          Text(skill.label),
+          const SizedBox(height: 4),
+          Text(
+            accuracy == null
+                ? 'ยังไม่มีข้อมูล'
+                : '${(accuracy * 100).toStringAsFixed(0)}%',
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(value: accuracy ?? 0),
+          if (accuracy != null) LinearProgressIndicator(value: accuracy),
           const SizedBox(height: 6),
           Text('จำนวนตัวอย่าง: ${skill.sampleSize}'),
         ],

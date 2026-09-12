@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/offline_content/application/offline_content_manager.dart';
 import '../features/offline_content/domain/offline_content_state.dart';
+import '../runtime/app_dependencies.dart';
+import '../runtime/registries/feature_registry.dart';
 
 final class OfflineContentManagerScreen extends StatefulWidget {
   const OfflineContentManagerScreen({
@@ -21,13 +23,13 @@ final class OfflineContentManagerScreen extends StatefulWidget {
 
 final class _OfflineContentManagerScreenState
     extends State<OfflineContentManagerScreen> {
-  late Future<List<_OfflineContentEntry>> _states;
+  Future<List<_OfflineContentEntry>>? _states;
   final Set<ContentIdentity> _busy = <ContentIdentity>{};
 
   @override
-  void initState() {
-    super.initState();
-    _states = _load();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _states ??= _load();
   }
 
   @override
@@ -98,19 +100,50 @@ final class _OfflineContentManagerScreenState
               final entry = states[index];
               final state = entry.state;
               final identity = state.identity;
-              final semanticLabel =
-                  '${identity.type.name} ${identity.id} '
-                  'revision ${identity.revision}'
-                  '${entry.canRemove ? '' : ' required by active learning'}';
               return Semantics(
                 container: true,
                 explicitChildNodes: true,
-                label: semanticLabel,
                 child: Card(
-                  child: ListTile(
-                    title: Text(identity.id),
-                    subtitle: Text(_statusText(state)),
-                    trailing: _action(entry),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          entry.title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(_statusText(state)),
+                        if (!entry.canRemove) ...[
+                          const SizedBox(height: 12),
+                          const Text('จำเป็นต่อการเรียนที่กำลังดำเนินอยู่'),
+                        ],
+                        const SizedBox(height: 12),
+                        _action(entry),
+                        const SizedBox(height: 12),
+                        ExpansionTile(
+                          key: ValueKey(
+                            'offline-content/details/${identity.id}',
+                          ),
+                          tilePadding: EdgeInsets.zero,
+                          title: const Text('รายละเอียดไฟล์'),
+                          children: [
+                            Text(
+                              'รหัส: ${identity.id} · รุ่น ${identity.revision}',
+                            ),
+                            Text(
+                              '${state.hasVerifiedBytes ? 'ขนาดที่ตรวจสอบแล้ว' : 'ข้อมูลที่ดาวน์โหลดได้'}: ${state.downloadedBytes} ไบต์',
+                            ),
+                            if (state.failureCode != null)
+                              Text(
+                                'สาเหตุ: ${_failureText(state.failureCode!)}',
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -122,13 +155,34 @@ final class _OfflineContentManagerScreenState
   }
 
   Future<List<_OfflineContentEntry>> _load() async {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final planning =
+        dependencies?.features.isVisible(Feature.studyPlanning) == true
+        ? dependencies?.studyPlanning
+        : null;
     final states = await widget.manager.catalog();
     return Future.wait(
       states.map((state) async {
         final canRemove =
             state.status != OfflineContentStatus.verified ||
             await widget.manager.canRemove(state.identity);
-        return _OfflineContentEntry(state: state, canRemove: canRemove);
+        String? title;
+        if (state.identity.type == ContentType.learningPack &&
+            planning != null) {
+          try {
+            final detail = await planning.loadPinnedVersion(state.identity);
+            if (detail.summary.contentIdentity == state.identity) {
+              title = detail.summary.title;
+            }
+          } on Object {
+            // Metadata is optional; never guess a name from ID or another revision.
+          }
+        }
+        return _OfflineContentEntry(
+          state: state,
+          canRemove: canRemove,
+          title: title ?? _typeLabel(state.identity.type),
+        );
       }),
     );
   }
@@ -155,22 +209,13 @@ final class _OfflineContentManagerScreenState
                 ),
                 child: const Text('ลบไฟล์'),
               )
-            : Tooltip(
-                message: 'จำเป็นต่อการเรียนที่กำลังดำเนินอยู่',
-                excludeFromSemantics: true,
-                child: Semantics(
-                  container: true,
-                  label: 'จำเป็นต่อการเรียนที่กำลังดำเนินอยู่',
-                  excludeSemantics: true,
-                  child: const Icon(Icons.lock_outline),
-                ),
-              ),
+            : const ExcludeSemantics(child: Icon(Icons.lock_outline)),
       OfflineContentStatus.quarantined ||
       OfflineContentStatus.interrupted => FilledButton(
         key: ValueKey<String>('offline-content/repair/${identity.id}'),
         onPressed: () =>
             _perform(identity, () async => widget.manager.repair(identity)),
-        child: const Text('ซ่อมแซม'),
+        child: const Text('ตรวจสอบและซ่อมไฟล์'),
       ),
       OfflineContentStatus.notDownloaded => FilledButton(
         key: ValueKey<String>('offline-content/download/${identity.id}'),
@@ -186,15 +231,45 @@ final class _OfflineContentManagerScreenState
     OfflineContentStatus.notDownloaded => 'ยังไม่ได้ดาวน์โหลด',
     OfflineContentStatus.downloading => 'กำลังดาวน์โหลด',
     OfflineContentStatus.verified =>
-      'พร้อมใช้งานออฟไลน์ • ${state.downloadedBytes} ไบต์',
+      'พร้อมใช้งานออฟไลน์ · ${_byteLabel(state.downloadedBytes)}',
     OfflineContentStatus.interrupted => 'การดาวน์โหลดถูกขัดจังหวะ',
     OfflineContentStatus.quarantined => 'ไฟล์ไม่ผ่านการตรวจสอบและถูกกักไว้',
+  };
+
+  static String _typeLabel(ContentType type) => switch (type) {
+    ContentType.learningPack => 'ชุดเนื้อหาการเรียน',
+    ContentType.lexicalMetadata => 'ข้อมูลประกอบคำศัพท์',
+    ContentType.assessmentForm => 'เนื้อหาแบบประเมิน',
+    ContentType.offlineArtifact => 'ไฟล์สำหรับใช้งานออฟไลน์',
+  };
+
+  static String _byteLabel(int bytes) {
+    if (bytes < 1024) return '$bytes ไบต์';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  static String _failureText(OfflineContentFailureCode code) => switch (code) {
+    OfflineContentFailureCode.checksumMismatch =>
+      'เนื้อหาไฟล์ไม่ตรงกับฉบับที่ตรวจสอบ',
+    OfflineContentFailureCode.sizeMismatch => 'ขนาดไฟล์ไม่ครบหรือไม่ตรง',
+    OfflineContentFailureCode.revisionMismatch => 'ไฟล์คนละรุ่นกับที่ต้องใช้',
+    OfflineContentFailureCode.missingArtifact => 'ไม่พบไฟล์ที่ต้องใช้',
+    OfflineContentFailureCode.unsupportedContent => 'ยังไม่รองรับเนื้อหานี้',
+    OfflineContentFailureCode.contentInUse => 'มีการเรียนที่ยังต้องใช้ไฟล์นี้',
+    OfflineContentFailureCode.interrupted => 'การดาวน์โหลดถูกขัดจังหวะ',
+    OfflineContentFailureCode.invalidState => 'สถานะไฟล์ไม่พร้อมใช้งาน',
   };
 }
 
 final class _OfflineContentEntry {
-  const _OfflineContentEntry({required this.state, required this.canRemove});
+  const _OfflineContentEntry({
+    required this.state,
+    required this.canRemove,
+    required this.title,
+  });
 
   final OfflineContentState state;
   final bool canRemove;
+  final String title;
 }

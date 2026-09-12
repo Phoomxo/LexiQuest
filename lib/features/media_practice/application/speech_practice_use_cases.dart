@@ -74,21 +74,40 @@ final class SpeechPracticeUseCases {
       }
       await gateway.initialize(
         onFailure: (failure) {
-          if (!session._accepts(attempt)) return;
+          if (session._finalizedAttempt == attempt) return;
+          final acceptsCurrent = session._accepts(attempt);
+          final acceptsStopping = session._acceptsStoppingFinal(attempt);
+          if (!acceptsCurrent && !acceptsStopping) return;
           session._engaged = false;
+          if (_isTerminalFailure(failure)) {
+            session._stoppingFinalAttempt = null;
+            if (acceptsCurrent) session._attempt += 1;
+          }
           onFailure(failure);
         },
         onStatus: (status) {
-          if (session._accepts(attempt)) onStatus(status);
+          if (session._finalizedAttempt != attempt &&
+              session._accepts(attempt)) {
+            onStatus(status);
+          }
         },
       );
       if (!session._accepts(attempt)) return false;
       await gateway.start(
         locale: locale,
         onEvent: (event) {
-          if (!session._accepts(attempt)) return;
-          if (event.isFinal) session._engaged = false;
+          if (session._finalizedAttempt == attempt) return;
+          final acceptsCurrent = session._accepts(attempt);
+          if (!acceptsCurrent &&
+              !(event.isFinal && session._acceptsStoppingFinal(attempt))) {
+            return;
+          }
+          if (event.isFinal) {
+            session._stoppingFinalAttempt = null;
+            session._finalizedAttempt = attempt;
+          }
           onEvent(event);
+          if (event.isFinal) session._engaged = false;
         },
       );
       final stillCurrent = session._accepts(attempt);
@@ -131,16 +150,33 @@ final class SpeechPracticeUseCases {
   Future<void> _stopSession(SpeechPracticeSession session) {
     if (!_isCurrent(session)) return Future<void>.value();
     final shouldStop = session._engaged || gateway.isListening;
-    session._attempt += 1;
-    session._engaged = false;
     if (!shouldStop) return Future<void>.value();
-    return _enqueue<void>(gateway.stop);
+    final attempt = session._attempt;
+    return _enqueue<void>(() async {
+      // Once accepted, cleanup must drain ahead of any later owner's native
+      // operation even if this session is released or superseded in the queue.
+      await gateway.stop();
+      if (session._accepts(attempt)) {
+        if (session._finalizedAttempt != attempt) {
+          session._stoppingFinalAttempt = attempt;
+        }
+        session._attempt += 1;
+        session._engaged = false;
+      }
+    });
   }
+
+  static bool _isTerminalFailure(SpeechFailureCode failure) =>
+      switch (failure) {
+        SpeechFailureCode.engine => false,
+        _ => true,
+      };
 
   Future<void> _cancelSession(SpeechPracticeSession session) {
     if (!_isCurrent(session)) return Future<void>.value();
     final shouldCancel = session._engaged || gateway.isListening;
     session._attempt += 1;
+    session._stoppingFinalAttempt = null;
     session._engaged = false;
     if (!shouldCancel) return Future<void>.value();
     return _enqueue<void>(gateway.cancel);
@@ -150,6 +186,7 @@ final class SpeechPracticeUseCases {
     if (!_isCurrent(session)) return Future<void>.value();
     final shouldCancel = session._engaged || gateway.isListening;
     session._attempt += 1;
+    session._stoppingFinalAttempt = null;
     session._engaged = false;
     _activeSession = null;
     if (!shouldCancel) return Future<void>.value();
@@ -236,6 +273,8 @@ final class SpeechPracticeSession {
   final SpeechPracticeUseCases _owner;
   final int _sessionId;
   int _attempt = 0;
+  int? _stoppingFinalAttempt;
+  int? _finalizedAttempt;
   bool _engaged = false;
   bool _released = false;
 
@@ -251,6 +290,7 @@ final class SpeechPracticeSession {
   }) async {
     if (_released || !isCurrent) return false;
     final attempt = ++_attempt;
+    _stoppingFinalAttempt = null;
     _engaged = true;
     try {
       return await _owner._startSession(
@@ -279,6 +319,9 @@ final class SpeechPracticeSession {
 
   bool _accepts(int attempt) =>
       !_released && _attempt == attempt && _owner._isCurrent(this);
+
+  bool _acceptsStoppingFinal(int attempt) =>
+      !_released && _stoppingFinalAttempt == attempt && _owner._isCurrent(this);
 
   @override
   String toString() => 'SpeechPracticeSession($_sessionId)';

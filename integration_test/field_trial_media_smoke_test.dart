@@ -29,10 +29,8 @@ void main() {
   testWidgets(
     'host fakes render camera microphone and model unavailable states',
     (tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+      // Keep native pointer coordinates aligned with the actual device view.
+      // A desktop-sized override puts scroll gestures outside a phone's view.
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       final directory = await Directory.systemTemp.createTemp(
@@ -160,10 +158,19 @@ void main() {
           isTrue,
         );
         await tester.tap(shadowingDestination);
+        final options = find.byKey(const ValueKey('session-options-toggle'));
+        await _pumpUntilFound(tester, options);
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(options);
+        await tester.pump();
+        expect(options.hitTestable(), findsOneWidget);
+        await tester.tap(options);
         final itemCount = find.byKey(
           const ValueKey<String>('session-item-count'),
         );
         await _pumpUntilFound(tester, itemCount);
+        await tester.ensureVisible(itemCount);
+        await tester.pump();
         await tester.enterText(itemCount, '1');
         FocusManager.instance.primaryFocus?.unfocus();
         await tester.pump();

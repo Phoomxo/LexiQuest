@@ -136,15 +136,17 @@ final class ContrastiveFeedbackPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final maximumHeight = (MediaQuery.sizeOf(context).height * 0.25).clamp(
-      96.0,
-      280.0,
-    );
+    final largeText = MediaQuery.textScalerOf(context).scale(16) >= 28;
+    final maximumHeight =
+        (MediaQuery.sizeOf(context).height * (largeText ? 0.20 : 0.25)).clamp(
+          96.0,
+          280.0,
+        );
     return Semantics(
       key: const ValueKey<String>('contrastive-feedback-panel'),
       container: true,
       explicitChildNodes: true,
-      label: 'Contrastive feedback',
+      label: 'คำอธิบายเปรียบเทียบคำตอบ',
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
@@ -161,13 +163,13 @@ final class ContrastiveFeedbackPanel extends StatelessWidget {
                 children: <Widget>[
                   _RationaleRow(
                     icon: Icons.lightbulb_outline,
-                    title: 'Why the correct answer works',
+                    title: 'เหตุผลของคำตอบที่ถูก',
                     rationale: explanation.correctRationale,
                   ),
                   const SizedBox(height: 12),
                   _RationaleRow(
                     icon: Icons.compare_arrows,
-                    title: 'Why your choice differs',
+                    title: 'คำตอบที่เลือกต่างกันอย่างไร',
                     rationale: explanation.distractorRationale,
                   ),
                 ],

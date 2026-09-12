@@ -6,6 +6,9 @@ import '../domain/learning_goal_repository.dart';
 
 typedef LearningGoalIdGenerator = String Function();
 typedef LearningGoalUtcNow = DateTime Function();
+typedef LearningGoalActiveOwnerId = Future<String> Function();
+typedef LearningGoalLearningDay =
+    DateTime Function(DateTime utcInstant, String timezoneId);
 
 enum LearningGoalDeadlineState { future, today, past }
 
@@ -17,9 +20,10 @@ final class LearningGoalCountdown {
 }
 
 final class LearningGoalCreateCommand {
-  const LearningGoalCreateCommand._(this.goal);
+  const LearningGoalCreateCommand._(this.goal, this.expectedOwnerId);
 
   final LearningGoal goal;
+  final String expectedOwnerId;
 }
 
 final class LearningGoalUseCases {
@@ -27,11 +31,15 @@ final class LearningGoalUseCases {
     required this.repository,
     required this.nowUtc,
     required this.generateId,
+    required this.activeOwnerId,
+    this.learningDay = TimezonePolicy.getLearningDay,
   });
 
   final LearningGoalRepository repository;
   final LearningGoalUtcNow nowUtc;
   final LearningGoalIdGenerator generateId;
+  final LearningGoalActiveOwnerId activeOwnerId;
+  final LearningGoalLearningDay learningDay;
 
   Future<List<LearningGoal>> list() => repository.list();
 
@@ -41,8 +49,8 @@ final class LearningGoalUseCases {
     required DateTime deadlineAtUtc,
     required LearningGoalTimezoneContext timezone,
     LearningGoalMutationGuard? mutationAllowed,
-  }) {
-    final command = prepareCreate(
+  }) async {
+    final command = await prepareCreate(
       kind: kind,
       title: title,
       deadlineAtUtc: deadlineAtUtc,
@@ -51,12 +59,20 @@ final class LearningGoalUseCases {
     return executeCreate(command, mutationAllowed: mutationAllowed);
   }
 
-  LearningGoalCreateCommand prepareCreate({
+  Future<LearningGoalCreateCommand> prepareCreate({
     required LearningGoalKind kind,
     required String title,
     required DateTime deadlineAtUtc,
     required LearningGoalTimezoneContext timezone,
-  }) {
+    String? expectedOwnerId,
+  }) async {
+    final ownerId = await activeOwnerId();
+    if (ownerId.isEmpty || ownerId.trim() != ownerId) {
+      throw const LearningGoalOwnerChanged();
+    }
+    if (expectedOwnerId != null && expectedOwnerId != ownerId) {
+      throw const LearningGoalOwnerChanged();
+    }
     final now = nowUtc();
     return LearningGoalCreateCommand._(
       LearningGoal(
@@ -69,6 +85,7 @@ final class LearningGoalUseCases {
         createdAtUtc: now,
         updatedAtUtc: now,
       ),
+      ownerId,
     );
   }
 
@@ -76,7 +93,11 @@ final class LearningGoalUseCases {
     LearningGoalCreateCommand command, {
     LearningGoalMutationGuard? mutationAllowed,
   }) async {
-    await repository.save(command.goal, mutationAllowed: mutationAllowed);
+    await repository.save(
+      command.goal,
+      mutationAllowed: mutationAllowed,
+      expectedOwnerId: command.expectedOwnerId,
+    );
     return command.goal;
   }
 
@@ -100,12 +121,18 @@ final class LearningGoalUseCases {
     if (!now.isUtc) {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
-    final today = TimezonePolicy.getLearningDay(now, goal.timezone.timezoneId);
-    final deadlineDay = TimezonePolicy.getLearningDay(
+    final today = learningDay(now, goal.timezone.timezoneId);
+    final deadlineDay = learningDay(
       goal.deadlineAtUtc,
       goal.timezone.timezoneId,
     );
-    final days = deadlineDay.difference(today).inDays;
+    final todayOrdinal = DateTime.utc(today.year, today.month, today.day);
+    final deadlineOrdinal = DateTime.utc(
+      deadlineDay.year,
+      deadlineDay.month,
+      deadlineDay.day,
+    );
+    final days = deadlineOrdinal.difference(todayOrdinal).inDays;
     return LearningGoalCountdown(
       state: days < 0
           ? LearningGoalDeadlineState.past

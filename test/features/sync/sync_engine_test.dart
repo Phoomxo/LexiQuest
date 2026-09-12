@@ -8,6 +8,9 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -87,6 +90,106 @@ void main() {
       optionalPullCollections: optionalPullCollections,
     );
   }
+
+  test(
+    'restored bookmark unsave translates real wire acknowledgement to local row',
+    () async {
+      store = DriftSyncStore(
+        database,
+        savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: savedLearningItemV1RulesRevision,
+        ),
+      );
+      final wireId = SavedLearningItemSyncPayloadContract.canonicalEntityId(
+        contentType: 'lexicalMetadata',
+        contentId: 'word:shared',
+        contentRevision: 1,
+      );
+      var supplied = false;
+      gateway.onPull = (collection, after) {
+        if (collection != SyncCollection.savedLearningItems || supplied) {
+          return PullPage(changes: const [], nextCursor: after, hasMore: false);
+        }
+        supplied = true;
+        return PullPage(
+          changes: [
+            SyncEntity(
+              collection: collection,
+              entityId: wireId,
+              revision: 1,
+              payloadVersion: 1,
+              isDeleted: false,
+              clientUpdatedAtUtc: nowUtc,
+              serverUpdatedAtUtc: nowUtc,
+              payload: {
+                'contentType': 'lexicalMetadata',
+                'contentId': 'word:shared',
+                'contentRevision': 1,
+                'savedAtUtcMs': nowUtc.millisecondsSinceEpoch,
+                'updatedAtUtcMs': nowUtc.millisecondsSinceEpoch,
+                'isDeleted': false,
+              },
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: nowUtc,
+            documentId: wireId,
+          ),
+          hasMore: false,
+        );
+      };
+      expect((await engine().run()).status, SyncRunStatus.completed);
+      final restored = await database
+          .select(database.savedLearningItems)
+          .getSingle();
+      expect(restored.ownerId, 'owner-a');
+      expect(
+        restored.id,
+        isNot(wireId),
+        reason: 'Restore must establish an owner-local identity.',
+      );
+      nowUtc = nowUtc.add(const Duration(seconds: 5));
+      gateway.nowUtc = nowUtc;
+      await DriftLearnerIntentRepository(
+        database,
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unused-owner',
+          nowUtc: () => nowUtc,
+        ),
+        nowUtc: () => nowUtc,
+      ).unsave(
+        const ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: 'word:shared',
+          revision: 1,
+        ),
+      );
+      final pending = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      expect(pending.entityId, restored.id);
+      final result = await engine().run();
+      expect(result.status, SyncRunStatus.completed);
+      expect(result.pushed, 1);
+      final mutation = gateway.pushedMutations.single;
+      expect(mutation.entityId, wireId);
+      expect(mutation.operationId, isNot(pending.operationId));
+      expect(mutation.payload['isDeleted'], isTrue);
+      final acknowledged = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      expect(acknowledged.operationId, pending.operationId);
+      expect(acknowledged.state, 'acknowledged');
+      final tombstone = await database
+          .select(database.savedLearningItems)
+          .getSingle();
+      expect(tombstone.id, restored.id);
+      expect(tombstone.isDeleted, isTrue);
+      expect(tombstone.cloudRevision, 2);
+      expect(tombstone.lastAcknowledgedAtUtcMs, nowUtc.millisecondsSinceEpoch);
+    },
+  );
 
   test('cloud kill switch leaves pending local work untouched', () async {
     await _seedCategoryOperation(database);

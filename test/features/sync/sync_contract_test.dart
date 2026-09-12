@@ -64,6 +64,7 @@ void main() {
           SyncCollection.motivationMeasurementRuns: <int>{1},
           SyncCollection.motivationResponses: <int>{1},
           SyncCollection.researchParticipationPermits: <int>{1},
+          SyncCollection.researchSessionProofs: <int>{1},
           SyncCollection.measurementOpportunities: <int>{1},
           SyncCollection.neutralEventsV2: <int>{1},
           SyncCollection.researchWithdrawals: <int>{1},

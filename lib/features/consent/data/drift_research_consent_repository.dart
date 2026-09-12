@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../sync/domain/research_sync.dart';
+import '../../sync/domain/sync_entity.dart';
 import '../domain/research_consent.dart';
 
 final class DriftResearchConsentRepository
@@ -82,6 +84,35 @@ final class DriftResearchConsentRepository
         );
       }
       if (accepted) return;
+
+      // Capture denial in this same transaction before a later acceptance can
+      // replace the mutable consent projection. Existing permit identities are
+      // the scope; neither rollout nor a measurement run is needed to withdraw.
+      final permits = await (database.select(
+        database.researchParticipationPermits,
+      )..where((permit) => permit.ownerId.equals(ownerId))).get();
+      for (final permit in permits) {
+        await database
+            .into(database.outboxOperations)
+            .insert(
+              db.OutboxOperationsCompanion.insert(
+                operationId: ResearchSyncContract.operationIdFor(
+                  collection: SyncCollection.researchWithdrawals,
+                  entityId: permit.id,
+                  payload: {'permitId': permit.id, 'ownerId': ownerId},
+                  revision: 1,
+                ),
+                ownerId: ownerId,
+                entityType: 'researchWithdrawal',
+                entityId: permit.id,
+                operationKind: 'upsert',
+                payloadVersion: const Value(1),
+                createdAtUtcMs: epoch,
+              ),
+              // Never reset an acknowledgement, retry delay or an in-flight lease.
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
 
       // Preserve the original completion time and all response evidence.
       await database.customUpdate(
@@ -165,6 +196,10 @@ final class DriftResearchConsentRepository
             SELECT id FROM motivation_responses WHERE owner_id = outbox_operations.owner_id
               AND run_id IN (SELECT id FROM scoped_runs)))
           OR (entity_type = 'measurementOpportunity' AND entity_id IN (SELECT id FROM scoped_opportunities))
+          OR (entity_type = 'researchSessionProof' AND entity_id IN (
+            SELECT id FROM research_session_proofs
+            WHERE owner_id = outbox_operations.owner_id
+              AND measurement_run_id IN (SELECT id FROM scoped_runs)))
           OR (entity_type = 'researchParticipationPermit' AND entity_id IN (SELECT id FROM scoped_permits))
           OR (entity_type = 'assessmentRun' AND entity_id IN (SELECT id FROM scoped_assessments))
           OR (entity_type = 'experimentAssignment' AND entity_id IN (

@@ -1,3 +1,5 @@
+import 'local_reading_catalog.dart';
+
 class GeneratedPassage {
   final String contentId;
   final String cefrLevel;
@@ -15,51 +17,33 @@ class GeneratedPassage {
 }
 
 class AiReadingContentAdapter {
-  final Map<String, String> _curatedBank = {
-    'B2':
-        'Life is filled with ephemeral moments that require a resilient spirit to appreciate fully.',
-    'B1':
-        'The journey across the ancient city was filled with beautiful sights and quiet streets.',
-  };
-
   Future<GeneratedPassage> generatePassage({
     required String cefrLevel,
     required List<String> targetWords,
     bool forceOffline = false,
   }) async {
-    if (forceOffline) {
-      return _getCuratedFallback(cefrLevel, targetWords);
-    }
-
-    try {
-      // In production, invokes backend AI API; if unavailable, falls back gracefully.
-      final text =
-          _curatedBank[cefrLevel] ??
-          'Reading practice text incorporating target words cleanly.';
-      return GeneratedPassage(
-        contentId: 'ai-gen-${DateTime.now().millisecondsSinceEpoch}',
-        cefrLevel: cefrLevel,
-        passageText: text,
-        targetWords: targetWords,
-        isFallback: false,
-      );
-    } catch (_) {
-      return _getCuratedFallback(cefrLevel, targetWords);
-    }
+    // This adapter has no remote provider. Connectivity cannot turn local
+    // authored text into AI output; retain the parameter for API compatibility.
+    return _getCuratedFallback(cefrLevel, targetWords);
   }
 
   GeneratedPassage _getCuratedFallback(
     String cefrLevel,
     List<String> targetWords,
   ) {
-    final text =
-        _curatedBank[cefrLevel] ??
-        'Curated fallback passage for vocabulary reading practice.';
+    final lesson = LocalReadingCatalog.forLevel(cefrLevel);
+    final text = lesson.text;
+    final tokens = RegExp(
+      r"[a-z]+(?:'[a-z]+)?",
+    ).allMatches(text.toLowerCase()).map((match) => match.group(0)!).toSet();
     return GeneratedPassage(
-      contentId: 'curated-${cefrLevel.toLowerCase()}',
-      cefrLevel: cefrLevel,
+      contentId: lesson.id,
+      cefrLevel: lesson.level,
       passageText: text,
-      targetWords: targetWords,
+      targetWords: targetWords
+          .where((word) => tokens.contains(word.trim().toLowerCase()))
+          .toSet()
+          .toList(),
       isFallback: true,
     );
   }

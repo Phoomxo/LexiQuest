@@ -7,6 +7,30 @@ import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
+  testWidgets('profile stays compact and delegates its full overview', (
+    tester,
+  ) async {
+    var opens = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfileSettingsScreen(
+          loader: () async => _profile,
+          onOpenMastery: () => opens++,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('80% จาก 10 คำตอบ'), findsNothing);
+    final action = find.byKey(const ValueKey('profile-open-mastery'));
+    await _reveal(tester, action);
+    await tester.tap(action);
+    expect(opens, 1);
+    await tester.pumpWidget(
+      MaterialApp(home: ProfileSettingsScreen(loader: () async => _profile)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('profile-open-mastery')), findsNothing);
+  });
   testWidgets(
     'Thai glossary profile axes remain distinct read-only semantics',
     (tester) async {
@@ -19,6 +43,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        final details = find.byKey(const ValueKey('profile-learning-details'));
+        await _reveal(tester, details);
+        await tester.tap(details);
+        await tester.pumpAndSettle();
+
         for (final label in <String>[
           'ความชำนาญ',
           'ทบทวนแบบเว้นระยะ (SRS)',
@@ -27,14 +56,18 @@ void main() {
           'จุดที่ควรฝึกเพิ่ม',
           'ความต่อเนื่องในการเรียน',
         ]) {
+          await _reveal(tester, find.text(label));
           expect(find.text(label), findsOneWidget);
         }
+        await _reveal(tester, find.text('80% จาก 10 คำตอบ'));
         expect(find.text('80% จาก 10 คำตอบ'), findsOneWidget);
+        await _reveal(tester, find.text('42 XP · ต่อเนื่อง 7 วัน'));
         expect(find.text('42 XP · ต่อเนื่อง 7 วัน'), findsOneWidget);
         expect(find.textContaining('คะแนนรวม'), findsNothing);
         for (final MapEntry(key: entryId, value: expectedValue)
             in _axisValues.entries) {
           final entry = NavigationGlossary.require(entryId);
+          await _reveal(tester, find.text(entry.fullThaiLabel));
           final tooltip = find.byWidgetPredicate(
             (widget) => widget is Tooltip && widget.message == entry.tooltip,
           );
@@ -108,6 +141,13 @@ void main() {
 
     expect(calls, 0);
   });
+}
+
+Future<void> _reveal(WidgetTester tester, Finder target) async {
+  tester.state<ScrollableState>(find.byType(Scrollable)).position.jumpTo(0);
+  await tester.pump();
+  await tester.scrollUntilVisible(target, 160);
+  await tester.pump();
 }
 
 final _profile = _profileFixture();

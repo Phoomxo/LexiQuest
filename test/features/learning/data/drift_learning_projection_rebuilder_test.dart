@@ -187,6 +187,49 @@ void main() {
       expect(srsRows.length, 1);
     });
 
+    test(
+      'rebuildWord deterministically caps long immutable history at version two',
+      () async {
+        for (var index = 0; index < 27; index++) {
+          await _insertAttempt(
+            db,
+            isCorrect: true,
+            seqMs: index,
+            attemptNumber: index + 1,
+          );
+        }
+        final attemptsBefore = (await db.select(db.answerAttempts).get())
+            .map((row) => row.toJson())
+            .toList(growable: false);
+        final rebuilder = DriftLearningProjectionRebuilder(db);
+
+        final first = await rebuilder.rebuildWord(
+          ownerId: 'owner-rebuild',
+          wordId: 'word-rebuild',
+        );
+        final firstRow = await db.select(db.srsStates).getSingle();
+        final replay = await rebuilder.rebuildWord(
+          ownerId: 'owner-rebuild',
+          wordId: 'word-rebuild',
+        );
+        final replayRow = await db.select(db.srsStates).getSingle();
+
+        expect(first?.intervalDays, 36500);
+        expect(first?.repetitions, 27);
+        expect(first?.algorithmVersion, 2);
+        expect(replay?.intervalDays, first?.intervalDays);
+        expect(replay?.repetitions, first?.repetitions);
+        expect(replay?.algorithmVersion, first?.algorithmVersion);
+        expect(replayRow.toJson(), firstRow.toJson());
+        expect(
+          (await db.select(db.answerAttempts).get())
+              .map((row) => row.toJson())
+              .toList(growable: false),
+          attemptsBefore,
+        );
+      },
+    );
+
     test('rebuildWord inserts XP entry for each correct answer', () async {
       await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
       await _insertAttempt(db, isCorrect: true, seqMs: 1000, attemptNumber: 2);

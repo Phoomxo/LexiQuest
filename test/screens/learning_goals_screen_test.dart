@@ -1,7 +1,12 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/goals/data/drift_learning_goal_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/goals/application/learning_goal_use_cases.dart';
 import 'package:vocab_learning_app/features/goals/domain/learning_goal.dart';
 import 'package:vocab_learning_app/features/goals/domain/learning_goal_repository.dart';
@@ -12,6 +17,112 @@ import 'package:vocab_learning_app/features/reminders/domain/study_reminder_repo
 import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 
 void main() {
+  setUpAll(timezone_data.initializeTimeZones);
+  for (final changeOwner in [false, true]) {
+    testWidgets(
+      changeOwner
+          ? 'owner change before first submit rejects the open A draft'
+          : 'unchanged owner first submit persists the valid form',
+      (tester) async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final owners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'synthetic-owner-a',
+          nowUtc: () => DateTime.utc(2026, 8, 25),
+        );
+        await owners.getOrCreateActiveOwner();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: LearningGoalsScreen(
+              useCases: LearningGoalUseCases(
+                activeOwnerId: () async =>
+                    (await owners.getOrCreateActiveOwner()).id,
+                repository: DriftLearningGoalRepository(
+                  database,
+                  owners: owners,
+                ),
+                nowUtc: () => DateTime.utc(2026, 8, 25),
+                generateId: () => 'goal:synthetic-stale-form',
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('learning-goals/add')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('learning-goals/title')),
+          'Synthetic owner A draft',
+        );
+        await _selectLocalDateTime(
+          tester,
+          'learning-goals/deadline',
+          '09/01/2026',
+          '12',
+          '00',
+        );
+
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const ValueKey('learning-goals/create')),
+              )
+              .onPressed,
+          isNotNull,
+        );
+        if (changeOwner) {
+          await tester.runAsync(() async {
+            await database.transaction(() async {
+              await database.customUpdate(
+                'UPDATE local_owners SET is_active = 0',
+              );
+              await database
+                  .into(database.localOwners)
+                  .insert(
+                    LocalOwnersCompanion.insert(
+                      id: 'synthetic-owner-b',
+                      createdAtUtcMs: DateTime.utc(
+                        2026,
+                        8,
+                        25,
+                      ).millisecondsSinceEpoch,
+                    ),
+                  );
+            });
+          });
+        }
+        await tester.runAsync(() async {
+          await tester.tap(find.byKey(const ValueKey('learning-goals/create')));
+          for (var attempt = 0; attempt < 100; attempt++) {
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+            await tester.pump();
+            if (find.byType(AlertDialog).evaluate().isEmpty) break;
+          }
+        });
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(AlertDialog),
+          findsNothing,
+          reason:
+              'Observe completed submission, never mistake validation for isolation.',
+        );
+        final goals = await tester.runAsync(
+          () => database.select(database.learningGoals).get(),
+        );
+        final outbox = await tester.runAsync(
+          () => database.select(database.outboxOperations).get(),
+        );
+        expect(
+          goals,
+          changeOwner ? isEmpty : hasLength(1),
+          reason: 'First submit must retain the form owner.',
+        );
+        expect(outbox, changeOwner ? isEmpty : hasLength(1));
+      },
+    );
+  }
+
   testWidgets('renders typed language goals without admission-score UI', (
     tester,
   ) async {
@@ -34,6 +145,7 @@ void main() {
       MaterialApp(
         home: LearningGoalsScreen(
           useCases: LearningGoalUseCases(
+            activeOwnerId: () async => 'synthetic-owner-a',
             repository: repository,
             nowUtc: () => DateTime.utc(2026, 8, 25),
             generateId: () => 'goal:new',
@@ -45,7 +157,7 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'เป้าหมายการเรียน'), findsOneWidget);
     expect(find.text('IELTS practice target'), findsOneWidget);
-    expect(find.textContaining('days'), findsOneWidget);
+    expect(find.textContaining('วัน'), findsOneWidget);
     expect(find.textContaining('admission', findRichText: true), findsNothing);
     expect(find.textContaining('TCAS', findRichText: true), findsNothing);
     expect(
@@ -62,6 +174,7 @@ void main() {
       MaterialApp(
         home: LearningGoalsScreen(
           useCases: LearningGoalUseCases(
+            activeOwnerId: () async => 'synthetic-owner-a',
             repository: repository,
             nowUtc: () => DateTime.utc(2026, 8, 25),
             generateId: () => 'goal:new',
@@ -77,14 +190,14 @@ void main() {
       find.byKey(const ValueKey('learning-goals/title')),
       'TOEFL practice target',
     );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/deadline')),
-      '2026-09-01T05:00:00Z',
+    await _selectLocalDateTime(
+      tester,
+      'learning-goals/deadline',
+      '09/01/2026',
+      '12',
+      '00',
     );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/timezone')),
-      'Asia/Bangkok',
-    );
+
     await tester.tap(find.byKey(const ValueKey('learning-goals/create')));
     await tester.pumpAndSettle();
 
@@ -107,6 +220,7 @@ void main() {
       MaterialApp(
         home: LearningGoalsScreen(
           useCases: LearningGoalUseCases(
+            activeOwnerId: () async => 'synthetic-owner-a',
             repository: repository,
             nowUtc: () => DateTime.utc(2026, 8, 25),
             generateId: () => 'goal:${++generatedIds}',
@@ -122,18 +236,19 @@ void main() {
       find.byKey(const ValueKey('learning-goals/title')),
       'TOEFL practice target',
     );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/deadline')),
-      '2026-09-01T05:00:00Z',
+    await _selectLocalDateTime(
+      tester,
+      'learning-goals/deadline',
+      '09/01/2026',
+      '12',
+      '00',
     );
-    await tester.enterText(
-      find.byKey(const ValueKey('learning-goals/timezone')),
-      'Asia/Bangkok',
-    );
+
     final create = find.byKey(const ValueKey('learning-goals/create'));
     await tester.tap(create);
     await tester.tap(create);
 
+    await tester.pump();
     expect(repository.saveCalls, 1);
     expect(generatedIds, 1);
     repository.release.complete();
@@ -174,6 +289,7 @@ void main() {
         MaterialApp(
           home: LearningGoalsScreen(
             useCases: LearningGoalUseCases(
+              activeOwnerId: () async => 'synthetic-owner-a',
               repository: goals,
               nowUtc: () => DateTime.utc(2026, 8, 25),
               generateId: () => 'goal:new',
@@ -220,6 +336,7 @@ final class _Goals implements LearningGoalRepository {
   Future<void> save(
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
+    String? expectedOwnerId,
   }) async {
     goals.removeWhere((candidate) => candidate.id == goal.id);
     goals.add(goal);
@@ -238,6 +355,7 @@ final class _BlockingGoals implements LearningGoalRepository {
   Future<void> save(
     LearningGoal goal, {
     LearningGoalMutationGuard? mutationAllowed,
+    String? expectedOwnerId,
   }) async {
     saveCalls += 1;
     await release.future;
@@ -252,6 +370,12 @@ final class _ReminderRepository implements StudyReminderRepository {
 
   @override
   Future<String> activeOwnerId() async => 'owner-a';
+
+  @override
+  Future<bool> isOwnerOperationTokenOwned({
+    required String operationToken,
+    required DateTime nowUtc,
+  }) async => false;
 
   @override
   Future<void> beginOwnerOperationFence({
@@ -389,4 +513,38 @@ final class _ReminderScheduler implements ReminderScheduler {
 
   @override
   Future<void> cancel(int platformId) async {}
+}
+
+Future<void> _selectLocalDateTime(
+  WidgetTester tester,
+  String prefix,
+  String date,
+  String hour,
+  String minute,
+) async {
+  final dateButton = find.byKey(ValueKey('$prefix/date'));
+  await tester.ensureVisible(dateButton);
+  await tester.tap(dateButton);
+  await tester.pumpAndSettle();
+  await tester.enterText(
+    find
+        .descendant(
+          of: find.byType(DatePickerDialog),
+          matching: find.byType(TextField),
+        )
+        .first,
+    date,
+  );
+  await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('$prefix/time')));
+  await tester.pumpAndSettle();
+  final inputs = find.descendant(
+    of: find.byType(TimePickerDialog),
+    matching: find.byType(TextField),
+  );
+  await tester.enterText(inputs.at(0), hour);
+  await tester.enterText(inputs.at(1), minute);
+  await tester.tap(find.widgetWithText(TextButton, 'ตกลง').last);
+  await tester.pumpAndSettle();
 }

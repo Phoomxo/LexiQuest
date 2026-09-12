@@ -10,6 +10,8 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/associative_reading_checkpoint.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_session_state.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
@@ -58,6 +60,7 @@ class _AssociativeReadingLauncherScreenState
   Object? _loadFailure;
   AssociativeReadingLauncherUnavailableReason? _unavailableReason;
   LearningUseCases? _learning;
+  VocabularyUseCases? _vocabulary;
   AssociativeLearningPort? _associativeLearning;
   CurrentActivityEvidenceAdapter? _currentActivityEvidence;
   LessonModeAdapter? _lessonAdapter;
@@ -65,6 +68,8 @@ class _AssociativeReadingLauncherScreenState
   UnifiedLessonControllerFactory? _createLessonController;
   FeatureRegistry? _features;
   bool _starting = false;
+  AssociativeReadingCheckpoint? _recoveryContent;
+  bool _hasCompletedReading = false;
 
   @override
   void didChangeDependencies() {
@@ -114,10 +119,28 @@ class _AssociativeReadingLauncherScreenState
   }
 
   Future<void> _loadWords(VocabularyUseCases vocabulary) async {
+    _vocabulary = vocabulary;
     try {
-      final loaded = await vocabulary.getGameWords(
-        limit: widget.sessionConfiguration?.itemCount ?? 10,
+      final candidate = await _learning!.loadActivityRecovery(
+        activityType: 'associativeReading',
       );
+      if (candidate?.checkpoint?.state['kind'] == 'associativeReading') {
+        // Candidate discovery does not authorize restore; _start performs an
+        // exact authenticated load and validates current lexical pins.
+        _recoveryContent = AssociativeReadingCheckpoint.fromJson(
+          candidate!.checkpoint!.state,
+        );
+        _recoveryContent!.recallResults(candidate);
+        _hasCompletedReading = candidate.session.state == 'completed';
+      }
+      final pinned = _recoveryContent;
+      final loaded = pinned == null
+          ? await vocabulary.getGameWords(
+              limit: widget.sessionConfiguration?.itemCount ?? 10,
+            )
+          : await vocabulary.readPinnedByIds(
+              pinned.words.map((word) => word.id),
+            );
       if (!mounted) return;
       final spellings = <String>{};
       final words = loaded
@@ -138,13 +161,23 @@ class _AssociativeReadingLauncherScreenState
     }
     if (_loadFailure != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Associative Reading')),
-        body: const Center(
+        appBar: AppBar(title: const Text('อ่านเชื่อมโยงความจำ')),
+        body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'Vocabulary could not be loaded for associative reading.',
-              textAlign: TextAlign.center,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'โหลดคำศัพท์สำหรับอ่านเชื่อมโยงความจำไม่ได้',
+                  textAlign: TextAlign.center,
+                ),
+                if (_hasCompletedReading)
+                  TextButton(
+                    onPressed: _starting ? null : _startNewRound,
+                    child: const Text('เริ่มรอบใหม่'),
+                  ),
+              ],
             ),
           ),
         ),
@@ -157,7 +190,7 @@ class _AssociativeReadingLauncherScreenState
     }
     if (words.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Associative Reading')),
+        appBar: AppBar(title: const Text('อ่านเชื่อมโยงความจำ')),
         body: Center(
           key: const ValueKey('associative-reading-empty'),
           child: Padding(
@@ -168,7 +201,7 @@ class _AssociativeReadingLauncherScreenState
                 const Icon(Icons.menu_book_outlined, size: 48),
                 const SizedBox(height: 16),
                 const Text(
-                  'Save at least one vocabulary word before starting.',
+                  'บันทึกคำศัพท์อย่างน้อยหนึ่งคำก่อนเริ่ม',
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -181,7 +214,7 @@ class _AssociativeReadingLauncherScreenState
                     ),
                     replace: true,
                   ),
-                  child: const Text('Create vocabulary'),
+                  child: const Text('เพิ่มคำศัพท์'),
                 ),
               ],
             ),
@@ -193,14 +226,14 @@ class _AssociativeReadingLauncherScreenState
     return PopScope(
       canPop: !_starting,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Associative Reading')),
+        appBar: AppBar(title: const Text('อ่านเชื่อมโยงความจำ')),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${words.length} target word${words.length == 1 ? '' : 's'}',
+                'คำเป้าหมาย ${words.length} คำ',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
@@ -222,8 +255,13 @@ class _AssociativeReadingLauncherScreenState
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
                 ),
-                child: Text(_starting ? 'Starting...' : 'Start reading'),
+                child: Text(_starting ? 'กำลังเริ่ม…' : 'เริ่มอ่าน'),
               ),
+              if (_hasCompletedReading)
+                TextButton(
+                  onPressed: _starting ? null : _startNewRound,
+                  child: const Text('เริ่มรอบใหม่'),
+                ),
             ],
           ),
         ),
@@ -231,7 +269,52 @@ class _AssociativeReadingLauncherScreenState
     );
   }
 
-  Future<void> _start(List<VocabularyWord> words) async {
+  Future<void> _startNewRound() async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      // Recheck canonical terminal authority before selecting a new round.
+      // A concurrent active session must never be implicitly retired.
+      final candidate = await _learning!.loadActivityRecovery(
+        activityType: 'associativeReading',
+      );
+      if (candidate?.session.state != 'completed' ||
+          candidate?.checkpoint == null) {
+        throw StateError('A completed reading session is required');
+      }
+      AssociativeReadingCheckpoint.fromJson(
+        candidate!.checkpoint!.state,
+      ).recallResults(candidate);
+      final loaded = await _vocabulary!.getGameWords(
+        limit: widget.sessionConfiguration?.itemCount ?? 10,
+      );
+      final spellings = <String>{};
+      final words = loaded
+          .where((word) => spellings.add(word.spelling))
+          .toList(growable: false);
+      if (!mounted) return;
+      setState(() {
+        _starting = false;
+        _words = List.unmodifiable(words);
+        _loadFailure = null;
+      });
+      if (words.isEmpty) return;
+      await _start(words, newRound: true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _starting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _start(
+    List<VocabularyWord> words, {
+    bool newRound = false,
+  }) async {
     if (_starting) return;
     final learning = _learning!;
     final associativeLearning = _associativeLearning!;
@@ -266,13 +349,10 @@ class _AssociativeReadingLauncherScreenState
     String? createdSessionOwnerId;
     var compensationAttempted = false;
     try {
-      final configuration = widget.sessionConfiguration;
-      final revalidateConfiguration = widget.revalidateSessionConfiguration;
+      var configuration = widget.sessionConfiguration;
+      var revalidateConfiguration = widget.revalidateSessionConfiguration;
       if ((configuration == null) != (revalidateConfiguration == null)) {
         throw StateError('session configuration authority is incomplete');
-      }
-      if (configuration != null && revalidateConfiguration != null) {
-        await revalidateConfiguration(configuration);
       }
       final recallPrompts = List<TypedRecallPrompt>.unmodifiable(
         words.map((word) {
@@ -302,20 +382,66 @@ class _AssociativeReadingLauncherScreenState
           return prompt;
         }),
       );
-      final session = await learning.startAssociativeReadingSessionHandle(
-        sessionConfiguration: configuration,
+      final previousContent = newRound ? null : _recoveryContent;
+      final initial = AssociativeReadingCheckpoint(
+        documentId:
+            previousContent?.documentId ??
+            'associative-reading:$documentDigest',
+        documentRevision: previousContent?.documentRevision ?? documentRevision,
+        cefrLevel: previousContent?.cefrLevel ?? cefrLevel,
+        passage: previousContent?.passage ?? passage,
+        stage: 1,
+        words: recallPrompts.indexed.map((entry) {
+          final prompt = entry.$2;
+          return ReadingWordPin(
+            id: prompt.wordId,
+            spelling: words[entry.$1].spelling,
+            canonicalAnswer: prompt.canonicalAnswer,
+            revision: prompt.contentRevision,
+            checksum: prompt.contentChecksumSha256,
+            normalizationRevision: prompt.normalizationRevision,
+            acceptedVariants: prompt.acceptedVariants,
+            acceptedVariantsRevision: prompt.acceptedVariantsRevision,
+            acceptedVariantsChecksum: prompt.acceptedVariantsChecksumSha256,
+          );
+        }),
       );
-      createdSessionId = session.id;
-      createdSessionOwnerId = session.ownerId;
+      final recovery = newRound
+          ? null
+          : await learning.loadReadingRecovery(initial);
+      if (recovery != null)
+        configuration = recovery.session.sessionConfiguration;
+      if (configuration == null) revalidateConfiguration = null;
+      if (configuration != null) {
+        if (revalidateConfiguration == null)
+          throw StateError('Reading configuration revalidation unavailable');
+        await revalidateConfiguration(configuration);
+      }
+      final session = recovery == null
+          ? await learning.startAssociativeReadingSessionHandle(
+              sessionConfiguration: configuration,
+              pinnedContent: initial.words.map((word) => word.content).toList(),
+              initialState: (_) => initial.toJson(),
+            )
+          : LearningSessionHandle(
+              id: recovery.session.id,
+              ownerId: recovery.session.ownerId,
+              startedAtUtc: recovery.session.startedAtUtc,
+            );
+      final terminal = recovery != null && recovery.session.state != 'active';
+      createdSessionId = terminal ? null : session.id;
+      createdSessionOwnerId = terminal ? null : session.ownerId;
       if (!mounted) {
-        await learning.abandonSession(
-          ownerId: session.ownerId,
-          sessionId: session.id,
-          abandonedAtUtc: DateTime.now().toUtc(),
-        );
+        if (!terminal)
+          await learning.abandonSession(
+            ownerId: session.ownerId,
+            sessionId: session.id,
+            abandonedAtUtc: DateTime.now().toUtc(),
+          );
         return;
       }
       final terminalAuthority = _AssociativeReadingSessionTerminalAuthority();
+      if (terminal) terminalAuthority.markDurableTerminal();
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
@@ -323,14 +449,14 @@ class _AssociativeReadingLauncherScreenState
           builder: (_) {
             Widget buildSession(BuildContext context) =>
                 AssociativeReadingSessionScreen(
-                  cefrLevel: cefrLevel,
+                  cefrLevel: initial.cefrLevel,
                   targetWords: words
                       .map((word) => word.spelling)
                       .toList(growable: false),
                   targetWordIds: Map.unmodifiable(wordIds),
-                  passageText: passage,
-                  documentId: 'associative-reading:$documentDigest',
-                  documentRevision: documentRevision,
+                  passageText: initial.passage,
+                  documentId: initial.documentId,
+                  documentRevision: initial.documentRevision,
                   learning: learning,
                   associativeLearning: associativeLearning,
                   sessionId: session.id,
@@ -339,18 +465,23 @@ class _AssociativeReadingLauncherScreenState
                   evidenceAdapter: _currentActivityEvidence,
                   modeAdapter: typedRecallAdapter,
                   recallPrompts: recallPrompts,
+                  readingCheckpoint: initial,
+                  recoveredActivity: recovery,
                   featureRegistry: features,
                   claimTerminalCompensation:
                       terminalAuthority.claimTerminalCompensation,
-                  retainsLifecycleOwnership:
-                      terminalAuthority.retainsLifecycleOwnership,
+                  retainsLifecycleOwnership: terminal
+                      ? null
+                      : terminalAuthority.retainsLifecycleOwnership,
                   mayPublishOwnedTerminalFailure:
                       terminalAuthority.mayPublishOwnedTerminalFailure,
                   onTerminalFailurePublished:
                       terminalAuthority.markTerminalFailurePublished,
+                  onSessionAbandoned: terminalAuthority.markDurableTerminal,
                 );
 
-            if (lessonAdapter != null &&
+            if (!terminal &&
+                lessonAdapter != null &&
                 createLessonController != null &&
                 features != null) {
               return _AssociativeReadingSessionRoute(
@@ -393,6 +524,17 @@ class _AssociativeReadingLauncherScreenState
       }
       createdSessionId = null;
       createdSessionOwnerId = null;
+      final latest = await learning.loadActivityRecovery(
+        activityType: 'associativeReading',
+      );
+      if (mounted)
+        setState(() {
+          _hasCompletedReading = latest?.session.state == 'completed';
+          _recoveryContent =
+              latest?.checkpoint?.state['kind'] == 'associativeReading'
+              ? AssociativeReadingCheckpoint.fromJson(latest!.checkpoint!.state)
+              : null;
+        });
     } catch (_) {
       final sessionId = createdSessionId;
       final ownerId = createdSessionOwnerId;
@@ -414,7 +556,7 @@ class _AssociativeReadingLauncherScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not start associative reading. Try again.'),
+          content: Text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
         ),
       );
     } finally {
@@ -737,23 +879,23 @@ class _LauncherUnavailable extends StatelessWidget {
   Widget build(BuildContext context) {
     final detail = switch (reason) {
       AssociativeReadingLauncherUnavailableReason.vocabulary =>
-        'Vocabulary is unavailable.',
+        'คลังคำศัพท์ไม่พร้อมใช้งาน',
       AssociativeReadingLauncherUnavailableReason.learning =>
-        'Learning records are unavailable.',
+        'บันทึกการเรียนไม่พร้อมใช้งาน',
       AssociativeReadingLauncherUnavailableReason.associativeLearning =>
-        'Associative persistence is unavailable.',
+        'ระบบบันทึกการเชื่อมโยงไม่พร้อมใช้งาน',
       AssociativeReadingLauncherUnavailableReason.lessonLifecycle =>
-        'Lesson lifecycle is unavailable.',
+        'ระบบจัดการกิจกรรมไม่พร้อมใช้งาน',
       AssociativeReadingLauncherUnavailableReason.typedRecall =>
-        'Typed recall is unavailable.',
+        'กิจกรรมพิมพ์จากความจำไม่พร้อมใช้งาน',
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Associative Reading')),
+      appBar: AppBar(title: const Text('อ่านเชื่อมโยงความจำ')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Associative reading is unavailable on this installation. '
+            'อ่านเชื่อมโยงความจำไม่พร้อมใช้งานในแอปนี้ '
             '$detail',
             textAlign: TextAlign.center,
           ),

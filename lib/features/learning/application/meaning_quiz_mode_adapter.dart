@@ -24,6 +24,10 @@ typedef MeaningQuizEvidenceOperation =
 
 enum MeaningQuizDirection { wordToMeaning, meaningToWord }
 
+final class InsufficientMeaningQuizOptions implements Exception {
+  const InsufficientMeaningQuizOptions();
+}
+
 final class MeaningQuizQuestion {
   const MeaningQuizQuestion({
     required this.word,
@@ -99,6 +103,7 @@ final class MeaningQuizModeAdapter
     MeaningQuizEvidenceOperation? runEvidenceOperation,
     SessionDirection direction = SessionDirection.mixed,
     Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
+    Iterable<QuizWord> distractorWords = const <QuizWord>[],
   }) {
     if (session.isEmpty) {
       throw ArgumentError.value(session, 'session', 'must contain a question');
@@ -114,6 +119,7 @@ final class MeaningQuizModeAdapter
         session,
         direction: direction,
         lexicalWords: lexicalWords,
+        distractorWords: distractorWords,
       ),
       learning: learning,
       evidence: evidence,
@@ -132,6 +138,7 @@ final class MeaningQuizModeAdapter
     QuizSession session, {
     SessionDirection direction = SessionDirection.mixed,
     Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
+    Iterable<QuizWord> distractorWords = const <QuizWord>[],
   }) {
     final lexicalById = <String, VocabularyWord>{
       for (final word in lexicalWords) word.id: word,
@@ -139,7 +146,8 @@ final class MeaningQuizModeAdapter
     final words = session.questions
         .map((question) => question.word)
         .toList(growable: false);
-    return List<MeaningQuizQuestion>.unmodifiable(
+    final optionWords = <QuizWord>[...words, ...distractorWords];
+    final questions = List<MeaningQuizQuestion>.unmodifiable(
       words.indexed.map((entry) {
         final index = entry.$1;
         final word = entry.$2;
@@ -156,7 +164,7 @@ final class MeaningQuizModeAdapter
             ? word.meaning
             : word.spelling;
         final pool = _equivalentDistinctDistractors(
-          words: words,
+          words: optionWords,
           word: word,
           direction: questionDirection,
         );
@@ -219,6 +227,11 @@ final class MeaningQuizModeAdapter
         );
       }),
     );
+    if (distractorWords.isNotEmpty &&
+        questions.any((question) => question.options.length < 2)) {
+      throw const InsufficientMeaningQuizOptions();
+    }
+    return questions;
   }
 
   @override

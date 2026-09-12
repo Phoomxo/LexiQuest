@@ -169,11 +169,20 @@ final class LiteRtImageClassifier implements ImageClassifierRuntime {
     if (topK < 1 || topK > _labels.length) {
       throw ArgumentError.value(topK, 'topK', 'is out of bounds');
     }
-    final output = Uint8List(_interpreter.getOutputTensor(0).numBytes());
+    final outputTensor = _interpreter.getOutputTensor(0);
+    final output = Uint8List(outputTensor.numBytes());
     _interpreter.run(rgbBytes, output);
-    final params = _interpreter.getOutputTensor(0).params;
-    final scores = List<ModelClassification>.generate(output.length, (index) {
-      final confidence = (output[index] - params.zeroPoint) * params.scale;
+    final params = outputTensor.params;
+    final values = ByteData.sublistView(output);
+    final scores = List<ModelClassification>.generate(_labels.length, (index) {
+      final confidence = outputTensor.type == tflite.TensorType.float32
+          ? values.getFloat32(index * 4, Endian.host)
+          : (output[index] - params.zeroPoint) * params.scale;
+      if (!confidence.isFinite) {
+        throw const ModelLifecycleException(
+          ModelFailureCode.incompatibleTensor,
+        );
+      }
       return ModelClassification(
         index: index,
         label: _labels[index],

@@ -140,7 +140,6 @@ final class FlutterLocalNotificationsGateway implements ReminderNativeGateway {
   final ReminderTargetPlatform targetPlatform;
   final FlutterLocalNotificationsPlugin plugin;
   bool _initialized = false;
-  ReminderPermissionState? _lastRequestedPermission;
 
   @override
   Future<void> initialize() async {
@@ -171,8 +170,7 @@ final class FlutterLocalNotificationsGateway implements ReminderNativeGateway {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.areNotificationsEnabled();
-      if (enabled == true) return ReminderPermissionState.granted;
-      return _lastRequestedPermission ?? ReminderPermissionState.unknown;
+      return _permission(enabled);
     }
     if (targetPlatform == ReminderTargetPlatform.ios) {
       final permissions = await plugin
@@ -184,7 +182,7 @@ final class FlutterLocalNotificationsGateway implements ReminderNativeGateway {
       if (permissions.isAlertEnabled || permissions.isProvisionalEnabled) {
         return ReminderPermissionState.granted;
       }
-      return _lastRequestedPermission ?? ReminderPermissionState.unknown;
+      return ReminderPermissionState.denied;
     }
     return ReminderPermissionState.unknown;
   }
@@ -197,7 +195,7 @@ final class FlutterLocalNotificationsGateway implements ReminderNativeGateway {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.requestNotificationsPermission();
-      return _lastRequestedPermission = _permission(granted);
+      return _permission(granted);
     }
     if (targetPlatform == ReminderTargetPlatform.ios) {
       final granted = await plugin
@@ -205,7 +203,7 @@ final class FlutterLocalNotificationsGateway implements ReminderNativeGateway {
             IOSFlutterLocalNotificationsPlugin
           >()
           ?.requestPermissions(alert: true, badge: false, sound: true);
-      return _lastRequestedPermission = _permission(granted);
+      return _permission(granted);
     }
     return ReminderPermissionState.unknown;
   }

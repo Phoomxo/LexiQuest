@@ -197,8 +197,8 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Stage 1: Supported Reading'), findsNothing);
-        expect(find.text('Complete & Continue'), findsNothing);
+        expect(find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'), findsNothing);
+        expect(find.text('เสร็จแล้ว ไปขั้นถัดไป'), findsNothing);
         expect(find.byType(TextField), findsNothing);
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.inactive,
@@ -288,8 +288,8 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.text('Stage 1: Supported Reading'), findsNothing);
-        expect(find.text('Complete & Continue'), findsNothing);
+        expect(find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'), findsNothing);
+        expect(find.text('เสร็จแล้ว ไปขั้นถัดไป'), findsNothing);
         expect(find.byType(TextField), findsNothing);
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         await pumpInitialization(tester);
@@ -322,10 +322,10 @@ void main() {
       WidgetTester tester,
     ) async {
       await tester.pumpWidget(session());
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
-      expect(find.text('Associative Reading (B2)'), findsOneWidget);
-      expect(find.text('Stage 1: Supported Reading'), findsOneWidget);
+      expect(find.text('อ่านเชื่อมโยงความจำ (B2)'), findsOneWidget);
+      expect(find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'), findsOneWidget);
       expect(find.textContaining('ephemeral moments'), findsOneWidget);
 
       for (var stage = 2; stage <= 6; stage++) {
@@ -337,32 +337,51 @@ void main() {
             );
           }
         }
-        await tester.tap(find.text('Complete & Continue'));
-        final title = 'Stage $stage: ${_stageName(stage)}';
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        final title = 'ขั้นที่ $stage: ${_stageName(stage)}';
         await pumpUntilFound(tester, find.text(title));
         expect(find.text(title), findsOneWidget);
       }
-      expect(find.text('Ready to finish'), findsOneWidget);
+      expect(find.text('พร้อมจบกิจกรรม'), findsOneWidget);
     });
+
+    testWidgets(
+      'stage 2 keeps the exact passage visible without stage 1 target cues',
+      (tester) async {
+        const passage =
+            'Life is filled with ephemeral moments that require a resilient spirit to appreciate.';
+
+        await tester.pumpWidget(session());
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
+        expect(find.text(passage), findsOneWidget);
+        expect(find.text('คำเป้าหมาย: ephemeral, resilient'), findsOneWidget);
+
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'));
+
+        expect(find.text(passage), findsOneWidget);
+        expect(find.text('คำเป้าหมาย: ephemeral, resilient'), findsNothing);
+      },
+    );
 
     testWidgets(
       'f38 ultra review: Stage 3 inputs belong to the response region',
       (tester) async {
         await tester.pumpWidget(session());
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
         for (var i = 0; i < 2; i++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
+            find.text('ขั้นที่ ${i + 2}: ${_stageName(i + 2)}'),
           );
         }
 
-        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
         expect(find.byType(TextField), findsNWidgets(2));
-        expect(find.text('Word 1'), findsOneWidget);
-        expect(find.text('Word 2'), findsOneWidget);
+        expect(find.text('คำที่ 1'), findsOneWidget);
+        expect(find.text('คำที่ 2'), findsOneWidget);
         final root = find.byType(AssociativeReadingSessionScreen);
         for (final field in find.byType(TextField).evaluate()) {
           final finder = find.byElementPredicate(
@@ -397,21 +416,21 @@ void main() {
             targetWordIds: const {'banana': 'word-banana'},
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
         for (var i = 0; i < 3; i++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
+            find.text('ขั้นที่ ${i + 2}: ${_stageName(i + 2)}'),
           );
         }
-        expect(find.text('Stage 4: Memory Association'), findsOneWidget);
+        expect(find.text('ขั้นที่ 4: เชื่อมโยงความจำ'), findsOneWidget);
 
         await tester.enterText(find.byType(TextField).first, 'yellow fruit');
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
-        expect(find.text('Stage 5: Context Transfer'), findsOneWidget);
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
+        expect(find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'), findsOneWidget);
 
         final owner = await owners.getOrCreateActiveOwner();
         final associations = await associativeLearning.getAssociationsForWord(
@@ -517,19 +536,19 @@ void main() {
           ),
         ),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
       for (var stage = 2; stage <= 3; stage++) {
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await pumpUntilFound(
           tester,
-          find.text('Stage $stage: ${_stageName(stage)}'),
+          find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
         );
       }
       await tester.enterText(find.byType(TextField), '  RAIL   STATION  ');
 
-      await tester.tap(find.text('Complete & Continue'));
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
       await tester.pumpAndSettle();
-      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+      expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
       ScaffoldMessenger.of(
         tester.element(find.byType(AssociativeReadingSessionScreen)),
       ).removeCurrentSnackBar();
@@ -537,7 +556,7 @@ void main() {
       await tester.tap(
         find.byKey(const ValueKey<String>('current-evidence-retry')),
       );
-      await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
 
       expect(repository.commands, hasLength(2));
       final first = repository.commands.first;
@@ -620,20 +639,20 @@ void main() {
             ),
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 3; stage++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
         await tester.enterText(find.byType(TextField).at(0), 'banana');
         await tester.enterText(find.byType(TextField).at(1), 'wrong');
 
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await tester.pumpAndSettle();
-        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
         expect(
           tester
               .widgetList<TextField>(find.byType(TextField))
@@ -653,7 +672,7 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('current-evidence-retry')),
         );
-        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
 
         expect(repository.commands, hasLength(3));
         final banana = repository.commands.where(
@@ -897,21 +916,21 @@ void main() {
             ),
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 3; stage++) {
           tester
               .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Complete & Continue'),
+                find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
               )
               .onPressed!();
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Show strategy'),
+              find.widgetWithText(FilledButton, 'ดูวิธีคิด'),
             )
             .onPressed!();
         await tester.pump();
@@ -920,10 +939,10 @@ void main() {
 
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Complete & Continue'),
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
             )
             .onPressed!();
-        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
 
         final attempts = (await tester.runAsync(
           () => database.select(database.answerAttempts).get(),
@@ -974,16 +993,16 @@ void main() {
             sessionId: 'over-limit-session',
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 3; stage++) {
           tester
               .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Complete & Continue'),
+                find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
               )
               .onPressed!();
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
         final field = tester.widget<TextField>(find.byType(TextField));
@@ -992,11 +1011,11 @@ void main() {
 
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Complete & Continue'),
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
             )
             .onPressed!();
         await tester.pump();
-        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
         expect(repository.answerCommands, isEmpty);
         expect(
           tester.widget<TextField>(find.byType(TextField)).enabled,
@@ -1006,10 +1025,10 @@ void main() {
         field.controller!.text = 'anchor';
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Complete & Continue'),
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
             )
             .onPressed!();
-        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
         expect(repository.answerCommands, hasLength(1));
         expect(
           repository.answerCommands.single.providerProvenance,
@@ -1046,22 +1065,22 @@ void main() {
           sessionId: 'live-off-session',
         ),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
       for (var stage = 2; stage <= 3; stage++) {
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Complete & Continue'),
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
             )
             .onPressed!();
         await pumpUntilFound(
           tester,
-          find.text('Stage $stage: ${_stageName(stage)}'),
+          find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
         );
       }
       await tester.enterText(find.byType(TextField), 'anchor');
       final staleSubmit = tester
           .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Complete & Continue'),
+            find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
           )
           .onPressed!;
 
@@ -1070,11 +1089,11 @@ void main() {
       await tester.pump();
 
       expect(repository.answerCommands, isEmpty);
-      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+      expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
       expect(
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Complete & Continue'),
+              find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
             )
             .onPressed,
         isNull,
@@ -1126,22 +1145,22 @@ void main() {
             sessionId: 'mapping-session',
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 3; stage++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
         await tester.enterText(find.byType(TextField).at(0), 'banana');
         await tester.enterText(find.byType(TextField).at(1), 'apple');
         final progressBeforeSubmit = repository.progressCommands.length;
 
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(find.text('ขั้นที่ 3: นึกคำจากความจำ'), findsOneWidget);
         expect(evidenceIdCalls, 0);
         expect(repository.answerCommands, isEmpty);
         expect(repository.progressCommands, hasLength(progressBeforeSubmit));
@@ -1153,8 +1172,8 @@ void main() {
         );
         expect(
           find.text(
-            'Active recall word mapping is invalid. '
-            'Restart this reading activity.',
+            'ข้อมูลคำสำหรับนึกจากความจำไม่ตรงกัน '
+            'กรุณาเริ่มกิจกรรมอ่านนี้ใหม่',
           ),
           findsOneWidget,
         );
@@ -1222,23 +1241,23 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('open-associative-route')),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 2: Cue Fading'));
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 3: Active Recall'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 3: นึกคำจากความจำ'));
         await tester.enterText(find.byType(TextField), 'banana');
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 4: เชื่อมโยงความจำ'));
         await tester.enterText(find.byType(TextField), 'yellow fruit');
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
         await tester.enterText(find.byType(TextField), 'I ate a banana.');
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(tester, find.text('Stage 6: Finish'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 6: จบกิจกรรม'));
 
-        final finish = find.widgetWithText(FilledButton, 'Finish Session');
+        final finish = find.widgetWithText(FilledButton, 'จบกิจกรรม');
         final staleFinishHandler = tester
             .widget<FilledButton>(finish)
             .onPressed!;
@@ -1433,11 +1452,11 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('open-checkpoint-route')),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
         final continueButton = find.widgetWithText(
           FilledButton,
-          'Complete & Continue',
+          'เสร็จแล้ว ไปขั้นถัดไป',
         );
         final staleContinueHandler = tester
             .widget<FilledButton>(continueButton)
@@ -1481,7 +1500,7 @@ void main() {
         final retryHandler = tester.widget<FilledButton>(retry).onPressed;
         expect(retryHandler, isNotNull);
         retryHandler!();
-        await pumpUntilFound(tester, find.text('Stage 2: Cue Fading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'));
 
         expect(repository.progressCommands, hasLength(2));
         final first = repository.progressCommands.first;
@@ -1510,21 +1529,21 @@ void main() {
             port: port,
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 4; stage++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
 
         await tester.enterText(find.byType(TextField).at(0), 'yellow fruit');
         await tester.enterText(find.byType(TextField).at(1), 'red fruit');
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Stage 4: Memory Association'), findsOneWidget);
+        expect(find.text('ขั้นที่ 4: เชื่อมโยงความจำ'), findsOneWidget);
         expect(port.calls, hasLength(2));
         expect(
           tester
@@ -1552,7 +1571,7 @@ void main() {
         final retryHandler = tester.widget<FilledButton>(retry).onPressed;
         expect(retryHandler, isNotNull);
         retryHandler!();
-        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
 
         expect(port.calls, hasLength(3));
         final bananaCalls = port.calls
@@ -1609,19 +1628,19 @@ void main() {
             learningUseCases: gatedLearning,
           ),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         for (var stage = 2; stage <= 4; stage++) {
-          await tester.tap(find.text('Complete & Continue'));
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
           await pumpUntilFound(
             tester,
-            find.text('Stage $stage: ${_stageName(stage)}'),
+            find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
           );
         }
 
         await tester.enterText(find.byType(TextField).at(0), 'yellow fruit');
         await tester.enterText(find.byType(TextField).at(1), 'red fruit');
         gatedOwners.blockNextOwnerResolution();
-        await tester.tap(find.text('Complete & Continue'));
+        await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
         await tester.pump();
         await tester.runAsync(() => gatedOwners.didBlock);
 
@@ -1643,7 +1662,7 @@ void main() {
           ),
         );
         gatedOwners.release();
-        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
 
         expect(port.calls.map((record) => record.wordKey), <String>[
           'word-banana',
@@ -1676,10 +1695,10 @@ void main() {
         ),
       );
       await tester.pumpWidget(session(learningUseCases: checkpointLearning));
-      await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'));
 
       await tester.enterText(find.byType(TextField), 'A resilient response.');
-      await tester.tap(find.text('Complete & Continue'));
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
       await tester.pumpAndSettle();
 
       expect(
@@ -2067,10 +2086,10 @@ final class _StageFiveCheckpointRepository implements LearningRepository {
 }
 
 String _stageName(int stage) => switch (stage) {
-  2 => 'Cue Fading',
-  3 => 'Active Recall',
-  4 => 'Memory Association',
-  5 => 'Context Transfer',
-  6 => 'Finish',
+  2 => 'อ่านโดยลดตัวช่วย',
+  3 => 'นึกคำจากความจำ',
+  4 => 'เชื่อมโยงความจำ',
+  5 => 'ใช้คำในบริบทใหม่',
+  6 => 'จบกิจกรรม',
   _ => throw ArgumentError.value(stage),
 };

@@ -45,7 +45,7 @@ void main() {
       expect(find.widgetWithText(AppBar, 'ชุดเนื้อหาการเรียน'), findsOneWidget);
       expect(find.text('Travel basics'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Travel basics, A1, travel, revision 1'),
+        find.bySemanticsLabel('Travel basics, A1, travel, รุ่น 1'),
         findsOneWidget,
       );
     },
@@ -75,7 +75,7 @@ void main() {
 
       expect(find.byType(LearningPackDetailScreen), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Travel basics, A1, revision 1'),
+        find.bySemanticsLabel('Travel basics, A1, รุ่น 1'),
         findsOneWidget,
       );
       registry.emergencyOff(Feature.studyPlanning);

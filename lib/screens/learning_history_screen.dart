@@ -284,10 +284,12 @@ final class _PairHistoryCard extends StatelessWidget {
     final status = _terminalPresentation(entry.terminalState);
     final packTitle =
         entry.packTitle ??
-        copy(
-          'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน',
-          'Saved content is unavailable',
-        );
+        (result != null && entry.packIdentity == null
+            ? copy('ชุดคำที่บันทึกไว้', 'Saved word set')
+            : copy(
+                'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน',
+                'Saved content is unavailable',
+              ));
     final projection = result;
     final stopped =
         !pairReadFailed &&
@@ -512,8 +514,11 @@ final class _HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = _terminalPresentation(entry.terminalState);
     final assessment = entry.assessmentSummary;
+    final localCefr = entry.localCefrPresentation;
     final packTitle = assessment == null
-        ? entry.packTitle ?? 'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน'
+        ? entry.packTitle ??
+              localCefr?.titleThai ??
+              'เนื้อหาที่บันทึกไว้ไม่พร้อมใช้งาน'
         : 'แบบประเมินผลการเรียน';
     final modeLabel = _modeLabel(entry.mode);
     final durationLabel = _durationLabel(entry.activeLearningDuration);
@@ -553,6 +558,10 @@ final class _HistoryCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(packTitle, style: Theme.of(context).textTheme.titleMedium),
+              if (localCefr != null) ...[
+                const SizedBox(height: 8),
+                Text(localCefr.detailThai),
+              ],
               const SizedBox(height: 4),
               if (assessment == null) ...[
                 Text(modeLabel),

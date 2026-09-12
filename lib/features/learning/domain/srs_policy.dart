@@ -17,7 +17,8 @@ abstract interface class SrsPolicy {
 final class BinarySm2SrsPolicy implements SrsPolicy {
   const BinarySm2SrsPolicy();
 
-  static const int version = 1;
+  static const int version = 2;
+  static const int maximumIntervalDays = 36500;
   static const List<int> _earlyIntervals = <int>[1, 3, 7, 14];
 
   @override
@@ -35,7 +36,7 @@ final class BinarySm2SrsPolicy implements SrsPolicy {
     final interval = isCorrect
         ? repetitions <= _earlyIntervals.length
               ? _earlyIntervals[repetitions - 1]
-              : math.max(1, (prior?.intervalDays ?? 14) * 2)
+              : _nextLongInterval(prior?.intervalDays ?? 14)
         : 1;
     final difficulty = isCorrect
         ? math.max(0.1, priorDifficulty - 0.03)
@@ -50,5 +51,16 @@ final class BinarySm2SrsPolicy implements SrsPolicy {
       dueAtUtc: nowUtc.add(Duration(days: interval)),
       algorithmVersion: version,
     );
+  }
+
+  static int _nextLongInterval(int priorIntervalDays) {
+    final saturatedPrior = math.min(
+      maximumIntervalDays,
+      math.max(1, priorIntervalDays),
+    );
+    if (saturatedPrior > maximumIntervalDays ~/ 2) {
+      return maximumIntervalDays;
+    }
+    return math.min(maximumIntervalDays, saturatedPrior * 2);
   }
 }

@@ -4,6 +4,7 @@ import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/domain/avatar_progression_policy.dart';
 import '../features/rewards/domain/reward_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/reward_avatar_preview.dart';
 
 class AvatarEquipmentScreen extends StatefulWidget {
   const AvatarEquipmentScreen({super.key, this.rewards});
@@ -18,7 +19,22 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
   RewardUseCases? _rewards;
   Future<AvatarRewardState>? _state;
   final Set<String> _busyItems = <String>{};
+  final Map<String, String> _itemMessages = <String, String>{};
+  final Set<String> _checkingItems = <String>{};
+  final ScrollController _scrollController = ScrollController();
+  String? _previewItemId;
   var _requestSequence = 0;
+
+  @override
+  void didUpdateWidget(covariant AvatarEquipmentScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.rewards, widget.rewards)) {
+      _rewards =
+          widget.rewards ?? AppDependenciesScope.maybeOf(context)?.rewards;
+      _previewItemId = null;
+      _state = _loadAvatar();
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -27,6 +43,7 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         widget.rewards ?? AppDependenciesScope.maybeOf(context)?.rewards;
     if (!identical(_rewards, rewards)) {
       _rewards = rewards;
+      _previewItemId = null;
       _state = _loadAvatar();
     }
     _state ??= _loadAvatar();
@@ -34,23 +51,63 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
 
   Future<AvatarRewardState> _loadAvatar() {
     final rewards = _rewards;
-    return rewards == null
+    final load = rewards == null
         ? Future<AvatarRewardState>.error(
             StateError('reward dependency unavailable'),
           )
         : rewards.loadAvatar();
+    final observed = load.then((state) {
+      if (mounted) {
+        for (final itemId in _checkingItems) {
+          _itemMessages.remove(itemId);
+        }
+        _checkingItems.clear();
+      }
+      return state;
+    });
+    observed.ignore();
+    return observed;
   }
 
   void _reload() {
     setState(() {
+      _previewItemId = null;
       _state = _loadAvatar();
     });
+  }
+
+  void _preview(RewardCatalogItem item) {
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    setState(() => _previewItemId = item.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (disableAnimations) {
+        _scrollController.jumpTo(0);
+      } else {
+        _scrollController
+            .animateTo(
+              0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            )
+            .ignore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _purchase(RewardCatalogItem item) async {
     final rewards = _rewards;
     if (rewards == null || _busyItems.contains(item.id)) return;
-    setState(() => _busyItems.add(item.id));
+    setState(() {
+      _busyItems.add(item.id);
+      _itemMessages.remove(item.id);
+    });
     try {
       final result = await rewards.purchase(
         itemId: item.id,
@@ -58,16 +115,13 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         idempotencyKey: _operationKey('purchase', item),
       );
       if (!mounted) return;
-      setState(() {
-        _state = rewards.loadAvatar();
-      });
       final text = result.status == PurchaseStatus.purchased
           ? 'ซื้อรายการและบันทึกในเครื่องแล้ว'
           : 'รายการนี้เป็นของคุณอยู่แล้ว';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-    } on RewardException catch (error) {
+    } on Object catch (error) {
       if (!mounted) return;
-      final text = switch (error.code) {
+      final text = switch (error is RewardException ? error.code : null) {
         RewardFailureCode.insufficientBalance => 'เหรียญไม่เพียงพอ',
         RewardFailureCode.lockedByProgression =>
           'เลเวลอวาตาร์ยังไม่ถึงเงื่อนไข',
@@ -75,44 +129,67 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
           'ข้อมูลราคาเปลี่ยนแล้ว กรุณาเปิดหน้าใหม่',
         RewardFailureCode.evidenceUnavailable =>
           'ข้อมูลรางวัลกำลังรอตรวจสอบ กรุณาลองใหม่ภายหลัง',
-        _ => 'ไม่สามารถซื้อรายการนี้ได้',
+        _ => 'การบันทึกขัดข้อง กำลังตรวจสอบสถานะรายการล่าสุด',
       };
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      _itemMessages[item.id] = text;
+      if (error is! RewardException) _checkingItems.add(item.id);
+      if (!_checkingItems.contains(item.id)) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(text)));
+      }
     } finally {
-      if (mounted) setState(() => _busyItems.remove(item.id));
+      if (mounted) _reconcileItem(item.id);
     }
   }
 
   Future<void> _equip(RewardCatalogItem item) async {
     final rewards = _rewards;
     if (rewards == null || _busyItems.contains(item.id)) return;
-    setState(() => _busyItems.add(item.id));
+    setState(() {
+      _busyItems.add(item.id);
+      _itemMessages.remove(item.id);
+    });
     try {
       await rewards.equip(
         item.id,
         idempotencyKey: _operationKey('equip', item),
       );
       if (!mounted) return;
-      setState(() {
-        _state = rewards.loadAvatar();
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ใช้งานรายการนี้แล้ว')));
-    } on RewardException catch (error) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error.code == RewardFailureCode.evidenceUnavailable
-                ? 'ข้อมูลรางวัลกำลังรอตรวจสอบ กรุณาลองใหม่ภายหลัง'
-                : 'ต้องเป็นเจ้าของรายการก่อนใช้งาน',
-          ),
-        ),
+        const SnackBar(content: Text('บันทึกรายการที่เลือกใช้งานแล้ว')),
       );
+    } on Object catch (error) {
+      if (!mounted) return;
+      final message =
+          error is RewardException &&
+              error.code == RewardFailureCode.evidenceUnavailable
+          ? 'ข้อมูลรางวัลกำลังรอตรวจสอบ กรุณาลองใหม่ภายหลัง'
+          : 'ยังยืนยันการใช้งานไม่ได้ กำลังตรวจสอบสถานะรายการล่าสุด';
+      _itemMessages[item.id] = message;
+      if (error is! RewardException ||
+          error.code != RewardFailureCode.evidenceUnavailable) {
+        _checkingItems.add(item.id);
+      }
+      if (!_checkingItems.contains(item.id)) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
     } finally {
-      if (mounted) setState(() => _busyItems.remove(item.id));
+      if (mounted) _reconcileItem(item.id);
     }
+  }
+
+  void _reconcileItem(String itemId) {
+    _previewItemId = null;
+    final next = _loadAvatar().whenComplete(() {
+      _busyItems.remove(itemId);
+    });
+    next.ignore();
+    setState(() {
+      _state = next;
+    });
   }
 
   String _operationKey(String operation, RewardCatalogItem item) {
@@ -128,12 +205,17 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
       body: FutureBuilder<AvatarRewardState>(
         future: _state,
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.hasError) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text('ไม่สามารถอ่านข้อมูลรางวัลในเครื่องได้'),
+                  if (_checkingItems.isNotEmpty)
+                    const Text(
+                      'ยังยืนยันสถานะรายการไม่ได้ ลองอ่านข้อมูลอีกครั้งโดยไม่บันทึกซ้ำ',
+                    ),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: _reload,
@@ -143,35 +225,60 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
               ),
             );
           }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
+          if (snapshot.connectionState != ConnectionState.done ||
+              !snapshot.hasData) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  if (_checkingItems.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text('กำลังตรวจสอบสถานะรายการล่าสุด'),
+                  ],
+                ],
+              ),
+            );
           }
           final state = snapshot.data!;
           final account = state.account;
           final progression = state.progression;
+          final equippedHeadgear = account.equippedBySlot['headgear'];
+          final visibleHeadgear = _previewItemId ?? equippedHeadgear;
+          final isPreviewing = _previewItemId != null;
           return ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(16),
             children: [
+              _AvatarPreviewPanel(
+                catalogVersion: account.catalogVersion,
+                itemId: visibleHeadgear,
+                previewing: isPreviewing,
+                onCancelPreview: isPreviewing
+                    ? () => setState(() => _previewItemId = null)
+                    : null,
+              ),
               _AvatarLevelCard(progression: progression),
-              const SizedBox(height: 8),
               Semantics(
                 label: 'เหรียญคงเหลือ ${account.coinBalance} เหรียญ',
                 child: Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.toll_outlined),
-                    title: const Text('เหรียญคงเหลือ'),
-                    trailing: Text(
+                  child: _RewardMetricLayout(
+                    icon: Icons.toll_outlined,
+                    title: 'เหรียญคงเหลือ',
+                    value: Text(
                       '${account.coinBalance}',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    subtitle: Text(
-                      'ธุรกรรม ${account.transactionCount} รายการ · '
-                      'แค็ตตาล็อก v${account.catalogVersion}',
-                    ),
+                    summary: Text('ธุรกรรม ${account.transactionCount} รายการ'),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              Text(
+                'ขณะนี้ภาพรองรับตัวละครพื้นฐานและหมวก IPA เท่านั้น',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
               for (final item in RewardCatalog.items)
                 _CatalogTile(
                   item: item,
@@ -180,12 +287,92 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
                       item.price == 0 || account.ownedItemIds.contains(item.id),
                   equipped: account.equippedBySlot[item.slot] == item.id,
                   busy: _busyItems.contains(item.id),
+                  message: _itemMessages[item.id],
+                  canPreview: RewardAvatarPreview.supports(
+                    catalogVersion: item.catalogVersion,
+                    itemId: item.id,
+                  ),
+                  previewing: _previewItemId == item.id,
+                  onPreview: () => _preview(item),
                   onPurchase: () => _purchase(item),
                   onEquip: () => _equip(item),
                 ),
+              ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                title: const Text('รายละเอียดบัญชีรางวัล'),
+                children: [Text('แค็ตตาล็อก v${account.catalogVersion}')],
+              ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _AvatarPreviewPanel extends StatelessWidget {
+  const _AvatarPreviewPanel({
+    required this.catalogVersion,
+    required this.itemId,
+    required this.previewing,
+    required this.onCancelPreview,
+  });
+
+  final int catalogVersion;
+  final String? itemId;
+  final bool previewing;
+  final VoidCallback? onCancelPreview;
+
+  @override
+  Widget build(BuildContext context) {
+    final supported =
+        itemId != null &&
+        RewardAvatarPreview.supports(
+          catalogVersion: catalogVersion,
+          itemId: itemId!,
+        );
+    return Card(
+      color: Theme.of(context).colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            RewardAvatarPreview(
+              catalogVersion: catalogVersion,
+              itemId: itemId,
+              size: 144,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              previewing
+                  ? 'กำลังลองหมวก IPA'
+                  : supported
+                  ? 'สวมหมวก IPA'
+                  : 'ตัวละครของฉัน',
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              previewing
+                  ? 'ลองดูเท่านั้น ยังไม่ได้ซื้อหรือสวม'
+                  : supported
+                  ? 'อุปกรณ์ที่เลือกใช้งานอยู่'
+                  : itemId == null
+                  ? 'ยังไม่ได้สวมหมวก'
+                  : 'ภาพอุปกรณ์นี้ยังไม่พร้อม',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (previewing) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onCancelPreview,
+                child: const Text('เลิกลอง'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -203,20 +390,20 @@ class _AvatarLevelCard extends StatelessWidget {
           'เลเวลอวาตาร์ ${progression.level} '
           'จาก XP สะสม ${progression.lifetimeXp}',
       child: Card(
-        child: ListTile(
-          leading: const Icon(Icons.person_outline),
-          title: const Text('เลเวลอวาตาร์'),
-          trailing: Text(
-            'Level ${progression.level}',
+        child: _RewardMetricLayout(
+          icon: Icons.person_outline,
+          title: 'เลเวลอวาตาร์',
+          value: Text(
+            'เลเวล ${progression.level}',
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          subtitle: Column(
+          summary: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('XP สะสม ${progression.lifetimeXp}'),
               Text(
                 'อีก ${progression.xpUntilNextLevel} XP '
-                'ถึง Level ${progression.level + 1}',
+                'ถึงเลเวล ${progression.level + 1}',
               ),
             ],
           ),
@@ -224,6 +411,71 @@ class _AvatarLevelCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _RewardMetricLayout extends StatelessWidget {
+  const _RewardMetricLayout({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.summary,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget value;
+  final Widget summary;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final stackDetails =
+          constraints.maxWidth < 320 ||
+          MediaQuery.textScalerOf(context).scale(16) >= 24;
+      if (!stackDetails) {
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          leading: Icon(icon),
+          title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+          trailing: value,
+          subtitle: DefaultTextStyle.merge(
+            style: Theme.of(context).textTheme.bodySmall,
+            child: summary,
+          ),
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(icon),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            value,
+            const SizedBox(height: 8),
+            DefaultTextStyle.merge(
+              style: Theme.of(context).textTheme.bodySmall,
+              child: summary,
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _CatalogTile extends StatelessWidget {
@@ -235,6 +487,10 @@ class _CatalogTile extends StatelessWidget {
     required this.busy,
     required this.onPurchase,
     required this.onEquip,
+    required this.canPreview,
+    required this.previewing,
+    required this.onPreview,
+    this.message,
   });
 
   final RewardCatalogItem item;
@@ -244,55 +500,80 @@ class _CatalogTile extends StatelessWidget {
   final bool busy;
   final VoidCallback onPurchase;
   final VoidCallback onEquip;
+  final bool canPreview;
+  final bool previewing;
+  final VoidCallback onPreview;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      key: ValueKey('reward-item/${item.id}'),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(_icon(item.kind), size: 32),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            Row(
+              children: [
+                Icon(_icon(item.kind), size: 40),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
                     item.name,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text(item.description),
-                  Text('${item.price} เหรียญ'),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(height: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.description),
+                const SizedBox(height: 8),
+                Text(owned ? 'เป็นเจ้าของแล้ว' : '${item.price} เหรียญ'),
+                Text('เงื่อนไข: เลเวล ${item.requiredAvatarLevel}'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (canPreview) ...[
+              OutlinedButton(
+                key: ValueKey('reward-preview/${item.id}'),
+                onPressed: previewing ? null : onPreview,
+                child: Text(previewing ? 'กำลังลอง' : 'ลองดู'),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (busy)
-              const SizedBox.square(
-                dimension: 32,
-                child: CircularProgressIndicator(strokeWidth: 2),
+              const Row(
+                children: [
+                  SizedBox.square(
+                    dimension: 32,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(child: Text('กำลังบันทึกรายการ…')),
+                ],
               )
             else if (equipped)
               const Chip(label: Text('กำลังใช้'))
             else if (owned)
-              SizedBox(
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: onEquip,
-                  child: const Text('ใช้งาน'),
-                ),
+              OutlinedButton(
+                key: ValueKey('reward-equip/${item.id}'),
+                onPressed: onEquip,
+                child: const Text('ใช้งาน'),
               )
             else if (!unlocked)
-              Chip(label: Text('ปลดล็อกที่ Level ${item.requiredAvatarLevel}'))
+              Text('ปลดล็อกที่เลเวล ${item.requiredAvatarLevel}')
             else
-              SizedBox(
-                height: 48,
-                child: FilledButton(
-                  onPressed: onPurchase,
-                  child: const Text('ซื้อ'),
-                ),
+              FilledButton(
+                key: ValueKey('reward-purchase/${item.id}'),
+                onPressed: onPurchase,
+                child: const Text('ซื้อ'),
               ),
+            if (message != null) ...[const SizedBox(height: 8), Text(message!)],
           ],
         ),
       ),

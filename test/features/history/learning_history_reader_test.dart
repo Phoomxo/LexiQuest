@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -56,6 +56,156 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'unpinned CEFR history has truthful metadata without replay or source writes',
+    () async {
+      await _seedTerminalSession(
+        database,
+        id: 'session:local-cefr',
+        state: 'completed',
+        startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+        endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+        configuration: _configuration(
+          mode: LessonMode.cefrReading,
+          itemCount: 1,
+          withPack: false,
+        ),
+      );
+      final before = await _sourceSnapshot(database);
+      final entry = (await reader.list(
+        const HistoryFilter(ownerId: 'owner:history'),
+      )).single;
+      final presentation = entry.localCefrPresentation;
+      expect(presentation, isNotNull);
+      expect(presentation!.titleThai, 'กิจกรรมอ่านตามระดับ CEFR');
+      expect(
+        presentation.detailThai,
+        'รอบนี้บันทึกการฝึกอ่านไว้ แต่ไม่ได้บันทึกชื่อบทอ่านหรือระดับที่เลือก',
+      );
+      expect(entry.packIdentity, isNull);
+      expect(entry.packTitle, isNull);
+      expect(
+        entry.contentAvailability,
+        LearningHistoryContentAvailability.unavailable,
+      );
+      await expectLater(
+        reader.replayAsNewSession(
+          entry.sessionId,
+          replayOperationId: 'history-replay:local-cefr',
+        ),
+        throwsStateError,
+      );
+      expect(
+        await reader.list(const HistoryFilter(ownerId: 'owner:other')),
+        isEmpty,
+      );
+      expect(await _sourceSnapshot(database), before);
+    },
+  );
+
+  for (final mode in [LessonMode.cefrReading, LessonMode.meaningQuiz]) {
+    for (final withPack in [true, false]) {
+      if (mode == LessonMode.cefrReading && !withPack) continue;
+      test(
+        'local CEFR metadata does not relabel ${mode.id} withPack=$withPack',
+        () async {
+          await _seedTerminalSession(
+            database,
+            id: 'session:not-local-cefr',
+            state: 'completed',
+            startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+            endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+            configuration: _configuration(
+              mode: mode,
+              itemCount: 1,
+              withPack: withPack,
+            ),
+          );
+          var entry = (await reader.list(
+            const HistoryFilter(ownerId: 'owner:history'),
+          )).single;
+          expect(entry.localCefrPresentation, isNull);
+          if (withPack) {
+            expect(entry.packTitle, 'Travel Essentials');
+            await database.delete(database.learningPacks).go();
+            entry = (await reader.list(
+              const HistoryFilter(ownerId: 'owner:history'),
+            )).single;
+            expect(entry.localCefrPresentation, isNull);
+            expect(entry.packTitle, isNull);
+          }
+        },
+      );
+    }
+  }
+
+  for (final mode in [
+    LessonMode.meaningQuiz,
+    LessonMode.typedRecall,
+    LessonMode.definitionQuiz,
+    LessonMode.cloze,
+    LessonMode.dictation,
+    LessonMode.speaking,
+    LessonMode.shadowing,
+    LessonMode.cefrReading,
+    LessonMode.sentenceScramble,
+    LessonMode.wordScramble,
+  ]) {
+    test(
+      'history reads configured ${mode.id} in the quiz storage carrier',
+      () async {
+        await _seedTerminalSession(
+          database,
+          id: 'session:quiz-carrier',
+          state: 'completed',
+          startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+          endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+          configuration: _configuration(mode: mode, itemCount: 1),
+        );
+        // LearningUseCases.startQuiz persists this activity type even when a
+        // native vocabulary mode supplies its canonical session configuration.
+        await database.customStatement(
+          "UPDATE learning_sessions SET activity_type='quiz' WHERE id='session:quiz-carrier'",
+        );
+        final before = await _sourceSnapshot(database);
+        final entries = await reader.list(
+          const HistoryFilter(ownerId: 'owner:history'),
+        );
+        expect(entries.single.mode, mode);
+        expect(entries.single.sessionId, 'session:quiz-carrier');
+        expect(await _sourceSnapshot(database), before);
+      },
+    );
+  }
+
+  for (final mode in [
+    LessonMode.matching,
+    LessonMode.associativeReading,
+    LessonMode.flashcard,
+    LessonMode.handwritingScratchpad,
+  ]) {
+    test(
+      'quiz carrier does not authorize unrelated ${mode.id} history',
+      () async {
+        await _seedTerminalSession(
+          database,
+          id: 'session:wrong-carrier',
+          state: 'completed',
+          startedAtUtc: DateTime.utc(2026, 8, 31, 11),
+          endedAtUtc: DateTime.utc(2026, 8, 31, 11, 1),
+          configuration: _configuration(mode: mode, itemCount: 1),
+        );
+        await database.customStatement(
+          "UPDATE learning_sessions SET activity_type='quiz' WHERE id='session:wrong-carrier'",
+        );
+        await expectLater(
+          reader.list(const HistoryFilter(ownerId: 'owner:history')),
+          throwsStateError,
+        );
+      },
+    );
+  }
 
   for (final state in ['completed', 'abandoned']) {
     test(
@@ -706,6 +856,7 @@ void main() {
 
       expect(entries, hasLength(1));
       final dynamic entry = entries.single;
+      expect(entry.localCefrPresentation, isNull);
       expect(
         () => entry.assessmentRun,
         throwsA(isA<NoSuchMethodError>()),
@@ -1003,6 +1154,7 @@ void main() {
       expect(entry.packIdentity, isNull);
       expect(entry.packTitle, isNull);
       expect(entry.sessionConfiguration, isNull);
+      expect(entry.localCefrPresentation, isNull);
       expect(
         entry.contentAvailability,
         LearningHistoryContentAvailability.unavailable,
@@ -1014,6 +1166,15 @@ void main() {
         ),
         throwsStateError,
       );
+      await database.customStatement(
+        "UPDATE learning_sessions SET activity_type='cefr-reading' WHERE id='session:legacy-unpinned'",
+      );
+      final unconfiguredCefr = (await reader.list(
+        const HistoryFilter(ownerId: 'owner:history'),
+      )).single;
+      expect(unconfiguredCefr.sessionConfiguration, isNull);
+      expect(unconfiguredCefr.mode, LessonMode.cefrReading);
+      expect(unconfiguredCefr.localCefrPresentation, isNull);
     },
   );
 
@@ -1273,6 +1434,7 @@ const _packIdentity = ContentIdentity(
 SessionConfiguration _configuration({
   required LessonMode mode,
   required int itemCount,
+  bool withPack = true,
 }) => SessionConfiguration.validated(
   schemaVersion: sessionConfigurationSchemaVersion,
   policyVersion: sessionConfigurationPolicyVersion,
@@ -1285,7 +1447,7 @@ SessionConfiguration _configuration({
   timing: const SessionTiming.untimedAlternative(
     maximumActiveEffort: Duration(minutes: 10),
   ),
-  packIdentity: _packIdentity,
+  packIdentity: withPack ? _packIdentity : null,
   protocolId: 'protocol:local-standard',
   protocolVersion: '1',
   protocolLimitsIdentity:

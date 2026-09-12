@@ -75,7 +75,7 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                     ),
                     const SizedBox(height: 4),
                     Text(word.meaning),
-                    Text('Part of speech: ${word.partOfSpeech}'),
+                    Text('ชนิดของคำ: ${word.partOfSpeech}'),
                     if (word.cefrLevel != null) Text('CEFR: ${word.cefrLevel}'),
                   ],
                 ),
@@ -87,12 +87,14 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                 container: true,
                 explicitChildNodes: true,
                 button: true,
-                label: 'Save for review',
+                label: 'บันทึกไว้ทบทวน',
+                enabled: true,
+                onTap: () => contract.action(contract.identity),
                 child: ExcludeSemantics(
                   child: OutlinedButton.icon(
                     onPressed: () => contract.action(contract.identity),
                     icon: const Icon(Icons.bookmark_add_outlined),
-                    label: const Text('Save for review'),
+                    label: const Text('บันทึกไว้ทบทวน'),
                   ),
                 ),
               ),
@@ -103,7 +105,13 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                 container: true,
                 explicitChildNodes: true,
                 button: true,
-                label: 'Report content',
+                label: 'รายงานเนื้อหา',
+                enabled: true,
+                onTap: () => _showContentReport(
+                  context,
+                  identity: contract.identity,
+                  action: contract.action,
+                ),
                 child: ExcludeSemantics(
                   child: OutlinedButton.icon(
                     onPressed: () => _showContentReport(
@@ -112,29 +120,31 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                       action: contract.action,
                     ),
                     icon: const Icon(Icons.flag_outlined),
-                    label: const Text('Report content'),
+                    label: const Text('รายงานเนื้อหา'),
                   ),
                 ),
               ),
               const SizedBox(height: 8),
             ],
             if (metadata == null)
-              const Text('Additional lexical details are unavailable.')
+              const Text('รายละเอียดคำศัพท์เพิ่มเติมไม่พร้อมใช้งาน')
             else ...[
               Semantics(
                 container: true,
                 explicitChildNodes: true,
                 button: true,
+                enabled: true,
+                onTap: _toggleDetails,
                 label: _expanded
-                    ? 'Hide lexical details'
-                    : 'Show lexical details',
+                    ? 'ซ่อนรายละเอียดคำศัพท์'
+                    : 'ดูรายละเอียดคำศัพท์',
                 child: ExcludeSemantics(
                   child: OutlinedButton(
-                    onPressed: () => setState(() => _expanded = !_expanded),
+                    onPressed: _toggleDetails,
                     child: Text(
                       _expanded
-                          ? 'Hide lexical details'
-                          : 'Show lexical details',
+                          ? 'ซ่อนรายละเอียดคำศัพท์'
+                          : 'ดูรายละเอียดคำศัพท์',
                     ),
                   ),
                 ),
@@ -152,10 +162,12 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
     );
   }
 
+  void _toggleDetails() => setState(() => _expanded = !_expanded);
+
   String _entryLabel(VocabularyWord word) {
     final cefr = word.cefrLevel;
-    return 'Lexical entry: ${word.spelling}. Meaning: ${word.meaning}. '
-        'Part of speech: ${word.partOfSpeech}.${cefr == null ? '' : ' CEFR: $cefr.'}';
+    return 'คำศัพท์: ${word.spelling}. ความหมาย: ${word.meaning}. '
+        'ชนิดของคำ: ${word.partOfSpeech}.${cefr == null ? '' : ' CEFR: $cefr.'}';
   }
 }
 
@@ -195,16 +207,16 @@ final class _RichDetails extends StatelessWidget {
               if (metadata.ipa != null) Text('IPA: ${metadata.ipa}'),
               if (metadata.examples.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                const Text('Examples'),
+                const Text('ตัวอย่าง'),
                 for (final example in metadata.examples) Text(example),
               ],
               if (metadata.synonyms.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text('Synonyms: ${metadata.synonyms.join(', ')}'),
+                Text('คำใกล้เคียง: ${metadata.synonyms.join(', ')}'),
               ],
               if (metadata.antonyms.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text('Antonyms: ${metadata.antonyms.join(', ')}'),
+                Text('คำตรงข้าม: ${metadata.antonyms.join(', ')}'),
               ],
             ],
           ),
@@ -218,15 +230,15 @@ final class _RichDetails extends StatelessWidget {
     final ipa = metadata.ipa;
     if (ipa != null) parts.add('IPA: $ipa.');
     if (metadata.examples.isNotEmpty) {
-      parts.add('Examples: ${metadata.examples.join(' ')}.');
+      parts.add('ตัวอย่าง: ${metadata.examples.join(' ')}.');
     }
     if (metadata.synonyms.isNotEmpty) {
-      parts.add('Synonyms: ${metadata.synonyms.join(', ')}.');
+      parts.add('คำใกล้เคียง: ${metadata.synonyms.join(', ')}.');
     }
     if (metadata.antonyms.isNotEmpty) {
-      parts.add('Antonyms: ${metadata.antonyms.join(', ')}.');
+      parts.add('คำตรงข้าม: ${metadata.antonyms.join(', ')}.');
     }
-    return 'Additional lexical details: ${parts.join(' ')}';
+    return 'รายละเอียดคำศัพท์เพิ่มเติม: ${parts.join(' ')}';
   }
 }
 
@@ -242,20 +254,22 @@ final class _AudioControl extends StatelessWidget {
       return Semantics(
         container: true,
         explicitChildNodes: true,
-        label: 'Pronunciation audio unavailable',
-        child: ExcludeSemantics(child: Text('Pronunciation audio unavailable')),
+        label: 'เสียงอ่านคำศัพท์ไม่พร้อมใช้งาน',
+        child: ExcludeSemantics(child: Text('เสียงอ่านคำศัพท์ไม่พร้อมใช้งาน')),
       );
     }
     return Semantics(
       container: true,
       explicitChildNodes: true,
       button: true,
-      label: 'Play pronunciation audio',
+      label: 'ฟังเสียงอ่านคำศัพท์',
+      enabled: true,
+      onTap: onPlayAudio,
       child: ExcludeSemantics(
         child: IconButton(
           icon: const Icon(Icons.volume_up),
           onPressed: onPlayAudio,
-          tooltip: 'Play pronunciation audio',
+          tooltip: 'ฟังเสียงอ่านคำศัพท์',
         ),
       ),
     );

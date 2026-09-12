@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/voice/voice_audio_player.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -32,6 +34,233 @@ Future<VoiceFailure> _captureFailure(Future<void> Function() action) async {
 }
 
 void main() {
+  test(
+    'completion-capable player separates start from natural completion',
+    () async {
+      final adapter = _RecordingAudioPlayerAdapter();
+      final playback = await PluginVoiceAudioPlayer(
+        adapter,
+      ).playWithCompletion(_wavBytes());
+      var completed = false;
+      playback.completed!.then((_) => completed = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(completed, isFalse);
+      adapter.completeNaturally();
+      await playback.completed;
+      expect(completed, isTrue);
+    },
+  );
+
+  test(
+    'stop rejects an active completion instead of reporting natural end',
+    () async {
+      final adapter = _RecordingAudioPlayerAdapter();
+      final player = PluginVoiceAudioPlayer(adapter);
+      final playback = await player.playWithCompletion(_wavBytes());
+      final failure = expectLater(
+        playback.completed!,
+        throwsA(
+          isA<VoiceFailure>().having(
+            (value) => value.category,
+            'category',
+            VoiceFailureCategory.cancelled,
+          ),
+        ),
+      );
+      await player.stop();
+      await failure;
+    },
+  );
+
+  test('plain adapter never fabricates a natural completion signal', () async {
+    final player = PluginVoiceAudioPlayer(_PlainAudioPlayerAdapter());
+    final playback = await player.playWithCompletion(_wavBytes());
+    expect(playback.completed, isNull);
+  });
+
+  test(
+    'audioplayers adapter completes only on the native completion event',
+    () async {
+      final native = _ControlledNativeAudioPlayer();
+      final adapter = AudioplayersAdapter(audioPlayer: native);
+      final playback = await adapter.playBytesWithCompletion(_wavBytes());
+      var completed = false;
+      playback.completed!.then((_) => completed = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(completed, isFalse);
+      native.completeNaturally();
+      await playback.completed;
+      expect(completed, isTrue);
+    },
+  );
+
+  test(
+    'audioplayers adapter rejects completion when native stream closes',
+    () async {
+      final native = _ControlledNativeAudioPlayer();
+      final adapter = AudioplayersAdapter(audioPlayer: native);
+      final playback = await adapter.playBytesWithCompletion(_wavBytes());
+      final failure = expectLater(
+        playback.completed!,
+        throwsA(isA<VoiceFailure>()),
+      );
+      await native.closeCompletionStream();
+      await failure;
+    },
+  );
+
+  test(
+    'audioplayers adapter rejects completion on native stream error',
+    () async {
+      final native = _ControlledNativeAudioPlayer();
+      final adapter = AudioplayersAdapter(audioPlayer: native);
+      final playback = await adapter.playBytesWithCompletion(_wavBytes());
+      final failure = expectLater(
+        playback.completed!,
+        throwsA(isA<VoiceFailure>()),
+      );
+      native.failCompletion(StateError('synthetic event error'));
+      await failure;
+    },
+  );
+
+  test('audioplayers adapter retires completion when stop throws', () async {
+    final native = _ControlledNativeAudioPlayer(throwOnStop: true);
+    final adapter = AudioplayersAdapter(audioPlayer: native);
+    final playback = await adapter.playBytesWithCompletion(_wavBytes());
+    final completion = expectLater(
+      playback.completed!,
+      throwsA(isA<VoiceFailure>()),
+    );
+    await expectLater(adapter.stop(), throwsA(anything));
+    await completion;
+  });
+
+  test('audioplayers adapter retires completion when dispose throws', () async {
+    final native = _ControlledNativeAudioPlayer(throwOnDispose: true);
+    final adapter = AudioplayersAdapter(audioPlayer: native);
+    final playback = await adapter.playBytesWithCompletion(_wavBytes());
+    final completion = expectLater(
+      playback.completed!,
+      throwsA(isA<VoiceFailure>()),
+    );
+    await expectLater(adapter.dispose(), throwsA(anything));
+    await completion;
+  });
+
+  test(
+    'replacement rejects old completion and owns a fresh native event',
+    () async {
+      final native = _ControlledNativeAudioPlayer();
+      final adapter = AudioplayersAdapter(audioPlayer: native);
+      final first = await adapter.playBytesWithCompletion(_wavBytes());
+      final retired = expectLater(
+        first.completed!,
+        throwsA(isA<VoiceFailure>()),
+      );
+      final second = await adapter.playBytesWithCompletion(_wavBytes());
+      await retired;
+      native.completeNaturally();
+      await second.completed;
+    },
+  );
+
+  test('plain play replacement retires the old completion proof', () async {
+    final native = _ControlledNativeAudioPlayer();
+    final adapter = AudioplayersAdapter(audioPlayer: native);
+    final first = await adapter.playBytesWithCompletion(_wavBytes());
+    final retired = expectLater(first.completed!, throwsA(isA<VoiceFailure>()));
+    await adapter.playBytes(_wavBytes());
+    await retired;
+    native.completeNaturally();
+    expect(native.playCalls, 2);
+  });
+
+  test(
+    'late failure from replaced native play cannot retire the new proof',
+    () async {
+      final firstPlay = Completer<void>();
+      final native = _ControlledNativeAudioPlayer(playGates: [firstPlay, null]);
+      final adapter = AudioplayersAdapter(audioPlayer: native);
+      final firstStart = adapter.playBytesWithCompletion(_wavBytes());
+      final firstFailure = expectLater(firstStart, throwsA(anything));
+      await Future<void>.delayed(Duration.zero);
+      await adapter.stop();
+      final second = await adapter.playBytesWithCompletion(_wavBytes());
+      firstPlay.completeError(StateError('late first play failure'));
+      await firstFailure;
+      var secondCompleted = false;
+      second.completed!.then((_) => secondCompleted = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(secondCompleted, isFalse);
+      native.completeNaturally();
+      await second.completed;
+    },
+  );
+
+  test('late stop acknowledgement cannot retire a replacement proof', () async {
+    final stopGate = Completer<void>();
+    final native = _ControlledNativeAudioPlayer(stopGate: stopGate);
+    final adapter = AudioplayersAdapter(audioPlayer: native);
+    final first = await adapter.playBytesWithCompletion(_wavBytes());
+    first.completed!.ignore();
+    final stopping = adapter.stop();
+    await Future<void>.delayed(Duration.zero);
+    final second = await adapter.playBytesWithCompletion(_wavBytes());
+    stopGate.complete();
+    await stopping;
+    var secondCompleted = false;
+    second.completed!.then((_) => secondCompleted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(secondCompleted, isFalse);
+    native.completeNaturally();
+    await second.completed;
+  });
+
+  test('stop begun without a proof cannot retire a later playback', () async {
+    final stopGate = Completer<void>();
+    final native = _ControlledNativeAudioPlayer(stopGate: stopGate);
+    final adapter = AudioplayersAdapter(audioPlayer: native);
+    final stopping = adapter.stop();
+    await Future<void>.delayed(Duration.zero);
+    final playback = await adapter.playBytesWithCompletion(_wavBytes());
+    stopGate.complete();
+    await stopping;
+    var completed = false;
+    playback.completed!.then((_) => completed = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(completed, isFalse);
+    native.completeNaturally();
+    await playback.completed;
+  });
+
+  test(
+    'late dispose acknowledgement cannot retire a replacement proof',
+    () async {
+      final disposeGate = Completer<void>();
+      final firstNative = _ControlledNativeAudioPlayer(
+        disposeGate: disposeGate,
+      );
+      final secondNative = _ControlledNativeAudioPlayer();
+      final adapter = AudioplayersAdapter(
+        audioPlayer: firstNative,
+        audioPlayerFactory: () => secondNative,
+      );
+      final first = await adapter.playBytesWithCompletion(_wavBytes());
+      first.completed!.ignore();
+      final disposing = adapter.dispose();
+      await Future<void>.delayed(Duration.zero);
+      final second = await adapter.playBytesWithCompletion(_wavBytes());
+      disposeGate.complete();
+      await disposing;
+      var secondCompleted = false;
+      second.completed!.then((_) => secondCompleted = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(secondCompleted, isFalse);
+      secondNative.completeNaturally();
+      await second.completed;
+    },
+  );
   test('delegates non-empty WAV bytes to playBytes exactly once', () async {
     final adapter = _RecordingAudioPlayerAdapter();
     final bytes = _wavBytes();
@@ -182,7 +411,68 @@ Future<void> _perform(PluginVoiceAudioPlayer player, _AdapterCall call) {
 
 enum _AdapterCall { playBytes, stop, dispose }
 
-class _RecordingAudioPlayerAdapter implements AudioPlayerAdapter {
+final class _ControlledNativeAudioPlayer implements AudioPlayer {
+  _ControlledNativeAudioPlayer({
+    this.throwOnStop = false,
+    this.throwOnDispose = false,
+    this.playGates = const [],
+    this.stopGate,
+    this.disposeGate,
+  });
+  final bool throwOnStop;
+  final bool throwOnDispose;
+  final List<Completer<void>?> playGates;
+  final Completer<void>? stopGate;
+  final Completer<void>? disposeGate;
+  final StreamController<void> _completions =
+      StreamController<void>.broadcast();
+  int playCalls = 0;
+  void completeNaturally() => _completions.add(null);
+  void failCompletion(Object error) => _completions.addError(error);
+  Future<void> closeCompletionStream() => _completions.close();
+  @override
+  Stream<void> get onPlayerComplete => _completions.stream;
+  @override
+  Future<void> play(
+    Source source, {
+    double? volume,
+    double? balance,
+    AudioContext? ctx,
+    Duration? position,
+    PlayerMode? mode,
+  }) async {
+    final call = playCalls++;
+    if (call < playGates.length) await playGates[call]?.future;
+  }
+
+  @override
+  Future<void> stop() async {
+    await stopGate?.future;
+    if (throwOnStop) throw StateError('synthetic stop failure');
+  }
+
+  @override
+  Future<void> dispose() async {
+    await disposeGate?.future;
+    if (throwOnDispose) throw StateError('synthetic dispose failure');
+    if (disposeGate == null) await _completions.close();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _PlainAudioPlayerAdapter implements AudioPlayerAdapter {
+  @override
+  Future<void> playBytes(Uint8List bytes) async {}
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> dispose() async {}
+}
+
+class _RecordingAudioPlayerAdapter
+    implements AudioPlayerAdapter, AudioPlayerAdapterWithCompletion {
   _RecordingAudioPlayerAdapter({this.failingCall, this.failure});
 
   final _AdapterCall? failingCall;
@@ -192,6 +482,9 @@ class _RecordingAudioPlayerAdapter implements AudioPlayerAdapter {
   int stopCount = 0;
   int disposeCount = 0;
   Uint8List? lastBytes;
+  Completer<void>? _completion;
+
+  void completeNaturally() => _completion!.complete();
 
   Future<void> _record(_AdapterCall call, [Object? argument]) async {
     if (failingCall == call && failure != null) {
@@ -213,7 +506,25 @@ class _RecordingAudioPlayerAdapter implements AudioPlayerAdapter {
       _record(_AdapterCall.playBytes, bytes);
 
   @override
-  Future<void> stop() => _record(_AdapterCall.stop);
+  Future<VoiceAudioPlayback> playBytesWithCompletion(Uint8List bytes) async {
+    await playBytes(bytes);
+    _completion = Completer<void>();
+    return VoiceAudioPlayback(completed: _completion!.future);
+  }
+
+  @override
+  Future<void> stop() async {
+    await _record(_AdapterCall.stop);
+    final completion = _completion;
+    if (completion != null && !completion.isCompleted) {
+      completion.completeError(
+        const VoiceFailure(
+          category: VoiceFailureCategory.cancelled,
+          message: 'synthetic stop',
+        ),
+      );
+    }
+  }
 
   @override
   Future<void> dispose() => _record(_AdapterCall.dispose);

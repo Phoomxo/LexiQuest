@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart';
+import 'dart:io';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,11 +11,15 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/associative_reading_checkpoint.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
@@ -188,6 +193,579 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   }
 
+  for (final acknowledgementLoss in [true, false]) {
+    testWidgets(
+      acknowledgementLoss
+          ? 'R06 stopped acknowledgement loss reconciles the authentic terminal timestamp'
+          : 'R06 two failed stop writes permit one explicit retry with the same cutoff',
+      (tester) async {
+        final repository = _CompletedProgressFailOnceAbandonRepository(
+          DriftLearningRepository(database),
+          failuresBeforeSuccess: acknowledgementLoss ? 0 : 2,
+          loseFirstAcknowledgement: acknowledgementLoss,
+        );
+        learning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'stop-${++id}',
+          nowUtc: () => DateTime.utc(2026, 9, 9),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'reading-stop-recovery',
+          ),
+        );
+        dependencies = makeDependencies();
+        try {
+          await tester.runAsync(() => seedWords(1));
+          await pump(tester, const AssociativeReadingLauncherScreen());
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.tap(find.text('เริ่มอ่าน'));
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
+          );
+          await tester.pageBack();
+          for (
+            var failure = 0;
+            failure < (acknowledgementLoss ? 1 : 2);
+            failure++
+          ) {
+            await pumpUntilFound(
+              tester,
+              find.text('ยังจบกิจกรรมการเรียนไม่ได้ กรุณาลองอีกครั้ง'),
+            );
+            expect(repository.abandonCalls, failure + 1);
+            expect(
+              tester
+                  .widget<FilledButton>(
+                    find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
+                  )
+                  .onPressed,
+              isNull,
+            );
+            await tester.pageBack();
+          }
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.pumpAndSettle();
+          expect(repository.abandonCalls, acknowledgementLoss ? 2 : 3);
+          expect(repository.durableAbandons, 1);
+          final session = (await tester.runAsync(
+            () => database.select(database.learningSessions).getSingle(),
+          ))!;
+          expect(session.state, 'abandoned');
+          expect(
+            session.endedAtUtcMs,
+            repository.terminalTimes.last.millisecondsSinceEpoch,
+          );
+          expect(repository.terminalTimes.toSet(), hasLength(1));
+        } finally {
+          await closeHarness(tester);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'R06 owner change during exact reading attachment refuses the old owner',
+    (tester) async {
+      final repository = _DelayedProgressCountingLearningRepository(
+        DriftLearningRepository(database),
+      );
+      learning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'owner-race-${++id}',
+        nowUtc: () => DateTime.utc(2026, 9, 9),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'reading-owner-race',
+        ),
+      );
+      dependencies = makeDependencies();
+      var released = false;
+      try {
+        await tester.runAsync(() => seedWords(1));
+        await pump(tester, const AssociativeReadingLauncherScreen());
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
+        await pumpUntilFound(
+          tester,
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        expect(repository.progressLoadCalls, 1);
+        final screen = tester.widget<AssociativeReadingSessionScreen>(
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        await tester.runAsync(
+          () => database.transaction(() async {
+            await database
+                .update(database.localOwners)
+                .write(const LocalOwnersCompanion(isActive: Value(false)));
+            await database
+                .into(database.localOwners)
+                .insert(
+                  LocalOwnersCompanion.insert(
+                    id: 'new-reading-owner',
+                    createdAtUtcMs: 2,
+                  ),
+                );
+          }),
+        );
+        repository.completeProgressLoad();
+        released = true;
+        await pumpUntilFound(
+          tester,
+          find.byKey(
+            const ValueKey<String>(
+              'associative-reading-initialization-failure',
+            ),
+          ),
+        );
+        expect(find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'), findsNothing);
+        await tester.runAsync(() async {
+          final sessions = await database
+              .select(database.learningSessions)
+              .get();
+          expect(sessions, hasLength(1));
+          expect(sessions.single.id, screen.sessionId);
+          expect(sessions.single.ownerId, screen.ownerId);
+          expect(sessions.single.state, 'active');
+          expect(await database.select(database.answerAttempts).get(), isEmpty);
+        });
+      } finally {
+        if (!released) repository.completeProgressLoad();
+        await closeHarness(tester);
+      }
+    },
+  );
+
+  for (final scenario in ['full', 'partial', 'edited', 'deleted']) {
+    final partial = scenario == 'partial';
+    final drift = scenario == 'edited' || scenario == 'deleted';
+    testWidgets(
+      drift
+          ? 'R06 explicit fresh round after $scenario completed content uses new pins and passage'
+          : partial
+          ? 'R06 partial recall process death disables only the committed occurrence'
+          : 'R06 process death resumes the same reading session and linked 1/2 recall',
+      (tester) async {
+        final directory = (await tester.runAsync(
+          () => Directory.systemTemp.createTemp('lexiquest-reading-recovery-'),
+        ))!;
+        final snapshot = File('${directory.path}/active.sqlite');
+        try {
+          await tester.runAsync(() => seedWords(2));
+          final owner = (await tester.runAsync(owners.getOrCreateActiveOwner))!;
+          final registration = dependencies.lessonModes!.find(
+            LessonMode.associativeReading,
+          )!;
+          const policy = SessionConfigurationPolicy();
+          const limits = SessionConfigurationProtocolLimits.standard();
+          SessionConfiguration configuration(int hints) => policy.validate(
+            draft: policy
+                .defaultsFor(registration: registration, limits: limits)
+                .copyWith(itemCount: 2, hintBudget: hints),
+            registration: registration,
+            limits: limits,
+            ownerId: owner.id,
+            availablePackIdentities: const [],
+          );
+          final originalConfiguration = configuration(2);
+          final laterConfiguration = configuration(0);
+          final validated = <SessionConfiguration>[];
+          Future<SessionConfiguration> revalidate(
+            SessionConfiguration value,
+          ) async {
+            validated.add(value);
+            return policy.revalidate(
+              configuration: value,
+              registration: registration,
+              limits: limits,
+              ownerId: owner.id,
+              availablePackIdentities: const [],
+            );
+          }
+
+          await pump(
+            tester,
+            AssociativeReadingLauncherScreen(
+              sessionConfiguration: originalConfiguration,
+              revalidateSessionConfiguration: revalidate,
+            ),
+          );
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.tap(find.text('เริ่มอ่าน'));
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
+          );
+          final original = tester.widget<AssociativeReadingSessionScreen>(
+            find.byType(AssociativeReadingSessionScreen),
+          );
+          for (final title in const [
+            'ขั้นที่ 2: อ่านโดยลดตัวช่วย',
+            'ขั้นที่ 3: นึกคำจากความจำ',
+          ]) {
+            await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+            await pumpUntilFound(tester, find.text(title));
+          }
+          await tester.enterText(
+            find.byType(TextField).at(0),
+            original.targetWords.first,
+          );
+          await tester.enterText(find.byType(TextField).at(1), 'incorrect');
+          tester.testTextInput.hide();
+          await tester.pump();
+          if (partial)
+            await tester.runAsync(
+              () => database.customStatement('''
+CREATE TRIGGER fail_second_reading_answer BEFORE INSERT ON answer_attempts
+WHEN (SELECT COUNT(*) FROM answer_attempts) = 1
+BEGIN SELECT RAISE(ABORT, 'synthetic second recall failure'); END
+'''),
+            );
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await pumpUntilFound(
+            tester,
+            partial
+                ? find.text('ลองบันทึกผลเดิมอีกครั้ง')
+                : find.text('ขั้นที่ 4: เชื่อมโยงความจำ'),
+          );
+
+          final before = (await tester.runAsync(() async {
+            final attempts = await database
+                .select(database.answerAttempts)
+                .get();
+            expect(attempts, hasLength(partial ? 1 : 2));
+            expect(attempts.where((row) => row.isCorrect), hasLength(1));
+            expect(attempts.map((row) => row.sessionId).toSet(), {
+              original.sessionId,
+            });
+            final result = (
+              answerIds: attempts.map((row) => row.id).toSet(),
+              events: (await database.select(database.eventsV2).get()).length,
+              srs: (await database.select(database.srsStates).get()).length,
+              rewards:
+                  (await database.select(database.rewardTransactions).get())
+                      .length,
+            );
+            // Snapshot committed storage before route disposal. Disposing a live
+            // widget is an explicit stop, whereas process death runs no cleanup.
+            await database.customStatement('VACUUM INTO ?', [snapshot.path]);
+            return result;
+          }))!;
+
+          await closeHarness(tester);
+          database = AppDatabase(NativeDatabase(snapshot));
+          owners = DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'reopened-owner',
+            nowUtc: () => DateTime.utc(2026, 8, 9, 12),
+          );
+          vocabulary = VocabularyUseCases(
+            owners: owners,
+            vocabulary: DriftVocabularyRepository(database),
+            generateId: () => 'reopened-word-${++id}',
+            nowUtc: () => DateTime.utc(2026, 8, 9, 12),
+          );
+          learning = LearningUseCases(
+            owners: owners,
+            repository: DriftLearningRepository(database),
+            generateId: () => 'reopened-learning-${++id}',
+            nowUtc: () => DateTime.utc(2026, 8, 9, 12),
+            buildInfo: const AppBuildInfo(
+              version: 'test',
+              buildId: 'reading-reopen',
+            ),
+          );
+          associativeLearning = DriftAssociativeLearningAdapter(database);
+          dependencies = makeDependencies();
+          await tester.runAsync(() async {
+            final sessions = await database
+                .select(database.learningSessions)
+                .get();
+            expect(sessions, hasLength(1));
+            expect(sessions.single.id, original.sessionId);
+            expect(sessions.single.state, 'active');
+          });
+          await pump(
+            tester,
+            AssociativeReadingLauncherScreen(
+              sessionConfiguration: laterConfiguration,
+              revalidateSessionConfiguration: revalidate,
+            ),
+          );
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.tap(find.text('เริ่มอ่าน'));
+          await pumpUntilFound(
+            tester,
+            find.text(
+              partial
+                  ? 'ขั้นที่ 3: นึกคำจากความจำ'
+                  : 'ขั้นที่ 4: เชื่อมโยงความจำ',
+            ),
+          );
+          final recovered = tester.widget<AssociativeReadingSessionScreen>(
+            find.byType(AssociativeReadingSessionScreen),
+          );
+          expect(recovered.sessionId, original.sessionId);
+          expect(recovered.ownerId, original.ownerId);
+          expect(recovered.sessionStartedAtUtc, original.sessionStartedAtUtc);
+          expect(recovered.documentId, original.documentId);
+          expect(recovered.documentRevision, original.documentRevision);
+          expect(recovered.targetWords, original.targetWords);
+          expect(
+            tester
+                .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+                .configuration,
+            originalConfiguration,
+          );
+          expect(validated.last, originalConfiguration);
+
+          await tester.runAsync(() async {
+            expect(
+              await database.select(database.learningSessions).get(),
+              hasLength(1),
+            );
+            expect(
+              (await database.select(database.answerAttempts).get())
+                  .map((row) => row.id)
+                  .toSet(),
+              before.answerIds,
+            );
+            expect(
+              (await database.select(database.eventsV2).get()).length,
+              before.events,
+            );
+            expect(
+              (await database.select(database.srsStates).get()).length,
+              before.srs,
+            );
+            expect(
+              (await database.select(database.rewardTransactions).get()).length,
+              before.rewards,
+            );
+          });
+          if (partial) {
+            expect(
+              tester.widget<TextField>(find.byType(TextField).at(0)).enabled,
+              isFalse,
+            );
+            expect(
+              tester.widget<TextField>(find.byType(TextField).at(1)).enabled,
+              isTrue,
+            );
+            await tester.runAsync(
+              () => database.customStatement(
+                'DROP TRIGGER fail_second_reading_answer',
+              ),
+            );
+            await tester.enterText(find.byType(TextField).at(1), 'incorrect');
+            tester.testTextInput.hide();
+            await tester.pump();
+            await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+            await pumpUntilFound(
+              tester,
+              find.text('ขั้นที่ 4: เชื่อมโยงความจำ'),
+            );
+            await tester.runAsync(() async {
+              final attempts = await database
+                  .select(database.answerAttempts)
+                  .get();
+              expect(attempts, hasLength(2));
+              expect(
+                attempts.where(
+                  (attempt) => before.answerIds.contains(attempt.id),
+                ),
+                hasLength(1),
+              );
+            });
+          }
+          await tester.enterText(
+            find.byType(TextField).at(0),
+            'synthetic first cue',
+          );
+          await tester.enterText(
+            find.byType(TextField).at(1),
+            'synthetic second cue',
+          );
+          tester.testTextInput.hide();
+          await tester.pump();
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 5: ใช้คำในบริบทใหม่'),
+          );
+          await tester.enterText(
+            find.byType(TextField),
+            'A synthetic practice sentence.',
+          );
+          tester.testTextInput.hide();
+          await tester.pump();
+          await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+          await pumpUntilFound(tester, find.text('นึกคำถูก: 1 / 2'));
+          await tester.tap(find.text('จบกิจกรรม'));
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.pumpAndSettle();
+          final completedEvents = (await tester.runAsync(() async {
+            final sessions = await database
+                .select(database.learningSessions)
+                .get();
+            expect(sessions, hasLength(1));
+            expect(sessions.single.state, 'completed');
+            expect(sessions.single.id, original.sessionId);
+            return (await database.select(database.eventsV2).get()).length;
+          }))!;
+          await tester.tap(find.text('เริ่มอ่าน'));
+          await pumpUntilFound(tester, find.text('นึกคำถูก: 1 / 2'));
+          await tester.pageBack();
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.pumpAndSettle();
+          await tester.runAsync(() async {
+            expect(
+              await database.select(database.learningSessions).get(),
+              hasLength(1),
+            );
+            expect(
+              (await database.select(database.eventsV2).get()).length,
+              completedEvents,
+            );
+          });
+          await tester.pump(const Duration(seconds: 5));
+          await tester.pumpAndSettle();
+          if (drift) {
+            await tester.runAsync(() async {
+              // Keep mutation authority in this runAsync zone, separate from
+              // the UI repository's fake-async mutation tail.
+              final seedVocabulary = VocabularyUseCases(
+                owners: DriftLocalOwnerRepository(
+                  database,
+                  generateId: () => 'unexpected-seed-owner',
+                  nowUtc: () => DateTime.utc(2026, 8, 9, 12),
+                ),
+                vocabulary: DriftVocabularyRepository(database),
+                generateId: () => 'replacement-${++id}',
+                nowUtc: () => DateTime.utc(2026, 8, 9, 12),
+              );
+              for (final wordId in original.targetWordIds!.values) {
+                if (scenario == 'deleted') {
+                  await seedVocabulary.deleteWord(wordId);
+                } else {
+                  final word = await (database.select(
+                    database.vocabularyWords,
+                  )..where((row) => row.id.equals(wordId))).getSingle();
+                  await seedVocabulary.updateWord(
+                    UpdateWordCommand(
+                      id: word.id,
+                      categoryId: word.categoryId,
+                      spelling: 'fresh-$wordId',
+                      meaning: word.meaning,
+                      partOfSpeech: word.partOfSpeech,
+                      cefrLevel: word.cefrLevel,
+                      source: word.source,
+                    ),
+                  );
+                }
+              }
+              if (scenario == 'deleted') {
+                final category = await seedVocabulary
+                    .createCategory('Fresh reading')
+                    .timeout(
+                      const Duration(seconds: 5),
+                      onTimeout: () => throw StateError(
+                        'R06 replacement category timed out',
+                      ),
+                    );
+                for (var index = 0; index < 2; index++) {
+                  await seedVocabulary
+                      .createWord(
+                        CreateWordCommand(
+                          categoryId: category.id,
+                          spelling: 'fresh-$index',
+                          meaning: 'fresh meaning $index',
+                          partOfSpeech: 'noun',
+                          cefrLevel: 'B2',
+                        ),
+                      )
+                      .timeout(
+                        const Duration(seconds: 5),
+                        onTimeout: () => throw StateError(
+                          'R06 replacement word $index timed out',
+                        ),
+                      );
+                }
+              }
+            });
+            await tester.pumpWidget(const SizedBox.shrink());
+            await tester.pumpAndSettle();
+            await pump(
+              tester,
+              AssociativeReadingLauncherScreen(
+                sessionConfiguration: laterConfiguration,
+                revalidateSessionConfiguration: revalidate,
+              ),
+            );
+            await pumpUntilFound(tester, find.text('เริ่มรอบใหม่'));
+          }
+          await tester.tap(find.text('เริ่มรอบใหม่'));
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
+          );
+          final newRound = tester.widget<AssociativeReadingSessionScreen>(
+            find.byType(AssociativeReadingSessionScreen),
+          );
+          expect(newRound.sessionId, isNot(original.sessionId));
+          expect(
+            tester
+                .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
+                .configuration,
+            laterConfiguration,
+          );
+          if (drift) {
+            expect(newRound.documentId, isNot(original.documentId));
+            expect(
+              newRound.readingCheckpoint!.words.map((word) => word.content),
+              isNot(
+                original.readingCheckpoint!.words.map((word) => word.content),
+              ),
+            );
+            expect(newRound.passageText, isNot(original.passageText));
+            for (final word in newRound.targetWords) {
+              expect(newRound.passageText, contains(word));
+            }
+            await tester.runAsync(() async {
+              final old = await DriftLearningRepository(database)
+                  .loadExactActivityRecovery(
+                    ownerId: original.ownerId!,
+                    sessionId: original.sessionId!,
+                    activityType: 'associativeReading',
+                  );
+              expect(old!.session.state, 'completed');
+              expect(
+                AssociativeReadingCheckpoint.fromJson(
+                  old.checkpoint!.state,
+                ).recallResults(old),
+                [true, false],
+              );
+              expect(
+                (await database.select(database.answerAttempts).get())
+                    .map((row) => row.id)
+                    .toSet(),
+                before.answerIds,
+              );
+            });
+          }
+          expect(find.text('นึกคำถูก: 0 / 2'), findsNothing);
+        } finally {
+          await closeHarness(tester);
+          await tester.runAsync(() => directory.delete(recursive: true));
+        }
+      },
+      timeout: const Timeout(Duration(seconds: 40)),
+    );
+  }
+
   testWidgets(
     'visible reading feature reaches launcher and injects up to 10 owned words',
     (tester) async {
@@ -198,8 +776,21 @@ void main() {
       const routeId = 'home/learn/associative-reading';
       final glossary = NavigationGlossary.require(routeId);
       final launcherEntry = find.byKey(const ValueKey<String>(routeId));
+      await tester.scrollUntilVisible(
+        launcherEntry,
+        150,
+        scrollable: find
+            .descendant(
+              of: find.byType(ChooseModeScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(launcherEntry, findsOneWidget);
-      expect(find.text(glossary.fullThaiLabel), findsOneWidget);
+      expect(find.text(glossary.shortThaiLabel), findsOneWidget);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(launcherEntry);
+      await tester.pumpAndSettle();
       await tester.tap(launcherEntry);
       await pumpUntilFound(
         tester,
@@ -213,16 +804,16 @@ void main() {
       await tester.ensureVisible(configurationStart);
       await tester.pump();
       await tester.tap(configurationStart);
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       expect(find.byType(AssociativeReadingLauncherScreen), findsOneWidget);
-      expect(find.text('Start reading'), findsOneWidget);
+      expect(find.text('เริ่มอ่าน'), findsOneWidget);
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
 
       final session = tester.widget<AssociativeReadingSessionScreen>(
         find.byType(AssociativeReadingSessionScreen),
@@ -352,13 +943,26 @@ void main() {
           generateId: () => 'unused-verified-${++id}',
           nowUtc: () => DateTime.utc(2026, 8, 26, 14),
         );
+        learning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(
+            database,
+            lexicalVocabulary: vocabulary.vocabulary,
+          ),
+          generateId: () => 'verified-reading-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 14),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'verified-reading',
+          ),
+        );
         dependencies = makeDependencies();
         return (coreChecksum: coreChecksum, artifactChecksum: artifactChecksum);
       });
 
       await pump(tester, const AssociativeReadingLauncherScreen());
-      await pumpUntilFound(tester, find.text('Start reading'));
-      await tester.tap(find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
@@ -472,14 +1076,36 @@ void main() {
                   ),
                 ),
               );
+              for (final row
+                  in await database.select(database.vocabularyWords).get()) {
+                await (database.update(
+                  database.vocabularyWords,
+                )..where((word) => word.id.equals(row.id))).write(
+                  VocabularyWordsCompanion(
+                    contentChecksumSha256: Value(
+                      ContentQualityPolicy.vocabularyChecksumSha256(
+                        categoryId: row.categoryId,
+                        spelling: row.spelling,
+                        normalizedSpelling: row.normalizedSpelling,
+                        meaning: row.meaning,
+                        normalizedMeaning: row.normalizedMeaning,
+                        partOfSpeech: row.partOfSpeech,
+                        cefrLevel: row.cefrLevel,
+                        source: row.source,
+                        isGlobal: row.isGlobal,
+                      ),
+                    ),
+                  ),
+                );
+              }
               return (firstId: first.id, secondId: second.id);
             });
         final firstId = seeded!.firstId;
         final secondId = seeded.secondId;
 
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byType(AssociativeReadingSessionScreen),
@@ -533,7 +1159,7 @@ void main() {
     await pump(tester, const ChooseModeScreen());
     await tester.pump();
 
-    expect(find.text('Associative Reading'), findsNothing);
+    expect(find.text('อ่านเชื่อมโยงความจำ'), findsNothing);
     await closeHarness(tester);
   });
 
@@ -556,9 +1182,9 @@ void main() {
         }
       });
       await pump(tester, const AssociativeReadingLauncherScreen());
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
@@ -580,30 +1206,30 @@ void main() {
     (tester) async {
       await tester.runAsync(() => seedWords(1));
       await pump(tester, const AssociativeReadingLauncherScreen());
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
       monotonicMicros += const Duration(minutes: 4).inMicroseconds;
-      await tester.tap(find.text('Stage 1: Supported Reading'));
+      await tester.tap(find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
       await tester.pump();
       monotonicMicros += const Duration(minutes: 4).inMicroseconds;
       await tester.pageBack();
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
       monotonicMicros += const Duration(seconds: 5).inMicroseconds;
       await tester.pageBack();
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       await tester.pumpAndSettle();
 
       final sessions = await database.select(database.learningSessions).get();
@@ -633,18 +1259,18 @@ void main() {
     (tester) async {
       await tester.runAsync(() => seedWords(1));
       await pump(tester, const AssociativeReadingLauncherScreen());
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
-      await tester.tap(find.text('Complete & Continue'));
-      await pumpUntilFound(tester, find.text('Stage 2: Cue Fading'));
-      await tester.tap(find.text('Complete & Continue'));
-      await pumpUntilFound(tester, find.text('Stage 3: Active Recall'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'));
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 3: นึกคำจากความจำ'));
 
       monotonicMicros = const Duration(minutes: 4).inMicroseconds;
       await tester.enterText(find.byType(TextField), 'w');
@@ -654,7 +1280,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.pageBack();
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       await tester.pumpAndSettle();
 
       final segments = await database
@@ -700,8 +1326,8 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byKey(
@@ -722,7 +1348,7 @@ void main() {
         );
 
         await tester.pageBack();
-        await pumpUntilFound(tester, find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
         await tester.pumpAndSettle();
 
         final sessions = (await tester.runAsync(
@@ -737,7 +1363,7 @@ void main() {
         expect(sessions.where((row) => row.state == 'active'), isEmpty);
         expect(segments, isEmpty);
         expect(
-          find.text('Could not start associative reading. Try again.'),
+          find.text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
           findsNothing,
         );
       } finally {
@@ -769,8 +1395,8 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byKey(
@@ -782,10 +1408,10 @@ void main() {
         expect(repository.abandonCalls, 1);
 
         await tester.pageBack();
-        await pumpUntilFound(tester, find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
-          find.text('Could not start associative reading. Try again.'),
+          find.text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
         );
         await tester.pump(const Duration(seconds: 1));
 
@@ -807,7 +1433,7 @@ void main() {
   );
 
   testWidgets(
-    'successful failure compensation terminally stops restored lifecycle time',
+    'retrying explicit reading stop terminally stops lifecycle time',
     (tester) async {
       final repository = _CompletedProgressFailOnceAbandonRepository(
         DriftLearningRepository(database),
@@ -834,36 +1460,44 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
-        await pumpUntilFound(
-          tester,
-          find.byKey(
-            const ValueKey<String>(
-              'associative-reading-initialization-failure',
-            ),
-          ),
-        );
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         final controller = tester
             .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
             .controller!;
+        await tester.pageBack();
+        await pumpUntilFound(
+          tester,
+          find.text('ยังจบกิจกรรมการเรียนไม่ได้ กรุณาลองอีกครั้ง'),
+        );
+        expect(repository.abandonCalls, 1);
+        final callbacksBeforeStop = List.of(idleCallbacks);
+        await tester.pageBack();
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.pumpAndSettle();
 
         expect(repository.abandonCalls, 2);
         expect(repository.successfulAbandons, 1);
         expect(
           idleCallbacks,
-          hasLength(1),
-          reason: 'route retirement owns one F24 lifecycle at one cutoff',
+          hasLength(callbacksBeforeStop.length),
+          reason: 'failed and retried stop must never schedule new idle work',
         );
         expect(idleCancellations, greaterThanOrEqualTo(1));
         final sessionsBeforeIdle = (await tester.runAsync(
           () => database.select(database.learningSessions).get(),
         ))!;
         expect(sessionsBeforeIdle.single.state, 'abandoned');
+        final eventsBeforeIdle = (await tester.runAsync(
+          () => database.select(database.eventsV2).get(),
+        ))!;
 
         monotonicMicros = const Duration(minutes: 6).inMicroseconds;
         await tester.runAsync(() async {
-          await Future<void>.sync(idleCallbacks.last);
+          for (final callback in callbacksBeforeStop) {
+            await Future<void>.sync(callback);
+          }
         });
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         await tester.pumpAndSettle();
@@ -880,6 +1514,14 @@ void main() {
         ))!;
         expect(segments, isEmpty);
         expect(sessionsAfterIdle.single.state, 'abandoned');
+        expect(sessionsAfterIdle, sessionsBeforeIdle);
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.eventsV2).get(),
+          ))!,
+          eventsBeforeIdle,
+        );
+        expect(idleCallbacks, hasLength(callbacksBeforeStop.length));
         expect(repository.abandonCalls, 2);
         await expectLater(
           controller.recordActiveLearningInteraction(
@@ -888,7 +1530,6 @@ void main() {
           throwsStateError,
         );
 
-        await tester.pageBack();
         await tester.pumpAndSettle();
         expect(repository.abandonCalls, 2);
       } finally {
@@ -919,8 +1560,8 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byKey(
@@ -939,7 +1580,7 @@ void main() {
         expect(repository.abandonCalls, 1);
 
         await tester.pageBack();
-        await pumpUntilFound(tester, find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
         await tester.pumpAndSettle();
 
         final afterReturn = (await tester.runAsync(
@@ -948,7 +1589,7 @@ void main() {
         expect(afterReturn.where((row) => row.state == 'active'), isEmpty);
         expect(repository.abandonCalls, 1);
         expect(
-          find.text('Could not start associative reading. Try again.'),
+          find.text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
           findsNothing,
         );
       } finally {
@@ -983,8 +1624,8 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byType(AssociativeReadingSessionScreen),
@@ -1026,7 +1667,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(repository.abandonCalls, 1);
         expect(
-          find.text('Could not start associative reading. Try again.'),
+          find.text('เริ่มอ่านเชื่อมโยงความจำไม่ได้ กรุณาลองอีกครั้ง'),
           findsNothing,
         );
       } finally {
@@ -1062,8 +1703,8 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const AssociativeReadingLauncherScreen());
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byType(AssociativeReadingSessionScreen),
@@ -1112,6 +1753,21 @@ void main() {
       try {
         await tester.runAsync(() => seedWords(1));
         await pump(tester, const ChooseModeScreen());
+        await tester.scrollUntilVisible(
+          find.byKey(const ValueKey<String>('home/learn/associative-reading')),
+          150,
+          scrollable: find
+              .descendant(
+                of: find.byType(ChooseModeScreen),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(
+          find.byKey(const ValueKey<String>('home/learn/associative-reading')),
+        );
+        await tester.pumpAndSettle();
         await tester.tap(
           find.byKey(const ValueKey<String>('home/learn/associative-reading')),
         );
@@ -1122,6 +1778,12 @@ void main() {
         final configurationStart = find.byKey(
           const ValueKey<String>('session-config-start'),
         );
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('ปรับตัวเลือก'));
+        await tester.pump();
+        expect(find.text('ปรับตัวเลือก').hitTestable(), findsOneWidget);
+        await tester.tap(find.text('ปรับตัวเลือก'));
+        await tester.pumpAndSettle();
         await tester.enterText(
           find.byKey(const ValueKey<String>('session-item-count')),
           '1',
@@ -1131,13 +1793,13 @@ void main() {
         await tester.ensureVisible(configurationStart);
         await tester.pump();
         await tester.tap(configurationStart);
-        await pumpUntilFound(tester, find.text('Start reading'));
-        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+        await tester.tap(find.text('เริ่มอ่าน'));
         await pumpUntilFound(
           tester,
           find.byType(AssociativeReadingSessionScreen),
         );
-        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
         final controller = tester
             .widget<UnifiedLessonShell>(find.byType(UnifiedLessonShell))
             .controller!;
@@ -1219,28 +1881,31 @@ void main() {
         try {
           await tester.runAsync(() => seedWords(1));
           await pump(tester, const AssociativeReadingLauncherScreen());
-          await pumpUntilFound(tester, find.text('Start reading'));
-          await tester.tap(find.text('Start reading'));
+          await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
+          await tester.tap(find.text('เริ่มอ่าน'));
           await pumpUntilFound(
             tester,
             find.byType(AssociativeReadingSessionScreen),
           );
-          await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+          await pumpUntilFound(
+            tester,
+            find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'),
+          );
           for (var stage = 2; stage <= 3; stage++) {
             tester
                 .widget<FilledButton>(
-                  find.widgetWithText(FilledButton, 'Complete & Continue'),
+                  find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
                 )
                 .onPressed!();
             await pumpUntilFound(
               tester,
-              find.text('Stage $stage: ${_stageName(stage)}'),
+              find.text('ขั้นที่ $stage: ${_stageName(stage)}'),
             );
           }
           await tester.enterText(find.byType(TextField), 'word-0');
           final staleSubmit = tester
               .widget<FilledButton>(
-                find.widgetWithText(FilledButton, 'Complete & Continue'),
+                find.widgetWithText(FilledButton, 'เสร็จแล้ว ไปขั้นถัดไป'),
               )
               .onPressed!;
           monotonicMicros = const Duration(seconds: 2).inMicroseconds;
@@ -1302,18 +1967,18 @@ void main() {
   }
 
   testWidgets(
-    'completed reading replay closes its fresh durable session',
+    'legacy document completion starts an honest new round without resuming abandoned session',
     (tester) async {
       await tester.runAsync(() => seedWords(1));
       await pump(tester, const AssociativeReadingLauncherScreen());
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
       final first = tester.widget<AssociativeReadingSessionScreen>(
         find.byType(AssociativeReadingSessionScreen),
       );
@@ -1326,17 +1991,22 @@ void main() {
         ),
       );
       await tester.pageBack();
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Start reading'));
+      await tester.tap(find.text('เริ่มอ่าน'));
       await pumpUntilFound(
         tester,
         find.byType(AssociativeReadingSessionScreen),
       );
-      await pumpUntilFound(tester, find.text('Stage 6: Finish'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
+      expect(
+        find.textContaining('ไม่สามารถเชื่อมโยงผลการนึกคำครั้งก่อน'),
+        findsOneWidget,
+      );
+      expect(find.text('นึกคำถูก: 0 / 1'), findsNothing);
       await tester.pageBack();
-      await pumpUntilFound(tester, find.text('Start reading'));
+      await pumpUntilFound(tester, find.text('เริ่มอ่าน'));
       await tester.pumpAndSettle();
 
       final sessions = await database.select(database.learningSessions).get();
@@ -1361,8 +2031,8 @@ void main() {
         find.byKey(const ValueKey('associative-reading-empty')),
         findsOneWidget,
       );
-      expect(find.text('Create vocabulary'), findsOneWidget);
-      await tester.tap(find.text('Create vocabulary'));
+      expect(find.text('เพิ่มคำศัพท์'), findsOneWidget);
+      await tester.tap(find.text('เพิ่มคำศัพท์'));
       await pumpUntilFound(tester, find.byType(CategoriesPage));
 
       expect(find.byType(CategoriesPage), findsOneWidget);
@@ -1373,12 +2043,89 @@ void main() {
 }
 
 String _stageName(int stage) => switch (stage) {
-  2 => 'Cue Fading',
-  3 => 'Active Recall',
+  2 => 'อ่านโดยลดตัวช่วย',
+  3 => 'นึกคำจากความจำ',
   _ => throw ArgumentError.value(stage, 'stage'),
 };
 
+mixin _ReadingRecoveryDelegate
+    implements
+        LearningActivityRecoveryRepository,
+        AssociativeReadingRecoveryRepository,
+        ExactPinnedLearningActivityRepository,
+        PinnedLearningContentRepository {
+  DriftLearningRepository get _delegate;
+  @override
+  Future<LearningActivityRecovery?> loadReadingRecovery({
+    required String ownerId,
+    required AssociativeReadingCheckpoint content,
+  }) => _delegate.loadReadingRecovery(ownerId: ownerId, content: content);
+  @override
+  Future<ReadingProgressSnapshot> saveReadingCheckpoint({
+    required ReadingProgressCommand progress,
+    required LearningActivityCheckpoint checkpoint,
+  }) => _delegate.saveReadingCheckpoint(
+    progress: progress,
+    checkpoint: checkpoint,
+  );
+  @override
+  Future<LearningActivityRecovery?> loadLatestActivityRecovery({
+    required String ownerId,
+    required String activityType,
+  }) => _delegate.loadLatestActivityRecovery(
+    ownerId: ownerId,
+    activityType: activityType,
+  );
+  @override
+  Future<LearningActivityRecovery?> loadExactActivityRecovery({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+  }) => _delegate.loadExactActivityRecovery(
+    ownerId: ownerId,
+    sessionId: sessionId,
+    activityType: activityType,
+  );
+  @override
+  Future<void> appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  }) => _delegate.appendActivityCheckpoint(
+    ownerId: ownerId,
+    checkpoint: checkpoint,
+  );
+  @override
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  }) => _delegate.startSessionWithCheckpoint(
+    session: session,
+    checkpoint: checkpoint,
+  );
+  @override
+  Future<void> startExactPinnedSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required List<PinnedQuizContent> content,
+    required LearningActivityCheckpoint checkpoint,
+  }) => _delegate.startExactPinnedSessionWithCheckpoint(
+    session: session,
+    content: content,
+    checkpoint: checkpoint,
+  );
+  @override
+  Future<List<QuizWord>> listExactPinnedQuizWords({
+    required String ownerId,
+    required List<PinnedQuizContent> content,
+  }) => _delegate.listExactPinnedQuizWords(ownerId: ownerId, content: content);
+  @override
+  Future<List<QuizWord>> listPinnedQuizWords({
+    required String ownerId,
+    required List<String> wordIds,
+  }) => _delegate.listPinnedQuizWords(ownerId: ownerId, wordIds: wordIds);
+}
+
 final class _BlockedAnswerCountingLearningRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
   _BlockedAnswerCountingLearningRepository(this._delegate);
 
@@ -1439,6 +2186,7 @@ final class _BlockedAnswerCountingLearningRepository
 }
 
 final class _FailingProgressCountingLearningRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
   _FailingProgressCountingLearningRepository(this._delegate);
 
@@ -1477,6 +2225,7 @@ final class _FailingProgressCountingLearningRepository
 }
 
 final class _DelayedProgressCountingLearningRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
   _DelayedProgressCountingLearningRepository(this._delegate);
 
@@ -1523,6 +2272,7 @@ final class _DelayedProgressCountingLearningRepository
 }
 
 final class _BlockedAbandonAfterProgressFailureRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
   _BlockedAbandonAfterProgressFailureRepository(this._delegate);
 
@@ -1579,10 +2329,19 @@ final class _BlockedAbandonAfterProgressFailureRepository
 }
 
 final class _CompletedProgressFailOnceAbandonRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
-  _CompletedProgressFailOnceAbandonRepository(this._delegate);
+  _CompletedProgressFailOnceAbandonRepository(
+    this._delegate, {
+    this.failuresBeforeSuccess = 1,
+    this.loseFirstAcknowledgement = false,
+  });
 
   final DriftLearningRepository _delegate;
+  final int failuresBeforeSuccess;
+  final bool loseFirstAcknowledgement;
+  final List<DateTime> terminalTimes = [];
+  int durableAbandons = 0;
   int abandonCalls = 0;
   int successfulAbandons = 0;
 
@@ -1610,15 +2369,23 @@ final class _CompletedProgressFailOnceAbandonRepository
     required DateTime abandonedAtUtc,
   }) async {
     abandonCalls += 1;
-    if (abandonCalls == 1) {
+    terminalTimes.add(abandonedAtUtc);
+    if (abandonCalls <= failuresBeforeSuccess) {
       throw StateError('simulated first lifecycle abandon failure');
     }
+    final previous = await (_delegate.database.select(
+      _delegate.database.learningSessions,
+    )..where((row) => row.id.equals(sessionId))).getSingle();
     final result = await _delegate.abandonSession(
       ownerId: ownerId,
       sessionId: sessionId,
       abandonedAtUtc: abandonedAtUtc,
     );
     successfulAbandons += 1;
+    if (previous.state == 'active') durableAbandons += 1;
+    if (loseFirstAcknowledgement && abandonCalls == 1) {
+      throw StateError('synthetic committed stop acknowledgement lost');
+    }
     return result;
   }
 
@@ -1627,6 +2394,7 @@ final class _CompletedProgressFailOnceAbandonRepository
 }
 
 final class _FailingProgressAndAbandonRepository
+    with _ReadingRecoveryDelegate
     implements LearningRepository, LearningSessionLifecycleRepository {
   _FailingProgressAndAbandonRepository(
     this._delegate, {

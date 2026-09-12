@@ -12,6 +12,8 @@
 library;
 
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'quest_definition_codec.dart';
+import 'quest_period.dart';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -205,6 +207,9 @@ final class QuestInstance {
     required this.progress,
     this.completedAtUtc,
     this.expiredAtUtc,
+    this.period,
+    this.definitionSnapshot,
+    this.isCanonical = true,
   });
 
   final String instanceId;
@@ -219,6 +224,9 @@ final class QuestInstance {
 
   final DateTime? completedAtUtc;
   final DateTime? expiredAtUtc;
+  final QuestPeriod? period;
+  final QuestDefinitionSnapshot? definitionSnapshot;
+  final bool isCanonical;
 
   // ── Derived ──────────────────────────────────────────────────────────────
 
@@ -268,6 +276,9 @@ final class QuestInstance {
       progress: updated,
       completedAtUtc: completedAtUtc,
       expiredAtUtc: expiredAtUtc,
+      period: period,
+      definitionSnapshot: definitionSnapshot,
+      isCanonical: isCanonical,
     );
   }
 

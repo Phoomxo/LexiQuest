@@ -1,10 +1,72 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/review/presentation/content_report_sheet.dart';
 
 void main() {
+  testWidgets(
+    'Task5 report close semantics dismisses only when submission is idle',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      final pending = Completer<void>();
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: FilledButton(
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (_) => ContentReportSheet(
+                      identity: _identity,
+                      onSubmit: ({required reason, comment}) => pending.future,
+                    ),
+                  ),
+                  child: const Text('open report'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open report'));
+        await tester.pumpAndSettle();
+        var close = tester.getSemantics(
+          find.bySemanticsLabel('ปิดการรายงานเนื้อหา'),
+        );
+        expect(close.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+        close.owner!.performAction(close.id, SemanticsAction.tap);
+        await tester.pumpAndSettle();
+        expect(find.byType(ContentReportSheet), findsNothing);
+        await tester.tap(find.text('open report'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ปัญหาคำตอบ'));
+        await tester.pump();
+        await tester.tap(find.text('ส่งรายงาน'));
+        await tester.pump();
+        close = tester.getSemantics(
+          find.bySemanticsLabel('ปิดการรายงานเนื้อหา'),
+        );
+        expect(
+          close.getSemanticsData().hasAction(SemanticsAction.tap),
+          isFalse,
+        );
+        close.owner!.performAction(close.id, SemanticsAction.tap);
+        await tester.pump();
+        expect(find.byType(ContentReportSheet), findsOneWidget);
+        pending.complete();
+        await tester.pumpAndSettle();
+        expect(find.byType(ContentReportSheet), findsNothing);
+      } finally {
+        if (!pending.isCompleted) pending.complete();
+        semantics.dispose();
+      }
+    },
+  );
   testWidgets(
     'requires one exact reason and submits a trimmed optional comment',
     (tester) async {
@@ -24,27 +86,27 @@ void main() {
         ),
       );
 
-      expect(find.text('Report content'), findsOneWidget);
-      expect(find.text('Revision 4'), findsOneWidget);
-      expect(find.text('Text problem'), findsOneWidget);
-      expect(find.text('Audio problem'), findsOneWidget);
-      expect(find.text('Answer problem'), findsOneWidget);
-      expect(find.text('Explanation problem'), findsOneWidget);
+      expect(find.text('รายงานเนื้อหา'), findsOneWidget);
+      expect(find.text('รุ่น 4'), findsOneWidget);
+      expect(find.text('ปัญหาข้อความ'), findsOneWidget);
+      expect(find.text('ปัญหาเสียง'), findsOneWidget);
+      expect(find.text('ปัญหาคำตอบ'), findsOneWidget);
+      expect(find.text('ปัญหาคำอธิบาย'), findsOneWidget);
       expect(
         tester
             .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'Submit report'),
+              find.widgetWithText(FilledButton, 'ส่งรายงาน'),
             )
             .onPressed,
         isNull,
       );
 
-      await tester.tap(find.text('Audio problem'));
+      await tester.tap(find.text('ปัญหาเสียง'));
       await tester.enterText(
         find.byType(TextField),
         '  Pronunciation is unclear  ',
       );
-      await tester.tap(find.text('Submit report'));
+      await tester.tap(find.text('ส่งรายงาน'));
       await tester.pump();
 
       expect(submittedReason, ContentReportReason.audio);
@@ -73,10 +135,10 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Answer problem'));
+    await tester.tap(find.text('ปัญหาคำตอบ'));
     await tester.pump();
-    await tester.tap(find.text('Submit report'));
-    await tester.tap(find.text('Submit report'), warnIfMissed: false);
+    await tester.tap(find.text('ส่งรายงาน'));
+    await tester.tap(find.text('ส่งรายงาน'), warnIfMissed: false);
     await tester.pump(const Duration(milliseconds: 25));
 
     expect(calls, 1);
@@ -96,15 +158,15 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Explanation problem'));
+    await tester.tap(find.text('ปัญหาคำอธิบาย'));
     await tester.enterText(
       find.byType(TextField),
       List<String>.filled(ContentQualityReport.maxCommentRunes + 1, 'ก').join(),
     );
-    await tester.tap(find.text('Submit report'));
+    await tester.tap(find.text('ส่งรายงาน'));
     await tester.pump();
 
-    expect(find.text('Comment is too long'), findsOneWidget);
+    expect(find.text('ความคิดเห็นยาวเกินกำหนด'), findsOneWidget);
     expect(calls, 0);
   });
 
@@ -123,8 +185,8 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('Close content report'), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel('Close content report'));
+    expect(find.bySemanticsLabel('ปิดการรายงานเนื้อหา'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('ปิดการรายงานเนื้อหา'));
     await tester.pump();
     expect(calls, 0);
   });

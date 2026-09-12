@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/reminders/domain/study_reminder.dart';
 import '../features/reminders/domain/study_reminder_repository.dart';
+import '../utils/local_study_datetime.dart';
+import '../widgets/local_study_datetime_field.dart';
+import '../widgets/study_time_picker.dart';
 
 final class StudyReminderSettingsScreen extends StatefulWidget {
   const StudyReminderSettingsScreen({
@@ -24,190 +27,278 @@ final class StudyReminderSettingsScreen extends StatefulWidget {
 }
 
 final class _StudyReminderSettingsScreenState
-    extends State<StudyReminderSettingsScreen> {
-  final TextEditingController _scheduledAt = TextEditingController();
-  final TextEditingController _timezone = TextEditingController(
-    text: 'Asia/Bangkok',
-  );
-  final TextEditingController _quietStart = TextEditingController(text: '1320');
-  final TextEditingController _quietEnd = TextEditingController(text: '420');
-  Future<StudyReminder?>? _current;
+    extends State<StudyReminderSettingsScreen>
+    with WidgetsBindingObserver {
+  DateTime? _scheduledAtUtc;
+  String _timezoneId = 'Asia/Bangkok';
+  TimeOfDay _quietStart = const TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _quietEnd = const TimeOfDay(hour: 7, minute: 0);
+  late Future<String> _openingOwner;
+  Future<StudyReminderStatusSnapshot>? _current;
+  int _bindingEpoch = 0;
   bool _submitting = false;
   String? _message;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _bind();
+  }
+
+  void _bind() {
+    _bindingEpoch++;
+    _openingOwner = widget.useCases.repository.activeOwnerId();
     _reload();
   }
 
   void _reload() {
-    _current = widget.useCases.list().then(
-      (reminders) => reminders
-          .where(
-            (reminder) =>
-                reminder.source.stableIdentity == widget.source.stableIdentity,
-          )
-          .firstOrNull,
-    );
+    final useCases = widget.useCases;
+    final source = widget.source;
+    final epoch = _bindingEpoch;
+    _current = _openingOwner.then((ownerId) {
+      if (!_isCurrent(epoch)) throw const StudyReminderMutationUnavailable();
+      return useCases.loadStatus(expectedOwnerId: ownerId, source: source);
+    });
+  }
+
+  bool _isCurrent(int epoch) => mounted && epoch == _bindingEpoch;
+
+  @override
+  void didUpdateWidget(covariant StudyReminderSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.useCases, widget.useCases) ||
+        oldWidget.source != widget.source) {
+      _submitting = false;
+      _message = null;
+      _scheduledAtUtc = null;
+      _timezoneId = 'Asia/Bangkok';
+      _bind();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {
+        _message = null;
+        _reload();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _bindingEpoch++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _optIn() async {
     if (_submitting || !widget.mutationAllowed()) return;
+    final epoch = _bindingEpoch;
+    final useCases = widget.useCases;
+    final source = widget.source;
+    final mutationAllowed = widget.mutationAllowed;
     setState(() {
       _submitting = true;
       _message = null;
     });
     try {
-      final scheduled = DateTime.parse(_scheduledAt.text);
-      if (!scheduled.isUtc || !_scheduledAt.text.endsWith('Z')) {
-        throw const FormatException('UTC Z suffix required');
+      final owner = await _openingOwner;
+      if (!_isCurrent(epoch)) return;
+      final activeOwner = await useCases.repository.activeOwnerId();
+      if (!_isCurrent(epoch)) return;
+      if (owner != activeOwner) {
+        throw const StudyReminderMutationUnavailable();
       }
-      final start = int.parse(_quietStart.text);
-      final end = int.parse(_quietEnd.text);
-      if (start < 0 || start >= 24 * 60 || end < 0 || end >= 24 * 60) {
-        throw const FormatException('quiet hours must be minutes of day');
+      final scheduled = _scheduledAtUtc;
+      if (scheduled == null) {
+        throw const FormatException('Choose date and time');
       }
-      final result = await widget.useCases.optIn(
-        source: widget.source,
+      final start = _quietStart.hour * 60 + _quietStart.minute;
+      final end = _quietEnd.hour * 60 + _quietEnd.minute;
+      final result = await useCases.optIn(
+        expectedOwnerId: owner,
+        source: source,
         scheduledAtUtc: scheduled,
-        timezoneId: _timezone.text,
+        timezoneId: _timezoneId,
         quietHours: ReminderQuietHours(startMinutes: start, endMinutes: end),
-        mutationAllowed: widget.mutationAllowed,
+        mutationAllowed: () => _isCurrent(epoch) && mutationAllowed(),
       );
-      if (!mounted) return;
+      if (!_isCurrent(epoch)) return;
+      final latestOwner = await useCases.repository.activeOwnerId();
+      if (!_isCurrent(epoch)) return;
+      if (owner != latestOwner) {
+        throw const StudyReminderMutationUnavailable();
+      }
+      if (!_isCurrent(epoch)) return;
       setState(() {
         _submitting = false;
         _message = switch (result) {
           StudyReminderOptInResult.scheduled => null,
           StudyReminderOptInResult.permissionDenied =>
-            'Notifications are off. You can keep studying without reminders.',
+            'ปิดการแจ้งเตือนอยู่ คุณยังเรียนต่อได้ตามปกติ',
           StudyReminderOptInResult.unavailable =>
-            'Reminders are unavailable. Your learning goal is unchanged.',
+            'การเตือนไม่พร้อมใช้งาน เป้าหมายการเรียนไม่เปลี่ยนแปลง',
           StudyReminderOptInResult.pendingRetry =>
-            'Your choice is saved. We will reconcile it when notifications are available.',
+            'บันทึกตัวเลือกแล้ว ระบบจะตรวจและปรับสถานะเมื่อการแจ้งเตือนพร้อมใช้งาน',
           StudyReminderOptInResult.invalidSchedule =>
-            'Choose a future time and a valid learning timezone.',
+            'กรุณาเลือกเวลาในอนาคตและเขตเวลาเรียนที่ถูกต้อง',
         };
         _reload();
       });
     } on StudyReminderMutationUnavailable {
-      if (mounted) Navigator.of(context).maybePop();
+      if (_isCurrent(epoch)) Navigator.of(context).maybePop();
     } on Object {
-      if (!mounted) return;
+      if (!_isCurrent(epoch)) return;
       setState(() {
         _submitting = false;
-        _message = 'Choose a future UTC time, timezone, and quiet hours.';
+        _message = 'กรุณาเลือกวันที่ เวลา เขตเวลา และช่วงงดเตือนให้ครบ';
       });
     }
   }
 
   Future<void> _cancel(StudyReminder reminder) async {
     if (_submitting || !widget.mutationAllowed()) return;
+    final epoch = _bindingEpoch;
+    final useCases = widget.useCases;
+    final mutationAllowed = widget.mutationAllowed;
     setState(() => _submitting = true);
     try {
-      await widget.useCases.cancel(
+      final owner = await _openingOwner;
+      if (!_isCurrent(epoch)) return;
+      final activeOwner = await useCases.repository.activeOwnerId();
+      if (!_isCurrent(epoch)) return;
+      if (owner != activeOwner) {
+        throw const StudyReminderMutationUnavailable();
+      }
+      await useCases.cancel(
         reminder.id,
-        mutationAllowed: widget.mutationAllowed,
+        mutationAllowed: () => _isCurrent(epoch) && mutationAllowed(),
       );
-      if (!mounted) return;
+      if (!_isCurrent(epoch)) return;
       setState(() {
         _submitting = false;
-        _message = 'Reminder off. Your learning goal is unchanged.';
+        _message = 'ปิดการเตือนแล้ว เป้าหมายการเรียนไม่เปลี่ยนแปลง';
         _reload();
       });
     } on StudyReminderMutationUnavailable {
-      if (mounted) Navigator.of(context).maybePop();
+      if (_isCurrent(epoch)) Navigator.of(context).maybePop();
     } on Object {
-      if (mounted) setState(() => _submitting = false);
+      if (_isCurrent(epoch)) setState(() => _submitting = false);
     }
   }
 
-  @override
-  void dispose() {
-    _scheduledAt.dispose();
-    _timezone.dispose();
-    _quietStart.dispose();
-    _quietEnd.dispose();
-    super.dispose();
+  Future<void> _pickQuiet(bool start) async {
+    final epoch = _bindingEpoch;
+    final picked = await showStudyTimePicker(
+      context: context,
+      initialTime: start ? _quietStart : _quietEnd,
+      helpText: start ? 'เริ่มช่วงงดเตือน' : 'สิ้นสุดช่วงงดเตือน',
+    );
+    if (!_isCurrent(epoch) || picked == null || _submitting) return;
+    setState(() {
+      if (start) {
+        _quietStart = picked;
+      } else {
+        _quietEnd = picked;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Study reminder')),
-      body: FutureBuilder<StudyReminder?>(
+      appBar: AppBar(title: const Text('เตือนเวลาเรียน')),
+      body: FutureBuilder<StudyReminderStatusSnapshot>(
         future: _current,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          final reminder = snapshot.data;
+          final reminder = snapshot.data?.reminder;
+          final status =
+              snapshot.data?.status ?? StudyReminderDisplayStatus.unavailable;
+          final statusMessage = _statusMessage(status);
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             children: [
-              Text(
-                widget.sourceLabel,
-                style: Theme.of(context).textTheme.titleLarge,
+              Semantics(
+                header: true,
+                child: Text(
+                  widget.sourceLabel,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Choose a gentle reminder for whenever study fits your day.',
-              ),
-              const SizedBox(height: 20),
+              const Text('เลือกเวลาเตือนเรียนที่เหมาะกับกิจวัตรของคุณ'),
+              const SizedBox(height: 24),
               if (reminder?.isEnabled ?? false) ...[
-                const Text('Reminder on'),
+                Text(
+                  statusMessage ?? 'เปิดการเตือนแล้ว',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'เวลาที่เลือก: ${formatLocalStudyDateTime(reminder!.scheduledAtUtc, reminder.timezone.timezoneId)}',
+                ),
+                Text(
+                  'เวลาแจ้งเตือนที่ตั้งไว้: ${formatLocalStudyDateTime(reminder.effectiveScheduledAtUtc, reminder.timezone.timezoneId)}',
+                ),
+                if (reminder.quietHours != null)
+                  Text(
+                    'ช่วงงดเตือน ${formatStudyClockMinutes(reminder.quietHours!.startMinutes)}–${formatStudyClockMinutes(reminder.quietHours!.endMinutes)}',
+                  ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   key: const ValueKey<String>('study-reminder/cancel'),
-                  onPressed: _submitting ? null : () => _cancel(reminder!),
-                  child: const Text('Turn off reminder'),
+                  onPressed: _submitting ? null : () => _cancel(reminder),
+                  child: const Text('ปิดการเตือน'),
                 ),
               ] else ...[
-                TextField(
-                  key: const ValueKey<String>('study-reminder/scheduled-at'),
-                  controller: _scheduledAt,
+                if (statusMessage != null) ...[
+                  Text(statusMessage),
+                  const SizedBox(height: 12),
+                ],
+                const Text('เตือนครั้งเดียวตามวันและเวลาที่เลือก'),
+                const SizedBox(height: 12),
+                LocalStudyDateTimeField(
+                  fieldKey: 'study-reminder/scheduled-at',
+                  referenceUtc: widget.useCases.nowUtc(),
+                  initialUtc: _scheduledAtUtc,
+                  initialTimezoneId: _timezoneId,
                   enabled: !_submitting,
-                  decoration: const InputDecoration(
-                    labelText: 'Reminder time (UTC)',
-                    hintText: '2026-08-29T02:00:00Z',
-                  ),
+                  onChanged: (instant, zone) {
+                    _scheduledAtUtc = instant;
+                    _timezoneId = zone;
+                  },
                 ),
-                TextField(
-                  key: const ValueKey<String>('study-reminder/timezone'),
-                  controller: _timezone,
-                  enabled: !_submitting,
-                  decoration: const InputDecoration(
-                    labelText: 'Learning timezone',
-                  ),
-                ),
-                TextField(
+                const SizedBox(height: 24),
+                OutlinedButton(
                   key: const ValueKey<String>('study-reminder/quiet-start'),
-                  controller: _quietStart,
-                  enabled: !_submitting,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quiet hours start (minutes after midnight)',
+                  onPressed: _submitting ? null : () => _pickQuiet(true),
+                  child: Text(
+                    'เริ่มช่วงงดเตือน ${formatStudyClockMinutes(_quietStart.hour * 60 + _quietStart.minute)}',
                   ),
                 ),
-                TextField(
+                const SizedBox(height: 8),
+                OutlinedButton(
                   key: const ValueKey<String>('study-reminder/quiet-end'),
-                  controller: _quietEnd,
-                  enabled: !_submitting,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quiet hours end (minutes after midnight)',
+                  onPressed: _submitting ? null : () => _pickQuiet(false),
+                  child: Text(
+                    'สิ้นสุดช่วงงดเตือน ${formatStudyClockMinutes(_quietEnd.hour * 60 + _quietEnd.minute)}',
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 FilledButton(
                   key: const ValueKey<String>('study-reminder/opt-in'),
                   onPressed: _submitting ? null : _optIn,
-                  child: const Text('Turn on reminder'),
+                  child: const Text('เปิดการเตือน'),
                 ),
               ],
-              if (_message != null) ...[
-                const SizedBox(height: 16),
+              if (_message != null && _message != statusMessage) ...[
+                const SizedBox(height: 12),
                 Text(_message!),
               ],
             ],
@@ -217,5 +308,18 @@ final class _StudyReminderSettingsScreenState
     );
   }
 }
+
+String? _statusMessage(StudyReminderDisplayStatus status) => switch (status) {
+  StudyReminderDisplayStatus.disabled => null,
+  StudyReminderDisplayStatus.scheduled => null,
+  StudyReminderDisplayStatus.pendingRetry =>
+    'บันทึกตัวเลือกแล้ว ระบบจะตรวจและปรับสถานะเมื่อการแจ้งเตือนพร้อมใช้งาน',
+  StudyReminderDisplayStatus.permissionDenied =>
+    'ปิดการแจ้งเตือนอยู่ คุณยังเรียนต่อได้ตามปกติ',
+  StudyReminderDisplayStatus.unavailable =>
+    'การเตือนไม่พร้อมใช้งาน เป้าหมายการเรียนไม่เปลี่ยนแปลง',
+  StudyReminderDisplayStatus.elapsed =>
+    'ถึงเวลาที่เลือกแล้ว ยังไม่มีข้อมูลยืนยันว่าการแจ้งเตือนแสดงแล้ว',
+};
 
 bool _allowMutation() => true;

@@ -28,7 +28,7 @@ import '../features/identity/research_lifecycle_fixtures.dart';
 
 void main() {
   test(
-    'current v24 lifecycle classifies owner and non-owner tables exactly once',
+    'current v26 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -61,7 +61,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(38),
+        hasLength(39),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -673,6 +673,120 @@ void main() {
     },
   );
 
+  test('archive usage allowlist includes token completeness metadata', () {
+    final descriptor = ownerLifecycleManifest.singleWhere(
+      (entry) => entry.alias == 'aiUsageDiagnostics',
+    );
+    expect(
+      descriptor.allowedExportFields,
+      containsAll(['totalTokens', 'knownTokens', 'tokenReportedRequestCount']),
+    );
+  });
+
+  for (final metadata in <(String, int?, int?)>[
+    ('success', null, null),
+    ('success', 2, null),
+    ('success', 2, 3),
+    ('failure', null, null),
+    ('indeterminate', null, null),
+  ]) {
+    test('archive usage keeps an unreported total unknown $metadata', () async {
+      final record = await _archiveUsageForTokenTest([
+        _archiveUsageEvent(
+          'unknown',
+          outcome: metadata.$1,
+          inputTokens: metadata.$2,
+          outputTokens: metadata.$3,
+          costMicros: 0,
+        ),
+      ]);
+
+      expect(record, containsPair('totalTokens', null));
+      expect(record['knownTokens'], 0);
+      expect(record['tokenReportedRequestCount'], 0);
+      expect(record['requestCount'], 1);
+      expect(record['successCount'], metadata.$1 == 'success' ? 1 : 0);
+      expect(record['failureCount'], metadata.$1 == 'failure' ? 1 : 0);
+      expect(
+        record['indeterminateCount'],
+        metadata.$1 == 'indeterminate' ? 1 : 0,
+      );
+      expect(record['providerReportedCostMicrosUsd'], 0);
+    });
+  }
+
+  test('archive usage preserves an explicitly measured zero total', () async {
+    final record = await _archiveUsageForTokenTest([
+      _archiveUsageEvent('zero', totalTokens: 0, costMicros: 0),
+    ]);
+
+    expect(record['totalTokens'], 0);
+    expect(record['knownTokens'], 0);
+    expect(record['tokenReportedRequestCount'], 1);
+    expect(record['requestCount'], 1);
+    expect(record['successCount'], 1);
+    expect(record['failureCount'], 0);
+    expect(record['indeterminateCount'], 0);
+    expect(record['providerReportedCostMicrosUsd'], 0);
+  });
+
+  test('archive usage marks mixed terminal totals as incomplete', () async {
+    final record = await _archiveUsageForTokenTest([
+      _archiveUsageEvent('success-known', totalTokens: 7, costMicros: 100),
+      _archiveUsageEvent('success-unknown', inputTokens: 2, outputTokens: 3),
+      _archiveUsageEvent(
+        'failure-known',
+        outcome: 'failure',
+        totalTokens: 3,
+        costMicros: 200,
+      ),
+      _archiveUsageEvent(
+        'indeterminate-zero',
+        outcome: 'indeterminate',
+        totalTokens: 0,
+        costMicros: 0,
+      ),
+    ]);
+
+    expect(record, containsPair('totalTokens', null));
+    expect(record['knownTokens'], 10);
+    expect(record['tokenReportedRequestCount'], 3);
+    expect(record['requestCount'], 4);
+    expect(record['successCount'], 2);
+    expect(record['failureCount'], 1);
+    expect(record['indeterminateCount'], 1);
+    expect(record['providerReportedCostMicrosUsd'], isNull);
+  });
+
+  test(
+    'archive usage includes reported failure and indeterminate totals',
+    () async {
+      final record = await _archiveUsageForTokenTest([
+        _archiveUsageEvent(
+          'failure-known',
+          outcome: 'failure',
+          totalTokens: 5,
+          costMicros: 100,
+        ),
+        _archiveUsageEvent(
+          'indeterminate-zero',
+          outcome: 'indeterminate',
+          totalTokens: 0,
+          costMicros: 200,
+        ),
+      ]);
+
+      expect(record['totalTokens'], 5);
+      expect(record['knownTokens'], 5);
+      expect(record['tokenReportedRequestCount'], 2);
+      expect(record['requestCount'], 2);
+      expect(record['successCount'], 0);
+      expect(record['failureCount'], 1);
+      expect(record['indeterminateCount'], 1);
+      expect(record['providerReportedCostMicrosUsd'], 300);
+    },
+  );
+
   test('archive never reports a partial provider cost as total cost', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -1155,6 +1269,14 @@ void main() {
       );
       expect(
         (aiDiagnostics['records'] as List<dynamic>).single,
+        containsPair('knownTokens', 99),
+      );
+      expect(
+        (aiDiagnostics['records'] as List<dynamic>).single,
+        containsPair('tokenReportedRequestCount', 1),
+      );
+      expect(
+        (aiDiagnostics['records'] as List<dynamic>).single,
         containsPair('providerReportedCostMicrosUsd', null),
       );
       final runtimeDiagnostics = archiveTables
@@ -1349,6 +1471,98 @@ void main() {
       );
     },
   );
+}
+
+AiUsageEventsCompanion _archiveUsageEvent(
+  String eventId, {
+  String ownerId = 'owner-a',
+  String outcome = 'success',
+  String model = 'model-a',
+  int? inputTokens,
+  int? outputTokens,
+  int? totalTokens,
+  int? costMicros,
+}) => AiUsageEventsCompanion.insert(
+  eventId: eventId,
+  ownerId: ownerId,
+  occurredAtUtcMs: 1,
+  providerId: 'openai',
+  model: model,
+  requestType: 'tutorReply',
+  outcome: outcome,
+  latencyMs: 10,
+  inputTokens: Value(inputTokens),
+  outputTokens: Value(outputTokens),
+  totalTokens: Value(totalTokens),
+  providerReportedCostMicrosUsd: Value(costMicros),
+);
+
+Future<Map<String, dynamic>> _archiveUsageForTokenTest(
+  List<AiUsageEventsCompanion> events,
+) async {
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  await database.customInsert(
+    'INSERT INTO local_owners '
+    '(id, account_state, created_at_utc_ms, is_active) '
+    "VALUES ('owner-a', 'localGuest', 1, 1), "
+    "('owner-b', 'localGuest', 1, 0)",
+  );
+  for (final event in [
+    ...events,
+    _archiveUsageEvent(
+      'pending-same-group',
+      outcome: 'pending',
+      totalTokens: 900,
+      costMicros: 900,
+    ),
+    _archiveUsageEvent(
+      'pending-only-group',
+      outcome: 'pending',
+      model: 'pending-model',
+      totalTokens: 800,
+      costMicros: 800,
+    ),
+    _archiveUsageEvent(
+      'other-owner',
+      ownerId: 'owner-b',
+      totalTokens: 700,
+      costMicros: 700,
+    ),
+  ]) {
+    await database.into(database.aiUsageEvents).insert(event);
+  }
+
+  final before = await database.select(database.aiUsageEvents).get();
+  final artifact = await OwnerLifecycleArchiveExporter(
+    database: database,
+    nowUtc: () => DateTime.utc(2026, 9, 9, 12),
+  ).prepareActive();
+  final envelope =
+      jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+  final tables =
+      (envelope['content'] as Map<String, dynamic>)['tables'] as List<dynamic>;
+  final records =
+      tables.cast<Map<String, dynamic>>().singleWhere(
+            (entry) => entry['alias'] == 'aiUsageDiagnostics',
+          )['records']
+          as List<dynamic>;
+  expect(
+    records,
+    hasLength(1),
+    reason: 'Pending-only groups are not exported.',
+  );
+  final record = records.single as Map<String, dynamic>;
+  expect(record['recordCount'], events.length);
+  expect(record['providerId'], 'openai');
+  expect(record['model'], 'model-a');
+  expect(record['totalLatencyMs'], 10 * events.length);
+  expect(
+    await database.select(database.aiUsageEvents).get(),
+    before,
+    reason: 'Aggregate export must not rewrite raw usage events.',
+  );
+  return record;
 }
 
 Future<int> _experimentAssignmentOwnerCount(

@@ -34,6 +34,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _modelUnavailable = false;
   bool _accepted = false;
   String? _error;
+  CameraFailureCode? _deferredInitializationFailure;
   ObjectScanResult? _result;
   List<ModelBenchmarkResult> _benchmarks = const [];
   ModelCancellation? _captureCancellation;
@@ -108,6 +109,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final lease = _scannerLease;
     _scannerLease = null;
     _initializedLease = null;
+    _deferredInitializationFailure = null;
     if (lease != null) lease.release().ignore();
   }
 
@@ -158,6 +160,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         return;
       }
       setState(() {
+        _deferredInitializationFailure = null;
         _initializing = false;
         _error = null;
       });
@@ -166,11 +169,17 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
           !identical(_scanner, scanner) ||
           !identical(_scannerLease, lease) ||
           !lease.isCurrent ||
-          _voice == null ||
-          !_cameraForeground) {
+          _voice == null) {
+        return;
+      }
+      if (!_cameraForeground) {
+        // A native permission prompt can background this same lease while
+        // initialization reports a recoverable failure.
+        _deferredInitializationFailure = error.code;
         return;
       }
       setState(() {
+        _deferredInitializationFailure = null;
         _initializing = false;
         _modelUnavailable = error.code == CameraFailureCode.modelUnavailable;
         _error = _cameraFailureText(error.code);
@@ -342,7 +351,18 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                 _cameraForeground) {
               setState(() {
                 _initializing = false;
-                _error = null;
+                if (lease.isReady) {
+                  _deferredInitializationFailure = null;
+                  _error = null;
+                } else {
+                  final failure = _deferredInitializationFailure;
+                  if (failure != null) {
+                    _deferredInitializationFailure = null;
+                    _modelUnavailable =
+                        failure == CameraFailureCode.modelUnavailable;
+                    _error = _cameraFailureText(failure);
+                  }
+                }
               });
             }
           })
@@ -505,6 +525,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       'ยังไม่มีโมเดลที่ตรวจสอบแล้ว กรุณาดาวน์โหลดโมเดลเมื่อออนไลน์',
     CameraFailureCode.cancelled => 'ยกเลิกการสแกนแล้ว',
     CameraFailureCode.invalidImage => 'รูปภาพนี้ไม่สามารถนำมาวิเคราะห์ได้',
+    CameraFailureCode.notConfident =>
+      'ยังระบุวัตถุไม่ได้ กรุณาถ่ายใหม่ให้วัตถุอยู่กลางภาพและมีแสงเพียงพอ',
     CameraFailureCode.captureFailed => 'ถ่ายภาพหรือวิเคราะห์ไม่สำเร็จ',
     CameraFailureCode.unavailable ||
     CameraFailureCode.initializationFailed => 'กล้องไม่พร้อมใช้งานบนอุปกรณ์นี้',
@@ -557,7 +579,7 @@ final class _ResultCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             const SizedBox(height: 8),
-            Text('ความมั่นใจจากโมเดล: $confidence%'),
+            Text('คะแนนจากโมเดล: $confidence%'),
             Text(
               'โมเดล ${result.modelId} รุ่น ${result.modelVersion}',
               style: Theme.of(context).textTheme.bodySmall,
@@ -565,7 +587,7 @@ final class _ResultCard extends StatelessWidget {
             if (vocabulary == null) ...[
               const SizedBox(height: 8),
               const Text(
-                'พบวัตถุจริง แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์',
+                'โมเดลแสดงผลลัพธ์นี้ แต่ยังไม่มีคำแปลที่ตรวจสอบแล้วในคลังคำศัพท์',
               ),
             ],
             const SizedBox(height: 12),

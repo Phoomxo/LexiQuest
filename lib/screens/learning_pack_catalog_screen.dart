@@ -52,13 +52,13 @@ final class _LearningPackCatalogScreenState
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Verified learning packs are unavailable.'),
+                child: Text('ยังไม่พร้อมแสดงชุดบทเรียนที่ผ่านการตรวจสอบ'),
               ),
             );
           }
           final packs = snapshot.requireData.packs;
           if (packs.isEmpty) {
-            return const Center(child: Text('No verified learning packs yet.'));
+            return const Center(child: Text('ยังไม่มีชุดบทเรียนที่ผ่านการตรวจสอบ'));
           }
           return ListView.builder(
             itemCount: packs.length,
@@ -97,7 +97,7 @@ final class _PackTile extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${pack.title}, ${pack.cefrLevel}, ${pack.topic}, revision '
+          '${pack.title}, ${pack.cefrLevel}, ${pack.topic}, รุ่น '
           '${pack.revision}',
       onTap: () => _open(context),
       child: ExcludeSemantics(
@@ -109,7 +109,7 @@ final class _PackTile extends StatelessWidget {
           title: Text(pack.title),
           subtitle: Text(
             '${pack.cefrLevel} · ${pack.topic} · ${pack.skill} · '
-            '${pack.goal} · Revision ${pack.revision}',
+            '${pack.goal} · รุ่น ${pack.revision}',
           ),
         ),
       ),

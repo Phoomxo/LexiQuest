@@ -96,6 +96,7 @@ class Settings(BaseSettings):
     """Runtime configuration for the AI content service."""
 
     model_config = SettingsConfigDict(
+        hide_input_in_errors=True,
         env_prefix="LEXIQUEST_AI_",
         env_file=_ENV_FILE,
         extra="ignore",

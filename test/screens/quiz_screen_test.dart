@@ -227,6 +227,47 @@ void main() {
     expect(ambiguous[1].options, isNot(contains('airfield')));
   });
 
+  test('attached distractor bank rejects an equivalent-only alternative', () {
+    const adapter = MeaningQuizModeAdapter();
+    final session = QuizSession(
+      id: 'session:single-review',
+      ownerId: 'local:owner',
+      startedAtUtc: DateTime.utc(2026, 9, 9, 9),
+      questions: const <QuizQuestion>[
+        QuizQuestion(
+          word: QuizWord(
+            id: 'word-1',
+            categoryId: 'category-1',
+            spelling: 'station',
+            normalizedSpelling: 'station',
+            meaning: 'สถานี',
+            normalizedMeaning: 'สถานี',
+            partOfSpeech: 'noun',
+          ),
+          options: <String>['สถานี'],
+        ),
+      ],
+    );
+
+    expect(
+      () => adapter.pinQuestions(
+        session,
+        distractorWords: const <QuizWord>[
+          QuizWord(
+            id: 'word-equivalent',
+            categoryId: 'category-1',
+            spelling: 'Station',
+            normalizedSpelling: 'station',
+            meaning: 'สถานี',
+            normalizedMeaning: 'สถานี',
+            partOfSpeech: 'noun',
+          ),
+        ],
+      ),
+      throwsA(isA<InsufficientMeaningQuizOptions>()),
+    );
+  });
+
   test(
     'review rejects corrupt feedback context before write without retry debt',
     () async {
@@ -390,7 +431,7 @@ void main() {
   });
 
   testWidgets(
-    'default f07 quiz keeps both directions as recognition without SRS',
+    'default f07 quiz persists correct and incorrect recognition without SRS',
     (tester) async {
       await tester.runAsync(() async {
         final ownerId = (await owners.getOrCreateActiveOwner()).id;
@@ -421,7 +462,7 @@ void main() {
             ),
           )
           .onPressed!();
-      await _pumpUntilFound(tester, find.text('Correct answer: สถานี'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
       tester
           .widget<FilledButton>(
             find.byKey(const ValueKey<String>('meaning-quiz-next')),
@@ -430,7 +471,7 @@ void main() {
       await _pumpUntilFound(
         tester,
         find.byKey(
-          const ValueKey<String>('meaning-quiz-option-word-2-airport'),
+          const ValueKey<String>('meaning-quiz-option-word-2-station'),
         ),
       );
 
@@ -441,11 +482,11 @@ void main() {
       tester
           .widget<FilledButton>(
             find.byKey(
-              const ValueKey<String>('meaning-quiz-option-word-2-airport'),
+              const ValueKey<String>('meaning-quiz-option-word-2-station'),
             ),
           )
           .onPressed!();
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final attempts = await database.select(database.answerAttempts).get();
       expect(attempts.map((attempt) => attempt.promptMode), <String>[
@@ -455,6 +496,7 @@ void main() {
       expect(attempts.map((attempt) => attempt.evidenceClass).toSet(), <String>{
         EvidenceClass.recognition.name,
       });
+      expect(attempts.map((attempt) => attempt.isCorrect), <bool>[true, false]);
       expect(await database.select(database.srsStates).get(), isEmpty);
     },
   );
@@ -619,6 +661,20 @@ void main() {
     'f38 ultra review: quiz committed feedback follows response semantics',
     (tester) => withAccessibilitySemantics(tester, () async {
       await tester.runAsync(() async {
+        await (database.update(
+          database.vocabularyWords,
+        )..where((row) => row.id.equals('word-1'))).write(
+          VocabularyWordsCompanion(
+            cefrLevel: const Value('A1'),
+            contentChecksumSha256: Value(
+              _canonicalCoreChecksum(
+                spelling: 'station',
+                meaning: 'สถานี',
+                cefrLevel: 'A1',
+              ),
+            ),
+          ),
+        );
         final ownerId = (await owners.getOrCreateActiveOwner()).id;
         await _insertWord(
           database,
@@ -654,7 +710,7 @@ void main() {
         ),
       );
       await _pumpUntilFound(tester, find.text('station'));
-
+      expect(find.byKey(const ValueKey('cefr-practice-example')), findsNothing);
       await tester.tap(find.text('สถานี'));
       await _pumpUntilFound(
         tester,
@@ -676,7 +732,11 @@ void main() {
           AccessibilitySemanticRole.navigation,
         ],
       );
-      expect(find.text('Correct answer: สถานี'), findsOneWidget);
+      expect(find.text('คำตอบที่ถูก: สถานี'), findsOneWidget);
+      await _pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey('cefr-practice-example')),
+      );
       expect(
         await database.select(database.answerAttempts).get(),
         hasLength(1),
@@ -698,6 +758,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('station'), findsNothing);
+      expect(find.byKey(const ValueKey('cefr-practice-example')), findsNothing);
 
       await tester.enterText(
         find.byKey(const ValueKey<String>('typed-recall-input')),
@@ -712,7 +773,7 @@ void main() {
       final typedSubmitButton = tester.widget<FilledButton>(typedSubmit);
       expect(typedSubmitButton.onPressed, isNotNull);
       typedSubmitButton.onPressed!();
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final attempts = await database.select(database.answerAttempts).get();
       expect(attempts, hasLength(2));
@@ -802,7 +863,7 @@ void main() {
         const ValueKey<String>('meaning-quiz-option-word-1-สถานี'),
       );
       tester.widget<FilledButton>(first).onPressed!();
-      await _pumpUntilFound(tester, find.text('Correct answer: สถานี'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
       tester
           .widget<FilledButton>(
             find.byKey(const ValueKey<String>('meaning-quiz-next')),
@@ -823,7 +884,7 @@ void main() {
             find.byKey(const ValueKey<String>('typed-recall-submit')),
           )
           .onPressed!();
-      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
 
       final attempt =
           (await database.select(database.answerAttempts).get()).last;
@@ -1120,7 +1181,7 @@ void main() {
         ),
         hasLength(1),
       );
-      expect(find.text('Correct answer: สถานี'), findsOneWidget);
+      expect(find.text('คำตอบที่ถูก: สถานี'), findsOneWidget);
     },
   );
 
@@ -1562,7 +1623,7 @@ void main() {
         const ValueKey<String>('current-evidence-retry'),
       );
       await _pumpUntilFound(tester, retryButton);
-      expect(find.text('Retry session completion'), findsOneWidget);
+      expect(find.text('ลองจบกิจกรรมอีกครั้ง'), findsOneWidget);
 
       staleFinishHandler();
       await tester.pump(const Duration(milliseconds: 50));
@@ -1715,6 +1776,7 @@ Future<void> _insertWord(
 String _canonicalCoreChecksum({
   required String spelling,
   required String meaning,
+  String? cefrLevel,
 }) => ContentQualityPolicy.vocabularyChecksumSha256(
   categoryId: 'category-1',
   spelling: spelling,
@@ -1722,7 +1784,7 @@ String _canonicalCoreChecksum({
   meaning: meaning,
   normalizedMeaning: meaning,
   partOfSpeech: 'noun',
-  cefrLevel: null,
+  cefrLevel: cefrLevel,
   source: 'manual',
   isGlobal: false,
 );

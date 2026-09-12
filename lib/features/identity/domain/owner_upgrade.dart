@@ -19,6 +19,17 @@ final class OwnerUpgradeResult {
   final int conflictCount;
 }
 
+/// Runs external transition effects inside an already acquired owner lease,
+/// outside the transaction that commits the canonical owner change.
+abstract interface class OwnerTransitionLifecycle {
+  Future<T> run<T>({
+    required String sourceOwnerId,
+    required String operationToken,
+    required Future<T> Function() operation,
+    required String Function(T result) targetOwnerId,
+  });
+}
+
 abstract interface class OwnerUpgradeRepository {
   Future<OwnerUpgradeResult> upgrade({
     required String activeOwnerId,

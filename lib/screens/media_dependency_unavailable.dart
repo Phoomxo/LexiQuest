@@ -17,7 +17,7 @@ final class MediaDependencyUnavailable extends StatelessWidget {
 
     return Scaffold(
       key: const ValueKey<String>('media-dependency-unavailable'),
-      appBar: AppBar(title: const Text('Practice unavailable')),
+      appBar: AppBar(title: const Text('การฝึกยังไม่พร้อมใช้งาน')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -25,21 +25,21 @@ final class MediaDependencyUnavailable extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               const Text(
-                'This practice activity is not available on this device right '
-                'now. Your saved learning data is unchanged.',
+                'กิจกรรมฝึกนี้ยังไม่พร้อมใช้งานบนอุปกรณ์นี้ '
+                'ข้อมูลการเรียนที่บันทึกไว้ไม่เปลี่ยนแปลง',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Semantics(
                 container: true,
                 button: true,
-                label: 'Choose a non-media activity',
+                label: 'เลือกกิจกรรมที่ไม่ใช้เสียงหรือกล้อง',
                 onTap: chooseAlternative,
                 child: ExcludeSemantics(
                   child: OutlinedButton.icon(
                     onPressed: chooseAlternative,
                     icon: const Icon(Icons.arrow_back_outlined),
-                    label: const Text('Choose another activity'),
+                    label: const Text('เลือกกิจกรรมอื่น'),
                   ),
                 ),
               ),

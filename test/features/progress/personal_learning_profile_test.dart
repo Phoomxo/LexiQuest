@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_personal_learning_profile_reader.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
@@ -294,6 +295,19 @@ Future<void> _seedOwner(
           meaning: 'สถานี',
           normalizedMeaning: 'สถานี',
           partOfSpeech: 'noun',
+          contentChecksumSha256: Value(
+            ContentQualityPolicy.vocabularyChecksumSha256(
+              categoryId: 'category:$ownerId',
+              spelling: 'station',
+              normalizedSpelling: 'station',
+              meaning: 'สถานี',
+              normalizedMeaning: 'สถานี',
+              partOfSpeech: 'noun',
+              cefrLevel: null,
+              source: 'manual',
+              isGlobal: false,
+            ),
+          ),
           createdAtUtcMs: 1,
           updatedAtUtcMs: 1,
         ),

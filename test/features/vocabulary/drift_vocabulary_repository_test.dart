@@ -33,6 +33,7 @@ void main() {
         .insert(
           LocalOwnersCompanion.insert(
             id: 'owner-2',
+            isActive: const Value(false),
             createdAtUtcMs: createdAt.millisecondsSinceEpoch,
           ),
         );
@@ -278,13 +279,13 @@ void main() {
   test(
     'pinned reads preserve requested order and attach only verified lexical metadata',
     () async {
-      await _insertPackagedVocabularyWord(
+      await _insertReviewedOwnedVocabularyWord(
         database,
         id: 'word:station',
         spelling: 'station',
         meaning: 'สถานี',
       );
-      await _insertPackagedVocabularyWord(
+      await _insertReviewedOwnedVocabularyWord(
         database,
         id: 'word:market',
         spelling: 'market',
@@ -357,7 +358,7 @@ void main() {
   test(
     'schema-valid metadata above the former limit remains enriched',
     () async {
-      await _insertPackagedVocabularyWord(
+      await _insertReviewedOwnedVocabularyWord(
         database,
         id: 'word:station',
         spelling: 'station',
@@ -387,7 +388,7 @@ void main() {
   test(
     'malformed, unbounded, or checksum-mismatched metadata falls back to core words',
     () async {
-      await _insertPackagedVocabularyWord(
+      await _insertReviewedOwnedVocabularyWord(
         database,
         id: 'word:station',
         spelling: 'station',
@@ -583,22 +584,20 @@ Uint8List _overNestedLexicalArtifact() {
   );
 }
 
-Future<void> _insertPackagedVocabularyWord(
+Future<void> _insertReviewedOwnedVocabularyWord(
   AppDatabase database, {
   required String id,
   required String spelling,
   required String meaning,
 }) async {
-  await database.customInsert(
-    "INSERT OR IGNORE INTO local_owners(id, account_state, "
-    "created_at_utc_ms, is_active) VALUES "
-    "('packaged-owner', 'localGuest', 1, 0)",
-  );
+  // Metadata enrichment is tested for authorized owner content. Cross-owner
+  // packaged access is separately exercised through the exact starter catalog;
+  // an arbitrary isGlobal flag must not grant access to another owner's row.
   await database.customInsert(
     "INSERT OR IGNORE INTO vocabulary_categories "
     "(id, owner_id, name, normalized_name, created_at_utc_ms, "
     "updated_at_utc_ms) VALUES "
-    "('category:pack', 'packaged-owner', 'Pack', 'pack', 1, 1)",
+    "('category:pack', 'owner-1', 'Pack', 'pack', 1, 1)",
   );
   final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
     categoryId: 'category:pack',
@@ -616,7 +615,7 @@ Future<void> _insertPackagedVocabularyWord(
       .insert(
         VocabularyWordsCompanion.insert(
           id: id,
-          ownerId: 'packaged-owner',
+          ownerId: 'owner-1',
           categoryId: 'category:pack',
           spelling: spelling,
           normalizedSpelling: spelling,

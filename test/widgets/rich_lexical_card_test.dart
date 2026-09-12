@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
@@ -6,6 +7,77 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
 
 void main() {
+  testWidgets(
+    'Task5 semantic actions share lexical bookmark report details and audio callbacks',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        ContentIdentity? bookmarked;
+        ContentIdentity? reported;
+        var played = 0;
+        const identity = ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: 'word:station',
+          revision: 1,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: RichLexicalCard(
+                  word: _word(
+                    metadata: RichLexicalMetadata(
+                      ipa: '/test/',
+                      audio: const LexicalAudioMetadata(
+                        language: 'en',
+                        assetId: 'synthetic:audio',
+                      ),
+                    ),
+                  ),
+                  bookmarkIdentity: identity,
+                  onBookmark: (value) async => bookmarked = value,
+                  reportIdentity: identity,
+                  onReport:
+                      ({required identity, required reason, comment}) async =>
+                          reported = identity,
+                  onPlayAudio: () => played++,
+                ),
+              ),
+            ),
+          ),
+        );
+        Future<void> activate(String label) async {
+          final finder = find.bySemanticsLabel(label);
+          await tester.ensureVisible(finder);
+          await tester.pump();
+          final node = tester.getSemantics(finder);
+          expect(
+            node.getSemanticsData().hasAction(SemanticsAction.tap),
+            isTrue,
+          );
+          node.owner!.performAction(node.id, SemanticsAction.tap);
+          await tester.pumpAndSettle();
+        }
+
+        await activate('บันทึกไว้ทบทวน');
+        expect(bookmarked, identity);
+        await activate('ฟังเสียงอ่านคำศัพท์');
+        expect(played, 1);
+        await activate('ดูรายละเอียดคำศัพท์');
+        expect(find.text('IPA: /test/'), findsOneWidget);
+        await activate('ซ่อนรายละเอียดคำศัพท์');
+        expect(find.text('IPA: /test/'), findsNothing);
+        await activate('รายงานเนื้อหา');
+        await tester.tap(find.text('ปัญหาคำตอบ'));
+        await tester.pump();
+        await tester.tap(find.text('ส่งรายงาน'));
+        await tester.pumpAndSettle();
+        expect(reported, identity);
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
   testWidgets(
     'shows canonical fallback and an unavailable audio state without metadata',
     (tester) async {
@@ -17,14 +89,14 @@ void main() {
 
       expect(find.text('station'), findsOneWidget);
       expect(find.text('สถานี'), findsOneWidget);
-      expect(find.text('Part of speech: noun'), findsOneWidget);
+      expect(find.text('ชนิดของคำ: noun'), findsOneWidget);
       expect(find.text('CEFR: A1'), findsOneWidget);
       expect(
-        find.text('Additional lexical details are unavailable.'),
+        find.text('รายละเอียดคำศัพท์เพิ่มเติมไม่พร้อมใช้งาน'),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel('Pronunciation audio unavailable'),
+        find.bySemanticsLabel('เสียงอ่านคำศัพท์ไม่พร้อมใช้งาน'),
         findsOneWidget,
       );
     },
@@ -57,25 +129,25 @@ void main() {
       expect(find.text('IPA: /ˈsteɪ.ʃən/'), findsNothing);
       expect(
         find.bySemanticsLabel(
-          'Lexical entry: station. Meaning: สถานี. Part of speech: noun. CEFR: A1.',
+          'คำศัพท์: station. ความหมาย: สถานี. ชนิดของคำ: noun. CEFR: A1.',
         ),
         findsOneWidget,
       );
-      await tester.tap(find.bySemanticsLabel('Show lexical details'));
+      await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
       await tester.pump();
 
       expect(find.text('IPA: /ˈsteɪ.ʃən/'), findsOneWidget);
-      expect(find.text('Examples'), findsOneWidget);
-      expect(find.text('Synonyms: terminal'), findsOneWidget);
-      expect(find.text('Antonyms: departure point'), findsOneWidget);
+      expect(find.text('ตัวอย่าง'), findsOneWidget);
+      expect(find.text('คำใกล้เคียง: terminal'), findsOneWidget);
+      expect(find.text('คำตรงข้าม: departure point'), findsOneWidget);
       expect(
         find.bySemanticsLabel(
-          'Additional lexical details: IPA: /ˈsteɪ.ʃən/. Examples: The station is near the market.. Synonyms: terminal. Antonyms: departure point.',
+          'รายละเอียดคำศัพท์เพิ่มเติม: IPA: /ˈsteɪ.ʃən/. ตัวอย่าง: The station is near the market.. คำใกล้เคียง: terminal. คำตรงข้าม: departure point.',
         ),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel('Pronunciation audio unavailable'),
+        find.bySemanticsLabel('เสียงอ่านคำศัพท์ไม่พร้อมใช้งาน'),
         findsOneWidget,
       );
     },
@@ -101,7 +173,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.bySemanticsLabel('Save for review'));
+    await tester.tap(find.bySemanticsLabel('บันทึกไว้ทบทวน'));
     await tester.pump();
 
     expect(
@@ -140,15 +212,15 @@ void main() {
         ),
       );
 
-      await tester.tap(find.bySemanticsLabel('Report content'));
+      await tester.tap(find.bySemanticsLabel('รายงานเนื้อหา'));
       await tester.pumpAndSettle();
-      expect(find.text('Revision 1'), findsOneWidget);
-      await tester.tap(find.text('Audio problem'));
+      expect(find.text('รุ่น 1'), findsOneWidget);
+      await tester.tap(find.text('ปัญหาเสียง'));
       await tester.enterText(
         find.byType(TextField),
         'Pronunciation is unclear',
       );
-      await tester.tap(find.text('Submit report'));
+      await tester.tap(find.text('ส่งรายงาน'));
       await tester.pumpAndSettle();
 
       expect(
@@ -201,7 +273,7 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel('Report content'), findsNothing);
+    expect(find.bySemanticsLabel('รายงานเนื้อหา'), findsNothing);
   });
 
   testWidgets(
@@ -242,14 +314,14 @@ void main() {
       await tester.pump();
 
       expect(tester.takeException(), isNull);
-      await tester.tap(find.bySemanticsLabel('Show lexical details'));
+      await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
       await tester.pump();
       await tester.scrollUntilVisible(
-        find.bySemanticsLabel('Play pronunciation audio'),
+        find.bySemanticsLabel('ฟังเสียงอ่านคำศัพท์'),
         200,
         scrollable: find.byType(Scrollable),
       );
-      await tester.tap(find.bySemanticsLabel('Play pronunciation audio'));
+      await tester.tap(find.bySemanticsLabel('ฟังเสียงอ่านคำศัพท์'));
       expect(playCalls, 1);
     },
   );
