@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
@@ -26,8 +27,148 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import '../support/accessibility_semantics_test_support.dart';
+import '../support/r15_visual_capture.dart';
 
 void main() {
+  for (final compact in [false, true]) {
+    testWidgets('R15.10 visual shadowing compact=$compact', (tester) async {
+      await loadR15Fonts();
+      tester.view.physicalSize = Size(compact ? 320 : 390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _RetryLearningRepository(failAnswerOnce: false);
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-visual',
+        nowUtc: () => DateTime.utc(2026, 9, 13),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final gateway = _ManualSpeechGateway();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: const ValueKey('synthetic-r15-surface'),
+          child: MaterialApp(
+            theme: compact ? M3Theme.darkTheme : M3Theme.lightTheme,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(compact ? 2 : 1),
+                disableAnimations: true,
+              ),
+              child: child!,
+            ),
+            home: ShadowingChallengeScreen(
+              voice: voice,
+              speechPractice: SpeechPracticeUseCases(gateway),
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final listen = find.byKey(
+        const ValueKey<String>('shadowing-listen-button'),
+      );
+      await tester.ensureVisible(listen);
+      await tester.tap(listen);
+      await tester.pump();
+      gateway.emitFailure(SpeechFailureCode.noMatch);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.text(
+          'ฝึกอ่านข้อความต้นแบบต่อได้ แล้วลองใช้ไมโครโฟนอีกครั้งเมื่อพร้อม',
+        ),
+      );
+      await captureR15Surface(
+        tester,
+        'shadowing-fallback-${compact ? '320-dark-200' : '390-light'}',
+      );
+      expect(repository.commands, isEmpty);
+      await tester.ensureVisible(listen);
+      await tester.tap(listen);
+      await tester.pump();
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.text('ความใกล้เคียงของข้อความที่ระบบได้ยิน: 100%'),
+      );
+      await captureR15Surface(
+        tester,
+        'shadowing-assessment-${compact ? '320-dark-200' : '390-light'}',
+      );
+      expect(repository.commands, hasLength(1));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final failure in SpeechFailureCode.values) {
+    testWidgets('R15.10 $failure keeps text practice and permits restart', (
+      tester,
+    ) async {
+      final repository = _RetryLearningRepository(failAnswerOnce: false);
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-fallback',
+        nowUtc: () => DateTime.utc(2026, 9, 13),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final gateway = _ManualSpeechGateway();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ShadowingChallengeScreen(
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(gateway),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final listen = find.byKey(
+        const ValueKey<String>('shadowing-listen-button'),
+      );
+      await tester.tap(listen);
+      await tester.pump();
+      gateway.emitFailure(failure);
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pumpAndSettle();
+      expect(find.text('Practice makes perfect'), findsOneWidget);
+      expect(
+        find.text(
+          'ฝึกอ่านข้อความต้นแบบต่อได้ แล้วลองใช้ไมโครโฟนอีกครั้งเมื่อพร้อม',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('100%'), findsNothing);
+      expect(repository.commands, isEmpty);
+      await tester.tap(listen);
+      await tester.pump();
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pumpAndSettle();
+      expect(
+        find.text('ความใกล้เคียงของข้อความที่ระบบได้ยิน: 100%'),
+        findsOneWidget,
+      );
+      expect(repository.commands, hasLength(1));
+      expect(gateway.startCalls, 2);
+    });
+  }
+
   testWidgets(
     'partial then noMatch retains preview without final score or evidence',
     (tester) async {
@@ -112,7 +253,10 @@ void main() {
     await tester.pump();
     await tester.tap(listen);
     await tester.pumpAndSettle();
-    expect(find.textContaining('ความเหมือนของข้อความ: 100%'), findsOneWidget);
+    expect(
+      find.textContaining('ความใกล้เคียงของข้อความที่ระบบได้ยิน: 100%'),
+      findsOneWidget,
+    );
     expect(repository.commands, hasLength(1));
   });
   test(
@@ -153,7 +297,10 @@ void main() {
       find.text('ข้อความที่ได้ยิน: Practice makes perfect'),
       findsOneWidget,
     );
-    expect(find.textContaining('ความเหมือนของข้อความ: 100%'), findsOneWidget);
+    expect(
+      find.textContaining('ความใกล้เคียงของข้อความที่ระบบได้ยิน: 100%'),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('ไม่ได้ส่งข้อมูล pitch หรือ phoneme'),
       findsOneWidget,
@@ -745,7 +892,9 @@ void main() {
         final retry = find.byKey(
           const ValueKey<String>('current-evidence-retry'),
         );
-        final assessment = find.textContaining('ความเหมือนของข้อความ: 100%');
+        final assessment = find.textContaining(
+          'ความใกล้เคียงของข้อความที่ระบบได้ยิน: 100%',
+        );
         expect(repository.commands, hasLength(1));
         expect(retry, findsOneWidget);
         expectInsideAccessibilityRole(

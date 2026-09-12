@@ -277,6 +277,11 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
               _acceptedFinalEpoch == epoch) {
             return;
           }
+          // Once this screen offers retry, callbacks from the failed attempt
+          // must not create an assessment or a durable learning answer.
+          _listenEpoch += 1;
+          _listenPending = false;
+          activeSession.cancel().ignore();
           setState(() {
             _listening = false;
             _error = _failureText(failure);
@@ -558,7 +563,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                           if (assessment != null) ...[
                             const SizedBox(height: 8),
                             Text(
-                              'ความเหมือนของข้อความ: '
+                              'ความใกล้เคียงของข้อความที่ระบบได้ยิน: '
                               '${assessment.similarityPercent}%',
                             ),
                             const Text(
@@ -587,6 +592,12 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                   _error!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
+                if (reference != null && !persistenceLocked) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'ฝึกอ่านข้อความต้นแบบต่อได้ แล้วลองใช้ไมโครโฟนอีกครั้งเมื่อพร้อม',
+                  ),
+                ],
               ],
             ],
           ),
