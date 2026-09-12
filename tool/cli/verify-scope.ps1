@@ -33,7 +33,9 @@ param(
 
     [switch]$Resume,
 
-    [string[]]$TestTargets = @()
+    [string[]]$TestTargets = @(),
+
+    [string]$TestName = ''
 )
 
 Set-StrictMode -Version 3.0
@@ -68,7 +70,7 @@ function Get-AreaPathPattern {
     # R15 features share authorities across areas. Hash shared inputs as well
     # as the selected tests; a wider fingerprint does not run wider suites.
     if ($TestTargets.Count -gt 0) {
-        return '^(lib/|test/|assets/|tool/cli/|pubspec\.(yaml|lock)$)'
+        return '^(lib/|test/|assets/|tool/cli/|\.gitattributes$|pubspec\.(yaml|lock)$)'
     }
 
     switch ($SelectedArea) {
@@ -166,14 +168,14 @@ function New-FlutterTestSpec {
         [string]$SourceArea
     )
 
-    $targets = Get-ExistingTargets -Candidates $Candidates
+    $targets = @(Get-ExistingTargets -Candidates $Candidates)
     if ($targets.Count -eq 0) {
         throw ('No Flutter test targets exist for ' + $Name + '.')
     }
     return New-CommandSpec `
         -Name $Name `
         -FilePath 'flutter' `
-        -Arguments (@('test') + $targets + @('--reporter', 'compact')) `
+        -Arguments (@('test') + $targets + @('--reporter', 'compact') + $(if ($TestName) { @('--plain-name', $TestName) } else { @() })) `
         -SourceArea $SourceArea
 }
 
@@ -213,6 +215,9 @@ function Get-VerificationCommands {
         [string]$SelectedArea
     )
 
+    if ($TestName -and $TestTargets.Count -eq 0) {
+        throw 'A test name requires explicit test targets.'
+    }
     if ($TestTargets.Count -gt 0) {
         if ($SelectedLevel -eq 'Release') {
             throw 'Explicit test targets cannot replace release verification.'
@@ -421,6 +426,8 @@ function Invoke-BoundedCommand {
     )
 
     $safeName = ($Command.Name -replace '[^A-Za-z0-9._-]', '-').Trim('-')
+    $LogDirectory = Join-Path $LogDirectory ($Command.commandKey.Substring(0, 12) + '-' + $SourceFingerprint.Substring(0, 12))
+    New-Item -ItemType Directory -Force -Path $LogDirectory | Out-Null
     $stdoutPath = Join-Path $LogDirectory ($safeName + '.stdout.log')
     $stderrPath = Join-Path $LogDirectory ($safeName + '.stderr.log')
     Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force -ErrorAction SilentlyContinue
@@ -523,6 +530,12 @@ try {
     $resultDirectory = Join-Path $repoRoot ('build\verification\' + $headSha)
     New-Item -ItemType Directory -Force -Path $resultDirectory | Out-Null
     $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '.json')
+    if ($TestTargets.Count -gt 0) {
+        $targetIdentity = $TestTargets -join "`n"
+        if ($TestName) { $targetIdentity += "`nname=" + $TestName }
+        $targetKey = Get-Sha256Text -Text $targetIdentity
+        $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '-' + $targetKey + '.json')
+    }
 
     $previousByCommand = @{}
     if ($Resume -and (Test-Path -LiteralPath $resultPath)) {
