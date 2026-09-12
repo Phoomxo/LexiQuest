@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/media_practice/data/plugin_camera_gateway.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 
 void main() {
   const camera = CameraDescription(
@@ -11,6 +12,60 @@ void main() {
     lensDirection: CameraLensDirection.back,
     sensorOrientation: 90,
   );
+
+  test(
+    'R15.6 unexpected initialization failure cleans session and can retry',
+    () async {
+      final failed = _FakeCameraSession();
+      final ready = _FakeCameraSession()..completeInitialization();
+      final sessions = [failed, ready];
+      final gateway = PluginCameraGateway(
+        discoverCameras: () async => [camera],
+        createSession: (_) => sessions.removeAt(0),
+      );
+      final initialization = gateway.initialize();
+      final expectation = expectLater(
+        initialization,
+        throwsA(
+          isA<CameraPracticeException>().having(
+            (e) => e.code,
+            'code',
+            CameraFailureCode.initializationFailed,
+          ),
+        ),
+      );
+      failed._initialization.completeError(StateError('native session failed'));
+      await expectation;
+      expect(failed.disposeCalls, 1);
+      expect(gateway.isInitialized, isFalse);
+      await gateway.initialize();
+      expect(gateway.isInitialized, isTrue);
+      await gateway.dispose();
+      expect(ready.disposeCalls, 1);
+    },
+  );
+
+  test('R15.6 repeated open pause resume closes every session once', () async {
+    final sessions = <_FakeCameraSession>[];
+    final gateway = PluginCameraGateway(
+      discoverCameras: () async => [camera],
+      createSession: (_) {
+        final session = _FakeCameraSession()..completeInitialization();
+        sessions.add(session);
+        return session;
+      },
+    );
+    for (var cycle = 0; cycle < 5; cycle++) {
+      await gateway.resume();
+      expect(gateway.isInitialized, isTrue);
+      await gateway.pause();
+      expect(gateway.isInitialized, isFalse);
+    }
+    await gateway.dispose();
+    await gateway.dispose();
+    expect(sessions, hasLength(5));
+    expect(sessions.map((s) => s.disposeCalls), everyElement(1));
+  });
 
   test('pause waits for an in-flight initialization and disposes it', () async {
     final session = _FakeCameraSession();

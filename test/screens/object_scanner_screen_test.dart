@@ -13,8 +13,325 @@ import 'package:vocab_learning_app/services/object_vocabulary_database.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
+import 'package:vocab_learning_app/screens/categories_page.dart';
+import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets(
+    'R15.6 unsupported result offers existing manual vocabulary route',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final scanner = _FakeScanner()..captureResult = _fakeUnmappedScanResult();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            scanner: scanner,
+            voice: VoiceUseCases(
+              provider: _FakeVoice(),
+              disposeProvider: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ถ่ายใหม่'), findsOneWidget);
+      await tester.tap(find.text('เพิ่มคำด้วยตนเอง'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoriesPage), findsOneWidget);
+      expect(scanner.acceptCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'R15.6 actual scanner results remain readable at 200 percent text',
+    (tester) async {
+      await loadR15Fonts();
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      for (final mapped in [true, false]) {
+        final scanner = _FakeScanner()
+          ..captureResult = mapped
+              ? _fakeObjectScanResult()
+              : _fakeUnmappedScanResult();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: M3Theme.lightTheme,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: RepaintBoundary(
+              key: const ValueKey('synthetic-r15-surface'),
+              child: ObjectScannerScreen(
+                scanner: scanner,
+                voice: VoiceUseCases(
+                  provider: _FakeVoice(),
+                  disposeProvider: () async {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('object-scanner-capture-button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.drag(find.byType(ListView), const Offset(0, -700));
+        await tester.pumpAndSettle();
+        await captureR15Surface(
+          tester,
+          mapped
+              ? 'r15-camera-mapped-text200'
+              : 'r15-camera-unsupported-text200',
+        );
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
+  testWidgets(
+    'R15.6 download cancellation keeps capture disabled and allows retry',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final pending = Completer<ModelDownloadRecord>();
+      final scanner = _FakeScanner()
+        ..modelRuntimeAvailable = false
+        ..downloadPending = pending;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            scanner: scanner,
+            voice: VoiceUseCases(
+              provider: _FakeVoice(),
+              disposeProvider: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final download = find.byKey(
+        const ValueKey('object-scanner-download-model'),
+      );
+      await tester.tap(download);
+      await tester.pump();
+      expect(find.text('ยกเลิกดาวน์โหลด'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(download);
+      expect(scanner.downloadCancellation!.isCancelled, isTrue);
+      pending.completeError(
+        const ModelLifecycleException(ModelFailureCode.cancelled),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ยกเลิกการดาวน์โหลดแล้ว'), findsOneWidget);
+      expect(find.text('ดาวน์โหลดโมเดลที่ตรวจสอบแล้ว'), findsOneWidget);
+      expect(scanner.captureCalls, 0);
+      final retry = Completer<ModelDownloadRecord>();
+      scanner.downloadPending = retry;
+      await tester.tap(download);
+      await tester.pump();
+      scanner.modelRuntimeAvailable = true;
+      retry.complete(
+        ModelDownloadRecord(
+          id: 'model',
+          modelVersion: 'model-v1',
+          sourceUrl: 'https://example.invalid/model',
+          expectedChecksum: 'synthetic',
+          expectedBytes: 1,
+          downloadedBytes: 1,
+          retryCount: 0,
+          state: ModelDownloadState.active,
+          updatedAtUtc: DateTime.utc(2026, 9, 13),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(scanner.initializeCalls, 2);
+      expect(find.byKey(const ValueKey('camera-preview')), findsOneWidget);
+      expect(download, findsNothing);
+      expect(find.byKey(const ValueKey('object-scanner-error')), findsNothing);
+    },
+  );
+
+  testWidgets('R15.6 old download failure cannot replace new scanner state', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final pending = Completer<ModelDownloadRecord>();
+    final first = _FakeScanner()
+      ..modelRuntimeAvailable = false
+      ..downloadPending = pending;
+    final second = _FakeScanner();
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    Future<void> show(_FakeScanner scanner) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(scanner: scanner, voice: voice),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await show(first);
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-download-model')),
+    );
+    await tester.pump();
+    await show(second);
+    expect(first.downloadCancellation!.isCancelled, isTrue);
+    pending.completeError(
+      const ModelLifecycleException(ModelFailureCode.cancelled),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('object-scanner-error')), findsNothing);
+    expect(find.byKey(const ValueKey('camera-preview')), findsOneWidget);
+  });
+
+  testWidgets('R15.6 clears a displayed result after scanner replacement', (
+    tester,
+  ) async {
+    final first = _FakeScanner();
+    final second = _FakeScanner();
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    Future<void> show(_FakeScanner scanner) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(scanner: scanner, voice: voice),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await show(first);
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-capture-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('เพิ่มเข้าคลัง'), findsOneWidget);
+    await show(second);
+    expect(find.text('apple'), findsNothing);
+    expect(find.text('เพิ่มเข้าคลัง'), findsNothing);
+    expect(second.acceptCalls, 0);
+  });
+
+  testWidgets(
+    'R15.6 saving blocks duplicate accept and ignores old completion',
+    (tester) async {
+      final pending = Completer<void>();
+      final first = _FakeScanner()..acceptPending = pending;
+      final second = _FakeScanner();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      Future<void> show(_FakeScanner scanner) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ObjectScannerScreen(scanner: scanner, voice: voice),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await show(first);
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pumpAndSettle();
+      final save = tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'เพิ่มเข้าคลัง'),
+          )
+          .onPressed!;
+      save();
+      save();
+      await tester.pump();
+      expect(first.acceptCalls, 1);
+      expect(find.text('กำลังบันทึก...'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNull,
+      );
+      await show(second);
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pumpAndSettle();
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('บันทึกแล้ว'), findsNothing);
+      expect(find.text('เพิ่มเข้าคลัง'), findsOneWidget);
+    },
+  );
+
+  testWidgets('R15.6 permission failure can retry initialization', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final scanner = _FakeScanner()
+      ..initializeFailure = const CameraPracticeException(
+        CameraFailureCode.permissionDenied,
+      );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          )
+          .onPressed,
+      isNull,
+    );
+    scanner.initializeFailure = null;
+    await tester.tap(find.text('ลองเปิดกล้องอีกครั้ง'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('camera-preview')), findsOneWidget);
+    expect(scanner.initializeCalls, 2);
+  });
+
   testWidgets('captures real adapter result and persists accepted vocabulary', (
     tester,
   ) async {
@@ -760,6 +1077,9 @@ final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? captureFailure;
   ObjectScanResult captureResult = _fakeObjectScanResult();
   Completer<void>? initializePending;
+  Completer<void>? acceptPending;
+  Completer<ModelDownloadRecord>? downloadPending;
+  ModelCancellation? downloadCancellation;
   bool modelRuntimeAvailable = true;
   final List<Completer<void>> initializePendings = [];
   final List<Completer<ObjectScanResult>> capturePendings = [];
@@ -791,6 +1111,7 @@ final class _FakeScanner implements ObjectScannerController {
   @override
   Future<VocabularyWord> accept(ObjectScanResult result) async {
     acceptCalls += 1;
+    await acceptPending?.future;
     return VocabularyWord(
       id: 'word:apple',
       ownerId: 'owner:1',
@@ -815,9 +1136,10 @@ final class _FakeScanner implements ObjectScannerController {
       const ColoredBox(key: ValueKey('camera-preview'), color: Colors.black);
 
   @override
-  Future<ModelDownloadRecord> downloadModel({
-    ModelCancellation? cancellation,
-  }) => throw UnimplementedError();
+  Future<ModelDownloadRecord> downloadModel({ModelCancellation? cancellation}) {
+    downloadCancellation = cancellation;
+    return downloadPending!.future;
+  }
 
   @override
   Future<ModelDownloadRecord?> modelStatus() async => null;

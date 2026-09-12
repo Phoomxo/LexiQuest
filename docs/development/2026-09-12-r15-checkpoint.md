@@ -6,38 +6,37 @@ accept and commit current package, then immediately create the next from exact
 accepted SHA. No approval restart, subagents, background writers or overlap.
 Use AGENTS.md and r15-package-workflow.md; read only current package requirements.
 
-- Worktree:C:/Users/Phet/.codex/worktrees/cad3/LexiQuest
-- Branch:feature/r15-dashboard-continuation
-- Starting HEAD:4936b48b4ce307ecdeb8aa6f77282f5f202f3bd1 (accepted R15.0–4).
-- This checkpoint accompanies accepted R15.5 commit; resolve HEAD before dispatch.
+- Worktree:C:/Users/Phet/.codex/worktrees/fa58/LexiQuest
+- Branch:feature/r15-camera-continuation
+- Starting HEAD:765237e2aee536fe7991f00916a57b8949768e01 (accepted R15.0–5).
+- This checkpoint accompanies accepted R15.6 commit; resolve HEAD before dispatch.
   Never start from default branch or import pending work elsewhere.
 - No task-owned test/build process remains. Source writes finished at handoff.
 - Generated registrants EOL-only status/no content diff excluded; do not import.
 
 ## Current package result
-R15.5 local implementation accepted: weekly correct/total+rounded percent,
-active time/current review due, honest unavailable copy and availability guard,
-overall mastery/XP labels, existing Goals/reminder route. Fixed Goals cache on
-use-case/dependency replacement. No new storage or authority.
-Evidence:2026-09-13-r15-dashboard-verification.md.
-Broad8-target gate137 passed +1 stale scroll assertion; corrected case1/1 passed.
-Additional ledger5/6 +79s-in10min case1/1 passed. Analysis6files clean.
-Final fingerprint:305b34114968c6b2bfb91540240257b8f3e677ed6189642320c111aafb015910.
-Actual Flutter empty/200%-text summary/details PNGs reviewed. No remaining local
+R15.6 local implementation accepted: permission retry; cancelled download retry
+to ready; stale-download guard; clear displayed result on scanner/lease release;
+saving/duplicate-accept and stale-completion guards; retake and existing manual
+vocabulary route; wrap actions at200% text. Gateway cleans generic native
+initialization errors and supports retry. RGB/model/primary-label mapping and
+duplicate vocabulary authorities unchanged. No new storage.
+Evidence:2026-09-13-r15-camera-verification.md.
+Broad4-target gate41/41 passed. Extended cancellation→retry→ready1/1 passed.
+Analysis8files clean. Final production delta after broad pass: braces only.
+Final fingerprint:139f7d6f854b2e353b032c5a8c3fe4d86e8e088895aba95be9478a591bf39cda.
+Actual Flutter mapped/unsupported200%-text PNGs reviewed. No remaining local
 acceptance/debugging failure. Human/physical/release acceptance external.
 
-R15.4 evidence:2026-09-13-r15-learning-verification.md. Version-pinned explanation,
-first5/6 and repair1/1 separated, activity semantics and due-clock retained.
-Pair golden fixture pumps pairFeedbackHold+pairFeedbackFade; do not replace with
-pumpAndSettle alone or change production completion. Prior package evidence stays
-in referenced verification files. Do not rerun unchanged passed gates.
+Prior R15.5 evidence:2026-09-13-r15-dashboard-verification.md;
+R15.4:2026-09-13-r15-learning-verification.md. Do not rerun unchanged passed gates.
 
 ## Next executable work
-Create R15.6 immediately from this accepted SHA. Read ONLY matching R15.6 roadmap,
-engineering spec and A-CAM runtime acceptance. Do not preload R15.7–10.
+Create R15.7 immediately from this accepted SHA. Read ONLY matching R15.7 roadmap,
+engineering spec and A-MODEL acceptance. Do not preload R15.8–10.
 Use the new task worktree. If detached/codex branch, create task-owned
-feature/r15-camera-continuation without changing another user's branch.
-Accept/commit R15.6 before creating R15.7; carry same rules through R15.10.
+feature/r15-model-continuation without changing another user's branch.
+Accept/commit R15.7 before creating R15.8; carry same rules through R15.10.
 Complete coupled debugging before handoff; never fork full history.
 
 ## Immutable boundaries and device
@@ -47,13 +46,13 @@ enrollment/upload, paid services, deploy/push/merge or destructive cleanup.
 No Codex Security/worker workflows. Serialize Flutter/test/build/codegen.
 Authorized Vivo9582188822004C6, V2041/API33, com.lexiquest.app debug v23; preserve
 identity/data and use serial explicitly. Build/device verification at combined UI
-source freeze. No device operation occurred in R15.5.
+source freeze. No device operation occurred in R15.6.
 
 ## Read on demand
 - ../superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md
 - ../superpowers/specs/2026-09-12-r15-engineering-spec.md
 - ../superpowers/plans/2026-09-12-r15-acceptance-contract.md
-- 2026-09-13-r15-dashboard-verification.md
+- 2026-09-13-r15-camera-verification.md
 - lexiquest-guardrails-reference.md
-Current logs/PNGs untracked under cad3/build/verification; earlier learning logs
-remain in5554. Read necessary evidence only; no worktree inventory.
+Current logs/PNGs untracked under fa58/build/verification. Earlier evidence stays
+in referenced history files/worktrees; read only if needed, no inventory.

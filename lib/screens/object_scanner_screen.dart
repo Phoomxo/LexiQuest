@@ -9,6 +9,8 @@ import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import 'media_dependency_unavailable.dart';
+import 'categories_page.dart';
+import '../navigation/app_routes.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
   const ObjectScannerScreen({super.key, this.scanner, this.voice});
@@ -33,6 +35,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _benchmarking = false;
   bool _modelUnavailable = false;
   bool _accepted = false;
+  bool _saving = false;
   String? _error;
   CameraFailureCode? _deferredInitializationFailure;
   ObjectScanResult? _result;
@@ -106,6 +109,11 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   void _releaseScannerLease() {
     _invalidateCapture();
+    _downloadCancellation?.cancel();
+    _downloadCancellation = null;
+    _downloading = false;
+    _modelUnavailable = false;
+    _benchmarks = const [];
     final lease = _scannerLease;
     _scannerLease = null;
     _initializedLease = null;
@@ -118,6 +126,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     _captureCancellation?.cancel();
     _captureCancellation = null;
     _capturing = false;
+    _result = null;
+    _accepted = false;
+    _saving = false;
   }
 
   bool _captureIsCurrent({
@@ -162,6 +173,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       setState(() {
         _deferredInitializationFailure = null;
         _initializing = false;
+        _modelUnavailable = false;
         _error = null;
       });
     } on CameraPracticeException catch (error) {
@@ -190,7 +202,11 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Future<void> _capture() async {
     final scanner = _scanner;
     final lease = _scannerLease;
-    if (scanner == null || lease == null || !lease.isReady || _capturing) {
+    if (scanner == null ||
+        lease == null ||
+        !lease.isReady ||
+        _capturing ||
+        _saving) {
       return;
     }
     final captureEpoch = ++_captureEpoch;
@@ -238,23 +254,36 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   Future<void> _downloadModel() async {
     final scanner = _scanner;
-    if (scanner == null || _downloading) return;
+    final lease = _scannerLease;
+    if (scanner == null || lease == null || !lease.isCurrent || _downloading) {
+      return;
+    }
     final cancellation = ModelCancellation();
     _downloadCancellation = cancellation;
+    bool isCurrent() =>
+        mounted &&
+        identical(_scanner, scanner) &&
+        identical(_scannerLease, lease) &&
+        lease.isCurrent &&
+        identical(_downloadCancellation, cancellation);
     setState(() {
       _downloading = true;
       _error = null;
     });
     try {
       await scanner.downloadModel(cancellation: cancellation);
-      if (!mounted) return;
+      if (!isCurrent()) return;
+      if (cancellation.isCancelled) {
+        setState(() => _error = 'ยกเลิกการดาวน์โหลดแล้ว');
+        return;
+      }
       setState(() {
         _modelUnavailable = false;
         _initializing = true;
       });
-      await _initialize();
+      await _initialize(lease);
     } on ModelLifecycleException catch (error) {
-      if (!mounted) return;
+      if (!isCurrent()) return;
       setState(() {
         _error = switch (error.code) {
           ModelFailureCode.cancelled => 'ยกเลิกการดาวน์โหลดแล้ว',
@@ -264,7 +293,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         };
       });
     } finally {
-      if (mounted) setState(() => _downloading = false);
+      if (isCurrent()) setState(() => _downloading = false);
       if (identical(_downloadCancellation, cancellation)) {
         _downloadCancellation = null;
       }
@@ -300,14 +329,40 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Future<void> _accept() async {
     final scanner = _scanner;
     final result = _result;
-    if (scanner == null || result == null || result.vocabulary == null) return;
+    final lease = _scannerLease;
+    final epoch = _captureEpoch;
+    if (scanner == null ||
+        result == null ||
+        result.vocabulary == null ||
+        lease == null ||
+        !lease.isReady ||
+        !_cameraForeground ||
+        _capturing ||
+        _saving ||
+        _accepted) {
+      return;
+    }
+    bool isCurrent() =>
+        mounted &&
+        epoch == _captureEpoch &&
+        identical(_scanner, scanner) &&
+        identical(_scannerLease, lease) &&
+        lease.isCurrent &&
+        identical(_result, result) &&
+        _cameraForeground;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await scanner.accept(result);
-      if (mounted) setState(() => _accepted = true);
+      if (isCurrent()) setState(() => _accepted = true);
     } catch (_) {
-      if (mounted) {
+      if (isCurrent()) {
         setState(() => _error = 'บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง');
       }
+    } finally {
+      if (isCurrent()) setState(() => _saving = false);
     }
   }
 
@@ -410,6 +465,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            const Text('จัดวัตถุให้อยู่กลางภาพและใช้แสงเพียงพอ'),
+            const SizedBox(height: 12),
             AspectRatio(
               aspectRatio: 4 / 3,
               child: ClipRRect(
@@ -429,7 +486,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
             const SizedBox(height: 16),
             FilledButton.icon(
               key: const ValueKey<String>('object-scanner-capture-button'),
-              onPressed: scannerReady && !_capturing ? _capture : null,
+              onPressed: scannerReady && !_capturing && !_saving
+                  ? _capture
+                  : null,
               icon: _capturing
                   ? const SizedBox.square(
                       dimension: 20,
@@ -437,7 +496,11 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                     )
                   : const Icon(Icons.camera_alt_outlined),
               label: Text(
-                _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
+                _capturing
+                    ? 'กำลังวิเคราะห์...'
+                    : scannerReady && (result != null || _error != null)
+                    ? 'ถ่ายใหม่'
+                    : 'ถ่ายภาพและวิเคราะห์',
               ),
             ),
             if (scannerReady) ...[
@@ -497,18 +560,43 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                 key: const ValueKey<String>('object-scanner-error'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
+              if (!scannerReady && !_initializing && !_modelUnavailable)
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _initializing = true;
+                      _error = null;
+                    });
+                    _initialize();
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('ลองเปิดกล้องอีกครั้ง'),
+                ),
             ],
             if (result != null) ...[
               const SizedBox(height: 16),
               _ResultCard(
                 result: result,
                 accepted: _accepted,
+                saving: _saving,
                 onSpeak: () => _speak(
                   result.vocabulary?.englishWord ??
                       (result.matchedClassification ?? result.primary).label,
                 ),
                 onAccept: result.vocabulary == null ? null : _accept,
               ),
+              if (result.vocabulary == null)
+                OutlinedButton.icon(
+                  onPressed: () => AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'vocabulary/create',
+                      builder: (_) => const CategoriesPage(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('เพิ่มคำด้วยตนเอง'),
+                ),
             ],
           ],
         ),
@@ -547,12 +635,14 @@ final class _ResultCard extends StatelessWidget {
   const _ResultCard({
     required this.result,
     required this.accepted,
+    required this.saving,
     required this.onSpeak,
     required this.onAccept,
   });
 
   final ObjectScanResult result;
   final bool accepted;
+  final bool saving;
   final VoidCallback onSpeak;
   final VoidCallback? onAccept;
 
@@ -591,19 +681,26 @@ final class _ResultCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 OutlinedButton.icon(
                   onPressed: onSpeak,
                   icon: const Icon(Icons.volume_up_outlined),
                   label: const Text('ฟังเสียง'),
                 ),
-                const SizedBox(width: 8),
                 if (onAccept != null)
                   FilledButton.icon(
-                    onPressed: accepted ? null : onAccept,
+                    onPressed: accepted || saving ? null : onAccept,
                     icon: Icon(accepted ? Icons.check : Icons.add),
-                    label: Text(accepted ? 'บันทึกแล้ว' : 'เพิ่มเข้าคลัง'),
+                    label: Text(
+                      saving
+                          ? 'กำลังบันทึก...'
+                          : accepted
+                          ? 'บันทึกแล้ว'
+                          : 'เพิ่มเข้าคลัง',
+                    ),
                   ),
               ],
             ),

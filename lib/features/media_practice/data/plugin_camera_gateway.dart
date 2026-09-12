@@ -106,6 +106,14 @@ final class PluginCameraGateway implements CameraGateway {
         _ => CameraFailureCode.initializationFailed,
       };
       throw CameraPracticeException(code);
+    } on CameraPracticeException {
+      await pendingSession?.dispose();
+      rethrow;
+    } catch (_) {
+      await pendingSession?.dispose();
+      throw const CameraPracticeException(
+        CameraFailureCode.initializationFailed,
+      );
     }
   }
 
