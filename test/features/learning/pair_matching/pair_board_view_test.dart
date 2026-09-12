@@ -175,10 +175,10 @@ Widget pairBoardTestApp({
     builder: (context) => Localizations.override(
       context: context,
       locale: locale,
-      child: Scaffold(
-        body: RepaintBoundary(
-          key: pairBoardSurfaceKey,
-          child: AccessibilityScope(
+      child: RepaintBoundary(
+        key: pairBoardSurfaceKey,
+        child: Scaffold(
+          body: AccessibilityScope(
             child: PairBoardView(
               key: boardKey,
               model: model,

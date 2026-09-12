@@ -40,13 +40,17 @@ final class PairMatchingResultView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            header: true,
-            child: Text(
-              replay
-                  ? copy('ผลการฝึกซ้ำ', 'Practice Replay result')
-                  : copy('ผลการจับคู่', 'Pair Matching result'),
-              style: Theme.of(context).textTheme.titleLarge,
+          Focus(
+            autofocus: true,
+            debugLabel: 'pair-result-heading',
+            child: Semantics(
+              header: true,
+              child: Text(
+                replay
+                    ? copy('ผลการฝึกซ้ำ', 'Practice Replay result')
+                    : copy('ผลการจับคู่', 'Pair Matching result'),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ),
           if (replay) ...[

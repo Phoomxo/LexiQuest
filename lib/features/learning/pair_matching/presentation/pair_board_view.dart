@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../accessibility/domain/accessibility_policy.dart';
 import '../../../accessibility/presentation/accessibility_scope.dart';
 import '../../../../config/m3_theme.dart';
+import '../../../../config/learning_feedback_theme.dart';
+import 'pair_feedback_episode.dart';
 import '../domain/pair_active_clock.dart';
 import '../domain/pair_matching_engine.dart';
 import '../domain/pair_matching_launch.dart';
@@ -22,6 +24,7 @@ final class PairBoardModel {
     this.audioAvailable = false,
     this.statusMessage,
     this.audioFallback,
+    this.feedbackEpisodes = const {},
   });
 
   final PairMatchingState state;
@@ -31,6 +34,7 @@ final class PairBoardModel {
   final bool audioAvailable;
   final String? statusMessage;
   final String? audioFallback;
+  final Map<String, PairFeedbackEpisode> feedbackEpisodes;
 }
 
 /// Pure Pair board renderer. It emits identities and never evaluates answers.
@@ -446,6 +450,60 @@ final class _PairBoardViewState extends State<PairBoardView> {
     PairTile tile,
   ) {
     final repair = _state.repairFor(tile.wordId)?.status;
+    final episode = widget.model.feedbackEpisodes[tile.wordId];
+    if (episode != null) {
+      final roles = LearningFeedbackTheme.of(context);
+      final english = Localizations.localeOf(context).languageCode == 'en';
+      final label = episode.assisted
+          ? (english ? 'Completed with help' : 'สำเร็จด้วยตัวช่วย')
+          : (english ? 'Correct' : 'ถูกต้อง');
+      final foreground = episode.assisted ? roles.onSupport : roles.onSuccess;
+      return Semantics(
+        container: true,
+        liveRegion: true,
+        label: '${_valueFor(tile.side, tile.wordId)}. $label',
+        child: ExcludeSemantics(
+          child: AnimatedOpacity(
+            key: ValueKey('pair-feedback:${tile.side.name}:${tile.wordId}'),
+            opacity: episode.fading ? 0 : 1,
+            duration: M3Theme.motionDuration(
+              M3Theme.pairFeedbackFade,
+              mediaQuery: MediaQuery.of(context),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 64),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: episode.assisted ? roles.support : roles.success,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: foreground),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _valueFor(tile.side, tile.wordId),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: foreground),
+                  ),
+                  Icon(
+                    episode.assisted
+                        ? Icons.help_outline
+                        : Icons.check_circle_outline,
+                    color: foreground,
+                  ),
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: foreground),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final hidden =
         _state.matchedWordIds.contains(tile.wordId) ||
         repair == PairRepairStatus.waiting ||

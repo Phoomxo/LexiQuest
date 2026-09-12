@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'learning_feedback_theme.dart';
 
 /// Centralized Material 3 Design System and Theme configuration for LexiQuest.
 class M3Theme {
@@ -8,6 +9,8 @@ class M3Theme {
   static const Color accentIndigo = Color(0xFF3F51B5);
   static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color cardSurface = Colors.white;
+  static const pairFeedbackHold = Duration(milliseconds: 450);
+  static const pairFeedbackFade = Duration(milliseconds: 150);
 
   /// Font family for proper Thai rendering across all screens.
   static const String thaiFontFamily = 'NotoSansThai';
@@ -72,6 +75,7 @@ class M3Theme {
         brightness: Brightness.light,
       ),
       scaffoldBackgroundColor: backgroundLight,
+      extensions: const [LearningFeedbackTheme.light],
       visualDensity: VisualDensity.standard,
       fontFamily: thaiFontFamily,
     );
@@ -117,6 +121,7 @@ class M3Theme {
   static ThemeData get darkTheme {
     final base = ThemeData(
       useMaterial3: true,
+      extensions: const [LearningFeedbackTheme.dark],
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryBlue,
         brightness: Brightness.dark,

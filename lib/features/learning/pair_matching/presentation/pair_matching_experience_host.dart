@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../../config/m3_theme.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -34,6 +35,7 @@ import '../domain/pair_matching_history_projection.dart';
 import '../domain/pair_matching_launch.dart';
 import '../domain/pair_matching_session_purpose.dart';
 import 'pair_board_view.dart';
+import 'pair_feedback_episode.dart';
 import 'pair_matching_result_view.dart';
 
 /// Explicit internal composition; no production navigation or default gate is
@@ -834,6 +836,42 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   Future<void>? _initialization;
   StreamSubscription<Object?>? _ownerSubscription;
   Timer? _displayTick;
+  final Map<String, PairFeedbackEpisode> _feedbackEpisodes = {};
+  final List<Timer> _feedbackTimers = [];
+
+  void _clearFeedback() {
+    for (final timer in _feedbackTimers) {
+      timer.cancel();
+    }
+    _feedbackTimers.clear();
+    _feedbackEpisodes.clear();
+  }
+
+  void _presentAccepted(PairMatchingState before, PairMatchingState after) {
+    if (!mounted || MediaQuery.of(context).disableAnimations) return;
+    for (final episode in PairFeedbackEpisode.accepted(before, after)) {
+      _feedbackEpisodes[episode.wordId] = episode;
+      bool current() =>
+          mounted &&
+          _liveOwner == after.plan.ownerId &&
+          _feedbackEpisodes[episode.wordId]?.identity == episode.identity;
+      _feedbackTimers.add(
+        Timer(M3Theme.pairFeedbackHold, () {
+          if (current()) {
+            setState(() => _feedbackEpisodes[episode.wordId] = episode.fade());
+          }
+        }),
+      );
+      _feedbackTimers.add(
+        Timer(M3Theme.pairFeedbackHold + M3Theme.pairFeedbackFade, () {
+          if (current()) {
+            setState(() => _feedbackEpisodes.remove(episode.wordId));
+          }
+        }),
+      );
+    }
+  }
+
   String? _liveOwner;
   bool _ownerInvalidated = false;
   bool _busy = true,
@@ -846,6 +884,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   bool _attached = false;
   int? _responseStart;
   PairMatchingHistoryProjection? _result;
+  bool _summaryScheduled = false;
   PairPauseLease? _coverPause;
   PairPauseLease? _narrationPause;
   bool _routeWantsInteraction = true;
@@ -863,6 +902,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   Future<void> _checkOwner() async {
     final owner = await widget.runtime.requireOwner();
     if (_ownerInvalidated || owner != widget.runtimeOwnerId) {
+      _clearFeedback();
       _liveOwner = null;
       _ownerInvalidated = true;
       widget.onOwnerInvalidated?.call();
@@ -903,7 +943,10 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
               _ownerInvalidated =
                   _ownerInvalidated || owner != widget.runtimeOwnerId;
               _liveOwner = _ownerInvalidated ? null : owner;
-              if (_liveOwner == null) widget.onOwnerInvalidated?.call();
+              if (_liveOwner == null) {
+                _clearFeedback();
+                widget.onOwnerInvalidated?.call();
+              }
               if (mounted) setState(() => _error = _liveOwner == null);
             }
           });
@@ -1023,8 +1066,10 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   Future<void> _run(
     Future<void> Function() action, {
     bool recoveringNarration = false,
+    bool resultAction = false,
   }) async {
     if (_busy ||
+        (_result != null && !resultAction) ||
         _coordinator == null ||
         (_narrationPause != null && !recoveringNarration)) {
       return;
@@ -1035,8 +1080,11 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     });
     try {
       await _checkOwner();
+      final before = _coordinator!.state;
       await action();
-      if (_coordinator!.state.complete) await _finish();
+      await _checkOwner();
+      _presentAccepted(before, _coordinator!.state);
+      if (_coordinator!.state.complete && _result == null) await _finish();
       _responseStart = _coordinator!.timer.interactiveElapsedMs;
     } catch (_) {
       if (mounted) setState(() => _error = true);
@@ -1121,10 +1169,6 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     }
     if (!mounted) return;
     setState(() => _result = PairMatchingHistoryProjection(snapshot));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _result == null) return;
-      unawaited(_acknowledgeResult());
-    });
   }
 
   Future<void> _endAtConfigurationLimit() async {
@@ -1164,9 +1208,6 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       setState(() {
         _result = PairMatchingHistoryProjection(snapshot);
         _error = false;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _result != null) unawaited(_acknowledgeResult());
       });
     }
   }
@@ -1297,7 +1338,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
           ? <ReviewQueueItem>[]
           : await _coordinator!.deferredReview(adapter);
       if (mounted) widget.onReview?.call(rows);
-    });
+    }, resultAction: true);
   }
 
   Future<void> _pronounce(PairTile tile) async {
@@ -1388,6 +1429,7 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
   @override
   void dispose() {
     _displayTick?.cancel();
+    _clearFeedback();
     _unavailableSession?.dispose();
     final handoff = _lifecycle?.detachPairPresentation();
     if (handoff == null) {
@@ -1528,7 +1570,17 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       );
     }
     final result = _result;
-    if (result != null) {
+    if (result != null &&
+        (_feedbackEpisodes.isEmpty ||
+            MediaQuery.of(context).disableAnimations)) {
+      if (!_summaryScheduled) {
+        _summaryScheduled = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _result != null && _liveOwner != null) {
+            unawaited(_acknowledgeResult());
+          }
+        });
+      }
       return Scaffold(
         key: const ValueKey('pair-result'),
         appBar: AppBar(title: Text(copy('จับคู่ครบแล้ว', 'Matching complete'))),
@@ -1567,9 +1619,12 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
     final status = c.hostStatus;
     final model = PairBoardModel(
       state: c.state,
+      feedbackEpisodes: Map.unmodifiable(_feedbackEpisodes),
       timer: timer,
       busy:
           _busy ||
+          _result != null ||
+          c.state.complete ||
           _narrationPause != null ||
           !status.canDispatch ||
           timer.mode == PairTimerMode.timeoutDecision,

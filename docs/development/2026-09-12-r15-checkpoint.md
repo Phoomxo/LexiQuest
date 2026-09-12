@@ -1,78 +1,46 @@
-# R15 execution checkpoint
+# R15 active checkpoint
 
-Worktree: `C:/Users/Phet/.codex/worktrees/fff3/LexiQuest`
-Branch: `feature/r15-autonomous-fff3`
-Approved baseline: `8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac`.
-Initial task checkout was clean/detached at `7b8ac6cc`; created this task-owned
-branch at the approved baseline without modifying another worktree.
+## Instruction and source
+User approved efficient continuous solo development through R15.10. No routine
+restart prompts, subagents, background writers, paid services, push or deploy.
+Use r15-package-workflow.md; read only the active package.
 
-## R15.0 reconciliation
+- Worktree: C:/Users/Phet/.codex/worktrees/fff3/LexiQuest
+- Branch: feature/r15-autonomous-fff3. Resolve its current committed SHA.
+- R15.0/1 baseline: 3e586dc24d34ca5103b4f3090a70bf26ad8e5916.
+- Context workflow commit: d84ed535. This checkpoint accompanies R15.2 source.
+  Successor must start from final committed source, not the default branch.
+  No task-owned test/build process remains. Other worktrees untouched.
 
-Imported exactly the five approved R15 source documents; SHA-256 matches the
-originals in 4366 (originals retained). Inventory of every worktree, branch,
-HEAD and changed path is in `2026-09-12-r15-worktree-inventory.json`.
+## Current package
+R15.2 local implementation: correct/support feedback, 450ms hold +150ms fade,
+operation identity, cancellation, durable finalization before animation, immediate
+reduced-motion result, focused heading and post-render presentation receipt.
+Review next works. No learning/reward schema or authority changes.
+Evidence: [R15.2 verification](2026-09-12-r15-pair-verification.md).
 
-Disposition:
-- 02fa / 4366: same approved implementation, already incorporated. The five
-  untracked documents from 4366 are now incorporated byte-for-byte.
-- complete-field-trial-release navigation delta: overlapping older shell and
-  FieldFeatureRegistry; current source has its successor registries and Today
-  replay. Do not merge its 158 insertions/75 deletions into the newer shell.
-- adventure-motivation-plan sync/generated database: no textual sync entity
-  delta in current diff; generated/history branch material is not an R15 fix.
-- e559 and release worktrees: platform/plugin generation is unrelated to the
-  current local package, not imported. Main checkout documents/auth image,
-  f00a release inputs/configuration, pr3 OSV material are unrelated, not imported.
-- Clean historical worktrees: retained as historical branches, no inferred
-  integration from names or commit recency.
-- Useful unique tooling: `verify-scope.ps1` exists at initial checkout commit
-  7b8ac6cc but is absent from approved Prototype 3. Imported only that runner,
-  adding explicit validated test paths and broad shared-input fingerprints for
-  the feature architecture. No backend/release suite was invoked.
+88 selected checks passed before final heading change. Affected host/result run:
+48 passed, one new overlap fixture failed because it waited for animations.
+Corrected rapid-input fixture: both final cases passed. Bounded analysis and
+runner contract passed. Counts overlap; reuse unchanged evidence, do not sum.
 
-Prototype 3's unchecked commit/push checkbox is historical: 8c160f87 exists;
-remote state was not fetched or verified. Historical 826/891 results do not
-count as verification here. Competitor observations/limitations are preserved
-in the imported source register and manifest; no competitor assets ship.
+## Next work
+Continue R15.3 then remaining packages in dependency order. Read only the roadmap
+entry and matching spec/acceptance sections. R15.3–10 are outstanding.
+At combined UI source freeze, build once and test authorized Vivo. Local tests
+do not establish physical TalkBack/device acceptance. Record missing cases.
 
-## R15.1 actual baseline defect and verification
+## Device and boundaries
+Vivo 9582188822004C6, V2041/API33, com.lexiquest.app debug v23. Only read-only
+inventory performed; preserve app identity/data. Emulator emulator-5554.
+Serialize Flutter tests/build/codegen. Preserve catalog 8/44, frozen
+EvidenceContext/EventEnvelopeV2, owner isolation and optional/default-off
+research. No real enrollment/uploads, paid services, deployment, push or merge.
 
-Requirements: DATA-03/04/05, SYS-01/02; targeted navigation/history, owner deletion,
-profile semantics and file-backed lost-ack recovery. Existing replay integration
-is retained, not reimplemented. No schema/interface/authority change.
-
-RED: initial five-suite run: 70 passed, 4 failed. Failure was
-`ContentQualityFailure(invalidByteLength)` before packaged replay admission.
-Windows `core.autocrlf=true` converted signed/pinned JSON LF into CRLF:
-starter-book was 235 bytes instead of 234; SHA was dbc11652..., expected a92b4c2e....
-Fix: `.gitattributes` pins content JSON to LF; 25 checked-out JSON files restored
-to LF and individually verified byte-identical to their HEAD Git blobs. Content
-validators, manifests and historical data remain unchanged.
-
-GREEN: `./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -Resume
--TestTargets @('test/screens/main_navigation_screen_test.dart',
-'test/screens/learning_history_screen_test.dart',
-'test/features/progress/personal_learning_profile_test.dart',
-'test/scenarios/file_backed_sync_recovery_test.dart',
-'test/features/account/local_data_deletion_test.dart')`
-returned exit 0, 74 tests passed, Flutter reported 24 seconds (runner 30 seconds).
-Source HEAD above; input fingerprint
-`f2335e636377327fee4533d4c31c73c060b022981b46b7d5aee89c6029f1e094`.
-Logs: `build/verification/8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac/`:
-`r15-baseline-red.stdout.log`, `r15-baseline-red.stderr.log`,
-`Explicit-Flutter-tests.stdout.log`, `targeted-learning.json`.
-Runner contract RED rejected old target selection; GREEN validates exact targets,
-shared asset/source fingerprint boundary and missing-target rejection.
-`git diff --check` passed. Generated platform files have line-ending-only status
-churn and are excluded from commits. No UI changed, so no new visual claim.
-
-## Queue and external acceptance
-
-R15.0/1 baseline/reconciliation accepted at the bounded scope above. Next is
-R15.2 Pair feedback (A-PAIR-01–09), followed by R15.3–10 in order; these are NOT
-complete. Later package-specific acceptance supplements this baseline.
-External-not-run: live AI teaching quality, physical camera scenes/resources,
-human speech/TalkBack/usability and two-device live sync. Real research enrollment,
-upload, deployment, paid calls, push and merge remain off. No task-owned process
-remains after the baseline command. Rollback: revert the package commit; no data
-migration or user-data repair is required.
+## Read on demand
+- ../superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md
+- ../superpowers/specs/2026-09-12-r15-engineering-spec.md
+- ../superpowers/plans/2026-09-12-r15-acceptance-contract.md
+- 2026-09-12-r15-execution-history.md
+- lexiquest-guardrails-reference.md
+Do not preload the whole reference set or repeat the worktree inventory.

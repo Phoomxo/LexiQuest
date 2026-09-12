@@ -389,6 +389,195 @@ PairMatchingExperienceRuntime _runtime(
 }
 
 void main() {
+  for (final interruption in ['dispose', 'owner']) {
+    testWidgets(
+      'R15 feedback rejects duplicate input and cleans up on $interruption',
+      (tester) async {
+        final h = PairHarness();
+        addTearDown(h.db.close);
+        await h.initialize();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: PairMatchingExperienceHost.recover(
+              runtime: _runtime(h),
+              operation: h.operation,
+              onExit: () {},
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('pair-tile:prompt:synthetic-0')),
+        );
+        await tester.pumpAndSettle();
+        final target = find.byKey(
+          const ValueKey('pair-tile:target:synthetic-0'),
+        );
+        await tester.ensureVisible(target);
+        final stalePress = tester.widget<OutlinedButton>(target).onPressed!;
+        await tester.tap(target);
+        for (
+          var tick = 0;
+          tick < 30 && find.text('Correct').evaluate().isEmpty;
+          tick++
+        ) {
+          await tester.pump(const Duration(milliseconds: 1));
+        }
+        expect(find.text('Correct'), findsNWidgets(2));
+        stalePress();
+        await tester.pump(const Duration(milliseconds: 1));
+        if (interruption == 'dispose') {
+          await tester.pumpWidget(const SizedBox.shrink());
+        } else {
+          await h.db.customStatement('UPDATE local_owners SET is_active = 0');
+          await tester.pumpAndSettle();
+        }
+        await tester.pump(const Duration(milliseconds: 650));
+        expect(find.text('Correct'), findsNothing);
+        expect((await h.db.select(h.db.answerAttempts).get()), hasLength(1));
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+  for (final reduced in [false, true]) {
+    testWidgets(
+      'R15 final pair is durable before presentation reduced=$reduced',
+      (tester) async {
+        final h = PairHarness();
+        addTearDown(h.db.close);
+        await h.initialize();
+        final runtime = _runtime(h);
+        Widget app() => MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
+            child: child!,
+          ),
+          home: PairMatchingExperienceHost.recover(
+            runtime: runtime,
+            operation: h.operation,
+            onExit: () {},
+          ),
+        );
+        await tester.pumpWidget(app());
+        await tester.pumpAndSettle();
+        Future<void> waitForInput(Finder tile) async {
+          for (var tick = 0; tick < 40; tick++) {
+            await tester.pump(const Duration(milliseconds: 1));
+            if (tester.widget<OutlinedButton>(tile).onPressed != null) return;
+          }
+          fail('Pair input did not become available within the bounded wait');
+        }
+        for (var i = 0; i < 4; i++) {
+          final prompt = find.byKey(ValueKey('pair-tile:prompt:synthetic-$i'));
+          await waitForInput(prompt);
+          await tester.ensureVisible(prompt);
+          await tester.tap(prompt);
+          final target = find.byKey(ValueKey('pair-tile:target:synthetic-$i'));
+          await waitForInput(target);
+          await tester.ensureVisible(target);
+          await tester.tap(target);
+          if (i == 3) {
+            for (var tick = 0; tick < 40; tick++) {
+              await tester.pump(const Duration(milliseconds: 1));
+              final saved = await h.real.read(
+                ownerId: h.owner,
+                sessionId: h.operation.plan.learningSessionId,
+              );
+              if (saved.snapshot?.terminal?.acknowledged == true) break;
+            }
+          }
+        }
+        final durable = await h.real.read(
+          ownerId: h.owner,
+          sessionId: h.operation.plan.learningSessionId,
+        );
+        expect(durable.snapshot!.terminal!.acknowledged, true);
+        expect(durable.snapshot!.evidenceIds, hasLength(4));
+        await tester.pump(const Duration(milliseconds: 1));
+        if (!reduced) {
+          expect(find.byKey(const ValueKey('pair-result')), findsNothing);
+          expect(
+            durable.snapshot!.terminal!.presented,
+            false,
+            reason:
+                'the summary is not presented while final feedback is visible',
+          );
+          expect(
+            find.byKey(const ValueKey('pair-feedback:prompt:synthetic-3')),
+            findsOneWidget,
+          );
+          expect(
+            find.text('Correct').evaluate().length,
+            greaterThanOrEqualTo(4),
+            reason: 'overlapping pairs keep separate feedback episodes',
+          );
+          await tester.pump(const Duration(milliseconds: 600));
+        }
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
+        expect(
+          FocusManager.instance.primaryFocus?.debugLabel,
+          'pair-result-heading',
+        );
+        final attempts = (await h.db.select(h.db.answerAttempts).get()).length;
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await tester.pumpWidget(app());
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
+        expect(find.text('Correct'), findsNothing);
+        expect((await h.db.select(h.db.answerAttempts).get()).length, attempts);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+  testWidgets('R15 accepted pair remains readable before its slots disappear', (
+    tester,
+  ) async {
+    final h = PairHarness();
+    addTearDown(h.db.close);
+    await h.initialize();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PairMatchingExperienceHost.recover(
+          runtime: _runtime(h),
+          operation: h.operation,
+          onExit: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('pair-tile:prompt:synthetic-0')),
+    );
+    await tester.pumpAndSettle();
+    final target = find.byKey(const ValueKey('pair-tile:target:synthetic-0'));
+    await tester.ensureVisible(target);
+    await tester.tap(target);
+    for (var i = 0; i < 30 && find.text('Correct').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+    expect(find.text('Correct'), findsNWidgets(2));
+    final saved = await h.real.loadExactActivityRecovery(
+      ownerId: h.owner,
+      sessionId: h.operation.plan.learningSessionId,
+      activityType: 'matching',
+    );
+    expect(saved!.attempts.length, 1);
+    await tester.pump(const Duration(milliseconds: 449));
+    expect(find.text('Correct'), findsNWidgets(2));
+    await tester.pump(const Duration(milliseconds: 151));
+    expect(find.text('Correct'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('pair-placeholder:prompt:synthetic-0')),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
   test(
     'Pair composition rejects a different learning authority before use',
     () async {
@@ -1164,7 +1353,13 @@ void main() {
         sessionId: h.operation.plan.learningSessionId,
       );
       expect(finished.snapshot!.timer!.interactiveElapsedMs, 2000);
-      expect(finished.snapshot!.terminal!.presented, true);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      final presented = await h.real.read(
+        ownerId: h.owner,
+        sessionId: h.operation.plan.learningSessionId,
+      );
+      expect(presented.snapshot!.terminal!.presented, true);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
     },
@@ -1403,12 +1598,17 @@ void main() {
         answerCount + 1,
       );
       await pair(3, 3);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
       final answersBeforeReview = await h.db.select(h.db.answerAttempts).get();
       final eventsBeforeReview = await h.db.select(h.db.eventsV2).get();
       await tester.ensureVisible(find.text('Review next'));
       await tester.tap(find.text('Review next'));
       await tester.pumpAndSettle();
+      for (var i = 0; i < 30 && handedOff == null; i++) {
+        await tester.pump(const Duration(milliseconds: 10));
+      }
       expect(handedOff, isNotEmpty);
       expect(
         handedOff!.every((item) => item.identity.id == 'synthetic-0'),
@@ -1771,6 +1971,8 @@ void main() {
         if (capCase.finish) {
           repository.release!.complete();
           await tester.pumpAndSettle();
+          await tester.pump(const Duration(milliseconds: 600));
+          await tester.pumpAndSettle();
           expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
           final result = await h.real.read(
             ownerId: h.owner,
@@ -2046,6 +2248,8 @@ void main() {
           );
           await tester.pumpAndSettle();
         }
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
         final finished = await h.real.read(
           ownerId: h.owner,
@@ -2242,6 +2446,8 @@ void main() {
         await tester.tap(find.byKey(ValueKey('pair-tile:target:synthetic-$i')));
         await tester.pumpAndSettle();
       }
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('pair-result')), findsOneWidget);
       final result = await h.real.read(
         ownerId: h.owner,
