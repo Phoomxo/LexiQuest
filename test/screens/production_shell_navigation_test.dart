@@ -256,8 +256,8 @@ void main() {
 
     expect(destinations.map((destination) => destination.label), <String>[
       'เรียน',
-      'คลังคำศัพท์',
-      'ความชำนาญ',
+      'คำศัพท์',
+      'ความก้าวหน้า',
       'รางวัล',
       'โปรไฟล์',
     ]);
@@ -313,7 +313,7 @@ void main() {
     await _pumpHome(tester, ready: false);
     await _openDrawer(tester);
 
-    expect(find.text('คลังคำศัพท์'), findsWidgets);
+    expect(find.text('คำศัพท์'), findsWidgets);
     expect(find.text('ร้านค้า'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -338,7 +338,7 @@ void main() {
 
     final vocabularyTile = find.descendant(
       of: find.byType(Drawer),
-      matching: find.widgetWithText(ListTile, 'คลังคำศัพท์'),
+      matching: find.widgetWithText(ListTile, 'คำศัพท์'),
     );
     await tester.scrollUntilVisible(
       vocabularyTile,

@@ -1538,16 +1538,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                ),
-                child: Text(
-                  'LexiQuest',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontSize: 22,
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'เมนู',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'ปิดเมนู',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
                 ),
               ),
               _drawerSection('กิจกรรมและการเรียน'),

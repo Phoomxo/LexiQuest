@@ -36,7 +36,7 @@ void main() {
     );
     expect(
       NavigationGlossary.require('home/learn/srs').fullThaiLabel,
-      'ทบทวนแบบเว้นระยะ (SRS)',
+      'ทบทวนคำศัพท์',
     );
     expect(
       NavigationGlossary.require('home/learn/reading/cefr').fullThaiLabel,
@@ -55,15 +55,8 @@ const _approvedLatinFields = <(String, String), String>{
   ('drawer/ai-tutor/settings', 'semanticsLabel'): 'เปิดตั้งค่าการเชื่อมต่อ AI',
   ('erase-local-data', 'tooltip'):
       'ลบคำศัพท์ ประวัติการเรียน ความยินยอม และกุญแจ AI ที่บันทึกในเครื่อง',
-  ('home/learn/srs', 'fullThaiLabel'): 'ทบทวนแบบเว้นระยะ (SRS)',
-  ('home/learn/srs', 'shortThaiLabel'): 'ทบทวน (SRS)',
-  ('home/learn/srs', 'semanticsLabel'): 'เปิดทบทวนแบบเว้นระยะ SRS',
   ('home/learn/reading/cefr', 'fullThaiLabel'): 'อ่านตามระดับภาษา CEFR',
   ('home/learn/reading/cefr', 'shortThaiLabel'): 'อ่าน CEFR',
   ('home/learn/reading/cefr', 'semanticsLabel'): 'เปิดอ่านตามระดับภาษา CEFR',
   ('home/learn/reading/cefr', 'tooltip'): 'อ่านบทความตามระดับภาษา CEFR',
-  ('profile/srs', 'fullThaiLabel'): 'ทบทวนแบบเว้นระยะ (SRS)',
-  ('profile/srs', 'shortThaiLabel'): 'ทบทวน (SRS)',
-  ('profile/srs', 'semanticsLabel'): 'สถานะการทบทวนแบบเว้นระยะ SRS',
-  ('profile/srs', 'tooltip'): 'สถานะการทบทวนแบบเว้นระยะ SRS',
 };

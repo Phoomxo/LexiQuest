@@ -533,10 +533,10 @@ void main() {
         ),
       ),
     );
-    final tile = tester.widget<ListTile>(
+    final tile = tester.widget<InkWell>(
       find.descendant(
         of: find.byKey(const ValueKey<String>('home/learn/quiz')),
-        matching: find.byType(ListTile),
+        matching: find.byType(InkWell),
       ),
     );
     final retainedOpen = tile.onTap!;
@@ -622,7 +622,7 @@ void main() {
         ),
         (
           'home/learn/srs',
-          'ทบทวนแบบเว้นระยะ (SRS)',
+          'ทบทวนคำศัพท์',
           Icons.event_repeat_outlined,
         ),
         (
@@ -644,7 +644,7 @@ void main() {
         ('home/learn/speech/speaking', 'ฝึกออกเสียง', Icons.mic_outlined),
         (
           'home/learn/speech/shadowing',
-          'ฝึกพูดตามเสียง',
+          'ฝึกพูดตาม',
           Icons.record_voice_over_outlined,
         ),
       ];
@@ -685,7 +685,7 @@ void main() {
       expect(
         find.descendant(
           of: entry,
-          matching: find.bySemanticsLabel('เปิดทบทวนแบบเว้นระยะ SRS'),
+          matching: find.bySemanticsLabel('เปิดทบทวนคำศัพท์'),
         ),
         findsOneWidget,
       );

@@ -2192,7 +2192,7 @@ void main() {
               find.byType(NavigationDestination),
             )
             .map((destination) => destination.label),
-        <String>['เรียน', 'คลังคำศัพท์', 'ความชำนาญ', 'รางวัล', 'โปรไฟล์'],
+        <String>['เรียน', 'คำศัพท์', 'ความก้าวหน้า', 'รางวัล', 'โปรไฟล์'],
       );
 
       await tester.tap(find.byKey(const ValueKey('home/mastery')));
@@ -2330,7 +2330,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('ร้านค้า'), findsOneWidget);
       expect(find.text('สแกนวัตถุ'), findsOneWidget);
-      expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
+      expect(find.text('ฝึกพูดตาม'), findsOneWidget);
       expect(find.text('ผู้ช่วยสอน AI'), findsOneWidget);
       expect(find.text('ตั้งค่าการเชื่อมต่อ AI'), findsOneWidget);
 

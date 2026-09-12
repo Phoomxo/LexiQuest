@@ -133,13 +133,13 @@ void main() {
         findsNothing,
       );
       await tester.scrollUntilVisible(
-        find.text('ทบทวนแบบเว้นระยะ (SRS)'),
+        find.text('ทบทวนคำศัพท์'),
         -200,
         scrollable: scrollable,
       );
       await tester.pump();
       expect(
-        find.bySemanticsLabel('ทบทวนแบบเว้นระยะ (SRS): พร้อมใช้งาน'),
+        find.bySemanticsLabel('ทบทวนคำศัพท์: พร้อมใช้งาน'),
         findsOneWidget,
       );
       await tester.scrollUntilVisible(

@@ -86,12 +86,14 @@ class M3Theme {
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: base.colorScheme.outlineVariant),
+          side: BorderSide(
+            color: base.colorScheme.outlineVariant.withValues(alpha: 0.45),
+          ),
         ),
         color: cardSurface,
       ),
       appBarTheme: AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -132,11 +134,13 @@ class M3Theme {
         margin: const EdgeInsets.only(bottom: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: base.colorScheme.outlineVariant),
+          side: BorderSide(
+            color: base.colorScheme.outlineVariant.withValues(alpha: 0.45),
+          ),
         ),
       ),
       appBarTheme: AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
         titleTextStyle: _learnerTextTheme(base.textTheme).titleLarge,
       ),

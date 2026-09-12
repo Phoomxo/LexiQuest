@@ -373,7 +373,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('เรียน')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
           for (final card in widget.leadingCards)
             _supplementaryCard(context, card),
@@ -413,7 +413,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             Semantics(
               header: true,
               child: Text(
-                'แผนและรายการของฉัน',
+                'วันนี้และแผนเรียน',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
@@ -422,21 +422,10 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
               _supplementaryCard(context, card),
             const SizedBox(height: 12),
           ],
-          Semantics(
-            header: true,
-            child: Text(
-              'เลือกฝึกเอง',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'เลือกตามสิ่งที่อยากฝึก แต่ละกิจกรรมใช้คำศัพท์และความก้าวหน้าที่มีอยู่',
-          ),
           for (final group in visibleGroups) ...[
             Padding(
               padding: EdgeInsets.only(
-                top: group == visibleGroups.first ? 24 : 12,
+                top: group == visibleGroups.first ? 8 : 24,
                 bottom: 12,
               ),
               child: Semantics(
@@ -447,9 +436,13 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                 ),
               ),
             ),
-            for (final id in group.value)
-              for (final tile in tiles)
-                if (tile.glossary.id == id) tile,
+            _LearningChoiceGrid(
+              tiles: [
+                for (final id in group.value)
+                  for (final tile in tiles)
+                    if (tile.glossary.id == id) tile,
+              ],
+            ),
           ],
           if (tiles.isEmpty)
             const Padding(
@@ -1068,6 +1061,49 @@ class _NativeVocabularyModeLoaderState
   }
 }
 
+class _LearningChoiceGrid extends StatelessWidget {
+  const _LearningChoiceGrid({required this.tiles});
+
+  final List<_LearningTile> tiles;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columns =
+          constraints.maxWidth >= 320 &&
+              MediaQuery.textScalerOf(context).scale(16) <= 20.8
+          ? 2
+          : 1;
+      return Column(
+        children: [
+          for (var index = 0; index < tiles.length; index += columns)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: index + columns < tiles.length ? 12 : 0,
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: tiles[index]),
+                    if (columns == 2) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: index + 1 < tiles.length
+                            ? tiles[index + 1]
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
 class _LearningTile extends StatelessWidget {
   const _LearningTile({super.key, required this.glossary, required this.onTap});
 
@@ -1077,11 +1113,15 @@ class _LearningTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.zero,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        side: BorderSide(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
       ),
       child: Tooltip(
         message: glossary.tooltip,
@@ -1090,22 +1130,46 @@ class _LearningTile extends StatelessWidget {
           label: glossary.semanticsLabel,
           onTap: onTap,
           excludeSemantics: true,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            leading: Icon(glossary.icon),
-            title: Text(
-              glossary.shortThaiLabel,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Text(
-              _modeDescription(glossary.id),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            trailing: const Icon(Icons.chevron_right),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
             onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      glossary.icon,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    glossary.shortThaiLabel,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _modeDescription(glossary.id),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -1114,13 +1178,13 @@ class _LearningTile extends StatelessWidget {
 }
 
 String _modeDescription(String id) => switch (id) {
-  'home/learn/quiz' => 'เลือกความหมายของคำศัพท์ แล้วดูคำตอบที่ถูกต้อง',
-  'home/learn/quiz/typed-recall' => 'นึกคำศัพท์แล้วพิมพ์คำตอบด้วยตัวเอง',
-  'home/learn/quiz/matching' => 'จับคู่คำศัพท์กับความหมายให้ตรงกัน',
-  'home/learn/quiz/definition' => 'อ่านคำนิยามแล้วเลือกคำศัพท์ที่ตรงกัน',
-  'home/learn/srs' => 'พลิกบัตรคำและทบทวนคำศัพท์แบบเว้นระยะ',
+  'home/learn/quiz' => 'เลือกความหมายที่ถูกต้อง',
+  'home/learn/quiz/typed-recall' => 'นึกคำแล้วพิมพ์คำตอบ',
+  'home/learn/quiz/matching' => 'จับคู่คำกับความหมาย',
+  'home/learn/quiz/definition' => 'เลือกคำให้ตรงคำอธิบาย',
+  'home/learn/srs' => 'ทบทวนคำที่เคยเรียน',
   'home/learn/quiz/word-scramble' => 'เรียงตัวอักษรให้เป็นคำศัพท์',
-  'home/learn/associative-reading' => 'อ่านเนื้อหาและเชื่อมคำศัพท์กับความหมาย',
+  'home/learn/associative-reading' => 'อ่านแล้วฝึกคำศัพท์',
   'home/learn/quiz/cloze' => 'เลือกคำเติมช่องว่างให้ประโยคสมบูรณ์',
   'home/learn/reading/cefr' => 'ฝึกอ่านเนื้อหาตามระดับภาษา',
   'home/learn/quiz/sentence-scramble' => 'เรียงคำให้เป็นประโยคที่ถูกต้อง',
