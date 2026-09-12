@@ -1,0 +1,306 @@
+[
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest",
+    "head": "f43aa0fff2155ca29d6a26f2695191dd44a2d6d1",
+    "branch": "feature/associative-reading-loop",
+    "changes": [
+      " M AGENTS.md",
+      " M docs/field/2026-08-05-v12-verification-attempt.md",
+      "?? .superpowers/",
+      "?? docs/field/2026-08-06-v12-gms-recovery-auth-verified.md",
+      "?? docs/field/2026-08-09-beta-readiness.md",
+      "?? docs/field/2026-08-09-release-candidate-13.md",
+      "?? docs/integration/",
+      "?? lexiquest_auth.png",
+      "?? \"\\340\\270\\232\\340\\270\\227\\340\\270\\227\\340\\270\\265\\340\\271\\2102_\\340\\271\\202\\340\\270\\204\\340\\270\\243\\340\\270\\207\\340\\270\\252\\340\\270\\243\\340\\271\\211\\340\\270\\262\\340\\270\\207\\340\\270\\233\\340\\270\\243\\340\\270\\261\\340\\270\\232\\340\\270\\233\\340\\270\\243\\340\\270\\270\\340\\270\\207.md\""
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/02fa/LexiQuest",
+    "head": "8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac",
+    "branch": "prototype-3-minimal-ui",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/4366/LexiQuest",
+    "head": "8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac",
+    "branch": null,
+    "changes": [
+      "?? docs/superpowers/plans/2026-09-12-r15-acceptance-contract.md",
+      "?? docs/superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md",
+      "?? docs/superpowers/specs/2026-09-12-r15-engineering-spec.md",
+      "?? docs/superpowers/specs/2026-09-12-r15-evidence-manifest.json",
+      "?? docs/superpowers/specs/2026-09-12-r15-source-register.md"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/9819/LexiQuest",
+    "head": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+    "branch": null,
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/e559/LexiQuest",
+    "head": "99f7fb2159749522cac29ae3180dbf7c428b4732",
+    "branch": null,
+    "changes": [
+      " M ios/Flutter/Debug.xcconfig",
+      " M ios/Flutter/Release.xcconfig",
+      " M ios/Runner.xcworkspace/contents.xcworkspacedata",
+      " M ios/Runner/AppDelegate.swift",
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake",
+      "?? ios/Podfile",
+      "?? ios/Podfile.lock"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/f00a/LexiQuest",
+    "head": "7b250d3d45979eeb67a5ab21db2891b033d01e7d",
+    "branch": "feature/production-readiness-integration",
+    "changes": [
+      " M docs/security/supabase-access-inventory.md",
+      " M supabase/config.toml",
+      "?? tool/cli/config/release-source-scope.json",
+      "?? tool/cli/lib/local-release-input.cjs",
+      "?? tool/cli/new-local-release-input.cjs",
+      "?? tool/cli/tests/local-release-input.test.cjs"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/fd36/LexiQuest",
+    "head": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+    "branch": null,
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/fff3/LexiQuest",
+    "head": "8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac",
+    "branch": "feature/r15-autonomous-fff3",
+    "changes": [
+      "?? docs/superpowers/plans/2026-09-12-r15-acceptance-contract.md",
+      "?? docs/superpowers/plans/2026-09-12-r15-autonomous-development-roadmap.md",
+      "?? docs/superpowers/specs/2026-09-12-r15-engineering-spec.md",
+      "?? docs/superpowers/specs/2026-09-12-r15-evidence-manifest.json",
+      "?? docs/superpowers/specs/2026-09-12-r15-source-register.md",
+      "?? tool/cli/tests/r15-scope.tests.ps1",
+      "?? tool/cli/verify-scope.ps1"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/adventure-motivation-plan",
+    "head": "6968ce97ff9b383e244b17b77cf0ed0f61eaaf3d",
+    "branch": "feature/adventure-motivation-plan",
+    "changes": [
+      " M AGENTS.md",
+      " M lib/features/sync/domain/sync_entity.dart",
+      " M lib/learning/storage/learning_database.g.dart"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/complete-field-trial-release",
+    "head": "b7412475c209452cc28c54b30b0fa7dbcc9291ea",
+    "branch": "codex/complete-field-trial-release",
+    "changes": [
+      " M lib/runtime/app_dependencies.dart",
+      " M lib/screens/main_navigation_screen.dart",
+      " M test/screens/main_navigation_screen_test.dart",
+      " M test/screens/production_shell_navigation_test.dart",
+      "?? lib/runtime/field_feature.dart",
+      "?? lib/runtime/field_feature_registry.dart",
+      "?? test/runtime/field_feature_registry_test.dart"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/feature-omnivoice-backend-poc",
+    "head": "ccf323cedfcb3ae333268d0a714026dc3e14c016",
+    "branch": "feature/omnivoice-backend-poc",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/p0-integration",
+    "head": "c0fd714ccebfea66e85add11127fe740bc9182bf",
+    "branch": "feature/alltcas-8-44-integration",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/p8-security-reliability",
+    "head": "e5624457410c659aa0057e515ba2f0ac336160f7",
+    "branch": "codex/p8-security-reliability",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/p8a-voice-architecture",
+    "head": "91f52aaf13dcf08a7adeda39e8edffc8cf73a5ca",
+    "branch": "feature/p8a-voice-architecture",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/pr3-osv-remediation",
+    "head": "f66d0316daff57c83ed972a11f6425cb326f482a",
+    "branch": "feature/production-vertical-slices",
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M osv-scanner.toml",
+      " M tool/cli/tests/osv-config.tests.ps1",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/production-system-v2-release-a",
+    "head": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+    "branch": "main",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/production-system-v2-stage0",
+    "head": "eeb29a81bf230f288ec3d9c4a3876c143faf556e",
+    "branch": "feature/production-system-v2-stage0",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-economy-gate",
+    "head": "212764410714e590b296aa1f8d63e28a77bb4af2",
+    "branch": "feature/release-a-economy-gate",
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-economy-lockdown",
+    "head": "b73f206b94b217101836007d92e8444faa3e69da",
+    "branch": "feature/release-a-economy-lockdown",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-final-scan",
+    "head": "7d681498113d3819493c3a02968ebacc41944c75",
+    "branch": "feature/release-a-final-scan",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-final-verify",
+    "head": "7d681498113d3819493c3a02968ebacc41944c75",
+    "branch": "feature/release-a-final-verify",
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-integrity-gate",
+    "head": "7d681498113d3819493c3a02968ebacc41944c75",
+    "branch": "feature/release-a-integrity-gate",
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-rc-verify",
+    "head": "2276dcb4fc528550d47f50caf10eabf9ffba79a8",
+    "branch": "feature/release-a-rc-verify",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-research-integrity",
+    "head": "6919657073fb70e145a28f6711060feed55c0b3f",
+    "branch": "feature/release-a-research-integrity",
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-verify-mobile",
+    "head": "57e12ca940c88cb64fb2843f6ba60fa85d9e1675",
+    "branch": null,
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-verify-mobile-b73f206",
+    "head": "b73f206b94b217101836007d92e8444faa3e69da",
+    "branch": null,
+    "changes": [
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-verify-security",
+    "head": "57e12ca940c88cb64fb2843f6ba60fa85d9e1675",
+    "branch": null,
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-a-verify-security-b73f206",
+    "head": "b73f206b94b217101836007d92e8444faa3e69da",
+    "branch": null,
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/release-v0.1-complete-system",
+    "head": "b37966857fd2d2056f7ea282db0277504256b824",
+    "branch": "release/v0.1-complete-system",
+    "changes": []
+  },
+  {
+    "path": "C:/Users/Phet/Documents/LexiQuest/.worktrees/research",
+    "head": "b9184e8a89e686169c17928f0ec95deab48054dd",
+    "branch": "feature/adventure-research",
+    "changes": [
+      " M lib/learning/storage/learning_database.g.dart",
+      " M linux/flutter/generated_plugin_registrant.cc",
+      " M linux/flutter/generated_plugin_registrant.h",
+      " M linux/flutter/generated_plugins.cmake",
+      " M macos/Flutter/GeneratedPluginRegistrant.swift",
+      " M windows/flutter/generated_plugin_registrant.cc",
+      " M windows/flutter/generated_plugin_registrant.h",
+      " M windows/flutter/generated_plugins.cmake"
+    ]
+  }
+]

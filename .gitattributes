@@ -1,0 +1,2 @@
+# Content manifests pin exact UTF-8 bytes and SHA-256, including line endings.
+assets/content/**/*.json text eol=lf
