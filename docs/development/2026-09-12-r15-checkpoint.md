@@ -1,62 +1,60 @@
 # R15 active checkpoint
 
-## Instruction and source
-R15.10 is the terminal approved package. Solo local work completed; no R15.11,
-successor task, source import, subagent, background writer, push or merge.
+## Latest instruction and source
+User authorized fixing the remaining quiz header0% after R15.10 completion.
+Bounded solo follow-up in the same worktree; no R15.11/successor task invented.
 Worktree:C:/Users/Phet/.codex/worktrees/842c/LexiQuest
 Branch:feature/r15-integration-continuation
-Starting HEAD:d076b48baf546ab5dc6840337207050b37e786f2 (accepted R15.0–9).
-This checkpoint accompanies the R15.10 local acceptance commit; resolve HEAD.
-No task-owned test/build/analyzer/device-driver process remains.
+Starting HEAD:29b9b8dece78a89fb738b156f0a8f0a126073139 (accepted R15.10 local).
+This checkpoint accompanies the accepted header fix; resolve current HEAD.
+No task-owned test/build/analyzer/device-driver operation remains.
 
-## Accepted local scope
-Shadowing speech failures now cancel/fence late results before evidence writes,
-permit retry, retain readable reference guidance and use the VOICE-01 label.
-No new storage/interface/migration/learning/reward/research authority.
-74distincttests/8targets:34voice +35unchanged sync/research retained +2visual
-+3nativeadapter. Analyzer11files clean. Four real-font images reviewed at390light
-and320dark200%, reduced motion. Native timeout mapping fixture verified.
-Evidence:2026-09-13-r15-integration-verification.md.
-All earlier accepted evidence remains retained, not rerun or relabeled as fresh.
+## Current outcome
+Header0% defect resolved. QuizScreen reflects unique acknowledged native answers
+into existing shell/controller progress. Skip/failed ACK does not advance it;
+retry advances once without another durable answer. Current session/status/count
+guards reject stale, regressing, duplicate and oversized display updates.
+Meaning and typed-input widget cases verified. No new persistent authority,
+storage/migration/research/reward write or classifier change.
+153distinctcases/2targets:128lifecycle retained from interrupted combined run,
+24Quiz retained +1finaltyped case. Failed/aborted commands are not labeled PASS.
+Analyzer5files clean; final changed test separately clean.
+Evidence:2026-09-13-quiz-header-verification.md (commands, recovery, all limits).
 
 ## Frozen artifact
-Manifest:build/verification/r15-integration/source-freeze.json (740files).
-SHA256:383b2381ea8450a12f5b4f4afdcb46036e79746ff6e135490b606bcd30478e16.
-Debug build155.33s passed; native model runtime/signature/32asset checks passed.
+Source742files:build/verification/quiz-header/source-freeze.json
+SHA256:0659310d93909dad8d98fa4c3e1ac5a21f8de4732ae48b8ef4cf440252ad740c.
+Final verify-scope fingerprint:
+f4a342ba0bbf585d0dd042b09a265a7f742db9563393c44026648cbfb49e09fb.
+Build92.76s passed; native runtime/signature/32bundled asset checks passed.
 APK:build/app/outputs/flutter-apk/app-debug.apk
-SHA256:baa175c9b3f864663c90d37d4d7c89a50fc31264d566b3d527ec43acc3bec4cf.
-Production entry, versionCode23, cloud sync false, learning preview true,
-loopback AI/voice endpoints, research bootstrap-default-off. No live API call.
-Two edited prior Dart files normalized LF; review --ignore-space-at-eol.
-Build/source hashes account for normalization; no later runtime source change.
+SHA256:2293fcdf6cad30729d20b6898dca05cc4ccfaaefb72f1123e259705e2bfda1ba.
+Production entry + approved learning preview, versionCode23, cloud sync false,
+research bootstrap-default-off, loopback AI/voice endpoints. No live calls.
+No runtime/test source writers during build/device checks.
 
-## Authorized device result
-Vivo9582188822004C6 V2041/API33 com.lexiquest.app debugv23 installed with -r.
-Signing identity preserved; old APK available at r15-integration/vivo-before.apk.
-Guest + decline participation -> completed synthetic10/10 -> force-stop/relaunch
--> Dashboard10/10. Both SQLite integrity checks ok;16table row hashes unchanged.
-Research measurement/permit/proof/assignment rows0; existing decline state is
-withdrawn.27ordinary outbox entries, all attempt counters0; no research types.
-Manual harness store is separate from production; its post-install/restart hashes
-match. Initial preflight hash changed after opening the old harness, so not used
-as an unchanged-across-install proof. Retained device model d3949e8a...b7d8b.
-Screenshots/logs/local synthetic SQLite snapshots remain untracked in build/.
+## Authorized Vivo result
+Serial9582188822004C6 V2041/API33 com.lexiquest.app debugv23 installed with -r;
+same signing identity, no clear-data/uninstall. Old APK:quiz-header/before.apk.
+All16checked table hashes unchanged across install. Completed10new synthetic
+answers; outer header reported10%,20%,...100%. Reviewed actual10/70/100% images.
+Historical10answer rows and1session unchanged. After restart Dashboard20/20;
+all16table hashes unchanged across restart, SQLite integrity ok.
+Research measurement/response/permit/proof/assignment rows0. Existing declined
+consent retained. Logs/screenshots/local synthetic DB snapshots stay in build/.
 
-## Limits and next step
-Approved local queue is finished; do not invent a successor package.
-Unresolved outside permitted voice/sync expansion: native quiz outer shell says0%
-while inner quiz shows7/10 (quiz-07-question.xml). Durable results/persistence pass.
-Do not claim all combined UI acceptance; observation is recorded for future scope.
-Emulator restart, human audio/TalkBack, physical camera accuracy, fresh qualifying
-model evaluation, two-device live sync, C-AI-Q live quality and release gates
-remain not-run/external. No training/exportcandidate or changed classifier.
-Keep8/44, EvidenceContext/EventEnvelopeV2, canonical authorities, owner isolation,
-historical truth and research optional/default-off. No enrollment/upload/paid
-services/deployment/destructive cleanup/security workers. Platform registrant
-EOL-only changes stay outside the commit. Token/credit usage unavailable.
+## Boundaries and next step
+The requested concrete header fix is complete. No further package starts here.
+Retain R15.0–10 evidence and frozen8/44, EvidenceContext/EventEnvelopeV2,
+canonical learning/reward authorities, historical truth and owner isolation.
+Human audio/TalkBack, physical camera accuracy, live tutor/two-device sync,
+emulator restart and full release acceptance remain not-run/external.
+No enrollment/upload, paid services, model training/exportcandidate,
+push/merge/deployment, destructive cleanup, subagents or security workers.
+Generated platform registrant EOL-only changes stay outside the commit.
+Actual model token/credit usage unavailable.
 
 ## Read on demand
-- 2026-09-13-r15-integration-verification.md (complete case ledger and commands)
-- 2026-09-13-r15-ai-tutor-verification.md (retained R15.9)
+- 2026-09-13-quiz-header-verification.md (latest fix)
+- 2026-09-13-r15-integration-verification.md (historical R15.10;0% observation now resolved)
 - r15-package-workflow.md / lexiquest-guardrails-reference.md
-- ../superpowers/plans/2026-09-12-r15-acceptance-contract.md (A-SYS)

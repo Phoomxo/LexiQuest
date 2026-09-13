@@ -93,6 +93,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<QuizSession>? _load;
   QuizSession? _session;
   MeaningQuizReviewController? _meaningReview;
+  final Set<int> _committedQuestionIndices = <int>{};
   TypedRecallQuizReviewController? _typedReview;
   bool _completionCommitted = false;
   bool _loadSettled = false;
@@ -397,7 +398,16 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _onReviewChanged() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    final session = _session;
+    if (session != null && _reviewPhase == MeaningQuizReviewPhase.answered) {
+      _committedQuestionIndices.add(_reviewIndex);
+      _lessonLifecycle?.reflectNativeCommittedResponses(
+        sessionId: session.id,
+        count: _committedQuestionIndices.length,
+      );
+    }
+    setState(() {});
   }
 
   MeaningQuizQuestion get _currentQuestion =>

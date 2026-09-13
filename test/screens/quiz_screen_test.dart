@@ -14,6 +14,8 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
+import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
@@ -91,6 +93,127 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  for (final typed in [false, true]) {
+    testWidgets('native header counts commits, not skips (typed=$typed)', (
+      tester,
+    ) async {
+      await tester.runAsync(() async {
+        final ownerId = (await owners.getOrCreateActiveOwner()).id;
+        for (final word in [
+          ('word-2', 'airport', 'สนามบิน'),
+          ('word-3', 'hotel', 'โรงแรม'),
+          ('word-4', 'market', 'ตลาด'),
+        ]) {
+          await _insertWord(
+            database,
+            ownerId: ownerId,
+            id: word.$1,
+            spelling: word.$2,
+            meaning: word.$3,
+          );
+        }
+      });
+      final controller = UnifiedLessonController(
+        learning: learning,
+        adapter: typed
+            ? const TypedRecallModeAdapter()
+            : const MeaningQuizModeAdapter(),
+      );
+      addTearDown(controller.dispose);
+      final semantics = tester.ensureSemantics();
+      try {
+        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: controller,
+              builder: (_) => typed
+                  ? QuizScreen.typedRecall(
+                      categoryId: 'category-1',
+                      learning: learning,
+                      evidenceAdapter: evidence,
+                      allowSkip: true,
+                    )
+                  : QuizScreen(
+                      categoryId: 'category-1',
+                      learning: learning,
+                      evidenceAdapter: evidence,
+                      allowSkip: true,
+                    ),
+            ),
+          ),
+        );
+        final skip = find.byKey(const ValueKey('meaning-quiz-skip'));
+        await _pumpUntilFound(tester, skip);
+        await tester.ensureVisible(skip);
+        await tester.tap(skip);
+        final next = find.byKey(const ValueKey('meaning-quiz-next'));
+        await _pumpUntilFound(tester, next);
+        await tester.ensureVisible(next);
+        await tester.tap(next);
+        await _pumpUntilFound(tester, skip);
+        expect(controller.state.committedResponseCount, 0);
+        final option = find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget.key is ValueKey<String> &&
+                  (widget.key! as ValueKey<String>).value.startsWith(
+                    'meaning-quiz-option-',
+                  ),
+            )
+            .first;
+        if (typed) {
+          final input = find.byKey(const ValueKey('typed-recall-input'));
+          await tester.ensureVisible(input);
+          await tester.enterText(input, 'airport');
+          await tester.pump();
+          final submit = find.byKey(const ValueKey('typed-recall-submit'));
+          await tester.ensureVisible(submit);
+          expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+          await tester.tap(submit);
+        } else {
+          await tester.ensureVisible(option);
+          await tester.tap(option);
+        }
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('answer-feedback-panel')),
+        );
+        expect(controller.state.itemCount, 4);
+        expect(controller.state.committedResponseCount, 1);
+        expect(controller.state.progress, .25);
+        expect(
+          find.bySemanticsLabel(
+            'บทเรียน: กำลังเรียน ความคืบหน้า 25 เปอร์เซ็นต์',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        controller.reflectNativeCommittedResponses(
+          sessionId: 'stale-session',
+          count: 4,
+        );
+        for (final count in [0, 1, 5]) {
+          controller.reflectNativeCommittedResponses(
+            sessionId: controller.state.sessionId!,
+            count: count,
+          );
+        }
+        await tester.pump();
+        expect(controller.state.progress, .25);
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
 
   test('adapter pins deterministic bidirectional recognition questions', () {
     const adapter = MeaningQuizModeAdapter();
@@ -1128,16 +1251,24 @@ void main() {
         nowUtc: () => DateTime.utc(2026, 8, 26, 10, 0, retryId),
         buildInfo: const AppBuildInfo(version: 'test', buildId: 'f07-test'),
       );
+      final shellController = UnifiedLessonController(
+        learning: retryLearning,
+        adapter: const MeaningQuizModeAdapter(),
+      );
+      addTearDown(shellController.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
-          home: QuizScreen(
-            categoryId: 'category-1',
-            learning: retryLearning,
-            evidenceAdapter: CurrentActivityEvidenceAdapter(
+          home: UnifiedLessonShell(
+            controller: shellController,
+            builder: (_) => QuizScreen(
+              categoryId: 'category-1',
               learning: retryLearning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: retryLearning,
+              ),
+              modeAdapter: const MeaningQuizModeAdapter(),
             ),
-            modeAdapter: const MeaningQuizModeAdapter(),
           ),
         ),
       );
@@ -1154,6 +1285,11 @@ void main() {
         reason: 'the first write committed before its acknowledgement was lost',
       );
       expect(
+        shellController.state.progress,
+        0,
+        reason: 'unacknowledged evidence must not advance the header',
+      );
+      expect(
         find.byKey(const ValueKey<String>('answer-feedback-panel')),
         findsNothing,
       );
@@ -1167,6 +1303,8 @@ void main() {
       );
 
       expect(repository.commands, hasLength(2));
+      expect(shellController.state.committedResponseCount, 1);
+      expect(shellController.state.progress, 1);
       final first = repository.commands.first;
       final retry = repository.commands.last;
       expect(retry.id, first.id);

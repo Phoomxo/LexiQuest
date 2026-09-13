@@ -222,6 +222,23 @@ final class UnifiedLessonController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// Reflects acknowledged native-mode answers in the shared progress display.
+  /// The native review has already persisted them; this must never write again.
+  void reflectNativeCommittedResponses({
+    required String sessionId,
+    required int count,
+  }) {
+    if (_disposed ||
+        _state.sessionId != sessionId ||
+        (_state.status != LessonSessionStatus.active &&
+            _state.status != LessonSessionStatus.paused) ||
+        count <= _state.committedResponseCount ||
+        count > _state.itemCount) {
+      return;
+    }
+    _setState(_state.copyWith(committedResponseCount: count));
+  }
+
   /// Records a presentation-only skip without creating learning evidence.
   void noteSkippedItem() {
     _requireNotDisposed();

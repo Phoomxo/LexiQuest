@@ -117,6 +117,14 @@ final class UnifiedLessonSessionLifecycle {
 
   void noteSkippedItem() => _controller.noteSkippedItem();
 
+  void reflectNativeCommittedResponses({
+    required String sessionId,
+    required int count,
+  }) => _controller.reflectNativeCommittedResponses(
+    sessionId: sessionId,
+    count: count,
+  );
+
   Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
     final routeLifecycle = _routeLifecycle;
     return routeLifecycle == null
@@ -1542,7 +1550,8 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     }
     final hintState = controller.hintState;
     final completed = controller.state.status == LessonSessionStatus.completed;
-    final terminal = completed || controller.state.status == LessonSessionStatus.abandoned;
+    final terminal =
+        completed || controller.state.status == LessonSessionStatus.abandoned;
     final displayedProgress = completed ? 1.0 : controller.state.progress;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
@@ -1571,9 +1580,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                       LessonSessionStatus.abandoned => 'ยุติกิจกรรมแล้ว',
                     }} ความคืบหน้า '
                     '${(displayedProgress * 100).round()} เปอร์เซ็นต์',
-                child: LinearProgressIndicator(
-                  value: displayedProgress,
-                ),
+                child: LinearProgressIndicator(value: displayedProgress),
               ),
               if (_focusGateEnabled && !terminal)
                 if (controller.focusTimer case final timer?)
