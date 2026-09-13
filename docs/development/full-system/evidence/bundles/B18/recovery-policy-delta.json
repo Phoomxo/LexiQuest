@@ -5,7 +5,8 @@
   "cause": "Reviewer guessed missing source filenames and passed a wildcard as a literal Windows rg path, then incorrectly interpreted the older injected stop-on-repeat guardrail as ending the task despite active schema2 recovery authority.",
   "preservedFailures": [
     "Get-Content lib/features/learning/application/native_language_mode_adapter.dart: path does not exist; actual enumerated path is native_mode_adapters.dart",
-    "rg test/features/learning/*mode*: Windows filename syntax error123; meaning_quiz_screen.dart and cloze_screen.dart guessed paths missing"
+    "rg test/features/learning/*mode*: Windows filename syntax error123; meaning_quiz_screen.dart and cloze_screen.dart guessed paths missing",
+    "Adventure continuation: guessed adventure_fact_readers.dart missing once. Changed to rg --files lib/features/adventure/application -g '*.dart', found adventure_journey_fact_readers.dart, Test-Path then bounded LiteralPath read succeeded; continued same task without source modification"
   ],
   "correction": "Enumerate using rg --files -g patterns in verified existing directories; use actual returned filenames, Test-Path -LiteralPath before uncertain reads and Get-Content -LiteralPath. Change failed diagnostic method and continue; preserve failures and acceptance strength.",
   "activeFilesInspected": {
