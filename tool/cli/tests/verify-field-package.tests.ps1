@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot '../lib/release-profile.ps1')
 
 $script:Passed = 0
 $script:Failed = 0
@@ -94,7 +95,7 @@ try {
         $apkPath,
         [System.Text.Encoding]::UTF8.GetBytes('verified-fixture-apk')
     )
-    $apkSha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash
+    $apkSha256 = (Get-LexiQuestFileHash -LiteralPath $apkPath -Algorithm SHA256).Hash
     $manifest = [ordered]@{
         schemaVersion = 1
         generatedAtUtc = '2026-08-13T00:00:00Z'

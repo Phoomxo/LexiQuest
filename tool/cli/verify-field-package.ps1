@@ -11,6 +11,16 @@ param(
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
+function Get-LexiQuestFileHash {
+    param([string]$LiteralPath, [string]$Algorithm = 'SHA256')
+    if ($Algorithm -ne 'SHA256') { throw 'Only SHA256 is supported.' }
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try { return [pscustomobject]@{ Hash=([BitConverter]::ToString($hasher.ComputeHash($stream))).Replace('-','') } }
+    finally { $hasher.Dispose(); $stream.Dispose() }
+}
+
+
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ([string]::IsNullOrWhiteSpace($RuntimeVerifierPath)) {
     $RuntimeVerifierPath = Join-Path $PSScriptRoot `
@@ -178,7 +188,7 @@ $apkPath = [System.IO.Path]::GetFullPath((Join-Path $resolvedPackage $apkName))
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
     throw "Field-package APK is missing: $apkPath"
 }
-if ((Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash -cne $apkSha256) {
+if ((Get-LexiQuestFileHash -LiteralPath $apkPath -Algorithm SHA256).Hash -cne $apkSha256) {
     throw 'Field-package APK SHA-256 does not match its manifest.'
 }
 

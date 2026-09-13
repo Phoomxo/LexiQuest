@@ -47,6 +47,10 @@ param(
 
     [switch]$LocalLearningPreview,
 
+    [switch]$PreviewBundleOnly,
+
+    [string[]]$CliTestTargets = @(),
+
     [string]$FrozenSha = ''
 )
 
@@ -286,6 +290,23 @@ function Get-VerificationCommands {
         [string]$SelectedArea
     )
 
+    if ((Get-Variable PreviewBundleOnly -ErrorAction SilentlyContinue) -and $PreviewBundleOnly) {
+        if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Integration' -or $TestTargets.Count -or $TestName -or $CliOnly -or $RulesOnly -or $AndroidCompileOnly -or $LocalLearningPreview -or $CliTestTargets.Count) {
+            throw 'PreviewBundleOnly requires Targeted/Integration with no other selection.'
+        }
+        $profile = Get-Content -LiteralPath (Join-Path $scriptDir 'profiles/local-learning-preview.json') -Raw | ConvertFrom-Json
+        if (@($profile.PSObject.Properties).Count -ne 2 -or $profile.LEXIQUEST_LEARNING_PREVIEW -isnot [string] -or $profile.LEXIQUEST_CLOUD_SYNC_ENABLED -isnot [string] -or $profile.LEXIQUEST_LEARNING_PREVIEW -cne 'true' -or $profile.LEXIQUEST_CLOUD_SYNC_ENABLED -cne 'false') { throw 'Invalid canonical local preview profile.' }
+        return @(New-CommandSpec -Name 'Unsigned local preview Flutter bundle' -FilePath 'flutter' -Arguments @('build','bundle','--debug','--no-pub','--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') -SourceArea 'Integration')
+    }
+    if ((Get-Variable CliTestTargets -ErrorAction SilentlyContinue) -and $CliTestTargets.Count) {
+        if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Runtime' -or $TestTargets.Count -or $TestName -or $CliOnly -or $RulesOnly -or $AndroidCompileOnly -or $LocalLearningPreview) { throw 'Explicit CLI tests require Targeted/Runtime with no other selector.' }
+        return @(foreach ($name in ($CliTestTargets | Select-Object -Unique)) {
+            if ($name -notmatch '^[a-zA-Z0-9-]+[.]tests[.]ps1$') { throw 'Invalid CLI test name.' }
+            $path = Join-Path $scriptDir ('tests/' + $name)
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw ('Missing CLI test: ' + $name) }
+            New-CommandSpec -Name $name -FilePath 'powershell' -Arguments @('-NoProfile','-ExecutionPolicy','Bypass','-File',$path) -SourceArea 'Runtime'
+        })
+    }
     if ((Get-Variable LocalLearningPreview -ErrorAction SilentlyContinue) -and $LocalLearningPreview) {
         if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -notin @('Learning','Runtime') -or $TestTargets.Count -eq 0 -or $CliOnly -or $RulesOnly -or $AndroidCompileOnly) {
             throw 'LocalLearningPreview requires targeted explicit Learning/Runtime Flutter tests only.'
@@ -687,6 +708,8 @@ try {
     if ($CliOnly) { $resultPath = Join-Path $resultDirectory 'subsystem-runtime-cli.json' }
     if ($RulesOnly) { $resultPath = Join-Path $resultDirectory 'targeted-economy-rules.json' }
     if ($AndroidCompileOnly) { $resultPath = Join-Path $resultDirectory 'targeted-integration-native.json' }
+    if ($PreviewBundleOnly) { $resultPath = Join-Path $resultDirectory 'targeted-integration-preview-bundle.json' }
+    if ($CliTestTargets.Count) { $resultPath = Join-Path $resultDirectory ('targeted-runtime-cli-' + (Get-Sha256Text ($CliTestTargets -join "`n")) + '.json') }
     if ($TestTargets.Count -gt 0) {
         $targetIdentity = $TestTargets -join "`n"
         if ($TestName) { $targetIdentity += "`nname=" + $TestName }

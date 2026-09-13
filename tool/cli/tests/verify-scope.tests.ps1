@@ -14,6 +14,21 @@ if ((Get-VerificationFileHash -LiteralPath $hashFixture).Hash -ne 'BA7816BF8F01C
 Remove-Item -LiteralPath $hashFixture
 
 $TestTargets = @(); $TestName = ''; $CliOnly = $false
+$RulesOnly = $false; $AndroidCompileOnly = $false; $LocalLearningPreview = $false
+$PreviewBundleOnly = $true; $CliTestTargets = @()
+$bundleSelection = @(Get-VerificationCommands Targeted Integration)
+if ($bundleSelection.Count -ne 1 -or $bundleSelection[0].Arguments -notcontains 'bundle' -or $bundleSelection[0].Arguments -notcontains '--debug' -or $bundleSelection[0].Arguments -notcontains '--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') { throw 'PreviewBundleOnly must build unsigned debug Flutter bundle with canonical flags' }
+foreach ($level in @('Subsystem','Release')) {
+    $rejected = $false
+    try { Get-VerificationCommands $level Integration | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw 'Preview bundle cannot substitute release or subsystem gates' }
+}
+$PreviewBundleOnly = $false
+$CliTestTargets = @('package-field-release.tests.ps1')
+$selectedCli = @(Get-VerificationCommands Targeted Runtime)
+if ($selectedCli.Count -ne 1 -or $selectedCli[0].Arguments[-1] -notlike '*package-field-release.tests.ps1') { throw 'Explicit CLI test selection must be bounded' }
+$CliTestTargets = @()
+
 $RulesOnly = $true
 $rulesSelection = @(Get-VerificationCommands Targeted Economy)
 if ($rulesSelection.Count -ne 1 -or $rulesSelection[0].Name -ne 'Firestore rules tests') { throw 'RulesOnly must isolate the local rules emulator from Flutter/trusted-writer suites' }

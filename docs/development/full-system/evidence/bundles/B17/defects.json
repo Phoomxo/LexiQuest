@@ -44,6 +44,58 @@
       "actual": "Default diff whitespace treats CR as trailing whitespace; JSON text attributes normalize raw copied receipts",
       "cause": "Mixed historical EOL plus Git defaults",
       "fix": "B17 raw receipts JSON/logs binary; diff check cr-at-eol; exact staged byte audit before commit; preserve original source EOL"
+    },
+    {
+      "id": "B17-EOL-03",
+      "status": "closed-local",
+      "actual": "First G7.6 commit followed failed staged-byte check because native Python failure did not terminate PowerShell; changed attributes left cached normalized receipts",
+      "fix": "No acceptance issued until follow-up29ffbe5e restored raw receipts using scoped renormalize and passed exact staged audit; explicit LASTEXITCODE checks added to subsequent command blocks"
+    },
+    {
+      "id": "B17-TOOL-01",
+      "package": "G7.7",
+      "status": "closed-local",
+      "actual": "No bounded unsigned bundle or explicit CLI selection; release hardcoded cloud=true",
+      "red": "G7.7-cli-red-verifier.json and G7.7-profile-missing-red-verifier.json",
+      "fix": "Bounded PreviewBundleOnly/explicit CLI target selectors; exact local profile validation and opt-in packager flag; historical cloud default retained",
+      "retest": [
+        "G7.7-tooling-green-verifier.json",
+        "G7.7-native-config-verifier.json",
+        "G7.7-bundle-verifier.json"
+      ]
+    },
+    {
+      "id": "B17-TOOL-02",
+      "package": "G7.7",
+      "status": "closed-local",
+      "actual": "Get-FileHash missing in child Windows PowerShell",
+      "cause": "Host utility unavailable; same portability issue addressed in B16 verifier",
+      "evidence": "G7.7-profile-red-verifier.json (hash failure; naming retained)",
+      "fix": "Streaming .NET SHA256 helper, standard abc vector; use same supported primitive in standalone package verifier",
+      "retest": "G7.7-native-config-verifier.json"
+    },
+    {
+      "id": "B17-PLAN-01",
+      "package": "G7.7",
+      "status": "closed-local",
+      "actual": "11 architecture failures: generator table49 and historical source/current drift; v26-to-v27 would target nonexistent matrix case",
+      "red": "G7.7-architecture-red-verifier.json",
+      "fix": "Pin current50, map v26 transition to actual B15 physical-schema regression; reject nonexistent matrix cases; run review assertions on current in-memory generator and add immutable whole historical artifact hash/schema26/49 test",
+      "retest": "G7.7-architecture-green-verifier.json",
+      "preserved": "Historical manifest unchanged; formal G8.4 plan not generated"
+    },
+    {
+      "id": "B17-EDIT-01",
+      "status": "closed-no-source-effect",
+      "actual": "Python test-edit syntax failure; byte-edit assertion on LF/CRLF mismatch; glob used as literal path during discovery",
+      "fix": "Stopped each method, inspected exact bytes or used rg --files discovery; applied matching bounded edits; subsequent relevant gates passed",
+      "scope": "No failed test assertions removed"
+    },
+    {
+      "id": "B17-RECEIPT-01",
+      "status": "closed-record-corrected",
+      "actual": "Two profile failure capture labels swapped initially",
+      "fix": "Original receipts/rawlogs preserved with timestamps/fingerprints; G7.7-profile-missing-red is missing helper, G7.7-profile-red is actual hash failure. No false pass."
     }
   ]
 }

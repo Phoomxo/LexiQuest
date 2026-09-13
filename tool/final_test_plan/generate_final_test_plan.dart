@@ -398,8 +398,8 @@ List<String> _readTableInventory(io.Directory root) {
           .map((match) => match.group(1)!)
           .toList(growable: false)
         ..sort();
-  // Schema v26 adds the historical proof mirror; the 8/44 catalog is unchanged.
-  if (tables.length != tables.toSet().length || tables.length != 49) {
+  // Schema v27 adds the preserved legacy learning table; the catalog is unchanged.
+  if (tables.length != tables.toSet().length || tables.length != 50) {
     throw FinalTestPlanContractFailure(
       'Current database table inventory is duplicate or stale: '
       '${tables.length}.',
@@ -597,11 +597,30 @@ List<Map<String, Object>> _buildGates(
   ];
 
   for (var from = 1; from < schemaVersion; from += 1) {
+    if (from == 26) {
+      const legacyMigration = 'test/data/local/legacy_learning_import_test.dart';
+      gates.add(<String, Object>{
+        ..._gate(
+          'migration-v26-to-v27', 'migrationTransition',
+          'flutter test --no-pub $legacyMigration '
+              '--plain-name "B15 schema26 upgrades without changing modern records" --reporter compact',
+          const <String>[legacyMigration, 'docs/database/schema_ledger.md'],
+        ),
+        'transition': 'v26-to-v27',
+        'coverage': 'physicalPreviousSchemaFixture',
+      });
+      continue;
+    }
     final to = from + 1;
     final transition = 'v$from-to-v$to';
     final dedicated = 'test/database/migration_v${from}_to_v${to}_test.dart';
     final hasDedicated = io.File(_join(root.path, dedicated)).existsSync();
     final matrix = 'test/database/migration_v1_to_v22_matrix_test.dart';
+    if (!hasDedicated && !RegExp('sourceVersion: $from,').hasMatch(
+      io.File(_join(root.path, matrix)).readAsStringSync(),
+    )) {
+      throw FinalTestPlanContractFailure('No executable migration fixture for v$from.');
+    }
     final matrixCase =
         'final test plan migration matrix: frozen v$from fixture reaches '
         'current with data intact';

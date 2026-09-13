@@ -5,6 +5,8 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
+import '../../tool/final_test_plan/generate_final_test_plan.dart';
+
 const _expectedBaselineCommit = 'd6be10d2ac6206fb018730449483c33cc4ed04b2';
 
 void main() {
@@ -15,9 +17,22 @@ void main() {
   );
 
   Map<String, Object?> readManifest() {
-    return (jsonDecode(manifestFile.readAsStringSync()) as Map<String, Object?>)
+    // Exercise current generator in memory; keep the historical disk artifact immutable.
+    return (jsonDecode(buildFinalTestPlanArtifacts(
+      repositoryRoot: repositoryRoot,
+      sourceCommit: '0123456789abcdef0123456789abcdef01234567',
+    ).normalizedJson) as Map<String, Object?>)
         .cast<String, Object?>();
   }
+
+  test('historical frozen test plan remains byte-identical and separate from current schema', () {
+    expect(sha256.convert(manifestFile.readAsBytesSync()).toString(),
+      '666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534');
+    final historical = jsonDecode(manifestFile.readAsStringSync()) as Map<String, dynamic>;
+    expect(historical['database']['schemaVersion'], 26);
+    expect(historical['database']['tableCount'], 49);
+    expect(readManifest()['database'], containsPair('schemaVersion', AppDatabase.currentSchemaVersion));
+  });
 
   List<Map<String, Object?>> manifestMaps(
     Map<String, Object?> manifest,
@@ -226,7 +241,13 @@ void main() {
         expect(command, isNot(contains('rg ')));
         expect(command, isNot(contains('grep ')));
         final refs = (gate['sourceRefs']! as List<Object?>).cast<String>();
-        expect(refs.any((path) => path.startsWith('test/database/')), isTrue);
+        if (gate['transition'] == 'v26-to-v27') {
+          expect(refs, contains('test/data/local/legacy_learning_import_test.dart'));
+          expect(command, contains('--plain-name "B15 schema26 upgrades without changing modern records"'));
+          expect(gate['coverage'], 'physicalPreviousSchemaFixture');
+        } else {
+          expect(refs.any((path) => path.startsWith('test/database/')), isTrue);
+        }
         if (refs.contains(
           'test/database/migration_v1_to_v22_matrix_test.dart',
         )) {

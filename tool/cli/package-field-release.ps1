@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
+    [switch]$LocalLearningPreview,
     [string]$OutputPath = 'build/field-release',
     [string]$Version = '1.0.0+1',
     [string]$SigningMetadataPath = (
@@ -12,6 +13,9 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot 'lib/release-profile.ps1')
+$buildProfile = Get-LexiQuestBuildProfile -LocalLearningPreview:$LocalLearningPreview
+$profileArguments = @($buildProfile.Arguments)
 $canonicalOutputRoot = [System.IO.Path]::GetFullPath(
     (Join-Path $repoRoot 'build\field-release')
 ).TrimEnd('\', '/')
@@ -272,7 +276,7 @@ try {
         "--android-project-arg=lexiquestModelSha256=$modelSha256" `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
-        --dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true `
+        @profileArguments `
         "--dart-define=LEXIQUEST_VERSION=$Version" `
         "--dart-define=LEXIQUEST_BUILD_ID=$buildId"
     if ([int]$LASTEXITCODE -ne 0) {
@@ -317,7 +321,7 @@ try {
     if ($certificateSha256 -cne $pinnedCertificateSha256) {
         throw 'The APK signing certificate does not match pinned metadata.'
     }
-    $apkSha256 = (Get-FileHash -LiteralPath $releaseApk -Algorithm SHA256).Hash
+    $apkSha256 = (Get-LexiQuestFileHash -LiteralPath $releaseApk -Algorithm SHA256).Hash
 
     $packageName = Invoke-ApkAnalyzerValue -Analyzer $apkAnalyzer `
         -Verb 'application-id' -ApkPath $releaseApk
@@ -366,6 +370,8 @@ try {
         schemaVersion = 1
         generatedAtUtc = [DateTime]::UtcNow.ToString('o')
         sourceCommit = $sourceCommit
+        buildProfile = $buildProfile
+        installedFlagsVerified = $false
         artifact = [ordered]@{
             apkPath = $releaseApkName
             apkSha256 = $apkSha256

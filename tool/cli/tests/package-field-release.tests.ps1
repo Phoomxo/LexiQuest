@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot '../lib/release-profile.ps1')
 
 $script:Passed = 0
 $script:Failed = 0
@@ -63,6 +64,10 @@ function New-PackagerFixture {
     ) -Destination (Join-Path (Split-Path -Parent $packagerPath) `
         'verify-field-package.ps1')
 
+    New-Item -ItemType Directory -Path (Join-Path $repository 'tool/cli/lib') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $realRepoRoot 'tool/cli/lib/release-profile.ps1') -Destination (Join-Path $repository 'tool/cli/lib/release-profile.ps1')
+    New-Item -ItemType Directory -Path (Join-Path $repository 'tool/cli/profiles') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $realRepoRoot 'tool/cli/profiles/local-learning-preview.json') -Destination (Join-Path $repository 'tool/cli/profiles/local-learning-preview.json')
     Write-Utf8File -Path (Join-Path $repository '.gitignore') -Content @'
 build/
 android/key.properties
@@ -234,6 +239,7 @@ function Invoke-PackagerFixture {
     param(
         [Parameter(Mandatory)][pscustomobject]$Fixture,
         [string]$OutputPath,
+        [switch]$LocalLearningPreview,
         [hashtable]$Environment = @{}
     )
 
@@ -275,6 +281,7 @@ function Invoke-PackagerFixture {
         if (-not [string]::IsNullOrWhiteSpace($OutputPath)) {
             $arguments += @('-OutputPath', $OutputPath)
         }
+        if ($LocalLearningPreview) { $arguments += '-LocalLearningPreview' }
         $arguments += @(
             '-SigningMetadataPath',
             (Join-Path $Fixture.FakeHome `
@@ -410,7 +417,7 @@ try {
         ) 'release manifest records the frozen source commit'
         $apkPath = Join-Path $packageRoot ([string]$manifest.artifact.apkPath)
         Assert-True (
-            (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash -ceq
+            (Get-LexiQuestFileHash -LiteralPath $apkPath -Algorithm SHA256).Hash -ceq
                 [string]$manifest.artifact.apkSha256
         ) 'release manifest APK hash matches the packaged bytes'
     }
@@ -508,6 +515,20 @@ finally {
     if (Test-Path -LiteralPath $fixture.Root -PathType Container) {
         Remove-Item -LiteralPath $fixture.Root -Recurse -Force
     }
+}
+$fixture = New-PackagerFixture -IncludeSigningMetadata
+try {
+    $result = Invoke-PackagerFixture -Fixture $fixture -LocalLearningPreview
+    Assert-True ($result.ExitCode -eq 0) 'preview fixture packages using existing integrity/signing checks'
+    $argsRead = @(Get-Content -LiteralPath $fixture.ArgumentLog)
+    Assert-True ($argsRead -ccontains '--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') 'preview flags use canonical file'
+    Assert-True ($argsRead -cnotcontains '--dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true') 'preview has no conflicting cloud override'
+    $receipt = Get-Content -LiteralPath (Join-Path $fixture.Repository 'build/field-release/release-manifest.json') -Raw | ConvertFrom-Json
+    Assert-True ($receipt.buildProfile.Name -ceq 'local-learning-preview' -and $receipt.buildProfile.Cloud -eq $false -and $receipt.installedFlagsVerified -eq $false) 'receipt records selected profile without inventing installed flag proof'
+} finally {
+    $expected = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+    if (-not ([IO.Path]::GetFullPath($fixture.Root)).StartsWith($expected, [StringComparison]::OrdinalIgnoreCase)) { throw 'Fixture cleanup escaped temp root' }
+    Remove-Item -LiteralPath $fixture.Root -Recurse -Force
 }
 Write-Host (
     'Release packager tests: {0} passed, {1} failed' -f
