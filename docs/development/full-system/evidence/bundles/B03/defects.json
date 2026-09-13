@@ -1,0 +1,32 @@
+{
+  "items": [
+    {
+      "id": "B03-OPS-01",
+      "status": "resolved",
+      "actual": "claim32 rejected because parent advanced revision33",
+      "cause": "concurrent receipt resolution",
+      "fix": "reread revision33/task ID under lock; claim34 succeeded"
+    },
+    {
+      "id": "B03-OPS-02",
+      "status": "resolved",
+      "actual": "rg literal wildcard rejected os123",
+      "fix": "rg --files then exact path; no repeat"
+    },
+    {
+      "id": "B03-OPS-03",
+      "status": "resolved",
+      "actual": "diff --check flags CR",
+      "cause": "preserved mixed baseline EOL",
+      "fix": "core.whitespace=cr-at-eol check; unchanged bytes preserved"
+    },
+    {
+      "id": "B03-OPS-04",
+      "status": "resolved",
+      "actual": "UTF-8 log read failed at BOM FF FE; shell continued and made evidence-only commit652a5f37",
+      "cause": "PowerShell logs UTF-16; missing command failure guards",
+      "fix": "BOM-aware decoder; complete artifacts in subsequent commit before acceptance; use explicit exit guards thereafter",
+      "retest": "all three manifests/logs archived and counts decoded"
+    }
+  ]
+}

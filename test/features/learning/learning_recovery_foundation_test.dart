@@ -646,10 +646,36 @@ BEGIN SELECT RAISE(ABORT, 'synthetic reading terminal failure'); END
           ownerId: owner.id,
         );
         expect(await database.select(database.answerAttempts).get(), isEmpty);
+        const ledgerTables = [
+          'learning_sessions', 'answer_attempts', 'events_v2', 'srs_states',
+          'points_ledger_entries', 'achievement_unlocks', 'outbox_operations',
+        ];
+        final beforePartialWrite = <String, List<Map<String, Object?>>>{};
+        for (final table in ledgerTables) {
+          beforePartialWrite[table] = (await database.customSelect(
+            'SELECT * FROM $table ORDER BY rowid',
+          ).get()).map((row) => row.data).toList();
+        }
+        await database.customStatement("""
+          CREATE TRIGGER b03_abort_answer AFTER INSERT ON answer_attempts
+          BEGIN SELECT RAISE(ABORT, 'B03 injected partial write'); END
+        """);
+        await expectLater(
+          captured.record(),
+          throwsA(predicate((error) =>
+            error.toString().contains('B03 injected partial write'))),
+        );
         await database.close();
         database = null;
 
         database = AppDatabase(NativeDatabase(file));
+        for (final table in ledgerTables) {
+          expect((await database.customSelect(
+            'SELECT * FROM $table ORDER BY rowid',
+          ).get()).map((row) => row.data).toList(), beforePartialWrite[table],
+            reason: '$table must survive rollback and reopen unchanged');
+        }
+        await database.customStatement('DROP TRIGGER b03_abort_answer');
         var reopenedId = 0;
         final reopenedOwners = DriftLocalOwnerRepository(
           database,
