@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/learning_feedback_theme.dart';
 import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_engine.dart';
+import 'package:vocab_learning_app/features/learning/pair_matching/domain/pair_matching_launch.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_board_view.dart';
 import 'package:vocab_learning_app/features/learning/pair_matching/presentation/pair_feedback_episode.dart';
 import 'pair_board_view_test.dart';
@@ -50,86 +51,102 @@ void main() {
       isEmpty,
     );
   });
-  for (final narrow in [false, true]) {
-    for (final kind in ['correct', 'wrong', 'support', 'final']) {
-      testWidgets('synthetic-r15 $kind narrow=$narrow', (tester) async {
-        final size = narrow ? const Size(320, 900) : const Size(390, 900);
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        var before = PairMatchingState.initial(pairBoardTestPlan());
-        if (kind == 'final') {
-          for (final id in ['word:1', 'word:2', 'word:3']) {
-            before = pairBoardMatch(before, id);
+  for (final density in [PairDensity.compact4, PairDensity.standard6]) {
+    for (final width in <double>[320, 390, 840]) {
+      final narrow = width == 320;
+      for (final kind in ['selected', 'correct', 'wrong', 'support', 'final']) {
+        testWidgets('B04 Pair ${density.name} $kind width=$width', (
+          tester,
+        ) async {
+          final size = Size(width, 900);
+          final plan = pairBoardTestPlan(density: density);
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          var before = PairMatchingState.initial(plan);
+          if (kind == 'final') {
+            for (final id in [
+              for (var i = 1; i < density.pairCount; i++) 'word:$i',
+            ]) {
+              before = pairBoardMatch(before, id);
+            }
           }
-        }
-        if (kind == 'support') {
-          before = pairBoardGuidedState(pairBoardTestPlan());
-        }
-        final PairMatchingState after;
-        if (kind == 'wrong') {
-          after = pairBoardWrong(before, 'word:0');
-        } else if (kind == 'support') {
-          final pending = PairMatchingEngine.reduce(
-            before,
-            PairConfirmGuidedMapping(
-              operationId: '${before.operationRevision}:r15-guided',
-              ownerId: before.plan.ownerId,
-              sessionId: before.plan.learningSessionId,
-              roundOrdinal: before.roundOrdinal,
-              expectedRevision: before.operationRevision,
-              wordId: 'word:0',
-              shownSupportRevision: before.supportAtRevision['word:0']!,
-              responseTimeMs: 25,
+          if (kind == 'support') {
+            before = pairBoardGuidedState(plan);
+          }
+          final PairMatchingState after;
+          if (kind == 'selected') {
+            after = pairBoardSelect(before, PairTileSide.prompt, 'word:0');
+          } else if (kind == 'wrong') {
+            after = pairBoardWrong(before, 'word:0');
+          } else if (kind == 'support') {
+            final pending = PairMatchingEngine.reduce(
+              before,
+              PairConfirmGuidedMapping(
+                operationId: '${before.operationRevision}:r15-guided',
+                ownerId: before.plan.ownerId,
+                sessionId: before.plan.learningSessionId,
+                roundOrdinal: before.roundOrdinal,
+                expectedRevision: before.operationRevision,
+                wordId: 'word:0',
+                shownSupportRevision: before.supportAtRevision['word:0']!,
+                responseTimeMs: 25,
+              ),
+            ).state;
+            after = pairBoardAcknowledge(pending);
+          } else {
+            after = pairBoardMatch(before, 'word:0');
+          }
+          final episodes = PairFeedbackEpisode.accepted(before, after);
+          final base = pairBoardTestModel(state: after);
+          await tester.pumpWidget(
+            pairBoardTestApp(
+              model: PairBoardModel(
+                state: after,
+                timer: base.timer,
+                feedbackEpisodes: {for (final e in episodes) e.wordId: e},
+              ),
+              size: size,
+              textScale: narrow ? 2 : 1,
+              themeMode: narrow ? ThemeMode.dark : ThemeMode.light,
             ),
-          ).state;
-          after = pairBoardAcknowledge(pending);
-        } else {
-          after = pairBoardMatch(before, 'word:0');
-        }
-        final episodes = PairFeedbackEpisode.accepted(before, after);
-        final base = pairBoardTestModel(state: after);
-        await tester.pumpWidget(
-          pairBoardTestApp(
-            model: PairBoardModel(
-              state: after,
-              timer: base.timer,
-              feedbackEpisodes: {for (final e in episodes) e.wordId: e},
-            ),
-            size: size,
-            textScale: narrow ? 2 : 1,
-            themeMode: narrow ? ThemeMode.dark : ThemeMode.light,
-          ),
-        );
-        await tester.pump();
-        expect(tester.takeException(), isNull);
-        if (kind != 'wrong') {
-          expect(
-            find.text(kind == 'support' ? 'สำเร็จด้วยตัวช่วย' : 'ถูกต้อง'),
-            findsWidgets,
           );
-          expect(
-            find.byKey(const ValueKey('pair-tile:prompt:word:0')),
-            findsNothing,
+          await tester.pump();
+          expect(tester.takeException(), isNull);
+          if (kind == 'correct' || kind == 'support' || kind == 'final') {
+            expect(
+              find.text(kind == 'support' ? 'สำเร็จด้วยตัวช่วย' : 'ถูกต้อง'),
+              findsWidgets,
+            );
+            expect(
+              find.byKey(const ValueKey('pair-tile:prompt:word:0')),
+              findsNothing,
+            );
+          }
+          if (kind == 'support') expect(find.text('ถูกต้อง'), findsNothing);
+          if (kind == 'selected' || kind == 'wrong') {
+            expect(episodes, isEmpty);
+            expect(find.text('ถูกต้อง'), findsNothing);
+          }
+          if (kind == 'final') expect(after.complete, isTrue);
+          final boundary = tester.renderObject<RenderRepaintBoundary>(
+            find.byKey(pairBoardSurfaceKey),
           );
-        }
-        final boundary = tester.renderObject<RenderRepaintBoundary>(
-          find.byKey(pairBoardSurfaceKey),
-        );
-        await tester.runAsync(() async {
-          final capture = await boundary.toImage();
-          final bytes = await capture.toByteData(
-            format: ui.ImageByteFormat.png,
-          );
-          final file = File(
-            'build/verification/r15-pair-visual/$kind-${narrow ? 'w320-s2-dark' : 'w390-s1-light'}.png',
-          );
-          await file.parent.create(recursive: true);
-          await file.writeAsBytes(bytes!.buffer.asUint8List());
-          capture.dispose();
+          await tester.runAsync(() async {
+            final capture = await boundary.toImage();
+            final bytes = await capture.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            final file = File(
+              'build/verification/r15-pair-visual/B04-${density.name}-$kind-w$width-${narrow ? 's2-dark' : 's1-light'}.png',
+            );
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(bytes!.buffer.asUint8List());
+            capture.dispose();
+          });
         });
-      });
+      }
     }
   }
 }

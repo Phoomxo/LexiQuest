@@ -1,0 +1,25 @@
+{
+  "bundleId": "B04",
+  "status": "accepted-local-automated",
+  "packages": [
+    "G2.1",
+    "G2.2"
+  ],
+  "receipts": [
+    "G2.1-verification.json",
+    "G2.2-verification.json"
+  ],
+  "G21Tests": 203,
+  "G22UniqueTests": 256,
+  "requiredOpenDefects": [],
+  "fullPhaseG2": "pending G2.8/B06",
+  "externalGates": [
+    "Physical device/manual screen-reader acceptance later",
+    "Effective service tier unverified"
+  ],
+  "branch": "lexiquest/b04-shell-pair-matching",
+  "baseSha": "4ba53881ac8871387aa965c0539632ac011f6b67",
+  "actualAcceptedShaLocation": "external handoffs/bundles/B04.json after commit",
+  "branchPolicy": "lexiquest/ only",
+  "speedPolicy": "Astra/medium; required default, effective tier unverified"
+}

@@ -1,0 +1,9 @@
+{
+  "status": "reuse-passed",
+  "receipt": "G2.1-verification.json",
+  "inputDelta": [
+    "test/features/learning/pair_matching/pair_board_view_test.dart",
+    "test/features/learning/pair_matching/r15_pair_feedback_test.dart"
+  ],
+  "basis": "Only Pair test files changed; G2.1 targets do not import them. Production/config/dependency hashes unchanged. No repeat for commit/report."
+}

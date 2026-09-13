@@ -4,5 +4,7 @@
   "red": "43ba24b05c87-0f098fb27c54: 201 passed /1 failed, RenderFlex overflow128",
   "cause": "Standalone bounded parent provides no scrolling for naturally sized pending explanation.",
   "fix": "AnswerFeedbackPanel scrolls when parent height bounded; unbounded shell/content parents keep their own scrolling.",
-  "assertionChange": "Replace exactly1 scroll node with exactly2 (panel+detail), add explicit retry visibility. Existing no-overflow/bottom480 checks retained."
+  "assertionChange": "Replace exactly1 scroll node with exactly2 (panel+detail), add explicit retry visibility. Existing no-overflow/bottom480 checks retained.",
+  "status": "closed",
+  "retest": "G2.1-verification.json"
 }

@@ -1,0 +1,5 @@
+{
+  "error": "Initial summary selector counted full CLI arguments incorrectly and found no result (StopIteration).",
+  "fix": "Select passed result by exact three Dart test targets; input/hash assertions verified.",
+  "testsRerun": false
+}

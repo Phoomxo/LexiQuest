@@ -113,8 +113,9 @@ PairMatchingState pairBoardWrong(PairMatchingState state, String wordId) {
 PairMatchingState pairBoardGuidedState(PairMatchingPlanV1 plan) {
   final ids = plan.orderedLexicalItems.map((item) => item.wordId).toList();
   var state = pairBoardWrong(PairMatchingState.initial(plan), ids[0]);
-  state = pairBoardMatch(state, ids[1]);
-  state = pairBoardMatch(state, ids[2]);
+  for (final id in ids.skip(1).take(ids.length ~/ 2)) {
+    state = pairBoardMatch(state, id);
+  }
   expect(state.repairFor(ids[0])?.status, PairRepairStatus.available);
   state = pairBoardWrong(state, ids[0]);
   expect(state.repairFor(ids[0])?.status, PairRepairStatus.guidedRequired);
