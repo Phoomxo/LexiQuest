@@ -48,6 +48,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     with WidgetsBindingObserver, RouteVoiceSessionMixin<DictationQuizScreen> {
   VoiceUseCases? _voiceProvider;
   bool _initialPlaybackScheduled = false;
+  bool _audioUnavailable = false;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
   bool _supportUsed = false;
@@ -97,7 +98,9 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   }
 
   Future<void> _playAudio({required double speed}) async {
-    if (_interactionLocked || !(_lifecycle?.acceptsOperations ?? true)) {
+    if (_audioUnavailable ||
+        _interactionLocked ||
+        !(_lifecycle?.acceptsOperations ?? true)) {
       return;
     }
     if (speed < 1) _supportUsed = true;
@@ -115,13 +118,20 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
           contentType: 'dictation_quiz',
         ),
       );
-    } catch (e) {
-      debugPrint('Error playing dictation audio: $e');
+    } on Object {
+      if (mounted &&
+          identical(session, routeVoiceSession) &&
+          !_interactionLocked &&
+          (_lifecycle?.acceptsOperations ?? true)) {
+        setState(() => _audioUnavailable = true);
+      }
     }
   }
 
   Future<void> _checkAnswer() async {
-    if (_interactionLocked || !(_lifecycle?.acceptsOperations ?? true)) {
+    if (_audioUnavailable ||
+        _interactionLocked ||
+        !(_lifecycle?.acceptsOperations ?? true)) {
       return;
     }
     final evaluation = _modeAdapter.evaluate(
@@ -256,7 +266,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_voiceProvider == null) {
+    if (_voiceProvider == null || _audioUnavailable) {
       return const MediaDependencyUnavailable(
         reason: MediaDependencyUnavailableReason.voice,
       );

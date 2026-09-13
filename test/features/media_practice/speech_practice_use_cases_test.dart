@@ -6,6 +6,59 @@ import 'package:vocab_learning_app/features/media_practice/domain/media_practice
 
 void main() {
   test(
+    'engine failure retires callbacks and permits a fresh attempt',
+    () async {
+      final gateway = _FinalOnStopSpeechGateway();
+      final session = SpeechPracticeUseCases(gateway).acquireSession();
+      final events = <SpeechRecognitionEvent>[];
+      final failures = <SpeechFailureCode>[];
+      await session.start(
+        locale: 'en-US',
+        onEvent: events.add,
+        onFailure: failures.add,
+        onStatus: (_) {},
+      );
+      gateway.emitFailure(SpeechFailureCode.engine);
+      gateway.emitFinal();
+      expect(events, isEmpty);
+      expect(failures, [SpeechFailureCode.engine]);
+      await session.start(
+        locale: 'en-US',
+        onEvent: events.add,
+        onFailure: failures.add,
+        onStatus: (_) {},
+      );
+      gateway.emitFinal();
+      expect(events, hasLength(1));
+    },
+  );
+
+  test(
+    'failed start retires retained callback and reports a speech failure',
+    () async {
+      final completion = Completer<void>();
+      final gateway = _ControlledSpeechGateway([completion]);
+      final session = SpeechPracticeUseCases(gateway).acquireSession();
+      final events = <SpeechRecognitionEvent>[];
+      final start = session.start(
+        locale: 'en-US',
+        onEvent: events.add,
+        onFailure: (_) {},
+        onStatus: (_) {},
+      );
+      final assertion = expectLater(
+        start,
+        throwsA(isA<SpeechPracticeException>()),
+      );
+      await Future<void>.delayed(Duration.zero);
+      completion.completeError(StateError('native start failed'));
+      await assertion;
+      gateway.emitFinalForStart(0, transcript: 'late');
+      expect(events, isEmpty);
+    },
+  );
+
+  test(
     'starts only after microphone permission and preserves provenance',
     () async {
       final gateway = _FakeSpeechGateway();
@@ -136,7 +189,7 @@ void main() {
         onFailure: (_) {},
         onStatus: (_) {},
       ),
-      throwsStateError,
+      throwsA(isA<SpeechPracticeException>()),
     );
 
     final second = useCases.acquireSession();

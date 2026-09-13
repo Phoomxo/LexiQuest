@@ -378,9 +378,26 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _stopListening() async {
+    final epoch = _listenEpoch;
     _listenPending = false;
-    await _speechSession?.stop();
-    if (mounted) setState(() => _listening = false);
+    try {
+      await _speechSession?.stop();
+    } on Object {
+      if (!_acceptsModeOperations ||
+          epoch != _listenEpoch ||
+          _acceptedFinalEpoch == epoch)
+        return;
+      _listenEpoch += 1;
+      _speechSession?.cancel().ignore();
+      setState(() {
+        _recognitionFailure = SpeechFailureCode.engine;
+        _listening = false;
+      });
+      return;
+    }
+    if (_acceptsModeOperations && epoch == _listenEpoch) {
+      setState(() => _listening = false);
+    }
   }
 
   @override

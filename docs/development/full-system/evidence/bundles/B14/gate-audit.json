@@ -1,0 +1,144 @@
+[
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-03b247e56a48c8ab7dfbadd86e92a4d3c8609488cd796ccd26727359ba276f06.json",
+    "status": "Failed",
+    "fingerprint": "44d4ce314fb4cf1872405400375d383c30ecbf741e2a0ee9c3412cc985429892",
+    "inputCount": 1306,
+    "currentInputMismatches": [
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/19f31b59067f-44d4ce314fb4/Explicit-Flutter-tests.stdout.log",
+        "sha256": "c09aa8758648a762bdc8c092d93a91a96c396f687cb3c5d291b4ccb35fdfa92d",
+        "bytes": 16812
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/19f31b59067f-44d4ce314fb4/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-57cfaecd2b05f33a7f641d72b389ddbf417793214cbf179be865213a04c997e2.json",
+    "status": "Passed",
+    "fingerprint": "f1ce535d95dc8bcb87b625572bbf562ed75410bdc32078773346562b96ced94f",
+    "inputCount": 1306,
+    "currentInputMismatches": [
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/007e8cf0acf8-f1ce535d95dc/Explicit-Flutter-tests.stdout.log",
+        "sha256": "299e2868a7f29f6bd8b7591c1eec823748261d74d0dd4d6ff85e7f34ed57809a",
+        "bytes": 79356
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/007e8cf0acf8-f1ce535d95dc/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-9d6088b31bb751539cec71a9922f144facb8ccb027535e4460e7194dc1cce1f0.json",
+    "status": "Passed",
+    "fingerprint": "56a6c5f2627ae1cc7262d33452b08be0072e0056cf6f09ca76de445167a029e3",
+    "inputCount": 1306,
+    "currentInputMismatches": [],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/32da4eb2ba53-56a6c5f2627a/Explicit-Flutter-tests.stdout.log",
+        "sha256": "2fc7eed27cc40e1593f17535b38d06032c8cb86b2d80007cabcd39d9530cf8d0",
+        "bytes": 20262
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/32da4eb2ba53-56a6c5f2627a/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-9e3cf8f554f23f42788d34bf7d9b7c11ffefe47c220ec769d665569b97c118ca.json",
+    "status": "Failed",
+    "fingerprint": "af79efe56da5f9925d5a9bf588bbb0f8624f48f08f0d5f6c327187f95e96636d",
+    "inputCount": 1306,
+    "currentInputMismatches": [
+      "lib/features/media_practice/application/speech_practice_use_cases.dart",
+      "lib/screens/dictation_quiz_screen.dart",
+      "lib/screens/shadowing_challenge_screen.dart",
+      "lib/screens/speak_to_text_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/speak_to_text_screen_voice_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/8a0337fb8fc8-af79efe56da5/Explicit-Flutter-tests.stdout.log",
+        "sha256": "994bda01f7576cf0dda6e3fc3c9c70fc7d0ed9a13dbe817de35632f6c6297ed7",
+        "bytes": 19908
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/8a0337fb8fc8-af79efe56da5/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-e0b5751f4c5e437224a6f496bb7a7af8f4818af461834c57ddf3bdde8a18482d.json",
+    "status": "Passed",
+    "fingerprint": "64796670d5f9ea20716d192e55ea9fef26f7cd11019a3b288a9eb60bde89e338",
+    "inputCount": 1306,
+    "currentInputMismatches": [
+      "lib/features/media_practice/application/speech_practice_use_cases.dart",
+      "lib/screens/dictation_quiz_screen.dart",
+      "lib/screens/shadowing_challenge_screen.dart",
+      "lib/screens/speak_to_text_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/speak_to_text_screen_voice_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/067b8d687dec-64796670d5f9/Explicit-Flutter-tests.stdout.log",
+        "sha256": "26a88d4a588f7fd95c59f50d31212c64a980df26acdcb58c89af6b9e83390cc5",
+        "bytes": 98652
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/067b8d687dec-64796670d5f9/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/targeted-ai-f5179122bc69dd8474bd971741f9561530aa4f5606089bfb6c56b6071f30054d.json",
+    "status": "Failed",
+    "fingerprint": "6a07417658c7ce7ea247d303339fbb94a17903fd16ca55a6eb376bd3441bfee2",
+    "inputCount": 1306,
+    "currentInputMismatches": [
+      "lib/features/media_practice/application/speech_practice_use_cases.dart",
+      "lib/screens/dictation_quiz_screen.dart",
+      "lib/screens/shadowing_challenge_screen.dart",
+      "lib/screens/speak_to_text_screen.dart",
+      "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/speak_to_text_screen_voice_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/b2ca5005918f-6a07417658c7/Explicit-Flutter-tests.stdout.log",
+        "sha256": "287ecbf077fc82b8ef44c56cadcf0bd5885043faa43b07e04dd919118cf5422f",
+        "bytes": 28628
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/c02b612a9b287b0cbd8aac2a49d00736d3e004c7/b2ca5005918f-6a07417658c7/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  }
+]

@@ -79,10 +79,10 @@ final class SpeechPracticeUseCases {
           final acceptsStopping = session._acceptsStoppingFinal(attempt);
           if (!acceptsCurrent && !acceptsStopping) return;
           session._engaged = false;
-          if (_isTerminalFailure(failure)) {
-            session._stoppingFinalAttempt = null;
-            if (acceptsCurrent) session._attempt += 1;
-          }
+          // Every reported failure offers retry to consumers. No subsequent
+          // result from that attempt may become learning evidence.
+          session._stoppingFinalAttempt = null;
+          if (acceptsCurrent) session._attempt += 1;
           onFailure(failure);
         },
         onStatus: (status) {
@@ -155,7 +155,16 @@ final class SpeechPracticeUseCases {
     return _enqueue<void>(() async {
       // Once accepted, cleanup must drain ahead of any later owner's native
       // operation even if this session is released or superseded in the queue.
-      await gateway.stop();
+      try {
+        await gateway.stop();
+      } on Object {
+        if (session._accepts(attempt)) {
+          session._stoppingFinalAttempt = null;
+          session._attempt += 1;
+          session._engaged = false;
+        }
+        rethrow;
+      }
       if (session._accepts(attempt)) {
         if (session._finalizedAttempt != attempt) {
           session._stoppingFinalAttempt = attempt;
@@ -165,12 +174,6 @@ final class SpeechPracticeUseCases {
       }
     });
   }
-
-  static bool _isTerminalFailure(SpeechFailureCode failure) =>
-      switch (failure) {
-        SpeechFailureCode.engine => false,
-        _ => true,
-      };
 
   Future<void> _cancelSession(SpeechPracticeSession session) {
     if (!_isCurrent(session)) return Future<void>.value();
@@ -301,9 +304,14 @@ final class SpeechPracticeSession {
         onFailure: onFailure,
         onStatus: onStatus,
       );
-    } on Object {
-      if (_accepts(attempt)) _engaged = false;
-      rethrow;
+    } on Object catch (error) {
+      if (_accepts(attempt)) {
+        _engaged = false;
+        _stoppingFinalAttempt = null;
+        _attempt += 1;
+      }
+      if (error is SpeechPracticeException) rethrow;
+      throw const SpeechPracticeException(SpeechFailureCode.engine);
     }
   }
 

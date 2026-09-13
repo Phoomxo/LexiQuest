@@ -220,9 +220,26 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     if (_listening) {
+      final epoch = _listenEpoch;
       _listenPending = false;
-      await _speechSession?.stop();
-      if (mounted) setState(() => _listening = false);
+      try {
+        await _speechSession?.stop();
+      } on Object {
+        if (!_acceptsModeOperations ||
+            epoch != _listenEpoch ||
+            _acceptedFinalEpoch == epoch)
+          return;
+        _listenEpoch += 1;
+        _speechSession?.cancel().ignore();
+        setState(() {
+          _listening = false;
+          _error = _failureText(SpeechFailureCode.engine);
+        });
+        return;
+      }
+      if (_acceptsModeOperations && epoch == _listenEpoch) {
+        setState(() => _listening = false);
+      }
       return;
     }
     final speech = _speech;

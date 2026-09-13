@@ -12,10 +12,12 @@ class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
   final Completer<void> stopEntered = Completer<void>();
   int stopCalls = 0;
+  Object? playbackError;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     spokenRequests.add(request);
+    if (playbackError != null) throw playbackError!;
     return const VoicePlaybackResult(
       requestedEngine: VoiceEngine.omniVoice,
       actualEngine: VoiceEngine.omniVoice,
@@ -32,6 +34,30 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('failed dictation audio offers a text activity without scoring', (
+    tester,
+  ) async {
+    final provider = FakeVoiceProvider()
+      ..playbackError = StateError('device unavailable');
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DictationQuizScreen(targetWord: 'station', voice: voice),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('media-dependency-unavailable')),
+      findsOneWidget,
+    );
+    expect(find.byType(TextField), findsNothing);
+    expect(find.text('ตรวจคำตอบ'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   test('f13 dictation delegates correctness to its typed native adapter', () {
     final source = File(
       'lib/screens/dictation_quiz_screen.dart',

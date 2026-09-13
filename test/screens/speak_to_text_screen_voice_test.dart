@@ -54,6 +54,23 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('failed native stop shows recovery and rejects late evidence', (
+    tester,
+  ) async {
+    final gateway = _ResultLifecycleSpeechGateway(
+      stopError: StateError('native stop'),
+    );
+    final repository = _CountingLearningRepository();
+    await _pumpSpeechResultRegression(tester, gateway, repository);
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    gateway.emit('station', isFinal: true);
+    await tester.pumpAndSettle();
+    expect(repository.commands, isEmpty);
+    expect(find.byKey(const ValueKey('speech-error')), findsOneWidget);
+    expect(find.text(_confirmedSpeechScore), findsNothing);
+  });
   test(
     'f13 speaking delegates evidence capture to its typed native adapter',
     () {
@@ -985,7 +1002,7 @@ void main() {
   );
 
   testWidgets(
-    'speaking result UX: a valid final clears recognition failure and records once',
+    'speaking result UX: only a fresh attempt clears failure and records once',
     (tester) async {
       final gateway = _ResultLifecycleSpeechGateway();
       final repository = _CountingLearningRepository();
@@ -994,6 +1011,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('speech-error')), findsOneWidget);
 
+      gateway.emit('station', isFinal: true);
+      await tester.pumpAndSettle();
+      expect(repository.commands, isEmpty);
+      expect(find.text(_confirmedSpeechScore), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pumpAndSettle();
       gateway.emit('station', isFinal: true);
       await tester.pumpAndSettle();
       gateway.fail(SpeechFailureCode.engine);
@@ -1056,6 +1079,8 @@ void main() {
 
       gateway.fail(SpeechFailureCode.engine);
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pumpAndSettle();
       gateway.emit('station', isFinal: true);
       await tester.pumpAndSettle();
 
@@ -1077,6 +1102,9 @@ void main() {
       final repository = _CountingLearningRepository(failFirstRecord: true);
       await _pumpSpeechResultRegression(tester, gateway, repository);
       gateway.fail(SpeechFailureCode.engine);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pumpAndSettle();
       gateway.emit('station', isFinal: true);
       await tester.pumpAndSettle();
       gateway.fail(SpeechFailureCode.engine);
@@ -1231,7 +1259,9 @@ final class _ResultLifecycleSpeechGateway implements SpeechRecognitionGateway {
   _ResultLifecycleSpeechGateway({
     this.finalOnStop,
     this.delayFinalOnStop = false,
+    this.stopError,
   });
+  final Object? stopError;
   final String? finalOnStop;
   final bool delayFinalOnStop;
   SpeechEventCallback? _onEvent;
@@ -1285,6 +1315,7 @@ final class _ResultLifecycleSpeechGateway implements SpeechRecognitionGateway {
   Future<void> stop() async {
     isListening = false;
     final transcript = finalOnStop;
+    if (stopError != null) throw stopError!;
     if (transcript != null) {
       if (delayFinalOnStop) {
         Future<void>.delayed(
