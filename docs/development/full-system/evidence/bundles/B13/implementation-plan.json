@@ -2,11 +2,63 @@
   "revision": "2026-09-14-camera-training-5",
   "baseSha": "c24ddd04492816f07676daf094fa1297f13078b7",
   "sequence": [
-    {"id":"G6.1","outcome":"Bounded ephemeral context and owner-pinned summary provenance","files":["lib/features/ai_tutor/application/ai_tutor_use_cases.dart","lib/runtime/app_bootstrap.dart","test/features/ai_tutor/ai_tutor_use_cases_test.dart"],"steps":["Reproduce retained session across a context-free request","Reproduce summary loader receiving no pinned owner and missing provenance","Reset context-free session, pass owner to progress.loadForOwner, expose aggregate version/evidence time without identifiers","Verify use cases, all gateway adapters and affected bootstrap integration"],"acceptance":"All gateways share role/order/budget/level/intent contract; no owner history leak or archive; quality and physical claims remain pending"},
-    {"id":"G6.2","outcome":"Cancellation and readable UI","steps":["Read package brief when reached","Inspect screen/transport/coordinator cancellation, late results and Thai plain text against existing tests","Add regressions and repair any actual gaps","Run bounded UI and transport tests; record limitations"]},
-    {"id":"G6.3","outcome":"Provider failures, credentials and exactly-once usage","steps":["Read package brief when reached","Inspect factory/retry/credential/usage finalization and actual tests","Repair demonstrated gaps","Run bounded affected subsystem checks and review all B13 changes","Commit accepted results and durable receipts before one B14 dispatch"]}
+    {
+      "id": "G6.1",
+      "outcome": "Bounded ephemeral context and owner-pinned summary provenance",
+      "files": [
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart"
+      ],
+      "steps": [
+        "Reproduce retained session across a context-free request",
+        "Reproduce summary loader receiving no pinned owner and missing provenance",
+        "Reset context-free session, pass owner to progress.loadForOwner, expose aggregate version/evidence time without identifiers",
+        "Verify use cases, all gateway adapters and affected bootstrap integration"
+      ],
+      "acceptance": "All gateways share role/order/budget/level/intent contract; no owner history leak or archive; quality and physical claims remain pending"
+    },
+    {
+      "id": "G6.2",
+      "outcome": "Cancellation and readable UI",
+      "steps": [
+        "Read package brief when reached",
+        "Inspect screen/transport/coordinator cancellation, late results and Thai plain text against existing tests",
+        "Add regressions and repair any actual gaps",
+        "Run bounded UI and transport tests; record limitations"
+      ],
+      "actualFiles": [
+        "lib/screens/ai_tutor_screen.dart",
+        "test/screens/ai_tutor_screen_test.dart",
+        "lib/features/media_practice/application/speech_practice_use_cases.dart"
+      ],
+      "diagnosis": "Explicit mic cancellation awaits raw gateway error outside try; add scoped UI catch and assert one cancel/stale event fence/draft preservation. Initial regression fixture omitted required locale; corrected fixture without changing acceptance."
+    },
+    {
+      "id": "G6.3",
+      "outcome": "Provider failures, credentials and exactly-once usage",
+      "steps": [
+        "Read package brief when reached",
+        "Inspect factory/retry/credential/usage finalization and actual tests",
+        "Repair demonstrated gaps",
+        "Run bounded affected subsystem checks and review all B13 changes",
+        "Commit accepted results and durable receipts before one B14 dispatch"
+      ]
+    }
   ],
-  "verification":"tool/cli/verify-scope.ps1 Targeted AI with explicit targets; reuse passed unchanged input closure; no full release",
-  "constraints":["One writer, no subagents","lexiquest/ only","Astra medium default requested; effective tier unverified","No deployment, spending or live provider requests","Preserve B12 candidate and baseline pins, FORM02/SQLite/finalflags/physical gates","Recovery schema2; preserve failed logs and repair without weaker acceptance"],
-  "discoveryFailure":{"id":"B13-TOOL-01","cause":"rg Windows wildcard supplied as literal path caused os error123","resolution":"Use rg against existing lib directory and rg --files discovery","sourceChanged":false}
+  "verification": "tool/cli/verify-scope.ps1 Targeted AI with explicit targets; reuse passed unchanged input closure; no full release",
+  "constraints": [
+    "One writer, no subagents",
+    "lexiquest/ only",
+    "Astra medium default requested; effective tier unverified",
+    "No deployment, spending or live provider requests",
+    "Preserve B12 candidate and baseline pins, FORM02/SQLite/finalflags/physical gates",
+    "Recovery schema2; preserve failed logs and repair without weaker acceptance"
+  ],
+  "discoveryFailure": {
+    "id": "B13-TOOL-01",
+    "cause": "rg Windows wildcard supplied as literal path caused os error123",
+    "resolution": "Use rg against existing lib directory and rg --files discovery",
+    "sourceChanged": false
+  }
 }

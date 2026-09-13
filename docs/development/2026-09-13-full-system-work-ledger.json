@@ -1743,7 +1743,7 @@
         "test/features/ai_tutor/ai_gateway_loopback_test.dart"
       ],
       "verificationKind": "targeted",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P6.1"
       ],
@@ -1753,7 +1753,8 @@
       ],
       "displayId": "G6.2",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G6.2.md",
-      "bundleId": "B13"
+      "bundleId": "B13",
+      "evidence": "docs/development/full-system/evidence/bundles/B13/G6.2-acceptance.json"
     },
     {
       "id": "P6.3",

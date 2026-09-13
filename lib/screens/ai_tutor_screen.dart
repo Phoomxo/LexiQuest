@@ -312,8 +312,15 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     final speech = _speechSession;
     if (_isListening) {
       final cancellation = _retireSpeechAttempt();
+      final attempt = _speechAttemptEpoch;
       setState(() {});
-      await cancellation;
+      try {
+        await cancellation;
+      } on Object {
+        if (mounted && attempt == _speechAttemptEpoch) {
+          setState(() => _error = 'หยุดไมโครโฟนไม่สำเร็จ กรุณาลองอีกครั้ง');
+        }
+      }
       return;
     }
     if (speech == null) {

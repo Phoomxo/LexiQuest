@@ -18,6 +18,49 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets('B13 explicit microphone cancel failure preserves draft', (
+    tester,
+  ) async {
+    final gateway = _FakeSpeechGateway(
+      emitResult: false,
+      cancelError: StateError('native cancel failed'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiTutorScreen(
+          aiTutor: _FakeAiTutor(),
+          speechPractice: SpeechPracticeUseCases(gateway),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+    await tester.pumpAndSettle();
+    final lateEvent = gateway.lastEvent!;
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'My draft',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(gateway.cancelCalls, 1);
+    lateEvent(
+      SpeechRecognitionEvent(
+        transcript: 'stale native text',
+        isFinal: true,
+        recognizedAtUtc: DateTime.utc(2026, 9, 14),
+        engine: 'synthetic',
+        locale: 'en-US',
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('My draft'), findsOneWidget);
+    expect(find.text('หยุดไมโครโฟนไม่สำเร็จ กรุณาลองอีกครั้ง'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   for (final reset in [
     'scenario',
     'level',
