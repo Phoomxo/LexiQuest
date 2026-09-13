@@ -3,6 +3,20 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "findings": [
     {
+      "id": "B18-REV03-03",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "relatedFiles": ["lib/features/adventure/presentation/adventure_mixed_review_screen.dart"],
+      "trigger": "Initialize a recovered mixed-review run in closing phase; retrying its exact close or durable acknowledgement fails transiently",
+      "expected": "Retain the exact pending close and expose an actionable completion retry even though no question prompt has been restored",
+      "actual": "_complete sets completionRetryRequired and rethrows, then initialize catch overwrites phase with failed. UI displays a fixed failure message without retry. Merely preserving the retry phase is insufficient because _retryControls is nested inside the nonnull prompt branch and recovered closing run has no prompt",
+      "ownerPackage": "G2.1/G2.2",
+      "proposedRegression": "Real checkpointed recovered closing session with one transient finish or acknowledgement failure: visible retry succeeds using same terminal identity, one canonical completion, and no new answer evidence; test controller phase and widget with null prompt",
+      "fixSha": null,
+      "retest": null
+    },
+    {
       "id": "B18-REV03-02",
       "severity": "P2",
       "status": "open-static-confirmed-runtime-reproduction-pending",

@@ -32310,11 +32310,18 @@
       "lines": 725,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read; truncated combined read repaired with explicit151-610 range. Payload-free bounded reason counters and exact decoder, no identity/story/research retention. Catalog recovery scoped to one pinned identity, deduplicates same-kind work and serializes cross-kind work, max3 transient retries with bounded backoff. Operation deadlines retain underlying manager fence and block new work until settled; disposal signal releases awaiting callers, shared manager remains owned elsewhere, owned manager dispose bounded. Result callback may throw after completed manager work; bootstrap callback contract already read, offline manager draining/oracles pending.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          725
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_entry_use_cases.dart",
@@ -32324,11 +32331,18 @@
       "lines": 252,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Canonical UUID/msUTC requests, product rollout preflight, owner/expiry/protocol-shaped permit determines assigned presentation while learner may choose Standard. Host caches permit/Today per opening and fences owner generation, then verifies snapshot owner. Cached failure concern resolved by TodayExperienceHost refresh creating a new entry host; no extra query on presentation-only switch. Availability captured before preference await relies on downstream live launch gate. Reading research permit seam does not activate assignment/research.",
+      "sourceReadDate": "2026-09-13T22:40:18.716567+00:00",
+      "readRanges": [
+        [
+          1,
+          252
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_journey_fact_readers.dart",
@@ -32366,11 +32380,18 @@
       "lines": 92,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Prepare checks plan/config active owner, canonical session/time, item count and exact core checksums; produces LessonStartCommand. Start verifies controller mode and binds configuration revalidator before attaching session. Submit delegates unchanged to controller; no competing evidence or session database write.",
+      "sourceReadDate": "2026-09-13T22:44:48.745621+00:00",
+      "readRanges": [
+        [
+          1,
+          92
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
@@ -32380,11 +32401,20 @@
       "lines": 901,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV03-03"
+      ],
+      "reviewNotes": "Full file read. Phase changes precede async submit/skip/flashcard/close, host recovery operation owns admitted lifecycle. Each occurrence checkpoint precedes evidence, canonical committed flag/class validated before repair cursor advances; checkpoint-only skipped/exposure stays evidence-free. Recovery restores exact prompt and explicit retry phase, close retained through shell-owned durable checkpoint/finish/acknowledgment. Prompt selection is synchronous before optional completion await, preventing ordinary duplicate next admission. Recovery use-case mutable state is instance-scoped by UI; owner migration and lifetime callers still need review. Feedback publication after cursor acceptance theoretically can throw; actual host/result validation must be checked before promoting a postcommit retry concern.",
+      "sourceReadDate": "2026-09-13T22:45:42.059400+00:00",
+      "readRanges": [
+        [
+          1,
+          901
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_mixed_review_prompt_catalog.dart",
@@ -32394,11 +32424,18 @@
       "lines": 924,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Deep-freezes canonical session, rejects duplicate/noncanonical lexical IDs and stale core/rich metadata, builds supported typed/meaning/cloze/definition/flashcard prompts through existing adapters. Snapshot decoder bounds32 artifacts, definition600scalars,8examples400scalars each and verifies deterministic payload digest; exact core binding on restore. Restored packaged/approved metadata relies on accepted checkpoint provenance, digest is not external authenticity. Live registry delivery type checked at lookup; no evidence writes. Construction assumes bounded canonical session from recovery30-item cap; selected-choice single-option concern inherited from adapters remains contract cross-check.",
+      "sourceReadDate": "2026-09-13T22:45:42.059400+00:00",
+      "readRanges": [
+        [
+          1,
+          924
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_motivation_projection_reader.dart",
@@ -32422,11 +32459,18 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Reads canonical preference and returns Standard on owner mismatch. Writes serialized per owner across shared instance, previous failure does not poison tail; expected owner passed to canonical preferences save and identity-matched cleanup removes tail. No own persistence table.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_reaction_selector.dart",
@@ -32436,11 +32480,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure deterministic selection among closed catalog trigger variants; negative seed/unknown version/empty candidates return null, exact script approval before return. Caller owns committed trigger truthfulness.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_recovery_use_cases.dart",
@@ -32450,11 +32501,18 @@
       "lines": 1587,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read in bounded contiguous ranges. Exact schema v1/v2 checkpoint with bounded content/occurrences, role/mode/evidence identity and explicit non-evidence skip/exposure intent; ambiguous legacy flashcard intent rejected. Starts atomic checkpointed quiz, recovers accepted work even rollout off and presents Standard. Pending checkpoint freezes exact failed write for retry; evidence commit precedes repair-policy acceptance, while next occurrence carries cumulative in-memory progress. Terminal close checkpoint and canonical durable summary authentication precede completion/summary-presented checkpoints. Revision64 reserve3 and original30 bound permit up to60 occurrences. Mutable coordinator assumes serialized controller ownership; cross-check concurrent calls, owner migration and pending-write recovery reset against callers/tests before acceptance. Discovery examines last100 completed sessions, fails closed on corrupt exact history; this is a bounded recovery horizon, not complete history traversal.",
+      "sourceReadDate": "2026-09-13T22:44:48.745621+00:00",
+      "readRanges": [
+        [
+          1,
+          1587
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_repair_policy.dart",
@@ -32464,11 +32522,18 @@
       "lines": 821,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read; truncated combined output repaired by151-640 reread. Typed committed versus non-evidence observations, at most100 decoded tickets with unique content/evidence/contiguous ordinals and exact supportive mode/prompt transitions. In-session repairs require independent incorrect source and3-5 distinct eligible independent intervening originals, otherwise defer to canonical incorrect-evidence Review authority. No duplicate evidence/SRS/reward write; exposure repair may be checkpoint-only, technical outcome leaves ticket, failed/skipped repair defers. isModeEligible and canonical observation truth supplied by controller/bridge; runtime schedule bound relies on bounded source plan.",
+      "sourceReadDate": "2026-09-13T22:40:18.716567+00:00",
+      "readRanges": [
+        [
+          1,
+          821
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_result_next_action_reader.dart",
@@ -32492,11 +32557,18 @@
       "lines": 49,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Feature emergency/hidden/disabled precedes dependencies/catalog readiness; limited/enabled allow read-only host even catalog unavailable, but new missions require available. Accepted-session close always permitted. Gate reports product availability without changing flags.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          49
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/application/adventure_session_composer.dart",
@@ -32506,11 +32578,18 @@
       "lines": 139,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Mission and configuration must match captured Today owner, evaluated mission and compatible mode/count. Every mission content identity resolves exactly once against captured canonical review work and checksum; selected firstN. Domain payload hashes owner/time/mission/content/config/recommendation/catalog/assignment into plan identity. No persistence or live-owner read; entry gate and Learning admission own live validation.",
+      "sourceReadDate": "2026-09-13T22:44:48.745621+00:00",
+      "readRanges": [
+        [
+          1,
+          139
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/data/adventure_catalog_download_adapter.dart",
@@ -32576,11 +32655,18 @@
       "lines": 136,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Closed presentation/destination/availability/fallback enums with strict wire decode, immutable request/permit/decision records. Permit/request constructors do not validate authority; entry resolver owns binding/expiry and no research activation is performed by these records.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          136
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/domain/adventure_journey.dart",
@@ -32604,11 +32690,18 @@
       "lines": 306,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Private immutable reaction construction and closed bilingual catalog support factual correctness/completion without mastery claims. Exact reviewed text/accessibility copy gate rejects arbitrary runtime script; motion/audio assets are predefined and audio null. Skipped copy promises review retention and reward-pending copy promises saved learning, so selector callers must use committed/projection-backed triggers.",
+      "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
+      "readRanges": [
+        [
+          1,
+          306
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/domain/adventure_result.dart",
@@ -32632,11 +32725,18 @@
       "lines": 119,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Immutable pinned content/checksum/configuration and origin record; constructor checks origin planId only. Owner, count, content identity and checksum validity belong to composer/recovery/bridge boundaries. Provenance serialized without separate durable Learning authority.",
+      "sourceReadDate": "2026-09-13T22:44:48.745621+00:00",
+      "readRanges": [
+        [
+          1,
+          119
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/domain/adventure_world_catalog.dart",
@@ -32688,11 +32788,18 @@
       "lines": 814,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Per-route controller wraps UnifiedLesson lifecycle, IME composition suppresses typed submission, exact retry controls and pop locks protect pending writes. Replacement result waits frame and acknowledges presented checkpoint after mount; acknowledgement failure intentionally leaves recovery available. Recovered closing path has null prompt, while retry controls live only in nonnull prompt branch; controller initialize also overwrites transient close retry with failed, recorded B18-REV03-03. Result navigation future unawaited and initial failure only exits; tests needed for recoverability. Flashcard reveal callback remains enabled after answered but controller rejects invalid phase; minor UI state cross-check pending.",
+      "sourceReadDate": "2026-09-13T22:46:21.336959+00:00",
+      "readRanges": [
+        [
+          1,
+          814
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/presentation/adventure_pair_experience.dart",
@@ -32772,11 +32879,18 @@
       "lines": 962,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. New opening rebuilds entry host, shared captured Today snapshot reused across Standard/Adventure switching; refresh and owner/dependency change increment generations. Preference saves serialize latest explicit choice only without active permit, exact owner/run guards and visible retry. Optional research flow is generation/owner-bound, permit/30min post-window timers retired on dispose, actual rendered presentation facts queued with explicit retry; no research task executed. Mission closures carry captured snapshot/liveness until accepted launch. Runtime feature revalidation belongs to entry/mission gates. Async research write protocol and native a11y remain separate review zones.",
+      "sourceReadDate": "2026-09-13T22:40:18.716567+00:00",
+      "readRanges": [
+        [
+          1,
+          962
+        ]
+      ]
     },
     {
       "path": "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
@@ -42388,11 +42502,18 @@
       "lines": 1185,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real in-memory Drift Learning/evidence/session persistence with fake lesson host tests independent3-item spacing then cloze repair, exact evidence retry identity, Standard versus Adventure full frozen JSON parity for typed/meaning/cloze/definition, lease depth, checkpoint-only flashcard, deferred concurrent continuation rejection, recovered flashcard skip and failed skip exact retry. Fake host always accepts, initialize returns session, close has no injected failure and no real shell retirement; no recovered closing failure test, supporting B18-REV03-03 coverage gap. Lexical fixtures use synthetic rich hashes and packaged flags over private seeded core, so parity proves adapter behavior not production content approval. Tests read only, not run in B18.",
+      "sourceReadDate": "2026-09-13T22:46:54.969748+00:00",
+      "readRanges": [
+        [
+          1,
+          1185
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_mixed_review_prompt_catalog_test.dart",
