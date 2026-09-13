@@ -1,0 +1,188 @@
+{
+    "schemaVersion":  1,
+    "registryEntries":  20,
+    "pathValidation":  "Complete; unavailable paths explicitly recorded and rejected by runner",
+    "unavailable":  [
+                        {
+                            "level":  "Targeted",
+                            "area":  "Economy",
+                            "command":  "Trusted writer tests",
+                            "missingPath":  "functions/package.json",
+                            "status":  "Unavailable / NOT RUN",
+                            "owner":  "P7.3"
+                        },
+                        {
+                            "level":  "Targeted",
+                            "area":  "Integration",
+                            "command":  "Android integration static analysis",
+                            "missingPath":  "integration_test\\production_learning_flow_test.dart",
+                            "status":  "Unavailable / NOT RUN",
+                            "owner":  "P7.7/P8.4"
+                        },
+                        {
+                            "level":  "Subsystem",
+                            "area":  "Economy",
+                            "command":  "Trusted writer tests",
+                            "missingPath":  "functions/package.json",
+                            "status":  "Unavailable / NOT RUN",
+                            "owner":  "P7.3"
+                        },
+                        {
+                            "level":  "Subsystem",
+                            "area":  "Integration",
+                            "command":  "Android device end-to-end tests",
+                            "missingPath":  "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-android-e2e.ps1",
+                            "status":  "Unavailable / NOT RUN",
+                            "owner":  "P7.7/P8.4"
+                        }
+                    ],
+    "parameterRejections":  [
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "All"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Targeted and Subsystem verification require a specific area.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:320 char:9\n+         throw \u0027Targeted and Subsystem verification require a specific ...\n+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Targeted and Su... specific area.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Targeted and Subsystem verification require a specific area.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "Runtime",
+                                                      "-CliOnly"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "CliOnly requires Subsystem/Runtime with no Flutter selection.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:274 char:13\n+             throw \u0027CliOnly requires Subsystem/Runtime with no Flutter ...\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (CliOnly require...tter selection.:String) [], RuntimeException\n    + FullyQualifiedErrorId : CliOnly requires Subsystem/Runtime with no Flutter selection.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "Learning",
+                                                      "-TestName",
+                                                      "orphan"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "A test name requires explicit test targets.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:285 char:9\n+         throw \u0027A test name requires explicit test targets.\u0027\n+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (A test name req...t test targets.:String) [], RuntimeException\n    + FullyQualifiedErrorId : A test name requires explicit test targets.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "Learning",
+                                                      "-TestTargets",
+                                                      "test/../pubspec.dart"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Invalid explicit Flutter test target: test/../pubspec.dart\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:294 char:17\n+ ...             throw (\u0027Invalid explicit Flutter test target: \u0027 + $target ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Invalid explici...../pubspec.dart:String) [], RuntimeException\n    + FullyQualifiedErrorId : Invalid explicit Flutter test target: test/../pubspec.dart\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Release",
+                                                      "-Area",
+                                                      "Runtime"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Release verification requires -Area All.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:302 char:13\n+             throw \u0027Release verification requires -Area All.\u0027\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Release verification requires -Area All.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Release verification requires -Area All.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Release",
+                                                      "-Area",
+                                                      "All"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Release requires -FrozenSha \u003cfull current HEAD\u003e and a clean checkout.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:624 char:13\n+             throw \u0027Release requires -FrozenSha \u003cfull current HEAD\u003e an ...\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Release require...clean checkout.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Release requires -FrozenSha \u003cfull current HEAD\u003e and a clean checkout.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Release",
+                                                      "-Area",
+                                                      "All",
+                                                      "-FrozenSha",
+                                                      "0000000000000000000000000000000000000000"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Release requires -FrozenSha \u003cfull current HEAD\u003e and a clean checkout.\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:624 char:13\n+             throw \u0027Release requires -FrozenSha \u003cfull current HEAD\u003e an ...\n+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Release require...clean checkout.:String) [], RuntimeException\n    + FullyQualifiedErrorId : Release requires -FrozenSha \u003cfull current HEAD\u003e and a clean checkout.\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "Economy",
+                                                      "-PlanOnly"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Unavailable command Trusted writer tests: missing functions\\package.json\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:496 char:75\n+ ... pe Leaf)) { throw (\u0027Unavailable command \u0027 + $command.Name + \u0027: missin ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Unavailable com...ns\\package.json:String) [], RuntimeException\n    + FullyQualifiedErrorId : Unavailable command Trusted writer tests: missing functions\\package.json\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Targeted",
+                                                      "-Area",
+                                                      "Integration",
+                                                      "-PlanOnly"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Unavailable command Android integration static analysis: missing integration_test\\production_learning_flow_test.dart\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:504 char:60\n+ ... bsolute)) { throw (\u0027Unavailable command \u0027 + $command.Name + \u0027: missin ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Unavailable com..._flow_test.dart:String) [], RuntimeException\n    + FullyQualifiedErrorId : Unavailable command Android integration static analysis: missing integration_test\\produc \n   tion_learning_flow_test.dart\n "
+                                },
+                                {
+                                    "arguments":  [
+                                                      "-Level",
+                                                      "Subsystem",
+                                                      "-Area",
+                                                      "Integration",
+                                                      "-PlanOnly"
+                                                  ],
+                                    "exitCode":  1,
+                                    "expected":  "Rejected before dispatch",
+                                    "output":  "Unavailable command Android device end-to-end tests: missing \nC:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-android-e2e.ps1\nAt C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify-scope.ps1:504 char:60\n+ ... bsolute)) { throw (\u0027Unavailable command \u0027 + $command.Name + \u0027: missin ...\n+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n    + CategoryInfo          : OperationStopped: (Unavailable com...android-e2e.ps1:String) [], RuntimeException\n    + FullyQualifiedErrorId : Unavailable command Android device end-to-end tests: missing C:\\Users\\Phet\\.codex\\worktr \n   ees\\3fa1\\LexiQuest\\tool\\cli\\verify-android-e2e.ps1\n "
+                                }
+                            ],
+    "releasePlan":  {
+                        "schemaVersion":  "verify-scope-plan-v1",
+                        "status":  "Planned",
+                        "runtimeVerified":  false,
+                        "headSha":  "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+                        "baseSha":  "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+                        "level":  "Release",
+                        "area":  "All",
+                        "timeoutSeconds":  2700,
+                        "commands":  [
+                                         {
+                                             "Name":  "Canonical release verification",
+                                             "FilePath":  "powershell",
+                                             "Arguments":  [
+                                                               "-NoProfile",
+                                                               "-ExecutionPolicy",
+                                                               "Bypass",
+                                                               "-File",
+                                                               "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\verify.ps1"
+                                                           ],
+                                             "SourceArea":  "All",
+                                             "commandKey":  "08dddc82aff31a1f274b0cbbf17c7eb0f4a0d89438dba03c5d3a84c349890ac0"
+                                         }
+                                     ],
+                        "logDirectory":  "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7"
+                    },
+    "releaseExecuted":  false
+}

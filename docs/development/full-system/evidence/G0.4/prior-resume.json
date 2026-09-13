@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+  "baseSha": "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+  "level": "Subsystem",
+  "area": "Runtime",
+  "fingerprint": "9a26728f2bf3aa6b51d7d76d23cc0f99bc26c580ba33b85506af1a62db64d6b4",
+  "environmentFingerprint": "7cdc76a8ea72bf6b8be66bd298c22db889bbddc0f0d177f98c4a2486060383da",
+  "selection": [
+    {
+      "Name": "r15-scope.tests.ps1",
+      "FilePath": "powershell",
+      "Arguments": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\tests\\r15-scope.tests.ps1"
+      ],
+      "SourceArea": "Runtime",
+      "commandKey": "5f9e054de4ad23435c9c1e074eea70ef9bf5c9df5213e91c326deff7347453ec"
+    },
+    {
+      "Name": "verify-scope.tests.ps1",
+      "FilePath": "powershell",
+      "Arguments": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\tool\\cli\\tests\\verify-scope.tests.ps1"
+      ],
+      "SourceArea": "Runtime",
+      "commandKey": "45aea900dccbd4b44f7e64b62ca47beaefba306dbfede66d10154f60e347c81a"
+    }
+  ],
+  "timeoutSeconds": 1200,
+  "startedAt": "2026-09-13T11:06:00.5535279+07:00",
+  "finishedAt": "2026-09-13T11:06:05.9930362+07:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "r15-scope.tests.ps1",
+      "commandKey": "5f9e054de4ad23435c9c1e074eea70ef9bf5c9df5213e91c326deff7347453ec",
+      "fingerprint": "9a26728f2bf3aa6b51d7d76d23cc0f99bc26c580ba33b85506af1a62db64d6b4",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-13T11:03:29.2895015+07:00",
+      "FinishedAt": "2026-09-13T11:04:26.5458543+07:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\5f9e054de4ad-9a26728f2bf3\\r15-scope.tests.ps1.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\5f9e054de4ad-9a26728f2bf3\\r15-scope.tests.ps1.stderr.log",
+      "StdoutHash": "F5E19ADB3CEB47ED27C93409DCF23D1A885A1DB7CBB07852B7440233404DF466",
+      "StderrHash": "184275C2A3FEDEF36DF9AF95750ADBCDC136BE2EED62B320E9FD55B4C62C50D2",
+      "Resumed": true
+    },
+    {
+      "Name": "verify-scope.tests.ps1",
+      "commandKey": "45aea900dccbd4b44f7e64b62ca47beaefba306dbfede66d10154f60e347c81a",
+      "fingerprint": "9a26728f2bf3aa6b51d7d76d23cc0f99bc26c580ba33b85506af1a62db64d6b4",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-13T11:04:29.3830556+07:00",
+      "FinishedAt": "2026-09-13T11:04:46.4271647+07:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\45aea900dccb-9a26728f2bf3\\verify-scope.tests.ps1.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\3fa1\\LexiQuest\\build\\verification\\dcd8c97b2c71de69b897eb89c92a1a2323bc5be7\\45aea900dccb-9a26728f2bf3\\verify-scope.tests.ps1.stderr.log",
+      "StdoutHash": "7500892DB3C591FAF19880321F1D7DC396F34AE1192DB3DF6BE38795BAA8C9C5",
+      "StderrHash": "184275C2A3FEDEF36DF9AF95750ADBCDC136BE2EED62B320E9FD55B4C62C50D2",
+      "Resumed": true
+    }
+  ]
+}

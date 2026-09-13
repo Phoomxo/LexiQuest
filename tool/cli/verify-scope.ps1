@@ -35,7 +35,13 @@ param(
 
     [string[]]$TestTargets = @(),
 
-    [string]$TestName = ''
+    [string]$TestName = '',
+
+    [switch]$PlanOnly,
+
+    [switch]$CliOnly,
+
+    [string]$FrozenSha = ''
 )
 
 Set-StrictMode -Version 3.0
@@ -91,9 +97,9 @@ function Get-AreaPathPattern {
         'Runtime' {
             return $flutterInputs + '|^(android/|\.github/workflows/)'
         }
-        'BackendAI' { return '^backend/ai_api/' }
-        'BackendVoice' { return '^backend/voice_api/' }
-        'BackendLM' { return '^backend/lexiquest_lm/' }
+        'BackendAI' { return '^(backend/ai_api/|tool/cli/|\.gitattributes$|uv\.toml$|\.python-version$)' }
+        'BackendVoice' { return '^(backend/voice_api/|tool/cli/|\.gitattributes$|uv\.toml$|\.python-version$)' }
+        'BackendLM' { return '^(backend/lexiquest_lm/|tool/cli/|\.gitattributes$|uv\.toml$|\.python-version$)' }
         'Integration' {
             return $flutterInputs + '|^(integration_test/|android/|\.github/workflows/)'
         }
@@ -123,6 +129,7 @@ function Get-SourceFingerprint {
     $parts.Add('baseSha=' + $ResolvedBaseSha)
     $parts.Add('headSha=' + $CurrentHeadSha)
     $parts.Add('area=' + $SelectedArea)
+    $parts.Add('environment=' + (Get-EnvironmentFingerprint))
 
     foreach ($relativePath in $candidatePaths) {
         $absolutePath = Join-Path $repoRoot ($relativePath -replace '/', '\')
@@ -134,6 +141,51 @@ function Get-SourceFingerprint {
     }
 
     return Get-Sha256Text -Text ($parts -join "`n")
+}
+
+function Get-EnvironmentFingerprint {
+    # Values may contain credentials: persist only their combined digest.
+    # Tool resolution and launcher bytes, SDK metadata and ignored local config
+    # are inputs too; Git-tracked source alone cannot justify cache reuse.
+    $parts = [System.Collections.Generic.List[string]]::new()
+    $parts.Add('powershell=' + $PSVersionTable.PSVersion.ToString())
+    foreach ($entry in (Get-ChildItem Env: | Sort-Object Name)) {
+        $parts.Add($entry.Name + '=' + $entry.Value)
+    }
+    foreach ($tool in @('powershell.exe','git','flutter','dart','uv','python','node','npm','java')) {
+        $resolved = Get-Command $tool -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -eq $resolved) { $parts.Add($tool + '=missing'); continue }
+        $parts.Add($tool + '=' + $resolved.Source + '=' + (Get-FileHash -LiteralPath $resolved.Source -Algorithm SHA256).Hash)
+        if ($tool -eq 'flutter') {
+            $sdk = Split-Path (Split-Path $resolved.Source -Parent) -Parent
+            foreach ($pin in @('bin/cache/flutter.version.json','bin/cache/engine.stamp','bin/cache/dart-sdk/version')) {
+                $file = Join-Path $sdk $pin
+                if (Test-Path -LiteralPath $file -PathType Leaf) { $parts.Add($file + '=' + (Get-FileHash -LiteralPath $file).Hash) }
+            }
+        }
+    }
+    foreach ($pin in @('.dart_tool/package_config.json','.dart_tool/package_graph.json','.packages','.env','uv.toml','.python-version',
+        'backend/ai_api/.env','backend/voice_api/.env','backend/lexiquest_lm/.env',
+        'backend/ai_api/.venv/pyvenv.cfg','backend/voice_api/.venv/pyvenv.cfg','backend/lexiquest_lm/.venv/pyvenv.cfg')) {
+        $file = Join-Path $repoRoot $pin
+        $value = if (Test-Path -LiteralPath $file -PathType Leaf) { (Get-FileHash -LiteralPath $file).Hash } else { 'missing' }
+        $parts.Add($pin + '=' + $value)
+    }
+    return Get-Sha256Text ($parts -join "`n")
+}
+
+function Test-ReusableCommand {
+    param([object]$Previous, [string]$Fingerprint)
+    if ($null -eq $Previous) { return $false }
+    foreach ($field in @('fingerprint','Status','ExitCode','Stdout','Stderr','StdoutHash','StderrHash','StartedAt','FinishedAt')) {
+        if ($null -eq $Previous.PSObject.Properties[$field]) { return $false }
+    }
+    if ($Previous.Status -ne 'Passed' -or $Previous.ExitCode -ne 0 -or $Previous.fingerprint -ne $Fingerprint) { return $false }
+    foreach ($stream in @('Stdout','Stderr')) {
+        if (-not (Test-Path -LiteralPath $Previous.$stream -PathType Leaf)) { return $false }
+        if ((Get-FileHash -LiteralPath $Previous.$stream).Hash -ne $Previous.($stream + 'Hash')) { return $false }
+    }
+    return $true
 }
 
 function New-CommandSpec {
@@ -217,6 +269,18 @@ function Get-VerificationCommands {
         [string]$SelectedArea
     )
 
+    if ((Get-Variable CliOnly -ErrorAction SilentlyContinue) -and $CliOnly) {
+        if ($SelectedLevel -ne 'Subsystem' -or $SelectedArea -ne 'Runtime' -or $TestTargets.Count -or $TestName) {
+            throw 'CliOnly requires Subsystem/Runtime with no Flutter selection.'
+        }
+        return @(
+            foreach ($test in @('r15-scope.tests.ps1','verify-scope.tests.ps1')) {
+                $path = Join-Path $scriptDir ('tests/' + $test)
+                if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw ('Missing CLI target: ' + $path) }
+                New-CommandSpec -Name $test -FilePath 'powershell' -Arguments @('-NoProfile','-ExecutionPolicy','Bypass','-File',$path) -SourceArea 'Runtime'
+            }
+        )
+    }
     if ($TestName -and $TestTargets.Count -eq 0) {
         throw 'A test name requires explicit test targets.'
     }
@@ -413,6 +477,35 @@ function Save-VerificationResult {
     $Result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
+function Assert-CommandPaths {
+    param([object[]]$Commands)
+    foreach ($command in $Commands) {
+        $arguments = @($command.Arguments)
+        $paths = @()
+        switch ($command.FilePath) {
+            'flutter' { $paths = @($arguments | Where-Object { $_ -match '^(test|integration_test)[/\\]' }) }
+            'powershell' { $paths = @($arguments[([array]::IndexOf($arguments, '-File') + 1)]) }
+            'uv' {
+                $project = $arguments[([array]::IndexOf($arguments, '--project') + 1)]
+                $paths = @((Join-Path $project 'pyproject.toml'),(Join-Path $project 'uv.lock'),(Join-Path $project 'tests'))
+            }
+            'npm' {
+                $packagePath = 'package.json'
+                if ($arguments -contains '--prefix') { $packagePath = Join-Path $arguments[([array]::IndexOf($arguments, '--prefix') + 1)] 'package.json' }
+                $file = Join-Path $repoRoot $packagePath
+                if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw ('Unavailable command ' + $command.Name + ': missing ' + $packagePath) }
+                $package = Get-Content -LiteralPath $file -Raw | ConvertFrom-Json
+                $scriptName = if ($arguments -contains 'run') { $arguments[([array]::IndexOf($arguments, 'run') + 1)] } else { 'test' }
+                if ($null -eq $package.scripts.PSObject.Properties[$scriptName]) { throw ('Unavailable npm script: ' + $scriptName) }
+            }
+        }
+        foreach ($path in $paths) {
+            $absolute = if ([IO.Path]::IsPathRooted($path)) { $path } else { Join-Path $repoRoot $path }
+            if (-not (Test-Path -LiteralPath $absolute)) { throw ('Unavailable command ' + $command.Name + ': missing ' + $path) }
+        }
+    }
+}
+
 function ConvertTo-PowerShellLiteral {
     param([string]$Value)
 
@@ -524,6 +617,23 @@ try {
     }
     $headSha = $headSha.Trim()
 
+    $commands = @(Get-VerificationCommands -SelectedLevel $Level -SelectedArea $Area)
+    Assert-CommandPaths -Commands $commands
+    if ($Level -eq 'Release' -and -not $PlanOnly) {
+        if ($FrozenSha -notmatch '^[a-fA-F0-9]{40}$' -or $FrozenSha -ne $headSha -or @(& git status --porcelain).Count) {
+            throw 'Release requires -FrozenSha <full current HEAD> and a clean checkout.'
+        }
+    }
+    if ($PlanOnly) {
+        [ordered]@{
+            schemaVersion = 'verify-scope-plan-v1'; status = 'Planned'; runtimeVerified = $false
+            headSha = $headSha; baseSha = $resolvedBaseSha; level = $Level; area = $Area
+            timeoutSeconds = $timeoutSeconds[$Level]; commands = $commands
+            logDirectory = Join-Path $repoRoot ('build/verification/' + $headSha)
+        } | ConvertTo-Json -Depth 8
+        exit 0
+    }
+
     $fingerprint = Get-SourceFingerprint `
         -SelectedArea $Area `
         -ResolvedBaseSha $resolvedBaseSha `
@@ -532,6 +642,7 @@ try {
     $resultDirectory = Join-Path $repoRoot ('build\verification\' + $headSha)
     New-Item -ItemType Directory -Force -Path $resultDirectory | Out-Null
     $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '.json')
+    if ($CliOnly) { $resultPath = Join-Path $resultDirectory 'subsystem-runtime-cli.json' }
     if ($TestTargets.Count -gt 0) {
         $targetIdentity = $TestTargets -join "`n"
         if ($TestName) { $targetIdentity += "`nname=" + $TestName }
@@ -549,14 +660,25 @@ try {
         }
     }
 
-    $commands = @(Get-VerificationCommands -SelectedLevel $Level -SelectedArea $Area)
     $result = [ordered]@{
-        schemaVersion = 'verify-scope-v1'
+        schemaVersion = 'verify-scope-v2'
         headSha = $headSha
         baseSha = $resolvedBaseSha
         level = $Level
         area = $Area
         fingerprint = $fingerprint
+        environmentFingerprint = Get-EnvironmentFingerprint
+        selection = @($commands | Select-Object Name,FilePath,Arguments,SourceArea,commandKey)
+        inputClosure = @(
+            foreach ($sourceArea in @($commands.SourceArea | Sort-Object -Unique)) {
+                $pattern = Get-AreaPathPattern $sourceArea
+                foreach ($path in @(& git ls-files --cached --others --exclude-standard | Sort-Object -Unique)) {
+                    if ($path -match $pattern -and (Test-Path -LiteralPath (Join-Path $repoRoot $path) -PathType Leaf)) {
+                        [pscustomobject]@{ area = $sourceArea; path = $path; sha256 = (Get-FileHash -LiteralPath (Join-Path $repoRoot $path)).Hash }
+                    }
+                }
+            }
+        )
         timeoutSeconds = $timeoutSeconds[$Level]
         startedAt = [DateTimeOffset]::UtcNow.ToString('o')
         finishedAt = $null
@@ -570,17 +692,7 @@ try {
             -ResolvedBaseSha $resolvedBaseSha `
             -CurrentHeadSha $headSha
         $previousCommand = $previousByCommand[[string]$command.commandKey]
-        $previousFingerprintProperty = if ($null -ne $previousCommand) {
-            $previousCommand.PSObject.Properties['fingerprint']
-        } else {
-            $null
-        }
-        if (
-            $null -ne $previousCommand -and
-            $previousCommand.Status -eq 'Passed' -and
-            $null -ne $previousFingerprintProperty -and
-            $previousCommand.fingerprint -eq $commandFingerprint
-        ) {
+        if (Test-ReusableCommand -Previous $previousCommand -Fingerprint $commandFingerprint) {
             $result.commands += [pscustomobject]@{
                 Name = $previousCommand.Name
                 commandKey = $previousCommand.commandKey
@@ -591,6 +703,8 @@ try {
                 FinishedAt = $previousCommand.FinishedAt
                 Stdout = $previousCommand.Stdout
                 Stderr = $previousCommand.Stderr
+                StdoutHash = $previousCommand.StdoutHash
+                StderrHash = $previousCommand.StderrHash
                 Resumed = $true
             }
             Write-Host ('SKIP: ' + $command.Name + ' already passed for this fingerprint.') -ForegroundColor DarkGray
@@ -603,6 +717,10 @@ try {
             -LimitSeconds $timeoutSeconds[$Level] `
             -LogDirectory $resultDirectory `
             -SourceFingerprint $commandFingerprint
+        foreach ($stream in @('Stdout','Stderr')) {
+            $hash = if (Test-Path -LiteralPath $commandResult.$stream -PathType Leaf) { (Get-FileHash -LiteralPath $commandResult.$stream).Hash } else { $null }
+            $commandResult | Add-Member NoteProperty ($stream + 'Hash') $hash
+        }
         $result.commands += $commandResult
         Save-VerificationResult -Result $result -Path $resultPath
 

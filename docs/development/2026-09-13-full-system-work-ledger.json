@@ -240,12 +240,14 @@
         "tool/cli/tests/verify-scope.tests.ps1"
       ],
       "verificationKind": "cli-contract",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P0.3"
       ],
       "verificationArea": "Runtime",
-      "plannedCommands": [],
+      "plannedCommands": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-scope.ps1 -Level Subsystem -Area Runtime -CliOnly -Resume"
+      ],
       "displayId": "G0.4",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G0.4.md",
       "sourceReconciliation": {
@@ -255,7 +257,9 @@
           "D08"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "checkpoint": "docs/development/full-system/checkpoints/G0.4.md",
+      "evidence": "docs/development/full-system/evidence/G0.4/verification.json"
     },
     {
       "id": "P0.5",
@@ -1848,6 +1852,11 @@
           "D11"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      },
+      "boundedRegistryObligation": {
+        "source": "docs/development/full-system/G0.4-bounded-verification.md",
+        "status": "Required; unavailable runtime gate is NOT RUN",
+        "detail": "Reconcile functions/package.json and test:functions-emulator command before Economy verification"
       }
     },
     {
@@ -2010,6 +2019,11 @@
           "D08"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      },
+      "boundedRegistryObligation": {
+        "source": "docs/development/full-system/G0.4-bounded-verification.md",
+        "status": "Required; unavailable runtime gate is NOT RUN",
+        "detail": "Reconcile Integration test and device runner paths before claiming journey/release readiness"
       }
     },
     {
@@ -2127,7 +2141,12 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.4.md",
+      "boundedRegistryObligation": {
+        "source": "docs/development/full-system/G0.4-bounded-verification.md",
+        "status": "Required; unavailable runtime gate is NOT RUN",
+        "detail": "Reconcile Integration test and device runner paths before claiming journey/release readiness"
+      }
     },
     {
       "id": "P8.5",
