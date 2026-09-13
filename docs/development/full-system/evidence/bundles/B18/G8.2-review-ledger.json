@@ -42579,11 +42579,18 @@
       "lines": 881,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full881 lines read. Closed payload-free decoder/counter saturation; fake managers exercise same-kind dedup/cross-kind serial ordering,3attempt backoff, durable quarantine reinspection, foreign identity rejection, timeout retaining underlying operation fence including queued work, shared/owned disposal, stalled drain bound and interrupted backoff. No-throw invalid states also rejected. Timing tests use real10-30ms deadlines rather than controlled scheduler, potential load sensitivity not an observed failure. Completers released where necessary; manager semantics tested here, real-byte scenario separate. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:02:00.959062+00:00",
+      "readRanges": [
+        [
+          1,
+          881
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_entry_use_cases_test.dart",
@@ -42593,11 +42600,18 @@
       "lines": 726,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake loader/permit/preferences verify blocked no-read preflight, explicit choices, emergency new-start versus accepted-close, pinned permitA despite rotationB, concurrent shared unresolved read, cached failures until new host, owner-generation discard, stable UUID/Today reuse, invalid permit product fallback and catalog fallback pins/diagnostics. Confirms deliberate cache-failure contract already resolved by TodayHost refresh. Raw-consent source-string test is structural, no study activation or authorization proof. Does not simulate live flag loss during preference await; downstream launch gate remains required. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:57:13.483120+00:00",
+      "readRanges": [
+        [
+          1,
+          726
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_feature_contract_test.dart",
@@ -42607,11 +42621,18 @@
       "lines": 66,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pins historical runtime feature names with Adventure appended, hidden durable default delivery metadata/dependency and44 product capability count. These metadata assertions do not prove installed flags or runtime route delivery. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:56:49.785170+00:00",
+      "readRanges": [
+        [
+          1,
+          66
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_journey_fact_readers_test.dart",
@@ -42621,11 +42642,18 @@
       "lines": 309,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake canonical sources verify requested owner and bounded history filter, empty states, order-independent nonempty fingerprints and completed configured pack requirement with no fabricated Adventure node completion. Does not exercise malformed/duplicate/foreign-owner history or invalid reward/achievement validation branches; actual source implementations reviewed separately. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:57:48.390357+00:00",
+      "readRanges": [
+        [
+          1,
+          309
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_journey_reader_test.dart",
@@ -42635,11 +42663,18 @@
       "lines": 558,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure canonical Today fixtures test deterministic output under repeated/shuffled catalog/readers, resume/due/recommendation priority, stale15min-derived blocking, supplemental authority corruption/exception isolation across mission kinds, fabricated node completion rejection and required Today corruption block. Immutable configured authority view plus structural no-Drift-source assertions. Actual canonical source readers and live owner checks outside these fixtures; no B18 execution.",
+      "sourceReadDate": "2026-09-13T22:57:30.960931+00:00",
+      "readRanges": [
+        [
+          1,
+          558
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_learning_bridge_test.dart",
@@ -42691,11 +42726,18 @@
       "lines": 614,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Exact adapter/mode/variant matrix including disabled Matching, wrong adapter type, stale/missing/unreviewed rich artifacts, duplicate IDs, deterministic order and immutable question options. Snapshot roundtrip reconstructs all available prompts without vocabulary, rejects modified definition digest and defends caller examples-list mutation. Synthetic core/rich hashes and unconstrained QuizSession fixtures do not prove packaged approval or bound enforcement at recovery start. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:58:49.767258+00:00",
+      "readRanges": [
+        [
+          1,
+          614
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_motivation_projection_reader_test.dart",
@@ -42705,11 +42747,18 @@
       "lines": 466,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift seeded attempt/event envelopes and explicit canonical projection receipts verify absent pending, exact receipt identity, evidence-versus-session achievement sources, assessment/recreational exclusion, typed map/story no-op and session evidence ordering. Before/after authority table counts assert no new rows but not unchanged existing row bytes; direct seeded legacy evidence avoids production capture path. No migration-owner or malformed receipt negative here, canonical reader tests in REV02 pending. No B18 execution or research activation.",
+      "sourceReadDate": "2026-09-13T22:58:26.617436+00:00",
+      "readRanges": [
+        [
+          1,
+          466
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_presentation_preferences_test.dart",
@@ -42719,11 +42768,18 @@
       "lines": 144,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift durable preference roundtrip and other-owner read fallback/write rejection; deferred fake repository proves shared writer serial last-choice wins across hosts. Fake ignores mutationAllowed so concurrency test is ordering only, not owner switch during persistence; canonical preferences source/tests remain separate. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:56:49.785170+00:00",
+      "readRanges": [
+        [
+          1,
+          144
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_recovery_use_cases_test.dart",
@@ -42754,11 +42810,18 @@
       "lines": 774,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure policy tests exact3/4/5 distinct independent spacing, short-tail and recognition-root deferral, supportive mode ladder, per-identity tickets, no recursive repair, checkpoint-only flashcard, duplicate source and exact snapshot/unauthorized decoder negatives. Helper defaults independentRecall even for meaning/matching in ladder fixtures, so those cases test abstract policy rather than valid production classification; dedicated recognition-root cases cover real deferral. No canonical persistence claims or B18 execution.",
+      "sourceReadDate": "2026-09-13T22:58:08.608341+00:00",
+      "readRanges": [
+        [
+          1,
+          774
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_result_next_action_reader_test.dart",
@@ -42768,11 +42831,18 @@
       "lines": 351,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake owner/source tests empty/nonSRS/mixed due provenance, captured100-limit filter/timezone, owner pre/post drift, source exceptions, sync argument validation order and bound endpoints. Synthetic snapshot checksum means reader routing contract only, no real Review canonical content validation. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:56:49.785170+00:00",
+      "readRanges": [
+        [
+          1,
+          351
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_session_composer_test.dart",
@@ -42950,11 +43020,18 @@
       "lines": 307,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Passive panel Thai/English copy/semantics/equipped cosmetic and unchanged fixture ownership, missing reaction hidden, normal animation duration/no action blocking, reduced-motion cases assert AnimatedSwitcher absent even though wrapper above MaterialApp. Pure lifecycle mapping covers hints/skips/pause/abandon; does not mount live AdventureLessonCompanionPanel with controller mutation/commit reset. Need local SDK MediaQuery inheritance check before judging wrapper coverage, no assumed failure. No B18 execution. Subsequent local SDK cross-check84fc5cbb resolves wrapper concern: MaterialApp introduces no MediaQuery and fromView preserves parent platform accessibility/textScaler; no defect promoted. See review-cross-checks-rev03.json.",
+      "sourceReadDate": "2026-09-13T23:00:44.904719+00:00",
+      "readRanges": [
+        [
+          1,
+          307
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_hub_screen_test.dart",
@@ -42964,11 +43041,18 @@
       "lines": 294,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Widget tests stable map element across toggles, persistent choice after scroll, companion unchanged, primary above exploration, explicit freshness/null mission and deferred single-flight launch. Test named device regression is Flutter widget only.200percent case again wraps MaterialApp in MediaQuery without effective scaler assertion; assess that test separately from true native/large-text coverage. No B18 execution. Subsequent local SDK cross-check84fc5cbb resolves wrapper concern: MaterialApp introduces no MediaQuery and fromView preserves parent platform accessibility/textScaler; no defect promoted. See review-cross-checks-rev03.json.",
+      "sourceReadDate": "2026-09-13T23:00:44.904719+00:00",
+      "readRanges": [
+        [
+          1,
+          294
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_map_list_parity_test.dart",
@@ -42978,11 +43062,18 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Renders every enum node state in both map/list and checks keys/visible labels, including hidden-as-labelled behavior. Does not compare actual state text or semantics despite title wording; no action authority present. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:59:03.705192+00:00",
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_mixed_review_screen_golden_test.dart",
@@ -43027,11 +43118,18 @@
       "lines": 136,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real fonts,390/320 viewports, light/dark and1x/2x reduced-motion MediaQuery inside MaterialApp.home; explicitly asserts effective scaler at result screen, every result section hit-testable/reachable with no overflow, callback immediate and no lingering animation. This supplies a valid result200percent oracle independent of weaker result-screen wrapper test, narrowing concern to redundant-test accuracy. Optional env visual QA writes only named build screenshots; no images rendered/run in B18 and no physical screen reader proof.",
+      "sourceReadDate": "2026-09-13T22:59:23.960394+00:00",
+      "readRanges": [
+        [
+          1,
+          136
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_pair_experience_test.dart",
@@ -43055,11 +43153,18 @@
       "lines": 218,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Loads real Thai/icon fonts; regular Thai and320px th/en200percent reduced-motion goldens, same exact PairBoard widget/focused layout/tap semantics/header viewport/no commands or active animations. MediaQuery correctly inside MaterialApp.builder here. Late typed decoration health failure reports once with bounded payload-free counter. Uses Pair board fixture rather than durable coordinator; golden files/native accessibility still separate review. No B18 execution.",
+      "sourceReadDate": "2026-09-13T22:59:03.705192+00:00",
+      "readRanges": [
+        [
+          1,
+          218
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_result_lifecycle_screen_test.dart",
@@ -43094,8 +43199,8 @@
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": "Full file read. Presentation fixture checks pending/accepted/unavailable reward text and callback independence, hidden technical IDs then expansion, effort versus mastery wording and no goal success for empty quest codes. One synthetic persisted reward row remains unchanged across rebuild/reopen, proving renderer read-only for that setup rather than canonical grant chain. Narrow200percent test places MediaQuery outside MaterialApp and does not assert effective scaler in rendered context; inherited MediaQuery behavior needs SDK/widget cross-check before claiming200percent coverage. No B18 execution.",
-      "sourceReadDate": "2026-09-13T22:54:37.548924+00:00",
+      "reviewNotes": "Full file read. Presentation fixture checks pending/accepted/unavailable reward text and callback independence, hidden technical IDs then expansion, effort versus mastery wording and no goal success for empty quest codes. One synthetic persisted reward row remains unchanged across rebuild/reopen, proving renderer read-only for that setup rather than canonical grant chain. Narrow200percent test places MediaQuery outside MaterialApp and does not assert effective scaler in rendered context; inherited MediaQuery behavior needs SDK/widget cross-check before claiming200percent coverage. No B18 execution. Subsequent local SDK cross-check84fc5cbb resolves wrapper concern: MaterialApp introduces no MediaQuery and fromView preserves parent platform accessibility/textScaler; no defect promoted. See review-cross-checks-rev03.json.",
+      "sourceReadDate": "2026-09-13T23:00:44.904719+00:00",
       "readRanges": [
         [
           1,
@@ -47731,11 +47836,18 @@
       "lines": 712,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full712 lines read. Real file-backed SQLite closes/reopens between before-write and lost-ack evidence failures, authenticates frozen retry and singular session/attempt/event/decision/points/achievement/outbox/SRS rows. Separate3-open committed-close discovery works emergency-off and summary-presented idempotency; owner switch persists unchanged preterminal checkpoint. Direct use-case calls avoid shell/widget retry UI, so B18-REV03-03 remains uncovered. Deterministic authority clock and private core seed; own temp DB cleanup after close. Read only, no B18 restart execution.",
+      "sourceReadDate": "2026-09-13T23:01:28.150103+00:00",
+      "readRanges": [
+        [
+          1,
+          712
+        ]
+      ]
     },
     {
       "path": "test/scenarios/adventure_offline_catalog_recovery_test.dart",
