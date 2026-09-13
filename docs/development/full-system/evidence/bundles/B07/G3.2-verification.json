@@ -1,0 +1,44 @@
+{
+  "packageId": "G3.2",
+  "bundleId": "B07",
+  "status": "accepted-local-automated",
+  "baseSha": "28ffce8d7265c91d1ca2fbe2e2f269047914c737",
+  "uniqueTestsPassed": 49,
+  "newRunTests": 38,
+  "verificationManifest": "docs/development/full-system/evidence/bundles/B07/G3.2-final/targeted-learning-979afbcc66d40645ef92c335e87c9b49f21fea0bcca0eef3e42dbfd6bf8628f1.json",
+  "fingerprint": "25e6081a2d25f5667ab5316a96e2bd1401c21950ab6503141b3bd15e0c676306",
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "reused": {
+    "manifest": "docs/development/full-system/evidence/bundles/B07/G3.1-verification.json",
+    "testFile": "test/features/learning_packs/content_quality_policy_test.dart",
+    "tests": 11,
+    "changedInputs": [
+      "lib/widgets/rich_lexical_card.dart",
+      "test/screens/learning_pack_detail_screen_test.dart",
+      "test/widgets/rich_lexical_card_test.dart"
+    ],
+    "reason": "Only card presentation and two widget tests changed; content quality policy/domain/repository/test inputs unchanged."
+  },
+  "requirements": [
+    "COV-f03",
+    "COV-f04",
+    "G3"
+  ],
+  "outcomes": [
+    "Meaning/POS/CEFR retained; English definition/IPA/examples/synonyms/antonyms progressively disclosed without generated fillers",
+    "Rich metadata/audio quarantined for unreviewed/rejected/nonpublished/mismatched revision or missing artifact checksum",
+    "Source and audio identity/language visible; AI-reviewed CEFR editorial remains labeled AI, not certified human",
+    "CEFR lexical approximation caption; read-only expansion resets for replaced content",
+    "No image field supplied; no invented images; actual audio playback remains supplied callback and not device proof"
+  ],
+  "review": {
+    "analyzer": "No issues found on all3 changed Dart files",
+    "method": "single-writer diff/caller/fixture behavior review",
+    "fixtures": "Corrected lazy-list test scrolls both words and asserts exact IDs; positive lexical fixtures include required artifact pins"
+  },
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "manual screen reader/device playback NOT RUN"
+  ]
+}

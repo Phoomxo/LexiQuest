@@ -161,11 +161,14 @@ void main() {
         find.bySemanticsLabel('Travel basics, A1, รุ่น 2'),
         findsOneWidget,
       );
-      expect(find.byType(RichLexicalCard), findsNWidgets(2));
       expect(find.text('station'), findsOneWidget);
-      expect(find.text('market'), findsOneWidget);
+      expect(tester.widget<RichLexicalCard>(find.byType(RichLexicalCard).first).word.id, 'word:station');
       expect(find.text('กิจกรรมที่เรียนจบ: 0'), findsOneWidget);
       final scrollable = find.byType(Scrollable);
+      await tester.scrollUntilVisible(find.text('market'), 200, scrollable: scrollable);
+      expect(find.text('market'), findsOneWidget);
+      final marketCard = find.ancestor(of: find.text('market'), matching: find.byType(RichLexicalCard));
+      expect(tester.widget<RichLexicalCard>(marketCard).word.id, 'word:market');
       await tester.scrollUntilVisible(
         find.text('แบบทดสอบจากคลังคำศัพท์'),
         200,

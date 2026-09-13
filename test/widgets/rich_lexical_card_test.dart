@@ -7,6 +7,112 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
 
 void main() {
+  testWidgets('B07 expansion is read-only and resets for replacement content', (tester) async {
+    var actions = 0;
+    final word = _word(metadata: _verifiedMetadata());
+    Future<void> show(VocabularyWord value) async {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: RichLexicalCard(
+        word: value, onPlayAudio: () => actions++,
+        bookmarkIdentity: ContentIdentity(type: ContentType.lexicalMetadata, id: value.id, revision: value.contentRevision),
+        onBookmark: (_) async { actions++; },
+      )))));
+      await tester.pumpAndSettle();
+    }
+    await show(word);
+    await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
+    await tester.pump();
+    expect(find.text('A place where trains stop.'), findsOneWidget);
+    expect(actions, 0);
+    await show(word.copyWith(contentRevision: 2, richMetadata: RichLexicalMetadata(
+      verifiedContentRevision: 2,
+      verifiedArtifactChecksumSha256: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+      englishDefinition: 'A revised definition.',
+    )));
+    expect(find.text('A revised definition.'), findsNothing);
+    expect(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'), findsOneWidget);
+    expect(actions, 0);
+  });
+
+  for (final state in [
+    ContentReviewState.unreviewed,
+    ContentReviewState.rejected,
+  ]) {
+    testWidgets('B07 rich card quarantines ${state.name} metadata', (
+      tester,
+    ) async {
+      var played = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RichLexicalCard(
+              word: _word(metadata: _verifiedMetadata(), reviewState: state),
+              onPlayAudio: () => played++,
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.text('รายละเอียดคำศัพท์เพิ่มเติมไม่พร้อมใช้งาน'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('ฟังเสียงอ่านคำศัพท์'), findsNothing);
+      expect(
+        find.text('เนื้อหายังไม่ผ่านการตรวจสอบเพื่อเผยแพร่'),
+        findsOneWidget,
+      );
+      expect(played, 0);
+    });
+  }
+  testWidgets(
+    'B07 rich card displays definition and source with approximate CEFR',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RichLexicalCard(
+                word: _word(metadata: _verifiedMetadata()),
+                onPlayAudio: () {},
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('ที่มาเนื้อหา: pack:v1'), findsOneWidget);
+      expect(
+        find.text('ระดับคำศัพท์โดยประมาณ ไม่ใช่ผลประเมินผู้เรียน'),
+        findsOneWidget,
+      );
+      await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
+      await tester.pump();
+      expect(find.text('A place where trains stop.'), findsOneWidget);
+      expect(find.text('เสียง: audio:station:en (en)'), findsOneWidget);
+    },
+  );
+  testWidgets('B07 rich card rejects mismatched rich revision', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RichLexicalCard(
+            word: _word(
+              metadata: RichLexicalMetadata(
+                verifiedContentRevision: 2,
+                verifiedArtifactChecksumSha256:
+                    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                ipa: '/wrong/',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.text('รายละเอียดคำศัพท์เพิ่มเติมไม่พร้อมใช้งาน'),
+      findsOneWidget,
+    );
+    expect(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'), findsNothing);
+  });
+
   testWidgets(
     'Task5 semantic actions share lexical bookmark report details and audio callbacks',
     (tester) async {
@@ -27,6 +133,9 @@ void main() {
                 child: RichLexicalCard(
                   word: _word(
                     metadata: RichLexicalMetadata(
+                      verifiedContentRevision: 1,
+                      verifiedArtifactChecksumSha256:
+                          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
                       ipa: '/test/',
                       audio: const LexicalAudioMetadata(
                         language: 'en',
@@ -111,6 +220,9 @@ void main() {
             body: RichLexicalCard(
               word: _word(
                 metadata: RichLexicalMetadata(
+                  verifiedContentRevision: 1,
+                  verifiedArtifactChecksumSha256:
+                      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
                   ipa: '/ˈsteɪ.ʃən/',
                   examples: const ['The station is near the market.'],
                   synonyms: const ['terminal'],
@@ -298,6 +410,9 @@ void main() {
               child: RichLexicalCard(
                 word: _word(
                   metadata: RichLexicalMetadata(
+                    verifiedContentRevision: 1,
+                    verifiedArtifactChecksumSha256:
+                        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
                     examples: const ['The station is near the market.'],
                     audio: const LexicalAudioMetadata(
                       language: 'en',
@@ -327,7 +442,21 @@ void main() {
   );
 }
 
-VocabularyWord _word({RichLexicalMetadata? metadata}) => VocabularyWord(
+RichLexicalMetadata _verifiedMetadata() => RichLexicalMetadata(
+  verifiedContentRevision: 1,
+  verifiedArtifactChecksumSha256:
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  englishDefinition: 'A place where trains stop.',
+  audio: const LexicalAudioMetadata(
+    language: 'en',
+    assetId: 'audio:station:en',
+  ),
+);
+
+VocabularyWord _word({
+  RichLexicalMetadata? metadata,
+  ContentReviewState reviewState = ContentReviewState.approved,
+}) => VocabularyWord(
   id: 'word:station',
   ownerId: 'packaged-owner',
   categoryId: 'category:pack',
@@ -347,7 +476,7 @@ VocabularyWord _word({RichLexicalMetadata? metadata}) => VocabularyWord(
   contentChecksumSha256:
       'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   contentProvenance: ContentProvenance.packaged,
-  contentReviewState: ContentReviewState.approved,
+  contentReviewState: reviewState,
   contentPublicationState: ContentPublicationState.published,
   richMetadata: metadata,
 );

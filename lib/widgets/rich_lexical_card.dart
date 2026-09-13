@@ -36,9 +36,32 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
   var _expanded = false;
 
   @override
+  void didUpdateWidget(covariant RichLexicalCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.word.id != widget.word.id ||
+        oldWidget.word.contentRevision != widget.word.contentRevision ||
+        oldWidget.word.richMetadata != widget.word.richMetadata) {
+      _expanded = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final word = widget.word;
-    final metadata = word.richMetadata;
+    final candidate = word.richMetadata;
+    final approved =
+        word.contentReviewState == ContentReviewState.approved &&
+        word.contentPublicationState == ContentPublicationState.published &&
+        !word.isDeleted;
+    final metadata =
+        approved &&
+            word.contentProvenance == ContentProvenance.packaged &&
+            candidate?.verifiedContentRevision == word.contentRevision &&
+            RegExp(
+              r'^[0-9a-f]{64}$',
+            ).hasMatch(candidate?.verifiedArtifactChecksumSha256 ?? '')
+        ? candidate
+        : null;
     final entryLabel = _entryLabel(word);
     final bookmark = switch ((widget.bookmarkIdentity, widget.onBookmark)) {
       (final identity?, final action?)
@@ -80,6 +103,18 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
                   ],
                 ),
               ),
+            ),
+            if (word.cefrLevel != null)
+              const Text('ระดับคำศัพท์โดยประมาณ ไม่ใช่ผลประเมินผู้เรียน'),
+            Text(
+              word.source.trim().isEmpty
+                  ? 'ไม่ระบุที่มาเนื้อหา'
+                  : 'ที่มาเนื้อหา: ${word.source}',
+            ),
+            Text(
+              approved
+                  ? 'เนื้อหาผ่านการตรวจสอบเพื่อเผยแพร่'
+                  : 'เนื้อหายังไม่ผ่านการตรวจสอบเพื่อเผยแพร่',
             ),
             const SizedBox(height: 8),
             if (bookmark case final contract?) ...[
@@ -204,6 +239,8 @@ final class _RichDetails extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (metadata.englishDefinition != null)
+                Text(metadata.englishDefinition!),
               if (metadata.ipa != null) Text('IPA: ${metadata.ipa}'),
               if (metadata.examples.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -227,6 +264,9 @@ final class _RichDetails extends StatelessWidget {
 
   String _detailsLabel(RichLexicalMetadata metadata) {
     final parts = <String>[];
+    if (metadata.englishDefinition != null) {
+      parts.add('ความหมายภาษาอังกฤษ: ${metadata.englishDefinition}.');
+    }
     final ipa = metadata.ipa;
     if (ipa != null) parts.add('IPA: $ipa.');
     if (metadata.examples.isNotEmpty) {
@@ -258,20 +298,26 @@ final class _AudioControl extends StatelessWidget {
         child: ExcludeSemantics(child: Text('เสียงอ่านคำศัพท์ไม่พร้อมใช้งาน')),
       );
     }
-    return Semantics(
-      container: true,
-      explicitChildNodes: true,
-      button: true,
-      label: 'ฟังเสียงอ่านคำศัพท์',
-      enabled: true,
-      onTap: onPlayAudio,
-      child: ExcludeSemantics(
-        child: IconButton(
-          icon: const Icon(Icons.volume_up),
-          onPressed: onPlayAudio,
-          tooltip: 'ฟังเสียงอ่านคำศัพท์',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('เสียง: ${audio!.assetId} (${audio!.language})'),
+        Semantics(
+          container: true,
+          explicitChildNodes: true,
+          button: true,
+          label: 'ฟังเสียงอ่านคำศัพท์',
+          enabled: true,
+          onTap: onPlayAudio,
+          child: ExcludeSemantics(
+            child: IconButton(
+              icon: const Icon(Icons.volume_up),
+              onPressed: onPlayAudio,
+              tooltip: 'ฟังเสียงอ่านคำศัพท์',
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
