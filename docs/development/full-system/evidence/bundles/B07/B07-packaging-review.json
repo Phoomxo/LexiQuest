@@ -1,0 +1,9 @@
+{
+  "reason": "Git autocrlf changed archived UTF8 stderr bytes; raw stdout is UTF16. B07 logs marked binary; JSON receipts normalized to LF. Original raw hashes remain authoritative.",
+  "sourceDeltaAfterFinalTests": [
+    ".gitattributes (B07 evidence-only attributes)"
+  ],
+  "runtimeDelta": "none",
+  "testsNotRerun": "Only evidence packaging changed; application/dependency/config bytes remain as tested.",
+  "review": "No required unresolved defects. B18 whole-app review and B19 formal Test Plan remain pending as planned."
+}
