@@ -1,0 +1,49 @@
+{
+  "bundleId": "B03",
+  "status": "accepted-local-automated",
+  "baseSha": "980ddce44a69f5e49c121c296cdf780ba67a9495",
+  "reviewedSourceSha": "760271ff22514099e7968c022d89b6e0c6f29ae0",
+  "branch": "lexiquest/b03-recovery-srs-local",
+  "packageReceipts": [
+    "packages/G1.4.json",
+    "packages/G1.5.json",
+    "packages/G1.6.json",
+    "packages/G1.7.json"
+  ],
+  "previousAcceptedSubresults": {
+    "G1.4": "c71d2f8518a4f541c266127670763facab6cff3d",
+    "G1.5": "7563c04fdd9c7c61552058ff9cd2ebc068f76b45",
+    "G1.6": "8318462db868ac2b33030f0fed80e1d6b14eee8c"
+  },
+  "G1.7Receipt": "Written externally after this evidence commit to avoid self-referential SHA",
+  "phaseGate": {
+    "id": "G1",
+    "status": "PASS-local-automated",
+    "acceptance": "owner/session/history/reward/time/SRS correct after retry/restart and without cloud",
+    "evidence": {
+      "ownerSessionHistoryReward": "B02 accepted980ddce44a69f5e49c121c296cdf780ba67a9495; G1.4/G1.6/G1.7 affected regression retained",
+      "restartMigration": "G1.4-verification.json and G1.7 final123",
+      "eligibilitySrs": "G1.5-verification.json (27 required,22 scheduler/adapter,1 atomic)",
+      "timeReadModels": "G1.6-verification.json (28 required,63 timer/readers,29 display/profile,2 caption retest)",
+      "localRuntime": "G1.7-verification.json (118 bootstrap/UI,123 storage/recovery,19 shell/offline/app entry)"
+    }
+  },
+  "externalGates": [
+    "Build/device preview flags NOT RUN; bind LEXIQUEST_LEARNING_PREVIEW=true and LEXIQUEST_CLOUD_SYNC_ENABLED=false in G7.5/G7.7",
+    "Legacy learning.sqlite import unsupported/preserved; G7.2 owns versioned owner-preserving import if needed",
+    "B01-FORM-02 empty speech/noEvidence open G6.4/G6.5",
+    "B01-FORM-01 broader cross-reader regression G3.5",
+    "G0.4 Economy/Integration automation gaps retained; full release only frozen SHA"
+  ],
+  "boundary": "Not a full44-feature runtime, Android/device, live provider or release claim",
+  "policy": {
+    "branchPrefix": "lexiquest/",
+    "requiredServiceTier": "default",
+    "fastModeAllowed": false,
+    "effectiveTier": "unverified; no supported tool exposed",
+    "model": "gpt-6-astra",
+    "thinking": "medium"
+  },
+  "nextBundleId": "B04",
+  "review": "No unresolved B03 defect blocks local acceptance; all raw failures retained; broader B18 review remains mandatory before B19 System Test Plan"
+}
