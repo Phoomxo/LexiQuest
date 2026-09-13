@@ -1,0 +1,14 @@
+{
+  "design": "Extend accepted canonical fixture to personal profile and weakness; no runtime change needed after delta review",
+  "packageId": "G3.5",
+  "formulaAuthority": "B01 historical registry retained; shared FirstAnswerAccuracy v1 is current denominator",
+  "defects": [
+    {
+      "recovery": "Stopped guessed-path method; rg --files test lib found today_hub paths",
+      "status": "resolved",
+      "cause": "Guessed test/features/today path missing",
+      "id": "B08-TOOL-02"
+    }
+  ],
+  "review": "Changed behavioral assertions pass; one test file analyzer clean; runtime formula consumers inspected"
+}

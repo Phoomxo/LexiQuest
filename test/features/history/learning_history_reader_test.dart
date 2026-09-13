@@ -1,6 +1,7 @@
 import 'package:timezone/data/latest_all.dart' as timezone_data;
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_learning_calendar_reader.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_personal_learning_profile_reader.dart';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -142,6 +143,22 @@ void main() {
       expect(progress.sampleSize, entry.firstAnswers.total);
       expect(calendar.weekly.accuracy.correctCount, entry.firstAnswers.correct);
       expect(calendar.weekly.accuracy.sampleSize, entry.firstAnswers.total);
+      final profile = await DriftPersonalLearningProfileReader(database).load(
+        ownerId: 'owner:history',
+        nowUtc: when,
+        timezoneId: 'Asia/Bangkok',
+      );
+      expect(profile.accuracy.correctCount, 5);
+      expect(profile.accuracy.sampleSize, 6);
+      expect(profile.mastery.observedPracticeCount, 6);
+      expect(profile.engagement.totalXp, progress.totalXp);
+      expect(
+        profile.effort.activeDuration,
+        calendar.weekly.effort.activeDuration,
+      );
+      expect(profile.weakness.items.single.wordId, 'first-word-5');
+      expect(profile.weakness.items.single.sampleSize, 1);
+      expect(profile.weakness.items.single.incorrectCount, 1);
       expect(await _sourceSnapshot(database), before);
     },
   );

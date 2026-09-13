@@ -1,0 +1,64 @@
+{
+  "packageId": "G3.5",
+  "bundleId": "B08",
+  "status": "accepted-local-automated",
+  "baseSha": "62e2607138c425b12fd5c3b611b6182208fdd89b",
+  "verification": [
+    {
+      "fingerprint": "e3c5c36bae6cf71f0dc78921e9eb5a7218acf69aaf0947632644951ba38e8b72",
+      "inputCount": 1306,
+      "manifest": "docs/development/full-system/evidence/bundles/B08/G3.5-final/targeted-learning-8c898a309e28b26ebbd50f1cfb797000c280176e5c6e20f7d90c0adbdd4b87c0.json",
+      "testsPassed": 145,
+      "logs": {
+        "Stderr": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.5-final/2494211bb4e6-e3c5c36bae6c/Explicit-Flutter-tests.stderr.log",
+          "sha256": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
+        },
+        "Stdout": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.5-final/2494211bb4e6-e3c5c36bae6c/Explicit-Flutter-tests.stdout.log",
+          "sha256": "E95D5049372D994906F88E38108E6D2BFC9260E25A117FD4C94D588A6A0D708B"
+        }
+      }
+    },
+    {
+      "fingerprint": "e3c5c36bae6cf71f0dc78921e9eb5a7218acf69aaf0947632644951ba38e8b72",
+      "inputCount": 1306,
+      "manifest": "docs/development/full-system/evidence/bundles/B08/G3.5-final/targeted-learning-f107f1cebfe14fafca82cd09b84d134e4195bff2647b71d74d8311ae947a15a7.json",
+      "testsPassed": 19,
+      "logs": {
+        "Stderr": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.5-final/ee8f76b463d5-e3c5c36bae6c/Explicit-Flutter-tests.stderr.log",
+          "sha256": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
+        },
+        "Stdout": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.5-final/ee8f76b463d5-e3c5c36bae6c/Explicit-Flutter-tests.stdout.log",
+          "sha256": "FA27052CB21C31E4A39412C4FEA21B686A6D7AFC14F938B0939D1AC0FDC8FA86"
+        }
+      }
+    }
+  ],
+  "requirements": [
+    "COV-f24",
+    "COV-f25",
+    "COV-f36",
+    "COV-f37",
+    "FORM-01",
+    "FORM-06",
+    "FORM-07",
+    "G3"
+  ],
+  "outcomes": [
+    "Shared fixture proves first5/6 repair1/1 across history/progress/calendar/profile and weakness1/1 without mutation",
+    "Bangkok midnight/week and DST boundaries; noEvidence remains null; engagement XP/streak distinct from learning accuracy/mastery",
+    "79 active seconds retained instead of 10-minute wall span; monotonic time/restart/segment idempotency",
+    "Today uses canonical review/recommendation readers and has no duplicate accuracy denominator; owner and stale loader tests passed",
+    "B01-FORM-01 denominator gap already fixed by shared first-answer reader; broader cross-reader acceptance now verified"
+  ],
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "Device/manual/live/full release NOT RUN",
+    "Effective tier unverified"
+  ]
+}
