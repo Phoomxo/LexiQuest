@@ -94,6 +94,22 @@
         522
       ],
       "observation": "Focused source cases expressly require repeated microphone/playback retries to remain blocked after failed owned cleanup while skip remains usable. Confirms retained barrier is deliberate fail-closed contract, not currently promoted as defect; full test file not yet read or executed."
+    },
+    {
+      "file": "lib/screens/local_reading_library_screen.dart",
+      "ranges": [
+        [
+          1,
+          100
+        ]
+      ],
+      "relatedFiles": [
+        "lib/screens/choose_mode_screen.dart",
+        "lib/screens/cefr_article_reader_screen.dart",
+        "lib/screens/cefr_vocabulary_catalog_screen.dart",
+        "lib/runtime/production_feature_gate.dart"
+      ],
+      "observation": "Unpromoted local-reading route-gate candidate: choose_mode513-536 wraps library only; library pushes MaterialPageRoute siblings without gate. Reader no reading registry observation, route voice mixin observes current-route/lifecycle only. Bare library/article/catalog tests lack live registry withdrawal. Reproduce emergencyOff reading after pushed article before promoting; no new finding count or runtime pass."
     }
   ],
   "runtimeTestsRun": false
