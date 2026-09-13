@@ -20,5 +20,42 @@
     "fix": "Require working content equal accepted Git blob modulo EOL and recorded pin match an explicit LF/CRLF representation; record both hashes per EOL-only reuse",
     "retest": "Corrected verifier run recorded separately in G0.6-verification.json",
     "status": "closed"
+  }, {
+    "id": "B01-OPS-02",
+    "operation": "Native rg path discovery",
+    "expected": "Bounded source lookup",
+    "actual": "OS123 wildcard path error recurred for ai_usage*; a later guessed lesson_summary.dart path returned OS2",
+    "cause": "Native shell glob assumption and unverified filename",
+    "fix": "Stopped wildcard/guessed-path lookup. Use rg --files inventory or observed explicit paths; located AiUsageSummary in ai_tutor_contracts.dart and first/repair counts in pair_matching_history_projection.dart",
+    "retest": "Explicit-path source reads succeeded; no filesystem writes from failed searches",
+    "status": "closed"
+  }, {
+    "id": "B01-FORM-01",
+    "classification": "source-confirmed implementation gap against Master, not a new formula proposal",
+    "sourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+    "requirements": ["FORM-01", "FORM-07"],
+    "owners": ["G1.2", "G1.3", "G3.5"],
+    "expected": "First5/6 plus repair1/1 leaves first-answer accuracy5/6; exposure/self-report excluded from first eligible denominator",
+    "actual": "Pair history separates first/repair by promptWordId. DriftProgressQueries._isPracticeAttempt and DriftLearningCalendarReader exclude assessment/recreational only, then count all remaining attempts; seven qualifying stored answers5 first correct plus1 repair correct aggregate6/7",
+    "evidence": ["lib/features/progress/data/drift_progress_queries.dart:304", "lib/features/progress/data/drift_progress_queries.dart:538", "lib/features/progress/data/drift_learning_calendar_reader.dart:85", "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart:36"],
+    "cause": "General practice aggregate and first-answer metric have different denominator/eligibility semantics",
+    "fix": "Owner packages must establish shared first-eligible projection, retain historical attempts and separate repair/exposure axes; version compatibility if persisted interpretation changes",
+    "retest": "Required future regression: first5/6 + repair1/1 + duplicate ack + exposure/self-report + owner isolation, History/Progress/Calendar agreement. B01 inspected source; runtime NOT RUN",
+    "status": "open-owned-downstream",
+    "blocks": "First-answer runtime acceptance in owner packages; does not block G0.7 registry acceptance because requirement explicitly records behavior differences"
+  }, {
+    "id": "B01-FORM-02",
+    "classification": "source-confirmed no-evidence boundary gap, not acoustic-score proposal",
+    "sourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+    "requirements": ["FORM-10"],
+    "owners": ["G6.4", "G6.5"],
+    "expected": "No speech/empty reference/device failure remains unscored or noEvidence, never interpreted as0% skill",
+    "actual": "assess returns similarityPercent0 for either empty canonical text; Shadowing final-event callback invokes assess and _recordEvidence without checking empty final transcript. Explicit failure callback is separately guarded",
+    "evidence": ["lib/features/media_practice/application/speech_practice_use_cases.dart:209", "lib/screens/shadowing_challenge_screen.dart:258", "test/features/media_practice/speech_practice_use_cases_test.dart:59"],
+    "cause": "Numeric helper fallback is admitted through a scored consumer for empty final transcript",
+    "fix": "G6.4/G6.5 must gate empty/no-speech before scored evidence and keep recognized-text similarity distinct from acoustic pronunciation; preserve prior evidence version semantics",
+    "retest": "Required future empty-final/reference, failure, cancel, late final, retry and owner-change regressions; B01 source inspection only, durable runtime reproduction NOT RUN",
+    "status": "open-owned-downstream",
+    "blocks": "Speech no-evidence runtime acceptance in G6; G0 registry records gap without pretending fixed"
   }]
 }
