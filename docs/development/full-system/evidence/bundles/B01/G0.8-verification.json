@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "packageId": "G0.8",
+  "bundleId": "B01",
+  "kind": "delivery-review",
+  "status": "passed",
+  "sourceSha": "593046e41494a16de09e34935933c113f6c861f1",
+  "controlRevisionAtVerification": 22,
+  "editionId": "local-learning-preview-b01-v1",
+  "editionContractSha256": "fdbf2562f81206125e31d65563184023899f4e84245e115961b4e4271ee9678c",
+  "verifierSha256": "5d816808d5e1930b6899614a47f6b18a92f82a61e1080e71d188dae6234ac94a",
+  "sourcePins": {
+    "lib/runtime/app_bootstrap.dart": "fa70ffdad6371f8ddb0c9e95122b16f03d60a64cff37174e13449ab67c4ed4e8",
+    "lib/runtime/app_dependencies.dart": "7591ca16fab49abd80cbc4a09ebf8aa75506c64cf746c788a80ade7436310425",
+    "lib/runtime/central_cost_policy.dart": "68f71868eda8181bbdda4cead339d2df7e6b2dd998529c94a122cd5a096a2582",
+    "lib/runtime/learning_preview_feature_registry.dart": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7",
+    "lib/runtime/registries/feature_registry.dart": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348",
+    "lib/features/learning/application/lesson_mode_registry.dart": "a741f433f9885a283d4a84c0a922c997c6ac2b00ee4d5a730504e62800244e6b",
+    "lib/features/time_tracking/application/focus_timer_rollout.dart": "de68df5c60314e81e20719202d982869a1fa61fdb691f82661c1d9d78b37545e",
+    "lib/runtime/production_feature_gate.dart": "8d36ad5b1af9a4b397b370c19334453825bd29f2adaea59a97357d066b76a054",
+    "lib/config/adventure_research_runtime_config.dart": "d15cc42cf241a7cf884b4404b76a37babcf5f3a56f2b905149386fcf892ad609",
+    "test/runtime/runtime_feature_controls_test.dart": "ea9b285cc2fb3e33d1c06e6d003d6c72212e2d3aca0df2e697ddb15f6ff152aa",
+    "test/features/learning/lesson_mode_registry_test.dart": "b07840c10671067abaeaf11870db0113c345cfad9a758644bc62d95398b9db6f"
+  },
+  "counts": {
+    "activationRecords": 74,
+    "deliveryDecisions": 4,
+    "authorityDispositions": 12,
+    "reusedG05Pins": 169,
+    "formulaFixtures": 60,
+    "failureCandidatesRetained": 76,
+    "reportLinks": 7
+  },
+  "reusedPackageCommits": {
+    "G0.6": "767bf2779e2354cb0adde10b5b7622144e490437",
+    "G0.7": "593046e41494a16de09e34935933c113f6c861f1"
+  },
+  "gates": {
+    "sourceOwnership": "PASS accepted G0.1/G0.2 lineage; one current bundle writer and isolated accepted branch",
+    "authorityChoices": "PASS D01–D12 adopted with implementation/remote release blockers retained, not runtime closure",
+    "coverageAssignment": "PASS same74 records, content profiles, owner packages and catalog identity",
+    "cleanupDisposition": "PASS accepted G0.6 unchanged fingerprints; all76 evidence images retained with restore proof",
+    "formulaRegistry": "PASS accepted G0.7 unchanged source/registry; gaps have explicit downstream owners",
+    "editionDecision": "PASS local preview config specified and source-bound; f12/f23/f28/f41 decisions closed; actual device config NOT RUN",
+    "verificationObligations": "PASS obligation registration only; Economy/Integration missing automation remains NOT RUN",
+    "G0": "PASS development-readiness; not runtime/product/release acceptance"
+  },
+  "runtimeVerified": false,
+  "applicationChanges": 0,
+  "dataDeletions": 0,
+  "notRun": [
+    "Flutter",
+    "backend",
+    "Android build/install",
+    "GPU",
+    "emulator",
+    "physical device",
+    "human",
+    "live provider",
+    "full release"
+  ],
+  "openDefects": [
+    "B01-FORM-01",
+    "B01-FORM-02"
+  ],
+  "externalGates": [
+    {
+      "id": "REMOTE-ECONOMY",
+      "status": "NOT RUN/open-required-for-remote-edition",
+      "owners": [
+        "G7.3",
+        "G7.5"
+      ],
+      "reason": "D04 trusted remote rules not closed; selected preview disables cloud"
+    },
+    {
+      "id": "STORAGE-POLICY",
+      "status": "NOT RUN/not-selected-local-edition",
+      "owners": [
+        "G7.3",
+        "G7.5"
+      ],
+      "reason": "D09 forward storage policy validation before enabling storage"
+    },
+    {
+      "id": "DEVICE-CAMERA",
+      "status": "NOT RUN/external-pending",
+      "owners": [
+        "G5.6",
+        "G8.6",
+        "G8.7"
+      ],
+      "reason": "Physical permission/lifecycle/model/resource/quality evidence required"
+    },
+    {
+      "id": "LIVE-AI-VOICE",
+      "status": "NOT RUN/external-pending",
+      "owners": [
+        "G6.6",
+        "G8.6"
+      ],
+      "reason": "Live provider/audio/human quality not established by local tests"
+    },
+    {
+      "id": "BUILD-IDENTITY",
+      "status": "NOT RUN/required-later",
+      "owners": [
+        "G7.7",
+        "G8.6"
+      ],
+      "reason": "Actual APK/AAB identity/signature/config/release provenance not inspected here"
+    },
+    {
+      "id": "FULL-RELEASE",
+      "status": "NOT RUN/required-after-freeze",
+      "owners": [
+        "G8.4",
+        "G8.5",
+        "G8.9"
+      ],
+      "reason": "B18 review/fixes before B19 System Test Plan/execution; no early full gate"
+    }
+  ],
+  "review": "Reviewed against G0.8/Master decisions. Preserves existing authority/history, closes decision ambiguity, explicitly disables cloud in selected profile, does not activate any service or claim44 runtime capabilities."
+}
