@@ -1,0 +1,12 @@
+test_cross_split_owner_is_rejected_even_with_different_groups (test_camera_web_dataset.WebDatasetTests.test_cross_split_owner_is_rejected_even_with_different_groups) ... ok
+test_curation_rejects_exact_and_crop_near_duplicates (test_camera_web_dataset.WebDatasetTests.test_curation_rejects_exact_and_crop_near_duplicates) ... ok
+test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset) ... ok
+test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input) ... ok
+test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo) ... ok
+test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split) ... ok
+test_validation_rejects_tampering_and_unrelated_rights (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_unrelated_rights) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.193s
+
+OK

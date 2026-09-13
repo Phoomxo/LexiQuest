@@ -1,0 +1,172 @@
+{
+  "status": "accepted",
+  "package": "G5.3b",
+  "datasetVersion": "2026-09-14.1",
+  "datasetRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training",
+  "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\manifest.json",
+  "manifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+  "acquired": 587,
+  "visuallyReviewed": 587,
+  "visualExclusions": 110,
+  "exactNearDuplicateExclusions": 0,
+  "retained": 477,
+  "splitCounts": {
+    "train": 357,
+    "validation": 120
+  },
+  "counts": {
+    "train": {
+      "book": 23,
+      "bottle": 24,
+      "chair": 27,
+      "cup": 27,
+      "apple": 20,
+      "bread": 20,
+      "tomato": 27,
+      "bowl": 21,
+      "spoon": 26,
+      "fork": 15,
+      "knife": 23,
+      "door": 25,
+      "ladder": 26,
+      "light bulb": 16,
+      "tool": 14,
+      "tap": 23
+    },
+    "validation": {
+      "book": 5,
+      "bottle": 10,
+      "chair": 8,
+      "cup": 10,
+      "apple": 7,
+      "bread": 9,
+      "tomato": 7,
+      "bowl": 10,
+      "spoon": 5,
+      "fork": 6,
+      "knife": 16,
+      "door": 8,
+      "ladder": 5,
+      "light bulb": 3,
+      "tool": 7,
+      "tap": 4
+    }
+  },
+  "splitSeed": 20260914,
+  "splitHashNamespace": "split-v1",
+  "sourceGroups": "canonical Flickr author + image identity + full/crop pHash distance<=8 + observed product links; preserve excluded bridges",
+  "perceptualMethod": "32x32 grayscale DCT 8x8 threshold median excluding DC; Hamming threshold8",
+  "tests": {
+    "log": "G5.3b-product-green.log",
+    "passed": 11,
+    "exitCode": 0
+  },
+  "curation": {
+    "log": "G5.3b-curate.log",
+    "exitCode": 0
+  },
+  "artifacts": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\manifest.json",
+      "sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+      "bytes": 1017583
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\combined-acquired.json",
+      "sha256": "cd8eddaebaeea403a8d8a93b3f215a1c196394526a6044a355f842f1ec95487a",
+      "bytes": 1099630
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\combined-review.json",
+      "sha256": "a5643d8c51c02ff33921a088777c265834ac6ac4fcac29b330a7ab065bd2883f",
+      "bytes": 29468
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\contact.py",
+      "sha256": "d223cccc494b3b6845928da7f63b9fcc968c0f7d26a6d7623d24a57dcb912734",
+      "bytes": 1189
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\supplement-protocol.json",
+      "sha256": "0ca894ea5e539d993623da2a39f384923e812876b06f3a3e83cc8aa1bd00c1b2",
+      "bytes": 512
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata\\acquisition.json",
+      "sha256": "5bed07a71bc7961de93a1a403a8431f84edc3cf3bd507c9c88acc2c1d15c502f",
+      "bytes": 898
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata-extra\\acquisition.json",
+      "sha256": "a4401b53d211f521737befe1fa451ff416947151ebf052ea742b91b3d8d36e39",
+      "bytes": 572
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata\\images.csv",
+      "sha256": "ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17",
+      "bytes": 15245485
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata\\boxes.csv",
+      "sha256": "d8bbd59410af14835d7733165a7bb8a3f0213981b22dd5077b0b9f7878991ff2",
+      "bytes": 25105048
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata\\classes.csv",
+      "sha256": "1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9",
+      "bytes": 12064
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata-extra\\images.csv",
+      "sha256": "de55c6b8cbda32a79f4a20f28572d54e9c49d527a4006725675764074a51a36d",
+      "bytes": 45227339
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\metadata-extra\\boxes.csv",
+      "sha256": "fe22e579b9453875601576859d14ef3304058165de139c66b725e599202bd7b1",
+      "bytes": 77484237
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-v1\\acquired.json",
+      "sha256": "743f1713ed4e82d2c777748053ff199ff0effad6ab1d82c63f8b987866760851",
+      "bytes": 901574
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-v1\\requests.jsonl",
+      "sha256": "99c8f4055e50001f38e62dc23499778e5997c270924a23bb392fdc6f2f94147d",
+      "bytes": 846238
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-v1\\visual-review.json",
+      "sha256": "6489fdd96c200a9eb861fc01ad8e39ecd015794f57c887480e0552349d6effbe",
+      "bytes": 22878
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-supplement\\acquired.json",
+      "sha256": "1c980eae079ceaec0364b5629036e4de2a29035977cda2e168f23126dca9d4cb",
+      "bytes": 184709
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-supplement\\requests.jsonl",
+      "sha256": "f62ad29fb07eca84a19928e36da1ffc85815e6f9b75ab36bbfe2f7ab13c7b878",
+      "bytes": 171366
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\dataset-supplement\\visual-review.json",
+      "sha256": "d74f953ab9c3cd3de14045a48b97f2c49995e8885bf334dd1170f4a3ed9c4aa2",
+      "bytes": 6917
+    }
+  ],
+  "inputs": {
+    "tools/camera_web_dataset.py": "648caa09fb9924f6e3be6a2d0aaebffc7f1c51928ea9e75b5baded16e5d84846",
+    "tools/test_camera_web_dataset.py": "3659a3ff7f319d9cdfd7be9d4b6957da809fe7e944cbb7deb75cd24ea648dd76",
+    "docs/development/full-system/evidence/bundles/B11A/taxonomy.json": "c07fc79fc0c084325bfa5a7ae308b6a606ffe8bf98fb1e534c37523007ef31e3"
+  },
+  "limitations": [
+    "Internet annotated object crops only; full-frame/device/unknown accuracy NOT RUN",
+    "Open Images upstream validation/test selected as development before any model fit; no fresh camera test opened",
+    "Pretrained ImageNet overlap not established; no unbiased benchmark claim",
+    "No bulk images/checkpoints committed; external byte locations are required to replay"
+  ],
+  "review": "Reviewed rights parsing, identity checks, curating before selection, source grouping, independent hash namespace and error preservation. Required local defects closed; inaccessible sources excluded using licensed alternatives."
+}

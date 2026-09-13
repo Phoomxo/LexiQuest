@@ -1,0 +1,23 @@
+test_author_aliases_use_stable_flickr_identity (test_camera_web_dataset.WebDatasetTests.test_author_aliases_use_stable_flickr_identity) ... ERROR
+test_cross_split_owner_is_rejected_even_with_different_groups (test_camera_web_dataset.WebDatasetTests.test_cross_split_owner_is_rejected_even_with_different_groups) ... ok
+test_curation_rejects_exact_and_crop_near_duplicates (test_camera_web_dataset.WebDatasetTests.test_curation_rejects_exact_and_crop_near_duplicates) ... ok
+test_file_paths_cannot_escape_dataset (test_camera_web_dataset.WebDatasetTests.test_file_paths_cannot_escape_dataset) ... ok
+test_fresh_test_is_never_training_input (test_camera_web_dataset.WebDatasetTests.test_fresh_test_is_never_training_input) ... ok
+test_license_must_belong_to_requested_photo (test_camera_web_dataset.WebDatasetTests.test_license_must_belong_to_requested_photo) ... ok
+test_related_sources_and_near_images_share_split (test_camera_web_dataset.WebDatasetTests.test_related_sources_and_near_images_share_split) ... ok
+test_split_hash_is_independent_from_acquisition_order (test_camera_web_dataset.WebDatasetTests.test_split_hash_is_independent_from_acquisition_order) ... ok
+test_validation_rejects_tampering_and_unrelated_rights (test_camera_web_dataset.WebDatasetTests.test_validation_rejects_tampering_and_unrelated_rights) ... ok
+
+======================================================================
+ERROR: test_author_aliases_use_stable_flickr_identity (test_camera_web_dataset.WebDatasetTests.test_author_aliases_use_stable_flickr_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\cd5e\LexiQuest\tools\test_camera_web_dataset.py", line 59, in test_author_aliases_use_stable_flickr_identity
+    self.assertEqual(api.owner_author(page, url), 'flickr:123@N04')
+                     ^^^^^^^^^^^^^^^^
+AttributeError: module 'camera_web_dataset' has no attribute 'owner_author'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.201s
+
+FAILED (errors=1)

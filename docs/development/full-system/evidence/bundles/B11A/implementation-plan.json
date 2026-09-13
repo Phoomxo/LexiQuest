@@ -65,5 +65,11 @@
     "No synthetic metrics or baseline-retention training acceptance",
     "Bulk imagery/checkpoints external locations with hashes",
     "One concise B11A.md report; structured plan supersedes skill default separate Markdown"
+  ],
+  "datasetProtocolRefinements": [
+    "Acquisition ordering and splitting use separate hash namespaces, seed20260914 unchanged",
+    "Canonical owner from photo JSON-LD avatar Flickr NSID, fallback current owner URL; merge all related images before curation removes bridge images",
+    "Visual review every acquired object crop before validation-loss/model inspection; exact plus full-frame/crop perceptual hash filtering",
+    "Sparse categories supplemented using existing Open Images metadata before training; all selected upstream partitions are development only, never fresh camera acceptance"
   ]
 }

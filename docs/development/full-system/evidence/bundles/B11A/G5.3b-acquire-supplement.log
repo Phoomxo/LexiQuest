@@ -1,0 +1,125 @@
+{"id": "a83700700b6d1f0a", "label": "book", "status": "acquired", "counts": {"book": 1, "spoon": 0, "ladder": 0, "light bulb": 0, "tap": 0}}
+{"id": "7e94154b6aab1200", "label": "spoon", "status": "acquired", "counts": {"book": 1, "spoon": 1, "ladder": 0, "light bulb": 0, "tap": 0}}
+{"id": "1bb9354b5ab7b139", "label": "tap", "status": "acquired", "counts": {"book": 1, "spoon": 1, "ladder": 0, "light bulb": 0, "tap": 1}}
+{"id": "7053ad0ed8118c44", "label": "tap", "status": "acquired", "counts": {"book": 1, "spoon": 1, "ladder": 0, "light bulb": 0, "tap": 2}}
+{"id": "412e3fddac13e4cf", "label": "ladder", "status": "excluded", "counts": {"book": 1, "spoon": 1, "ladder": 0, "light bulb": 0, "tap": 2}}
+{"id": "1e2a4fcc508d3660", "label": "ladder", "status": "acquired", "counts": {"book": 1, "spoon": 1, "ladder": 1, "light bulb": 0, "tap": 2}}
+{"id": "308099485283d4b9", "label": "book", "status": "acquired", "counts": {"book": 2, "spoon": 1, "ladder": 1, "light bulb": 0, "tap": 2}}
+{"id": "3abb138054950f0c", "label": "book", "status": "acquired", "counts": {"book": 3, "spoon": 1, "ladder": 1, "light bulb": 0, "tap": 2}}
+{"id": "d9ffd0e5483595d2", "label": "book", "status": "acquired", "counts": {"book": 4, "spoon": 1, "ladder": 1, "light bulb": 0, "tap": 2}}
+{"id": "8638f05fa3765b3a", "label": "spoon", "status": "acquired", "counts": {"book": 4, "spoon": 2, "ladder": 1, "light bulb": 0, "tap": 2}}
+{"id": "2b73bc86d0458f54", "label": "light bulb", "status": "acquired", "counts": {"book": 4, "spoon": 2, "ladder": 1, "light bulb": 1, "tap": 2}}
+{"id": "f6152a8ba6e644b1", "label": "book", "status": "excluded", "counts": {"book": 4, "spoon": 2, "ladder": 1, "light bulb": 1, "tap": 2}}
+{"id": "916483be4dbb2d84", "label": "spoon", "status": "acquired", "counts": {"book": 4, "spoon": 3, "ladder": 1, "light bulb": 1, "tap": 2}}
+{"id": "5bc21601ccdc7544", "label": "spoon", "status": "acquired", "counts": {"book": 4, "spoon": 4, "ladder": 1, "light bulb": 1, "tap": 2}}
+{"id": "81be67d8946df74c", "label": "tap", "status": "acquired", "counts": {"book": 4, "spoon": 4, "ladder": 1, "light bulb": 1, "tap": 3}}
+{"id": "1fe277de970362b2", "label": "ladder", "status": "excluded", "counts": {"book": 4, "spoon": 4, "ladder": 1, "light bulb": 1, "tap": 3}}
+{"id": "e1da37aec1a10ac5", "label": "ladder", "status": "acquired", "counts": {"book": 4, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "accc701a0db6350a", "label": "book", "status": "acquired", "counts": {"book": 5, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "f2213272f09d267b", "label": "spoon", "status": "excluded", "counts": {"book": 5, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "475d00a0c2c5cd71", "label": "book", "status": "acquired", "counts": {"book": 6, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "748d02321604483a", "label": "tap", "status": "excluded", "counts": {"book": 6, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "a13ad60d2ae08729", "label": "book", "status": "acquired", "counts": {"book": 7, "spoon": 4, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "b796c08f15d62b0a", "label": "spoon", "status": "acquired", "counts": {"book": 7, "spoon": 5, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "d7aa2d8650a749d8", "label": "spoon", "status": "acquired", "counts": {"book": 7, "spoon": 6, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "7409c167b0ea3ee8", "label": "book", "status": "acquired", "counts": {"book": 8, "spoon": 6, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "4921dfb85fa727a0", "label": "ladder", "status": "excluded", "counts": {"book": 8, "spoon": 6, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "23bded43c4460051", "label": "spoon", "status": "acquired", "counts": {"book": 8, "spoon": 7, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "3d8db9dac3e542d3", "label": "book", "status": "acquired", "counts": {"book": 9, "spoon": 7, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "860697323ff27286", "label": "ladder", "status": "excluded", "counts": {"book": 9, "spoon": 7, "ladder": 2, "light bulb": 1, "tap": 3}}
+{"id": "2e54acad63b47b13", "label": "tap", "status": "acquired", "counts": {"book": 9, "spoon": 7, "ladder": 2, "light bulb": 1, "tap": 4}}
+{"id": "a143973d857d74de", "label": "book", "status": "acquired", "counts": {"book": 10, "spoon": 7, "ladder": 2, "light bulb": 1, "tap": 4}}
+{"id": "34a8911e6e47dc05", "label": "spoon", "status": "acquired", "counts": {"book": 10, "spoon": 8, "ladder": 2, "light bulb": 1, "tap": 4}}
+{"id": "1d5797f281d145b9", "label": "ladder", "status": "acquired", "counts": {"book": 10, "spoon": 8, "ladder": 3, "light bulb": 1, "tap": 4}}
+{"id": "5baabdc47aabff2a", "label": "ladder", "status": "acquired", "counts": {"book": 10, "spoon": 8, "ladder": 4, "light bulb": 1, "tap": 4}}
+{"id": "8ba593677cc780d7", "label": "ladder", "status": "acquired", "counts": {"book": 10, "spoon": 8, "ladder": 5, "light bulb": 1, "tap": 4}}
+{"id": "df6fb34dcd008d9c", "label": "ladder", "status": "acquired", "counts": {"book": 10, "spoon": 8, "ladder": 6, "light bulb": 1, "tap": 4}}
+{"id": "c87a0b038a656446", "label": "spoon", "status": "excluded", "counts": {"book": 10, "spoon": 8, "ladder": 6, "light bulb": 1, "tap": 4}}
+{"id": "730fdf59bfc2fb98", "label": "book", "status": "acquired", "counts": {"book": 11, "spoon": 8, "ladder": 6, "light bulb": 1, "tap": 4}}
+{"id": "108fab56ee8bbc72", "label": "ladder", "status": "acquired", "counts": {"book": 11, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "c543348e219e3e45", "label": "book", "status": "acquired", "counts": {"book": 12, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "23fcb4277a8ee317", "label": "spoon", "status": "excluded", "counts": {"book": 12, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "5b0f9dedfeba3892", "label": "light bulb", "status": "excluded", "counts": {"book": 12, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "1df6e430c821910b", "label": "spoon", "status": "excluded", "counts": {"book": 12, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "169f75db18615bf1", "label": "book", "status": "acquired", "counts": {"book": 13, "spoon": 8, "ladder": 7, "light bulb": 1, "tap": 4}}
+{"id": "b10abf64e88807c7", "label": "ladder", "status": "acquired", "counts": {"book": 13, "spoon": 8, "ladder": 8, "light bulb": 1, "tap": 4}}
+{"id": "3f04eda70d443cd0", "label": "ladder", "status": "acquired", "counts": {"book": 13, "spoon": 8, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "2788f5a9418ba0e0", "label": "book", "status": "acquired", "counts": {"book": 14, "spoon": 8, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "3f2e9a97de8f922f", "label": "spoon", "status": "acquired", "counts": {"book": 14, "spoon": 9, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "2eba94f606dbb3ea", "label": "spoon", "status": "acquired", "counts": {"book": 14, "spoon": 10, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "723e70fe85e0da69", "label": "book", "status": "acquired", "counts": {"book": 15, "spoon": 10, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "f53359a17f2a063b", "label": "spoon", "status": "acquired", "counts": {"book": 15, "spoon": 11, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "80dcc25edab2f006", "label": "spoon", "status": "acquired", "counts": {"book": 15, "spoon": 12, "ladder": 9, "light bulb": 1, "tap": 4}}
+{"id": "313f51fc7ef2a042", "label": "ladder", "status": "acquired", "counts": {"book": 15, "spoon": 12, "ladder": 10, "light bulb": 1, "tap": 4}}
+{"id": "66941b7019902793", "label": "spoon", "status": "acquired", "counts": {"book": 15, "spoon": 13, "ladder": 10, "light bulb": 1, "tap": 4}}
+{"id": "572a9bd2900aa218", "label": "spoon", "status": "acquired", "counts": {"book": 15, "spoon": 14, "ladder": 10, "light bulb": 1, "tap": 4}}
+{"id": "93fd8d83a2a987e5", "label": "light bulb", "status": "acquired", "counts": {"book": 15, "spoon": 14, "ladder": 10, "light bulb": 2, "tap": 4}}
+{"id": "799b9b46c0c7490e", "label": "ladder", "status": "acquired", "counts": {"book": 15, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 4}}
+{"id": "c320f6ce63e54c2e", "label": "book", "status": "acquired", "counts": {"book": 16, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 4}}
+{"id": "d4e436271904ee4d", "label": "book", "status": "acquired", "counts": {"book": 17, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 4}}
+{"id": "2cb84e34527db533", "label": "tap", "status": "acquired", "counts": {"book": 17, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 5}}
+{"id": "b75030ef6a750a01", "label": "ladder", "status": "excluded", "counts": {"book": 17, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 5}}
+{"id": "4ce07056031fabb2", "label": "book", "status": "acquired", "counts": {"book": 18, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 5}}
+{"id": "7718ef1a7e6b3cb1", "label": "book", "status": "acquired", "counts": {"book": 19, "spoon": 14, "ladder": 11, "light bulb": 2, "tap": 5}}
+{"id": "ab729cdd56042f8e", "label": "ladder", "status": "acquired", "counts": {"book": 19, "spoon": 14, "ladder": 12, "light bulb": 2, "tap": 5}}
+{"id": "7938a967f8ce36a1", "label": "spoon", "status": "acquired", "counts": {"book": 19, "spoon": 15, "ladder": 12, "light bulb": 2, "tap": 5}}
+{"id": "117e1bc184d38694", "label": "ladder", "status": "acquired", "counts": {"book": 19, "spoon": 15, "ladder": 13, "light bulb": 2, "tap": 5}}
+{"id": "07048ea0ca4d5e4f", "label": "book", "status": "acquired", "counts": {"book": 20, "spoon": 15, "ladder": 13, "light bulb": 2, "tap": 5}}
+{"id": "e4026c6be48696ae", "label": "spoon", "status": "acquired", "counts": {"book": 20, "spoon": 16, "ladder": 13, "light bulb": 2, "tap": 5}}
+{"id": "aa4671872230edae", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 16, "ladder": 14, "light bulb": 2, "tap": 5}}
+{"id": "adb96f8b49b678fc", "label": "spoon", "status": "acquired", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 5}}
+{"id": "492e307bd849d9fa", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 6}}
+{"id": "4184ad265b7cdf3c", "label": "ladder", "status": "excluded", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 6}}
+{"id": "82eb32ee1ba16349", "label": "spoon", "status": "excluded", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 6}}
+{"id": "cbdc8e992e9100d9", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 6}}
+{"id": "1e8dd45113e1c46d", "label": "light bulb", "status": "excluded", "counts": {"book": 20, "spoon": 17, "ladder": 14, "light bulb": 2, "tap": 6}}
+{"id": "c8f9ae4c1b2abf75", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 17, "ladder": 15, "light bulb": 2, "tap": 6}}
+{"id": "d8eb28ba3b7b1e19", "label": "spoon", "status": "acquired", "counts": {"book": 20, "spoon": 18, "ladder": 15, "light bulb": 2, "tap": 6}}
+{"id": "7dfa97624e81b930", "label": "light bulb", "status": "excluded", "counts": {"book": 20, "spoon": 18, "ladder": 15, "light bulb": 2, "tap": 6}}
+{"id": "5c604fff938dfff3", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 18, "ladder": 16, "light bulb": 2, "tap": 6}}
+{"id": "6a7bc156999b4612", "label": "spoon", "status": "acquired", "counts": {"book": 20, "spoon": 19, "ladder": 16, "light bulb": 2, "tap": 6}}
+{"id": "75f40d292fe64fb3", "label": "spoon", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 16, "light bulb": 2, "tap": 6}}
+{"id": "3c91a03d78f56a78", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 17, "light bulb": 2, "tap": 6}}
+{"id": "d8e0c7825be12b2c", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 17, "light bulb": 2, "tap": 7}}
+{"id": "7e1a4afa1a3510aa", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 18, "light bulb": 2, "tap": 7}}
+{"id": "5bc5a644392fcad6", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 19, "light bulb": 2, "tap": 7}}
+{"id": "2cffe8b1fca33189", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 19, "light bulb": 3, "tap": 7}}
+{"id": "e4bd3b1c73e89d7f", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 19, "light bulb": 4, "tap": 7}}
+{"id": "d8f0b10b64b3dbeb", "label": "ladder", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 4, "tap": 7}}
+{"id": "047f61004ad84e40", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 5, "tap": 7}}
+{"id": "43f3387c86ff305b", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 6, "tap": 7}}
+{"id": "ac085b153d9f86f3", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 6, "tap": 8}}
+{"id": "6f17dcc342355b2e", "label": "light bulb", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 6, "tap": 8}}
+{"id": "ccfe0aca9965c819", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 6, "tap": 9}}
+{"id": "bf1e4030d88a0b1d", "label": "light bulb", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 6, "tap": 9}}
+{"id": "deaa26241783e382", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 7, "tap": 9}}
+{"id": "bb97440530d7fa1d", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 7, "tap": 10}}
+{"id": "5f86a3e33180fe15", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 8, "tap": 10}}
+{"id": "49752e381e86d790", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 8, "tap": 11}}
+{"id": "f80e278fc990e144", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 8, "tap": 11}}
+{"id": "8fff8515ecb2a73e", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 9, "tap": 11}}
+{"id": "bf1fed28d07675fe", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 10, "tap": 11}}
+{"id": "ee94e47cb47ec5a9", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 10, "tap": 11}}
+{"id": "9511dad8ea6bd2af", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 11, "tap": 11}}
+{"id": "7cdb2495631f72a6", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 11, "tap": 12}}
+{"id": "1b009839e77f493d", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 11, "tap": 13}}
+{"id": "ed231c2140c2c89d", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 12, "tap": 13}}
+{"id": "4930720ec7a78403", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 13, "tap": 13}}
+{"id": "5501b9c3db716f85", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 13, "tap": 13}}
+{"id": "4aec5b5fb3571ac2", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 13, "tap": 13}}
+{"id": "77525ddb3b77cc02", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 13, "tap": 14}}
+{"id": "ab7cc7dff47cd934", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 13, "tap": 14}}
+{"id": "71b828357f8f3fdf", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 14, "tap": 14}}
+{"id": "703b13b1f0db569f", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 14, "tap": 15}}
+{"id": "9c37e3057754ffb2", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 15, "tap": 15}}
+{"id": "157a69e616220d6f", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 16, "tap": 15}}
+{"id": "e34b706faf8a1fbb", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 17, "tap": 15}}
+{"id": "705ac475ecd763d4", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 18, "tap": 15}}
+{"id": "0ee5625c25cc2a30", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 19, "tap": 15}}
+{"id": "dc96dd263e1dba6f", "label": "light bulb", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 15}}
+{"id": "0b0803480232cf3e", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 16}}
+{"id": "c96f32d3115e8fab", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 17}}
+{"id": "8926f7f6295f09b0", "label": "tap", "status": "excluded", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 17}}
+{"id": "d82df52f6c107c77", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 18}}
+{"id": "a6b245401170b5fa", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 19}}
+{"id": "eb860406ae9b661b", "label": "tap", "status": "acquired", "counts": {"book": 20, "spoon": 20, "ladder": 20, "light bulb": 20, "tap": 20}}
