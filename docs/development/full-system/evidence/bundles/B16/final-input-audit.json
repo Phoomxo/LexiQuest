@@ -1,0 +1,52 @@
+[
+  {
+    "receipt": "G7.3-research",
+    "exactImportAndPackageInputs": 171,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  },
+  {
+    "receipt": "G7.4-final",
+    "exactImportAndPackageInputs": 316,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [
+      "tool/feature_contract/generate_feature_map.dart"
+    ],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  },
+  {
+    "receipt": "G7.5-default",
+    "exactImportAndPackageInputs": 508,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  },
+  {
+    "receipt": "G7.5-preview",
+    "exactImportAndPackageInputs": 501,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  },
+  {
+    "receipt": "G7.5-preview-journeys",
+    "exactImportAndPackageInputs": 501,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  },
+  {
+    "receipt": "G7.5-cefr-preview",
+    "exactImportAndPackageInputs": 501,
+    "changed": [],
+    "notPinnedByOriginalReceipt": [],
+    "pinnedBySupplementalArchitectureGate": [],
+    "scope": "Own-package Dart import/export/part closure and pubspec pins; not blanket verifier fingerprint equality"
+  }
+]

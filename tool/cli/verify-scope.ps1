@@ -45,6 +45,8 @@ param(
 
     [switch]$AndroidCompileOnly,
 
+    [switch]$LocalLearningPreview,
+
     [string]$FrozenSha = ''
 )
 
@@ -91,7 +93,7 @@ function Get-AreaPathPattern {
     # Frontend suites share feature authorities, bootstrap and test helpers.
     # Conservative input coverage avoids reusing a pass after an unstaged
     # dependency edit. This changes cache validity, not the selected tests.
-    $flutterInputs = '^(lib/|test/|assets/|tool/cli/|\.gitattributes$|pubspec\.(yaml|lock)$|analysis_options\.yaml$|dart_test\.yaml$|\.metadata$)'
+    $flutterInputs = '^(lib/|test/|assets/|tool/|\.gitattributes$|pubspec\.(yaml|lock)$|analysis_options\.yaml$|dart_test\.yaml$|\.metadata$)'
     if ($TestTargets.Count -gt 0) {
         return $flutterInputs
     }
@@ -244,7 +246,7 @@ function New-FlutterTestSpec {
     return New-CommandSpec `
         -Name $Name `
         -FilePath 'flutter' `
-        -Arguments (@('test') + $targets + @('--reporter', 'compact') + $(if ($TestName) { @('--plain-name', $TestName) } else { @() })) `
+        -Arguments (@('test') + $targets + @('--reporter', 'compact') + $(if ($TestName) { @('--plain-name', $TestName) } else { @() }) + $(if ((Get-Variable LocalLearningPreview -ErrorAction SilentlyContinue) -and $LocalLearningPreview) { @('--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') } else { @() })) `
         -SourceArea $SourceArea
 }
 
@@ -284,6 +286,15 @@ function Get-VerificationCommands {
         [string]$SelectedArea
     )
 
+    if ((Get-Variable LocalLearningPreview -ErrorAction SilentlyContinue) -and $LocalLearningPreview) {
+        if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -notin @('Learning','Runtime') -or $TestTargets.Count -eq 0 -or $CliOnly -or $RulesOnly -or $AndroidCompileOnly) {
+            throw 'LocalLearningPreview requires targeted explicit Learning/Runtime Flutter tests only.'
+        }
+        $profile = Get-Content -LiteralPath (Join-Path $scriptDir 'profiles/local-learning-preview.json') -Raw | ConvertFrom-Json
+        if (@($profile.PSObject.Properties).Count -ne 2 -or $profile.LEXIQUEST_LEARNING_PREVIEW -cne 'true' -or $profile.LEXIQUEST_CLOUD_SYNC_ENABLED -cne 'false') {
+            throw 'Local learning preview profile must enable learning and disable cloud only.'
+        }
+    }
     if ((Get-Variable AndroidCompileOnly -ErrorAction SilentlyContinue) -and $AndroidCompileOnly) {
         if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Integration' -or $TestTargets.Count -or $TestName -or $CliOnly -or $RulesOnly) {
             throw 'AndroidCompileOnly requires Targeted/Integration with no other selection.'
@@ -679,6 +690,7 @@ try {
     if ($TestTargets.Count -gt 0) {
         $targetIdentity = $TestTargets -join "`n"
         if ($TestName) { $targetIdentity += "`nname=" + $TestName }
+        if ($LocalLearningPreview) { $targetIdentity += "`nprofile=local-learning-preview" }
         $targetKey = Get-Sha256Text -Text $targetIdentity
         $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '-' + $targetKey + '.json')
     }

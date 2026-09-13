@@ -35,6 +35,23 @@ try { Get-VerificationCommands Targeted Economy | Out-Null } catch { $rejected =
 if (-not $rejected) { throw 'Mixed native/rules selectors must fail' }
 $RulesOnly = $false
 $AndroidCompileOnly = $false
+$LocalLearningPreview = $true
+$TestTargets = @('test/runtime/app_bootstrap_test.dart')
+$previewSelection = @(Get-VerificationCommands Targeted Runtime)
+if ($previewSelection[0].Arguments -notcontains '--dart-define-from-file=tool/cli/profiles/local-learning-preview.json') { throw 'Preview must compile the canonical local profile' }
+$TestTargets = @()
+$rejected = $false
+try { Get-VerificationCommands Release All | Out-Null } catch { $rejected = $true }
+if (-not $rejected) { throw 'Preview selector cannot replace release gate' }
+$RulesOnly = $true
+$rejected = $false
+try { Get-VerificationCommands Targeted Economy | Out-Null } catch { $rejected = $true }
+if (-not $rejected) { throw 'Preview cannot mix with rules selector' }
+$RulesOnly = $false
+$LocalLearningPreview = $false
+$TestTargets = @('test/architecture/fitness_test.dart')
+if ('tool/feature_contract/generate_feature_map.dart' -notmatch (Get-AreaPathPattern Learning)) { throw 'Flutter fingerprint must include imported tool Dart helpers' }
+$TestTargets = @()
 
 $failures = [System.Collections.Generic.List[string]]::new()
 foreach ($area in @('BackendAI','BackendVoice','BackendLM')) {

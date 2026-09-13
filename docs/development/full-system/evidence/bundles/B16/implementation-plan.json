@@ -25,7 +25,8 @@
         "research_runtime_sync_integration_test.dart and research_withdrawal_reopen_test.dart with unchanged-evidence audit or bounded run",
         "self review callers and donor contract"
       ],
-      "rollback": "Git revert rules changes locally; no deployed policy or remote catalog touched. Never roll back to permissive rules in a release."
+      "rollback": "Git revert rules changes locally; no deployed policy or remote catalog touched. Never roll back to permissive rules in a release.",
+      "status": "accepted-local"
     },
     {
       "package": "G7.4",
@@ -49,7 +50,8 @@
         "Retain previous-file backup if rollback itself fails; remove new payload",
         "Remove five whitespace-only legacy store placeholders after consumer audit; original schema fixture/importer retained",
         "Verify manifests across all50 tables; owner deletion/reminder fences and offline pin/cache behavior"
-      ]
+      ],
+      "status": "accepted-local"
     },
     {
       "package": "G7.5",
@@ -67,7 +69,15 @@
         "lesson_mode_registry_test.dart",
         "runtime_kill_switch_journey_test.dart",
         "bounded affected bootstrap/activation checks"
-      ]
+      ],
+      "discoveredWork": [
+        "Canonical tool/cli/profiles/local-learning-preview.json binds exactly learning=true/cloud=false",
+        "Verifier LocalLearningPreview only targeted explicit Flutter tests; reject mixed/release selectors and altered profile",
+        "Compiled factory flag assertions +44 catalog rows +lesson delivery +focus stage +all20 runtime kill switches",
+        "Join runtime matrix to B01 content profile/authority, add current explicit limitations; compiled test flags are not installed APK flags",
+        "Source-default regression and selected preview journeys; f12 enabled only preview/local, f23 internal, f28 hidden; research off"
+      ],
+      "status": "accepted-local"
     }
   ],
   "completion": "Review and commit each accepted package, external actual SHA receipt and atomic state advance. One concise Thai report. Bundle artifact audit then release writer/reserve exactly one B17; native creation receipt and actual-ID progress wait."

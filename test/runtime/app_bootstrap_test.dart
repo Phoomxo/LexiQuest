@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
+import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 import 'package:crypto/crypto.dart';
@@ -536,6 +538,75 @@ EvidenceContext _bootstrapMissingAssessmentEvidence() {
 void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
+
+    test('G7.5 compiled edition records all catalog activation boundaries', () async {
+      const preview = bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW');
+      const cloud = bool.fromEnvironment('LEXIQUEST_CLOUD_SYNC_ENABLED', defaultValue: true);
+      final production = AppBootstrap.production();
+      expect(production.learningPreviewEnabled, preview);
+      expect(production.cloudSyncEnabled, cloud);
+      expect(production.researchMeasurementSyncRollout.allowsSync, isFalse);
+      expect(production.adventureResearchConfig.enabled, isFalse);
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {}, initializeSupabase: () async {},
+        loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        cloudSyncEnabled: production.cloudSyncEnabled,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(dependencies.lessonModes!.resolve(LessonMode.handwritingScratchpad) != null, preview && !cloud);
+      expect(dependencies.focusTimerRollout.allowsFocusTimer, preview);
+      expect(dependencies.learningTimeCaptureRollout.allowsCapture, preview);
+      expect(dependencies.features.stateOf(Feature.researchAssessment), FeatureState.hidden);
+      final records = allTcasIdeaIntegrationCatalog.records;
+      expect(records, hasLength(44));
+      final rows = [for (final record in records) {
+        'id': record.id.name,
+        'name': record.name,
+        'routes': record.productionEntryIds.map((id) => id.value).toList(),
+        'catalogDependencies': record.dependencies.map((id) => id.name).toList(),
+        'activationProfile': record.activationProfileId.value,
+        'runtime': [for (final feature in record.runtimeFeatures) {
+          'feature': feature.name,
+          'state': dependencies.features.stateOf(feature).name,
+          'visible': dependencies.features.isVisible(feature),
+          'enabled': dependencies.features.isEnabled(feature),
+          'composedDependency': dependencies.hasComposedDependencyFor(feature),
+          'dependencyId': productionFeatureContract[feature]?.dependencyId,
+          'deliveryRoute': productionFeatureContract[feature]?.productionEntryId,
+          'durableContract': productionFeatureContract[feature]?.durable,
+        }],
+        'limitation': 'Composition is not content eligibility, physical/provider or whole-feature runtime acceptance.',
+      }];
+      final registry = dependencies.features as RuntimeFeatureRegistry;
+      final kills = <String, bool>{};
+      for (final feature in Feature.values) {
+        registry.emergencyOff(feature);
+        expect(registry.isEnabled(feature), isFalse);
+        expect(registry.isVisible(feature), isFalse);
+        kills[feature.name] = true;
+        registry.clearOverride(feature);
+      }
+      final output = File('build/verification/B16/${preview ? 'preview' : 'default'}-activation.json');
+      await output.parent.create(recursive: true);
+      await output.writeAsString(const JsonEncoder.withIndent('  ').convert({
+        'edition': preview && !cloud ? 'local-learning-preview-b01-v1' : 'source-default',
+        'compiledTestFlags': {'LEXIQUEST_LEARNING_PREVIEW': preview, 'LEXIQUEST_CLOUD_SYNC_ENABLED': cloud},
+        'productionFactoryFlagsMatch': true,
+        'researchEnabled': false,
+        'capabilities': rows,
+        'lessonModes': [for (final mode in dependencies.lessonModes!.registrations) {
+          'mode': mode.mode.name, 'route': mode.routeName, 'feature': mode.feature.name,
+          'deliveryState': mode.deliveryState.name,
+          'featureEnabled': dependencies.features.isEnabled(mode.feature),
+        }],
+        'focusTimer': dependencies.focusTimerRollout.stage.name,
+        'activeTimeCapture': dependencies.learningTimeCaptureRollout.allowsCapture,
+        'emergencyOff': kills,
+        'binaryInstalledFlags': 'NOT RUN; this is compiled Flutter test runtime with synthetic platform adapters',
+      }));
+    });
 
     if (const bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW')) {
       testWidgets('CEFR chooses eligible vocabulary before opening a session', (tester) async {

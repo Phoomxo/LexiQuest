@@ -57,6 +57,31 @@
       "red": "G7.4-cli-red-verifier.json",
       "fix": "AndroidCompileOnly Targeted/Integration; reject mixed/subsystem/release selectors; gradle launcher/local properties included in environment fingerprint",
       "retest": "G7.4-cli-final-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-02",
+      "package": "G7.5",
+      "status": "closed-local",
+      "expected": "Selected preview can be compiled with exact safe flags through bounded verifier",
+      "actual": "Existing verifier had no profile selector; build flags existed only in B01 specification",
+      "red": "G7.5-cli-red-verifier.json",
+      "fix": "LocalLearningPreview selector and canonical two-flag profile; reject mixed/release use and modified flag profile. Compiled test confirms production factory binding.",
+      "retest": "G7.5-cli-initial-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-03",
+      "package": "G7.5",
+      "status": "closed-local",
+      "expected": "Flutter fingerprints include imported helper tool/feature_contract/generate_feature_map.dart",
+      "actual": "Legacy closure excludes tool paths outside tool/cli",
+      "cause": "Overly narrow tool directory regex",
+      "baseline": "G7.5-helper-baseline.json confirms source unchanged since G7.4; no actual previous test behavior failure",
+      "fix": "Conservatively include all tool/ inputs and recheck affected architecture tests; retain original receipts",
+      "red": "G7.5-closure-red-verifier.json",
+      "retest": [
+        "G7.5-cli-final-verifier.json",
+        "G7.5-architecture-verifier.json"
+      ]
     }
   ],
   "diagnostics": [
