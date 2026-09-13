@@ -1,0 +1,8 @@
+test_dataset_pin_checked_before_use (test_camera_web_training.CameraWebTrainingTests.test_dataset_pin_checked_before_use) ... ok
+test_refuses_fresh_test_and_empty_partitions (test_camera_web_training.CameraWebTrainingTests.test_refuses_fresh_test_and_empty_partitions) ... ok
+test_run_directory_never_overwrites_checkpoint (test_camera_web_training.CameraWebTrainingTests.test_run_directory_never_overwrites_checkpoint) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.218s
+
+OK

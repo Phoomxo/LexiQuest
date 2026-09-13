@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "scope": "Committed structured evidence and raw logs; external image/model pins in package acceptance manifests",
+  "files": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/B11A-input-audit.json",
+      "sha256": "1ebdefa79a9bd31b15116b0f61f1fa9b1f1d06e83710c0fbccca1a9e46dbcf60",
+      "bytes": 633
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/candidate_runtime_test.dart",
+      "sha256": "c68e3742844e04fa21c5aa49106ab0e31b24b1db2cc2150f6e1733e45a73ded1",
+      "bytes": 3266
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/dataset-audit.json",
+      "sha256": "ae66be45c9ac89dfedcafa186a4c9511f607e5090236446d2c27208fac6aa6a3",
+      "bytes": 780
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/dataset-manifest.json",
+      "sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+      "bytes": 1017583
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3a-compute.json",
+      "sha256": "43e3291bc201d733c733045070770f7d58497ae8f2d100680845c76fcfba8d6d",
+      "bytes": 1883
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3a-sources.json",
+      "sha256": "04328e8842c69f10385f12140788b3a8b371e933412838fbbe11c44eeea29055",
+      "bytes": 7442
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3a-verification.json",
+      "sha256": "24e564347b9ea2f926f60ddb11ccab13831dbf8e1ad7f42abfca963b7d589af8",
+      "bytes": 899
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-acceptance.json",
+      "sha256": "6575c609ef5ce9ce32fc43b20b62f50228537a211013a2cf587e7ca1738a7527",
+      "bytes": 7682
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-acquire-resume.log",
+      "sha256": "78d8df530fd85d6fa77df00084cde55406ff519e49f4eb18d67f9c8cf18963fe",
+      "bytes": 170175
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-acquire-supplement.log",
+      "sha256": "f37e38e4e1afeaace81805226cb012b12518f05f8fb4a1ade1b0a929e35a1116",
+      "bytes": 18249
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-acquire.log",
+      "sha256": "1092c15e03dff9e9177138119359d92512e6504681eb5cd63ed313c7028ed2d8",
+      "bytes": 10286
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-author-green.log",
+      "sha256": "dca301dfd2b7be97568a702b916462f662635835633764b294cef93f71528a6e",
+      "bytes": 1437
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-author-red.log",
+      "sha256": "e27a47be5aba70e67c6761826de519ea9085c7a738297c759c2b8466cb9f24b7",
+      "bytes": 2115
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-curate.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-dedup-green.log",
+      "sha256": "e44cadef3ef14b146df6ba5644416d38fac43abe55a43f3a9416841e08e58336",
+      "bytes": 963
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-dedup-red.log",
+      "sha256": "7fe56d2377d7a49f233c38ae0d2fe4efa05a1fdb4fde244239e33d8e68ba91b5",
+      "bytes": 1632
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-defects.json",
+      "sha256": "b77c9a75f1012ed38a5adea2e7e5be79faf4f452faf24662fa9d8cb2c62e530d",
+      "bytes": 1879
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-graph-green.log",
+      "sha256": "bd34c1a6f3e3635daa96bd0ee77c8aeae280d7292362fac443999eeca2ac85bb",
+      "bytes": 807
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-graph-red.log",
+      "sha256": "63ed9c4985de4fe5df90e774f8c9a1c24a12202cc83f20c935d2f11a0583800e",
+      "bytes": 1653
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-green.log",
+      "sha256": "8347144a290f376d26235badfa80ccfecd99f915a014e7132f693cf441de1494",
+      "bytes": 807
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-group-regressions.log",
+      "sha256": "672ea2f9497265f597799a5927d53f99701b66b6bb2be1a27a96981948d53f28",
+      "bytes": 1135
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-product-green.log",
+      "sha256": "4390611cd6f3a76601a28bb6b3f7fbb3f6921b5a580f222b2aaf95789c89b1ec",
+      "bytes": 1718
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-product-red.log",
+      "sha256": "55ec75c9d7ae0504a91245c2f53ee326370e6a9a18f6e9514547340993a49fe7",
+      "bytes": 2289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-red.log",
+      "sha256": "97e1b4b9c1f53bc0bea188f3aa1cbbd4ae200edf14543fa5cbe7dfeebcffb95f",
+      "bytes": 4680
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-regressions.log",
+      "sha256": "0612f7a1ca0436a6c22ca5c074a631d5c772c3808efe75385c3568bf072e043d",
+      "bytes": 1135
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-split-green.log",
+      "sha256": "4d8fabc08b3aaab85b53199344fc91b8fba6bef9ea237eaafc05514e2ddd3755",
+      "bytes": 1293
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-split-red.log",
+      "sha256": "52b879ba4fe9c3367706439837d5dab56d4c3928c1ae9be82d53a5da87fb4b4a",
+      "bytes": 1953
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-taxonomy-green.log",
+      "sha256": "654213dce24c8292db67c4a1d61ef5cf1c762fd62b30290605b473cad7ea0fa3",
+      "bytes": 1590
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-taxonomy-red.log",
+      "sha256": "18f7a8fc6b2e4fa063f0f42c1eed0403a9a430c28fc86fb271eee2c9fb016a98",
+      "bytes": 2512
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-validator-green.log",
+      "sha256": "186355488a0df1fe56b69bd24527813cb80ca0bf891e19682abece2232922419",
+      "bytes": 807
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3b-validator-red.log",
+      "sha256": "73f881f99a5681985ca6dc662c689d5ac9b9b915deeb3a3eaa0986f84a3fb23c",
+      "bytes": 1447
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-acceptance.json",
+      "sha256": "c5458ad70393f7cbc60483df80aea37eafb9dafa90a49e6c05201adcc422ee2e",
+      "bytes": 17027
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-defects.json",
+      "sha256": "71a88277a57a70166ed2f9a8b4cf475b5a6a87920c6367d38f9fd2c60d22f3db",
+      "bytes": 778
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-export.log",
+      "sha256": "322c577a52a3224c007b056e95226b2683d3d1921d527df97e04562ecf70e5b0",
+      "bytes": 10877
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-green.log",
+      "sha256": "5abafe4e5ba98277f7d7a68d674a89d23198ec9dd4067955ec2544101b5ba1a5",
+      "bytes": 533
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-red.log",
+      "sha256": "d4e6198c6793159afe6bfe66457690953236ad4c77e3011ceeac5b746fe874ca",
+      "bytes": 2935
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-runtime-corrected.log",
+      "sha256": "ec97271bd573f90f0377919d42f9c18d7d8862e6cef5f012d914aa0bfef246b2",
+      "bytes": 301
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-runtime-passed/70132fd15b26-592f676afcc5/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-runtime-passed/70132fd15b26-592f676afcc5/Explicit-Flutter-tests.stdout.log",
+      "sha256": "b75e69c6e81e5c95d1c3bc3f80a643fc364ffd7da43984c06ff3cfc9c365d8f8",
+      "bytes": 14634
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-runtime-passed/targeted-learning-ddd1f276286e72516347640c05367e7a9d5b501bad183bc303624799149e93b0.json",
+      "sha256": "c470b2d2ef2ff306a77aef693a5be451a641fcfed2a763b991b3aaa5126e998e",
+      "bytes": 255722
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-runtime.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/G5.3c-training.log",
+      "sha256": "ffea19423fc39a84f215c55eba1664feb0abc4a9ba11e0d0ec49e2c5523f2c24",
+      "bytes": 8428
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/implementation-plan.json",
+      "sha256": "2d0636cd46a87e45b796e8764fc547b5d6cec5b8bbb00cbe0793f46eea3ca34e",
+      "bytes": 3775
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-config.json",
+      "sha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+      "bytes": 1212
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-environment.json",
+      "sha256": "334752547ce483eb450b9eff42c3ea5b34ca2b3f3d4ca7f9688cc8f6488138d5",
+      "bytes": 689
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-epochs.jsonl",
+      "sha256": "682d2af20fcfdc2be8e4a98a775aff1d22de7c51d776848b0e752184d42e92a4",
+      "bytes": 4426
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-export.json",
+      "sha256": "7d1e956556866323a764cbe9d7253e23301ad2f0ceef99345469e93937377c9e",
+      "bytes": 5184
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-predictions.json",
+      "sha256": "eb27d05b0abc2b4871f987209202b7bfa6ca646214a3e74b79879e9b4d2970ac",
+      "bytes": 286790
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-tflite-validation-predictions.json",
+      "sha256": "915626d734c001affa42b35405b3257db635fab6c95aeac0596724831c970455",
+      "bytes": 68843
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/run-001-training.json",
+      "sha256": "8013f0c2de8e6b805f3c4b5e250633fface39e35a93f70f5e7c103a389e88cff",
+      "bytes": 3685
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/taxonomy.json",
+      "sha256": "c07fc79fc0c084325bfa5a7ae308b6a606ffe8bf98fb1e534c37523007ef31e3",
+      "bytes": 3505
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B11A/training-config.json",
+      "sha256": "ad9f2df7a826754e20a7f7149833c46a757e5f7a2e7b4b56678f833bd6ceb5e6",
+      "bytes": 1212
+    }
+  ]
+}

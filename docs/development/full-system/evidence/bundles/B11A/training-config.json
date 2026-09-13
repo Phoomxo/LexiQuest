@@ -1,0 +1,17 @@
+{
+  "schema": "lexiquest-web-training-v1",
+  "manifestPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\manifest.json",
+  "manifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+  "acceptancePath": "C:\\Users\\Phet\\.codex\\worktrees\\cd5e\\LexiQuest\\docs\\development\\full-system\\evidence\\bundles\\B11A\\G5.3b-acceptance.json",
+  "acceptanceSha256": "6575c609ef5ce9ce32fc43b20b62f50228537a211013a2cf587e7ca1738a7527",
+  "backboneWeights": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\keras-cache\\models\\mobilenet_1_0_224_tf_no_top.h5",
+  "backboneSha256": "9f9cfd8c925431c06ce96744e1d201575f6a681bf38ae2de38e2ae8f7d7829d3",
+  "seed": 20260914,
+  "epochs": 30,
+  "batchSize": 16,
+  "learningRate": 0.001,
+  "method": "frozen MobileNet ImageNet features + trained classification head",
+  "preprocess": "EXIF transpose; annotated crop; bilinear224 RGB; float32/127.5-1; export wraps raw uint8 normalization",
+  "selection": "fixed30epochs/minimum validation loss",
+  "physicalAndUnknownEvaluation": "pending later independent device testing"
+}

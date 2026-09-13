@@ -1,0 +1,20 @@
+{
+  "requiredOpenDefects": [],
+  "defects": [
+    {
+      "id": "B11A-C01",
+      "status": "closed",
+      "failure": "verify-scope rejected explicit docs/ target before running Flutter",
+      "diagnosis": "Target validation explicitly requires ^test/ path",
+      "fix": "Copied byte-identical evidence probe to temporary test/b11a_candidate_runtime_probe_test.dart, verified full assertions through verify-scope, then removed temporary copy",
+      "firstExitCode": 1,
+      "correctedExitCode": 0,
+      "toolOutput": "Invalid explicit Flutter test target: docs/development/full-system/evidence/bundles/B11A/candidate_runtime_test.dart",
+      "logs": [
+        "G5.3c-runtime.log",
+        "G5.3c-runtime-corrected.log",
+        "G5.3c-runtime-passed"
+      ]
+    }
+  ]
+}
