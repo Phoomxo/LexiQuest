@@ -1641,38 +1641,50 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                               committedFeedback,
                             );
 
+                      final auxiliary = <Widget>[
+                        if (controller.state.status ==
+                                LessonSessionStatus.active &&
+                            widget.routeLifecycle?.ownsPairSession != true &&
+                            hintState != null)
+                          HintPanel(
+                            state: hintState,
+                            onRevealNext: controller.revealNextHint,
+                            enabled: controller.canRevealHint,
+                          ),
+                        if (accessibleSurface == null &&
+                            committedFeedback != null)
+                          committedFeedback,
+                        if (resetRequired != null)
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: SessionConfigurationResetPrompt(
+                              error: resetRequired,
+                              onReset: () => Navigator.of(context).maybePop(),
+                            ),
+                          ),
+                        if (controller.configurationLimitReached)
+                          Semantics(
+                            key: const ValueKey(
+                              'session-configuration-limit-reached',
+                            ),
+                            liveRegion: true,
+                            label: 'ถึงขีดจำกัดของกิจกรรมแล้ว',
+                            child: const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('ถึงขีดจำกัดของกิจกรรมแล้ว'),
+                            ),
+                          ),
+                      ];
                       return Column(
                         children: <Widget>[
-                          if (controller.state.status ==
-                                  LessonSessionStatus.active &&
-                              widget.routeLifecycle?.ownsPairSession != true &&
-                              hintState != null)
-                            HintPanel(
-                              state: hintState,
-                              onRevealNext: controller.revealNextHint,
-                              enabled: controller.canRevealHint,
-                            ),
-                          if (accessibleSurface == null &&
-                              committedFeedback != null)
-                            committedFeedback,
-                          if (resetRequired != null)
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: SessionConfigurationResetPrompt(
-                                error: resetRequired,
-                                onReset: () => Navigator.of(context).maybePop(),
-                              ),
-                            ),
-                          if (controller.configurationLimitReached)
-                            Semantics(
-                              key: const ValueKey(
-                                'session-configuration-limit-reached',
-                              ),
-                              liveRegion: true,
-                              label: 'ถึงขีดจำกัดของกิจกรรมแล้ว',
-                              child: const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Text('ถึงขีดจำกัดของกิจกรรมแล้ว'),
+                          if (auxiliary.isNotEmpty)
+                            Flexible(
+                              child: SingleChildScrollView(
+                                key: const ValueKey('lesson-auxiliary-scroll'),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: auxiliary,
+                                ),
                               ),
                             ),
                           Expanded(child: placedModeSurface),

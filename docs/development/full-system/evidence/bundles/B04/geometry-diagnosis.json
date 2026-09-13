@@ -1,0 +1,20 @@
+{
+  "source": "3bbb7557ef42-955ac01fb22d/Explicit-Flutter-tests.stdout.log",
+  "case": "320 scale2 dark",
+  "textHeight": 288,
+  "innerViewportHeight": 96,
+  "innerMaxScrollExtent": 192,
+  "innerScrollBefore": 0,
+  "innerScrollAfter": 0,
+  "outerViewport": {
+    "top": 328,
+    "bottom": 484
+  },
+  "afterText": {
+    "top": 328,
+    "bottom": 616
+  },
+  "rootCause": "ExplanationUnavailable fixed96px nested viewport clips Text center despite outer ensureVisible. Not fixed by more pump. Real font visual coverage also required.",
+  "fix": "Natural height unavailable explanation; parent owns scrolling.",
+  "diagnosticCommandError": "First diagnostic filter used regex but verifier uses --plain-name; no tests ran. Corrected exact name; raw logs preserved."
+}

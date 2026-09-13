@@ -50,7 +50,7 @@ final class AnswerFeedbackPanel extends StatelessWidget {
         (identity: identity, action: action),
       _ => null,
     };
-    return Semantics(
+    final panel = Semantics(
       key: const ValueKey<String>('answer-feedback-panel'),
       container: true,
       explicitChildNodes: true,
@@ -146,6 +146,11 @@ final class AnswerFeedbackPanel extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.hasBoundedHeight
+          ? SingleChildScrollView(child: panel)
+          : panel,
     );
   }
 }

@@ -1,0 +1,5 @@
+{
+  "error": "Dart formatter exit65 before verifier; extra closing parenthesis while wrapping capture boundary",
+  "fix": "Corrected exact Center/FilledButton closure before formatting",
+  "productionTestsRun": false
+}

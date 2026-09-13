@@ -675,7 +675,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      // The panel scrolls within bounded parents; the expanded rationale also
+      // owns its detail viewport. Verify access rather than a fixed tree shape.
+      expect(find.byType(SingleChildScrollView), findsNWidgets(2));
+      await tester.ensureVisible(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
+      expect(find.text('ลองอีกครั้ง').hitTestable(), findsOneWidget);
       expect(find.text('ลองอีกครั้ง'), findsOneWidget);
       expect(
         tester.getBottomRight(find.text('ลองอีกครั้ง')).dy,

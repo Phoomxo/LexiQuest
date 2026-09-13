@@ -132,12 +132,8 @@ final class ExplanationUnavailable extends StatelessWidget {
   const ExplanationUnavailable({super.key});
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
-    height: 96,
-    child: SingleChildScrollView(
-      child: Text('คำอธิบายยังไม่พร้อมสำหรับเนื้อหานี้'),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      const Text('คำอธิบายยังไม่พร้อมสำหรับเนื้อหานี้');
 }
 
 final class ContrastiveFeedbackPanel extends StatefulWidget {

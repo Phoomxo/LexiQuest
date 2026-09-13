@@ -1,0 +1,93 @@
+{
+  "bundleId": "B04",
+  "currentPackageId": "G2.1",
+  "status": "stopped-repeated-failure",
+  "accepted": false,
+  "baseSha": "4ba53881ac8871387aa965c0539632ac011f6b67",
+  "branch": "lexiquest/b04-shell-pair-matching",
+  "sourceChangesUncommitted": true,
+  "passedTests": 175,
+  "failedTests": 4,
+  "requiredRemaining": [
+    "Diagnose unresolved long-feedback visibility at320/390 textScale2; preserve visibility assertions",
+    "Complete G2.1 acceptance and required gates including visual/focus/motion evidence",
+    "Accept/commit G2.1 then begin G2.2",
+    "Only after B04 acceptance dispatch B05"
+  ],
+  "changedFiles": [
+    "lib/features/learning/presentation/unified_lesson_shell.dart",
+    "test/features/learning/unified_lesson_controller_test.dart"
+  ],
+  "evidence": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/defects.json",
+      "sha256": "3be4a8bf45f10eda63efe4b8056aa52d201cf4d489360909503191b6cc61ae87"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-red/targeted-learning-b5fac17c7ef43a414e2e19e5abc0564b8aeb1a8404258a857d2cba4700f1932d.json",
+      "sha256": "7160b36087c9dd719e18b76234b33e9d7dc28835f4e88180e0eb534ba51c41ad"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-retest1/targeted-learning-b5fac17c7ef43a414e2e19e5abc0564b8aeb1a8404258a857d2cba4700f1932d.json",
+      "sha256": "68b2af9e74f8f17bf9edf9b5097dfd50bafb6fa798c7aae55cd972d537e250b4"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/targeted-learning-b5fac17c7ef43a414e2e19e5abc0564b8aeb1a8404258a857d2cba4700f1932d.json",
+      "sha256": "68b2af9e74f8f17bf9edf9b5097dfd50bafb6fa798c7aae55cd972d537e250b4"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/targeted-learning-ff92859c9fecd4229a2cbdf5a8021f874e5d4345ec2be12f1048b2d4285be027.json",
+      "sha256": "dacdaafe59de695fe870ec96206df37cb2750d0b769e0f384bdd4857ae22a0ab"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stdout.log",
+      "sha256": "5b8f8564ba8979c56859e07fc14dcbd81ef623beaf9f5252ec5d53170d6ac631"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/21ffea5b8c40-b42d3892ad6c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/21ffea5b8c40-b42d3892ad6c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "9689de348ed1b2d863f6644f003151dbdf24e19dc9552c3dcee7fe1a3bb5f8bf"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/792adf309823-b7f0222016f4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-runs/792adf309823-b7f0222016f4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "fe65496df8ecd906a7f0684084cf982442dde0859f1242d94f383eafe83b1399"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-retest1/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-retest1/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stdout.log",
+      "sha256": "5b8f8564ba8979c56859e07fc14dcbd81ef623beaf9f5252ec5d53170d6ac631"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-retest1/21ffea5b8c40-b42d3892ad6c/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-retest1/21ffea5b8c40-b42d3892ad6c/Explicit-Flutter-tests.stdout.log",
+      "sha256": "9689de348ed1b2d863f6644f003151dbdf24e19dc9552c3dcee7fe1a3bb5f8bf"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-red/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B04/G2.1-red/21ffea5b8c40-989bc127f409/Explicit-Flutter-tests.stdout.log",
+      "sha256": "5b8f8564ba8979c56859e07fc14dcbd81ef623beaf9f5252ec5d53170d6ac631"
+    }
+  ],
+  "serviceTier": "unverified; no supported effective inspector",
+  "nextBundleCreated": false
+}

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "B04-UI-01",
+    "status": "closed",
+    "expected": "Long feedback scrolls and mode CTA remains reachable at widths 320/390/840, textScale2, light/dark.",
+    "actual": "All six regression cases overflow in shell Column.",
+    "cause": "Unbounded non-flex fallback feedback and hint chrome consumes mode height.",
+    "fix": "Flexible loose scrolling auxiliary region reserves at least half of remaining viewport for mode; natural short chrome height preserved.",
+    "evidence": "G2.1-red",
+    "retest": "G2.1-verification.json"
+  },
+  {
+    "id": "B04-TEST-01",
+    "status": "closed-hypothesis-disproved",
+    "cause": "Initial hypothesis that a missing scroll frame caused hit-test failure was disproved by retest with pumpAndSettle.",
+    "fix": "No confirmed fix. Stop repeated failing method; next diagnostic should measure text/viewport/scroll bounds and use loaded Thai fonts for visual QA without dropping assertions.",
+    "evidence": "G2.1-retest1",
+    "guardrail": "Stopped repeated command and diagnosed; no blind rerun.",
+    "resolution": "Geometry evidence confirms nested96px clipping; removed at source. No dropped visibility assertion."
+  }
+]

@@ -33,6 +33,24 @@ void main() {
     }
   });
 
+  test('B04 semantic text pairs meet unrounded 4.5 contrast in both themes', () {
+    for (final theme in [M3Theme.lightTheme, M3Theme.darkTheme]) {
+      final colors = theme.colorScheme;
+      for (final pair in [
+        (colors.onSurface, colors.surface),
+        (colors.onSurface, theme.cardTheme.color ?? colors.surfaceContainerLow),
+        (colors.onSurfaceVariant, colors.surface),
+        (colors.onSurface, colors.surfaceContainerHighest),
+        (colors.onPrimary, colors.primary),
+      ]) {
+        final a = pair.$1.computeLuminance();
+        final b = pair.$2.computeLuminance();
+        final ratio = ((a > b ? a : b) + 0.05) / ((a < b ? a : b) + 0.05);
+        expect(ratio, greaterThanOrEqualTo(4.5), reason: '${theme.brightness}: $pair');
+      }
+    }
+  });
+
   test('display preference preserves platform reduced motion fail closed', () {
     const platformReduced = MediaQueryData(disableAnimations: true);
     const platformAnimated = MediaQueryData(disableAnimations: false);

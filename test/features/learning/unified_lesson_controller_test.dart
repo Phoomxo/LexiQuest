@@ -4,6 +4,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
+import '../../support/r15_visual_capture.dart';
+import 'package:vocab_learning_app/config/m3_theme.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/companion/application/companion_reaction_use_cases.dart';
@@ -3566,6 +3569,89 @@ void main() {
     expect(find.byType(HandwritingScratchpad), findsNothing);
     expect(scratchpad.strokeCount, 0);
   });
+
+  for (final width in <double>[320, 390, 840]) {
+    for (final scale in <double>[1, 2]) {
+      for (final brightness in Brightness.values) {
+        testWidgets(
+          'B04 shell long feedback remains scrollable at $width scale $scale ${brightness.name}',
+          (tester) async {
+            tester.view.physicalSize = Size(width, 640);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            await loadR15Fonts();
+            final nextFocus = FocusNode();
+            addTearDown(nextFocus.dispose);
+            final fixture = await _fixture();
+            await fixture.controller.start(fixture.startCommand);
+            await fixture.controller.submit(
+              fixture.submission(
+                isCorrect: false,
+                canonicalCorrectAnswer: List.filled(
+                  16,
+                  'สถานีรถไฟ station',
+                ).join(' '),
+              ),
+            );
+            var nextCount = 0;
+            await tester.pumpWidget(
+              MaterialApp(
+                theme: brightness == Brightness.light
+                    ? M3Theme.lightTheme
+                    : M3Theme.darkTheme,
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: TextScaler.linear(scale),
+                    disableAnimations: true,
+                  ),
+                  child: child!,
+                ),
+                home: RepaintBoundary(
+                  key: const ValueKey('synthetic-r15-surface'),
+                  child: Scaffold(
+                    body: UnifiedLessonShell(
+                      controller: fixture.controller,
+                      builder: (_) => Center(
+                        child: FilledButton(
+                          focusNode: nextFocus,
+                          onPressed: () => nextCount++,
+                          child: const Text('Continue lesson'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            final next = find.widgetWithText(FilledButton, 'Continue lesson');
+            expect(next.hitTestable(), findsOneWidget);
+            expect(tester.getSize(next).height, greaterThanOrEqualTo(48));
+            await tester.tap(next);
+            expect(nextCount, 1);
+            nextFocus.requestFocus();
+            await tester.pump();
+            await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+            expect(nextCount, 2);
+            final explanation = find.text(
+              'คำอธิบายยังไม่พร้อมสำหรับเนื้อหานี้',
+            );
+            await tester.ensureVisible(explanation);
+            await tester.pumpAndSettle();
+            expect(explanation.hitTestable(), findsOneWidget);
+            await captureR15Surface(
+              tester,
+              'B04-T03-w$width-s$scale-${brightness.name}',
+            );
+            expect(fixture.controller.state.committedResponseCount, 1);
+            expect(tester.takeException(), isNull);
+          },
+        );
+      }
+    }
+  }
 
   testWidgets('shell presents one panel for one committed answer result', (
     tester,
