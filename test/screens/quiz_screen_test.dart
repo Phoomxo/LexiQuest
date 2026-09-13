@@ -935,6 +935,51 @@ void main() {
     }),
   );
 
+  testWidgets('B05 typed recall waits for IME composition before evidence', (tester) async {
+    await tester.runAsync(() async {
+      await _insertWord(database,
+        ownerId: (await owners.getOrCreateActiveOwner()).id,
+        id: 'word-2', spelling: 'airport', meaning: 'สนามบิน');
+    });
+    await tester.pumpWidget(MaterialApp(home: QuizScreen.typedRecall(
+      categoryId: 'category-1', learning: learning,
+      evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+      modeAdapter: const TypedRecallModeAdapter(),
+    )));
+    await _pumpUntilFound(tester, find.text('station'));
+    tester.widget<FilledButton>(find.byKey(
+      const ValueKey('meaning-quiz-option-word-1-สถานี'))).onPressed!();
+    await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
+    tester.widget<FilledButton>(find.byKey(
+      const ValueKey('meaning-quiz-next'))).onPressed!();
+    final input = find.byKey(const ValueKey('typed-recall-input'));
+    final submit = find.byKey(const ValueKey('typed-recall-submit'));
+    await _pumpUntilFound(tester, input);
+    await tester.showKeyboard(input);
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: 'airport', selection: TextSelection.collapsed(offset: 7),
+      composing: TextRange(start: 0, end: 7),
+    ));
+    await tester.pump();
+    expect(tester.widget<FilledButton>(submit).onPressed, isNull,
+      reason: 'an unfinished IME candidate is not a submitted answer');
+    tester.widget<TextField>(input).onSubmitted!('airport');
+    await tester.pump();
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    tester.testTextInput.updateEditingValue(const TextEditingValue(
+      text: 'airport', selection: TextSelection.collapsed(offset: 7),
+    ));
+    await tester.pump();
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull,
+      reason: 'composition-only completion must refresh submit availability');
+    tester.widget<FilledButton>(submit).onPressed!();
+    await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
+    final attempts = await database.select(database.answerAttempts).get();
+    expect(attempts, hasLength(2));
+    expect(attempts.last.isCorrect, isTrue);
+    expect(attempts.last.evidenceClass, EvidenceClass.independentRecall.name);
+  });
+
   testWidgets(
     'screen accepts a pinned spelling variant and persists pinned identity',
     (tester) async {

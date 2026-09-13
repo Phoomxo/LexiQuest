@@ -112,6 +112,22 @@ class _QuizScreenState extends State<QuizScreen> {
   bool get _isSkipped =>
       _typedReview?.isSkipped ?? _meaningReview?.isSkipped ?? false;
 
+  bool get _typedResponseReady {
+    final value = _typedResponseController.value;
+    return value.text.trim().isNotEmpty &&
+        !(value.composing.isValid && !value.composing.isCollapsed);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _typedResponseController.addListener(_typedResponseChanged);
+  }
+
+  void _typedResponseChanged() {
+    setState(() {});
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -534,10 +550,9 @@ class _QuizScreenState extends State<QuizScreen> {
                       textInputAction: TextInputAction.done,
                       onChanged: (_) {
                         _lessonLifecycle?.recordInteraction();
-                        setState(() {});
                       },
                       onSubmitted: (_) {
-                        if (_typedResponseController.text.trim().isNotEmpty &&
+                        if (_typedResponseReady &&
                             !actionLocked) {
                           _recordTyped();
                         }
@@ -554,7 +569,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       onPressed:
                           _isAnswered ||
                               actionLocked ||
-                              _typedResponseController.text.trim().isEmpty
+                              !_typedResponseReady
                           ? null
                           : _recordTyped,
                       child: const Text('ตรวจคำตอบ'),
@@ -666,7 +681,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _recordTyped() async {
     final review = _typedReview;
-    if (review == null || _actionLocked) return;
+    if (review == null || _actionLocked || !_typedResponseReady) return;
     try {
       final result = await review.answerTyped(
         response: _typedResponseController.text,
@@ -842,6 +857,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     _responseStopwatch.stop();
+    _typedResponseController.removeListener(_typedResponseChanged);
     _typedResponseController.dispose();
     _typedReview?.removeListener(_onReviewChanged);
     _typedReview?.dispose();

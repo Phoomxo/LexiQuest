@@ -1,0 +1,1 @@
+{"defects":[{"id":"B05-TOOL-01","cause":"Windows rg received wildcard in path argument","actual":"os error 123","fix":"inventory actual paths and pass explicit paths","repeat":false}]}

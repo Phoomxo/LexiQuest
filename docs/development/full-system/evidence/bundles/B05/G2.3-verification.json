@@ -1,0 +1,41 @@
+{
+  "packageId": "G2.3",
+  "bundleId": "B05",
+  "status": "accepted-local-automated",
+  "baseSha": "4b15b00c637cab2f819fb58a40fa43fb8b1b080b",
+  "uniqueTestsPassed": 85,
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.3-runs/targeted-learning-111913c49e4391c776b0b263f76ffc8acb86f33602cef641793a59a4c78cc8d4.json",
+      "fingerprint": "75de2425efb39efb9ddf1954f1c873e903e140fa39219772b381f900273cc1e9",
+      "changedInputsAfterPass": []
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.3-runs/targeted-learning-f849581beb133224c6c9d5601c7c0552e753bd044035f7389751f03a924f1f7e.json",
+      "fingerprint": "75de2425efb39efb9ddf1954f1c873e903e140fa39219772b381f900273cc1e9",
+      "changedInputsAfterPass": []
+    }
+  ],
+  "defectsClosed": [
+    "B05-IME-01"
+  ],
+  "acceptance": {
+    "COV-f07/MG-06": "Deterministic two directions, ambiguity-safe choices, durable ack/skip/retry covered",
+    "COV-f08/MG-07": "Reviewed real English definition/revision pinning, guided hints, stale/missing metadata and owner fence covered",
+    "COV-f11/MG-02": "IME composition guarded; variants, Unicode normalization, unknown revision rejection, independent recall vs recognition covered",
+    "G2": "Package local automated only; overall phase gate B06/G2.8"
+  },
+  "review": {
+    "method": "single-writer source/callers/data integrity review",
+    "findings": [],
+    "compatibility": "No stored evidence, schema, reward formula, mode or content identity changes"
+  },
+  "externalGates": [
+    "Physical IME/device and manual screen-reader NOT RUN",
+    "Effective service tier unverified"
+  ],
+  "requiredBranchPrefix": "lexiquest/",
+  "requiredServiceTier": "default",
+  "model": "gpt-6-astra",
+  "thinking": "medium"
+}
