@@ -31,6 +31,32 @@ import '../support/test_quest_use_cases.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('B07 skill and goal filters combine and clear independently', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database, extraPack: true),
+        child: const MaterialApp(home: LearningPackCatalogScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'reading'));
+    await tester.pumpAndSettle();
+    expect(find.text('Health basics'), findsOneWidget);
+    expect(find.text('Travel basics'), findsNothing);
+    await tester.tap(find.widgetWithText(FilterChip, 'recognition'));
+    await tester.pumpAndSettle();
+    expect(find.text('ไม่พบชุดบทเรียนที่ตรงกับตัวกรอง'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilterChip, 'recognition'));
+    await tester.tap(find.widgetWithText(FilterChip, 'reading'));
+    await tester.pumpAndSettle();
+    expect(find.text('Health basics'), findsOneWidget);
+    expect(find.text('Travel basics'), findsOneWidget);
+  });
+
   testWidgets('A-NAV-04 empty catalog has no start or search result claim', (
     tester,
   ) async {
@@ -330,8 +356,8 @@ final class _Packs implements LearningPackRepository {
               title: 'Health basics',
               cefrLevel: 'B1',
               topic: 'health',
-              skill: 'vocabulary',
-              goal: 'recognition',
+              skill: 'reading',
+              goal: 'comprehension',
               contentIdentity: ContentIdentity(
                 type: ContentType.learningPack,
                 id: 'synthetic-r15-health',

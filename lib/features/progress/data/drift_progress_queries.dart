@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/session_configuration.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../../learning/domain/first_answer_accuracy.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../vocabulary/data/packaged_starter_access.dart';
@@ -17,6 +19,51 @@ final class DriftProgressQueries {
   const DriftProgressQueries(this.database);
 
   final AppDatabase database;
+
+  Future<PackProgressSnapshot> loadPack({
+    required String ownerId,
+    required ContentIdentity identity,
+  }) async {
+    if (identity.type != ContentType.learningPack ||
+        identity.id.trim().isEmpty ||
+        identity.id != identity.id.trim() ||
+        identity.revision <= 0) {
+      throw ArgumentError.value(identity, 'identity');
+    }
+    final sessions = await (database.select(
+      database.learningSessions,
+    )..where((row) => row.ownerId.equals(ownerId))).get();
+    final matching = <String, LearningSession>{};
+    for (final session in sessions) {
+      final raw = session.sessionConfigurationJson;
+      final pin = session.sessionConfigurationIdentity;
+      if (raw == null && pin == null) continue;
+      if (raw == null || pin == null) {
+        throw const FormatException('Incomplete session configuration pin');
+      }
+      final configuration = SessionConfiguration.fromStableSerialization(raw);
+      if (configuration.ownerId != ownerId ||
+          configuration.contentIdentity != pin) {
+        throw const FormatException('Session configuration authority mismatch');
+      }
+      if (configuration.packIdentity == identity) {
+        matching[session.id] = session;
+      }
+    }
+    final attempts = (await _loadValidatedPracticeAttempts(
+      ownerId,
+    )).where((attempt) => matching.containsKey(attempt.sessionId)).toList();
+    final completed = attempts
+        .map((attempt) => attempt.sessionId)
+        .toSet()
+        .where((id) => matching[id]!.state == 'completed')
+        .length;
+    return PackProgressSnapshot(
+      sampleSize: attempts.length,
+      correctCount: attempts.where((attempt) => attempt.isCorrect).length,
+      completedSessions: completed,
+    );
+  }
 
   Future<ProgressSnapshot> load({
     required String ownerId,

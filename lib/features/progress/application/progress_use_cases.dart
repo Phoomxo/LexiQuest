@@ -1,3 +1,4 @@
+import '../../learning_packs/domain/content_manifest.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../data/drift_personal_learning_profile_reader.dart';
 import '../data/drift_progress_queries.dart';
@@ -20,6 +21,11 @@ final class ProgressUseCases {
   final ProgressUtcNow nowUtc;
   final DriftPersonalLearningProfileReader? profileReader;
   final String learningTimezoneId;
+
+  Future<PackProgressSnapshot> loadPack(ContentIdentity identity) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    return queries.loadPack(ownerId: owner.id, identity: identity);
+  }
 
   Future<ProgressSnapshot> load() async {
     final owner = await owners.getOrCreateActiveOwner();

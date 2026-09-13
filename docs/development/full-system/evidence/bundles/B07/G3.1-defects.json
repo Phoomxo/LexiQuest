@@ -1,0 +1,60 @@
+{
+  "defects": [
+    {
+      "id": "B07-CATALOG-01",
+      "expected": "Explicit skill/goal filtering combines with CEFR/topic/search",
+      "actual": "Only level/topic chips existed",
+      "cause": "UI omitted two metadata dimensions",
+      "fix": "Add independent skill/goal chips",
+      "red": "G3.1-ui-red",
+      "retest": "G3.1-regression",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-DETAIL-01",
+      "expected": "Reused widget follows selected revision",
+      "actual": "Old detail future remained",
+      "cause": "No didUpdateWidget reload",
+      "fix": "Reload when identity or injected authority changes",
+      "red": "G3.1-ui-red",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-PROGRESS-01",
+      "expected": "Exact pack/version counts only",
+      "actual": "Other pack with shared word showed one answer",
+      "cause": "Detail used overall progress projection",
+      "fix": "Use durable session pack identity and validated canonical first attempts; keep overall legacy totals unchanged",
+      "red": "G3.1-progress-behavior-red",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-READINESS-01",
+      "expected": "Empty/wrong pinned identity unavailable",
+      "actual": "Injected adapter could expose empty/wrong content",
+      "cause": "Detail composition trusted returned identity and nonempty references",
+      "fix": "Check exact identity and unique nonempty references before projection",
+      "red": "G3.1-readiness-red",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-FIXTURE-01",
+      "expected": "Regression compiles",
+      "actual": "isNull import ambiguity and positional timing constructor",
+      "cause": "New fixture used conflicting Drift matcher and wrong constructor signature",
+      "fix": "Hide Drift isNull; use named maximumActiveEffort; assertions unchanged",
+      "evidence": "G3.1-progress-red",
+      "status": "fixed"
+    },
+    {
+      "id": "B07-TOOL-01",
+      "expected": "Clean diff validation",
+      "actual": "CRLF flagged as whitespace in tracked Dart file",
+      "cause": "Windows formatter line endings",
+      "fix": "LF normalization; one analyzer style finding fixed with braces",
+      "evidence": "G3.1-line-ending-repair.json",
+      "status": "fixed"
+    }
+  ],
+  "requiredOpenDefects": []
+}

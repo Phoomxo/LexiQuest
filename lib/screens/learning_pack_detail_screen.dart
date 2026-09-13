@@ -40,6 +40,21 @@ final class _LearningPackDetailScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _reload();
+  }
+
+  @override
+  void didUpdateWidget(covariant LearningPackDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.packId != widget.packId ||
+        oldWidget.revision != widget.revision ||
+        oldWidget.useCases != widget.useCases ||
+        oldWidget.vocabulary != widget.vocabulary) {
+      _reload();
+    }
+  }
+
+  void _reload() {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
     final supplied = widget.useCases;
@@ -180,12 +195,14 @@ final class _DetailBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          Text('รุ่นเนื้อหา: ${summary.revision}'),
+          Text('คำศัพท์ในชุด: ${words.length}'),
           Text('ระดับภาษา: ${summary.cefrLevel}'),
           Text('หัวข้อ: ${summary.topic}'),
           Text('ทักษะ: ${summary.skill}'),
           Text('เป้าหมาย: ${summary.goal}'),
           const SizedBox(height: 24),
-          const Text('ความคืบหน้า'),
+          const Text('ความคืบหน้าของชุดและรุ่นนี้'),
           Text('กิจกรรมที่เรียนจบ: ${view.progress.completedSessions}'),
           Text('จำนวนครั้งที่ฝึก: ${view.progress.sampleSize}'),
           const SizedBox(height: 24),

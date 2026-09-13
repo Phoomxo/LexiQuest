@@ -46,6 +46,55 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  for (final invalid in ['empty', 'wrong-identity', 'missing-word']) {
+    testWidgets('B07 detail fails closed for $invalid content', (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LearningPackDetailScreen(
+            packId: 'pack:travel',
+            revision: 2,
+            useCases: _useCases(database, invalid: invalid),
+            vocabulary: _vocabulary(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(LearningPackDetailUnavailable), findsOneWidget);
+      expect(find.byType(RichLexicalCard), findsNothing);
+    });
+  }
+
+  testWidgets('B07 detail reloads when selected revision changes', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final useCases = _useCases(database);
+    final vocabulary = _vocabulary();
+    Future<void> show(int revision) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LearningPackDetailScreen(
+            packId: 'pack:travel',
+            revision: revision,
+            useCases: useCases,
+            vocabulary: vocabulary,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await show(2);
+    expect(find.bySemanticsLabel('Travel basics, A1, รุ่น 2'), findsOneWidget);
+    await show(3);
+    expect(find.bySemanticsLabel('Travel basics, A1, รุ่น 3'), findsOneWidget);
+    expect(find.bySemanticsLabel('Travel basics, A1, รุ่น 2'), findsNothing);
+    expect(find.text('คำศัพท์ในชุด: 2'), findsOneWidget);
+  });
+
   test(
     'runtime quiz delivery requires the canonical evidence gateway',
     () async {
@@ -403,8 +452,9 @@ VocabularyUseCases _vocabulary() => VocabularyUseCases(
 LearningPackDetailUseCases _useCases(
   AppDatabase database, {
   ContentQualityFailure? failure,
+  String? invalid,
 }) => LearningPackDetailUseCases(
-  packs: _Packs(failure: failure),
+  packs: _Packs(failure: failure, invalid: invalid),
   progress: ProgressUseCases(
     owners: _Owner(),
     queries: DriftProgressQueries(database),
@@ -416,7 +466,9 @@ LearningPackDetailUseCases _useCases(
 );
 
 final class _Packs implements LearningPackRepository {
-  const _Packs({this.failure});
+  const _Packs({this.failure, this.invalid});
+
+  final String? invalid;
 
   final ContentQualityFailure? failure;
 
@@ -426,7 +478,7 @@ final class _Packs implements LearningPackRepository {
     if (error != null) throw error;
     return LearningPackDetail(
       summary: LearningPackSummary(
-        packId: packId,
+        packId: invalid == 'wrong-identity' ? 'pack:other' : packId,
         revision: revision,
         title: 'Travel basics',
         cefrLevel: 'A1',
@@ -435,11 +487,15 @@ final class _Packs implements LearningPackRepository {
         goal: 'recognition',
         contentIdentity: ContentIdentity(
           type: ContentType.learningPack,
-          id: packId,
+          id: invalid == 'wrong-identity' ? 'pack:other' : packId,
           revision: revision,
         ),
       ),
-      vocabularyWordIds: const ['word:station', 'word:market'],
+      vocabularyWordIds: invalid == 'empty'
+          ? const []
+          : invalid == 'missing-word'
+          ? const ['word:missing']
+          : const ['word:station', 'word:market'],
     );
   }
 

@@ -1,0 +1,36 @@
+{
+  "packageId": "G3.1",
+  "bundleId": "B07",
+  "baseSha": "4168b4164694ccdb019968bf14f8a19abed24453",
+  "status": "accepted-local-automated",
+  "uniqueTestsPassed": 82,
+  "verificationManifest": "docs/development/full-system/evidence/bundles/B07/G3.1-final/targeted-learning-d423dd5655c7b1837a9092473a1f0cd6b31da492dbf0abc392a4434445a8fe1c.json",
+  "fingerprint": "29dc8202251b977211be447001366ece1b980d363fc4ed4fd5c708602b0fb225",
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requirements": [
+    "COV-f01",
+    "COV-f02",
+    "COV-f04",
+    "G3"
+  ],
+  "outcomes": [
+    "Four metadata filters plus search",
+    "Exact pack revision/readiness and actual vocabulary count",
+    "Canonical pack-scoped first-answer progress without cross-pack or revision leakage",
+    "Unattributed legacy evidence remains overall only; owner and tampered pin checks",
+    "Existing launch validates exact ContentIdentity through StudyPlanningUseCases and session configuration policy; no parallel lesson writer"
+  ],
+  "review": {
+    "method": "single-writer manual diff/caller/acceptance review",
+    "schemaMigration": "none; rebuildable read projection only",
+    "analyzer": "9 changed Dart files checked; final info corrected and affected file rechecked clean",
+    "remainingRequiredDefects": []
+  },
+  "externalGates": [
+    "device/manual screen reader/live speech/binary flags/full release NOT RUN",
+    "effective service tier unverified"
+  ],
+  "generatedFiles": "Flutter-generated platform registrants restored; no semantic changes",
+  "reportToolRecovery": "Initial count parser assumed UTF8; raw log has UTF16 BOM. Decode using observed BOM; original hashes preserved."
+}

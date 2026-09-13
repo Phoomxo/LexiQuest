@@ -10,6 +10,8 @@ import '../../vocabulary/domain/vocabulary_word.dart';
 import '../../../runtime/production_feature_contract.dart';
 import '../../../runtime/registries/feature_registry.dart';
 import '../domain/learning_pack_detail.dart';
+import '../domain/content_manifest.dart';
+import '../domain/content_quality_policy.dart';
 import '../domain/learning_pack_repository.dart';
 
 /// Read-only composition for a pinned pack revision. Content remains owned by
@@ -40,7 +42,22 @@ final class LearningPackDetailUseCases {
     int revision,
   ) async {
     final detail = await packs.getVersion(packId, revision);
-    final snapshot = await progress.load();
+    final expected = ContentIdentity(
+      type: ContentType.learningPack,
+      id: packId,
+      revision: revision,
+    );
+    if (detail.summary.contentIdentity != expected ||
+        detail.summary.packId != packId ||
+        detail.summary.revision != revision ||
+        detail.vocabularyWordIds.isEmpty ||
+        detail.vocabularyWordIds.toSet().length !=
+            detail.vocabularyWordIds.length) {
+      throw const ContentQualityFailure(
+        ContentQualityFailureCode.missingReference,
+      );
+    }
+    final snapshot = await progress.loadPack(expected);
     return LearningPackDetailView(
       detail: detail,
       progress: snapshot,
@@ -161,6 +178,6 @@ final class LearningPackDetailView {
   });
 
   final LearningPackDetail detail;
-  final ProgressSnapshot progress;
+  final PackProgressSnapshot progress;
   final List<LearningPackActivity> activities;
 }

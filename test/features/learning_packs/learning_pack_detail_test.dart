@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 
 import 'package:crypto/crypto.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
@@ -38,6 +39,81 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'B07 pack projection excludes unattributed history and rejects tampered pins',
+    () async {
+      await _insertLearnerProgress(database);
+      const identity = ContentIdentity(
+        type: ContentType.learningPack,
+        id: 'pack:travel',
+        revision: 1,
+      );
+      final queries = DriftProgressQueries(database);
+      expect(
+        (await queries.loadPack(
+          ownerId: 'owner:detail',
+          identity: identity,
+        )).sampleSize,
+        1,
+      );
+      expect(
+        (await queries.loadPack(
+          ownerId: 'owner:other',
+          identity: identity,
+        )).sampleSize,
+        0,
+      );
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      await database
+          .update(database.learningSessions)
+          .write(
+            const LearningSessionsCompanion(
+              sessionConfigurationIdentity: Value(null),
+              sessionConfigurationJson: Value(null),
+            ),
+          );
+      expect(
+        (await queries.loadPack(
+          ownerId: 'owner:detail',
+          identity: identity,
+        )).sampleSize,
+        0,
+      );
+      expect(
+        (await queries.load(
+          ownerId: 'owner:detail',
+          nowUtc: DateTime.utc(2026, 8, 24),
+        )).sampleSize,
+        1,
+      );
+      await database
+          .update(database.learningSessions)
+          .write(
+            LearningSessionsCompanion(
+              sessionConfigurationIdentity: const Value('sha256:wrong'),
+              sessionConfigurationJson: Value(session.sessionConfigurationJson),
+            ),
+          );
+      await expectLater(
+        queries.loadPack(ownerId: 'owner:detail', identity: identity),
+        throwsFormatException,
+      );
+      await database
+          .update(database.learningSessions)
+          .write(
+            const LearningSessionsCompanion(
+              sessionConfigurationIdentity: Value(null),
+            ),
+          );
+      await expectLater(
+        queries.loadPack(ownerId: 'owner:detail', identity: identity),
+        throwsFormatException,
+      );
+    },
+  );
 
   test('reads only the requested verified pinned pack revision', () async {
     await _insertVerifiedPack(
@@ -146,6 +222,26 @@ void main() {
       expect(view.progress.sampleSize, 1);
       expect(view.progress.accuracy, 1);
       expect(await _packRows(database), before);
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:other',
+        revision: 1,
+        title: 'Other',
+        wordIds: const ['word:station'],
+      );
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 2,
+        title: 'Revised',
+        wordIds: const ['word:station'],
+      );
+      final other = await useCases.loadVersion('pack:other', 1);
+      final revised = await useCases.loadVersion('pack:travel', 2);
+      expect(other.progress.sampleSize, 0);
+      expect(other.progress.completedSessions, 0);
+      expect(revised.progress.sampleSize, 0);
+      expect(revised.progress.accuracy, isNull);
     },
   );
 
@@ -741,6 +837,28 @@ Future<void> _insertVerifiedPack(
 }
 
 Future<void> _insertLearnerProgress(AppDatabase database) async {
+  final configuration = SessionConfiguration.validated(
+    schemaVersion: sessionConfigurationSchemaVersion,
+    policyVersion: sessionConfigurationPolicyVersion,
+    ownerId: 'owner:detail',
+    mode: LessonMode.meaningQuiz,
+    itemCount: 1,
+    direction: SessionDirection.forward,
+    difficulty: SessionDifficulty.standard,
+    hintBudget: 0,
+    timing: const SessionTiming.untimedAlternative(
+      maximumActiveEffort: Duration(minutes: 5),
+    ),
+    packIdentity: const ContentIdentity(
+      type: ContentType.learningPack,
+      id: 'pack:travel',
+      revision: 1,
+    ),
+    protocolId: 'protocol:local-standard',
+    protocolVersion: '1',
+    protocolLimitsIdentity:
+        const SessionConfigurationProtocolLimits.standard().contentIdentity,
+  );
   await (database.update(database.vocabularyWords)
         ..where((word) => word.id.equals('word:station')))
       .write(const VocabularyWordsCompanion(ownerId: Value('owner:detail')));
@@ -749,6 +867,8 @@ Future<void> _insertLearnerProgress(AppDatabase database) async {
       .insert(
         LearningSessionsCompanion.insert(
           id: 'session:detail',
+          sessionConfigurationIdentity: Value(configuration.contentIdentity),
+          sessionConfigurationJson: Value(configuration.stableSerialization),
           ownerId: 'owner:detail',
           activityType: 'quiz',
           state: 'completed',

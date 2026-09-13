@@ -26,6 +26,8 @@ final class _LearningPackCatalogScreenState
   final _search = TextEditingController();
   String? _level;
   String? _topic;
+  String? _skill;
+  String? _goal;
 
   @override
   void dispose() {
@@ -76,11 +78,16 @@ final class _LearningPackCatalogScreenState
             ..sort();
           final topics = packs.map((pack) => pack.topic).toSet().toList()
             ..sort();
+          final skills = packs.map((pack) => pack.skill).toSet().toList()
+            ..sort();
+          final goals = packs.map((pack) => pack.goal).toSet().toList()..sort();
           final visible = packs
               .where(
                 (pack) =>
                     (_level == null || pack.cefrLevel == _level) &&
                     (_topic == null || pack.topic == _topic) &&
+                    (_skill == null || pack.skill == _skill) &&
+                    (_goal == null || pack.goal == _goal) &&
                     '${pack.title} ${pack.cefrLevel} ${pack.topic} ${pack.skill} ${pack.goal}'
                         .toLowerCase()
                         .contains(query),
@@ -128,6 +135,21 @@ final class _LearningPackCatalogScreenState
                             onSelected: (selected) => setState(
                               () => _level = selected ? level : null,
                             ),
+                          ),
+                        for (final skill in skills)
+                          FilterChip(
+                            label: Text(skill),
+                            selected: _skill == skill,
+                            onSelected: (selected) => setState(
+                              () => _skill = selected ? skill : null,
+                            ),
+                          ),
+                        for (final goal in goals)
+                          FilterChip(
+                            label: Text(goal),
+                            selected: _goal == goal,
+                            onSelected: (selected) =>
+                                setState(() => _goal = selected ? goal : null),
                           ),
                         for (final topic in topics)
                           FilterChip(

@@ -101,3 +101,17 @@ final class ProgressSnapshot {
   final double? averageResponseTimeMs;
   final DateTime? latestEvidenceAtUtc;
 }
+
+/// First-answer practice evidence attributed to one exact pack revision.
+/// Legacy sessions without a pack pin remain in overall progress only.
+final class PackProgressSnapshot {
+  const PackProgressSnapshot({
+    required this.sampleSize,
+    required this.correctCount,
+    required this.completedSessions,
+  });
+  final int sampleSize;
+  final int correctCount;
+  final int completedSessions;
+  double? get accuracy => sampleSize == 0 ? null : correctCount / sampleSize;
+}
