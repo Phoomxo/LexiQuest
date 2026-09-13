@@ -23,13 +23,42 @@ class RecommendationPanel extends StatefulWidget {
 class _RecommendationPanelState extends State<RecommendationPanel> {
   LessonMode? _busyMode;
 
-  Future<void> _select(LessonMode mode) async {
-    if (_busyMode != null) return;
+  @override
+  void didUpdateWidget(RecommendationPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.result, widget.result)) _busyMode = null;
+  }
+
+  bool _canRecommend(RecommendationPanelResult result) =>
+      result.availability == RecommendationResultAvailability.recommended &&
+      result.freshness == RecommendationEvidenceFreshness.current;
+
+  Future<void> _select(
+    LessonMode mode,
+    RecommendationPanelResult result,
+  ) async {
+    if (!mounted || !identical(result, widget.result) || _busyMode != null) {
+      return;
+    }
+    if (!result.alternatives.contains(mode) &&
+        !(_canRecommend(result) && result.recommendedMode == mode)) {
+      return;
+    }
     setState(() => _busyMode = mode);
     try {
       await widget.onActivitySelected(mode);
+    } catch (_) {
+      if (mounted && identical(result, widget.result)) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          const SnackBar(
+            content: Text('ไม่สามารถเปิดกิจกรรมได้ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
     } finally {
-      if (mounted) setState(() => _busyMode = null);
+      if (mounted && identical(result, widget.result)) {
+        setState(() => _busyMode = null);
+      }
     }
   }
 
@@ -81,14 +110,15 @@ class _RecommendationPanelState extends State<RecommendationPanel> {
                 const SizedBox(height: 12),
                 const Text('ยังไม่มีกิจกรรมที่พร้อมใช้งาน'),
               ],
-              if (result.recommendedMode case final mode?) ...[
+              if (result.recommendedMode case final mode?
+                  when _canRecommend(result)) ...[
                 const SizedBox(height: 12),
                 _ActivityButton(
                   mode: mode,
                   label: 'เริ่มกิจกรรม ${_modeLabel(mode)}',
                   busy: _busyMode != null,
                   filled: true,
-                  onPressed: () => _select(mode),
+                  onPressed: () => _select(mode, result),
                 ),
               ],
               if (result.alternatives.isNotEmpty) ...[
@@ -105,7 +135,7 @@ class _RecommendationPanelState extends State<RecommendationPanel> {
                         label: 'เลือกกิจกรรม ${_modeLabel(mode)}',
                         busy: _busyMode != null,
                         filled: false,
-                        onPressed: () => _select(mode),
+                        onPressed: () => _select(mode, result),
                       ),
                   ],
                 ),

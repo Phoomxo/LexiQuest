@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
@@ -5,6 +7,139 @@ import 'package:vocab_learning_app/features/recommendation/application/recommend
 import 'package:vocab_learning_app/widgets/recommendation_panel.dart';
 
 void main() {
+  testWidgets('G4.1 old completion cannot unlock replacement action', (
+    tester,
+  ) async {
+    final oldPending = Completer<void>();
+    final currentPending = Completer<void>();
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(
+          result: _recommended,
+          onActivitySelected: (_) => oldPending.future,
+        ),
+      ),
+    );
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(
+          result: _constrained,
+          onActivitySelected: (_) => currentPending.future,
+        ),
+      ),
+    );
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    oldPending.complete();
+    await tester.pump();
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+    currentPending.complete();
+    await tester.pump();
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('G4.1 launch failure is visible and retryable', (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(
+          result: _recommended,
+          onActivitySelected: (_) async {
+            if (++calls == 1) throw StateError('unavailable');
+          },
+        ),
+      ),
+    );
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(
+      find.text('ไม่สามารถเปิดกิจกรรมได้ กรุณาลองอีกครั้ง'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(calls, 2);
+  });
+
+  testWidgets('G4.1 stale recommendation preserves manual alternatives', (
+    tester,
+  ) async {
+    final selected = <LessonMode>[];
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(
+          result: RecommendationPanelResult.recommended(
+            ownerId: 'owner-1',
+            mode: LessonMode.flashcard,
+            reason: RecommendationPanelReason.staleEvidence,
+            freshness: RecommendationEvidenceFreshness.stale,
+            protocolConstraint: RecommendationProtocolConstraint.open,
+            alternatives: const [LessonMode.meaningQuiz],
+          ),
+          onActivitySelected: (mode) async {
+            selected.add(mode);
+          },
+        ),
+      ),
+    );
+    expect(find.byType(FilledButton), findsNothing);
+    await tester.tap(find.bySemanticsLabel('เลือกกิจกรรม Meaning quiz'));
+    await tester.pump();
+    expect(selected, [LessonMode.meaningQuiz]);
+  });
+
+  testWidgets('G4.1 rejects captured action after owner replacement', (
+    tester,
+  ) async {
+    var calls = 0;
+    Future<void> select(LessonMode _) async {
+      calls++;
+    }
+
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(result: _recommended, onActivitySelected: select),
+      ),
+    );
+    final captured = tester
+        .widget<FilledButton>(find.byType(FilledButton))
+        .onPressed!;
+    await tester.pumpWidget(
+      _app(
+        RecommendationPanel(
+          result: RecommendationPanelResult.recommended(
+            ownerId: 'owner-2',
+            mode: LessonMode.typedRecall,
+            reason: RecommendationPanelReason.weakEvidence,
+            freshness: RecommendationEvidenceFreshness.current,
+            protocolConstraint: RecommendationProtocolConstraint.open,
+            alternatives: const [],
+          ),
+          onActivitySelected: select,
+        ),
+      ),
+    );
+    captured();
+    await tester.pump();
+    expect(calls, 0);
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    expect(calls, 1);
+  });
+
   testWidgets('renders an explained recommendation with a typed action', (
     tester,
   ) async {
