@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B16",
+  "defects": [
+    {
+      "id": "B16-POLICY-01",
+      "package": "G7.3",
+      "status": "closed-local-emulator",
+      "expected": "Missing/invalid provider claims cannot use registered-only legacy grants",
+      "actual": "Complete valid global-word create succeeded with missing claim",
+      "cause": "isRegisteredUser treated missing firebase/provider as registered",
+      "red": "G7.3-provider-red.stdout.log",
+      "fix": "Require explicit map, nonempty string provider, nonanonymous identity; field guest sync unchanged",
+      "retest": "G7.3-final-verifier.json"
+    },
+    {
+      "id": "B16-POLICY-02",
+      "package": "G7.3",
+      "status": "closed-local-emulator",
+      "expected": "Clients cannot grant legacy scores or purchases",
+      "actual": "Profile score update, state score create, exact-price atomic purchase succeeded",
+      "cause": "Bounded client score fields and atomic debit were mistaken for trusted earning authority",
+      "red": "G7.3-red-Firestore-rules-tests.stdout.log",
+      "fix": "Profile-only affected keys; wallpaper-only state mutations; client purchases denied. Preserve trusted score fields on profile edits.",
+      "retest": "G7.3-final-verifier.json"
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "fixture-correction",
+      "detail": "First claim test lacked required word fields and passed for the wrong reason. Replaced with complete valid payload before second red run, which demonstrated missing-claim bypass. No acceptance reduction."
+    },
+    {
+      "kind": "path-discovery",
+      "detail": "Initial scoped reads included absent functions, test/security/package.json and test/cli paths. Switched to rg file inventory and actual root package.json/tool/cli/tests; functions exist only in frozen main donor. No user files modified or removed."
+    },
+    {
+      "kind": "SDK-fixture-correction",
+      "detail": "@firebase/util createMockUserToken inserts firebase.sign_in_provider=custom for empty options. First post-fix run179/180 exposed this test issue, not a rule bypass. Explicit firebase:undefined omits the JWT claim; final180/180 passed. Empty map, empty/nonstring/anonymous provider also denied."
+    }
+  ]
+}

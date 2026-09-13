@@ -558,7 +558,7 @@ describe('R17 research session proof server boundary', () => {
 });
 
 function authDb(uid = alice, isAnon = false) {
-  const token = isAnon ? { firebase: { sign_in_provider: 'anonymous' } } : {};
+  const token = { firebase: { sign_in_provider: isAnon ? 'anonymous' : 'password' } };
   return testEnv.authenticatedContext(uid, token).firestore();
 }
 
@@ -1433,6 +1433,65 @@ after(async () => {
   await testEnv?.cleanup();
 });
 
+describe('G7.3 legacy trusted-writer boundary', () => {
+  it('rejects absent, malformed, empty and anonymous provider claims', async () => {
+    // The SDK inserts provider=custom for {}, so explicitly erase firebase
+    // before JWT serialization to exercise a genuinely absent claim.
+    for (const token of [{firebase: undefined}, {firebase: {}}, {firebase: {sign_in_provider: ''}},
+      {firebase: {sign_in_provider: 7}}, {firebase: {sign_in_provider: 'anonymous'}}]) {
+      const db = testEnv.authenticatedContext(alice, token).firestore();
+      await assertFails(setDoc(doc(db, 'global_words', 'apple'), {
+        word: 'apple', meaning: 'fruit', partOfSpeech: 'noun', createdAt: serverTimestamp(),
+      }));
+    }
+  });
+
+  it('rejects self-awarded profile scores while retaining profile edit and owner read', async () => {
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'users', alice), {
+        first_name: 'Alice', last_name: '', email: '', age: 20,
+        createdAt: new Date(0), points: 7, totalPoints: 7, gamesPlayed: 1,
+      });
+    });
+    const ref = doc(authDb(), 'users', alice);
+    await assertSucceeds(updateDoc(ref, {first_name: 'Alicia'}));
+    for (const key of ['points', 'totalPoints', 'gamesPlayed']) {
+      await assertFails(updateDoc(ref, {[key]: 999}));
+    }
+    await assertFails(setDoc(ref, {first_name: 'Alice', last_name: '', email: '', age: 20, createdAt: new Date(0)}));
+    assert.equal((await assertSucceeds(getDoc(ref))).data().points, 7);
+    await assertFails(getDoc(doc(authDb(bob), 'users', alice)));
+  });
+
+  it('retains wallpaper selection but rejects client score create/update/delete', async () => {
+    const ref = doc(authDb(), 'state', alice);
+    await assertFails(setDoc(ref, {totalPoints: 100}));
+    await assertSucceeds(setDoc(ref, {selectedWallpaper: null}));
+    await seedStateAndProduct();
+    await assertSucceeds(updateDoc(ref, {selectedWallpaper: 'wallpaper_neon.png'}));
+    for (const key of ['totalPoints', 'totalCorrectAnswers', 'totalWrongAnswers', 'gamesPlayed']) {
+      await assertFails(updateDoc(ref, {[key]: 999}));
+    }
+    await assertFails(setDoc(ref, {selectedWallpaper: null}));
+    await assertFails(deleteDoc(ref));
+    assert.equal((await getDoc(ref)).data().totalPoints, 100);
+  });
+
+  it('client admin-looking claims cannot write trusted research/control or purchases', async () => {
+    const db = testEnv.authenticatedContext(alice, {
+      firebase: {sign_in_provider: 'password'}, admin: true, role: 'service_role',
+    }).firestore();
+    for (const parts of [['app_control', 'field'],
+      ['field_users', alice, 'research_sync_authorities', 'permit:a'],
+      ['field_users', alice, 'research_receipts', 'receipt:a']]) {
+      await assertFails(setDoc(doc(db, ...parts), {active: true}));
+    }
+    await seedStateAndProduct();
+    await assertFails(setDoc(doc(db, 'purchased_items', purchaseId), purchaseData()));
+    await assertFails(writeFieldCategory(testEnv.unauthenticatedContext().firestore()));
+  });
+});
+
 describe('purchased_items transaction integrity', () => {
   it('denies minting an item without atomically debiting points', async () => {
     await seedStateAndProduct();
@@ -1456,7 +1515,7 @@ describe('purchased_items transaction integrity', () => {
     await assertFails(batch.commit());
   });
 
-  it('allows one purchase with the exact catalog price and atomic debit', async () => {
+  it('denies even an exact catalog purchase and atomic client debit', async () => {
     await seedStateAndProduct();
     const db = authDb();
     const batch = writeBatch(db);
@@ -1466,26 +1525,17 @@ describe('purchased_items transaction integrity', () => {
       purchaseData(),
     );
 
-    await assertSucceeds(batch.commit());
+    await assertFails(batch.commit());
     const state = await assertSucceeds(getDoc(doc(db, 'state', alice)));
-    const purchase = await assertSucceeds(
-      getDoc(doc(db, 'purchased_items', purchaseId)),
-    );
-    if (state.data().totalPoints !== 50 || purchase.data().total_price !== 50) {
-      throw new Error('The committed purchase does not match the expected debit.');
-    }
+    assert.equal(state.data().totalPoints, 100);
   });
 
   it('denies a second purchase of the same product', async () => {
     await seedStateAndProduct();
     const db = authDb();
-    const first = writeBatch(db);
-    first.update(doc(db, 'state', alice), { totalPoints: 50 });
-    first.set(
-      doc(db, 'purchased_items', purchaseId),
-      purchaseData(),
-    );
-    await assertSucceeds(first.commit());
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(context.firestore(), 'purchased_items', purchaseId), purchaseData());
+    });
 
     const second = writeBatch(db);
     second.update(doc(db, 'state', alice), { totalPoints: 0 });

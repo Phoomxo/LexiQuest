@@ -1,0 +1,8 @@
+{
+  "file": "firestore.rules",
+  "testedSha256": "2a5081a22b46b6f0d6939677e22810b3c437cd19714306ce0c659c3236a64aa8",
+  "finalSha256": "dffbeb1a7a7429a798e78b58109820c4531ee1992f192e379a436c2d7b2c1954",
+  "ruleTokensEqual": true,
+  "change": "Remove obsolete comment for deleted client purchase helper; no rule tokens changed",
+  "reuse": "G7.3-final-verifier.json 180 tests"
+}

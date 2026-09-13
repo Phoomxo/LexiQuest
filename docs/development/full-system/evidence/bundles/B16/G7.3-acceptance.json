@@ -1,0 +1,33 @@
+{
+  "packageId": "G7.3",
+  "bundleId": "B16",
+  "status": "accepted-local",
+  "requirements": [
+    "COV-f28",
+    "COV-f40",
+    "COV-f41",
+    "G7",
+    "D04"
+  ],
+  "checks": [
+    {
+      "receipt": "G7.3-final-verifier.json",
+      "tests": 180,
+      "kind": "local-demo-emulator"
+    },
+    {
+      "receipt": "G7.3-research-verifier.json",
+      "tests": 20,
+      "kind": "synthetic-Flutter-runtime-reopen"
+    }
+  ],
+  "review": "Sole-writer diff/caller/donor review: field_users rules untouched, guest sync retained, server score fields preserved via affectedKeys, client purchase grant and obsolete helper removed. Corrected SDK fixtures documented. No functions import or remote activation.",
+  "openRequiredLocalDefects": [],
+  "external": [
+    "deployed rules",
+    "Supabase runtime",
+    "remote trusted writer",
+    "G7.4-G7.7 and full release"
+  ],
+  "ruleReuse": "G7.3-comment-audit.json"
+}

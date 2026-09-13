@@ -1,0 +1,15 @@
+{
+  "package": "G7.3",
+  "requirementIds": ["COV-f28", "COV-f40", "COV-f41", "G7", "G0.3-D04"],
+  "donorSha": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+  "activeBaseSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa",
+  "decisions": [
+    {"surface": "legacy Firestore", "action": "selective fail-closed claim/economy lockdown", "preserved": "owner reads, valid profile edits, wallpaper preferences; canonical field_users schemas untouched"},
+    {"surface": "donor functions/src/progress_writer.ts", "action": "do not import or activate", "evidence": "requireCallableIdentity requires auth/App Check; input parser bounds correctAnswers by eventIds and transaction checks session fingerprint, but earning still trusts submitted correctAnswers. This is not verified canonical learning evidence."},
+    {"surface": "active functions", "action": "absent; not a deployed trusted writer claim", "evidence": "git tree and current composition/caller search"},
+    {"surface": "supabase/migrations/20260727000000_image_bucket_public_readonly.sql", "action": "retain source policy", "evidence": "Image-only public SELECT; restrictive false INSERT/UPDATE/DELETE for anon/authenticated. Service role retains bypass. No production migration or remote audit performed."},
+    {"surface": "storage.rules", "action": "retain deny-all", "evidence": "Firebase Storage unused; all reads/writes false"},
+    {"surface": "research", "action": "retain exact signed permit/receipt/issuer pins and withdrawal boundary", "evidence": "existing rules tests; synthetic identities only; no client admin claims grant authority; no enrollment or live research upload"}
+  ],
+  "external": ["Deployed rules NOT RUN", "Supabase runtime SQL NOT RUN", "Remote trusted economy unavailable until separately verified server authority", "No rollout or cloud write"]
+}

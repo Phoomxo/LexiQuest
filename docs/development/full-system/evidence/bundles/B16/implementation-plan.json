@@ -1,0 +1,31 @@
+{
+  "bundleId": "B16",
+  "baseSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa",
+  "revision": "2026-09-14-camera-training-5",
+  "constraints": ["single writer; sequential acceptance", "no deployment, spending or research activation", "preserve schema27 and historical evidence", "bounded verify-scope; reuse unchanged passed inputs", "lexiquest/; Astra medium; default requested, effective tier unverified"],
+  "steps": [
+    {
+      "package": "G7.3",
+      "outcome": "Close inherited D04 legacy client economy and missing-provider-claim grants without changing canonical field sync/research authority.",
+      "paths": ["firestore.rules", "test/security/firestore-rules.test.cjs", "supabase/migrations/20260727000000_image_bucket_public_readonly.sql", "docs/development/full-system/G0.3-authority.md"],
+      "design": "Require explicit nonanonymous provider for registered-only paths. Permit profile edits without changing server-owned scores; state client edits limited to wallpaper; deny all client purchase writes. Compare frozen donor trusted writers, do not adopt answer-count payload as verified evidence. Supabase source audit only; absent functions remain absent.",
+      "verification": ["Targeted Economy RulesOnly red then green", "research_runtime_sync_integration_test.dart and research_withdrawal_reopen_test.dart with unchanged-evidence audit or bounded run", "self review callers and donor contract"],
+      "rollback": "Git revert rules changes locally; no deployed policy or remote catalog touched. Never roll back to permissive rules in a release."
+    },
+    {
+      "package": "G7.4",
+      "outcome": "Verify owner-scoped archive/delete/cancellation and queue/cache lifecycle including imported historical records.",
+      "paths": ["lib/features/export/application/export_use_cases.dart", "lib/features/export/application/owner_lifecycle_archive.dart", "lib/features/account", "lib/features/offline_content", "lib/features/identity/domain/owner_lifecycle_manifest.dart"],
+      "design": "Read own brief when reached. Trace save/report/preferences/reminder/offline files through owner gate, restart, export redaction and deletion. Add regression and repair demonstrated gaps. Audit removable placeholders by import/route/schema/generator references; preserve historical evidence and rollback source.",
+      "verification": ["bounded account/export/offline/preferences tests", "file-backed owner and pending-queue behavior", "cleanup disposition and committed blob hashes"]
+    },
+    {
+      "package": "G7.5",
+      "outcome": "Record honest route/dependency/content/flag/edition matrix and verify local preview without research/cloud rollout.",
+      "paths": ["lib/runtime/production_feature_contract.dart", "lib/runtime/production_feature_gate.dart", "lib/runtime/app_dependencies.dart", "lib/runtime/central_cost_policy.dart", "lib/features/learning/application/lesson_mode_registry.dart"],
+      "design": "Read own brief when reached; inspect actual flags and all catalog entries. Preserve unavailable/implementedOff/internal/enabled/kill-switch distinctions and explicit external limitations; f28 remains hidden. No binary or physical PASS without actual evidence.",
+      "verification": ["runtime_feature_controls_test.dart", "lesson_mode_registry_test.dart", "runtime_kill_switch_journey_test.dart", "bounded affected bootstrap/activation checks"]
+    }
+  ],
+  "completion": "Review and commit each accepted package, external actual SHA receipt and atomic state advance. One concise Thai report. Bundle artifact audit then release writer/reserve exactly one B17; native creation receipt and actual-ID progress wait."
+}

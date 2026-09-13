@@ -30,9 +30,12 @@ service cloud.firestore {
 
     function isRegisteredUser() {
       return isSignedIn()
-        && (!('firebase' in request.auth.token)
-            || !('sign_in_provider' in request.auth.token.firebase)
-            || request.auth.token.firebase.sign_in_provider != 'anonymous');
+        && 'firebase' in request.auth.token
+        && request.auth.token.firebase is map
+        && 'sign_in_provider' in request.auth.token.firebase
+        && request.auth.token.firebase.sign_in_provider is string
+        && request.auth.token.firebase.sign_in_provider.size() > 0
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
 
     function ownsFieldUser(uid) {
@@ -1738,35 +1741,6 @@ service cloud.firestore {
         && request.resource.data.occurredAtUtc.size() <= 40;
     }
 
-    // A purchase record may only be created by the same atomic write that
-    // debits the buyer's points by the exact positive catalog price.
-    function purchaseIntegrityOk(database) {
-      let productDoc = get(
-        /databases/$(database)/documents/products/$(request.resource.data.product_id)
-      );
-      let stateDoc = get(
-        /databases/$(database)/documents/state/$(request.auth.uid)
-      );
-      let stateAfterDoc = getAfter(
-        /databases/$(database)/documents/state/$(request.auth.uid)
-      );
-      return exists(
-          /databases/$(database)/documents/products/$(request.resource.data.product_id)
-        )
-        && productDoc.data.price is int
-        && productDoc.data.price > 0
-        && request.resource.data.total_price == productDoc.data.price
-        && exists(
-          /databases/$(database)/documents/state/$(request.auth.uid)
-        )
-        && stateDoc.data.totalPoints is int
-        && stateDoc.data.totalPoints >= request.resource.data.total_price
-        && stateAfterDoc.data.totalPoints is int
-        && stateAfterDoc.data.totalPoints
-             == stateDoc.data.totalPoints
-                - request.resource.data.total_price;
-    }
-
     // -------------------------------------------------------------------------
     // field_users/{uid} - versioned local-first sync mirror. The owner path is
     // the authorization boundary. Entity and immutable operation writes must
@@ -2058,10 +2032,10 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // users/{uid} - profile + per-user points. Keyed by uid; self only.
+    // users/{uid} - self-owned profile; score fields are server-owned.
     //   create: AuthService.registerUser (first_name, last_name, email, age,
     //           createdAt via serverTimestamp)
-    //   update: QuizScreen._savePointsToFirestore (merge totalPoints/gamesPlayed)
+    //   update: profile fields only; legacy client score writes are denied
     //   read  : SettingScreen, UserService.getUserData
     //   createdAt is server-controlled and immutable after creation.
     // -------------------------------------------------------------------------
@@ -2086,39 +2060,22 @@ service cloud.firestore {
         && request.resource.data.age <= 150
         && request.resource.data.createdAt == request.time;
 
+      // Existing trusted score fields may remain, but only profile keys may change.
       allow update: if isSignedIn()
         && request.auth.uid == uid
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly([
-             'first_name', 'last_name', 'email', 'age', 'points',
-             'totalPoints', 'gamesPlayed', 'createdAt'
-           ])
-        && request.resource.data.createdAt == resource.data.createdAt
-        && (!('first_name' in request.resource.data.keys())
-             || (request.resource.data.first_name is string
-                 && request.resource.data.first_name.size() <= 100))
-        && (!('last_name' in request.resource.data.keys())
-             || (request.resource.data.last_name is string
-                 && request.resource.data.last_name.size() <= 100))
-        && (!('email' in request.resource.data.keys())
-             || (request.resource.data.email is string
-                 && request.resource.data.email.size() <= 254))
-        && (!('age' in request.resource.data.keys())
-             || (request.resource.data.age is int
-                 && request.resource.data.age >= 0
-                 && request.resource.data.age <= 150))
-        && (!('points' in request.resource.data.keys())
-             || (request.resource.data.points is int
-                 && request.resource.data.points >= 0
-                 && request.resource.data.points <= 100000000))
-        && (!('totalPoints' in request.resource.data.keys())
-             || (request.resource.data.totalPoints is int
-                 && request.resource.data.totalPoints >= -100000000
-                 && request.resource.data.totalPoints <= 100000000))
-        && (!('gamesPlayed' in request.resource.data.keys())
-             || (request.resource.data.gamesPlayed is int
-                 && request.resource.data.gamesPlayed >= 0
-                 && request.resource.data.gamesPlayed <= 100000000));
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'first_name', 'last_name', 'email', 'age'
+        ])
+        && request.resource.data.first_name is string
+        && request.resource.data.first_name.size() > 0
+        && request.resource.data.first_name.size() <= 100
+        && request.resource.data.last_name is string
+        && request.resource.data.last_name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.age is int
+        && request.resource.data.age >= 0
+        && request.resource.data.age <= 150;
 
       allow delete: if false;
     }
@@ -2129,38 +2086,23 @@ service cloud.firestore {
     //                  (totalPoints increment), SelectWallpaperScreen
     //                  (selectedWallpaper update)
     //   read         : ScoreScreen, QuizScreen, ShopPage, UserService
-    //   NOTE: totalPoints is client-incrementable; tamper-proof scoring needs a
-    //   server-side writer (Cloud Function/Callable). See explanation.
+    //   Only wallpaper selection is client-writable. Scores require a trusted
+    //   server writer; no callable is installed or activated by these rules.
     // -------------------------------------------------------------------------
     match /state/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
 
-      allow create, update: if isSignedIn()
-        && request.auth.uid == uid
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly([
-             'totalPoints', 'totalCorrectAnswers', 'totalWrongAnswers',
-             'gamesPlayed', 'selectedWallpaper'
-           ])
-        && (!('totalPoints' in request.resource.data.keys())
-             || (request.resource.data.totalPoints is int
-                 && request.resource.data.totalPoints >= -100000000
-                 && request.resource.data.totalPoints <= 100000000))
-        && (!('totalCorrectAnswers' in request.resource.data.keys())
-             || (request.resource.data.totalCorrectAnswers is int
-                 && request.resource.data.totalCorrectAnswers >= 0
-                 && request.resource.data.totalCorrectAnswers <= 100000000))
-        && (!('totalWrongAnswers' in request.resource.data.keys())
-             || (request.resource.data.totalWrongAnswers is int
-                 && request.resource.data.totalWrongAnswers >= 0
-                 && request.resource.data.totalWrongAnswers <= 100000000))
-        && (!('gamesPlayed' in request.resource.data.keys())
-             || (request.resource.data.gamesPlayed is int
-                 && request.resource.data.gamesPlayed >= 0
-                 && request.resource.data.gamesPlayed <= 100000000))
-        && (!('selectedWallpaper' in request.resource.data.keys())
-             || request.resource.data.selectedWallpaper is string
-             || request.resource.data.selectedWallpaper == null);
+      allow create: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['selectedWallpaper'])
+        && (request.resource.data.selectedWallpaper == null
+          || (request.resource.data.selectedWallpaper is string
+            && request.resource.data.selectedWallpaper.size() <= 256));
+      allow update: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['selectedWallpaper'])
+        && (request.resource.data.selectedWallpaper == null
+          || (request.resource.data.selectedWallpaper is string
+            && request.resource.data.selectedWallpaper.size() <= 256));
 
       allow delete: if false;
     }
@@ -2282,28 +2224,16 @@ service cloud.firestore {
 
     // -------------------------------------------------------------------------
     // purchased_items/{purchaseId} - per-user ownership records.
-    //   create: ShopPage._buyProduct transaction (user_id == current user)
+    //   create: trusted server only; legacy ShopPage client transaction denied
     //   read  : ShopPage, SelectWallpaperScreen (both filter .where('user_id'))
     // -------------------------------------------------------------------------
     match /purchased_items/{purchaseId} {
       allow read: if isSignedIn()
         && resource.data.user_id == request.auth.uid;
 
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['user_id', 'product_id', 'total_price', 'created_at'])
-        && request.resource.data.user_id is string
-        && request.resource.data.user_id == request.auth.uid
-        && request.resource.data.product_id is string
-        && request.resource.data.product_id.size() > 0
-        && request.resource.data.product_id.size() <= 120
-        && request.resource.data.total_price is int
-        && request.resource.data.total_price > 0
-        && request.resource.data.total_price <= 100000000
-        && request.resource.data.created_at is timestamp
-        && purchaseIntegrityOk(database);
-
-      allow update, delete: if false;
+      // Purchases and balances require an independently trusted server writer.
+      // Atomic client debit alone cannot establish earned balance or entitlement.
+      allow create, update, delete: if false;
     }
 
     // -------------------------------------------------------------------------
