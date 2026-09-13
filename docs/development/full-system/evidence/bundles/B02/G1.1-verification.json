@@ -82,7 +82,7 @@
     "lib/features/learning/application/unified_lesson_controller.dart",
     "lib/runtime/app_bootstrap.dart"
   ],
-  "reuse": "Core/Today gates precede isolated bootstrap-test-only change; production inputs unchanged. Test file normalized back to original CRLF after successful test; content identical modulo EOL.",
+  "reuse": "Core/Today gates preceded isolated bootstrap-test-only change; production inputs unchanged. Final test keeps baseline mixed EOL bytes; assertions are identical modulo EOL to passed fixture. Generated registrants restored byte-for-byte after verifying EOL-only diff.",
   "externalGates": [
     "Physical device/build local-preview config NOT RUN, owners G1.7/G7.5/G7.7"
   ],

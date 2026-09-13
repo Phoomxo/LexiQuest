@@ -14,5 +14,12 @@
     "fix": "Supply promptMode, responseTimeMs and attemptNumber",
     "cause": "New bootstrap fixture omitted required recordAnswer parameters",
     "retest": "Targeted Runtime selected Firebase failure journey passed, 1 test"
+  },
+  {
+    "id": "B02-OPS-02",
+    "status": "closed",
+    "cause": "Whole-file CRLF normalization changed preexisting mixed-EOL lines; diff check flagged CR whitespace before shell continued to checkpoint commit",
+    "fix": "Reconstructed untouched baseline bytes from accepted Git blob and inserted only new test assertions; no test semantics change",
+    "retest": "Require clean diff check before acceptance receipt; checkpoint commit is not accepted SHA"
   }
 ]
