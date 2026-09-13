@@ -1,0 +1,17 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.2-edit-green/targeted-learning-08c77aa8cf66efb3f16c58ce1eb7dc307db44cec01a56730cb663eb1d13bbf46.json",
+  "status": "Passed",
+  "fingerprint": "b59f5118da770bb3453c9889d6910be03dac3ac0c17c92aab64e1c1890c4722f",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-edit-green/f94fe12d9050-b59f5118da77/Explicit-Flutter-tests.stdout.log",
+      "sha256": "cd214ba9b09baed4016b9afbebf50a1bc9419677df1848759d5d856eb12a08a1"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-edit-green/f94fe12d9050-b59f5118da77/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ],
+  "testsPassed": 21
+}

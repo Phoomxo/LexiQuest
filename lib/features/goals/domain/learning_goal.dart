@@ -42,6 +42,7 @@ final class LearningGoal {
     required LearningGoalStatus status,
     required DateTime createdAtUtc,
     required DateTime updatedAtUtc,
+    bool isDeleted = false,
   }) {
     final canonicalId = _canonicalText(id, 'id', maximumLength: 256);
     final canonicalTitle = _canonicalText(title, 'title', maximumLength: 120);
@@ -72,6 +73,7 @@ final class LearningGoal {
       status: status,
       createdAtUtc: created,
       updatedAtUtc: updated,
+      isDeleted: isDeleted,
     );
   }
 
@@ -84,6 +86,7 @@ final class LearningGoal {
     required this.status,
     required this.createdAtUtc,
     required this.updatedAtUtc,
+    required this.isDeleted,
   });
 
   final String id;
@@ -94,6 +97,7 @@ final class LearningGoal {
   final LearningGoalStatus status;
   final DateTime createdAtUtc;
   final DateTime updatedAtUtc;
+  final bool isDeleted;
 
   LearningGoal copyWith({
     LearningGoalKind? kind,
@@ -102,6 +106,7 @@ final class LearningGoal {
     LearningGoalTimezoneContext? timezone,
     LearningGoalStatus? status,
     DateTime? updatedAtUtc,
+    bool? isDeleted,
   }) => LearningGoal(
     id: id,
     kind: kind ?? this.kind,
@@ -111,6 +116,7 @@ final class LearningGoal {
     status: status ?? this.status,
     createdAtUtc: createdAtUtc,
     updatedAtUtc: updatedAtUtc ?? this.updatedAtUtc,
+    isDeleted: isDeleted ?? this.isDeleted,
   );
 }
 

@@ -1,0 +1,65 @@
+{
+  "design": "Reuse goal save/idempotency and existing tombstone schema. Edit pins opening owner and stable command. Goal deletion atomically tombstones linked reminders through their repository before parent tombstone; existing reminder reconciliation owns native cancellation. Editing a goal retains independently selected reminder time; no implicit opt-in or reschedule.",
+  "bundleId": "B09",
+  "requirements": [
+    "COV-f26",
+    "COV-f27",
+    "FORM-07",
+    "G4"
+  ],
+  "compatibility": [
+    "No schema migration; existing isDeleted/localRevision/outbox fields",
+    "Delete operationKind emitted for sync, rollout remains off",
+    "Deleted goals cannot be resurrected by stale save",
+    "Learning/history/reward authorities untouched"
+  ],
+  "defects": [
+    {
+      "red": "G4.2-ui-red",
+      "status": "resolved",
+      "cause": "No goal edit/delete UI or tombstone mutation path",
+      "id": "B09-G42-01"
+    },
+    {
+      "fix": "Read actual owner from repository; retain durable identity/revision assertions",
+      "cause": "Synthetic owner loader omitted canonical local: prefix",
+      "evidence": "G4.2-fixture-failure",
+      "id": "B09-FIXTURE-01",
+      "status": "resolved"
+    },
+    {
+      "fix": "Read git bytes as UTF-8 in Python, preserve CRLF, assert exact replacement",
+      "cause": "PowerShell git show text roundtrip corrupted Thai encoding while removing formatting churn",
+      "proof": "Bootstrap diff restored to 4 insertions/1 deletion; composition test follows",
+      "id": "B09-TOOL-01",
+      "status": "resolved"
+    },
+    {
+      "fix": "Discovered drift_sync_store.dart using rg --files, read literal path",
+      "cause": "Literal wildcard path used in bounded sync discovery",
+      "status": "resolved",
+      "id": "B09-TOOL-02"
+    }
+  ],
+  "external": [
+    "Physical OS notification delivery NOT RUN",
+    "Remote sync not activated"
+  ],
+  "packageId": "G4.2",
+  "coverage": [
+    "Calendar date before/today/after Bangkok midnight and DST dates",
+    "Stable edit/delete replay, rollback on guard denial, owner mismatch",
+    "Reminder denied/revoked, unsupported/native failures, quiet hours, timezone and restart",
+    "Screen create/edit/delete, manual date/time, permission gating, status refresh"
+  ],
+  "verification": {
+    "final": "G4.2-final/receipt.json",
+    "bootstrapTests": 1,
+    "bootstrap": "G4.2-bootstrap-final/receipt.json",
+    "status": "accepted-local-automated",
+    "diffCheck": "Passed with cr-at-eol for existing CRLF source",
+    "inputHashesVerified": 1306,
+    "tests": 129,
+    "analyzer": "Goal/UI changed files clean; bootstrap files retain 6 pre-existing info-level diagnostics outside changed lines"
+  }
+}

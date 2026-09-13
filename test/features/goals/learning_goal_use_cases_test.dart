@@ -13,6 +13,8 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/reminders/data/drift_study_reminder_repository.dart';
+import 'package:vocab_learning_app/features/reminders/domain/study_reminder.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
@@ -42,6 +44,151 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'G4.2 local midnight counts yesterday today tomorrow as calendar days',
+    () {
+      final cases = LearningGoalUseCases(
+        repository: repository,
+        activeOwnerId: useCases.activeOwnerId,
+        generateId: () => 'unused',
+        nowUtc: () => DateTime.utc(2026, 9, 13, 17),
+      );
+      for (final entry in [
+        (DateTime.utc(2026, 9, 13, 16, 59), LearningGoalDeadlineState.past, 1),
+        (DateTime.utc(2026, 9, 13, 17), LearningGoalDeadlineState.today, 0),
+        (DateTime.utc(2026, 9, 14, 16, 59), LearningGoalDeadlineState.today, 0),
+        (DateTime.utc(2026, 9, 14, 17), LearningGoalDeadlineState.future, 1),
+      ]) {
+        final goal = LearningGoal(
+          id: 'goal:boundary',
+          kind: LearningGoalKind.personal,
+          title: 'Local date target',
+          deadlineAtUtc: entry.$1,
+          timezone: const LearningGoalTimezoneContext(
+            timezoneId: 'Asia/Bangkok',
+            utcOffsetMinutes: 420,
+          ),
+          status: LearningGoalStatus.active,
+          createdAtUtc: DateTime.utc(2026, 8, 1),
+          updatedAtUtc: DateTime.utc(2026, 8, 1),
+        );
+        expect(cases.countdown(goal).state, entry.$2);
+        expect(cases.countdown(goal).days, entry.$3);
+      }
+    },
+  );
+
+  test(
+    'G4.2 edit and tombstone preserve identity and cancel linked reminder atomically',
+    () async {
+      final owner = await useCases.activeOwnerId();
+      final goal = await useCases.create(
+        kind: LearningGoalKind.personal,
+        title: 'Initial',
+        deadlineAtUtc: DateTime.utc(2026, 9, 1),
+        timezone: const LearningGoalTimezoneContext(
+          timezoneId: 'Asia/Bangkok',
+          utcOffsetMinutes: 420,
+        ),
+      );
+      final reminders = DriftStudyReminderRepository(
+        database,
+        owners: repository.owners,
+      );
+      await reminders.save(
+        StudyReminder(
+          id: 'reminder:goal',
+          ownerId: owner,
+          source: StudyReminderSource.goalDeadline(goal.id),
+          scheduledAtUtc: DateTime.utc(2026, 9, 1),
+          timezone: const StudyReminderTimezoneContext(
+            timezoneId: 'Asia/Bangkok',
+            utcOffsetMinutes: 420,
+          ),
+          isEnabled: true,
+          createdAtUtc: DateTime.utc(2026, 8, 25),
+          updatedAtUtc: DateTime.utc(2026, 8, 25),
+        ),
+      );
+      final edit = await useCases.prepareUpdate(
+        goal,
+        expectedOwnerId: owner,
+        kind: LearningGoalKind.course,
+        title: 'Revised',
+        deadlineAtUtc: DateTime.utc(2026, 9, 2),
+        timezone: goal.timezone,
+      );
+      final edited = await useCases.executeCreate(edit);
+      await useCases.executeCreate(edit);
+      expect(edited.id, goal.id);
+      expect(edited.createdAtUtc, goal.createdAtUtc);
+      expect(
+        (await useCases.list()).single.deadlineAtUtc,
+        DateTime.utc(2026, 9, 2),
+      );
+      // Editing a goal does not silently move an independently opted-in reminder.
+      expect(
+        (await reminders.list()).single.scheduledAtUtc,
+        DateTime.utc(2026, 9, 1),
+      );
+      final deletion = await useCases.prepareUpdate(
+        edited,
+        expectedOwnerId: owner,
+        kind: edited.kind,
+        title: edited.title,
+        deadlineAtUtc: edited.deadlineAtUtc,
+        timezone: edited.timezone,
+        isDeleted: true,
+      );
+      await expectLater(
+        useCases.executeCreate(deletion, mutationAllowed: () => false),
+        throwsA(isA<LearningGoalMutationUnavailable>()),
+      );
+      expect(await useCases.list(), hasLength(1));
+      expect((await reminders.list()).single.isEnabled, isTrue);
+      await useCases.executeCreate(deletion);
+      await useCases.executeCreate(deletion);
+      expect(await useCases.list(), isEmpty);
+      final row = (await database.select(database.learningGoals).get()).single;
+      expect(row.isDeleted, isTrue);
+      expect(row.localRevision, 3);
+      final reminder = (await reminders.list(includeDeleted: true)).single;
+      expect(reminder.isDeleted, isTrue);
+      expect(reminder.isEnabled, isFalse);
+      final outbox = await database.select(database.outboxOperations).get();
+      expect(
+        outbox.where(
+          (o) => o.entityType == 'learningGoal' && o.operationKind == 'delete',
+        ),
+        hasLength(1),
+      );
+      expect(
+        outbox.where(
+          (o) => o.entityId == reminder.id && o.operationKind == 'cancel',
+        ),
+        hasLength(1),
+      );
+      await expectLater(
+        repository.save(
+          edited.copyWith(updatedAtUtc: DateTime.utc(2026, 9, 3)),
+        ),
+        throwsStateError,
+      );
+      expect(await useCases.list(), isEmpty);
+      await expectLater(
+        useCases.prepareUpdate(
+          edited,
+          expectedOwnerId: 'different-owner',
+          kind: edited.kind,
+          title: 'Wrong owner',
+          deadlineAtUtc: edited.deadlineAtUtc,
+          timezone: edited.timezone,
+        ),
+        throwsA(isA<LearningGoalOwnerChanged>()),
+      );
+    },
+  );
 
   test('prepared owner A command cannot retry into active owner B', () async {
     final command = await useCases.prepareCreate(

@@ -18,6 +18,64 @@ import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
+  testWidgets(
+    'G4.2 edits and deletes a personal goal through durable actions',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime.utc(2026, 9, 13, 16, 59);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'goal-editor',
+        nowUtc: () => now,
+      );
+      await owners.getOrCreateActiveOwner();
+      final cases = LearningGoalUseCases(
+        repository: DriftLearningGoalRepository(database, owners: owners),
+        activeOwnerId: () async => (await owners.getOrCreateActiveOwner()).id,
+        nowUtc: () => now,
+        generateId: () => 'goal:editable',
+      );
+      await cases.create(
+        kind: LearningGoalKind.personal,
+        title: 'Original target',
+        deadlineAtUtc: DateTime.utc(2026, 9, 14, 3),
+        timezone: const LearningGoalTimezoneContext(
+          timezoneId: 'Asia/Bangkok',
+          utcOffsetMinutes: 420,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: LearningGoalsScreen(useCases: cases)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('learning-goal/goal:editable/edit')),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('learning-goals/title')),
+        'Revised personal target',
+      );
+      await tester.tap(find.byKey(const ValueKey('learning-goals/save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Revised personal target'), findsOneWidget);
+      expect(
+        (await cases.list()).single.deadlineAtUtc,
+        DateTime.utc(2026, 9, 14, 3),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('learning-goal/goal:editable/delete')),
+      );
+      await tester.pumpAndSettle();
+      expect(await cases.list(), isEmpty);
+      final row = (await database.select(database.learningGoals).get()).single;
+      expect(row.isDeleted, isTrue);
+      expect(row.title, 'Revised personal target');
+      expect(row.localRevision, 3);
+    },
+  );
+
   testWidgets('R15.5 goals reload when owner dependencies are replaced', (
     tester,
   ) async {

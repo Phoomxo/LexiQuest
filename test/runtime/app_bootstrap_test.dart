@@ -76,6 +76,8 @@ import '../support/motivation_research_fixture.dart';
 import 'package:vocab_learning_app/features/review/application/review_center_use_cases.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
+import 'package:vocab_learning_app/features/goals/domain/learning_goal.dart';
+import 'package:vocab_learning_app/features/goals/application/learning_goal_use_cases.dart';
 import 'package:vocab_learning_app/features/reminders/application/study_reminder_use_cases.dart';
 import 'package:vocab_learning_app/features/reminders/domain/study_reminder.dart';
 import 'package:vocab_learning_app/features/reminders/domain/study_reminder_repository.dart';
@@ -1728,6 +1730,40 @@ void main() {
       )..where((row) => row.ownerId.equals(replacement.id))).getSingle();
       expect(persisted.themeMode, 'light');
       expect(persisted.motionMode, 'system');
+    });
+
+    test('G4.2 goal deletion reconciles native reminder without another opt-in', () async {
+      final scheduler = _BootstrapReminderScheduler()
+        ..permission = ReminderPermissionState.granted;
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase, initializeFirebase: () async {},
+        initializeSupabase: () async {}, loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        reminderSchedulerFactory: () => scheduler,
+        buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final goals = dependencies.learningGoals!;
+      final deadline = DateTime.now().toUtc().add(const Duration(days: 2));
+      final goal = await goals.create(kind: LearningGoalKind.personal,
+        title: 'Synthetic personal goal', deadlineAtUtc: deadline,
+        timezone: LearningGoalUseCases.timezoneContext('Asia/Bangkok', deadline));
+      expect(scheduler.permissionRequests, 0);
+      expect(scheduler.pending, isEmpty);
+      await dependencies.studyReminders!.optIn(
+        source: StudyReminderSource.goalDeadline(goal.id),
+        scheduledAtUtc: deadline, timezoneId: 'Asia/Bangkok', mutationAllowed: () => true);
+      expect(scheduler.pending, hasLength(1));
+      final requests = scheduler.permissionRequests;
+      final command = await goals.prepareUpdate(goal,
+        expectedOwnerId: await goals.activeOwnerId(), kind: goal.kind,
+        title: goal.title, deadlineAtUtc: goal.deadlineAtUtc,
+        timezone: goal.timezone, isDeleted: true);
+      await goals.executeCreate(command);
+      expect(await goals.list(), isEmpty);
+      expect(scheduler.pending, isEmpty);
+      expect(scheduler.permissionRequests, requests);
     });
 
     test(

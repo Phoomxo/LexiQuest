@@ -46,6 +46,7 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   LearningGoalUseCases? _loadedUseCases;
   Future<bool>? _reminderEntryAvailable;
   Listenable? _registryChanges;
+  final Set<String> _deleting = {};
 
   LearningGoalUseCases? _resolveUseCases() =>
       widget.useCases ?? AppDependenciesScope.maybeOf(context)?.learningGoals;
@@ -136,8 +137,9 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   Future<void> _createGoal(
     LearningGoalUseCases useCases,
     FeatureRegistry? registry,
-    LearningGoalMutationGuard mutationAllowed,
-  ) async {
+    LearningGoalMutationGuard mutationAllowed, {
+    LearningGoal? goal,
+  }) async {
     final openingOwnerId = await useCases.activeOwnerId();
     if (!mounted || !mutationAllowed()) return;
     final created = await showDialog<LearningGoal>(
@@ -147,9 +149,42 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
         registry: registry,
         mutationAllowed: mutationAllowed,
         openingOwnerId: openingOwnerId,
+        initialGoal: goal,
       ),
     );
-    if (created != null && mounted) _reload(useCases);
+    if (created != null && mounted && mutationAllowed()) _reload(useCases);
+  }
+
+  Future<void> _deleteGoal(
+    LearningGoal goal,
+    LearningGoalUseCases useCases,
+    LearningGoalMutationGuard mutationAllowed,
+  ) async {
+    if (_deleting.contains(goal.id) || !mutationAllowed()) return;
+    setState(() => _deleting.add(goal.id));
+    try {
+      final owner = await useCases.activeOwnerId();
+      if (!mutationAllowed()) return;
+      final command = await useCases.prepareUpdate(
+        goal,
+        expectedOwnerId: owner,
+        kind: goal.kind,
+        title: goal.title,
+        deadlineAtUtc: goal.deadlineAtUtc,
+        timezone: goal.timezone,
+        isDeleted: true,
+      );
+      await useCases.executeCreate(command, mutationAllowed: mutationAllowed);
+      if (mounted && mutationAllowed()) _reload(useCases);
+    } on Object {
+      if (mounted && mutationAllowed()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ยังลบเป้าหมายไม่ได้ กรุณาลองอีกครั้ง')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _deleting.remove(goal.id));
+    }
   }
 
   @override
@@ -162,7 +197,9 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
         MediaQuery.sizeOf(context).width < 360 ||
         MediaQuery.textScalerOf(context).scale(16) >= 24;
     bool mutationAllowed() =>
-        registry?.isEnabled(Feature.studyPlanning) ?? allowWithoutRegistry;
+        mounted &&
+        identical(useCases, _resolveUseCases()) &&
+        (registry?.isEnabled(Feature.studyPlanning) ?? allowWithoutRegistry);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -238,6 +275,35 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
                               spacing: 8,
                               runSpacing: 8,
                               children: [
+                                IconButton(
+                                  key: ValueKey(
+                                    'learning-goal/${goal.id}/edit',
+                                  ),
+                                  tooltip: 'แก้ไขเป้าหมาย',
+                                  onPressed: _deleting.contains(goal.id)
+                                      ? null
+                                      : () => _createGoal(
+                                          useCases,
+                                          registry,
+                                          mutationAllowed,
+                                          goal: goal,
+                                        ),
+                                  icon: const Icon(Icons.edit_outlined),
+                                ),
+                                IconButton(
+                                  key: ValueKey(
+                                    'learning-goal/${goal.id}/delete',
+                                  ),
+                                  tooltip: 'ลบเป้าหมายและการเตือนที่ผูกไว้',
+                                  onPressed: _deleting.contains(goal.id)
+                                      ? null
+                                      : () => _deleteGoal(
+                                          goal,
+                                          useCases,
+                                          mutationAllowed,
+                                        ),
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
                                 if (reminders != null)
                                   FutureBuilder<bool>(
                                     future: _reminderEntryAvailable,
@@ -292,12 +358,14 @@ final class _CreateLearningGoalDialog extends StatefulWidget {
     required this.registry,
     required this.mutationAllowed,
     required this.openingOwnerId,
+    this.initialGoal,
   });
 
   final LearningGoalUseCases useCases;
   final FeatureRegistry? registry;
   final LearningGoalMutationGuard mutationAllowed;
   final String openingOwnerId;
+  final LearningGoal? initialGoal;
 
   @override
   State<_CreateLearningGoalDialog> createState() =>
@@ -320,6 +388,13 @@ final class _CreateLearningGoalDialogState
   @override
   void initState() {
     super.initState();
+    final goal = widget.initialGoal;
+    if (goal != null) {
+      _title.text = goal.title;
+      _deadlineUtc = goal.deadlineAtUtc;
+      _timezoneId = goal.timezone.timezoneId;
+      _kind = goal.kind;
+    }
     _registryChanges?.addListener(_onRegistryChanged);
   }
 
@@ -357,13 +432,22 @@ final class _CreateLearningGoalDialogState
           _timezoneId,
           deadline,
         );
-        command = await widget.useCases.prepareCreate(
-          expectedOwnerId: widget.openingOwnerId,
-          kind: _kind,
-          title: _title.text,
-          deadlineAtUtc: deadline,
-          timezone: timezone,
-        );
+        command = widget.initialGoal == null
+            ? await widget.useCases.prepareCreate(
+                expectedOwnerId: widget.openingOwnerId,
+                kind: _kind,
+                title: _title.text,
+                deadlineAtUtc: deadline,
+                timezone: timezone,
+              )
+            : await widget.useCases.prepareUpdate(
+                widget.initialGoal!,
+                expectedOwnerId: widget.openingOwnerId,
+                kind: _kind,
+                title: _title.text,
+                deadlineAtUtc: deadline,
+                timezone: timezone,
+              );
         _pendingCommand = command;
       }
       if (!widget.mutationAllowed()) {
@@ -399,7 +483,11 @@ final class _CreateLearningGoalDialogState
       titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      title: const Text('เพิ่มเป้าหมายการเรียน'),
+      title: Text(
+        widget.initialGoal == null
+            ? 'เพิ่มเป้าหมายการเรียน'
+            : 'แก้ไขเป้าหมายส่วนตัว',
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -437,6 +525,9 @@ final class _CreateLearningGoalDialogState
             fieldKey: 'learning-goals/deadline',
             referenceUtc: widget.useCases.nowUtc(),
             enabled: fieldsEnabled,
+            initialUtc: widget.initialGoal?.deadlineAtUtc,
+            initialTimezoneId:
+                widget.initialGoal?.timezone.timezoneId ?? 'Asia/Bangkok',
             onChanged: (instant, zone) {
               _deadlineUtc = instant;
               _timezoneId = zone;
@@ -458,10 +549,18 @@ final class _CreateLearningGoalDialogState
           child: const Text('ยกเลิก'),
         ),
         FilledButton(
-          key: const ValueKey<String>('learning-goals/create'),
+          key: ValueKey<String>(
+            widget.initialGoal == null
+                ? 'learning-goals/create'
+                : 'learning-goals/save',
+          ),
           onPressed: _submitting ? null : _submit,
           child: Text(
-            _pendingCommand == null ? 'สร้างเป้าหมาย' : 'ลองอีกครั้ง',
+            _pendingCommand != null
+                ? 'ลองอีกครั้ง'
+                : widget.initialGoal == null
+                ? 'สร้างเป้าหมาย'
+                : 'บันทึกเป้าหมาย',
           ),
         ),
       ],

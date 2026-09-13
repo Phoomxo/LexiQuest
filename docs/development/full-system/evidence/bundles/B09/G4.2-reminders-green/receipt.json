@@ -1,0 +1,17 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.2-reminders-green/targeted-learning-9391bfe68a873acaa275cd04b0d72197169fd16daf0bf916261541c235603a2b.json",
+  "status": "Passed",
+  "fingerprint": "6e35b9b318e6dbf92989a2e8e2c806a4612d53415bc93a1618da597c2fc9a011",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-reminders-green/6b1b7cde449f-6e35b9b318e6/Explicit-Flutter-tests.stdout.log",
+      "sha256": "ea874da0d63371bc109f0a8829129fede2fcb837c64551b54f7a7a6de41e1772"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.2-reminders-green/6b1b7cde449f-6e35b9b318e6/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ],
+  "testsPassed": 129
+}

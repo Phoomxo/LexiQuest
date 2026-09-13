@@ -101,6 +101,34 @@ final class LearningGoalUseCases {
     return command.goal;
   }
 
+  Future<LearningGoalCreateCommand> prepareUpdate(
+    LearningGoal goal, {
+    required String expectedOwnerId,
+    required LearningGoalKind kind,
+    required String title,
+    required DateTime deadlineAtUtc,
+    required LearningGoalTimezoneContext timezone,
+    bool isDeleted = false,
+  }) async {
+    if (await activeOwnerId() != expectedOwnerId) {
+      throw const LearningGoalOwnerChanged();
+    }
+    final now = nowUtc();
+    return LearningGoalCreateCommand._(
+      goal.copyWith(
+        kind: kind,
+        title: title,
+        deadlineAtUtc: deadlineAtUtc,
+        timezone: timezone,
+        isDeleted: isDeleted,
+        updatedAtUtc: now.isAfter(goal.updatedAtUtc)
+            ? now
+            : goal.updatedAtUtc.add(const Duration(milliseconds: 1)),
+      ),
+      expectedOwnerId,
+    );
+  }
+
   Future<LearningGoal> updateStatus(
     LearningGoal goal,
     LearningGoalStatus status, {

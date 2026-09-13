@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../identity/domain/local_owner_repository.dart';
+import '../../reminders/data/drift_study_reminder_repository.dart';
 import '../domain/learning_goal.dart';
 import '../domain/learning_goal_repository.dart';
 
@@ -34,6 +35,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
         database.learningGoals,
       )..where((row) => row.id.equals(goal.id))).getSingleOrNull();
       if (existing == null) {
+        if (goal.isDeleted) throw StateError('Cannot delete a missing goal');
         _requireMutationAllowed(mutationAllowed);
         await database
             .into(database.learningGoals)
@@ -59,6 +61,9 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
       }
       if (_matches(existing, goal)) return false;
       if (_matchesSemanticCommand(existing, goal)) return false;
+      if (existing.isDeleted) {
+        throw StateError('Deleted goals cannot be restored by stale edits');
+      }
       final updatedAtMs = goal.updatedAtUtc.millisecondsSinceEpoch;
       if (updatedAtMs <= existing.updatedAtUtcMs ||
           goal.createdAtUtc.millisecondsSinceEpoch != existing.createdAtUtcMs) {
@@ -66,6 +71,25 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
       }
       final revision = existing.localRevision + 1;
       _requireMutationAllowed(mutationAllowed);
+      if (goal.isDeleted) {
+        // Commit reminder cancellation intent in the same transaction, before
+        // its parent tombstone. Native repair remains owned by reminders.
+        final reminders = DriftStudyReminderRepository(
+          database,
+          owners: owners,
+        );
+        final states = await reminders.listForOwner(ownerId);
+        for (final state in states) {
+          if (state.reminder.source.goalId == goal.id) {
+            await reminders.delete(
+              state.reminder.id,
+              updatedAtUtc: goal.updatedAtUtc,
+              mutationAllowed: mutationAllowed,
+            );
+          }
+        }
+        _requireMutationAllowed(mutationAllowed);
+      }
       await (database.update(
         database.learningGoals,
       )..where((row) => row.id.equals(goal.id))).write(
@@ -78,6 +102,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
           status: Value(goal.status.name),
           updatedAtUtcMs: Value(updatedAtMs),
           localRevision: Value(revision),
+          isDeleted: Value(goal.isDeleted),
         ),
       );
       await _appendOutbox(
@@ -86,6 +111,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
         existing.cloudRevision,
         revision,
         goal.updatedAtUtc,
+        isDeleted: goal.isDeleted,
       );
       return true;
     });
@@ -117,8 +143,9 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
     String goalId,
     int baseRevision,
     int revision,
-    DateTime occurredAtUtc,
-  ) => database
+    DateTime occurredAtUtc, {
+    bool isDeleted = false,
+  }) => database
       .into(database.outboxOperations)
       .insert(
         db.OutboxOperationsCompanion.insert(
@@ -126,7 +153,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
           ownerId: ownerId,
           entityType: 'learningGoal',
           entityId: goalId,
-          operationKind: 'upsert',
+          operationKind: isDeleted ? 'delete' : 'upsert',
           baseRevision: Value(baseRevision),
           createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
         ),
@@ -153,7 +180,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
       row.status == goal.status.name &&
       row.createdAtUtcMs == goal.createdAtUtc.millisecondsSinceEpoch &&
       row.updatedAtUtcMs == goal.updatedAtUtc.millisecondsSinceEpoch &&
-      !row.isDeleted;
+      row.isDeleted == goal.isDeleted;
 
   bool _matchesSemanticCommand(db.LearningGoalRow row, LearningGoal goal) =>
       row.kind == goal.kind.name &&
@@ -163,7 +190,7 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
       row.timezoneOffsetMinutes == goal.timezone.utcOffsetMinutes &&
       row.status == goal.status.name &&
       row.createdAtUtcMs == goal.createdAtUtc.millisecondsSinceEpoch &&
-      !row.isDeleted;
+      row.isDeleted == goal.isDeleted;
 
   void _requireMutationAllowed(LearningGoalMutationGuard? mutationAllowed) {
     if (mutationAllowed != null && !mutationAllowed()) {
@@ -192,5 +219,6 @@ final class DriftLearningGoalRepository implements LearningGoalRepository {
       row.updatedAtUtcMs,
       isUtc: true,
     ),
+    isDeleted: row.isDeleted,
   );
 }

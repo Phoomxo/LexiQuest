@@ -1,0 +1,11 @@
+Analyzing goals, learning_goals_screen.dart, app_bootstrap.dart, learning_goal_use_cases_test.dart, learning_goals_screen_test.dart, app_bootstrap_test.dart...
+
+   info - lib\features\goals\data\drift_learning_goal_repository.dart:65:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\runtime\app_bootstrap.dart:1169:9 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - lib\runtime\app_bootstrap.dart:1207:11 - Statements in an if should be enclosed in a block. Try wrapping the statement in a block. - curly_braces_in_flow_control_structures
+   info - test\runtime\app_bootstrap_test.dart:4557:46 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - test\runtime\app_bootstrap_test.dart:4618:46 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - test\runtime\app_bootstrap_test.dart:4699:17 - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?'. - use_null_aware_elements
+   info - test\runtime\app_bootstrap_test.dart:4700:17 - Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?'. - use_null_aware_elements
+
+7 issues found.

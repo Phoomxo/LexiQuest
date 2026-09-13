@@ -1116,7 +1116,10 @@ final class AppBootstrap {
       repository: DriftLearningGoalRepository(
         database,
         owners: localOwners,
-        onLocalMutation: () async => notifyLocalMutation(),
+        onLocalMutation: () async {
+          notifyLocalMutation();
+          await studyReminders.reconcile(featureEnabled: reminderFeatureEnabled);
+        },
       ),
       nowUtc: () => DateTime.now().toUtc(),
       generateId: () => 'goal:${idGenerator.v4()}',
