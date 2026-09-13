@@ -21,6 +21,7 @@ final class LearnerPreferencesUseCases {
   }
 
   Future<LearnerPreferences> save({
+    String? expectedOwnerId,
     required LearnerPreferenceGoal goal,
     required int availableMinutesPerDay,
     required LearnerActivityPreference activityPreference,
@@ -28,6 +29,9 @@ final class LearnerPreferencesUseCases {
     LearnerPreferencesMutationGuard? mutationAllowed,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    if (expectedOwnerId != null && owner.id != expectedOwnerId) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
     final current = await repository.read(owner.id);
     final candidate = LearnerPreferences(
       ownerId: owner.id,

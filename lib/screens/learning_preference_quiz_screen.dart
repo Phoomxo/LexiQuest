@@ -20,6 +20,9 @@ final class _LearningPreferenceQuizScreenState
     extends State<LearningPreferenceQuizScreen> {
   final TextEditingController _minutes = TextEditingController();
   Future<LearnerPreferences>? _preference;
+  LearnerPreferencesUseCases? _activeUseCases;
+  String? _loadedOwnerId;
+  int _generation = 0;
   LearnerPreferenceGoal _goal = LearnerPreferenceGoal.balancedGrowth;
   LearnerActivityPreference _activity = LearnerActivityPreference.mixedPractice;
   bool _submitting = false;
@@ -32,8 +35,26 @@ final class _LearningPreferenceQuizScreenState
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindUseCases();
+  }
+
+  @override
+  void didUpdateWidget(covariant LearningPreferenceQuizScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindUseCases();
+  }
+
+  void _bindUseCases() {
     final useCases = _useCases(context);
-    _preference ??= useCases?.read().then((value) {
+    if (identical(useCases, _activeUseCases) && _preference != null) return;
+    _activeUseCases = useCases;
+    final generation = ++_generation;
+    _loadedOwnerId = null;
+    _submitting = false;
+    _message = null;
+    _preference = useCases?.read().then((value) {
+      if (!_isCurrent(generation, useCases)) return value;
+      _loadedOwnerId = value.ownerId;
       _goal = value.goal;
       _activity = value.activityPreference;
       _minutes.text = value.availableMinutesPerDay.toString();
@@ -41,14 +62,24 @@ final class _LearningPreferenceQuizScreenState
     });
   }
 
+  bool _isCurrent(int generation, LearnerPreferencesUseCases? useCases) =>
+      mounted &&
+      generation == _generation &&
+      identical(_activeUseCases, useCases);
+
   bool _mutationAllowed() {
     final registry = AppDependenciesScope.maybeOf(context)?.features;
     return registry?.isEnabled(Feature.studyPlanning) ??
         widget.useCases != null;
   }
 
-  Future<void> _save(LearnerPreferencesUseCases useCases) async {
-    if (_submitting) return;
+  Future<void> _save(
+    LearnerPreferencesUseCases useCases,
+    int generation,
+  ) async {
+    if (_submitting || !_isCurrent(generation, useCases)) return;
+    final ownerId = _loadedOwnerId;
+    if (ownerId == null) return;
     final minutes = int.tryParse(_minutes.text);
     if (minutes == null || minutes < 1 || minutes > 240) {
       setState(() => _message = 'กรุณาระบุเวลาตั้งแต่ 1 ถึง 240 นาที');
@@ -60,18 +91,20 @@ final class _LearningPreferenceQuizScreenState
     });
     try {
       await useCases.save(
+        expectedOwnerId: ownerId,
         goal: _goal,
         availableMinutesPerDay: minutes,
         activityPreference: _activity,
-        mutationAllowed: _mutationAllowed,
+        mutationAllowed: () =>
+            _isCurrent(generation, useCases) && _mutationAllowed(),
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation, useCases)) return;
       setState(() {
         _submitting = false;
         _message = 'บันทึกการตั้งค่าการเรียนแล้ว';
       });
     } on Object {
-      if (!mounted) return;
+      if (!_isCurrent(generation, useCases)) return;
       setState(() {
         _submitting = false;
         _message = _mutationAllowed()
@@ -113,6 +146,7 @@ final class _LearningPreferenceQuizScreenState
           if (snapshot.hasError) {
             return const Center(child: Text('ยังไม่พร้อมตั้งค่าการเรียน'));
           }
+          final generation = _generation;
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -194,7 +228,9 @@ final class _LearningPreferenceQuizScreenState
               const SizedBox(height: 20),
               FilledButton(
                 key: const ValueKey<String>('learning-preferences/save'),
-                onPressed: _submitting ? null : () => _save(useCases),
+                onPressed: _submitting
+                    ? null
+                    : () => _save(useCases, generation),
                 child: Text(_submitting ? 'กำลังบันทึก…' : 'บันทึกการตั้งค่า'),
               ),
               if (_message != null) ...[

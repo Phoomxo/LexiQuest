@@ -1,0 +1,15 @@
+{
+  "status": "Failed",
+  "sourceFingerprint": "ca4a2057450a9d813a4553a420b6ad3d86f64c677d5ef930b469338970982d8f",
+  "verification": "targeted-learning-664b51fe3c956bdf6416511ede82eba73e73ac89882b534359d4ec338a10e677.json",
+  "artifacts": [
+    {
+      "path": "24a6478b1a84-ca4a2057450a/Explicit-Flutter-tests.stdout.log",
+      "sha256": "0df115553e10c65d6f1b0e7880fafa2c7f7e8379a552ef183f7fdc39680f3b24"
+    },
+    {
+      "path": "24a6478b1a84-ca4a2057450a/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

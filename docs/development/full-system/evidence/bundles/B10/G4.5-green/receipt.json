@@ -11,5 +11,6 @@
       "path": "a6ab0fdb711d-3fc531f03858/Explicit-Flutter-tests.stderr.log",
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     }
-  ]
+  ],
+  "testsPassed": 87
 }

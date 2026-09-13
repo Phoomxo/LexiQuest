@@ -1,0 +1,9 @@
+{
+  "sourceInputCount": 1306,
+  "mismatches": [],
+  "phaseManifest": "targeted-learning-916eed3f3e837976d04c971c2a4b22801f07fd2c9c5c6dc4ea11b62af81b000b.json",
+  "baseAcceptedSha": "493f1bb75cfe995d49a965338ee8bdeaf623f518",
+  "finalTests": 747,
+  "finalFiles": 47,
+  "requiredOpenDefects": []
+}
