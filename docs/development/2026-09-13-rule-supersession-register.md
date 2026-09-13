@@ -50,3 +50,5 @@ RULE-03 และ UI draft ต้นทางที่ยังไม่ได�
 G0.6 มีงาน active-index / historical / superseded / archive / unreferenced-candidate พร้อม hash, references, replacement และ restore map. G7.4 ครอบคลุม unused code/data/cache/lifecycle หลังตรวจ consumers. ภาพ failure candidates76ไฟล์ยังไม่ได้ถูกลบ; goldens, migration, history, receipts และหลักฐานที่ยังอ้างอิงต้องมี disposition ก่อนเปลี่ยน
 
 การแก้ครั้งนี้ทำให้ข้อจำกัดเก่าที่ขัดกัน **ไม่มีผลเป็นคำสั่งปัจจุบัน** และเตรียม task ที่รับผิดชอบ cleanup ไว้แล้ว. การลบ/ย้ายไฟล์ application และการอัปเดต GitHub เป็นงานคนละขั้น ไม่กล่าวว่าทำแล้วจากการแก้เอกสาร
+
+Latest user resume (2026-09-13): complete all authorized bundles through B20; prior pause is superseded. Recovery schema2 supersedes automatic task stops for repeated failures or ten-minute stalls. Change the diagnostic method, fix and retest without weakening acceptance; preserve failed evidence and propagate the policy.

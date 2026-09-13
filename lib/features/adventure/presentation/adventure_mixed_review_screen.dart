@@ -435,7 +435,9 @@ final class _AdventureMixedReviewScreenState
 
   void _submitTyped(AdventureMixedReviewController controller) {
     final response = _typedController.text;
-    if (!controller.canSubmit || response.trim().isEmpty) return;
+    if (!mounted || !controller.canSubmit || response.trim().isEmpty) return;
+    if (_typedController.value.composing.isValid &&
+        !_typedController.value.composing.isCollapsed) return;
     unawaited(
       _perform(
         () => controller.submitTyped(

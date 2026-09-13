@@ -81,15 +81,18 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     if (learning == null) {
       throw StateError('learning dependency unavailable');
     }
+    final averageMs = progress.averageResponseTimeMs;
+    final recordedAt = progress.latestEvidenceAtUtc;
+    if (averageMs == null || !averageMs.isFinite || averageMs <= 0 ||
+        recordedAt == null) {
+      throw StateError('observed ghost timing history unavailable');
+    }
     final session = await learning.startWeaknessPractice(
       wordIds: progress.weaknesses.map((item) => item.wordId),
     );
     if (session.isEmpty) return _DuelData.empty(progress);
-    final averageMs = progress.averageResponseTimeMs ?? 3000;
     final ghostSnapshot = GhostSnapshot(
-      recordedAt:
-          progress.latestEvidenceAtUtc ??
-          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      recordedAt: recordedAt,
       accuracyRate: progress.accuracy ?? 0,
       avgResponseTimeMs: averageMs,
       weakWords: session.questions
@@ -110,7 +113,9 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   }
 
   Future<void> _submit(_DuelData data) async {
-    if (_saving || _finished || _pendingEvidence != null) return;
+    if (!mounted || _saving || _finished || _pendingEvidence != null) return;
+    if (_answer.value.composing.isValid &&
+        !_answer.value.composing.isCollapsed) return;
     final input = _answer.text.trim().toLowerCase();
     if (input.isEmpty) return;
     final question = data.session.questions[_index];
@@ -133,7 +138,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
 
   Future<void> _retryEvidence(_DuelData data) async {
     final pending = _pendingEvidence;
-    if (pending == null || !pending.requiresRetry || _saving) return;
+    if (!mounted || pending == null || !pending.requiresRetry || _saving) return;
     final question = data.session.questions[_index];
     setState(() => _saving = true);
     await _commitPending(data, question, pending, retry: true);
@@ -215,7 +220,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   }
 
   Future<void> _retrySessionClose(_DuelData data) async {
-    if (_saving || _pendingSessionClose?.requiresRetry != true) return;
+    if (!mounted || _saving || _pendingSessionClose?.requiresRetry != true) return;
     setState(() => _saving = true);
     try {
       await _closeSession(data.session);
@@ -235,8 +240,10 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     final load = _load;
     if (load != null) {
       unawaited(
-        load.then((data) {
-          if (!data.session.isEmpty) return _closeSession(data.session);
+        load.then<void>((data) async {
+          if (!data.session.isEmpty) await _closeSession(data.session);
+        }, onError: (Object _, StackTrace __) {
+          // An unavailable load owns no session to close.
         }),
       );
     }

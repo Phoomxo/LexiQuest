@@ -1,0 +1,22 @@
+{
+  "phase": "G2",
+  "status": "accepted-local-automated",
+  "lessonModeCount": 14,
+  "journeyCount": 2,
+  "featureCountUnchanged": 44,
+  "modeMatrix": "G2.7-mode-matrix.json",
+  "journeys": "G2.8-journeys.json",
+  "productionAccessibilitySmoke": "39 passed including14 real mode surfaces",
+  "packageEvidence": [
+    "../B04/G2.1-verification.json",
+    "../B04/G2.2-verification.json",
+    "../B05/G2.3-verification.json",
+    "../B05/G2.4-verification.json",
+    "../B05/G2.5-verification.json",
+    "G2.6-verification.json",
+    "G2.7-verification.json",
+    "G2.8-verification.json"
+  ],
+  "requiredOpenFindings": [],
+  "externalClaims": "No device/live/provider/full release claim; corresponding later gates retained"
+}

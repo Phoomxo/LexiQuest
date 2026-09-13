@@ -39,6 +39,28 @@ void main() {
 
   tearDown(() => fixture.close());
 
+  testWidgets('B06 Adventure IME waits for committed typed response', (tester) async {
+    final harness = await _startHarness(tester, fixture, itemCount: 1);
+    await tester.pumpWidget(harness.app());
+    final input = find.byKey(const ValueKey<String>('mixed-review-typed-input'));
+    await _pumpUntil(tester, () => input.evaluate().isNotEmpty);
+    final field = tester.widget<TextField>(input);
+    field.controller!.value = const TextEditingValue(text: 'station', composing: TextRange(start: 0, end: 7));
+    field.onSubmitted!('station');
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1)));
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(harness.host.recordCalls, 0);
+    expect(await _readAttempts(tester, fixture), isEmpty);
+    field.controller!.value = const TextEditingValue(text: 'station');
+    field.onSubmitted!('station');
+    await _pumpUntil(tester, () => harness.host.recordCalls == 1);
+    expect(harness.host.recordCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('playful typed prompt renders and submits canonical evidence', (
     tester,
   ) async {

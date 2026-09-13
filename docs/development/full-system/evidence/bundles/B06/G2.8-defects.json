@@ -1,0 +1,44 @@
+{
+  "defects": [
+    {
+      "id": "B06-G28-IME",
+      "cause": "Ghost and Adventure accepted composing input",
+      "proof": "G2.8-red and G2.8-adventure-red: command admitted before commit",
+      "fix": "Reject valid noncollapsed composition; accept committed text",
+      "retest": "Full affected screens passed; Adventure fixture waits asynchronous admission before no-write assertion"
+    },
+    {
+      "id": "B06-G28-DISPOSE",
+      "cause": "Retained Ghost submit callback accessed disposed controller; failed load cleanup propagated error",
+      "fix": "Mounted fences and consume failed load at cleanup only, UI remains unavailable",
+      "retest": "Disposed callback and unavailable-load retirement pass"
+    },
+    {
+      "id": "B06-G28-LAYOUT",
+      "cause": "320px/text200 header places TextField outside lazy ListView cache; ensureVisible requires an existing element",
+      "failedMethod": "Changed button scroll first; failure remained at field lookup line35",
+      "proof": "Test asserts ListView exists and field absent before real300px drag; field appears after drag and answer/result persist correctly",
+      "fix": "Scroll real viewport before ensureVisible; no product layout or assertion weakening",
+      "retest": "All320/390/840 pass; full screen tests pass"
+    },
+    {
+      "id": "B06-G28-HISTORY",
+      "cause": "Missing observed time/date fabricated3000ms/epoch and started session",
+      "proof": "Both missing-history tests red: expected0 startedSessions actual1",
+      "fix": "Reject incomplete timing history before canonical session creation; engine unchanged",
+      "retest": "Full Ghost+engine15 passed"
+    },
+    {
+      "id": "B06-G28-STOP",
+      "cause": "Misinterpreted failed-method stop as task stop",
+      "fix": "Latest resume/recovery schema2 persisted in AGENTS/workflow/supersession register. Prior stop checkpoint retained as history.",
+      "retest": "Bounded active wrapper scan; no automatic repeated-failure task stop remains in active rules"
+    },
+    {
+      "id": "B06-G28-PATH",
+      "cause": "One search used nonexistent full-system-workflow.md",
+      "fix": "Used existing full-system-package-workflow.md reported in AGENTS; no blind path retry"
+    }
+  ],
+  "requiredOpenFindings": []
+}

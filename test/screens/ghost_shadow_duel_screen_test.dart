@@ -14,6 +14,113 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/ghost_shadow_duel_screen.dart';
 
 void main() {
+  for (final missing in ['time', 'date']) {
+    testWidgets('B06 Ghost missing $missing cannot fabricate history or start session', (tester) async {
+      final repository = _RetryLearningRepository(failFirstAnswer: false);
+      final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+        generateId: () => 'missing-history', nowUtc: () => DateTime.utc(2026, 9, 13),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+      final progress = ProgressSnapshot(sampleSize: 1, correctCount: 0, wrongCount: 1,
+        accuracy: 0, totalXp: 0, completedSessions: 0, streakDays: 0, dueReviewCount: 1,
+        masteredWordCount: 0, achievementCount: 0, gameLevel: 1, skills: const [],
+        weaknesses: _duelProgress.weaknesses, recommendations: const [],
+        averageResponseTimeMs: missing == 'time' ? null : 1000,
+        latestEvidenceAtUtc: missing == 'date' ? null : DateTime.utc(2026, 8, 14));
+      await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+        progressLoader: () async => progress, learning: learning,
+        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+      await tester.pumpAndSettle();
+      expect(repository.startedSessions, 0);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.text('ไม่สามารถอ่านประวัติการเรียนได้'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final width in [320.0, 390.0, 840.0]) {
+    testWidgets('B06 Ghost reachable response and result at width $width', (tester) async {
+      tester.view.physicalSize = Size(width, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _RetryLearningRepository(failFirstAnswer: false);
+      var id = 0;
+      final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+        generateId: () => 'layout-${++id}', nowUtc: () => DateTime.utc(2026, 9, 13),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+      await tester.pumpWidget(MaterialApp(theme: ThemeData.dark(),
+        builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(width == 320 ? 2 : 1), disableAnimations: true), child: child!),
+        home: GhostShadowDuelScreen(progressLoader: () async => _duelProgress,
+          learning: learning, evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+      await tester.pumpAndSettle();
+      final field = find.byType(TextField);
+      if (width == 320) {
+        // The large-text header places lazy ListView children below its cache.
+        expect(find.byType(ListView), findsOneWidget);
+        expect(field, findsNothing);
+        await tester.drag(find.byType(ListView), const Offset(0, -300));
+        await tester.pump();
+        expect(field, findsOneWidget);
+      }
+      await tester.ensureVisible(field);
+      await tester.enterText(field, 'durable');
+      final submit = find.widgetWithText(FilledButton, 'ตอบ');
+      await tester.scrollUntilVisible(submit, 100, scrollable: find.byType(Scrollable).first);
+      await tester.pump();
+      expect(submit.hitTestable(), findsOneWidget);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(repository.commands, hasLength(1));
+      expect(repository.successfulFinishes, 1);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final retire in [false, true]) {
+    testWidgets('B06 Ghost ${retire ? 'disposed callback' : 'IME composition'} cannot submit', (tester) async {
+      final repository = _RetryLearningRepository(failFirstAnswer: false);
+      var id = 0;
+      final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+        generateId: () => 'boundary-${++id}', nowUtc: () => DateTime.utc(2026, 9, 13),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+      await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+        progressLoader: () async => _duelProgress, learning: learning,
+        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+      )));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      field.controller!.value = TextEditingValue(text: 'durable',
+        composing: retire ? TextRange.empty : const TextRange(start: 0, end: 7));
+      final submit = field.onSubmitted!;
+      if (retire) await tester.pumpWidget(const SizedBox.shrink());
+      submit('durable');
+      await tester.pumpAndSettle();
+      expect(repository.commands, isEmpty);
+      expect(tester.takeException(), isNull);
+      if (!retire) {
+        field.controller!.value = const TextEditingValue(text: 'durable');
+        submit('durable');
+        await tester.pumpAndSettle();
+        expect(repository.commands, hasLength(1));
+      }
+    });
+  }
+
+  testWidgets('B06 Ghost unavailable load can retire without async error', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+      progressLoader: () async => throw StateError('unavailable'),
+    )));
+    await tester.pumpAndSettle();
+    expect(find.text('ไม่สามารถอ่านประวัติการเรียนได้'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('fresh account shows zero evidence and no sample words', (
     tester,
   ) async {
@@ -254,6 +361,7 @@ final class _RetryLearningRepository implements LearningRepository {
   var _answerFailed = false;
   var _finishFailed = false;
   int successfulFinishes = 0;
+  int startedSessions = 0;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -271,7 +379,7 @@ final class _RetryLearningRepository implements LearningRepository {
   ];
 
   @override
-  Future<void> startSession(LearningSessionDraft session) async {}
+  Future<void> startSession(LearningSessionDraft session) async { startedSessions += 1; }
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {

@@ -1,0 +1,10 @@
+{
+  "status": "verified-pending-commit",
+  "packageId": "G2.8",
+  "phase": "G2 local automated accepted",
+  "priorStop": "G2.8-stop.json retained as superseded history",
+  "requiredOpenFindings": [],
+  "nextBundle": "B07",
+  "branch": "lexiquest/b06-study-modes-journeys",
+  "sourceBase": "8d820cc69394c46cfc241bd7eea4c347f87eaf0b"
+}
