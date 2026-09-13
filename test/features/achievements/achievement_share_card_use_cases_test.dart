@@ -9,6 +9,85 @@ import 'package:vocab_learning_app/features/achievements/data/file_selector_shar
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 
 void main() {
+  test(
+    'separate owner view scopes do not merge identical receipt exports',
+    () async {
+      final store = _RecordingShareCardStore()..blockNextSelection();
+      final useCases = AchievementShareCardUseCases(store: store);
+      final first = useCases.share(
+        progress: _progress(),
+        scope: Object(),
+        achievementId: 'first_session',
+        definitionVersion: 7,
+        confirmed: true,
+      );
+      await store.selectionStarted.future;
+      final second = useCases.share(
+        progress: _progress(),
+        scope: Object(),
+        achievementId: 'first_session',
+        definitionVersion: 7,
+        confirmed: true,
+      );
+      store.releaseSelection();
+      await Future.wait([first, second]);
+      expect(store.selectionCalls, 2);
+      expect(store.savedArtifacts, hasLength(2));
+    },
+  );
+
+  test('desktop export preserves unrelated temporary bytes', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final root = await Directory.systemTemp.createTemp('b10-share-');
+    addTearDown(() => root.delete(recursive: true));
+    final artifact = await _canonicalArtifact();
+    final sentinel = File('${root.path}/${artifact.suggestedFileName}.partial');
+    await sentinel.writeAsString('unrelated export still in progress');
+    final destination = File('${root.path}/chosen.svg');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const picker = MethodChannel('plugins.flutter.io/file_selector');
+    const paths = MethodChannel('plugins.flutter.io/path_provider');
+    messenger.setMockMethodCallHandler(picker, (call) async {
+      expect(call.method, 'getSavePath');
+      return destination.path;
+    });
+    messenger.setMockMethodCallHandler(paths, (call) async => root.path);
+    addTearDown(() {
+      messenger.setMockMethodCallHandler(picker, null);
+      messenger.setMockMethodCallHandler(paths, null);
+    });
+    final result = await const FileSelectorShareCardStore(
+      isAndroid: false,
+    ).selectDestinationAndSave(artifact);
+    expect(result.status, AchievementShareCardStoreStatus.saved);
+    expect(await destination.readAsBytes(), artifact.bytes);
+    expect(await sentinel.exists(), isTrue);
+    expect(await sentinel.readAsString(), 'unrelated export still in progress');
+  });
+
+  test('different source receipts never share a pending export', () async {
+    final store = _RecordingShareCardStore()..blockNextSelection();
+    final useCases = AchievementShareCardUseCases(store: store);
+    final first = useCases.share(
+      progress: _progress(sourceEventId: 'owner-a-event'),
+      achievementId: 'first_session',
+      definitionVersion: 7,
+      confirmed: true,
+    );
+    await store.selectionStarted.future;
+    final second = useCases.share(
+      progress: _progress(sourceEventId: 'owner-b-event'),
+      achievementId: 'first_session',
+      definitionVersion: 7,
+      confirmed: true,
+    );
+    store.releaseSelection();
+    await Future.wait([first, second]);
+    expect(store.selectionCalls, 2);
+    expect(store.savedArtifacts, hasLength(2));
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('share-card artifacts have no public construction path', () {

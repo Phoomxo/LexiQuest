@@ -98,8 +98,8 @@ final class AchievementShareCardUseCases {
   };
 
   final AchievementShareCardStore _store;
-  final Map<String, Future<AchievementShareCardResult>> _inFlight =
-      <String, Future<AchievementShareCardResult>>{};
+  final Map<(Object?, String), Future<AchievementShareCardResult>> _inFlight =
+      <(Object?, String), Future<AchievementShareCardResult>>{};
 
   /// True only for a structurally valid, known display definition.
   bool canShare(AchievementEvidence achievement) {
@@ -116,6 +116,7 @@ final class AchievementShareCardUseCases {
     required String achievementId,
     required int definitionVersion,
     required bool confirmed,
+    Object? scope,
   }) async {
     if (!confirmed) {
       throw const AchievementShareCardException(
@@ -128,10 +129,13 @@ final class AchievementShareCardUseCases {
       definitionVersion: definitionVersion,
     );
     final artifact = _buildArtifact(unlock);
-    final operationId =
-        '${artifact.achievementId}:'
-        '${artifact.definitionVersion}:'
-        '${artifact.unlockedAtUtc.millisecondsSinceEpoch}';
+    final operationId = (
+      scope,
+      '${artifact.achievementId}:'
+          '${artifact.definitionVersion}:'
+          '${artifact.unlockedAtUtc.millisecondsSinceEpoch}:'
+          '${unlock.sourceEventId}',
+    );
     return _inFlight.putIfAbsent(operationId, () async {
       try {
         final saved = await _store.selectDestinationAndSave(artifact);

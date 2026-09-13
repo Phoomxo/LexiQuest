@@ -33,6 +33,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   );
 
   Future<ProgressSnapshot>? _load;
+  AchievementProgressLoader? _activeLoader;
   var _loadGeneration = 0;
   var _wasActive = false;
   final Set<String> _busyShareKeys = <String>{};
@@ -46,7 +47,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final isActive = TickerMode.valuesOf(context).enabled;
-    if (!isActive || (_wasActive && _load != null)) {
+    final loader =
+        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+    if (!isActive || (_wasActive && _load != null && loader == _activeLoader)) {
       _wasActive = isActive;
       return;
     }
@@ -57,7 +60,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   @override
   void didUpdateWidget(covariant AchievementsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.loader == oldWidget.loader) return;
+    if (widget.loader == oldWidget.loader &&
+        identical(widget.shareCards, oldWidget.shareCards)) {
+      return;
+    }
     final isActive = TickerMode.valuesOf(context).enabled;
     _wasActive = isActive;
     if (isActive) _startLoad();
@@ -65,8 +71,12 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   void _startLoad() {
     _loadGeneration += 1;
+    _busyShareKeys.clear();
+    _shareStatus = null;
+    _savedArtifact = null;
     final loader =
         widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+    _activeLoader = loader;
     _load = loader == null
         ? Future<ProgressSnapshot>.error(
             StateError('progress dependency unavailable'),
@@ -233,7 +243,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     final key = _shareKey(unlock);
     final busy = _busyShareKeys.contains(key);
     final title = _title(unlock.id);
-    final onPressed = busy ? null : () => _confirmShare(progress, unlock);
+    final generation = _loadGeneration;
+    final shares = _shareCards;
+    final onPressed = busy
+        ? null
+        : () {
+            if (!_isCurrentShare(generation, shares)) return;
+            _confirmShare(progress, unlock);
+          };
     return Semantics(
       container: true,
       button: true,
@@ -263,6 +280,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     final key = _shareKey(unlock);
     if (_busyShareKeys.contains(key)) return;
     final loadGeneration = _loadGeneration;
+    final shares = _shareCards;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -284,7 +302,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted || loadGeneration != _loadGeneration) {
+    if (confirmed != true || !_isCurrentShare(loadGeneration, shares)) {
       return;
     }
     await _share(progress, unlock);
@@ -296,18 +314,22 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   ) async {
     final key = _shareKey(unlock);
     if (_busyShareKeys.contains(key)) return;
+    final generation = _loadGeneration;
+    final shares = _shareCards;
+    final scope = _load;
     setState(() {
       _busyShareKeys.add(key);
       _shareStatus = null;
     });
     try {
-      final result = await _shareCards.share(
+      final result = await shares.share(
         progress: progress,
+        scope: scope,
         achievementId: unlock.id,
         definitionVersion: unlock.definitionVersion,
         confirmed: true,
       );
-      if (!mounted) return;
+      if (!_isCurrentShare(generation, shares)) return;
       setState(() {
         _busyShareKeys.remove(key);
         switch (result.status) {
@@ -319,13 +341,19 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         }
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!_isCurrentShare(generation, shares)) return;
       setState(() {
         _busyShareKeys.remove(key);
         _shareStatus = _AchievementShareStatus.failed;
       });
     }
   }
+
+  bool _isCurrentShare(int generation, AchievementShareCardUseCases shares) =>
+      mounted &&
+      _wasActive &&
+      generation == _loadGeneration &&
+      identical(shares, _shareCards);
 
   Widget _shareStatusMessage() {
     final status = _shareStatus!;

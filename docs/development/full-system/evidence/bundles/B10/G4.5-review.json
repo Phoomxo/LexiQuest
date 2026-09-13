@@ -1,0 +1,75 @@
+{
+  "packageId": "G4.5",
+  "bundleId": "B10",
+  "requirements": [
+    "COV-f31",
+    "COV-f32",
+    "COV-f33",
+    "COV-f34",
+    "FORM-04",
+    "G4"
+  ],
+  "design": "Share operations bind source receipt plus optional owner-view scope. Screen callbacks, dialog confirmation and async completion check load generation and adapter identity; reload clears saved preview. Desktop writes immutable artifact bytes directly after destination selection, removing shared partial-file collision.",
+  "defects": [
+    {
+      "id": "B10-G45-01",
+      "status": "resolved",
+      "cause": "Old callback/completion lacked current-view checks; saved preview survived reload",
+      "red": "G4.5-ui-behavior-red/receipt.json",
+      "fix": "Generation/adapter/active-screen guards and clearing state on load"
+    },
+    {
+      "id": "B10-G45-02",
+      "status": "resolved",
+      "cause": "Export singleflight key omitted source receipt and owner-view scope",
+      "red": "G4.5-receipt-red/receipt.json",
+      "actual": "Different receipts produced only one export",
+      "fix": "Include canonical sourceEventId and caller scope in key; same receipt within scope still singleflight"
+    },
+    {
+      "id": "B10-G45-03",
+      "status": "resolved",
+      "cause": "Desktop shared temporary filename overwrote/deleted unrelated export bytes",
+      "red": "G4.5-desktop-red/receipt.json",
+      "fix": "XFile.fromData saves immutable bytes after picker returns destination; no intermediate shared file"
+    }
+  ],
+  "toolingRecovery": [
+    {
+      "evidence": "G4.5-ui-red/receipt.json",
+      "cause": "TestName is literal --plain-name, regex alternation selected zero tests",
+      "fix": "Read CLI implementation; use shared literal substring share, then observed both behavioral failures"
+    },
+    {
+      "cause": "Discovery attempted absent home_screen.dart",
+      "fix": "Stopped path, used rg search for actual AchievementsScreen caller main_navigation_screen.dart"
+    },
+    {
+      "evidence": "G4.5-analyzer.log",
+      "cause": "New multiline if lacked braces",
+      "fix": "Added braces; final analyzer clean"
+    }
+  ],
+  "review": [
+    "Artifact filename and SVG escaping allowlist preserved; owner/source IDs remain absent from export bytes",
+    "No network/social send; Android exact native request and cancel remain typed",
+    "Already confirmed independent local file may finish after owner view changes; obsolete result cannot appear in current view",
+    "Avatar XP 0/19/20/39/40 boundaries and cosmetic version receipts stay canonical",
+    "Coins/purchase/rebuild retain lifetime XP and idempotency in reward tests",
+    "Companion semantics/reduced motion and hit-testable answer control pass"
+  ],
+  "verification": {
+    "initialTests": 87,
+    "initialFiles": 10,
+    "initialReceipt": "G4.5-green/receipt.json",
+    "affectedFinalReceipt": "G4.5-final/receipt.json",
+    "analyzer": "G4.5-analyzer-final.log",
+    "countPolicy": "Overlapping subsets; do not add as unique totals"
+  },
+  "requiredOpenDefects": [],
+  "phaseStatus": "G4 pending G4.6",
+  "external": [
+    "Physical picker/manual screen reader/live/full release NOT RUN",
+    "Effective service tier unverified"
+  ]
+}

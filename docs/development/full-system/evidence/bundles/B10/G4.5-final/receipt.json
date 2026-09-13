@@ -1,0 +1,15 @@
+{
+  "status": "Passed",
+  "sourceFingerprint": "bd9b3a1064548e28357e63f58899987ffb8b187cfb5f44a0f02210db87a82b13",
+  "verification": "targeted-learning-700b23b8de92893202d1fac47343ddc599547eb2103a4d1b652f944b4623b15a.json",
+  "artifacts": [
+    {
+      "path": "7a125e39fb7e-bd9b3a106454/Explicit-Flutter-tests.stdout.log",
+      "sha256": "2494f58c01f7e7c3020950616fe289bcb62420ed527cf687b47a49908284f172"
+    },
+    {
+      "path": "7a125e39fb7e-bd9b3a106454/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

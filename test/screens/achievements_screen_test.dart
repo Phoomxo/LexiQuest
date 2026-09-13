@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:vocab_learning_app/features/achievements/presentation/achievement_share_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/achievements/application/achievement_share_card_use_cases.dart';
@@ -6,6 +7,106 @@ import 'package:vocab_learning_app/features/progress/domain/progress_models.dart
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
 
 void main() {
+  testWidgets('completed preview clears when the current progress changes', (
+    tester,
+  ) async {
+    final shares = AchievementShareCardUseCases(store: _ScreenShareCardStore());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _withAchievement,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _confirmShare(tester);
+    expect(find.byType(AchievementShareCard), findsOneWidget);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _empty,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AchievementShareCard), findsNothing);
+  });
+
+  testWidgets('old share completion cannot publish a preview after reload', (
+    tester,
+  ) async {
+    final pending = Completer<AchievementShareCardStoreResult>();
+    final store = _ScreenShareCardStore()..pending = pending;
+    final shares = AchievementShareCardUseCases(store: store);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _withAchievement,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('achievement-share/first_session')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(store.selectionCalls, 1);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _empty,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    pending.complete(
+      const AchievementShareCardStoreResult.saved(destination: 'local.svg'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(AchievementShareCard), findsNothing);
+  });
+
+  testWidgets('captured share action is invalid after its receipt reload', (
+    tester,
+  ) async {
+    final store = _ScreenShareCardStore();
+    final shares = AchievementShareCardUseCases(store: store);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _withAchievement,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final oldAction = tester
+        .widget<IconButton>(
+          find.byKey(const ValueKey<String>('achievement-share/first_session')),
+        )
+        .onPressed!;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AchievementsScreen(
+          loader: () async => _empty,
+          shareCards: shares,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    oldAction();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(store.selectionCalls, 0);
+  });
+
   testWidgets('achievement retry exposes pending and prevents another read', (
     tester,
   ) async {
@@ -434,6 +535,7 @@ final _unknownAchievement = ProgressSnapshot(
 final class _ScreenShareCardStore implements AchievementShareCardStore {
   final results = <AchievementShareCardStoreResult>[];
   final errors = <Object>[];
+  Completer<AchievementShareCardStoreResult>? pending;
   var selectionCalls = 0;
   var writeCalls = 0;
 
@@ -442,6 +544,7 @@ final class _ScreenShareCardStore implements AchievementShareCardStore {
     AchievementShareCardArtifact artifact,
   ) async {
     selectionCalls += 1;
+    if (pending != null) return pending!.future;
     if (errors.isNotEmpty) throw errors.removeAt(0);
     final result = results.isEmpty
         ? const AchievementShareCardStoreResult.saved(

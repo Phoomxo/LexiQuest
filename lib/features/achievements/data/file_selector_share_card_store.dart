@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../application/achievement_share_card_use_cases.dart';
 
@@ -12,8 +11,8 @@ typedef AndroidShareCardSaver =
 /// User-selected local file storage for f34 share cards.
 ///
 /// This deliberately mirrors the existing export store's Android document
-/// channel and desktop save flow. It creates a temporary file only after a
-/// non-Android destination has been selected, and always removes that file.
+/// channel and desktop save flow. Desktop writes immutable in-memory bytes
+/// only after selection; independent exports never share a temporary path.
 final class FileSelectorShareCardStore implements AchievementShareCardStore {
   const FileSelectorShareCardStore({this.isAndroid, this.androidSaver});
 
@@ -73,17 +72,10 @@ final class FileSelectorShareCardStore implements AchievementShareCardStore {
     if (destination == null) {
       return const AchievementShareCardStoreResult.cancelled();
     }
-    File? partial;
     try {
-      final temporaryDirectory = await getTemporaryDirectory();
-      partial = File(
-        '${temporaryDirectory.path}${Platform.pathSeparator}'
-        '${artifact.suggestedFileName}.partial',
-      );
-      if (await partial.exists()) await partial.delete();
-      await partial.writeAsBytes(artifact.bytes, flush: true);
-      await XFile(
-        partial.path,
+      await XFile.fromData(
+        artifact.bytes,
+        name: artifact.suggestedFileName,
         mimeType: artifact.mimeType,
       ).saveTo(destination.path);
       return AchievementShareCardStoreResult.saved(
@@ -97,10 +89,6 @@ final class FileSelectorShareCardStore implements AchievementShareCardStore {
       throw const AchievementShareCardException(
         AchievementShareCardFailureCode.writeFailed,
       );
-    } finally {
-      if (partial != null && await partial.exists()) {
-        await partial.delete();
-      }
     }
   }
 
