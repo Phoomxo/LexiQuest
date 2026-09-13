@@ -216,7 +216,7 @@ String _formatDuration(Duration value) => '${value.inSeconds} วินาที
 String _formatAccuracy(LearningAccuracyAxis value) {
   final accuracy = value.accuracy;
   if (accuracy == null) return 'ยังไม่มีคำตอบที่นับความแม่นยำได้';
-  return '${(accuracy * 100).toStringAsFixed(0)}% จาก ${value.sampleSize} คำตอบ';
+  return 'ตอบถูก ${value.correctCount} จาก ${value.sampleSize} คำตอบ · ${(accuracy * 100).toStringAsFixed(0)}%';
 }
 
 String _formatDay(DateTime value) =>

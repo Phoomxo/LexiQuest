@@ -19,7 +19,7 @@ void main() {
     expect(find.text('การกระจายทักษะ'), findsOneWidget);
     expect(find.text('แนวโน้มความแม่นยำ'), findsOneWidget);
     expect(find.text('75 วินาที'), findsOneWidget);
-    expect(find.text('100% จาก 1 คำตอบ'), findsOneWidget);
+    expect(find.text('ตอบถูก 1 จาก 1 คำตอบ · 100%'), findsOneWidget);
     expect(find.bySemanticsLabel('แกนความพยายาม'), findsOneWidget);
     expect(find.bySemanticsLabel('แกนความแม่นยำ'), findsOneWidget);
     expect(find.bySemanticsLabel('แกนการกระจายทักษะ'), findsOneWidget);

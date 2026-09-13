@@ -39,7 +39,7 @@ void main() {
 
       clock
         ..utc = DateTime.utc(2026, 8, 24, 9, 1)
-        ..monotonicMicros += const Duration(seconds: 2).inMicroseconds;
+        ..monotonicMicros += const Duration(seconds: 60).inMicroseconds;
       await controller.resume(occurredAtUtc: clock.utc);
       clock
         ..utc = DateTime.utc(2026, 8, 24, 9, 1, 20)

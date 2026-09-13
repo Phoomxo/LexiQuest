@@ -42,6 +42,21 @@
       "status": "resolved",
       "actual": "Read-only rg used nonexistent guessed paths os2",
       "fix": "Full lib/test search confirmed actual consumers; use discovered paths only"
+    },
+    {
+      "id": "B03-DISPLAY-01",
+      "status": "fixed",
+      "expected": "Calendar correct numerator and total denominator visible",
+      "actual": "Widget expectation failed: only percentage and denominator shown",
+      "cause": "formatAccuracy omitted correctCount",
+      "fix": "Caption now matches explicit count convention",
+      "retest": "Calendar2 tests PASS; failed logs1016bfe29818-c74abce56590 preserved (verifier overwrote same-selection manifest)"
+    },
+    {
+      "id": "B03-OPS-06",
+      "status": "resolved",
+      "actual": "Nonexistent progress screen path read repeated os2",
+      "fix": "Stopped guessed-path reads, reported to user; rg --files found mastery_dashboard_screen and learning_calendar_screen"
     }
   ]
 }
