@@ -5,5 +5,13 @@
   "baseAcceptedSha": "493f1bb75cfe995d49a965338ee8bdeaf623f518",
   "finalTests": 747,
   "finalFiles": 47,
-  "requiredOpenDefects": []
+  "requiredOpenDefects": [],
+  "commitByteAudit": {
+    "sourceSha": "0eb556de3971363f48690d25e30f1b5f5a744a7e",
+    "artifactExact": 56,
+    "sourceRawExact": 263,
+    "sourceCRLFOnly": 1043,
+    "otherDifferences": [],
+    "note": "Inherited checkout CRLF differs from Git LF; source equivalence verified separately. Raw test input fingerprints remain actual working-copy hashes; this does not override verifier environment/fingerprint reuse rules."
+  }
 }
