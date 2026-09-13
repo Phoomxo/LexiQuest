@@ -1,0 +1,152 @@
+[
+  {
+    "path": "lib/data/local/app_database.g.dart",
+    "from": "REV-02",
+    "to": "REV-12"
+  },
+  {
+    "path": "lib/features/learning/application/cloze_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/definition_quiz_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/flashcard_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/hint_use_cases.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/legacy_lesson_mode_adapters.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/lesson_mode_registry.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/matching_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/native_mode_adapters.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/session_configuration_policy.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/typed_recall_mode_adapter.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/application/unified_lesson_controller.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/answer_feedback_panel.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/contrastive_feedback_panel.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/handwriting_scratchpad.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/hint_panel.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/legacy_matching_mode_screen.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/sentence_practice_panel.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/session_configuration_sheet.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "lib/features/learning/presentation/unified_lesson_shell.dart",
+    "from": "REV-02",
+    "to": "REV-03"
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.cc",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.h",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "linux/flutter/generated_plugins.cmake",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.cc",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.h",
+    "from": "REV-10",
+    "to": "REV-12"
+  },
+  {
+    "path": "windows/flutter/generated_plugins.cmake",
+    "from": "REV-10",
+    "to": "REV-12"
+  }
+]

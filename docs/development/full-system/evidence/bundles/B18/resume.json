@@ -1,0 +1,32 @@
+{
+  "bundleId": "B18",
+  "threadId": "01a09cb1-50a7-72f2-8da3-615e9b4c7c9c",
+  "worktree": "C:/Users/Phet/.codex/worktrees/1e2b/LexiQuest",
+  "branch": "lexiquest/b18-freeze-review",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "currentPackageId": "G8.2",
+  "applicationSourceChanged": false,
+  "writerReleased": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "B19Dispatched": false,
+  "nextWork": [
+    "Read latest external run-state and verify same writer; do not reclaim from an old revision or overwrite parent creation receipt",
+    "Continue REV-01 cross-checks using explicit source read notes; every41 assigned source files read but zone acceptance not issued",
+    "Inspect recorded candidate findings and callers/oracles; later zones remain pending, generated code assigned REV-12",
+    "Complete serial semantic review of all handwritten source, configs, test oracles, generated provenance and B18 tooling; do not mark unread files no-actionable-finding",
+    "Only after G8.2 review complete, accept actual subpackage commit, proceed G8.3 regression RED/fix/GREEN/scoped review/final freeze and verify inherited constraints",
+    "Only after all B18 packages pass, release writer and reserve/create B19 once with actual accepted source and complete inherited handoff"
+  ],
+  "evidence": [
+    "G8.1-acceptance.json",
+    "G8.1-inventory.json",
+    "G8.2-review-ledger.json",
+    "defects.json",
+    "checkpoint-integrity.json"
+  ],
+  "toolingCaution": "freeze_inventory.py and record_review.py write reports; do not blindly rerun and overwrite incremental observations. checkpoint_audit.py validates current source without modifying old bundles. Initial245EOL restoration path list was overwritten by a subsequent inventory classification run; count and final all-file equality are retained, no per-path restoration history invented.",
+  "authorization": "Continuous through B20/G8.9; no repeat approval needed. One writer, no subagents/background implementation, no prohibited workflow, no deployment/spending/live/research activation. Policies remain inherited in G8.1-acceptance.json and latest external schema2 controls.",
+  "runtimeEvidence": "No B18 runtime tests yet. Device/human/live/installedflags/fullrelease NOT RUN. Existing gate evidence has its original scoped interpretation only."
+}

@@ -1,0 +1,24 @@
+{
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "trackedRawBytesVerified": 3610,
+  "sourceAndConfigStatus": {
+    "pending-review": 1388,
+    "source-read-awaiting-cross-check": 37,
+    "in-progress": 4
+  },
+  "ignoredFiles": [],
+  "newReviewTooling": [
+    "docs/development/full-system/evidence/bundles/B18/G8.2-review-ledger.json",
+    "docs/development/full-system/evidence/bundles/B18/checkpoint_audit.py",
+    "docs/development/full-system/evidence/bundles/B18/defects.json",
+    "docs/development/full-system/evidence/bundles/B18/record_review.py",
+    "docs/development/full-system/evidence/bundles/B18/review_queue.py",
+    "docs/development/full-system/evidence/bundles/B18/zone-assignment-refinement.json"
+  ],
+  "semanticReviewComplete": false,
+  "G82Accepted": false,
+  "G83Started": false,
+  "B19Dispatched": false,
+  "runtimeTestsRun": false,
+  "validation": "Integrity only; source-read observations and candidate findings are not full semantic acceptance"
+}
