@@ -3,6 +3,19 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "findings": [
     {
+      "id": "B18-REV03-02",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "trigger": "Recover an authenticated unfinished Pair session after owner merge; plan retains original owner while runtimeOwnerId is current custodian; acknowledge a correct match with animations enabled",
+      "expected": "Transient feedback expires for the same live runtime owner/session so completed result becomes visible without changing historical plan identity",
+      "actual": "_presentAccepted adds feedback episodes, but timer current() compares _liveOwner to after.plan.ownerId. Those differ for valid migrated recovery, so neither fade nor removal executes. Result UI waits for _feedbackEpisodes.isEmpty, leaving completed board displayed",
+      "ownerPackage": "G1.2/G2.1",
+      "proposedRegression": "Real migrated-owner Pair recovery with retained original plan: finish final match, advance feedback hold/fade, assert result visible and original plan/evidence actor history unchanged; owner replacement still cancels stale feedback",
+      "fixSha": null,
+      "retest": null
+    },
+    {
       "id": "B18-REV03-01",
       "severity": "P2",
       "status": "open-static-confirmed-runtime-reproduction-pending",

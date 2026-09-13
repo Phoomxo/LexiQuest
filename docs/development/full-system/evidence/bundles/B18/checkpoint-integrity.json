@@ -2,16 +2,12 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "trackedRawBytesVerified": 3610,
   "sourceAndConfigStatus": {
-    "pending-review": 1312,
-    "source-read-awaiting-cross-check": 113,
+    "pending-review": 1287,
+    "source-read-awaiting-cross-check": 138,
     "in-progress": 4
   },
   "ignoredFiles": [],
-  "newReviewTooling": [
-    "docs/development/full-system/evidence/bundles/B18/recovery-policy-delta.json",
-    "docs/development/full-system/evidence/bundles/B18/review-cross-checks-rev03.json",
-    "docs/development/full-system/evidence/bundles/B18/review_observations_rev12.json"
-  ],
+  "newReviewTooling": [],
   "semanticReviewComplete": false,
   "G82Accepted": false,
   "G83Started": false,
