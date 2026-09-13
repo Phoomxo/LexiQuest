@@ -2,6 +2,8 @@
 
 ## Current Full-System authority — 2026-09-13 revision 4
 
+- Subsequent tasks use Standard/default only: no Fast/1.5x or fast/priority service tier. Keep GPT-6 Astra/medium. Follow external `speed-policy.json`, propagate in each prompt/handoff, and verify effective tier when supported. `create_thread` has no serviceTier field; prompt/config alone do not prove runtime enforcement. If Fast is observed, switch through a supported control or report the limitation before continuing.
+
 - The latest user instruction after accepted G0.5 replaces one task per package with **one task per related-work bundle**. Preserve all9 phases/64 requirement packages and every acceptance criterion. G0.1–G0.5 are accepted history; the remaining59 packages execute in20 bundles B01–B20. Use GPT-6 Astra (`gpt-6-astra`) / `medium`.
 - Read `docs/development/full-system-active-index.md`, `docs/development/full-system-package-workflow.md`, and `docs/development/2026-09-13-rule-supersession-register.md`. G/P labels identify requirement units; B identifies a dispatch bundle. `nextPackage` is order only, never an instruction to create a task.
 - Keep one application writer and execute packages sequentially inside the current bundle/task/worktree. Check and commit accepted sub-results without opening tasks per commit. Dispatch exactly one next bundle only after all current packages pass, durable accepted-source handoff exists, and writer is released. No subagents, parallel implementers or background implementation workers.

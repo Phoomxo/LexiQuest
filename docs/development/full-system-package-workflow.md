@@ -58,6 +58,8 @@ Control directory:
 
 ## Dispatch เฉพาะเมื่อ bundle จบ
 
+ใช้ Standard/default เท่านั้น ห้าม Fast/1.5x หรือ fast/priority คง Astra/medium ตาม external `speed-policy.json`; ส่งต่อใน prompt/handoff ทุกครั้ง. ตรวจ effective tier เมื่อมีช่องทางรองรับ; `create_thread` ไม่มี serviceTier field จึงห้ามอ้าง enforcement จาก prompt/config. หากพบ Fast ให้เปลี่ยนเป็น default ผ่านช่องทางที่รองรับ มิฉะนั้นรายงานข้อจำกัดก่อนทำต่อ
+
 1. ยืนยันlatestuserinstruction, all-packageacceptance, source/handoff และไม่มีdispatchของnextBundle. ปล่อยwriterแล้วreservebundleถัดไปแบบatomic
 2. เรียก list_projects ยืนยัน savedGitproject `C:/Users/Phet/Documents/LexiQuest` และใช้IDจริง. create_threadเป็น native `worktree` ตามtooldefaults; ไม่ระบุstartingStateที่userไม่ได้สั่ง และไม่forkfullhistory
 3. ใช้title/briefจาก `index.bundles`, modelAstra/medium. Promptระบุbundlepackages, sourceSHAจริง, predecessorhandoff/controlpaths, onebundlewriter,ทำภายในตามลำดับ และสิทธิ์ส่งต่อหนึ่งbundleหลังจบ
