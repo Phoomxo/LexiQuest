@@ -30,3 +30,6 @@ docs/development/full-system/evidence/bundles/B14/**/*.json text eol=lf
 
 docs/development/full-system/evidence/bundles/B15/**/*.log binary
 docs/development/full-system/evidence/bundles/B15/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B16/**/*.log binary
+docs/development/full-system/evidence/bundles/B16/**/*.json text eol=lf
