@@ -1,0 +1,1176 @@
+{
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "planRevision": "2026-09-14-camera-training-5",
+  "priorPackages": [
+    {
+      "displayId": "G0.1",
+      "status": "accepted",
+      "acceptedSourceSha": "a66285dae472045b9bffd215f55c505a535de7ff",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/handoffs/G0.1.json"
+    },
+    {
+      "displayId": "G0.2",
+      "status": "accepted",
+      "acceptedSourceSha": "e1b3fcb17fbdbdab158780142383f3ee15d8da0a",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/handoffs/G0.2.json"
+    },
+    {
+      "displayId": "G0.3",
+      "status": "accepted",
+      "acceptedSourceSha": "dcd8c97b2c71de69b897eb89c92a1a2323bc5be7",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/handoffs/G0.3.json"
+    },
+    {
+      "displayId": "G0.4",
+      "status": "accepted",
+      "acceptedSourceSha": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/handoffs/G0.4.json"
+    },
+    {
+      "displayId": "G0.5",
+      "status": "accepted",
+      "acceptedSourceSha": "9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/handoffs/G0.5.json"
+    },
+    {
+      "displayId": "G0.6",
+      "status": "accepted",
+      "acceptedSourceSha": "767bf2779e2354cb0adde10b5b7622144e490437",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G0.6.json"
+    },
+    {
+      "displayId": "G0.7",
+      "status": "accepted",
+      "acceptedSourceSha": "593046e41494a16de09e34935933c113f6c861f1",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G0.7.json"
+    },
+    {
+      "displayId": "G0.8",
+      "status": "accepted",
+      "acceptedSourceSha": "ad94af69d4512d71daed8c55c415813865617b39",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G0.8.json"
+    },
+    {
+      "displayId": "G1.1",
+      "status": "accepted",
+      "acceptedSourceSha": "4dedaef0bde2af716d1c6feb9a9d60889a13b8f0",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.1.json"
+    },
+    {
+      "displayId": "G1.2",
+      "status": "accepted",
+      "acceptedSourceSha": "2f8a8bde45d84e9a18425a72d851a9fcda0f3f17",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.2.json"
+    },
+    {
+      "displayId": "G1.3",
+      "status": "accepted",
+      "acceptedSourceSha": "edb265f68439cbed57fd5b08331a22d7e3e92c48",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.3.json"
+    },
+    {
+      "displayId": "G1.4",
+      "status": "accepted",
+      "acceptedSourceSha": "c71d2f8518a4f541c266127670763facab6cff3d",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.4.json"
+    },
+    {
+      "displayId": "G1.5",
+      "status": "accepted",
+      "acceptedSourceSha": "7563c04fdd9c7c61552058ff9cd2ebc068f76b45",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.5.json"
+    },
+    {
+      "displayId": "G1.6",
+      "status": "accepted",
+      "acceptedSourceSha": "8318462db868ac2b33030f0fed80e1d6b14eee8c",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.6.json"
+    },
+    {
+      "displayId": "G1.7",
+      "status": "accepted",
+      "acceptedSourceSha": "4ba53881ac8871387aa965c0539632ac011f6b67",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G1.7.json"
+    },
+    {
+      "displayId": "G2.1",
+      "status": "accepted",
+      "acceptedSourceSha": "dac93ff3512ca2580b34b78c1bfd1e7962b3eed2",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.1.json"
+    },
+    {
+      "displayId": "G2.2",
+      "status": "accepted",
+      "acceptedSourceSha": "4b15b00c637cab2f819fb58a40fa43fb8b1b080b",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.2.json"
+    },
+    {
+      "displayId": "G2.3",
+      "status": "accepted",
+      "acceptedSourceSha": "9d6bfcc1093744c702843e1d468eb1327a891a0b",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.3.json"
+    },
+    {
+      "displayId": "G2.4",
+      "status": "accepted",
+      "acceptedSourceSha": "476d031722fb14718ad6d69d79165cbe2972ec06",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.4.json"
+    },
+    {
+      "displayId": "G2.5",
+      "status": "accepted",
+      "acceptedSourceSha": "5d778d59e870646b1ed864e52e0cf9ca0814210f",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.5.json"
+    },
+    {
+      "displayId": "G2.6",
+      "status": "accepted",
+      "acceptedSourceSha": "969fea33130cb15bb97b919d93a79c7a791b0873",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.6.json"
+    },
+    {
+      "displayId": "G2.7",
+      "status": "accepted",
+      "acceptedSourceSha": "6dc51206611c3830535b722eae0cce859af8f74e",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G2.7.json"
+    },
+    {
+      "displayId": "G2.8",
+      "status": "accepted",
+      "acceptedSourceSha": "a10c8380547fcc53d141b20ea5325daa18d84aaf",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G2.8.json"
+    },
+    {
+      "displayId": "G3.1",
+      "status": "accepted",
+      "acceptedSourceSha": "28ffce8d7265c91d1ca2fbe2e2f269047914c737",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.1.json"
+    },
+    {
+      "displayId": "G3.2",
+      "status": "accepted",
+      "acceptedSourceSha": "7a7c6e21337da3dddb543a9e04ffc57710131a4b",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.2.json"
+    },
+    {
+      "displayId": "G3.3",
+      "status": "accepted",
+      "acceptedSourceSha": "2e6474a315c69e7f134d3d19481792aa460afa28",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.3.json"
+    },
+    {
+      "displayId": "G3.4",
+      "status": "accepted",
+      "acceptedSourceSha": "62e2607138c425b12fd5c3b611b6182208fdd89b",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.4.json"
+    },
+    {
+      "displayId": "G3.5",
+      "status": "accepted",
+      "acceptedSourceSha": "a2ba3a92f2f5324af6c6c92f9f1345858780fdb7",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.5.json"
+    },
+    {
+      "displayId": "G3.6",
+      "status": "accepted",
+      "acceptedSourceSha": "7a75a03bfc55f671c931c18a6506cb629278b024",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.6.json"
+    },
+    {
+      "displayId": "G3.7",
+      "status": "accepted",
+      "acceptedSourceSha": "d8f3b1547f1c0376b324465618eadcdd5682b139",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G3.7.json"
+    },
+    {
+      "displayId": "G4.1",
+      "status": "accepted",
+      "acceptedSourceSha": "27fa47801c7ff477e42b8404fc12acfde31a6732",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G4.1.json"
+    },
+    {
+      "displayId": "G4.2",
+      "status": "accepted",
+      "acceptedSourceSha": "40c724cef3275de9a25f21aa4472592b8cdbc0b6",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G4.2.json"
+    },
+    {
+      "displayId": "G4.3",
+      "status": "accepted",
+      "acceptedSourceSha": "493f1bb75cfe995d49a965338ee8bdeaf623f518",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G4.3.json"
+    },
+    {
+      "displayId": "G4.4",
+      "status": "accepted",
+      "acceptedSourceSha": "1647cf413cce6fd1d2fbb4d215a0c4793a0c4f8f",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G4.4.json"
+    },
+    {
+      "displayId": "G4.5",
+      "status": "accepted",
+      "acceptedSourceSha": "1c469abd6ab770b3b6e64a9ea6a0b45524de9dd2",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G4.5.json"
+    },
+    {
+      "displayId": "G4.6",
+      "status": "accepted",
+      "acceptedSourceSha": "ca025b28b21cd5535d95abf95e7acdeeb20ab1bb",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G4.6.json"
+    },
+    {
+      "displayId": "G5.1",
+      "status": "accepted",
+      "acceptedSourceSha": "cec481991defb8fbfdd5b63320be7751f1df747b",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration/packages/G5.1.json"
+    },
+    {
+      "displayId": "G5.2",
+      "status": "accepted",
+      "acceptedSourceSha": "9ad276dd1acf1b4611f1be20f05b53c23234f3fb",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration/packages/G5.2.json"
+    },
+    {
+      "displayId": "G5.3",
+      "status": "accepted",
+      "acceptedSourceSha": "c84d1e55928356df15681b2b701cfe7abcc49fa6",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration/packages/G5.3.json"
+    },
+    {
+      "displayId": "G5.3a",
+      "status": "accepted",
+      "acceptedSourceSha": "a9d9c485f8cc5de9fcf1a478fec303f19effb0d9",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G5.3a.json"
+    },
+    {
+      "displayId": "G5.3b",
+      "status": "accepted",
+      "acceptedSourceSha": "a542eb890775841fd2f300809e59804247c02bb7",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G5.3b.json"
+    },
+    {
+      "displayId": "G5.3c",
+      "status": "accepted",
+      "acceptedSourceSha": "93eb652a1a550e496262cba4e7b5602da84ede8e",
+      "handoffPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G5.3c.json"
+    },
+    {
+      "displayId": "G5.4",
+      "status": "accepted",
+      "acceptedSourceSha": "ed2be1ee876cf548b72f0620d71f1d6a2b6ec043",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G5.4.json"
+    },
+    {
+      "displayId": "G5.5",
+      "status": "accepted",
+      "acceptedSourceSha": "1b94ef7e4679e9a8432aa946c748da919fb8788e",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G5.5.json"
+    },
+    {
+      "displayId": "G5.6",
+      "status": "accepted",
+      "acceptedSourceSha": "c24ddd04492816f07676daf094fa1297f13078b7",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G5.6.json"
+    },
+    {
+      "displayId": "G6.1",
+      "status": "accepted",
+      "acceptedSourceSha": "d5601487d28e6b367933bd4263a1896fff725479",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.1.json"
+    },
+    {
+      "displayId": "G6.2",
+      "status": "accepted",
+      "acceptedSourceSha": "de73ad6dd7aa0b249dca12a106b6b445c2bfd75d",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.2.json"
+    },
+    {
+      "displayId": "G6.3",
+      "status": "accepted",
+      "acceptedSourceSha": "c02b612a9b287b0cbd8aac2a49d00736d3e004c7",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.3.json"
+    },
+    {
+      "displayId": "G6.4",
+      "status": "accepted",
+      "acceptedSourceSha": "09a0b5aff0757288ee285b8b7b0c09bbe38a1929",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.4.json"
+    },
+    {
+      "displayId": "G6.5",
+      "status": "accepted",
+      "acceptedSourceSha": "295413dc6f1e19e3400804efff7f21f6e5e1f655",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.5.json"
+    },
+    {
+      "displayId": "G6.6",
+      "status": "accepted",
+      "acceptedSourceSha": "af40a0512070cd6804c6f01484d63348e87a86b6",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G6.6.json"
+    },
+    {
+      "displayId": "G7.1",
+      "status": "accepted",
+      "acceptedSourceSha": "1e70c5221e5fea66b31c60a3b3d78049b47901d4",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.1.json"
+    },
+    {
+      "displayId": "G7.2",
+      "status": "accepted",
+      "acceptedSourceSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.2.json"
+    },
+    {
+      "displayId": "G7.3",
+      "status": "accepted",
+      "acceptedSourceSha": "d47e205056b8ab78e6b3872162d7d27e8ad675d3",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.3.json"
+    },
+    {
+      "displayId": "G7.4",
+      "status": "accepted",
+      "acceptedSourceSha": "401ebdff5d9d636c8b40e6c9e79caa8de613600e",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.4.json"
+    },
+    {
+      "displayId": "G7.5",
+      "status": "accepted",
+      "acceptedSourceSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.5.json"
+    },
+    {
+      "displayId": "G7.6",
+      "status": "accepted",
+      "acceptedSourceSha": "29ffbe5e332501883e2ab61419490ccfe9f07e18",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.6.json"
+    },
+    {
+      "displayId": "G7.7",
+      "status": "accepted",
+      "acceptedSourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+      "handoffPath": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/packages/G7.7.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "bundle": "B15",
+      "artifacts": 106,
+      "indexSha256": "ddaf6bf97aab4505138eefd24e4cb69a2d1e4b5f0dffd2ee72f0b04f35528e36"
+    },
+    {
+      "bundle": "B16",
+      "artifacts": 115,
+      "indexSha256": "c234ec26c66d90200aa5ef54b72f8cd0ba12781ee5119a5bea7abd41651d78ca"
+    },
+    {
+      "bundle": "B17",
+      "artifacts": 85,
+      "indexSha256": "30ceec5968071beb6997ca1b4e664568cb71d241100a0471727f6431f8d4542e"
+    }
+  ],
+  "pins": [
+    {
+      "kind": "dataset",
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/manifest.json",
+      "sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f"
+    },
+    {
+      "kind": "candidate",
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\candidate.tflite",
+      "sha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96"
+    },
+    {
+      "kind": "source-config",
+      "path": "pubspec.yaml",
+      "sha256": "afd947c0c0f4ac8864dbf67a33ecbb4699b6a40f3d39edac4ba6be60459db584"
+    },
+    {
+      "kind": "source-config",
+      "path": "pubspec.lock",
+      "sha256": "47745c547efa5cb964b424607cb6356f6e5a2c791b0e78c182a30c0fe2718ca3"
+    },
+    {
+      "kind": "source-config",
+      "path": "firestore.rules",
+      "sha256": "dffbeb1a7a7429a798e78b58109820c4531ee1992f192e379a436c2d7b2c1954"
+    },
+    {
+      "kind": "source-config",
+      "path": "storage.rules",
+      "sha256": "4e59efa416ee58d04c3968c0c6be825473fb656b2e12c5bb992190706af79782"
+    },
+    {
+      "kind": "source-config",
+      "path": "lib/features/device_model/domain/model_manifest.dart",
+      "sha256": "4f2c764194e99426aa91f3eaf7b06bb8a404caa6f7243a84d1c32297cbc6d89d"
+    },
+    {
+      "kind": "source-config",
+      "path": "docs/generated/alltcas-8-44-final-test-plan.json",
+      "sha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534"
+    }
+  ],
+  "trackedFiles": 3610,
+  "reviewCounts": {
+    "configuration": 90,
+    "reference": 2147,
+    "handwritten-source": 1331,
+    "asset": 34,
+    "generated": 8
+  },
+  "applicationWriterFrozen": true,
+  "evidenceReuse": "No production source changed from B17. Prior results retain their exact original scopes and limits; no new runtime PASS.",
+  "inheritedHandoffSha256": "a935ed1980fc470fecd2e7c1d9d2352c0db99b830c1d81e6f753482fa32d7811",
+  "inheritedConstraints": {
+    "databaseSchemaVersion": 27,
+    "tableCount": 50,
+    "legacyCompatibility": [
+      "Automatic legacy import supports fresh missing destination and unambiguous single-owner exact schema1 only. Existing nonempty destinations are never merged; multi-owner/conflicting/unknown files require explicit compatibility resolution and remain intact",
+      "Historical records are exportable preserved history, not current playable sessions, current SRS/skill evidence, new rewards or active remote queue",
+      "Original legacy file deliberately retained for rollback, including after deletion of imported records in the current database. No claim of erasing user-owned legacy backup files",
+      "No real installed user legacy database observed; all migration fixtures synthetic from pinned historical schema",
+      "No deployed rules change/live cloud, device, permissions, acoustic quality or full-release result"
+    ],
+    "candidate": {
+      "schema": "lexiquest-local-camera-candidate-v1",
+      "id": "lexiquest-web-mobilenet16",
+      "version": "2026-09-14.1",
+      "minimumAppVersion": "1.0.0",
+      "localArtifactPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\candidate.tflite",
+      "distributionUri": null,
+      "expectedSha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+      "expectedBytes": 12871389,
+      "inputShape": [
+        1,
+        224,
+        224,
+        3
+      ],
+      "inputType": "uint8",
+      "outputShape": [
+        1,
+        16
+      ],
+      "outputType": "float32",
+      "backgroundClassIndex": null,
+      "inputEncoding": "rawUint8Rgb",
+      "labelAssetName": "labels.txt",
+      "labels": [
+        "book",
+        "bottle",
+        "chair",
+        "cup",
+        "apple",
+        "bread",
+        "tomato",
+        "bowl",
+        "spoon",
+        "fork",
+        "knife",
+        "door",
+        "ladder",
+        "light bulb",
+        "tool",
+        "tap"
+      ],
+      "supportedDelegates": [
+        "cpu"
+      ],
+      "trainingManifestSha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+      "kerasCheckpointSha256": "f33d63fa40256a4129bb1b482c0f6d5eaf963b148bbacee666f3da20336ef9f9",
+      "validationSamples": 120,
+      "matchingTop1": 120,
+      "maximumProbabilityError": 4.589557647705078e-06,
+      "parityPassed": true,
+      "probe": [
+        {
+          "id": "00a36f96e31731c4",
+          "split": "validation",
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-0.rgb",
+          "sha256": "707b6ba660faba014ab2437787eba351202e2f1f60fb96ea0811bcc8dff3333e",
+          "scores": [
+            0.0001321767776971683,
+            0.9689749479293823,
+            0.0038111465983092785,
+            5.843777216796298e-06,
+            6.44832180114463e-05,
+            2.834182453170797e-07,
+            5.12554615852423e-05,
+            1.0350244110668427e-06,
+            6.39023128314875e-05,
+            0.000388509186450392,
+            0.0004938975325785577,
+            0.013740476220846176,
+            0.00022367983183357865,
+            0.0006828784826211631,
+            0.0075116888619959354,
+            0.003853817470371723
+          ]
+        },
+        {
+          "id": "01b9021aa05e6e46",
+          "split": "validation",
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-1.rgb",
+          "sha256": "e6deaed09b28ff23662569d19e475759a25885280cd55f9319704c22fd2bb09a",
+          "scores": [
+            1.259765758732101e-05,
+            2.983721969940234e-05,
+            3.065363489440642e-05,
+            7.8359693134189e-07,
+            2.8455822302930756e-06,
+            9.778075764188543e-06,
+            3.138221291010268e-05,
+            9.940510608430486e-06,
+            0.0009859862038865685,
+            7.8929791925475e-05,
+            0.9983439445495605,
+            2.938088437076658e-05,
+            3.802930166330043e-07,
+            2.617915470182197e-06,
+            0.0004295154067222029,
+            1.333950535808981e-06
+          ]
+        },
+        {
+          "id": "0344cade36bbd4f4",
+          "split": "validation",
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-2.rgb",
+          "sha256": "d0f4d214eafc727192d24b7ee358fd33c67de3dac6b487f4054fd65cc8afd734",
+          "scores": [
+            0.0002122560836141929,
+            6.0861824749736115e-05,
+            2.6482450266485102e-05,
+            0.00011085543519584462,
+            7.65619824960595e-06,
+            1.8203760191681795e-05,
+            0.00014340299821924418,
+            0.0019670622423291206,
+            0.9961289167404175,
+            0.0007140164962038398,
+            0.0001360393944196403,
+            1.9972921094790763e-08,
+            1.463279204472201e-06,
+            0.00029505990096367896,
+            9.637061339162756e-06,
+            0.00016817603318486363
+          ]
+        },
+        {
+          "id": "0623368731dd66aa",
+          "split": "validation",
+          "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\run-001\\probe-3.rgb",
+          "sha256": "c48648b415e3ae8095a258216116910d2788e67769923b1c24375c18130c67ae",
+          "scores": [
+            0.012688827700912952,
+            0.013369157910346985,
+            0.011498181149363518,
+            9.72043999354355e-05,
+            8.775098103797063e-05,
+            8.374040044145659e-05,
+            3.8482819945784286e-05,
+            1.8715272744884714e-05,
+            3.653594831121154e-05,
+            1.0461477359058335e-05,
+            8.61364333104575e-06,
+            2.2606769562116824e-05,
+            0.004114892799407244,
+            0.0023504600394517183,
+            0.949833869934082,
+            0.005740489345043898
+          ]
+        }
+      ],
+      "releaseEnabled": false,
+      "modelRights": "Local development candidate; pretrained and image attribution retained in B11A evidence; not published",
+      "rollback": {
+        "id": "mobilenet-v1-imagenet",
+        "sha256": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b",
+        "action": "Production manifest remains unchanged; remove local candidate selection to use pinned baseline"
+      },
+      "limitations": [
+        "16 object categories; cannot silently replace broad1001-output baseline",
+        "Object-crop web development metrics only; camera/unknown/device/resources pending"
+      ]
+    },
+    "dataset": {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/manifest.json",
+      "sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+      "acceptance": "docs/development/full-system/evidence/bundles/B11A/G5.3b-acceptance.json"
+    },
+    "baseline": {
+      "id": "mobilenet-v1-imagenet",
+      "sha256": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b",
+      "bytes": 4287874,
+      "outputs": 1001,
+      "manifest": "lib/features/device_model/domain/model_manifest.dart",
+      "sourceChanged": false
+    },
+    "policies": {
+      "pause": {
+        "schemaVersion": 2,
+        "authority": "Latest explicit user instruction: continue until all subtasks are complete",
+        "successorDispatchAllowed": true,
+        "execution": "Resume current B06 and sequential successors through B20/G8.9 under the full-system plan",
+        "supersedes": "Previous user pause and ambiguous G3.8 stopping boundary",
+        "requirements": "Repair recoverable failures autonomously; preserve acceptance; no skipped tests or hidden defects; complete code review then formal System Test Plan and execution"
+      },
+      "branch": {
+        "schemaVersion": 1,
+        "branchPrefix": "lexiquest/",
+        "forbiddenPrefixes": [
+          "codex/",
+          "codeic/"
+        ],
+        "authority": "Explicit user correction: never use codex/codeic in branch names",
+        "scope": "Current and future full-system development branches",
+        "propagation": "Current writer renames its branch safely, updates active references, persists in AGENTS/workflow and passes policy in successor prompts. Preserve accepted historical handoffs and commit identities."
+      },
+      "speed": {
+        "schemaVersion": 1,
+        "scope": "All subsequent LexiQuest full-system tasks",
+        "serviceTier": "default",
+        "fastModeAllowed": false,
+        "model": "gpt-6-astra",
+        "reasoningEffort": "medium",
+        "authority": "Explicit user instruction in master thread: default only; never enable Fast or 1.5x for future work tasks",
+        "propagation": "Include in active workflow, successor creation prompt and durable handoff. Verify effective tier when supported; do not claim runtime enforcement from prompt or config alone."
+      },
+      "recovery": {
+        "schemaVersion": 2,
+        "authority": "Latest explicit user instruction: diagnose, fix and rerun autonomously until the full authorized plan is complete; do not stop a task merely because a command or test fails repeatedly",
+        "scope": "B06 and every successor full-system task",
+        "supersedes": "Any repeat-count or 10-minute rule interpreted as ending the task or waiting for user approval for recoverable implementation, test, fixture, path or tooling failures",
+        "workflow": "Record failure, diagnose root cause, change code/fixture/tooling as evidence warrants, rerun relevant tests including previous failures, review result and continue. Repeated failure or stalled method triggers a new diagnostic approach, not an automatic task stop.",
+        "reruns": "Authorized whenever needed to verify a fix or investigate unresolved failures; reuse unchanged passed evidence only when valid. Never weaken acceptance or falsely claim PASS.",
+        "stopTaskWhen": "User explicitly pauses; indispensable external access or user-only decision is missing; or a documented concrete blocker leaves no safe useful work within authorized scope. Ordinary test failure is not such a blocker.",
+        "propagation": "Current writer must update AGENTS, active workflow and remaining execution wrappers that conflict before successor dispatch, then include this policy in every successor prompt and handoff",
+        "preserve": "Single writer, accepted evidence, no unauthorized spending/deployment, lexiquest/ prefix, Astra Medium, Standard/default"
+      }
+    },
+    "schemaVersion": 2,
+    "bundleId": "B17",
+    "status": "accepted-local",
+    "planRevision": "2026-09-14-camera-training-5",
+    "executionMode": "bundles",
+    "threadId": "01a09c93-db97-7201-9675-bd181f19e76a",
+    "branch": "lexiquest/b17-diagnostics-release",
+    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest",
+    "baseSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+    "acceptedSourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+    "packageIds": [
+      "G7.6",
+      "G7.7"
+    ],
+    "packageReceipts": [
+      "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G7.6.json",
+      "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\packages\\G7.7.json"
+    ],
+    "reportPath": "docs/development/full-system/bundles/B17.md",
+    "evidenceDirectory": "docs/development/full-system/evidence/bundles/B17",
+    "artifactIndex": "docs/development/full-system/evidence/bundles/B17/B17-artifact-index.json",
+    "artifactIndexSha256": "30ceec5968071beb6997ca1b4e664568cb71d241100a0471727f6431f8d4542e",
+    "artifactsVerified": 85,
+    "inheritedB15CommittedArtifactsVerified": 106,
+    "postcommitAudit": "85 committed artifacts and3610tracked raw files equal HEAD;status clean after validated index stat refresh",
+    "inputAudit": [
+      {
+        "receipt": "G7.6-flutter",
+        "exactDartImportAndPubspecInputs": 374,
+        "changed": [],
+        "scope": "Own-package import/export/part closure; dynamic historical manifest immutable checksum exercised by review test, no blanket verifier equality"
+      },
+      {
+        "receipt": "G7.7-architecture-green",
+        "exactDartImportAndPubspecInputs": 133,
+        "changed": [],
+        "scope": "Own-package import/export/part closure; dynamic historical manifest immutable checksum exercised by review test, no blanket verifier equality"
+      },
+      {
+        "receipt": "G7.6-ai-green",
+        "checkedInputs": 22,
+        "changed": [],
+        "scope": "backend/ai_api/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.6-voice",
+        "checkedInputs": 29,
+        "changed": [],
+        "scope": "backend/voice_api/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.6-lm",
+        "checkedInputs": 35,
+        "changed": [],
+        "scope": "backend/lexiquest_lm/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.6-flutter",
+        "checkedInputs": 618,
+        "changed": [],
+        "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.7-bundle",
+        "checkedInputs": 618,
+        "changed": [],
+        "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.7-architecture-green",
+        "checkedInputs": 618,
+        "changed": [],
+        "scope": "lib/ plus pubspec pins; no blanket fingerprint equality"
+      },
+      {
+        "receipt": "G7.7-tooling-green",
+        "conservativeClosureDeltas": [
+          "test/architecture/final_8_44_test_plan_review_contract_test.dart",
+          "tool/cli/tests/release-profile.tests.ps1",
+          "tool/cli/tests/verify-field-package.tests.ps1",
+          "tool/final_test_plan/generate_final_test_plan.dart"
+        ],
+        "disposition": "Later generator/review tests do not execute in these CLI fixtures; profile vector and package verifier test changes retested in native-config receipt. Selected command functions and production helper unchanged."
+      },
+      {
+        "receipt": "G7.7-native-config",
+        "conservativeClosureDeltas": [],
+        "disposition": "Later generator/review tests do not execute in these CLI fixtures; profile vector and package verifier test changes retested in native-config receipt. Selected command functions and production helper unchanged."
+      },
+      {
+        "bundle": "B15",
+        "inheritedArtifacts": 106,
+        "changed": []
+      },
+      {
+        "bundle": "B16",
+        "inheritedArtifacts": 115,
+        "changed": []
+      }
+    ],
+    "requiredOpenDefects": [],
+    "closedDefects": [
+      {
+        "id": "B17-AI-01",
+        "package": "G7.6",
+        "expected": "Provider response allocations bounded and stream closed on all status paths",
+        "actual": "200/429/503 read unbounded bytes",
+        "cause": "urllib read without size on success and HTTPError",
+        "red": "G7.6-ai-red-verifier.json",
+        "fix": "Read at most 1MiB+1; throw typed ProviderError; do not swallow budget failure; context/finally closes streams",
+        "retest": "G7.6-ai-green-verifier.json",
+        "status": "closed-local"
+      },
+      {
+        "id": "B17-ENV-01",
+        "expected": "Predecessor evidence raw bytes retain recorded hashes",
+        "actual": "B15 audit_evidence.py hash differed immediately after checkout",
+        "cause": "System core.autocrlf=true transforms historical LF files",
+        "fix": "Restored only proven EOL transformations using accepted Git blobs; batch reader replaced slow per-file reader",
+        "retest": "inherited-artifact-audit.json",
+        "status": "closed-local"
+      },
+      {
+        "id": "B17-READ-01",
+        "expected": "Read current documentation and actual paths",
+        "actual": "Default seed lacked active index/workflow; guessed optional paths absent; creation receipt not yet written",
+        "cause": "Native worktree starts default branch; source-specific paths differ; asynchronous parent receipt",
+        "fix": "Accepted SHA checkout, rg file discovery, latest revision118 and env actual thread ID before exclusive claim119",
+        "status": "closed-no-source-effect"
+      },
+      {
+        "id": "B17-AUDIT-01",
+        "expected": "Find eligible historical passes",
+        "actual": "Initial reuse candidates empty",
+        "cause": "Historical verifier stores commands, not results; EOL variants also differ",
+        "fix": "Support actual schema and cryptographically verify EOL variants; no test was rerun on initial result",
+        "retest": "G7.6-flutter-reuse.json",
+        "status": "closed-local"
+      },
+      {
+        "id": "B17-EOL-02",
+        "status": "closed-local",
+        "actual": "Default diff whitespace treats CR as trailing whitespace; JSON text attributes normalize raw copied receipts",
+        "cause": "Mixed historical EOL plus Git defaults",
+        "fix": "B17 raw receipts JSON/logs binary; diff check cr-at-eol; exact staged byte audit before commit; preserve original source EOL"
+      },
+      {
+        "id": "B17-EOL-03",
+        "status": "closed-local",
+        "actual": "First G7.6 commit followed failed staged-byte check because native Python failure did not terminate PowerShell; changed attributes left cached normalized receipts",
+        "fix": "No acceptance issued until follow-up29ffbe5e restored raw receipts using scoped renormalize and passed exact staged audit; explicit LASTEXITCODE checks added to subsequent command blocks"
+      },
+      {
+        "id": "B17-TOOL-01",
+        "package": "G7.7",
+        "status": "closed-local",
+        "actual": "No bounded unsigned bundle or explicit CLI selection; release hardcoded cloud=true",
+        "red": "G7.7-cli-red-verifier.json and G7.7-profile-missing-red-verifier.json",
+        "fix": "Bounded PreviewBundleOnly/explicit CLI target selectors; exact local profile validation and opt-in packager flag; historical cloud default retained",
+        "retest": [
+          "G7.7-tooling-green-verifier.json",
+          "G7.7-native-config-verifier.json",
+          "G7.7-bundle-verifier.json"
+        ]
+      },
+      {
+        "id": "B17-TOOL-02",
+        "package": "G7.7",
+        "status": "closed-local",
+        "actual": "Get-FileHash missing in child Windows PowerShell",
+        "cause": "Host utility unavailable; same portability issue addressed in B16 verifier",
+        "evidence": "G7.7-profile-red-verifier.json (hash failure; naming retained)",
+        "fix": "Streaming .NET SHA256 helper, standard abc vector; use same supported primitive in standalone package verifier",
+        "retest": "G7.7-native-config-verifier.json"
+      },
+      {
+        "id": "B17-PLAN-01",
+        "package": "G7.7",
+        "status": "closed-local",
+        "actual": "11 architecture failures: generator table49 and historical source/current drift; v26-to-v27 would target nonexistent matrix case",
+        "red": "G7.7-architecture-red-verifier.json",
+        "fix": "Pin current50, map v26 transition to actual B15 physical-schema regression; reject nonexistent matrix cases; run review assertions on current in-memory generator and add immutable whole historical artifact hash/schema26/49 test",
+        "retest": "G7.7-architecture-green-verifier.json",
+        "preserved": "Historical manifest unchanged; formal G8.4 plan not generated"
+      },
+      {
+        "id": "B17-EDIT-01",
+        "status": "closed-no-source-effect",
+        "actual": "Python test-edit syntax failure; byte-edit assertion on LF/CRLF mismatch; glob used as literal path during discovery",
+        "fix": "Stopped each method, inspected exact bytes or used rg --files discovery; applied matching bounded edits; subsequent relevant gates passed",
+        "scope": "No failed test assertions removed"
+      },
+      {
+        "id": "B17-RECEIPT-01",
+        "status": "closed-record-corrected",
+        "actual": "Two profile failure capture labels swapped initially",
+        "fix": "Original receipts/rawlogs preserved with timestamps/fingerprints; G7.7-profile-missing-red is missing helper, G7.7-profile-red is actual hash failure. No false pass."
+      },
+      {
+        "id": "B17-AUDIT-02",
+        "status": "closed-path-correction",
+        "actual": "Committed blob audit received absolute Windows path and Git returned missing",
+        "cause": "Python __file__ is absolute; artifact index requires repository-relative paths",
+        "fix": "Resolve evidence relative to cwd; regenerate index and audit committed blobs before handoff",
+        "testEffect": "No production or test gate inputs changed"
+      }
+    ],
+    "dirtyDisposition": "clean;3610tracked raw bytes equal HEAD;system autocrlf=true stat noise cleared via validated core.autocrlf=false add --renormalize --update",
+    "writerReleased": true,
+    "nextBundleId": "B18",
+    "rollback": "Schema27-compatible source; removed whitespace placeholders recoverable from B15. Original legacy source retained; export rollback failure preserves backup.",
+    "review": "Sole writer semantic diff/caller/generator/profile/hash/error lifecycle review;85 committed artifacts and3610tracked raw files verified",
+    "verification": {
+      "architecture": 19,
+      "packager": 31,
+      "packageIntegrity": 5,
+      "signing": 54,
+      "provenance": 28,
+      "manifest": 15,
+      "profileAndSelector": "passed",
+      "unsignedFlutterBundle": "passed;32 declared assets byte-identical",
+      "G7.6": {
+        "AI": 109,
+        "Voice": 74,
+        "LM": 94,
+        "Flutter": 51,
+        "cost": "scoped reuse"
+      }
+    },
+    "countsNote": "Executions/configurations and supplemental architecture overlap; not unique aggregate tests.",
+    "outcomes": [
+      "AI response cap1MiB with stream cleanup",
+      "Canonical preview wired opt-in release tooling;field-cloud preserved",
+      "Actual unsigned debug bundle32assets verified;externalZIP retained",
+      "Generator schema27/50 and real v26migration mapping;historical manifest unchanged"
+    ],
+    "selectedProfile": {
+      "path": "tool/cli/profiles/local-learning-preview.json",
+      "learningPreview": true,
+      "cloudSync": false,
+      "installedBinaryFlags": "NOT RUN;exact compiler arguments+B16compiledfactory tests;unsigned kernel/assets inspected without independent boolean decode or device install"
+    },
+    "inheritedHandoff": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\handoffs\\bundles\\B16.json",
+    "externalGates": [
+      "Device/manual screen reader/live speech/remote report delivery/binary flags/full release NOT RUN",
+      "Preview learning=true/cloud=false final flags G7.5/G7.7",
+      "Economy/Integration automation obligations G0.4",
+      "f28 personal runtime not selected or delivered per B01 edition; research remains hidden",
+      "Cancellation waits current adapter stage, not instantaneous network abort; minimum size not OS free-space guarantee",
+      "Effective service tier unverified",
+      "Native cancellation failures retain intent for reconcile/restart; no physical notification delivery claim",
+      "G4 local automated gate now passed; physical accessibility/no-audio device journey and native picker NOT RUN",
+      "B11 physical camera/native permission/device accuracy NOT RUN; runtime tests use fake hardware + real controller/UI/SQLite",
+      "Real-camera fresh evaluation later during actual device testing; no need to wait for user camera photos to train",
+      "Development crop accuracy90.83% is not real camera/generalization acceptance",
+      "Per-class validation tiny3-16; light bulb1/3, knife13/16; camera distribution/unknowns/resources remain for later evaluation",
+      "ImageNet pretraining overlap unknown; not an unbiased benchmark",
+      "No model publication, paid compute, full release or physical device test performed",
+      "Device/nativepermissions/accessibility/livespeech/fullrelease NOT RUN",
+      "Finalflags G7.5/G7.7",
+      "f28 not selected; research remains hidden",
+      "No researchactivation/remotesync/studyassignment/statisticalreporting",
+      "Freshcamera and independentunknown evaluation later; inspected improvement images become development and need newheldout set",
+      "Effective service tier unverified; Astra medium/default requested",
+      "No publication/deployment/newspending",
+      "Candidate correctAccepted82.5% development; lightbulb0/3 at0.6; actualpairedbaseline/open-set/camerapipeline/nativehandleproof absent",
+      "Gemini usage counters unknown; one logical usage intent may contain up to3 provider HTTP attempts, no billing guarantee",
+      "No live provider/real speech/native cancellation/device accessibility/fullrelease tested inB13",
+      "G6 local engineering accepted; physical/live speech, device audio delivery, human/model accuracy and latency NOT RUN",
+      "Dictionary playback start acknowledgement is not natural end or physical hearing proof",
+      "Original legacy source kept for rollback even after imported-record deletion; no backup-erasure claim",
+      "G7.3-G7.5 accepted local only; G7.6/G7.7 pending. Deployed rules/Supabase runtime/full release NOT RUN.",
+      "B16 native Kotlin compile only; no APK install/physical document-provider proof.",
+      "All44 complete feature runtime acceptance not claimed; f44 hidden.",
+      "Final local profile selected and compiled tests pass; installed artifact flags remain NOT RUN.",
+      "B17 local only;optional AI/OmniVoice/LM servers unconfigured;server admission/inference deadline/disconnect/resources not productionaccepted",
+      "G7.7 profile wired;actual unsigned Flutterbundle only,not APK/sign/install/fullrelease",
+      "B18 freeze+wholeappreview+fix before B19 formal SystemTestPlan;historical plan unchanged"
+    ],
+    "successorConstraints": "B18 G8.1->G8.2->G8.3 sequential same task/worktree then exactlyone B19;authorized throughB20/G8.9. Preserve all inherited policies/pins/limits. One writer/no subagents/background/security workflows;lexiquest/ only;Astra medium default only,noFast/priority/1.5x,effective tier unverified. OSexclusive lock revisioncompare File.Replace nonemptybackup. Recover failures autonomously preserve rawlogs/no weakened assertions. Actualaffectedinputs reuse,no blanketfingerprintequality. No spending/deploy/liveprovider/researchactivation/remotesync/studyassignment/statistics/unrelateddocs. Freshcamera/independentunknown later;inspected images development needing freshheldout. Commitacceptedpackages actualSHAreceipts,currentPackageId;release/reserve atomically onlyonbundleacceptance;nativecreate exactlyonce/rawreceipt/actualID/waitonce<=60s. Git core.autocrlf=false checkout/staging and rawblob audit;existing unchanged checkout files may need provenEOL-only restoration+indexrefresh. Never rewrite predecessor evidence.",
+    "inheritedB16CommittedArtifactsVerified": 115,
+    "unsignedArtifact": {
+      "artifactPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09c93-db97-7201-9675-bd181f19e76a\\B17-artifacts\\local-preview-bundle.zip",
+      "artifactSha256": "cd9181870b471b23d74675074b2659b08300ffb5814190f2a8b4e621334e2ea5",
+      "files": [
+        {
+          "path": ".last_build_id",
+          "bytes": 32,
+          "sha256": "36c5ebd08a1dd68cdc2ace934d00539dfb46ce4dd18c25972a730a21747f707b"
+        },
+        {
+          "path": "AssetManifest.bin",
+          "bytes": 3681,
+          "sha256": "b99abf460567c7b82765cd5905333911aefbfe7078fe7af329dba2b2822894a5"
+        },
+        {
+          "path": "assets/content/cefr_editorial/batch-1.json",
+          "bytes": 251186,
+          "sha256": "d7ab58a1cce6d7d30b92418b234161ab1a75088da7934516f33d5791159b027b"
+        },
+        {
+          "path": "assets/content/cefr_editorial/batch-2.json",
+          "bytes": 332016,
+          "sha256": "9a53ab6653d1fcebd61d8cf9a6251e11b5075e26ea865cc819e3fb29d100e46e"
+        },
+        {
+          "path": "assets/content/cefr_editorial/batch-3.json",
+          "bytes": 290417,
+          "sha256": "b2534412e7ee71bb913f229952902f25e5d46265931a094dd6cd1316d3642f06"
+        },
+        {
+          "path": "assets/content/cefr_editorial/complete-1.json",
+          "bytes": 537836,
+          "sha256": "c615817a58afb6ecb9b5c24d8c35b8b5d9f1af133a9ba659697858d8ff953551"
+        },
+        {
+          "path": "assets/content/cefr_editorial/complete-2.json",
+          "bytes": 624452,
+          "sha256": "f173b57c3540c4e44b39fe8ade0be7c6b1c75961ff39d74fbc90a930c3cab0c9"
+        },
+        {
+          "path": "assets/content/cefr_editorial/complete-3.json",
+          "bytes": 566704,
+          "sha256": "3c0d6c460b99f99c99b51371f101dbd668de48c2dc93e8ebde1cd99e24647d3f"
+        },
+        {
+          "path": "assets/content/cefr_editorial/NOTICE.txt",
+          "bytes": 2423,
+          "sha256": "080de4b4e0dde7b58583e7f5c67455ad1c884500e8781fa7c5dfcd514aeb0d81"
+        },
+        {
+          "path": "assets/content/cefr_editorial/sense-review-1.json",
+          "bytes": 734506,
+          "sha256": "c3fcc05d70288e528517a6cbea1881cd285dbb7410fcd43243e80a4c8fa223eb"
+        },
+        {
+          "path": "assets/content/cefr_editorial/sense-review-2.json",
+          "bytes": 621966,
+          "sha256": "ebb94097be4a1d6a47f24849b0a76f2967af70c3f6c662e9d9e321f4d498278a"
+        },
+        {
+          "path": "assets/content/cefr_editorial/sense-review-3.json",
+          "bytes": 561140,
+          "sha256": "a2c9b8f1178fd0e6c5b4370fc46d7fd597cf477812dfbc5b326491ab5e3fd804"
+        },
+        {
+          "path": "assets/content/cefr_expanded/advanced-profile.json",
+          "bytes": 155220,
+          "sha256": "694a96a5cd413aa41c8547691d54eabed8f8746ca08dcf970e3dd288fc7ebe05"
+        },
+        {
+          "path": "assets/content/cefr_expanded/advanced-translations.json",
+          "bytes": 270665,
+          "sha256": "3e25d52af96d5524ca786c07cc840772ee6862cb381e7b2cda96c16a1d116130"
+        },
+        {
+          "path": "assets/content/cefr_expanded/core-extension.json",
+          "bytes": 545822,
+          "sha256": "da83baf5ecfb8b64a486da6e784c7ca3d5ae373e18e7fccc02d09179cf7bf6bf"
+        },
+        {
+          "path": "assets/content/cefr_expanded/NOTICE.txt",
+          "bytes": 2815,
+          "sha256": "4c0f6de2c1c91ac62ba9ec985d71ca94668bcbbc673cbbe429feabef9d7c5b79"
+        },
+        {
+          "path": "assets/content/cefr_expanded/octanove-source.csv",
+          "bytes": 46462,
+          "sha256": "18c33a407f2f89f7b8de9671c6d45fe3ea0bce45e7d2d7dcaab48d73e0f7b380"
+        },
+        {
+          "path": "assets/content/cefr_starter/catalog.json",
+          "bytes": 1154172,
+          "sha256": "b1af6f5c444650d39d6873bf7db7632585b2220b69bce323327693c021641140"
+        },
+        {
+          "path": "assets/content/cefr_starter/LICENSE-th.txt",
+          "bytes": 13727,
+          "sha256": "c5ee569c4f90f797b400ca57b608b87baf90d052244e03c477ec4d2d616fbd6f"
+        },
+        {
+          "path": "assets/content/cefr_starter/LICENSE.txt",
+          "bytes": 4592,
+          "sha256": "ad4492b38d5a82e0e57793be2ada45ed6f129f0ca04a97019f408f76545528f8"
+        },
+        {
+          "path": "assets/content/cefr_starter/NOTICE.txt",
+          "bytes": 2286,
+          "sha256": "229a5adbb63875cc7f872eb88ce30dbdd9e8a97fbf85c4daa12adf1f499b860f"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-bag/r1.json",
+          "bytes": 249,
+          "sha256": "9b27908a43e5f047ab8cf00ee9684d902255aa67e11f4c703032ba321856cf7b"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-book/r1.json",
+          "bytes": 234,
+          "sha256": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-bottle/r1.json",
+          "bytes": 259,
+          "sha256": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-chair/r1.json",
+          "bytes": 229,
+          "sha256": "33d514b228ae7033e1d1242a77054178aecf1e67587b1514bb05901f47591fdd"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-clock/r1.json",
+          "bytes": 270,
+          "sha256": "a662360d388bb4466a97b3f915d4fb77cd9b6cec0624b2e87b9a62176be7d3b9"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-cup/r1.json",
+          "bytes": 260,
+          "sha256": "4af13e68ae9dc7364560bb9cd15e40c5e0fb1a43d16b8f46ea8f8376adf1cc38"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-door/r1.json",
+          "bytes": 264,
+          "sha256": "c5118f9b9d159b18c0694d63d7667481c2189832a5b39307a1f83b5ef00aac04"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-key/r1.json",
+          "bytes": 235,
+          "sha256": "834b6e191333dc96238269dd4884dd09546eab26aee93f0ca1df19ff776e6cdf"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-pencil/r1.json",
+          "bytes": 263,
+          "sha256": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-plate/r1.json",
+          "bytes": 236,
+          "sha256": "4deed1ddfb40df024d5d014b8323ea08f824f5b7a0653113c7c01316ac6c05ce"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-spoon/r1.json",
+          "bytes": 261,
+          "sha256": "8cadc285886d20ad391423309e455b82bbb6f008253480c0274894a5491c8795"
+        },
+        {
+          "path": "assets/content/lexical_metadata/starter-window/r1.json",
+          "bytes": 272,
+          "sha256": "1fa2337cdb2f423fb85068d9ec2cf468dc82448c44a2b36ea22a104e2d2fbc4c"
+        },
+        {
+          "path": "assets/fonts/NotoSansThai-Variable.ttf",
+          "bytes": 218652,
+          "sha256": "5a1c559bb539583c8a1fd99d1c5b9491e5e14478c9cd2bd0970d5c3096cc9ef8"
+        },
+        {
+          "path": "FontManifest.json",
+          "bytes": 169,
+          "sha256": "4f8767ac50872b640bd2e12135a3392ec93f35ffaebfc93ef1fcf2768ce0f9a9"
+        },
+        {
+          "path": "fonts/MaterialIcons-Regular.otf",
+          "bytes": 1645184,
+          "sha256": "d9865b671a09d683d13a863089d8825e0f61a37696ce5d7d448bc8023aa62453"
+        },
+        {
+          "path": "isolate_snapshot_data",
+          "bytes": 11093091,
+          "sha256": "139981dabb754003d034f584ece39ce20296eb2913452cd185f662d95b2b5c1c"
+        },
+        {
+          "path": "kernel_blob.bin",
+          "bytes": 121662424,
+          "sha256": "5bfb41f2395b3f1b96a16b9bd77240d3cfe0f550fc7b3fdb7887f8bf6368f058"
+        },
+        {
+          "path": "native_assets/jniLibs/lib/armeabi-v7a/libsqlite3.so",
+          "bytes": 1871956,
+          "sha256": "6c1b8dffc1ddefaf02e771711491410bc3ab1db858d3d23d2925e0b2cd691b93"
+        },
+        {
+          "path": "NativeAssetsManifest.json",
+          "bytes": 133,
+          "sha256": "31b3bfb1ae35ef7012fb9f4e03554488a0726f3928b57c8a171209a8336c8c73"
+        },
+        {
+          "path": "NOTICES.Z",
+          "bytes": 121235,
+          "sha256": "79b17d7b6bd5ae15975ad5e5f18057facfebb537c76a346b95b1b29bda69c9d8"
+        },
+        {
+          "path": "packages/flutter_local_notifications_web/web/notifications_service_worker.js",
+          "bytes": 3407,
+          "sha256": "566f47dccc0f417f0164a3d0852334c340d0941472af43fc65ee50a314555058"
+        },
+        {
+          "path": "shaders/ink_sparkle.frag",
+          "bytes": 21856,
+          "sha256": "1fe8436a743884cb65078fe8c7b38e18f5365f2a2961270916f426fd13c604af"
+        },
+        {
+          "path": "shaders/stretch_effect.frag",
+          "bytes": 17624,
+          "sha256": "62a899ff4e168ac6ca888ce7c2f40e5d3fbf8ca20a1c3ded781a116a6d7907e2"
+        },
+        {
+          "path": "vm_snapshot_data",
+          "bytes": 13646,
+          "sha256": "d0f254c29f65c8031ff67e0ca451f29dfb7d77aab2fa98a650ecac399fa4f0b2"
+        }
+      ],
+      "declaredAssetsVerified": 32,
+      "profile": {
+        "LEXIQUEST_LEARNING_PREVIEW": "true",
+        "LEXIQUEST_CLOUD_SYNC_ENABLED": "false"
+      },
+      "buildReceipt": "G7.7-bundle-verifier.json",
+      "claims": [
+        "Actual debug kernel and asset bundle inspected and retained; all declared assets byte-identical",
+        "Profile bound by recorded compiler arguments plus B16 production-factory compiled tests",
+        "No independent kernel boolean decoding; installed-binary flags NOT RUN",
+        "Not an APK; no release build, signing, installation or native-device runtime proof",
+        "Baseline device model remains downloaded/pinned by production manifest; candidate is not packaged"
+      ]
+    }
+  }
+}
