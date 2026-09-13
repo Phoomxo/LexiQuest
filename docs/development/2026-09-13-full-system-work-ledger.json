@@ -1703,7 +1703,7 @@
         "test/features/ai_tutor/ai_gateway_adapters_test.dart"
       ],
       "verificationKind": "targeted",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "G3",
         "G4"
@@ -1722,7 +1722,8 @@
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
       },
-      "bundleId": "B13"
+      "bundleId": "B13",
+      "evidence": "docs/development/full-system/evidence/bundles/B13/G6.1-acceptance.json"
     },
     {
       "id": "P6.2",

@@ -39,7 +39,7 @@ void main() {
   AiTutorUseCases createTutor({
     String Function()? eventId,
     _OpenOwnerGate? gate,
-    Future<ProgressSnapshot> Function()? loadProgress,
+    LoadAiTutorProgress? loadProgress,
   }) {
     final operationGate = gate ?? _OpenOwnerGate();
     return AiTutorUseCases(
@@ -60,6 +60,74 @@ void main() {
       ),
     );
   }
+
+  test('B13 context-free request retires the previous conversation', () async {
+    var id = 0;
+    final tutor = createTutor(eventId: () => 'reset-${id++}');
+    addTearDown(tutor.dispose);
+    final scope = (await tutor.loadSettings()).contextScopeId;
+    final context = TutorRequestContext(
+      sessionId: 'old',
+      scopeId: scope,
+      priorTurns: const [
+        TutorContextTurn(role: TutorTurnRole.learner, text: 'private question'),
+        TutorContextTurn(role: TutorTurnRole.tutor, text: 'private answer'),
+      ],
+    );
+    await tutor.reply(
+      scenario: 'Cafe',
+      learnerMessage: 'one',
+      context: context,
+    );
+    await tutor.reply(scenario: 'Airport', learnerMessage: 'standalone');
+    await tutor.reply(
+      scenario: 'Cafe',
+      learnerMessage: 'return',
+      context: context,
+    );
+    expect(gateway.lastContext!.priorTurns, isEmpty);
+  });
+
+  test(
+    'B13 summary uses pinned owner and explicit aggregate provenance',
+    () async {
+      await store.writeCredential(
+        (await store.readCredential())!.copyWith(shareLearningSummary: true),
+      );
+      String? loadedOwner;
+      final tutor = createTutor(
+        loadProgress: ([String? ownerId]) async {
+          loadedOwner = ownerId;
+          return ProgressSnapshot(
+            sampleSize: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            accuracy: null,
+            totalXp: 0,
+            completedSessions: 0,
+            streakDays: 0,
+            dueReviewCount: 0,
+            masteredWordCount: 0,
+            achievementCount: 0,
+            gameLevel: 1,
+            skills: const [],
+            weaknesses: const [],
+            recommendations: const [],
+            algorithmVersion: 3,
+            latestEvidenceAtUtc: DateTime.utc(2026, 9, 13),
+          );
+        },
+      );
+      addTearDown(tutor.dispose);
+      await tutor.reply(scenario: 'Cafe', learnerMessage: 'hello');
+      expect(loadedOwner, 'owner-a');
+      expect(gateway.lastSummary, contains('source=local-learning-aggregate'));
+      expect(gateway.lastSummary, contains('algorithmVersion=3'));
+      expect(gateway.lastSummary, contains('2026-09-13T00:00:00.000Z'));
+      expect(gateway.lastSummary, isNot(contains('owner-a')));
+      expect(gateway.lastSummary, contains('accuracy=none'));
+    },
+  );
 
   test(
     'R15 owner and credential scope fences reject stale history before HTTP',
@@ -329,7 +397,7 @@ void main() {
 
       await expectLater(
         createTutor(
-          loadProgress: () async => throw StateError('progress read failed'),
+          loadProgress: (_) async => throw StateError('progress read failed'),
         ).reply(scenario: 'scenario', learnerMessage: 'message'),
         throwsA(_aiFailure(AiFailureCode.localPersistence)),
       );
@@ -354,7 +422,7 @@ void main() {
 
       await expectLater(
         createTutor(
-          loadProgress: () async => throw sentinel,
+          loadProgress: (_) async => throw sentinel,
         ).reply(scenario: 'scenario', learnerMessage: 'message'),
         throwsA(
           allOf(
@@ -697,6 +765,7 @@ final class _FakeGateway implements AiTutorGateway {
   Future<void> Function()? onGenerate;
   int generateCalls = 0;
   TutorRequestContext? lastContext;
+  String? lastSummary;
 
   @override
   AiProviderId get providerId => providerIdValue;
@@ -715,6 +784,7 @@ final class _FakeGateway implements AiTutorGateway {
   }) async {
     generateCalls++;
     lastContext = context;
+    lastSummary = learningSummary;
     await onGenerate?.call();
     if (failure case final error?) throw error;
     return const AiGatewayReply(

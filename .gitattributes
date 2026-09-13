@@ -21,3 +21,6 @@ docs/development/full-system/evidence/bundles/B11A/**/*.json text eol=lf
 
 docs/development/full-system/evidence/bundles/B12/**/*.log binary
 docs/development/full-system/evidence/bundles/B12/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B13/**/*.log binary
+docs/development/full-system/evidence/bundles/B13/**/*.json text eol=lf

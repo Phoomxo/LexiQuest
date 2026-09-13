@@ -6,7 +6,7 @@ import '../../progress/domain/progress_models.dart';
 import '../domain/ai_tutor_contracts.dart';
 import 'owner_operation_coordinator.dart';
 
-typedef LoadAiTutorProgress = Future<ProgressSnapshot> Function();
+typedef LoadAiTutorProgress = Future<ProgressSnapshot> Function(String ownerId);
 typedef AiGatewayResolver =
     AiTutorGateway Function({
       required AiProviderId providerId,
@@ -70,7 +70,10 @@ final class AiTutorUseCases implements AiTutorController {
     String scenario,
   ) {
     final scope = _scopeFor(ownerId, credential);
-    if (context == null) return null;
+    if (context == null) {
+      _conversationSession = null;
+      return null;
+    }
     if (context.scopeId != null && context.scopeId != scope) {
       throw const AiTutorException(AiFailureCode.cancelled);
     }
@@ -388,7 +391,7 @@ final class AiTutorUseCases implements AiTutorController {
           String? summary;
           if (credential.shareLearningSummary && loadProgress != null) {
             try {
-              summary = _progressSummary(await loadProgress!());
+              summary = _progressSummary(await loadProgress!(ownerId));
             } on AiTutorException {
               rethrow;
             } on Object {
@@ -696,7 +699,10 @@ final class AiTutorUseCases implements AiTutorController {
               '(n=${item.sampleSize})',
         )
         .join(',');
-    return 'answers=${progress.sampleSize};accuracy=$accuracy;'
+    return 'source=local-learning-aggregate;'
+        'algorithmVersion=${progress.algorithmVersion};'
+        'latestEvidenceAtUtc=${progress.latestEvidenceAtUtc?.toUtc().toIso8601String() ?? 'none'};'
+        'answers=${progress.sampleSize};accuracy=$accuracy;'
         'due=${progress.dueReviewCount};mastered=${progress.masteredWordCount};'
         'weaknesses=${weaknesses.isEmpty ? 'none' : weaknesses}';
   }

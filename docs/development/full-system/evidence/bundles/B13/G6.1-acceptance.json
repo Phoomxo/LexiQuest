@@ -1,0 +1,7 @@
+{
+  "packageId":"G6.1","status":"accepted-local","testsPassed":175,
+  "red":"G6.1-red.log","green":"G6.1-green.log","rawDirectory":"G6.1-gate",
+  "requirements":{"context":"Immutable complete pairs; six turns/3000 Unicode points; learner/tutor order; default A1; intent caps160/320/480; all adapter mappings retained","reset":"Owner/provider/model/credential/consent scope and scenario/new session retained; null context now retires session","summary":"Explicit pinned owner loader wired to progress.loadForOwner; opt-in only; source, algorithmVersion and latestEvidenceAtUtc in aggregate; no owner ID serialized","storage":"No conversation archive or schema change","quality":"Output budgets are engineering policy; live answer quality NOT RUN"},
+  "review":{"method":"Local diff/caller/acceptance review, no subagents per user","findingsClosed":["B13-01 null context retained session","B13-02 aggregate loader had no pinned owner or version/time provenance"],"requiredOpenDefects":[]},
+  "tooling":{"B13-TOOL-01":"Two read-only rg wildcard-path errors123 preserved in task outputs; switched to directory plus -g filtering. No source impact."}
+}

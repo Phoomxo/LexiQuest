@@ -1724,7 +1724,7 @@ final class AppBootstrap {
           settings: aiTutorSettings,
           usage: aiUsage,
           ownerCoordinator: aiOwnerCoordinator,
-          loadProgress: progress.load,
+          loadProgress: progress.loadForOwner,
           nowUtc: aiNowUtc,
           usageEventId: idGenerator.v4,
         ),
