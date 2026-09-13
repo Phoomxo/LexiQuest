@@ -194,14 +194,34 @@
       ],
       "testTargets": [],
       "verificationKind": "source-inspection",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P0.2"
       ],
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.3.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D01",
+          "D02",
+          "D03",
+          "D04",
+          "D05",
+          "D06",
+          "D07",
+          "D08",
+          "D09",
+          "D10",
+          "D11",
+          "D12"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      },
+      "checkpoint": "docs/development/full-system/checkpoints/G0.3.md"
     },
     {
       "id": "P0.4",
@@ -227,7 +247,15 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.4.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D08"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P0.5",
@@ -255,7 +283,15 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.5.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D12"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P0.6",
@@ -279,7 +315,16 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.6.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D02",
+          "D12"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P0.7",
@@ -302,7 +347,15 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.7.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D03"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P0.8",
@@ -331,7 +384,21 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.8",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.8.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.8.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D01",
+          "D02",
+          "D03",
+          "D04",
+          "D07",
+          "D08",
+          "D09"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P1.1",
@@ -395,7 +462,16 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/current_activity_evidence_test.dart','test/features/learning/learning_side_effect_reconciler_test.dart','test/features/rewards/reward_use_cases_test.dart') -Resume"
       ],
       "displayId": "G1.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.2.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D03",
+          "D04"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P1.3",
@@ -454,7 +530,16 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/scenarios/file_backed_sync_recovery_test.dart','test/features/learning/learning_recovery_foundation_test.dart','test/features/learning/drift_learning_repository_test.dart') -Resume"
       ],
       "displayId": "G1.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.4.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D02",
+          "D03"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P1.5",
@@ -486,7 +571,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/evidence_eligibility_policy_test.dart','test/features/learning/srs_policy_test.dart','test/features/learning/assessment_evidence_isolation_test.dart') -Resume"
       ],
       "displayId": "G1.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.5.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D03"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P1.6",
@@ -549,7 +642,16 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/production_shell_navigation_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart','test/screens/offline_vocabulary_journey_test.dart') -Resume"
       ],
       "displayId": "G1.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.7.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D01",
+          "D02"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P2.1",
@@ -803,7 +905,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/adventure/application/adventure_mixed_review_controller_test.dart','test/features/adventure/presentation/adventure_mixed_review_screen_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
       ],
       "displayId": "G2.8",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.8.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.8.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D05"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P3.1",
@@ -835,7 +945,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/learning_pack_catalog_screen_test.dart','test/screens/learning_pack_detail_screen_test.dart','test/features/learning_packs/learning_pack_detail_test.dart') -Resume"
       ],
       "displayId": "G3.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.1.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D05"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P3.2",
@@ -1025,7 +1143,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/offline_content/offline_content_manager_test.dart','test/screens/offline_content_manager_screen_test.dart','test/screens/offline_content_settings_entry_test.dart') -Resume"
       ],
       "displayId": "G3.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.7.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D05"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P4.1",
@@ -1186,7 +1312,16 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/rewards/avatar_progression_policy_test.dart','test/features/achievements/achievement_share_card_use_cases_test.dart','test/widgets/reward_avatar_preview_test.dart') -Resume"
       ],
       "displayId": "G4.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.5.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D04",
+          "D11"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P4.6",
@@ -1248,7 +1383,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/object_scanner_screen_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/features/device_model/model_manifest_test.dart') -Resume"
       ],
       "displayId": "G5.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.1.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D10"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P5.2",
@@ -1418,7 +1561,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/ai_tutor/ai_tutor_use_cases_test.dart','test/features/ai_tutor/ai_gateway_adapters_test.dart') -Resume"
       ],
       "displayId": "G6.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.1.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D05"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P6.2",
@@ -1510,7 +1661,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/media_practice/speech_practice_use_cases_test.dart','test/features/media_practice/plugin_speech_recognition_gateway_test.dart','test/screens/shadowing_challenge_screen_test.dart') -Resume"
       ],
       "displayId": "G6.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.4.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D05"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P6.5",
@@ -1603,7 +1762,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/scenarios/file_backed_sync_recovery_test.dart','test/features/sync/cloud_sync_policy_test.dart') -Resume"
       ],
       "displayId": "G7.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.1.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D04"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.2",
@@ -1633,7 +1800,16 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/identity/upgrade_guest_owner_test.dart','test/features/sync/srs_state_sync_test.dart','test/features/sync/reward_transaction_sync_test.dart') -Resume"
       ],
       "displayId": "G7.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.2.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D02",
+          "D04"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.3",
@@ -1662,7 +1838,17 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G7.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.3.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D04",
+          "D09",
+          "D11"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.4",
@@ -1697,7 +1883,15 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/account/local_data_deletion_test.dart','test/features/sync/learner_preferences_sync_test.dart','test/features/offline_content/offline_content_manager_test.dart') -Resume"
       ],
       "displayId": "G7.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.4.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D11"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.5",
@@ -1730,7 +1924,17 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/runtime/runtime_feature_controls_test.dart','test/features/learning/lesson_mode_registry_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart') -Resume"
       ],
       "displayId": "G7.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.5.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D01",
+          "D04",
+          "D09"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.6",
@@ -1758,7 +1962,15 @@
       "verificationArea": "BackendAI",
       "plannedCommands": [],
       "displayId": "G7.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.6.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D07"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P7.7",
@@ -1788,7 +2000,17 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G7.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.7.md",
+      "sourceReconciliation": {
+        "authority": "docs/development/full-system/G0.3-authority.md",
+        "ledger": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
+        "decisions": [
+          "D06",
+          "D07",
+          "D08"
+        ],
+        "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
+      }
     },
     {
       "id": "P8.1",
