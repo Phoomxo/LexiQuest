@@ -43,5 +43,9 @@
   "external": [
     "Physical/manual/live/full release NOT RUN",
     "Effective service tier unverified"
-  ]
+  ],
+  "toolingRecovery": {
+    "failure": "Report update read default cp874, rejected existing UTF-8 Thai bytes",
+    "fix": "Read/write explicit UTF-8; no source bytes lost; report completed in follow-up"
+  }
 }
