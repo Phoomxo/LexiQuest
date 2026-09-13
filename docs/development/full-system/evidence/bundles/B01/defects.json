@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "defects": [{
+    "id": "B01-OPS-01",
+    "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+    "operation": "Bounded text search using wildcard directory arguments",
+    "expected": "Relevant cleanup protocol matches",
+    "actual": "rg rejected Windows wildcard path arguments with OS error 123; no source mutation",
+    "cause": "PowerShell did not expand wildcard paths for native rg",
+    "fix": "Use existing directory arguments and rg -g filename filters",
+    "retest": "Recorded by subsequent bounded search output",
+    "status": "closed"
+  }, {
+    "id": "B01-VERIFY-01",
+    "sourceSha": "6ab2e371fc4f7563da1ad8dc04a158d854b5dc20",
+    "operation": "G0.6 verifier reuse fingerprint check",
+    "expected": "Unchanged predecessor manifest pins validate in native checkout",
+    "actual": "AssertionError AGENTS.md comparing working bytes with predecessor manifest; earlier document and76 restore checks completed",
+    "cause": "Native checkout CRLF versus accepted Git/manifest LF; AGENTS21 CRLF lines, normalized bytes equal, Git blob SHA256 matches recorded pin",
+    "fix": "Require working content equal accepted Git blob modulo EOL and recorded pin match an explicit LF/CRLF representation; record both hashes per EOL-only reuse",
+    "retest": "Corrected verifier run recorded separately in G0.6-verification.json",
+    "status": "closed"
+  }]
+}
