@@ -4,8 +4,8 @@
   "artifacts": [
     {
       "path": "docs/development/full-system/evidence/bundles/B06/B06-final-checkpoint.json",
-      "sha256": "a43ba1df1a6a58fd789e33fb57c3fa9dbc1dcaa49d18685794b844c847f1f9d9",
-      "bytes": 344
+      "sha256": "935c19ef250e3679d1594e00c2521bb6e07b05f25b8f926702aea68dc6480672",
+      "bytes": 416
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B06/checkpoint.json",
