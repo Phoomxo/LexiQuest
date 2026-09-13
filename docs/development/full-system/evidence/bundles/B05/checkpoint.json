@@ -1,13 +1,14 @@
 {
   "bundleId": "B05",
-  "status": "G2.5-verified-awaiting-commit",
-  "currentPackageId": "G2.5",
+  "status": "accepted-local-automated",
+  "currentPackageId": null,
   "threadId": "01a09a40-ce55-7ac2-a2c9-741d983f3179",
   "branch": "lexiquest/b05-quiz-cloze-block-spelling",
   "headSha": "476d031722fb14718ad6d69d79165cbe2972ec06",
   "acceptedPackages": {
     "G2.3": "9d6bfcc1093744c702843e1d468eb1327a891a0b",
-    "G2.4": "476d031722fb14718ad6d69d79165cbe2972ec06"
+    "G2.4": "476d031722fb14718ad6d69d79165cbe2972ec06",
+    "G2.5": "5d778d59e870646b1ed864e52e0cf9ca0814210f"
   },
   "stopReason": null,
   "G2.5": {
@@ -24,31 +25,7 @@
     "serviceTier": "default",
     "effectiveTier": "unverified"
   },
-  "dirtyFiles": [
-    {
-      "path": "docs/development/full-system/evidence/bundles/B05/command-defects.json",
-      "sha256": "cd968e52327787f3850b37a4e3dd74274da7dccec063241e5af42c9113ef667c"
-    },
-    {
-      "path": "lib/screens/sentence_scramble_screen.dart",
-      "sha256": "b02fd094c26232945776c348538055b82ab8f071de7e2ae9f462189bbf4ed261"
-    },
-    {
-      "path": "lib/screens/word_scramble_screen.dart",
-      "sha256": "11065dafc0566c4ef008f36758e815b7bf8ac5d1d5010f71681933899c3c95ac"
-    },
-    {
-      "path": "test/screens/sentence_scramble_screen_test.dart",
-      "sha256": "01b6d9a2b9e43e57bbc7b5a5096cb9d2267272042f0adfa1042bfcf9f0111677"
-    },
-    {
-      "path": "test/screens/word_scramble_screen_test.dart",
-      "sha256": "4a7b9b6efe530ad6eb09b2c64ed9c6322db2b5ad43c7292eaa4d6a35cc543be4"
-    },
-    {
-      "path": "docs/development/full-system/evidence/bundles/B05/G2.5-defects.json",
-      "sha256": "a110fc0fb683522f7b6012d6001eabe28123458b63a194cc8c188719042dffc3"
-    }
-  ],
-  "historicalStop": "stopped-checkpoint.json"
+  "dirtyFiles": [],
+  "historicalStop": "stopped-checkpoint.json",
+  "completion": "completion.json"
 }

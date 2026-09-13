@@ -1,0 +1,31 @@
+{
+  "bundleId": "B05",
+  "status": "accepted-local-automated",
+  "subresultShas": {
+    "G2.3": "9d6bfcc1093744c702843e1d468eb1327a891a0b",
+    "G2.4": "476d031722fb14718ad6d69d79165cbe2972ec06",
+    "G2.5": "5d778d59e870646b1ed864e52e0cf9ca0814210f"
+  },
+  "uniqueTestsByPackage": {
+    "G2.3": 85,
+    "G2.4": 20,
+    "G2.5": 32
+  },
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "G2 phase gate remains B06/G2.8",
+    "Physical device/IME/manual screen-reader and full-release NOT RUN",
+    "Effective tier unverified",
+    "B01-FORM-02 speech noEvidence remains G6.4/G6.5",
+    "Broader first-answer cross-reader G3.5",
+    "Legacy learning.sqlite import preserved/unsupported G7.2",
+    "Preview device flags remain G7.5/G7.7: LEXIQUEST_LEARNING_PREVIEW=true and LEXIQUEST_CLOUD_SYNC_ENABLED=false",
+    "Economy/Integration automation gaps G0.4 retained"
+  ],
+  "review": "Single-writer diff/callers/acceptance review; all required local checks passed. Recovery policy propagated in AGENTS and workflow.",
+  "rollback": "Revert B05 source commits in a new isolated branch; no schema/data migration",
+  "reuse": "No re-execution of G1/B04 unchanged gates. G2.4 retains G2.3 quiz results with no called-code change. G2.5 retains earlier packages whose input/evidence contracts it does not change.",
+  "branchPolicy": "lexiquest/ only",
+  "speedPolicy": "gpt-6-astra / medium / default; effective tier unverified",
+  "recoveryPolicy": "Stop failed method, preserve evidence, diagnose/correct/verify/continue; stop task only without safe recovery or ownership/integrity/authority uncertain or10min no progress."
+}
