@@ -1,0 +1,21 @@
+test_development_split_provenance_and_config (test_camera_development_evaluation.DevelopmentFreezeTests.test_development_split_provenance_and_config) ... ok
+test_freeze_recomputes_and_has_no_fresh_authority (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_recomputes_and_has_no_fresh_authority) ... ok
+test_freeze_tampering_rejected (test_camera_development_evaluation.DevelopmentFreezeTests.test_freeze_tampering_rejected) ... ok
+test_pinned_cli_actual_bytes_contract_and_exclusive_output (test_camera_development_evaluation.DevelopmentFreezeTests.test_pinned_cli_actual_bytes_contract_and_exclusive_output) ... ERROR
+test_prediction_closure_and_scores_fail_closed (test_camera_development_evaluation.DevelopmentFreezeTests.test_prediction_closure_and_scores_fail_closed) ... ok
+
+======================================================================
+ERROR: test_pinned_cli_actual_bytes_contract_and_exclusive_output (test_camera_development_evaluation.DevelopmentFreezeTests.test_pinned_cli_actual_bytes_contract_and_exclusive_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\test_camera_development_evaluation.py", line 105, in test_pinned_cli_actual_bytes_contract_and_exclusive_output
+    self.assertEqual(evaluation.load_inputs(config), (rows, predictions))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Phet\.codex\worktrees\a357\LexiQuest\tools\camera_development_evaluation.py", line 156, in load_inputs
+    raise ValueError('Dataset/export/local candidate contract mismatch')
+ValueError: Dataset/export/local candidate contract mismatch
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.013s
+
+FAILED (errors=1)

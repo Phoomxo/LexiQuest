@@ -20,7 +20,7 @@
   "pins": {
     "tools/camera_development_evaluation.py": "700a1809d046df09d5017bf5f92006d238e9b6bcf1cdc914e60da803255f88ac",
     "tools/test_camera_development_evaluation.py": "8c8b962e0ac413db69b274d373dfeaf0139b2c3244cc784945844d6ec22a2f02",
-    "docs/development/full-system/evidence/bundles/B12/G5.4-config.json": "b8c630e2d02e7da30328346471e9565a88025f8614ae4193e26c25a18e0c3a2f",
+    "docs/development/full-system/evidence/bundles/B12/G5.4-config.json": "fd79ccaa951fb48c31067f2ef0ea093d4b411d6f7fc9dafb357474f81f77225e",
     "docs/development/full-system/evidence/bundles/B12/G5.4-freeze.json": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
     "docs/development/full-system/evidence/bundles/B12/G5.4-recomputed.json": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
     "docs/development/full-system/evidence/bundles/B12/G5.4-cli-green.log": "a5c72acc0244c28a0dbb986d5b90f717779a6e39dcc8834d9e60cb350fb9fde5"
