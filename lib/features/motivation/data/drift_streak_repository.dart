@@ -68,6 +68,48 @@ final class DriftStreakRepository {
         );
   }
 
+  /// Serialize inventory changes with learning projections on this database.
+  Future<bool> consumeFreeze(String ownerId, int nowMs) =>
+      _database.transaction(() async {
+        final current = await getOrCreate(ownerId, nowMs);
+        if (current.freezeCount <= 0) return false;
+        await save(
+          current.copyWith(
+            freezeCount: current.freezeCount - 1,
+            updatedAtUtcMs: nowMs,
+          ),
+        );
+        return true;
+      });
+
+  Future<StreakState> grantFreezes(String ownerId, int count, int nowMs) =>
+      _database.transaction(() async {
+        if (count < 1 || count > StreakPolicy.maxFreezeInventory) {
+          throw RangeError.range(
+            count,
+            1,
+            StreakPolicy.maxFreezeInventory,
+            'count',
+          );
+        }
+        final current = await getOrCreate(ownerId, nowMs);
+        final nextCount = current.freezeCount + count;
+        if (nextCount > StreakPolicy.maxFreezeInventory) {
+          throw RangeError.range(
+            nextCount,
+            0,
+            StreakPolicy.maxFreezeInventory,
+            'freezeCount',
+          );
+        }
+        final updated = current.copyWith(
+          freezeCount: nextCount,
+          updatedAtUtcMs: nowMs,
+        );
+        await save(updated);
+        return updated;
+      });
+
   /// Establishes the immutable boundary between markerless legacy history and
   /// evidence created after this Streak policy became active for [ownerId].
   ///

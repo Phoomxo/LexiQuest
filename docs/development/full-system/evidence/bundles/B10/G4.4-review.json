@@ -1,0 +1,47 @@
+{
+  "packageId": "G4.4",
+  "bundleId": "B10",
+  "requirements": [
+    "COV-f29",
+    "COV-f30",
+    "FORM-04",
+    "FORM-05",
+    "G4"
+  ],
+  "design": "Move inventory read-modify-write into existing Drift transaction, shared with canonical streak projection. Preserve schema, policy v2, grandfathered surplus and historical receipts. No UI/animation grants.",
+  "alternatives": [
+    "Chosen: repository transactions serialize DB authority",
+    "Rejected: UI debounce cannot protect multiple callers",
+    "Rejected: in-memory lock cannot coordinate repository instances"
+  ],
+  "defects": [
+    {
+      "id": "B10-G44-01",
+      "status": "resolved",
+      "cause": "Freeze spend/grant read-modify-write ran outside a transaction",
+      "red": "G4.4-freeze-red/receipt.json",
+      "actual": "8 spends succeeded for 1 token; 3 grants retained 1 token",
+      "fix": "consumeFreeze/grantFreezes run read/validate/save in a Drift transaction",
+      "retest": "G4.4-green/receipt.json"
+    }
+  ],
+  "verification": {
+    "tests": 163,
+    "files": 9,
+    "receipt": "G4.4-green/receipt.json",
+    "analyzer": "G4.4-analyzer.log"
+  },
+  "review": [
+    "Canonical Quest evidence eligibility, same event duplicate and concurrent retry covered by quest unit/integration tests",
+    "Quest period assignment, timezone day boundaries and authored definition snapshots preserved",
+    "Streak same-day/rollback/future/replay pinned timezone and policy/grandfathered freeze coverage passes",
+    "Gentle recovery card is read-only, retains all-time best and optional learning access; punitive copy rejected",
+    "No knowledge, evidence, reward, history, schema, policy or rollout reinterpretation"
+  ],
+  "requiredOpenDefects": [],
+  "phaseStatus": "G4 pending G4.6",
+  "external": [
+    "Physical/manual/live/full release NOT RUN",
+    "Effective service tier unverified"
+  ]
+}

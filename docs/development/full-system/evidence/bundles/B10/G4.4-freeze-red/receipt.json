@@ -1,0 +1,9 @@
+{
+  "status": "Failed",
+  "sourceFingerprint": "842c254d8089af312d0097665982b7f8090bd2ab437f3cd1a7bbbefe6b2234bb",
+  "verification": "targeted-learning-f05466624ed77357597d19a4f4a4d4bbbc6ed4dd79c299f5e5a28c2f1be1ed00.json",
+  "expectedFailures": [
+    "8 consumers reported success for 1 token",
+    "3 accepted grants retained only 1 token"
+  ]
+}

@@ -195,17 +195,7 @@ final class StreakUseCases {
   Future<bool> useFreezeToken() async {
     final owner = await owners.getOrCreateActiveOwner();
     final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    if (current.freezeCount <= 0) return false;
-    final updated = current.copyWith(
-      freezeCount: current.freezeCount - 1,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return true;
+    return repository.consumeFreeze(owner.id, now.millisecondsSinceEpoch);
   }
 
   /// Applies a bounded inventory adjustment already authorized upstream.
@@ -222,25 +212,7 @@ final class StreakUseCases {
     }
     final owner = await owners.getOrCreateActiveOwner();
     final now = _now();
-    final current = await repository.getOrCreate(
-      owner.id,
-      now.millisecondsSinceEpoch,
-    );
-    final nextCount = current.freezeCount + count;
-    if (nextCount > StreakPolicy.maxFreezeInventory) {
-      throw RangeError.range(
-        nextCount,
-        0,
-        StreakPolicy.maxFreezeInventory,
-        'freezeCount',
-      );
-    }
-    final updated = current.copyWith(
-      freezeCount: nextCount,
-      updatedAtUtcMs: now.millisecondsSinceEpoch,
-    );
-    await repository.save(updated);
-    return updated;
+    return repository.grantFreezes(owner.id, count, now.millisecondsSinceEpoch);
   }
 
   // ── Private ────────────────────────────────────────────────────────────────

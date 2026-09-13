@@ -154,6 +154,25 @@ void main() {
       expect(state.freezeCount, 1);
     });
 
+    test('concurrent consumers spend a single freeze only once', () async {
+      await useCases.grantFreezeTokens(1);
+      final results = await Future.wait(
+        List.generate(8, (_) => useCases.useFreezeToken()),
+      );
+      expect(results.where((used) => used), hasLength(1));
+      expect((await useCases.getCurrentStreak()).freezeCount, 0);
+    });
+
+    test(
+      'concurrent grants retain every accepted token within the cap',
+      () async {
+        await Future.wait(
+          List.generate(3, (_) => useCases.grantFreezeTokens(1)),
+        );
+        expect((await useCases.getCurrentStreak()).freezeCount, 3);
+      },
+    );
+
     test('freeze inventory is bounded and rejects invalid grants', () async {
       await useCases.grantFreezeTokens(StreakPolicy.maxFreezeInventory);
 
