@@ -170,6 +170,7 @@ class _SessionConfigurationSheetState extends State<SessionConfigurationSheet> {
   late final TextEditingController _timeLimitSeconds;
   SessionConfigurationResetRequired? _resetRequired;
   bool _submitting = false;
+  String? _inputError;
   bool _optionsExpanded = false;
 
   List<ContentIdentity> get _availablePackIdentities =>
@@ -303,6 +304,9 @@ class _SessionConfigurationSheetState extends State<SessionConfigurationSheet> {
       ),
       const SizedBox(height: 12),
       _buildSummary(),
+      if (_inputError != null)
+        Text(_inputError!, key: const ValueKey('session-config-input-error'),
+          semanticsLabel: _inputError),
       const SizedBox(height: 24),
       FilledButton.icon(
         key: const ValueKey('session-config-start'),
@@ -633,7 +637,23 @@ class _SessionConfigurationSheetState extends State<SessionConfigurationSheet> {
 
   void _submit() {
     if (_submitting) return;
-    setState(() => _submitting = true);
+    final inputs = <TextEditingController>[
+      _itemCount,
+      if (_draft.timing.kind == SessionTimingKind.timed) _timeLimitSeconds,
+    ];
+    if (inputs.any((input) => input.value.composing.isValid &&
+        !input.value.composing.isCollapsed)) {
+      setState(() => _inputError = 'กรุณาพิมพ์ตัวเลขให้เสร็จก่อนเริ่มเรียน');
+      return;
+    }
+    if (inputs.any((input) => int.tryParse(input.text) == null)) {
+      setState(() => _inputError = 'กรุณากรอกจำนวนข้อและเวลาเป็นตัวเลข');
+      return;
+    }
+    setState(() {
+      _inputError = null;
+      _submitting = true;
+    });
     try {
       final configuration = widget.policy.validate(
         draft: _requestedDraft,

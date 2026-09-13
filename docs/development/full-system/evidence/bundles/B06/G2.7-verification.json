@@ -1,0 +1,56 @@
+{
+  "packageId": "G2.7",
+  "bundleId": "B06",
+  "baseSha": "969fea33130cb15bb97b919d93a79c7a791b0873",
+  "status": "accepted-local-automated",
+  "uniqueTestsPassed": 66,
+  "verification": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.7-runs/targeted-learning-b50a58417fa51b4875f32526cd2d5816784b952f930548264f4f822649d55a17.json",
+      "status": "Passed",
+      "fingerprint": "0a2f31d76cc18030cbb0e3f282ba7c1ceba75399d817c135bbe643e7928a88f0",
+      "changedInputsSinceRun": []
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.7-runs/targeted-learning-bf1d03f0f9af3bcf3a904dcd74015d86f9c7406c3de04715569fb90aadf5b8e0.json",
+      "status": "Failed",
+      "fingerprint": "1e42d759d3321b5df1de276b75868439fd1dd9bb4fb37118e96945810e3dded0",
+      "changedInputsSinceRun": [
+        "lib/features/learning/presentation/session_configuration_sheet.dart"
+      ]
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.7-runs/targeted-learning-c90db5730428b027f604cc19dc73e87ea1c50f0fe534c01e695b529c990a7b87.json",
+      "status": "Passed",
+      "fingerprint": "0a2f31d76cc18030cbb0e3f282ba7c1ceba75399d817c135bbe643e7928a88f0",
+      "changedInputsSinceRun": []
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B06/G2.7-runs/targeted-learning-cbe94b9ef254469b86e58b2754907cbe9b340a1446317038e54a75ab477c8475.json",
+      "status": "Passed",
+      "fingerprint": "6754ac7f89e5f530badf36e7ba07a3f3872a0befe0359f2941f92afe678511a3",
+      "changedInputsSinceRun": []
+    }
+  ],
+  "acceptance": {
+    "COV-f05/f16/f19": "34 configuration policy/sheet/store tests pass: exact adapter, unsupported options, tamper/owner/content/protocol revalidation, atomic owner save, phone text200 and short viewport. New four composing/blank tests reject incomplete fields and then accept completed values.",
+    "MODE-all": "14 distinct registry/configuration/lifecycle/result records;14 all-mode tests pass canonical serialization, owner rejection, off and missing registration fail closed.",
+    "callerRegression": "18 f16 ChooseMode session/owner/effort/retry/retirement tests passed against changed configuration sheet.",
+    "G2": "Phase gate remains G2.8."
+  },
+  "matrixPath": "docs/development/full-system/evidence/bundles/B06/G2.7-mode-matrix.json",
+  "review": {
+    "method": "Single writer source/caller/configuration serialization and 14-mode contract review",
+    "requiredOpenFindings": []
+  },
+  "externalGates": [
+    "Physical keyboard/IME and manual screen reader NOT RUN",
+    "Live speech/provider/device claims remain G6/G8",
+    "G2 phase smoke pending G2.8"
+  ],
+  "requiredBranchPrefix": "lexiquest/",
+  "requiredServiceTier": "default",
+  "effectiveServiceTier": "unverified",
+  "model": "gpt-6-astra",
+  "thinking": "medium"
+}

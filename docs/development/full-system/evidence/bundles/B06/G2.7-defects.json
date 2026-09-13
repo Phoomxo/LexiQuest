@@ -1,0 +1,19 @@
+{
+  "defects": [
+    {
+      "id": "B06-G27-01",
+      "expected": "Incomplete IME and blank numeric fields do not close configuration",
+      "actual": "All four new cases returned a configuration",
+      "cause": "Submit parsed in-flight fields and turned blank into zero before policy clamp",
+      "fix": "Guard composition/parse validity at UI submit; show actionable inline message; completed numeric clamp policy unchanged",
+      "retest": "34 policy/sheet/store tests PASS,14 all-mode authority tests PASS,18 f16 caller tests PASS"
+    },
+    {
+      "id": "B06-G27-F01",
+      "actual": "Matrix fixture called nonexistent fromJson",
+      "cause": "Used wrong serialization API",
+      "fix": "Use actual fromStableSerialization/stableSerialization envelope preserving integrity checks",
+      "retest": "14 matrix tests PASS"
+    }
+  ]
+}

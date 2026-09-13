@@ -39,6 +39,41 @@ void main() {
     routeName: 'learning/quiz',
   );
 
+  for (final fieldKey in ['session-item-count', 'session-time-limit-seconds']) {
+    for (final pending in [true, false]) {
+      testWidgets('B06 config $fieldKey rejects ${pending ? 'composing' : 'blank'} then accepts completed input', (tester) async {
+        SessionConfiguration? result;
+        await tester.pumpWidget(MaterialApp(home: Builder(builder: (context) => Scaffold(
+          body: FilledButton(onPressed: () async {
+            result = await showSessionConfigurationSheet(
+              context: context, registration: registration, policy: policy,
+              limits: limits, ownerId: 'owner:ime', packs: const [SessionConfigurationPackOption(identity: pack, label: 'ชุดฝึกจริง')],
+            );
+          }, child: const Text('open')),
+        ))));
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ปรับตัวเลือก'));
+        await tester.pumpAndSettle();
+        final field = find.byKey(ValueKey(fieldKey));
+        await tester.ensureVisible(field);
+        final controller = tester.widget<TextField>(field).controller!;
+        final text = fieldKey == 'session-item-count' ? '6' : '600';
+        controller.value = TextEditingValue(text: pending ? text : '', composing: pending ? TextRange(start: 0, end: text.length) : TextRange.empty);
+        final submit = tester.widget<FilledButton>(find.byKey(const ValueKey('session-config-start'))).onPressed!;
+        submit();
+        await tester.pumpAndSettle();
+        expect(result, isNull);
+        expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+        controller.value = TextEditingValue(text: text);
+        submit();
+        await tester.pumpAndSettle();
+        expect(result, isNotNull);
+        expect(find.byType(SessionConfigurationSheet), findsNothing);
+      });
+    }
+  }
+
   for (final adapter in <LessonModeAdapter>[
     const DictationModeAdapter(),
     const MatchingModeAdapter(),
