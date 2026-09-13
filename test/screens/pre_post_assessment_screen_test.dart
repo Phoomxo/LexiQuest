@@ -33,6 +33,67 @@ import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/screens/pre_post_assessment_screen.dart';
 
 void main() {
+  testWidgets('pre post comparison labels percentage points and sample sizes', (
+    tester,
+  ) async {
+    final harness = await _ScreenHarness.create();
+    addTearDown(harness.close);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PrePostAssessmentScreen(
+          useCases: harness.useCases,
+          command: _command,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    harness.advance(const Duration(seconds: 1));
+    await tester.tap(find.text('choice-a'));
+    await tester.pumpAndSettle();
+    expect(find.text('ทำแบบประเมินเสร็จแล้ว'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    harness.advance(const Duration(minutes: 1));
+    await DriftLearningRepository(harness.database).startSession(
+      LearningSessionDraft(
+        id: 'session-post',
+        ownerId: _ownerId,
+        activityType: 'assessment',
+        startedAtUtc: harness.clock.call(),
+        appVersion: _appVersion,
+        buildId: _buildId,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PrePostAssessmentScreen(
+          useCases: harness.useCases,
+          command: const AssessmentStartCommand(
+            runId: 'run-post',
+            learningSessionId: 'session-post',
+            studyCycleId: _studyCycleId,
+            phase: AssessmentPhase.post,
+            instrumentId: _instrumentId,
+            instrumentVersion: _instrumentVersion,
+            formId: _formId,
+            formVersion: _formVersion,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    harness.advance(const Duration(seconds: 1));
+    await tester.tap(find.text('choice-b'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ก่อนเรียน 100% (1/1)'), findsOneWidget);
+    expect(find.textContaining('หลังเรียน 0% (0/1)'), findsOneWidget);
+    expect(
+      find.textContaining('เปลี่ยนแปลง -100 จุดเปอร์เซ็นต์'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('-100%'), findsNothing);
+  });
+
   test('screen source has only the score-free assessment use-case port', () {
     final source = File(
       'lib/screens/pre_post_assessment_screen.dart',

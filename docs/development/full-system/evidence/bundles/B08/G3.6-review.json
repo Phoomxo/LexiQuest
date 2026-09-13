@@ -1,0 +1,34 @@
+{
+  "requirements": [
+    "COV-f28",
+    "FORM-08",
+    "G3"
+  ],
+  "design": "Keep frozen research contract; display raw accuracy difference as percentage points with correct/n; no personal assessment activation",
+  "packageId": "G3.6",
+  "review": "Compared formula against FORM-08; consent/assignment and no-engagement authority unchanged; added app/build/schema incompatibility coverage",
+  "defects": [
+    {
+      "status": "resolved",
+      "fix": "Percentage-point label and correct/n per phase",
+      "cause": "Raw accuracy difference labelled percent",
+      "evidence": "G3.6-label-red",
+      "id": "B08-G36-01"
+    },
+    {
+      "status": "resolved",
+      "cause": "Wildcard passed as Windows path to rg",
+      "recovery": "Stopped wildcard-path usage; discovered literal G0.8-edition-contract.json with rg --files",
+      "id": "B08-TOOL-03"
+    }
+  ],
+  "external": [
+    "No participant data collected; no study assignment or remote sync",
+    "Personal assessment runtime not delivered per selected edition"
+  ],
+  "edition": "local-learning-preview-b01-v1: f28 research-only hidden, personal runtime explicitly not selected",
+  "alternatives": [
+    "Chosen: correct label and add denominator using existing summary",
+    "Rejected: relative percent gain, which changes the defined formula and is undefined at pre=0"
+  ]
+}

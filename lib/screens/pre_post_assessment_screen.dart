@@ -268,9 +268,11 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
   Widget _completedBody(AssessmentPresentationCompletion completion) {
     final comparisonMessage = switch (completion.comparison) {
       AssessmentComparisonReady result =>
-        'ก่อนเรียน ${_percent(result.preOutcome.accuracy)} · '
-            'หลังเรียน ${_percent(result.postOutcome.accuracy)} · '
-            'เปลี่ยนแปลง ${_signedPercent(result.comparison.accuracyDelta)}',
+        'ก่อนเรียน ${_percent(result.preOutcome.accuracy)} '
+            '(${result.preOutcome.correctCount}/${result.preOutcome.sampleSize}) · '
+            'หลังเรียน ${_percent(result.postOutcome.accuracy)} '
+            '(${result.postOutcome.correctCount}/${result.postOutcome.sampleSize}) · '
+            'เปลี่ยนแปลง ${_signedPercentagePoints(result.comparison.accuracyDelta)}',
       AssessmentComparisonMissingPair() =>
         'จะแสดงผลเปรียบเทียบเมื่อทำแบบประเมินก่อนและหลังที่ใช้เปรียบเทียบกันได้ครบแล้ว',
       AssessmentComparisonIncompatibleMetadata() =>
@@ -299,7 +301,7 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
 
 String _percent(double value) => '${(value * 100).round()}%';
 
-String _signedPercent(double value) {
+String _signedPercentagePoints(double value) {
   final rounded = (value * 100).round();
-  return '${rounded >= 0 ? '+' : ''}$rounded%';
+  return '${rounded >= 0 ? '+' : ''}$rounded จุดเปอร์เซ็นต์';
 }

@@ -1,0 +1,42 @@
+{
+  "packageId": "G3.6",
+  "bundleId": "B08",
+  "status": "accepted-local-automated",
+  "baseSha": "a2ba3a92f2f5324af6c6c92f9f1345858780fdb7",
+  "verification": [
+    {
+      "fingerprint": "8f551fe14607fc04b7292ff917be4dd744fc9d1ba138fea0bb0e773bb9a12160",
+      "testsPassed": 72,
+      "inputCount": 1306,
+      "manifest": "docs/development/full-system/evidence/bundles/B08/G3.6-final/targeted-learning-c88a6cd24c58bb6fd654a1ae6c8f8054d4ef0c3770b830a064b028c795aa7245.json",
+      "logs": {
+        "Stdout": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.6-final/aa8a5518a8b1-8f551fe14607/Explicit-Flutter-tests.stdout.log",
+          "sha256": "FA5C6AAC044510BB25ACA9B0A7C7359EFF12242FAC8BD86B02666931AA86E3AB"
+        },
+        "Stderr": {
+          "path": "docs/development/full-system/evidence/bundles/B08/G3.6-final/aa8a5518a8b1-8f551fe14607/Explicit-Flutter-tests.stderr.log",
+          "sha256": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
+        }
+      }
+    }
+  ],
+  "requirements": [
+    "COV-f28",
+    "FORM-08",
+    "G3"
+  ],
+  "outcomes": [
+    "Actual synthetic pre/post UI flow shows percentage points and correct/n; raw formula unchanged",
+    "Missing pair, incompatible instrument/form/content/app/build/schema, duplicate item and scoring metadata rejected",
+    "Consent/assignment required; no-engagement evidence and byte-for-byte learning authority isolation",
+    "Selected B01 edition retains hidden research-only f28; personal runtime not selected or delivered"
+  ],
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "Device/manual/live/full release NOT RUN",
+    "Effective tier unverified"
+  ]
+}

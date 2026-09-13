@@ -202,6 +202,9 @@ void main() {
     'every immutable run metadata mismatch is IncompatibleMetadata',
     () async {
       final mismatches = <String, Object>{
+        'app_version': 'other-app-version',
+        'build_id': 'other-build',
+        'database_schema_version': AppDatabase.currentSchemaVersion + 1,
         'protocol_id': 'other-protocol',
         'protocol_version': 'protocol-2.0.0',
         'experiment_id': 'other-experiment',
