@@ -1,0 +1,229 @@
+{
+  "artifacts": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/audit_evidence.py",
+      "sha256": "afdc36114070420265bc6864794d5fd70d2373329d147368d68a5aa913b2fe5c",
+      "bytes": 3989
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-acceptance.json",
+      "sha256": "71cea69f6b6038b0cae1fa2a960be1ec398948611ef897c33b697a42fdf7c74e",
+      "bytes": 1147
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/8c18e4baa1fb-81fa36e7a3ab/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/8c18e4baa1fb-81fa36e7a3ab/Explicit-Flutter-tests.stdout.log",
+      "sha256": "52ce3edec3fc6cc951381ecbe3803078295f53abebd0b6cf09fbf41557977bd5",
+      "bytes": 169002
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/945b11b243ae-614fd49904e0/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/945b11b243ae-614fd49904e0/Explicit-Flutter-tests.stdout.log",
+      "sha256": "67e20d5e342de52c564a6e132c63e55227cfa85186f473121956e4db9237a9ec",
+      "bytes": 18232
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/targeted-ai-80ad46e29d5400d607f700a06a51421c89b6913bc5223964483ee68bafac8a95.json",
+      "sha256": "2ca8d62dc64fa4b3b30adb6c58d76aca821bbfc62ec8b4556631200c49ed6ebe",
+      "bytes": 247738
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-gate/targeted-ai-90001fdebf92ac58ee78f2241a6aa8547f2c62d1de6606baa982c35cd69051cd.json",
+      "sha256": "c72955b63111d274ee15c9c022319c2814b793f2effe4edd74647279e42f78ea",
+      "bytes": 247873
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-green.log",
+      "sha256": "c307f1916e2c627e53d867547986f105b2d11e710074329ea6dae59c564e9451",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.1-red.log",
+      "sha256": "9d71540a3d464db8bf0037588e3b9e46eaa5cdae177b2070c9eac61c32795d05",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-acceptance.json",
+      "sha256": "652a8f2459f886763ea5a1f42247741d435786ae1fd40708d7d6f21635986b83",
+      "bytes": 1696
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gate.log",
+      "sha256": "71b657e022e850318bb3638fb7d984aa88ef0d186a81a59f36a92957394bb3c7",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/3fa98be0440e-4d52aab6e383/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/3fa98be0440e-4d52aab6e383/Explicit-Flutter-tests.stdout.log",
+      "sha256": "4187983b546af912760c9beec723bf8f9d5cdd9cb02ab8de7c01f033959bab42",
+      "bytes": 44784
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/4c85bccd4db2-1f13922239a4/Explicit-Flutter-tests.stderr.log",
+      "sha256": "d41c5667e840cb5cdd087bf256e278074e1f2eb9df4723aac95245bb7075dd15",
+      "bytes": 2248
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/4c85bccd4db2-1f13922239a4/Explicit-Flutter-tests.stdout.log",
+      "sha256": "97d27a736cf1cef6bf02f8c06f04bbbdec6911d9a7d1605fd1e1f86f6d07fe3d",
+      "bytes": 13288
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/4c85bccd4db2-fb20d8478edb/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/4c85bccd4db2-fb20d8478edb/Explicit-Flutter-tests.stdout.log",
+      "sha256": "773f4ddb116a489c01a86d3f8ea6514c4018ffcd079c55e6049fe18a8f5a9653",
+      "bytes": 20284
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/932b277cfa79-1ae439a61092/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/932b277cfa79-1ae439a61092/Explicit-Flutter-tests.stdout.log",
+      "sha256": "44ab41f0a1c4d74eeec55092e43e044b588c52576aa8b0b95c56fbaacca1cf75",
+      "bytes": 42372
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/targeted-ai-149ab5a63bdc5ab26a94c9ea547badb6c48623817afb2885a8f063c62b96f0ad.json",
+      "sha256": "e21655bfcd1d54493cc148277f17b8c318246e045c0ce32db0b050776bcf2cbc",
+      "bytes": 247750
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/targeted-ai-90378c89bcaf83ad60c0f7aec2e83c2f4ebd6b6a6e456f6b70081381c922ce37.json",
+      "sha256": "b90fd655511fadac3bbbbc2ea6cbda01d57aabdff9d3490a149479bab6a287ba",
+      "bytes": 247762
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-gates/targeted-ai-b146b5d2ea9ee9feea32ac154e1a191315b1153ab9fe251a5d61f0e744219012.json",
+      "sha256": "2668dcc20b50d0247f043f9de7010cfc8afae9de22bd38bca524af42d7903966",
+      "bytes": 247725
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-green.log",
+      "sha256": "d636de5d05d5eaddf730634e2097060a40619a86f766139900f5aacf1173c2a0",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-red-corrected.log",
+      "sha256": "44eb436b3c0b73a262c0f671b64a2336cde702c8302850a511b069843e243203",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.2-red.log",
+      "sha256": "a6803bdc71ab10ff65bd55635ab753ac8f0acc9850518f109e1a843e9fd60df8",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-acceptance.json",
+      "sha256": "b586b1c23c46d3f03f8f947e03b37fd4e5cc001d18e6ca17ae8c35a2c2264e09",
+      "bytes": 2057
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-bridge-red.log",
+      "sha256": "ab893525cdd395cbe8fc2c11f3694bc57eadb23e3e1c0fe1dc8f7688fe5d741e",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/1875a28a780c-c87dedd56435/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/1875a28a780c-c87dedd56435/Explicit-Flutter-tests.stdout.log",
+      "sha256": "4d791b0529e0b7d392bb151a3efad227e12b4f1fe2ad999b55dba145c0e1b83b",
+      "bytes": 67184
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/8951626873ce-68a968b34bba/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/8951626873ce-68a968b34bba/Explicit-Flutter-tests.stdout.log",
+      "sha256": "71623fa7629bce1a23b759922836b879d72251703a2c456cb8135f1911669745",
+      "bytes": 12772
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/cd744e1eebcd-245f96411614/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/cd744e1eebcd-245f96411614/Explicit-Flutter-tests.stdout.log",
+      "sha256": "f79c2b9a7f6ae247c9d667362888a7edde1d3b38aa4ec52a5c30291928780984",
+      "bytes": 15036
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/f131ff269755-bf9bd0259efc/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/f131ff269755-bf9bd0259efc/Explicit-Flutter-tests.stdout.log",
+      "sha256": "c89e753e345fb8047795c2f7ea6b96756cd9f14077db638dfe3b417fdd969322",
+      "bytes": 12624
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/targeted-ai-022252eec74319df87a2bb27c42e8bef25c959361cf903ab450e4e9a91fe3792.json",
+      "sha256": "f76c8b22944fa69034ba0afc34e8a2ee9032b3efbe94aa138a2cef5974e93058",
+      "bytes": 247800
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/targeted-ai-1356373b6b5c0fff68ca77a1164e0f6f4e7b32cd7ffe73a0e697c473dc7a84aa.json",
+      "sha256": "a7fc0872a316a02f2e6f5e3334d0c0ef1679b2d5267e7c5aff938e5765c4f6e9",
+      "bytes": 247739
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/targeted-ai-d15b87be32b51d1d73ed075e690b2d5769c6b39466c1b5fa8a8c73526c7a16fa.json",
+      "sha256": "dc933d4938d185823c85a597a7418003f60c126a0c6f40bfcbc8148843257c76",
+      "bytes": 248093
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-gates/targeted-ai-dc5a270113b22b175b9db1ff6f735e3be114cd19f01ecd15939403c8023b0fe0.json",
+      "sha256": "ac75f014555493a3366fe13580d4b329a9d8a7ae8eaa71f4fc3a826357d270d1",
+      "bytes": 247739
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-green.log",
+      "sha256": "3d7dc87100d2430fe75f43f3357d87a5bfb8e020998b9503d89b8197efffedaf",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-loopback.log",
+      "sha256": "ad40c0995e4558f7c204c5cc71ca121a11f291c29871dd2d323563088dd17616",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/G6.3-no-key.log",
+      "sha256": "8a2ae3da1bd46207a2ce8eb82bc1cd0ccf2b58bfd6195560275415ded7d7ab43",
+      "bytes": 289
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/implementation-plan.json",
+      "sha256": "063e2c6041ce74f9c9e1d2ceb5a4012ac9dce02886974ce42326d897e6d75760",
+      "bytes": 3691
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B13/input-audit.json",
+      "sha256": "0c68155ce8d4bd22b7d6547c813e73a57a891395f5caf88ac47dbb4a34c8eff4",
+      "bytes": 20596
+    }
+  ]
+}

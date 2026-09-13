@@ -1,0 +1,401 @@
+{
+  "baseSha": "c24ddd04492816f07676daf094fa1297f13078b7",
+  "gates": [
+    {
+      "gate": "G6.1-gate\\targeted-ai-80ad46e29d5400d607f700a06a51421c89b6913bc5223964483ee68bafac8a95.json",
+      "fingerprint": "614fd49904e0314178e2cc7da5cfd29f1435387b8d5bfb4893f889cfffce7dee",
+      "status": "Failed",
+      "rawExactInputs": 1297,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "recorded": "FA306B7C02192149F89B6ED6616337B33579A6E273E3FAC3A6A7E24C8CD2F116",
+          "current": "a936cb9091c057dd234d2faab4e625193efd8011b735227a07d67fa3e0187e07",
+          "disposition": "Evidence-only binary log/LF JSON rules.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+          "recorded": "452D63E1D8CAD78409FBB4A0A1F6A9916073FBA9B26C45AB0097B08C86F3B8D6",
+          "current": "4e97130c34f5dcdf10263d28a6348f2f4b84ab3ddedca7dfd67ff88e625ecd3f",
+          "disposition": "Pre-fix input retained in red gate",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/runtime/app_bootstrap.dart",
+          "recorded": "DE0C8F8910943A2A39CB3D88625428372B248B391D751D69DE6328DCAC098774",
+          "current": "fd3595506142b6d79a1a67fe626974c44739917b8cbc6ad869cd9669f9d57740",
+          "disposition": "Pre-fix input retained in red gate",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/screens/ai_tutor_screen.dart",
+          "recorded": "B7EFD2A957FCB09604E54BE89AC9BE0BB0584D32072E99683F350341BC2EF171",
+          "current": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+          "disposition": "G6.2 scoped mic-stop catch, tested UI/speech40; LF/CRLF normalized separately.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "recorded": "1F9EF058693BD25261F34BC494E66612005A7D2918E38039824B836D1FB9C1AB",
+          "current": "63bafbaf2ec1977445334ceef62e9c3f9673bb3b051005ec77269f891507bf35",
+          "disposition": "G6.3 additive5xx/retry cases;5new cases passed; prior21 cases unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "5E8F28E136F4643A35A4F900824685A49984E699AD88C17DDCA91CFEA81ADC1A",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "8CFBFF8BE2AEF6DD6B49623E04CAD7DB1BDC4F01C221043395BD9ABB41BCF01F",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.1-gate\\targeted-ai-90001fdebf92ac58ee78f2241a6aa8547f2c62d1de6606baa982c35cd69051cd.json",
+      "fingerprint": "81fa36e7a3ab232683230d6243a17d96f382fee52f0913a7476804ed44e58225",
+      "status": "Passed",
+      "rawExactInputs": 1299,
+      "deltas": [
+        {
+          "path": ".gitattributes",
+          "recorded": "FA306B7C02192149F89B6ED6616337B33579A6E273E3FAC3A6A7E24C8CD2F116",
+          "current": "a936cb9091c057dd234d2faab4e625193efd8011b735227a07d67fa3e0187e07",
+          "disposition": "Evidence-only binary log/LF JSON rules.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/screens/ai_tutor_screen.dart",
+          "recorded": "B7EFD2A957FCB09604E54BE89AC9BE0BB0584D32072E99683F350341BC2EF171",
+          "current": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+          "disposition": "G6.2 scoped mic-stop catch, tested UI/speech40; LF/CRLF normalized separately.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "recorded": "1F9EF058693BD25261F34BC494E66612005A7D2918E38039824B836D1FB9C1AB",
+          "current": "63bafbaf2ec1977445334ceef62e9c3f9673bb3b051005ec77269f891507bf35",
+          "disposition": "G6.3 additive5xx/retry cases;5new cases passed; prior21 cases unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "8CFBFF8BE2AEF6DD6B49623E04CAD7DB1BDC4F01C221043395BD9ABB41BCF01F",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.2-gates\\targeted-ai-149ab5a63bdc5ab26a94c9ea547badb6c48623817afb2885a8f063c62b96f0ad.json",
+      "fingerprint": "4d52aab6e38386573258da547c706541630feefb1e33f6c1a1d0a332ee1fb940",
+      "status": "Passed",
+      "rawExactInputs": 1300,
+      "deltas": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/screens/ai_tutor_screen.dart",
+          "recorded": "B7EFD2A957FCB09604E54BE89AC9BE0BB0584D32072E99683F350341BC2EF171",
+          "current": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+          "disposition": "G6.2 scoped mic-stop catch, tested UI/speech40; LF/CRLF normalized separately.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "recorded": "1F9EF058693BD25261F34BC494E66612005A7D2918E38039824B836D1FB9C1AB",
+          "current": "63bafbaf2ec1977445334ceef62e9c3f9673bb3b051005ec77269f891507bf35",
+          "disposition": "G6.3 additive5xx/retry cases;5new cases passed; prior21 cases unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "8CFBFF8BE2AEF6DD6B49623E04CAD7DB1BDC4F01C221043395BD9ABB41BCF01F",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.2-gates\\targeted-ai-90378c89bcaf83ad60c0f7aec2e83c2f4ebd6b6a6e456f6b70081381c922ce37.json",
+      "fingerprint": "1ae439a610921bccbb2d912b31e8aa42e105d95b2714917ce26d7190e246d86e",
+      "status": "Passed",
+      "rawExactInputs": 1300,
+      "deltas": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/screens/ai_tutor_screen.dart",
+          "recorded": "BB55AEA4438C3DDCA3276F2027D100737F74FCF0D8326B7A5310E82C28531A8C",
+          "current": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+          "disposition": "G6.2 scoped mic-stop catch, tested UI/speech40; LF/CRLF normalized separately.",
+          "crlfOnly": true
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "recorded": "1F9EF058693BD25261F34BC494E66612005A7D2918E38039824B836D1FB9C1AB",
+          "current": "63bafbaf2ec1977445334ceef62e9c3f9673bb3b051005ec77269f891507bf35",
+          "disposition": "G6.3 additive5xx/retry cases;5new cases passed; prior21 cases unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "A8B3B97ADF7D8470E6680ABF3B99837D95E44AFBF2B60F628F82D0BF39375E87",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.2-gates\\targeted-ai-b146b5d2ea9ee9feea32ac154e1a191315b1153ab9fe251a5d61f0e744219012.json",
+      "fingerprint": "fb20d8478edbd0278db6eca9398626aa124a6c4b712e417b28a9794e929de509",
+      "status": "Failed",
+      "rawExactInputs": 1300,
+      "deltas": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "lib/screens/ai_tutor_screen.dart",
+          "recorded": "B7EFD2A957FCB09604E54BE89AC9BE0BB0584D32072E99683F350341BC2EF171",
+          "current": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+          "disposition": "G6.2 scoped mic-stop catch, tested UI/speech40; LF/CRLF normalized separately.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+          "recorded": "1F9EF058693BD25261F34BC494E66612005A7D2918E38039824B836D1FB9C1AB",
+          "current": "63bafbaf2ec1977445334ceef62e9c3f9673bb3b051005ec77269f891507bf35",
+          "disposition": "G6.3 additive5xx/retry cases;5new cases passed; prior21 cases unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "A35CE70E85EB5F086682E1A1E80CBC423144D0DE9FE2D724F86CE24A1CE5B126",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.3-gates\\targeted-ai-022252eec74319df87a2bb27c42e8bef25c959361cf903ab450e4e9a91fe3792.json",
+      "fingerprint": "bf9bd0259efcbfc60ab58f1d73860421cbfde1ee043d05e498b1779a829d529e",
+      "status": "Passed",
+      "rawExactInputs": 1306,
+      "deltas": []
+    },
+    {
+      "gate": "G6.3-gates\\targeted-ai-1356373b6b5c0fff68ca77a1164e0f6f4e7b32cd7ffe73a0e697c473dc7a84aa.json",
+      "fingerprint": "245f9641161472d4f4832005d4a0d042ff203bc4a97fa64d481b8a46d00d5905",
+      "status": "Passed",
+      "rawExactInputs": 1302,
+      "deltas": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "88C8F842B7F1C899E55137373791C6E9CFB62E99E3C7F7103BF07A67C7A48C9D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "A8B3B97ADF7D8470E6680ABF3B99837D95E44AFBF2B60F628F82D0BF39375E87",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.3-gates\\targeted-ai-d15b87be32b51d1d73ed075e690b2d5769c6b39466c1b5fa8a8c73526c7a16fa.json",
+      "fingerprint": "c87dedd564355dbccbd852c3bea0baf4aa29f7cf153b0328bc2c554f3404f7e4",
+      "status": "Passed",
+      "rawExactInputs": 1304,
+      "deltas": [
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "A8B3B97ADF7D8470E6680ABF3B99837D95E44AFBF2B60F628F82D0BF39375E87",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    },
+    {
+      "gate": "G6.3-gates\\targeted-ai-dc5a270113b22b175b9db1ff6f735e3be114cd19f01ecd15939403c8023b0fe0.json",
+      "fingerprint": "68a968b34bba1d9f796c301399c056a8b5ef0cf9ec2cd480d0c7c940641d68db",
+      "status": "Failed",
+      "rawExactInputs": 1302,
+      "deltas": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "recorded": "027CFE6243D7479A5D1F2CA709D27E9EAEB4C5F66A8C1713C137AA1EB9C196AB",
+          "current": "9515ce29d739d675dd32d3f3075e79b29a2e18b61b12a3b51bfa83b9b5ca735a",
+          "disposition": "G6.3 bridge guard, tested adapters and provider lifecycle74.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+          "recorded": "1F99AAB1B1583FBA27AF29A3F087EA75A902D45BA6672AB37F32AEEC417CBB7D",
+          "current": "27d700620d5e78fc449f7de76364e4ef4c663ed637b5adc8bda064a4fcade59d",
+          "disposition": "G6.3 bridge regression and full adapter rerun.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "recorded": "E18DB3499F79FB494EEF29A049DA6ED9C5F52C7D37CA053AA4A36C7AE1E9F6C9",
+          "current": "0d2cc0bb9759ff4300ede5fa07ff1834038f44d89a6385d53c3deddecf542d7f",
+          "disposition": "G6.3 appended no-key test passed; existing tests unchanged.",
+          "crlfOnly": false
+        },
+        {
+          "path": "test/screens/ai_tutor_screen_test.dart",
+          "recorded": "A8B3B97ADF7D8470E6680ABF3B99837D95E44AFBF2B60F628F82D0BF39375E87",
+          "current": "4156bcd3140610e6d78ecdda0822ec766118a665272aacdf42e1351b0e452f73",
+          "disposition": "G6.2 regression and G6.3 no-key coverage; no old tests removed.",
+          "crlfOnly": false
+        }
+      ]
+    }
+  ],
+  "reviewedRuntimeDelta": [
+    "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+    "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+    "lib/runtime/app_bootstrap.dart",
+    "lib/screens/ai_tutor_screen.dart",
+    "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+    "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+    "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+    "test/screens/ai_tutor_screen_test.dart"
+  ],
+  "unchangedBaselineAndEvaluation": [
+    "lib/features/device_model/domain/model_manifest.dart",
+    "tools/camera_development_evaluation.py"
+  ],
+  "globalFingerprintEquivalent": false,
+  "reuseDecision": "Use-case/bootstrap/Gemini original tests retained for unchanged behavior; UI40 and adapters74 supersede affected paths; five new sockets and two no-key tests supplement. Raw red failures are not reusable PASS.",
+  "limitations": "No physical/live/fullrelease claim. CRLF-only normalized source is not raw equality."
+}

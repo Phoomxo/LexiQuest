@@ -18,6 +18,32 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets('B13 missing key displays setup and no canned answer', (
+    tester,
+  ) async {
+    final tutor = _FakeAiTutor()
+      ..hasKey = false
+      ..replyFailure = const AiTutorException(AiFailureCode.missingKey);
+    await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('ตั้งค่าบัญชีและรหัสเชื่อมต่อของผู้ให้บริการ AI ก่อนเริ่ม'),
+      findsOneWidget,
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'hello',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('เพิ่มรหัสเชื่อมต่อในการตั้งค่าผู้ให้บริการ AI'),
+      findsOneWidget,
+    );
+    expect(find.text('Live Gemini reply'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('B13 explicit microphone cancel failure preserves draft', (
     tester,
   ) async {

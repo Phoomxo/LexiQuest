@@ -61,6 +61,18 @@ void main() {
     );
   }
 
+  test('B13 missing key does not begin usage or invoke gateway', () async {
+    await store.deleteCredential();
+    final tutor = createTutor();
+    addTearDown(tutor.dispose);
+    await expectLater(
+      tutor.reply(scenario: 'Cafe', learnerMessage: 'hello'),
+      throwsA(_aiFailure(AiFailureCode.missingKey)),
+    );
+    expect(gateway.generateCalls, 0);
+    expect(await tutor.loadUsage(), isEmpty);
+  });
+
   test('B13 context-free request retires the previous conversation', () async {
     var id = 0;
     final tutor = createTutor(eventId: () => 'reset-${id++}');

@@ -270,7 +270,11 @@ final class GeminiRestGatewayAdapter implements AiTutorGateway {
   GeminiCancellation? _bridge(AiCancellation? cancellation) {
     if (cancellation == null) return null;
     final gemini = GeminiCancellation();
-    cancellation.whenCancelled.then((_) => gemini.cancel());
+    if (cancellation.isCancelled) {
+      gemini.cancel();
+    } else {
+      cancellation.whenCancelled.then((_) => gemini.cancel());
+    }
     return gemini;
   }
 

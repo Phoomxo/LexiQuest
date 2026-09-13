@@ -1775,7 +1775,7 @@
         "test/runtime/central_cost_policy_test.dart"
       ],
       "verificationKind": "targeted",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P6.2"
       ],
@@ -1785,7 +1785,8 @@
       ],
       "displayId": "G6.3",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G6.3.md",
-      "bundleId": "B13"
+      "bundleId": "B13",
+      "evidence": "docs/development/full-system/evidence/bundles/B13/G6.3-acceptance.json"
     },
     {
       "id": "P6.4",

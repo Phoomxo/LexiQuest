@@ -8,16 +8,75 @@ import 'package:vocab_learning_app/features/ai_tutor/data/anthropic_gateway.dart
 import 'package:vocab_learning_app/features/ai_tutor/data/openai_compatible_gateway.dart';
 import 'package:vocab_learning_app/features/ai_tutor/data/openai_responses_gateway.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/gemini/data/gemini_rest_gateway.dart';
+import 'package:vocab_learning_app/features/gemini/data/retry_gemini_gateway.dart';
+import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 
 // Actual local sockets and http.Client; all replies and credentials are
 // synthetic. This checks transport, not a live model's teaching quality.
 void main() {
+  for (final cancelBackoff in [false, true]) {
+    test(
+      'B13 Gemini real socket retry bounded cancel=$cancelBackoff',
+      () async {
+        final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+        final client = http.Client();
+        addTearDown(() async {
+          client.close();
+          await server.close(force: true);
+        });
+        var requests = 0;
+        server.listen((request) async {
+          await request.drain<void>();
+          requests++;
+          request.response.statusCode = 503;
+          request.response.write('{}');
+          await request.response.close();
+        });
+        final cancellation = GeminiCancellation();
+        final gateway = RetryGeminiGateway(
+          GeminiRestGateway(
+            client: client,
+            baseUri: Uri.parse('http://127.0.0.1:${server.port}/'),
+            model: 'synthetic-model',
+          ),
+          baseDelay: Duration.zero,
+          totalTimeout: const Duration(seconds: 5),
+          delay: cancelBackoff
+              ? (_, linked) async {
+                  cancellation.cancel();
+                  await linked!.whenCancelled;
+                }
+              : null,
+        );
+        await expectLater(
+          gateway.generateTutorReply(
+            key: 'synthetic-key-long-enough-123456',
+            scenario: 'Cafe',
+            learnerMessage: 'hello',
+            cancellation: cancellation,
+          ),
+          throwsA(
+            isA<GeminiException>().having(
+              (e) => e.code,
+              'code',
+              cancelBackoff
+                  ? GeminiFailureCode.cancelled
+                  : GeminiFailureCode.providerUnavailable,
+            ),
+          ),
+        );
+        expect(requests, cancelBackoff ? 1 : 3);
+      },
+    );
+  }
   for (final provider in ['responses', 'compatible', 'anthropic']) {
     for (final scenario in [
       'reply',
       'invalid-key',
       'quota',
       'rate-limit',
+      'B13-server-error',
       'malformed',
       'timeout',
       'cancel',
@@ -53,6 +112,7 @@ void main() {
             'invalid-key' => 401,
             'quota' => 402,
             'rate-limit' => 429,
+            'B13-server-error' => 503,
             _ => 200,
           };
           final body = scenario == 'reply'
@@ -158,6 +218,7 @@ void main() {
             'invalid-key' => AiFailureCode.invalidKey,
             'quota' => AiFailureCode.quota,
             'rate-limit' => AiFailureCode.rateLimited,
+            'B13-server-error' => AiFailureCode.providerUnavailable,
             'timeout' => AiFailureCode.timeout,
             _ => AiFailureCode.malformedResponse,
           };

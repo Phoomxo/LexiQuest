@@ -43,7 +43,15 @@
         "Repair demonstrated gaps",
         "Run bounded affected subsystem checks and review all B13 changes",
         "Commit accepted results and durable receipts before one B14 dispatch"
-      ]
+      ],
+      "actualFiles": [
+        "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+        "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+        "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+        "test/screens/ai_tutor_screen_test.dart",
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart"
+      ],
+      "diagnosis": "Gemini cancellation bridge only subscribed asynchronously; pre-cancelled token started HTTP. Reproduced with recording client, synchronously copy isCancelled; add bounded real socket5xx/retry/cancel and no-key coverage. Secure storage/usage/cost existing contracts retained."
     }
   ],
   "verification": "tool/cli/verify-scope.ps1 Targeted AI with explicit targets; reuse passed unchanged input closure; no full release",

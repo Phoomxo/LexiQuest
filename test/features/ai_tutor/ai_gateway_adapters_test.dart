@@ -4,11 +4,30 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocab_learning_app/features/ai_tutor/data/anthropic_gateway.dart';
+import 'package:vocab_learning_app/features/ai_tutor/data/ai_tutor_gateway_factory.dart';
 import 'package:vocab_learning_app/features/ai_tutor/data/openai_compatible_gateway.dart';
 import 'package:vocab_learning_app/features/ai_tutor/data/openai_responses_gateway.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 
 void main() {
+  test('B13 pre-cancelled Gemini bridge sends no HTTP request', () async {
+    final client = _RecordingClient((_, _) async => _response(200, '{}'));
+    final gateway = AiTutorGatewayFactory(
+      client: client,
+    ).create(providerId: AiProviderId.gemini, model: 'synthetic-model');
+    final cancellation = AiCancellation()..cancel();
+    await expectLater(
+      gateway.generateTutorReply(
+        key: 'synthetic-key-long-enough-123456',
+        scenario: 'Cafe',
+        learnerMessage: 'hello',
+        cancellation: cancellation,
+      ),
+      throwsA(_aiFailure(AiFailureCode.cancelled)),
+    );
+    expect(client.requests, isEmpty);
+  });
+
   test(
     'R15 configured lower cap and Unicode latest bounds apply to all adapters',
     () async {
