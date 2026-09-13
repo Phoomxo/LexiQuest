@@ -1,0 +1,1 @@
+{"inheritedVerified": 45, "gatesAudited": 12, "productionDelta": ["lib/features/learning/application/native_mode_adapters.dart", "lib/features/media_practice/application/speech_practice_use_cases.dart", "lib/screens/dictation_quiz_screen.dart", "lib/screens/shadowing_challenge_screen.dart", "lib/screens/speak_to_text_screen.dart"]}

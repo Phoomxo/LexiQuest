@@ -13,6 +13,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -35,7 +36,15 @@
     "status": "Passed",
     "fingerprint": "df8a37ccf2ec11960d9ae733abda984aeee242f66271b141862cbf9b27e8bc91",
     "inputCount": 1307,
-    "currentInputMismatches": [],
+    "currentInputMismatches": [
+      "lib/features/learning/application/native_mode_adapters.dart",
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/architecture/lesson_mode_adapter_coverage_test.dart",
+      "test/features/learning/native_mode_adapters_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/shadowing_challenge_screen_test.dart"
+    ],
     "logs": [
       {
         "path": "docs/development/full-system/evidence/bundles/B14/gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/9d3f2abdbe45-df8a37ccf2ec/Explicit-Flutter-tests.stdout.log",
@@ -63,6 +72,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -86,9 +96,13 @@
     "fingerprint": "ff3f446e36f6f9e7adab013b0703a9be933b4636b0ac2546600a42e11efe3834",
     "inputCount": 1306,
     "currentInputMismatches": [
+      "lib/features/learning/application/native_mode_adapters.dart",
       "lib/screens/dictation_quiz_screen.dart",
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
-      "test/screens/dictation_quiz_screen_test.dart"
+      "test/features/learning/native_mode_adapters_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/shadowing_challenge_screen_test.dart"
     ],
     "logs": [
       {
@@ -108,7 +122,15 @@
     "status": "Passed",
     "fingerprint": "df8a37ccf2ec11960d9ae733abda984aeee242f66271b141862cbf9b27e8bc91",
     "inputCount": 1307,
-    "currentInputMismatches": [],
+    "currentInputMismatches": [
+      "lib/features/learning/application/native_mode_adapters.dart",
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/architecture/lesson_mode_adapter_coverage_test.dart",
+      "test/features/learning/native_mode_adapters_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
+      "test/screens/dictation_quiz_screen_test.dart",
+      "test/screens/shadowing_challenge_screen_test.dart"
+    ],
     "logs": [
       {
         "path": "docs/development/full-system/evidence/bundles/B14/gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/2349f349047a-df8a37ccf2ec/Explicit-Flutter-tests.stdout.log",
@@ -117,6 +139,69 @@
       },
       {
         "path": "docs/development/full-system/evidence/bundles/B14/gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/2349f349047a-df8a37ccf2ec/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-374056d584803873dfd1beda3697bf2ea5c3479ff4e41caca7b3c08441a070bc.json",
+    "status": "Passed",
+    "fingerprint": "1a0085e86380a7134167085d547f5cc2c4f1167d76468f15b01353892096f58e",
+    "inputCount": 1308,
+    "currentInputMismatches": [
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/e43bb800b790-1a0085e86380/Explicit-Flutter-tests.stdout.log",
+        "sha256": "0f14b73efda94ed5ec0ad0ebca4b9222eefbe19e0a8b829936b8c5da5c5c6c8c",
+        "bytes": 45186
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/e43bb800b790-1a0085e86380/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-4b2dc8a10374824ddb113e274d4db95914481229a6b59904068c5ae8e4fd57d9.json",
+    "status": "Failed",
+    "fingerprint": "57c2210e65577d95a384f932eae0a03592daefc24acc0329a2d3fd9ae4b4f8b0",
+    "inputCount": 1308,
+    "currentInputMismatches": [
+      "lib/screens/dictation_quiz_screen.dart",
+      "test/screens/dictation_quiz_screen_test.dart"
+    ],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/25da346b6dde-57c2210e6557/Explicit-Flutter-tests.stdout.log",
+        "sha256": "aeef868ed517cf6a21022b33d4836e55c0529d5d1253794319c3bec60558644d",
+        "bytes": 17644
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/25da346b6dde-57c2210e6557/Explicit-Flutter-tests.stderr.log",
+        "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+        "bytes": 394
+      }
+    ]
+  },
+  {
+    "manifest": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/targeted-ai-9d6088b31bb751539cec71a9922f144facb8ccb027535e4460e7194dc1cce1f0.json",
+    "status": "Passed",
+    "fingerprint": "a659e0a9808f4ab1af9fb01dbae94e97fd4ca7be735dd67b68fd7bbe49a175ce",
+    "inputCount": 1308,
+    "currentInputMismatches": [],
+    "logs": [
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/32da4eb2ba53-a659e0a9808f/Explicit-Flutter-tests.stdout.log",
+        "sha256": "55c18e7ac946f9acd96e4bb98fc651fd676482f18946b6d0c9038022b7676f34",
+        "bytes": 23478
+      },
+      {
+        "path": "docs/development/full-system/evidence/bundles/B14/gates/295413dc6f1e19e3400804efff7f21f6e5e1f655/32da4eb2ba53-a659e0a9808f/Explicit-Flutter-tests.stderr.log",
         "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
         "bytes": 394
       }
@@ -137,6 +222,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -169,6 +255,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -201,6 +288,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -233,6 +321,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -265,6 +354,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"
@@ -297,6 +387,7 @@
       "test/architecture/lesson_mode_adapter_coverage_test.dart",
       "test/features/learning/native_mode_adapters_test.dart",
       "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
       "test/screens/dictation_quiz_screen_test.dart",
       "test/screens/shadowing_challenge_screen_test.dart",
       "test/screens/speak_to_text_screen_voice_test.dart"

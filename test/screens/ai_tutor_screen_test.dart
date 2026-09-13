@@ -18,6 +18,23 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets('B14 scripted wrong answer stays visible for quality review', (
+    tester,
+  ) async {
+    const wrong = 'ประโยค He go to school every day. ถูกต้องแล้ว';
+    final tutor = _FakeAiTutor()..replyText = wrong;
+    await tester.pumpWidget(MaterialApp(home: AiTutorScreen(aiTutor: tutor)));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('ai-tutor-input')),
+      'ช่วยแก้ He go to school every day.',
+    );
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+    await tester.pumpAndSettle();
+    expect(find.text(wrong), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    // Rubric G1 correctness=0: visible transport success is not quality PASS.
+  });
   testWidgets('B13 missing key displays setup and no canned answer', (
     tester,
   ) async {

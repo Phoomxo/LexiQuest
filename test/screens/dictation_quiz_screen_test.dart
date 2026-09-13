@@ -36,6 +36,39 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets(
+    'replaying during pending audio ignores superseded cancellation',
+    (tester) async {
+      final provider = FakeVoiceProvider()..allowPlayback = Completer<void>();
+      final voice = VoiceUseCases(
+        provider: provider,
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DictationQuizScreen(targetWord: 'station', voice: voice),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.volume_up));
+      await tester.pump();
+      provider.allowPlayback!.complete();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('media-dependency-unavailable')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
   testWidgets('pending initial audio cannot submit before failed start', (
     tester,
   ) async {

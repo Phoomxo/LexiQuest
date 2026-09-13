@@ -50,6 +50,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   bool _initialPlaybackScheduled = false;
   bool _audioUnavailable = false;
   bool _audioReady = false;
+  int _audioEpoch = 0;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
   bool _supportUsed = false;
@@ -107,6 +108,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     if (speed < 1) _supportUsed = true;
     final session = routeVoiceSession;
     if (session == null) return;
+    final epoch = ++_audioEpoch;
     try {
       await session.speak(
         VoiceRequest.create(
@@ -120,6 +122,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
         ),
       );
       if (mounted &&
+          epoch == _audioEpoch &&
           identical(session, routeVoiceSession) &&
           session.isCurrent &&
           !_audioUnavailable) {
@@ -127,6 +130,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
       }
     } on Object {
       if (mounted &&
+          epoch == _audioEpoch &&
           identical(session, routeVoiceSession) &&
           !_interactionLocked &&
           (_lifecycle?.acceptsOperations ?? true)) {
