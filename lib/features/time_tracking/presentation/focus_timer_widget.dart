@@ -72,8 +72,15 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
     });
   }
 
-  Future<void> _run(Future<void> Function() action) async {
-    if (_transitionPending) return;
+  Future<void> _run(
+    FocusTimerController controller,
+    Future<void> Function() action,
+  ) async {
+    if (!mounted ||
+        !identical(controller, widget.controller) ||
+        _transitionPending) {
+      return;
+    }
     setState(() {
       _transitionPending = true;
       _failure = null;
@@ -81,9 +88,9 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
     try {
       await action();
     } catch (error) {
-      _failure = error;
+      if (mounted && identical(controller, widget.controller)) _failure = error;
     } finally {
-      if (mounted) {
+      if (mounted && identical(controller, widget.controller)) {
         setState(() {
           _transitionPending = false;
           _syncTicker();
@@ -94,7 +101,8 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final snapshot = widget.controller.snapshot;
+    final controller = widget.controller;
+    final snapshot = controller.snapshot;
     final statusLabel = switch (snapshot.status) {
       FocusTimerStatus.notStarted => 'พร้อมเริ่ม',
       FocusTimerStatus.running => 'กำลังเรียน',
@@ -167,7 +175,10 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                       key: const ValueKey<String>('focus-timer/start'),
                       onPressed: _transitionPending
                           ? null
-                          : () => _run(() => widget.onStart(widget.nowUtc())),
+                          : () => _run(
+                              controller,
+                              () => widget.onStart(widget.nowUtc()),
+                            ),
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('เริ่มจับเวลา'),
                     ),
@@ -176,7 +187,10 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                       key: const ValueKey<String>('focus-timer/pause'),
                       onPressed: _transitionPending
                           ? null
-                          : () => _run(() => widget.onPause(widget.nowUtc())),
+                          : () => _run(
+                              controller,
+                              () => widget.onPause(widget.nowUtc()),
+                            ),
                       icon: const Icon(Icons.pause),
                       label: const Text('พัก'),
                     ),
@@ -185,7 +199,10 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                       key: const ValueKey<String>('focus-timer/resume'),
                       onPressed: _transitionPending
                           ? null
-                          : () => _run(() => widget.onResume(widget.nowUtc())),
+                          : () => _run(
+                              controller,
+                              () => widget.onResume(widget.nowUtc()),
+                            ),
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('ทำต่อ'),
                     ),
@@ -195,7 +212,10 @@ final class _FocusTimerWidgetState extends State<FocusTimerWidget> {
                       key: const ValueKey<String>('focus-timer/finish'),
                       onPressed: _transitionPending
                           ? null
-                          : () => _run(() => widget.onFinish(widget.nowUtc())),
+                          : () => _run(
+                              controller,
+                              () => widget.onFinish(widget.nowUtc()),
+                            ),
                       icon: const Icon(Icons.stop),
                       label: const Text('จบการจับเวลา'),
                     ),

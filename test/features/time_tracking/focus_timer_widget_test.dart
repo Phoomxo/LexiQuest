@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
@@ -8,6 +10,72 @@ import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_s
 import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
 
 void main() {
+  testWidgets('G4.3 replaced timer rejects captured actions and old failures', (
+    tester,
+  ) async {
+    final now = DateTime.utc(2026, 9, 13);
+    FocusTimerController controller() {
+      final time = ActiveLearningTimeController(
+        repository: _MemoryLearningTimeRepository(),
+        monotonicMicros: () => 0,
+        nowUtc: () => now,
+        timezoneContext: (_) => const LearningTimeZoneContext(
+          timezoneId: 'Asia/Bangkok',
+          utcOffsetMinutes: 420,
+        ),
+      );
+      addTearDown(time.dispose);
+      final timer = FocusTimerController(timeAuthority: time);
+      addTearDown(timer.dispose);
+      return timer;
+    }
+
+    final old = controller();
+    final next = controller();
+    final oldPending = Completer<void>();
+    final nextPending = Completer<void>();
+    addTearDown(() {
+      if (!oldPending.isCompleted) oldPending.complete();
+      if (!nextPending.isCompleted) nextPending.complete();
+    });
+    var nextCalls = 0;
+    Widget app(FocusTimerController timer) => MaterialApp(
+      home: Scaffold(
+        body: FocusTimerWidget(
+          controller: timer,
+          nowUtc: () => now,
+          onStart: (_) {
+            if (identical(timer, old)) return oldPending.future;
+            nextCalls++;
+            return nextPending.future;
+          },
+          onPause: (_) async {},
+          onResume: (_) async {},
+          onFinish: (_) async {},
+        ),
+      ),
+    );
+    await tester.pumpWidget(app(old));
+    final key = find.byKey(const ValueKey('focus-timer/start'));
+    final captured = tester.widget<FilledButton>(key).onPressed!;
+    await tester.tap(key);
+    await tester.pump();
+    await tester.pumpWidget(app(next));
+    captured();
+    await tester.pump();
+    expect(nextCalls, 0);
+    await tester.tap(key);
+    await tester.pump();
+    oldPending.completeError(StateError('old owner failed'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('focus-timer/error')), findsNothing);
+    expect(tester.widget<FilledButton>(key).onPressed, isNull);
+    nextPending.complete();
+    await tester.pump();
+    expect(nextCalls, 1);
+    expect(tester.widget<FilledButton>(key).onPressed, isNotNull);
+  });
+
   testWidgets(
     'narrow 200 percent text keeps the timer heading duration and action visible',
     (tester) async {

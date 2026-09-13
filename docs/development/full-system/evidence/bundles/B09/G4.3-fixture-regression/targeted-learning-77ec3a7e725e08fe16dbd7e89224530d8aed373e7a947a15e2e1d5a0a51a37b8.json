@@ -1,23 +1,27 @@
 {
   "schemaVersion": "verify-scope-v2",
-  "headSha": "d8f3b1547f1c0376b324465618eadcdd5682b139",
-  "baseSha": "d8f3b1547f1c0376b324465618eadcdd5682b139",
+  "headSha": "40c724cef3275de9a25f21aa4472592b8cdbc0b6",
+  "baseSha": "40c724cef3275de9a25f21aa4472592b8cdbc0b6",
   "level": "Targeted",
   "area": "Learning",
-  "fingerprint": "f65c596a6c63bfc563264270aa40e5671394cdc93d030520aa6c7edd13b7151b",
-  "environmentFingerprint": "878f67663aa74329c3bc26ddae22774cd528dd227d2a013d162a6c9cfdaa3195",
+  "fingerprint": "0092e04200d8c5e05d41813ad75e91a8a3f44f8cf51a661b1dc855b633a951f1",
+  "environmentFingerprint": "4ecadc63ca32c80959f5a742806481a9b18a10f8c72fc9ac0a96bcc373d9f0fe",
   "selection": [
     {
       "Name": "Explicit Flutter tests",
       "FilePath": "flutter",
       "Arguments": [
         "test",
-        "test/widgets/recommendation_panel_test.dart",
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
         "--reporter",
         "compact"
       ],
       "SourceArea": "Learning",
-      "commandKey": "16c3f9fe2008f85a16daaf241ee7263477982971ddf5e78281b468db10c4e60e"
+      "commandKey": "c13fa16c8f26784a6eb48657b2b00b2155fe066d034409ab50df773765f219ea"
     }
   ],
   "inputClosure": [
@@ -199,7 +203,7 @@
     {
       "area": "Learning",
       "path": ".gitattributes",
-      "sha256": "7480BC8DFD0C0BEA52D57FE470B05108029CE93E7863C5FF47CB85B8AD61C0F1"
+      "sha256": "6D3A7A16CA7E5EC80E08BA56E3B590D4619BA02F56865E040C307EE235B38E8E"
     },
     {
       "area": "Learning",
@@ -864,17 +868,17 @@
     {
       "area": "Learning",
       "path": "lib/features/goals/application/learning_goal_use_cases.dart",
-      "sha256": "4EC7B1B9F1881A02FD26F97509836489EDCB651FE15D489929A3695FE7BBCA9E"
+      "sha256": "15A48732B6885C34B6F993452DE11DBA3FC3282E4C59ACE17B80435535167626"
     },
     {
       "area": "Learning",
       "path": "lib/features/goals/data/drift_learning_goal_repository.dart",
-      "sha256": "A4C1F5D5964DB6466985317F7DAF1DCCBB06227D0CB92EE3E04E13C839A667B6"
+      "sha256": "7DF4AF1C290EA3104E4EF2491E77CA3AD75CAAE25EC54B7D8B6F86212833826E"
     },
     {
       "area": "Learning",
       "path": "lib/features/goals/domain/learning_goal.dart",
-      "sha256": "BC78F686B7B0576B4E14E001B2994DC74FDE338998E8A913C0D12DFA7E35FF05"
+      "sha256": "CBC8DBBE0B7625D6D139DD2C9C6CAFF1C301857265185FAE43BB14A6FD3DDD3F"
     },
     {
       "area": "Learning",
@@ -1984,7 +1988,7 @@
     {
       "area": "Learning",
       "path": "lib/features/time_tracking/application/focus_timer_controller.dart",
-      "sha256": "CE23ACACAB55285789F8E363081DAABB3414BED62BB8AAE7D50D34C729F40E2C"
+      "sha256": "03C845C78C1D3B80F5F6FC8F76A0E919002F387032B441CC8C0A95912ACF1D80"
     },
     {
       "area": "Learning",
@@ -2359,7 +2363,7 @@
     {
       "area": "Learning",
       "path": "lib/runtime/app_bootstrap.dart",
-      "sha256": "E76130B5D0B4014757757D8433AF63E0FE3D2474508DF55C4DE018210BE3916B"
+      "sha256": "DE0C8F8910943A2A39CB3D88625428372B248B391D751D69DE6328DCAC098774"
     },
     {
       "area": "Learning",
@@ -2614,7 +2618,7 @@
     {
       "area": "Learning",
       "path": "lib/screens/learning_goals_screen.dart",
-      "sha256": "BEC642A12E2DB485831D965D3D2C45FD8ACA1D0C068B175C0225F3C72552F6CF"
+      "sha256": "7A245D7C3D6D7F54A0E78F569C4D48A402A8632D639DF4B21FBF9CF276D1269E"
     },
     {
       "area": "Learning",
@@ -3274,7 +3278,7 @@
     {
       "area": "Learning",
       "path": "lib/widgets/recommendation_panel.dart",
-      "sha256": "87AEF4274FB10069CDB31907CDF4943A04FFAA8ECB3083F6A377C7708542093F"
+      "sha256": "2ADBABDBD2250FB938886A3A9715DD3880AD01366E94DCFF82B2D2265BD3F9D0"
     },
     {
       "area": "Learning",
@@ -4109,7 +4113,7 @@
     {
       "area": "Learning",
       "path": "test/features/goals/learning_goal_use_cases_test.dart",
-      "sha256": "993B5ACE7BADBC280C7CB4549EB7007897565BF5231876696CED7480440FDA2C"
+      "sha256": "AC3C6EDA25E63D0B7962212EBAFAB7D8F7C67277FEF408F67CD7EEFEF7F92905"
     },
     {
       "area": "Learning",
@@ -5199,7 +5203,7 @@
     {
       "area": "Learning",
       "path": "test/features/time_tracking/focus_timer_controller_test.dart",
-      "sha256": "C2156C29E947C302B3D8686C42D18C2B4073C42CD2C350EB14DD6F015BA75C88"
+      "sha256": "DD06069A204A9C43441BA57CC5E0C09BA271B288A4585399E6EF488617563D61"
     },
     {
       "area": "Learning",
@@ -5324,7 +5328,7 @@
     {
       "area": "Learning",
       "path": "test/runtime/app_bootstrap_test.dart",
-      "sha256": "F738B41E43D0B969E67B8590B04C97F9AE4E946FF7A61ED5CCE7F32BDF419E3D"
+      "sha256": "4032564226BA4A072F1472B54DD44A1AE0BFA47A0B0D864FF8E4D6CDC3BF9820"
     },
     {
       "area": "Learning",
@@ -5579,7 +5583,7 @@
     {
       "area": "Learning",
       "path": "test/screens/learning_goals_screen_test.dart",
-      "sha256": "FE13BAB73D82BADC8F1AF72BF5344B5AFE5B34C0D2679DD1E77700CE6A030EB3"
+      "sha256": "549E81D04B758C53023777F4058FC337E0B3C63575036D003D8E3CCFBFC17D50"
     },
     {
       "area": "Learning",
@@ -6214,7 +6218,7 @@
     {
       "area": "Learning",
       "path": "test/widgets/recommendation_panel_test.dart",
-      "sha256": "26B01E8452463187CAB8A651D24D3EFF404A324EC5D31B11619D7F120E2C1B8A"
+      "sha256": "292197FBD9489120D9B2FDCF974F01CCE4A0A331032AFB5BC90B6259ECEE4A9E"
     },
     {
       "area": "Learning",
@@ -6553,21 +6557,21 @@
     }
   ],
   "timeoutSeconds": 600,
-  "startedAt": "2026-09-13T15:41:52.7489305+00:00",
-  "finishedAt": "2026-09-13T15:42:14.5832068+00:00",
+  "startedAt": "2026-09-13T16:00:22.6219204+00:00",
+  "finishedAt": "2026-09-13T16:01:19.9512797+00:00",
   "status": "Failed",
   "commands": [
     {
       "Name": "Explicit Flutter tests",
-      "commandKey": "16c3f9fe2008f85a16daaf241ee7263477982971ddf5e78281b468db10c4e60e",
-      "fingerprint": "f65c596a6c63bfc563264270aa40e5671394cdc93d030520aa6c7edd13b7151b",
+      "commandKey": "c13fa16c8f26784a6eb48657b2b00b2155fe066d034409ab50df773765f219ea",
+      "fingerprint": "0092e04200d8c5e05d41813ad75e91a8a3f44f8cf51a661b1dc855b633a951f1",
       "Status": "Failed",
       "ExitCode": 1,
-      "StartedAt": "2026-09-13T15:41:54.7938071+00:00",
-      "FinishedAt": "2026-09-13T15:42:14.5288224+00:00",
-      "Stdout": "docs/development/full-system/evidence/bundles/B09/G4.1-panel-red/16c3f9fe2008-f65c596a6c63/Explicit-Flutter-tests.stdout.log",
-      "Stderr": "docs/development/full-system/evidence/bundles/B09/G4.1-panel-red/16c3f9fe2008-f65c596a6c63/Explicit-Flutter-tests.stderr.log",
-      "StdoutHash": "0A8016ED6F1B50DD688040671AC92DE08F18E87BA2F74A33DFF43B1850DF211A",
+      "StartedAt": "2026-09-13T16:00:24.1495772+00:00",
+      "FinishedAt": "2026-09-13T16:01:19.9046623+00:00",
+      "Stdout": "docs/development/full-system/evidence/bundles/B09/G4.3-fixture-regression/c13fa16c8f26-0092e04200d8/Explicit-Flutter-tests.stdout.log",
+      "Stderr": "docs/development/full-system/evidence/bundles/B09/G4.3-fixture-regression/c13fa16c8f26-0092e04200d8/Explicit-Flutter-tests.stderr.log",
+      "StdoutHash": "A685B68563B88A879F7E303959C293B6FBADFE7D778434FA363DADD3C46A2BD6",
       "StderrHash": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
     }
   ]

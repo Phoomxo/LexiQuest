@@ -292,7 +292,15 @@ final class FocusTimerController extends ChangeNotifier {
       switch (pending.kind) {
         case _FocusTransitionKind.start || _FocusTransitionKind.resume:
           if (timeAuthority.state == ActiveLearningTimeState.paused) {
-            throw StateError('cannot run focus while the lesson is paused');
+            if (pending.kind != _FocusTransitionKind.resume ||
+                _pauseReason != FocusTimerPauseReason.explicit) {
+              throw StateError('cannot run focus while the lesson is paused');
+            }
+            await timeAuthority.selectCaptureSourceWhileSuspended(
+              LearningTimeCaptureSource.focusTimer,
+            );
+            await timeAuthority.resumeObserved(pending.occurrence);
+            break;
           }
           await timeAuthority.transitionCaptureSourceObserved(
             LearningTimeCaptureSource.focusTimer,
@@ -301,7 +309,15 @@ final class FocusTimerController extends ChangeNotifier {
           break;
         case _FocusTransitionKind.pause || _FocusTransitionKind.finish:
           if (_status == FocusTimerStatus.running) {
-            if (timeAuthority.state == ActiveLearningTimeState.active) {
+            if (pending.kind == _FocusTransitionKind.pause &&
+                pending.pauseReason == FocusTimerPauseReason.explicit) {
+              // A break is not automatic lesson effort. A real learner
+              // interaction can reopen automatic capture from this boundary.
+              await timeAuthority.pauseObserved(pending.occurrence);
+              await timeAuthority.selectCaptureSourceWhileSuspended(
+                LearningTimeCaptureSource.automaticLesson,
+              );
+            } else if (timeAuthority.state == ActiveLearningTimeState.active) {
               await timeAuthority.transitionCaptureSourceObserved(
                 LearningTimeCaptureSource.automaticLesson,
                 pending.occurrence,

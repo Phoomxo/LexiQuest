@@ -39,6 +39,12 @@
       "cause": "Literal wildcard path used in bounded sync discovery",
       "status": "resolved",
       "id": "B09-TOOL-02"
+    },
+    {
+      "id": "B09-TOOL-03",
+      "cause": "Initial formula filename guess did not exist; CRLF source reported as whitespace by default diff check",
+      "fix": "Discovered G0.7-formula-registry.json before literal read; used cr-at-eol diff check for inherited CRLF. No application assertion or test disabled.",
+      "status": "resolved"
     }
   ],
   "external": [

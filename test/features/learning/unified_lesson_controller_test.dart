@@ -5316,6 +5316,11 @@ Future<_FocusLifecycleRaceFixture> _focusLifecycleRaceFixture(
       await fixture.controller.pauseFocusTimer(
         fixture.now.add(const Duration(seconds: 1)),
       );
+      // The race requires a real automatic interval to flush on focus resume.
+      // An untouched break now correctly produces no append to block/fail.
+      await fixture.controller.recordActiveLearningInteraction(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
       clock.advance(const Duration(seconds: 1));
       break;
   }

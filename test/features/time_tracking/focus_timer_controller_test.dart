@@ -7,6 +7,37 @@ import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_r
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 
 void main() {
+  test('G4.3 explicit 60 second break adds no automatic effort', () async {
+    final repository = _MemoryRepository();
+    final clock = _FakeTimeAuthority(
+      utc: DateTime.utc(2026, 9, 13),
+      monotonicMicros: 0,
+    );
+    final active = _activeTime(repository, clock);
+    final timer = FocusTimerController(timeAuthority: active);
+    await active.start(sessionId: 'session-break', occurredAtUtc: clock.utc);
+    timer.attachSession('session-break');
+    await timer.start(occurredAtUtc: clock.utc);
+    clock.advance(const Duration(seconds: 10));
+    await timer.pause(occurredAtUtc: clock.utc);
+    clock.advance(const Duration(seconds: 60));
+    await timer.resume(occurredAtUtc: clock.utc);
+    clock.advance(const Duration(seconds: 5));
+    await timer.finish(occurredAtUtc: clock.utc);
+    await active.finish(occurredAtUtc: clock.utc);
+    expect(timer.snapshot.activeDuration, const Duration(seconds: 15));
+    expect(
+      await repository.activeDuration('session-break'),
+      const Duration(seconds: 15),
+    );
+    expect(
+      repository.segments.map((s) => s.captureSource),
+      everyElement(LearningTimeCaptureSource.focusTimer),
+    );
+    timer.dispose();
+    active.dispose();
+  });
+
   test(
     'focus rollout is implemented-off by default and emergency-off wins',
     () {
@@ -41,6 +72,11 @@ void main() {
         ..monotonicMicros += const Duration(seconds: 30).inMicroseconds
         ..utc = DateTime.utc(2026, 8, 24, 8, 59, 55);
       await timer.pause(occurredAtUtc: clock.utc);
+      // This case keeps learning while only the focus stopwatch is paused.
+      // A separate 60-second-break case proves absence of interaction adds zero.
+      await activeTime.recordAutomaticInteractionObserved(
+        activeTime.observe(clock.utc),
+      );
       clock
         ..monotonicMicros += const Duration(seconds: 2).inMicroseconds
         ..utc = DateTime.utc(2026, 8, 24, 9, 1);

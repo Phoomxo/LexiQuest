@@ -1,0 +1,16 @@
+{
+  "manifest": "docs/development/full-system/evidence/bundles/B09/G4.3-break-red/targeted-learning-bd48d9afa5d9ce989ade50672b607d64a6ea1134ef365ecca9abde68219f9ba1.json",
+  "status": "Failed",
+  "fingerprint": "2e398b5a365d193a697ac0aeeb1beb191efb13621066d9a772585b85d3749582",
+  "inputCount": 1306,
+  "logs": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.3-break-red/33d15bcc166b-2e398b5a365d/Explicit-Flutter-tests.stdout.log",
+      "sha256": "b582f5700ba058441cca97693804f06b777b3bb65cb9baceb8fb3a8bc4101ec5"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B09/G4.3-break-red/33d15bcc166b-2e398b5a365d/Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
+    }
+  ]
+}

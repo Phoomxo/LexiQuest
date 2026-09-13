@@ -1,0 +1,64 @@
+{
+  "packageId": "G4.3",
+  "bundleId": "B09",
+  "requirements": [
+    "COV-f23",
+    "COV-f24",
+    "FORM-06",
+    "G4"
+  ],
+  "design": "An explicit focus break closes the shared time authority and selects automatic capture while suspended. Explicit resume opens focus at the observed resume boundary; an actual lesson interaction may reopen automatic capture. No second time calculator or retrospective segment rewrite.",
+  "alternatives": [
+    "Chosen: suspend capture on explicit focus pause, preserve continued learning through observed interactions",
+    "Rejected: keep automatic capture running across a break, which measured 75 seconds for 15 seconds of learning",
+    "Rejected: disable automatic effort permanently after timer pause, which would lose actual later learning"
+  ],
+  "defects": [
+    {
+      "id": "B09-G43-01",
+      "status": "resolved",
+      "cause": "Explicit focus pause immediately reopened automaticLesson capture",
+      "expected": "10 seconds learning + 60 seconds break + 5 seconds learning = 15 seconds",
+      "actual": "75 seconds before fix",
+      "red": "G4.3-break-red",
+      "fix": "Suspend shared authority and resume only at observed user action"
+    },
+    {
+      "id": "B09-G43-02",
+      "status": "resolved",
+      "cause": "Widget callbacks and async failure/completion were not bound to the original controller",
+      "red": "G4.3-widget-red",
+      "fix": "Controller identity guards at invocation, failure and completion"
+    },
+    {
+      "id": "B09-FIXTURE-02",
+      "status": "resolved",
+      "cause": "Old lifecycle race fixture expected an automatic interval to exist during an untouched break",
+      "evidence": "G4.3-fixture-regression",
+      "recovery": "Stopped the verified B09 flutter_tester process waiting for an obsolete append boundary. Added real learner interaction before opening the automatic interval; retained all blocked-write/failure/retry/lifecycle assertions. Separate 60-second-break regression proves no-interaction effort stays zero."
+    }
+  ],
+  "review": [
+    "Existing FocusTimerController and ActiveLearningTimeController share one repository and monotonic observation authority",
+    "Explicit pause uses existing frozen-segment retry; no old segment duration is altered",
+    "Background and emergency-off transitions retain existing handling and are covered by real shell lifecycle tests",
+    "Preview bootstrap promotes existing capture and timer rollouts to internal while retaining emergency-off",
+    "Composition checks adapter capability, exact registered feature and shared active-time controller",
+    "Mastery dashboard remains available without an hours threshold; noEvidence stays distinct from low skill"
+  ],
+  "verification": {
+    "timerAndDashboardTests": 184,
+    "timerAndDashboardReceipt": "G4.3-green/receipt.json",
+    "realQuizRouteTests": 1,
+    "realQuizRouteReceipt": "G4.3-route-final/receipt.json",
+    "finalBundleRegression": "B09-final/receipt.json",
+    "analyzer": "G4.3-analyzer.log",
+    "countPolicy": "Package test counts overlap final bundle regression; do not add as unique total"
+  },
+  "requiredOpenDefects": [],
+  "external": [
+    "Physical/manual screen-reader/live/binary flags/full release NOT RUN",
+    "G4 phase gate belongs to G4.6 in B10",
+    "Effective service tier unverified"
+  ]
+}

@@ -6565,8 +6565,8 @@
       "ExitCode": 1,
       "StartedAt": "2026-09-13T15:41:54.7938071+00:00",
       "FinishedAt": "2026-09-13T15:42:14.5288224+00:00",
-      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\4b68\\LexiQuest\\build\\verification\\d8f3b1547f1c0376b324465618eadcdd5682b139\\16c3f9fe2008-f65c596a6c63\\Explicit-Flutter-tests.stdout.log",
-      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\4b68\\LexiQuest\\build\\verification\\d8f3b1547f1c0376b324465618eadcdd5682b139\\16c3f9fe2008-f65c596a6c63\\Explicit-Flutter-tests.stderr.log",
+      "Stdout": "docs/development/full-system/evidence/bundles/B09/G4.1-core-green/16c3f9fe2008-f65c596a6c63/Explicit-Flutter-tests.stdout.log",
+      "Stderr": "docs/development/full-system/evidence/bundles/B09/G4.1-core-green/16c3f9fe2008-f65c596a6c63/Explicit-Flutter-tests.stderr.log",
       "StdoutHash": "0A8016ED6F1B50DD688040671AC92DE08F18E87BA2F74A33DFF43B1850DF211A",
       "StderrHash": "45388781B89CEB414430C93AE56448A9C2C50529F7BA011EA1AB1E1D8F721D8A"
     }
