@@ -39,3 +39,12 @@ abstract interface class VocabularyRepository {
     required DateTime nowUtc,
   });
 }
+
+/// Atomically creates/reuses an owner category and word with canonical outbox.
+abstract interface class AtomicVocabularyCreationRepository {
+  Future<VocabularyWord> createOrReuseWordInCategory({
+    required VocabularyCategory category,
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+  });
+}

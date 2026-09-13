@@ -85,6 +85,41 @@ void main() {
     );
   }
 
+  test(
+    'B11 mutation expiry at commit rolls back category word and outbox',
+    () async {
+      var checks = 0;
+      await expectLater(
+        repository.createOrReuseWordInCategory(
+          category: category(),
+          word: word(1),
+          mutationAllowed: () => ++checks == 1,
+        ),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+      expect(checks, 2);
+      expect(
+        await database.select(database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      expect(await database.select(database.vocabularyWords).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+      await repository.createOrReuseWordInCategory(
+        category: category(),
+        word: word(1),
+        mutationAllowed: () => true,
+      );
+      expect(
+        await database.select(database.vocabularyWords).get(),
+        hasLength(1),
+      );
+      expect(
+        await database.select(database.outboxOperations).get(),
+        hasLength(2),
+      );
+    },
+  );
+
   test('category and word streams emit committed local changes', () async {
     final categories = repository
         .watchCategories('owner-1')

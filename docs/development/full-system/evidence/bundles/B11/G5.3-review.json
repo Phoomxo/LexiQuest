@@ -1,0 +1,84 @@
+{
+  "packageId": "G5.3",
+  "status": "local-accepted",
+  "requirements": [
+    "COV-f13",
+    "COV-f20",
+    "COV-f40",
+    "A-CAM",
+    "G5"
+  ],
+  "verification": {
+    "tests": 115,
+    "files": 11,
+    "manifest": "G5.3-final/targeted-learning-9b2f24f0c92c67c196b6882b108f5aa49486fcb34a18d324bfb24755ffc1a1a4.json",
+    "analyzer": "B11-final-analyzer.log",
+    "countPolicy": "Overlapping gates; do not add package counts"
+  },
+  "defects": [
+    {
+      "id": "B11-CAM-07",
+      "cause": "category and word committed separately; owner looked up per step",
+      "fix": "AtomicVocabularyCreationRepository capability, same Drift transaction for category/word/outbox; pin owner at capture and DB active-owner guard",
+      "red": "G5.3-red",
+      "retest": "G5.3-final"
+    },
+    {
+      "id": "B11-CAM-08",
+      "cause": "lease release invalidation waited for native operation queue",
+      "fix": "Synchronous invalidation callback on pause/release/acquire/close while native cleanup remains serialized",
+      "red": "G5.3-lease-red",
+      "retest": "G5.3-final"
+    },
+    {
+      "id": "B11-CAM-09",
+      "cause": "owner changes during inference could publish old preview",
+      "fix": "Recheck active owner before issuing result; existing generation guard retained",
+      "red": "G5.3-owner-red",
+      "retest": "G5.3-final"
+    }
+  ],
+  "toolingAndFixtureRecovery": [
+    {
+      "cause": "LocalOwner import collision and unrelated-interface promotion",
+      "fix": "Alias domain import and explicit checked capability cast",
+      "evidence": "G5.3-compile-failure"
+    },
+    {
+      "cause": "Journey fixture expected Food from fake instead of real Food & Drinks; missing AppDependenciesScope for pushed route",
+      "fix": "Use actual mapping and runtime scope, retain all original durable assertions",
+      "evidence": "G5.3-journey-fixture-failure and G5.3-journey-scope-failure"
+    },
+    {
+      "cause": "SQLite stream cancellation and duplicate disposal futures from widget zone awaited in runAsync; teardown blocked",
+      "fix": "Bounded pump of widget and I/O during close, close flags, single cleanup after proven disposal; no acceptance weakened",
+      "evidence": "G5.3-final diagnostic logs; final integrated journey exits0"
+    },
+    {
+      "cause": "Substring edit failed, compound shell continued into unchanged failed test",
+      "fix": "Stopped only scoped flutter_tester; switched to apply_patch and separate analyze before rerun",
+      "evidence": "G5.3-final retained interrupted logs"
+    },
+    {
+      "cause": "Second wildcard path search invalid on Windows",
+      "fix": "Stopped wildcard path method; use rg --files -g then literal path",
+      "status": "resolved"
+    }
+  ],
+  "review": [
+    "Real controller + SQLite + scanner screen + Categories/VocabList + database close/reopen proves one word/two outbox rows",
+    "8 concurrent retries after injected lost acknowledgement reuse same word; no extra receipt/outbox",
+    "Injected word INSERT abort rolls back category and outbox; retry succeeds",
+    "Post-insert mutation guard failure rolls back entire transaction",
+    "Owner change before accept and during inference rejects; queued lease release rejects immediately",
+    "UI remains saving until ack; error retains preview and retry; no premature saved",
+    "Natural-key duplicates retain original word source and content history; no schema or separate camera store",
+    "No captured image persistence added, model manifest/threshold unchanged; no new cloud/research/evidence/reward writes"
+  ],
+  "requiredLocalOpenDefects": [],
+  "externalGates": [
+    "Physical camera/native permission/native lifecycle NOT RUN",
+    "G5 evaluation and actual training are successor work, not claimed by runtime tests",
+    "No full release/device accuracy claim"
+  ]
+}

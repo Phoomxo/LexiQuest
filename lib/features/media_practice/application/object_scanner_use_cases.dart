@@ -6,8 +6,6 @@ import '../../device_model/application/device_model_use_cases.dart';
 import '../../device_model/application/model_benchmark.dart';
 import '../../device_model/domain/model_lifecycle.dart';
 import '../../vocabulary/application/vocabulary_use_cases.dart';
-import '../../vocabulary/domain/vocabulary_category.dart';
-import '../../vocabulary/domain/vocabulary_failure.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../../../services/object_vocabulary_database.dart';
 import '../domain/media_practice_contracts.dart';
@@ -71,19 +69,28 @@ final class ObjectScannerLeaseManager {
     required Future<void> Function() initialize,
     required Future<void> Function() pause,
     required Future<void> Function() resume,
-  }) => ObjectScannerLeaseManager._(isReady, initialize, pause, resume);
+    void Function()? onInvalidated,
+  }) => ObjectScannerLeaseManager._(
+    isReady,
+    initialize,
+    pause,
+    resume,
+    onInvalidated,
+  );
 
   ObjectScannerLeaseManager._(
     this._isReady,
     this._initialize,
     this._pause,
     this._resume,
+    this._onInvalidated,
   );
 
   final bool Function() _isReady;
   final Future<void> Function() _initialize;
   final Future<void> Function() _pause;
   final Future<void> Function() _resume;
+  final void Function()? _onInvalidated;
   Future<void> _operationTail = Future<void>.value();
   int _nextLeaseId = 0;
   int? _activeLeaseId;
@@ -96,6 +103,7 @@ final class ObjectScannerLeaseManager {
     final hadActiveLease = _activeLeaseId != null;
     final leaseId = ++_nextLeaseId;
     _activeLeaseId = leaseId;
+    _onInvalidated?.call();
     if (hadActiveLease) {
       _enqueue<void>(() async {
         if (_activeLeaseId == leaseId) await _pause();
@@ -117,6 +125,7 @@ final class ObjectScannerLeaseManager {
   }
 
   Future<void> _pauseLease(int leaseId) {
+    if (_isCurrent(leaseId)) _onInvalidated?.call();
     return _enqueue<void>(() async {
       if (_isCurrent(leaseId)) await _pause();
     });
@@ -131,6 +140,7 @@ final class ObjectScannerLeaseManager {
   Future<void> _releaseLease(int leaseId) {
     if (!_isCurrent(leaseId)) return Future<void>.value();
     _activeLeaseId = null;
+    _onInvalidated?.call();
     // This cleanup remains ahead of any subsequently acquired lease's
     // initialization in the shared operation queue.
     return _enqueue<void>(_pause);
@@ -141,6 +151,7 @@ final class ObjectScannerLeaseManager {
     if (!_closed) {
       _closed = true;
       _activeLeaseId = null;
+      _onInvalidated?.call();
     }
     await _operationTail;
   }
@@ -237,6 +248,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   bool _disposed = false;
   int _scanGeneration = 0;
   ObjectScanResult? _issuedResult;
+  String? _issuedOwnerId;
   Future<void>? _disposeFuture;
   late final ObjectScannerLeaseManager _leaseManager =
       ObjectScannerLeaseManager(
@@ -244,6 +256,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
         initialize: initialize,
         pause: pause,
         resume: resume,
+        onInvalidated: _invalidateResult,
       );
 
   @override
@@ -346,6 +359,12 @@ final class ObjectScannerUseCases implements ObjectScannerController {
       throw const CameraPracticeException(CameraFailureCode.cancelled);
     }
     try {
+      final owner = await vocabulary.owners.getOrCreateActiveOwner();
+      if (_disposed ||
+          generation != _scanGeneration ||
+          (cancellation?.isCancelled ?? false)) {
+        throw const CameraPracticeException(CameraFailureCode.cancelled);
+      }
       final captured = await camera.capture();
       if (_disposed ||
           generation != _scanGeneration ||
@@ -358,7 +377,9 @@ final class ObjectScannerUseCases implements ObjectScannerController {
         input,
         topK: classCount < 10 ? classCount : 10,
       );
-      if (_disposed ||
+      final currentOwner = await vocabulary.owners.getOrCreateActiveOwner();
+      if (currentOwner.id != owner.id ||
+          _disposed ||
           generation != _scanGeneration ||
           (cancellation?.isCancelled ?? false)) {
         throw const CameraPracticeException(CameraFailureCode.cancelled);
@@ -395,6 +416,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
         capturedAtUtc: captured.capturedAtUtc,
       );
       _issuedResult = result;
+      _issuedOwnerId = owner.id;
       return result;
     } on CameraPracticeException {
       rethrow;
@@ -410,51 +432,24 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     if (!identical(_issuedResult, result) || mapped == null) {
       throw const CameraPracticeException(CameraFailureCode.unavailable);
     }
-    final category = await _findOrCreateCategory(mapped.category);
-    final words = await vocabulary.watchWords(category.id).first;
-    final normalizedSpelling = normalizeVocabularyText(mapped.englishWord);
-    final normalizedMeaning = normalizeVocabularyText(mapped.thaiTranslation);
-    for (final word in words) {
-      if (word.normalizedSpelling == normalizedSpelling &&
-          word.normalizedMeaning == normalizedMeaning) {
-        return word;
-      }
+    final ownerId = _issuedOwnerId;
+    final generation = _scanGeneration;
+    if (ownerId == null) {
+      throw const CameraPracticeException(CameraFailureCode.unavailable);
     }
-    try {
-      return await vocabulary.createWord(
-        CreateWordCommand(
-          categoryId: category.id,
-          spelling: mapped.englishWord,
-          meaning: mapped.thaiTranslation,
-          partOfSpeech: 'noun',
-          cefrLevel: mapped.cefrLevel,
-          source: 'object-scanner:${result.modelId}@${result.modelVersion}',
-        ),
-      );
-    } on DuplicateVocabularyFailure {
-      final refreshed = await vocabulary.watchWords(category.id).first;
-      return refreshed.firstWhere(
-        (word) =>
-            word.normalizedSpelling == normalizedSpelling &&
-            word.normalizedMeaning == normalizedMeaning,
-      );
-    }
-  }
-
-  Future<VocabularyCategory> _findOrCreateCategory(String name) async {
-    final normalized = normalizeVocabularyText(name);
-    final categories = await vocabulary.watchCategories().first;
-    for (final category in categories) {
-      if (category.normalizedName == normalized) return category;
-    }
-    try {
-      return await vocabulary.createCategory(name);
-    } on DuplicateVocabularyFailure {
-      final refreshed = await vocabulary.watchCategories().first;
-      return refreshed.firstWhere(
-        (category) => category.normalizedName == normalized,
-      );
-    }
+    return vocabulary.createOrReuseWordInCategory(
+      expectedOwnerId: ownerId,
+      categoryName: mapped.category,
+      spelling: mapped.englishWord,
+      meaning: mapped.thaiTranslation,
+      partOfSpeech: 'noun',
+      cefrLevel: mapped.cefrLevel,
+      source: 'object-scanner:${result.modelId}@${result.modelVersion}',
+      mutationAllowed: () =>
+          !_disposed &&
+          generation == _scanGeneration &&
+          identical(_issuedResult, result),
+    );
   }
 
   @override
@@ -466,6 +461,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   void _invalidateResult() {
     _scanGeneration += 1;
     _issuedResult = null;
+    _issuedOwnerId = null;
   }
 
   @override

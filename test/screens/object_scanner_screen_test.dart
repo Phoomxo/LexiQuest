@@ -18,6 +18,53 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets(
+    'B11 save error retains preview and retry waits for durable acknowledgement',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final pending = Completer<void>();
+      final scanner = _FakeScanner()..acceptPending = pending;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            scanner: scanner,
+            voice: VoiceUseCases(
+              provider: _FakeVoice(),
+              disposeProvider: () async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('เพิ่มเข้าคลัง'));
+      await tester.pump();
+      expect(find.text('กำลังบันทึก...'), findsOneWidget);
+      expect(find.text('บันทึกแล้ว'), findsNothing);
+      pending.completeError(StateError('disk or lost ack'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('บันทึกคำศัพท์ไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsOneWidget,
+      );
+      expect(find.text('apple'), findsOneWidget);
+      expect(find.text('บันทึกแล้ว'), findsNothing);
+      final retry = Completer<void>();
+      scanner.acceptPending = retry;
+      await tester.tap(find.text('เพิ่มเข้าคลัง'));
+      await tester.pump();
+      expect(find.text('บันทึกแล้ว'), findsNothing);
+      retry.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('บันทึกแล้ว'), findsOneWidget);
+      expect(scanner.acceptCalls, 2);
+    },
+  );
+
   testWidgets('B11 stale accept callback cannot approve a new scan', (
     tester,
   ) async {

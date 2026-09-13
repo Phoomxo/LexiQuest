@@ -108,6 +108,63 @@ final class VocabularyUseCases {
     }
   }
 
+  Future<VocabularyWord> createOrReuseWordInCategory({
+    required String expectedOwnerId,
+    required String categoryName,
+    required String spelling,
+    required String meaning,
+    required String partOfSpeech,
+    required String? cefrLevel,
+    required String source,
+    required bool Function() mutationAllowed,
+  }) async {
+    final repository = vocabulary;
+    if (repository is! AtomicVocabularyCreationRepository) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId || !mutationAllowed()) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final now = _currentUtc();
+    final name = _required(
+      categoryName,
+      'categoryName',
+      maxLength: maxCategoryNameLength,
+    );
+    final category = VocabularyCategory(
+      id: 'category:${_nextId()}',
+      ownerId: owner.id,
+      name: name,
+      normalizedName: normalizeVocabularyText(name),
+      sortOrder: 0,
+      localRevision: 1,
+      isDeleted: false,
+      createdAtUtc: now,
+      updatedAtUtc: now,
+    );
+    final word = _wordFromInput(
+      id: 'word:${_nextId()}',
+      ownerId: owner.id,
+      categoryId: category.id,
+      spelling: spelling,
+      meaning: meaning,
+      partOfSpeech: partOfSpeech,
+      cefrLevel: cefrLevel,
+      source: source,
+      createdAtUtc: now,
+      updatedAtUtc: now,
+    );
+    final result = await (repository as AtomicVocabularyCreationRepository)
+        .createOrReuseWordInCategory(
+          category: category,
+          word: word,
+          mutationAllowed: mutationAllowed,
+        );
+    onLocalMutation?.call();
+    return result;
+  }
+
   Future<VocabularyCategory> createCategory(String name) async {
     final canonicalName = _required(
       name,

@@ -5,7 +5,17 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/native.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import '../../support/inert_research_dependencies.dart';
+import '../../support/test_quest_use_cases.dart';
+import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
+import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/device_model/application/device_model_use_cases.dart';
@@ -14,6 +24,8 @@ import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.
 import 'package:vocab_learning_app/features/device_model/domain/model_manifest.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as identity;
 import 'package:vocab_learning_app/features/media_practice/application/image_preprocessor.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
@@ -22,6 +34,390 @@ import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_rep
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 
 void main() {
+  test(
+    'B11 owner replacement during inference cannot publish old scan',
+    () async {
+      final h = await _scannerHarness();
+      final pending = Completer<void>();
+      final entered = Completer<void>();
+      h.runtime.classifyPending = pending;
+      h.runtime.classifyEntered = entered;
+      final capture = h.scanner.captureAndClassify();
+      final rejected = expectLater(
+        capture,
+        throwsA(isA<CameraPracticeException>()),
+      );
+      await entered.future;
+      await h.database.customStatement('UPDATE local_owners SET is_active = 0');
+      await h.owners.getOrCreateActiveOwner();
+      pending.complete();
+      await rejected;
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'B11 real scanner UI saves into vocabulary and reopens after restart',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final directory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp('b11-ui-restart-'),
+      ))!;
+      final file = File('${directory.path}/vocabulary.sqlite');
+      final original = AppDatabase(NativeDatabase(file));
+      var originalClosed = false;
+      addTearDown(
+        () => tester.runAsync(() async {
+          if (!originalClosed) await original.close();
+          debugPrint('B11 stage original closed');
+          if (await directory.exists()) await directory.delete(recursive: true);
+        }),
+      );
+      Widget app(AppDatabase db, VocabularyUseCases vocabulary, Widget home) {
+        final research = InertResearchDependencies(db);
+        return AppDependenciesScope(
+          dependencies: AppDependencies(
+            initialRoute: AppRoute.home,
+            runtimeStatus: const AppRuntimeStatus(
+              localData: RuntimeAvailability.ready,
+              firebase: RuntimeAvailability.unavailable,
+              supabase: RuntimeAvailability.unavailable,
+              backends: RuntimeAvailability.unavailable,
+            ),
+            config: null,
+            guestSessionService: _NoGuest(),
+            quest: testQuestUseCases(),
+            experiments: research.experiments,
+            consents: research.consents,
+            experimentAssignments: research.experimentAssignments,
+            assignedLearningEventContext: research.assignedLearningEventContext,
+            evidencePolicyRolloutModeProvider:
+                research.evidencePolicyRolloutModeProvider,
+            database: db,
+            vocabulary: vocabulary,
+          ),
+          child: MaterialApp(home: home),
+        );
+      }
+
+      final h = (await tester.runAsync(
+        () => _scannerHarness(databaseOverride: original, widgetTester: tester),
+      ))!;
+      Future<void> drain(Future<void> operation) async {
+        var done = false;
+        Object? failure;
+        operation.then(
+          (_) => done = true,
+          onError: (Object error) {
+            failure = error;
+            done = true;
+          },
+        );
+        for (var i = 0; i < 100 && !done; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        expect(
+          done,
+          isTrue,
+          reason:
+              'Database close must drain real I/O and widget-zone stream cancellation',
+        );
+        if (failure != null) throw failure!;
+      }
+
+      Future<void> until(Finder finder) async {
+        for (var i = 0; i < 80; i++) {
+          await tester.pump(const Duration(milliseconds: 20));
+          if (finder.evaluate().isNotEmpty) return;
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        fail(
+          'Missing expected UI: $finder; visible: ${tester.widgetList<Text>(find.byType(Text)).map((e) => e.data).toList()}',
+        );
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            scanner: h.scanner,
+            voice: VoiceUseCases(
+              provider: _NoAudioVoice(),
+              disposeProvider: () async {},
+            ),
+          ),
+        ),
+      );
+      final capture = find.byKey(
+        const ValueKey('object-scanner-capture-button'),
+      );
+      for (var i = 0; i < 80; i++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        if (tester.widget<FilledButton>(capture).onPressed != null) break;
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      expect(tester.widget<FilledButton>(capture).onPressed, isNotNull);
+      await tester.tap(capture);
+      await until(find.text('เพิ่มเข้าคลัง'));
+      expect(find.text('apple'), findsOneWidget);
+      expect(find.text('บันทึกแล้ว'), findsNothing);
+      await tester.tap(find.text('เพิ่มเข้าคลัง'));
+      await until(find.text('บันทึกแล้ว'));
+      debugPrint('B11 stage saved');
+      await tester.pumpWidget(
+        app(original, h.scanner.vocabulary, const CategoriesPage()),
+      );
+      await until(find.text('Food & Drinks'));
+      await tester.tap(find.text('Food & Drinks'));
+      await until(find.text('apple'));
+      debugPrint('B11 stage vocabulary visible');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await drain(h.scanner.dispose());
+      await drain(original.close());
+      originalClosed = true;
+      debugPrint('B11 stage original closed');
+      final reopened = AppDatabase(NativeDatabase(file));
+      var reopenedClosed = false;
+      addTearDown(
+        () => tester.runAsync(() async {
+          if (!reopenedClosed) await reopened.close();
+        }),
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: DriftLocalOwnerRepository(
+          reopened,
+          generateId: () => 'must-not-create',
+          nowUtc: () => DateTime.utc(2026, 9, 13),
+        ),
+        vocabulary: DriftVocabularyRepository(reopened),
+        generateId: () => 'must-not-write',
+        nowUtc: () => DateTime.utc(2026, 9, 13),
+      );
+      await tester.pumpWidget(
+        app(reopened, vocabulary, const CategoriesPage()),
+      );
+      await until(find.text('Food & Drinks'));
+      await tester.tap(find.text('Food & Drinks'));
+      await until(find.text('apple'));
+      debugPrint('B11 stage vocabulary visible');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(() async {
+        expect(
+          await reopened.select(reopened.vocabularyWords).get(),
+          hasLength(1),
+        );
+        expect(
+          await reopened.select(reopened.outboxOperations).get(),
+          hasLength(2),
+        );
+      });
+      await drain(reopened.close());
+      reopenedClosed = true;
+      await tester.runAsync(() => directory.delete(recursive: true));
+      await tester.runAsync(h.cleanupAfterDispose);
+      debugPrint('B11 stage file cleanup done');
+    },
+  );
+
+  test(
+    'B11 releasing lease invalidates save while native resume is pending',
+    () async {
+      final h = await _scannerHarness();
+      final lease = h.scanner.acquireLease();
+      await lease.initialize();
+      final result = await h.scanner.captureAndClassify();
+      final pending = Completer<void>();
+      final entered = Completer<void>();
+      h.camera.resumePending = pending;
+      h.camera.resumeEntered = entered;
+      final resume = lease.resume();
+      await entered.future;
+      final released = lease.release();
+      try {
+        await expectLater(h.scanner.accept(result), throwsA(anything));
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          isEmpty,
+        );
+      } finally {
+        pending.complete();
+        await resume;
+        await released;
+      }
+    },
+  );
+
+  test(
+    'B11 lost acknowledgement and concurrent duplicate reuse one durable word',
+    () async {
+      var loseAck = true;
+      final h = await _scannerHarness(
+        onLocalMutation: () {
+          if (loseAck) {
+            loseAck = false;
+            throw StateError('lost acknowledgement after commit');
+          }
+        },
+      );
+      final result = await h.scanner.captureAndClassify();
+      await expectLater(h.scanner.accept(result), throwsA(isA<StateError>()));
+      final stored = await h.database.select(h.database.vocabularyWords).get();
+      expect(stored, hasLength(1));
+      final retries = await Future.wait(
+        List.generate(8, (_) => h.scanner.accept(result)),
+      );
+      expect(retries.map((word) => word.id).toSet(), {stored.single.id});
+      expect(
+        await h.database.select(h.database.vocabularyCategories).get(),
+        hasLength(1),
+      );
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        hasLength(1),
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  test(
+    'B11 scanner save survives file database restart with original provenance',
+    () async {
+      final directory = await Directory.systemTemp.createTemp('b11-restart-');
+      final file = File('${directory.path}/vocabulary.sqlite');
+      final original = AppDatabase(NativeDatabase(file));
+      final h = await _scannerHarness(databaseOverride: original);
+      final result = await h.scanner.captureAndClassify();
+      final saved = await h.scanner.accept(result);
+      await h.scanner.dispose();
+      await original.close();
+      final reopened = AppDatabase(NativeDatabase(file));
+      addTearDown(() async {
+        await reopened.close();
+        await directory.delete(recursive: true);
+      });
+      final rows = await reopened.select(reopened.vocabularyWords).get();
+      expect(rows.single.id, saved.id);
+      expect(
+        rows.single.source,
+        'object-scanner:${result.modelId}@${result.modelVersion}',
+      );
+      expect(rows.single.ownerId, saved.ownerId);
+      expect(
+        await reopened.select(reopened.outboxOperations).get(),
+        hasLength(2),
+      );
+      final repository = DriftVocabularyRepository(reopened);
+      final visible = await repository
+          .watchWords(saved.ownerId, saved.categoryId)
+          .first;
+      expect(visible.single.id, saved.id);
+      expect(visible.single.spelling, 'apple');
+    },
+  );
+
+  test(
+    'B11 pending save rolls back when lifecycle expires before transaction',
+    () async {
+      final h = await _scannerHarness();
+      final result = await h.scanner.captureAndClassify();
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final held = h.database.transaction(() async {
+        entered.complete();
+        await release.future;
+      });
+      await entered.future;
+      final save = h.scanner.accept(result);
+      final rejected = expectLater(save, throwsA(anything));
+      await h.scanner.pause();
+      release.complete();
+      await held;
+      await rejected;
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'B11 disk failure rolls back scanner category word and outbox then retries',
+    () async {
+      final h = await _scannerHarness();
+      final result = await h.scanner.captureAndClassify();
+      await h.database.customStatement(
+        "CREATE TRIGGER b11_disk_failure BEFORE INSERT ON vocabulary_words BEGIN SELECT RAISE(ABORT, 'simulated disk failure'); END",
+      );
+      await expectLater(h.scanner.accept(result), throwsA(anything));
+      expect(
+        await h.database.select(h.database.vocabularyCategories).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+      await h.database.customStatement('DROP TRIGGER b11_disk_failure');
+      await h.scanner.accept(result);
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        hasLength(1),
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  test(
+    'B11 owner change after preview rejects save into replacement owner',
+    () async {
+      final h = await _scannerHarness();
+      final first = await h.owners.getOrCreateActiveOwner();
+      final result = await h.scanner.captureAndClassify();
+      await h.database.customStatement('UPDATE local_owners SET is_active = 0');
+      final second = await h.owners.getOrCreateActiveOwner();
+      expect(second.id, isNot(first.id));
+      await expectLater(h.scanner.accept(result), throwsA(anything));
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+    },
+  );
+
   test(
     'B11 accept rejects a foreign mapped result without vocabulary writes',
     () async {
@@ -495,6 +891,8 @@ VocabularyUseCases _throwingVocabulary() => VocabularyUseCases(
 final class _FakeCamera implements CameraGateway {
   MediaPermissionState permission = MediaPermissionState.granted;
   Object? permissionFailure;
+  Completer<void>? resumePending;
+  Completer<void>? resumeEntered;
   int initializeCalls = 0;
   @override
   bool isInitialized = false;
@@ -533,7 +931,11 @@ final class _FakeCamera implements CameraGateway {
   }
 
   @override
-  Future<void> resume() => initialize();
+  Future<void> resume() async {
+    resumeEntered?.complete();
+    await resumePending?.future;
+    await initialize();
+  }
 }
 
 final class _FakePreprocessor implements ImagePreprocessor {
@@ -546,6 +948,8 @@ final class _FakeRuntime implements ImageClassifierRuntime {
     ModelClassification(index: 1, label: 'Apple', confidence: 0.92),
     ModelClassification(index: 0, label: 'background', confidence: 0.05),
   ];
+  Completer<void>? classifyPending;
+  Completer<void>? classifyEntered;
   int closeCalls = 0;
   int? requestedTopK;
 
@@ -558,6 +962,8 @@ final class _FakeRuntime implements ImageClassifierRuntime {
     int topK = 5,
   }) async {
     requestedTopK = topK;
+    classifyEntered?.complete();
+    await classifyPending?.future;
     return classifications;
   }
 
@@ -606,6 +1012,12 @@ final class _UncalledVerifier implements ModelFileVerifier {
 // These throwers are never reached by the permission-denial test.
 final class _ThrowingOwners implements LocalOwnerRepository {
   @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async =>
+      identity.LocalOwner(
+        id: 'test-owner',
+        createdAtUtc: DateTime.utc(2026, 9, 13),
+      );
+  @override
   noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
@@ -621,11 +1033,16 @@ Future<
     _FakeRuntime runtime,
     AppDatabase database,
     DriftLocalOwnerRepository owners,
+    Future<void> Function() cleanupAfterDispose,
   })
 >
-_scannerHarness() async {
+_scannerHarness({
+  AppDatabase? databaseOverride,
+  void Function()? onLocalMutation,
+  WidgetTester? widgetTester,
+}) async {
   final directory = await Directory.systemTemp.createTemp('b11-scanner-');
-  final database = AppDatabase(NativeDatabase.memory());
+  final database = databaseOverride ?? AppDatabase(NativeDatabase.memory());
   final bytes = utf8.encode('verified-test-model');
   final file = File('${directory.path}/model.tflite');
   await file.writeAsBytes(bytes);
@@ -654,13 +1071,26 @@ _scannerHarness() async {
       vocabulary: DriftVocabularyRepository(database),
       generateId: () => 'id-${id++}',
       nowUtc: () => DateTime.utc(2026, 9, 13),
+      onLocalMutation: onLocalMutation,
     ),
     preprocessor: _FakePreprocessor(),
   );
-  addTearDown(() async {
-    await scanner.dispose();
-    await database.close();
+  var cleaned = false;
+  Future<void> cleanup({bool alreadyDisposed = false}) async {
+    if (cleaned) return;
+    if (!alreadyDisposed) await scanner.dispose();
+    if (databaseOverride == null) await database.close();
     await directory.delete(recursive: true);
+    cleaned = true;
+  }
+
+  addTearDown(() async {
+    if (cleaned) return;
+    if (widgetTester == null) {
+      await cleanup();
+    } else {
+      await widgetTester.runAsync(cleanup);
+    }
   });
   await scanner.initialize();
   return (
@@ -669,5 +1099,19 @@ _scannerHarness() async {
     runtime: runtime,
     database: database,
     owners: owners,
+    cleanupAfterDispose: () => cleanup(alreadyDisposed: true),
   );
+}
+
+final class _NoAudioVoice implements VoiceProvider {
+  @override
+  Future<void> stop() async {}
+  @override
+  noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+final class _NoGuest implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'b11-local');
 }

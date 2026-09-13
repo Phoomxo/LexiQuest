@@ -9,7 +9,8 @@ import '../domain/vocabulary_repository.dart';
 import '../domain/vocabulary_word.dart';
 import 'packaged_starter_access.dart';
 
-final class DriftVocabularyRepository implements VocabularyRepository {
+final class DriftVocabularyRepository
+    implements VocabularyRepository, AtomicVocabularyCreationRepository {
   DriftVocabularyRepository(this.database, {this.contentManifests});
 
   static const int categoryWordLimit = 50;
@@ -103,6 +104,56 @@ final class DriftVocabularyRepository implements VocabularyRepository {
     }
     return List.unmodifiable(words);
   }
+
+  @override
+  Future<VocabularyWord> createOrReuseWordInCategory({
+    required VocabularyCategory category,
+    required VocabularyWord word,
+    required bool Function() mutationAllowed,
+  }) => database.transaction(() async {
+    if (word.ownerId != category.ownerId || word.categoryId != category.id) {
+      throw const VocabularyNotFoundFailure();
+    }
+    Future<void> requireCurrent() async {
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).get();
+      if (active.length != 1 ||
+          active.single.id != word.ownerId ||
+          !mutationAllowed()) {
+        throw const VocabularyNotFoundFailure();
+      }
+    }
+
+    await requireCurrent();
+    final existingCategory =
+        await (database.select(database.vocabularyCategories)..where(
+              (row) =>
+                  row.ownerId.equals(category.ownerId) &
+                  row.normalizedName.equals(category.normalizedName) &
+                  row.isDeleted.equals(false),
+            ))
+            .getSingleOrNull();
+    final selected = existingCategory == null
+        ? await createCategory(category)
+        : _categoryToDomain(existingCategory);
+    final existingWord =
+        await (database.select(database.vocabularyWords)..where(
+              (row) =>
+                  row.ownerId.equals(word.ownerId) &
+                  row.categoryId.equals(selected.id) &
+                  row.normalizedSpelling.equals(word.normalizedSpelling) &
+                  row.normalizedMeaning.equals(word.normalizedMeaning) &
+                  row.isDeleted.equals(false),
+            ))
+            .getSingleOrNull();
+    final result = existingWord == null
+        ? await createWord(word.copyWith(categoryId: selected.id))
+        : _wordToDomain(existingWord);
+    // A stale view or owner rolls back category, word and outbox together.
+    await requireCurrent();
+    return result;
+  });
 
   @override
   Future<VocabularyCategory> createCategory(VocabularyCategory category) async {
