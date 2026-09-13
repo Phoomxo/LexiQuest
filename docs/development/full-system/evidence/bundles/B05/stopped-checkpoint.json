@@ -1,0 +1,61 @@
+{
+  "bundleId": "B05",
+  "status": "stopped-guardrail",
+  "currentPackageId": "G2.5",
+  "threadId": "01a09a40-ce55-7ac2-a2c9-741d983f3179",
+  "branch": "lexiquest/b05-quiz-cloze-block-spelling",
+  "headSha": "476d031722fb14718ad6d69d79165cbe2972ec06",
+  "acceptedPackages": {
+    "G2.3": "9d6bfcc1093744c702843e1d468eb1327a891a0b",
+    "G2.4": "476d031722fb14718ad6d69d79165cbe2972ec06"
+  },
+  "stopReason": "Repeated Windows filesystem/path error123 from rg wildcard argument; no blind retry",
+  "G2.5": {
+    "emptyContent": "2 regression tests passed after unavailable/operation guard; source uncommitted",
+    "letterMatrix": "0 passed/3 fixture errors before full acceptance assertions",
+    "fixtureCause": "Focus.of called using InkWell element context without Focus ancestor, line53; no product keyboard conclusion",
+    "suspectedProductGap": "Source inspection: retained _checkAnswer callback checks interaction/owner but not _isComplete; test intended to verify late duplicate after completion has not reached assertion. Not yet reproduced or fixed.",
+    "remaining": [
+      "Fix keyboard fixture using actual focused descendant or traversal then verify repeated e/t placement/undo/drag on320/390/840",
+      "Validate retained callbacks after success/dispose and pending/owner fences",
+      "Sentence duplicate tokens/punctuation and affected full screen tests",
+      "Required acceptance review and FORM-11 source/evidence mapping",
+      "G2.5 receipt/commit then bundle artifact pins/handoff only after acceptance"
+    ]
+  },
+  "writerReleased": false,
+  "nextBundleDispatched": false,
+  "policies": {
+    "branchPrefix": "lexiquest/",
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTier": "default",
+    "effectiveTier": "unverified"
+  },
+  "dirtyFiles": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/command-defects.json",
+      "sha256": "cd968e52327787f3850b37a4e3dd74274da7dccec063241e5af42c9113ef667c"
+    },
+    {
+      "path": "lib/screens/sentence_scramble_screen.dart",
+      "sha256": "b02fd094c26232945776c348538055b82ab8f071de7e2ae9f462189bbf4ed261"
+    },
+    {
+      "path": "lib/screens/word_scramble_screen.dart",
+      "sha256": "11065dafc0566c4ef008f36758e815b7bf8ac5d1d5010f71681933899c3c95ac"
+    },
+    {
+      "path": "test/screens/sentence_scramble_screen_test.dart",
+      "sha256": "01b6d9a2b9e43e57bbc7b5a5096cb9d2267272042f0adfa1042bfcf9f0111677"
+    },
+    {
+      "path": "test/screens/word_scramble_screen_test.dart",
+      "sha256": "4a7b9b6efe530ad6eb09b2c64ed9c6322db2b5ad43c7292eaa4d6a35cc543be4"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B05/G2.5-defects.json",
+      "sha256": "a110fc0fb683522f7b6012d6001eabe28123458b63a194cc8c188719042dffc3"
+    }
+  ]
+}

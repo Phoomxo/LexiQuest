@@ -1,0 +1,10 @@
+{
+  "id": "B05-CONTENT-01",
+  "cause": "Empty explicit route arguments built an empty/whitespace game and sentence scheduled audio",
+  "red": "G2.5-red; 2 expected missing-unavailable failures",
+  "fix": "Honest unavailable UI plus content guard on operation acceptance",
+  "status": "closed",
+  "retest": "G2.5-runs/targeted-learning-189256f29e7f36f6f664f9e9f55d08474ccaccaa7506d107aa9892bb8798aede.json",
+  "testsPassed": 2,
+  "verification": "G2.5-verification.json"
+}

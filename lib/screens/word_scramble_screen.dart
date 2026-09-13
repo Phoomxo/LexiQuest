@@ -74,7 +74,9 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
 
   WordScrambleModeAdapter get _modeAdapter => widget.modeAdapter;
   bool get _acceptsModeOperations =>
-      mounted && (_lifecycle?.acceptsOperations ?? true);
+      mounted &&
+      widget.word.trim().isNotEmpty &&
+      (_lifecycle?.acceptsOperations ?? true);
   bool get _persistenceLocked =>
       _pendingEvidence != null || _pendingSessionClose != null;
   bool get _interactionLocked => _persistenceLocked || _sessionCompleted;
@@ -105,7 +107,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   }
 
   Future<void> _checkAnswer() async {
-    if (_interactionLocked || !_acceptsModeOperations) return;
+    if (_isComplete || _interactionLocked || !_acceptsModeOperations) return;
     final response = userAnswer.join();
     final evaluation = _modeAdapter.evaluate(
       target: widget.word,
@@ -219,7 +221,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
         lifecycle == null ||
         learning == null ||
         sessionId == null) {
-      if (!shouldComplete) _nextAttemptNumber += 1;
+      if (shouldComplete) {
+        _sessionCompleted = true;
+      } else {
+        _nextAttemptNumber += 1;
+      }
       if (mounted) setState(() {});
       return;
     }
@@ -268,6 +274,26 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.word.trim().isEmpty) {
+      return AccessibilityModeScaffold(
+        appBar: AppBar(title: const Text('เกมเรียงตัวอักษร')),
+        body: const SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Text(
+                  'ยังไม่มีคำศัพท์สำหรับกิจกรรมนี้',
+                  key: ValueKey('word-scramble-unavailable'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     final reducedMotion = AccessibilityScope.of(context).reducedMotion;
     return PopScope(
       canPop: !_persistenceLocked,

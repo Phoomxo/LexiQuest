@@ -59,7 +59,9 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
 
   SentenceScrambleModeAdapter get _modeAdapter => widget.modeAdapter;
   bool get _acceptsModeOperations =>
-      mounted && (_lifecycle?.acceptsOperations ?? true);
+      mounted &&
+      widget.targetSentence.trim().isNotEmpty &&
+      (_lifecycle?.acceptsOperations ?? true);
   bool get _persistenceLocked =>
       _pendingEvidence != null || _pendingSessionClose != null;
   bool get _interactionLocked => _persistenceLocked || _sessionCompleted;
@@ -130,7 +132,8 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   }
 
   Future<void> _checkSentence() async {
-    if (_interactionLocked || !_acceptsModeOperations) return;
+    if (_isCorrect == true || _interactionLocked || !_acceptsModeOperations)
+      return;
     final userSentence = _userSelection.join(' ');
     final evaluation = _modeAdapter.evaluate(
       target: widget.targetSentence,
@@ -206,7 +209,11 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
         lifecycle == null ||
         learning == null ||
         sessionId == null) {
-      if (!shouldComplete) _nextAttemptNumber += 1;
+      if (shouldComplete) {
+        _sessionCompleted = true;
+      } else {
+        _nextAttemptNumber += 1;
+      }
       if (mounted) setState(() {});
       return;
     }
@@ -242,6 +249,26 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.targetSentence.trim().isEmpty) {
+      return AccessibilityModeScaffold(
+        appBar: AppBar(title: const Text('เรียงประโยคภาษาอังกฤษ')),
+        body: const SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Text(
+                  'ยังไม่มีประโยคสำหรับกิจกรรมนี้',
+                  key: ValueKey('sentence-scramble-unavailable'),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return PopScope(
       canPop: !_persistenceLocked,
       child: AccessibilityModeScaffold(

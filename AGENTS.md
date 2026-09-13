@@ -21,5 +21,7 @@
 - Use `tool/cli/verify-scope.ps1` for bounded targeted and subsystem checks. Run the full release verifier only on a frozen PR or release SHA.
 - Do not rerun a passed gate when its recorded source fingerprint is unchanged.
 - Do not run full Flutter tests, full backend tests, Android builds, or GPU checks concurrently.
-- Stop and report when the same command failure repeats, a filesystem error repeats, or a command makes no measurable progress for 10 minutes.
+- For repeated command or path failures, stop the failed method and follow the user recovery policy below; do not blind retry or skip acceptance.
 - Keep research activation, remote research synchronization, study assignment, statistical reporting, and unrelated document work outside the production-system work packages.
+
+- Recovery policy (user update 2026-09-13): stop a failed method, preserve evidence, diagnose, use a corrected bounded method and continue without repeated permission. Stop the task only when no safe recovery exists, ownership/data integrity or authorization is uncertain, or progress stalls for10 minutes. Use `rg --files -g` for glob discovery and literal existing paths for reads; never put wildcards in Windows path arguments. Preserve gates and propagate external `recovery-policy.json` in every successor.

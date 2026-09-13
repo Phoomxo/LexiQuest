@@ -74,3 +74,5 @@ Control directory:
 B18ทำ G8.1 freeze → G8.2รีวิวโค้ดทั้งแอปทีละzone → G8.3แก้และปิดreview. B19จึงทำ G8.4 System Test Plan → G8.5 automated → G8.6 build/install/journeys → G8.7fault/accessibility/resources. B20ทำG8.8 defect/retest/regression → G8.9finalledger. การรวมtaskไม่ย้ายtestsก่อนreviewและไม่ลดcoverage/acceptance
 
 ถ้าcontextใกล้เต็มให้checkpointในbundle report + structuredstateและใช้compactionในtaskเดิม. ไม่dispatchกลางbundleเพื่อแก้contextและไม่ย้อนทำacceptedpackages; resumeจากreceipt/currentPackageIdและinputsที่เปลี่ยน. Pause/stopใหม่หยุดdispatchและรักษาcheckpoint
+
+- Recovery policy (user update 2026-09-13): stop a failed method, preserve evidence, diagnose, use a corrected bounded method and continue without repeated permission. Stop the task only when no safe recovery exists, ownership/data integrity or authorization is uncertain, or progress stalls for10 minutes. Use `rg --files -g` for glob discovery and literal existing paths for reads; never put wildcards in Windows path arguments. Preserve gates and propagate external `recovery-policy.json` in every successor.

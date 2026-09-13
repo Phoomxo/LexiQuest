@@ -1,0 +1,22 @@
+[
+  {
+    "path": "lib/screens/word_scramble_screen.dart",
+    "unchangedBlocksRestoredFromHead": true,
+    "formatScope": "changed hunks only"
+  },
+  {
+    "path": "lib/screens/sentence_scramble_screen.dart",
+    "unchangedBlocksRestoredFromHead": true,
+    "formatScope": "changed hunks only"
+  },
+  {
+    "path": "test/screens/word_scramble_screen_test.dart",
+    "unchangedBlocksRestoredFromHead": true,
+    "formatScope": "changed hunks only"
+  },
+  {
+    "path": "test/screens/sentence_scramble_screen_test.dart",
+    "unchangedBlocksRestoredFromHead": true,
+    "formatScope": "changed hunks only"
+  }
+]

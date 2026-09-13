@@ -32,6 +32,101 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('B05 sentence duplicate tokens punctuation and late completion', (
+    tester,
+  ) async {
+    final voice = FakeVoiceProvider();
+    final repository = FailOnceLearningRepository(failFirst: false);
+    final learning = buildFailOnceLearningUseCases(
+      repository: repository,
+      idPrefix: 'duplicate-sentence',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SentenceScrambleScreen(
+          targetSentence: 'I can can can.',
+          ownerId: 'owner-1',
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          voice: VoiceUseCases(provider: voice, disposeProvider: () async {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    Finder token(String value) => find.byWidgetPredicate(
+      (widget) => widget is ChoiceChip && (widget.label as Text).data == value,
+    );
+    for (final value in ['I', 'can', 'can']) {
+      await tester.tap(token(value).first);
+      await tester.pumpAndSettle();
+    }
+    final placed = find.byWidgetPredicate(
+      (widget) => widget is ActionChip && (widget.label as Text).data == 'can',
+    );
+    expect(placed, findsNWidgets(2));
+    await tester.tap(placed.first);
+    await tester.pumpAndSettle();
+    expect(placed, findsOneWidget);
+    expect(token('can'), findsOneWidget);
+    await tester.tap(token('can'));
+    await tester.pumpAndSettle();
+    await tester.tap(token('can.'));
+    await tester.pumpAndSettle();
+    expect(placed, findsNWidgets(2));
+    expect(repository.commands, isEmpty);
+    final submit = find.byType(ElevatedButton);
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    final retained = tester.widget<ElevatedButton>(submit).onPressed!;
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(repository.commands, hasLength(1));
+    expect(repository.commands.single.isCorrect, isTrue);
+    retained();
+    await tester.pumpAndSettle();
+    expect(
+      repository.commands,
+      hasLength(1),
+      reason: 'completed sentence callback cannot create a duplicate',
+    );
+    await tester.pumpWidget(const SizedBox());
+    retained();
+    await tester.pump();
+    expect(repository.commands, hasLength(1));
+  });
+
+  testWidgets('B05 empty sentence is unavailable without audio or evidence', (
+    tester,
+  ) async {
+    final voice = FakeVoiceProvider();
+    final repository = FailOnceLearningRepository(failFirst: false);
+    final learning = buildFailOnceLearningUseCases(
+      repository: repository,
+      idPrefix: 'empty-sentence',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SentenceScrambleScreen(
+          targetSentence: '   ',
+          ownerId: 'owner-1',
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          voice: VoiceUseCases(provider: voice, disposeProvider: () async {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('sentence-scramble-unavailable')),
+      findsOneWidget,
+    );
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(voice.spokenRequests, isEmpty);
+    expect(repository.commands, isEmpty);
+  });
+
   test('f13 sentence scramble delegates correctness to its typed adapter', () {
     final source = File(
       'lib/screens/sentence_scramble_screen.dart',
