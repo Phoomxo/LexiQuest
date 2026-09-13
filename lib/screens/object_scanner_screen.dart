@@ -345,13 +345,18 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     }
   }
 
-  Future<void> _accept() async {
+  Future<void> _accept(
+    ObjectScanResult expectedResult,
+    int expectedEpoch,
+  ) async {
     final scanner = _scanner;
     final result = _result;
     final lease = _scannerLease;
     final epoch = _captureEpoch;
     if (scanner == null ||
         result == null ||
+        !identical(result, expectedResult) ||
+        epoch != expectedEpoch ||
         result.vocabulary == null ||
         lease == null ||
         !lease.isReady ||
@@ -486,6 +491,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       );
     }
     final result = _result;
+    final epoch = _captureEpoch;
     final scannerReady = _scannerLease?.isReady == true;
     return Scaffold(
       appBar: AppBar(title: const Text('สแกนวัตถุเป็นคำศัพท์')),
@@ -611,7 +617,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                   result.vocabulary?.englishWord ??
                       (result.matchedClassification ?? result.primary).label,
                 ),
-                onAccept: result.vocabulary == null ? null : _accept,
+                onAccept: result.vocabulary == null
+                    ? null
+                    : () => _accept(result, epoch),
               ),
               if (result.vocabulary == null)
                 OutlinedButton.icon(

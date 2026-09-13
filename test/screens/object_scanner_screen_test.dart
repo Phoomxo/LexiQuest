@@ -18,6 +18,43 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('B11 stale accept callback cannot approve a new scan', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final scanner = _FakeScanner();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final capture = find.byKey(const ValueKey('object-scanner-capture-button'));
+    await tester.tap(capture);
+    await tester.pumpAndSettle();
+    final oldAccept = tester
+        .widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'เพิ่มเข้าคลัง'),
+        )
+        .onPressed!;
+    scanner.captureResult = _fakeObjectScanResult();
+    await tester.tap(capture);
+    await tester.pumpAndSettle();
+    oldAccept();
+    await tester.pumpAndSettle();
+    expect(scanner.acceptCalls, 0);
+    await tester.tap(find.text('เพิ่มเข้าคลัง'));
+    await tester.pumpAndSettle();
+    expect(scanner.acceptCalls, 1);
+  });
+
   testWidgets('B11 old resume failure cannot overwrite replacement scanner', (
     tester,
   ) async {

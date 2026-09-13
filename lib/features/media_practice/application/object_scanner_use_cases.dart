@@ -235,6 +235,8 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   final double minimumConfidence;
   ImageClassifierRuntime? _runtime;
   bool _disposed = false;
+  int _scanGeneration = 0;
+  ObjectScanResult? _issuedResult;
   Future<void>? _disposeFuture;
   late final ObjectScannerLeaseManager _leaseManager =
       ObjectScannerLeaseManager(
@@ -247,6 +249,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   @override
   ObjectScannerLease acquireLease() {
     _checkNotDisposed();
+    _invalidateResult();
     return _leaseManager.acquire();
   }
 
@@ -280,6 +283,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   @override
   Future<void> initialize() async {
     _checkNotDisposed();
+    _invalidateResult();
     try {
       final permission = await camera.requestPermission();
       switch (permission) {
@@ -332,6 +336,8 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     ModelCancellation? cancellation,
   }) async {
     _checkNotDisposed();
+    _invalidateResult();
+    final generation = _scanGeneration;
     final runtime = _runtime;
     if (!camera.isInitialized || runtime == null) {
       throw const CameraPracticeException(CameraFailureCode.unavailable);
@@ -341,7 +347,9 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     }
     try {
       final captured = await camera.capture();
-      if (cancellation?.isCancelled ?? false) {
+      if (_disposed ||
+          generation != _scanGeneration ||
+          (cancellation?.isCancelled ?? false)) {
         throw const CameraPracticeException(CameraFailureCode.cancelled);
       }
       final input = preprocessor.toRawRgb224(captured.bytes);
@@ -350,8 +358,20 @@ final class ObjectScannerUseCases implements ObjectScannerController {
         input,
         topK: classCount < 10 ? classCount : 10,
       );
-      if (cancellation?.isCancelled ?? false) {
+      if (_disposed ||
+          generation != _scanGeneration ||
+          (cancellation?.isCancelled ?? false)) {
         throw const CameraPracticeException(CameraFailureCode.cancelled);
+      }
+      if (classifications.any(
+        (item) =>
+            !item.confidence.isFinite ||
+            item.confidence < 0 ||
+            item.confidence > 1 ||
+            item.index < 0 ||
+            item.index >= classCount,
+      )) {
+        throw const CameraPracticeException(CameraFailureCode.captureFailed);
       }
       final usable = classifications
           .where(
@@ -366,14 +386,16 @@ final class ObjectScannerUseCases implements ObjectScannerController {
       }
       final primary = usable.first;
       final mapped = labelVocabulary.lookupByMlLabel(primary.label);
-      return ObjectScanResult(
-        classifications: usable,
+      final result = ObjectScanResult(
+        classifications: List.unmodifiable(usable),
         vocabulary: mapped,
         matchedClassification: mapped == null ? null : primary,
         modelId: deviceModels.manifest.id,
         modelVersion: deviceModels.manifest.version,
         capturedAtUtc: captured.capturedAtUtc,
       );
+      _issuedResult = result;
+      return result;
     } on CameraPracticeException {
       rethrow;
     } catch (_) {
@@ -385,7 +407,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   Future<VocabularyWord> accept(ObjectScanResult result) async {
     _checkNotDisposed();
     final mapped = result.vocabulary;
-    if (mapped == null) {
+    if (!identical(_issuedResult, result) || mapped == null) {
       throw const CameraPracticeException(CameraFailureCode.unavailable);
     }
     final category = await _findOrCreateCategory(mapped.category);
@@ -436,7 +458,15 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   }
 
   @override
-  Future<void> pause() => camera.pause();
+  Future<void> pause() {
+    _invalidateResult();
+    return camera.pause();
+  }
+
+  void _invalidateResult() {
+    _scanGeneration += 1;
+    _issuedResult = null;
+  }
 
   @override
   Future<void> resume() async {
@@ -449,6 +479,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
 
   Future<void> _dispose() async {
     _disposed = true;
+    _invalidateResult();
     await _leaseManager.close();
     final runtime = _runtime;
     _runtime = null;

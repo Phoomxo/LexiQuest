@@ -1,0 +1,48 @@
+{
+  "packageId": "G5.2",
+  "status": "local-accepted",
+  "requirements": [
+    "A-CAM-02",
+    "A-CAM-03",
+    "A-CAM-04",
+    "A-CAM-05",
+    "FORM-09",
+    "G5"
+  ],
+  "defects": [
+    {
+      "id": "B11-CAM-04",
+      "cause": "accept allowed any mapped result, no controller-issued identity",
+      "fix": "latest issued immutable result + lifecycle invalidation",
+      "evidence": "G5.2-red"
+    },
+    {
+      "id": "B11-CAM-05",
+      "cause": "invalid score/index filtered or accepted, potentially promoting lower mapped label",
+      "fix": "reject entire malformed output; preserve valid primary/mapping/threshold",
+      "fixture": "Existing Unknown index2 exceeded two-class manifest; use index0 with background disabled. Still verifies unknown primary never replaced by mapped secondary.",
+      "evidence": "G5.2-red"
+    },
+    {
+      "id": "B11-CAM-06",
+      "cause": "retained accept callback reads current result instead of displayed result",
+      "fix": "callback pins result identity and capture epoch",
+      "evidence": "G5.2-callback-red"
+    }
+  ],
+  "retest": "G5.2-final/targeted-learning-845782d5593728acf378e1bb758ed38aab08939a61bb0a27c83f65e4c6ab7bad.json",
+  "review": [
+    "Rejected/unsupported return before vocabulary/outbox; no evidence/reward writes",
+    "Manual route, mapped and unsupported score copy tested",
+    "Baseline threshold0.15/model manifest unchanged; model score not probability/accuracy claim",
+    "FORM09 evaluation functions unchanged; dataset/evaluation gates belong to B12",
+    "Historical word sources unchanged; issued result permission is ephemeral only"
+  ],
+  "toolingFailure": {
+    "command": "rg FORM-09 with wildcard path",
+    "cause": "Windows literal path glob invalid",
+    "fix": "rg --files -g discovery then read exact path",
+    "status": "resolved"
+  },
+  "requiredLocalOpenDefects": []
+}

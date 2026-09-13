@@ -23,6 +23,84 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_reposit
 
 void main() {
   test(
+    'B11 accept rejects a foreign mapped result without vocabulary writes',
+    () async {
+      final h = await _scannerHarness();
+      final result = await h.scanner.captureAndClassify();
+      final forged = ObjectScanResult(
+        classifications: result.classifications,
+        vocabulary: result.vocabulary,
+        matchedClassification: result.matchedClassification,
+        modelId: result.modelId,
+        modelVersion: result.modelVersion,
+        capturedAtUtc: result.capturedAtUtc,
+      );
+      await expectLater(
+        h.scanner.accept(forged),
+        throwsA(isA<CameraPracticeException>()),
+      );
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        isEmpty,
+      );
+      expect(
+        await h.database.select(h.database.outboxOperations).get(),
+        isEmpty,
+      );
+      await h.scanner.accept(result);
+      expect(
+        await h.database.select(h.database.vocabularyWords).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test('B11 pause invalidates controller accept permission', () async {
+    final h = await _scannerHarness();
+    final result = await h.scanner.captureAndClassify();
+    await h.scanner.pause();
+    await h.scanner.resume();
+    await expectLater(
+      h.scanner.accept(result),
+      throwsA(isA<CameraPracticeException>()),
+    );
+    expect(await h.database.select(h.database.outboxOperations).get(), isEmpty);
+  });
+
+  for (final score in [double.nan, double.infinity, 1.01, -0.01]) {
+    test(
+      'B11 invalid model score $score rejects whole output without promoting lower label',
+      () async {
+        final h = await _scannerHarness();
+        h.runtime.classifications = [
+          ModelClassification(index: 1, label: 'Apple', confidence: score),
+          const ModelClassification(index: 1, label: 'Apple', confidence: 0.8),
+        ];
+        await expectLater(
+          h.scanner.captureAndClassify(),
+          throwsA(isA<CameraPracticeException>()),
+        );
+        expect(
+          await h.database.select(h.database.outboxOperations).get(),
+          isEmpty,
+        );
+      },
+    );
+  }
+
+  test('B11 invalid class index cannot become accepted vocabulary', () async {
+    final h = await _scannerHarness();
+    h.runtime.classifications = const [
+      ModelClassification(index: 99, label: 'Apple', confidence: 0.9),
+    ];
+    await expectLater(
+      h.scanner.captureAndClassify(),
+      throwsA(isA<CameraPracticeException>()),
+    );
+    expect(await h.database.select(h.database.outboxOperations).get(), isEmpty);
+  });
+
+  test(
     'B11 permission plugin exception becomes recoverable initialization failure',
     () async {
       final camera = _FakeCamera()
@@ -171,13 +249,13 @@ void main() {
       final modelBytes = utf8.encode('verified-test-model');
       final modelFile = File('${directory.path}/model.tflite');
       await modelFile.writeAsBytes(modelBytes);
-      final manifest = _manifest(modelBytes);
+      final manifest = _manifest(modelBytes, backgroundClassIndex: null);
       final repository = _ModelRepository(
         _activeRecord(manifest, modelFile.path),
       );
       final runtime = _FakeRuntime()
         ..classifications = const [
-          ModelClassification(index: 2, label: 'Unknown', confidence: 0.98),
+          ModelClassification(index: 0, label: 'Unknown', confidence: 0.98),
           ModelClassification(index: 1, label: 'Apple', confidence: 0.73),
         ];
       final scanner = ObjectScannerUseCases(
@@ -534,4 +612,62 @@ final class _ThrowingOwners implements LocalOwnerRepository {
 final class _ThrowingVocabularyRepository implements VocabularyRepository {
   @override
   noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+Future<
+  ({
+    ObjectScannerUseCases scanner,
+    _FakeCamera camera,
+    _FakeRuntime runtime,
+    AppDatabase database,
+    DriftLocalOwnerRepository owners,
+  })
+>
+_scannerHarness() async {
+  final directory = await Directory.systemTemp.createTemp('b11-scanner-');
+  final database = AppDatabase(NativeDatabase.memory());
+  final bytes = utf8.encode('verified-test-model');
+  final file = File('${directory.path}/model.tflite');
+  await file.writeAsBytes(bytes);
+  final manifest = _manifest(bytes);
+  final repository = _ModelRepository(_activeRecord(manifest, file.path));
+  final runtime = _FakeRuntime();
+  final camera = _FakeCamera();
+  var id = 0;
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'owner-${id++}',
+    nowUtc: () => DateTime.utc(2026, 9, 13),
+  );
+  final scanner = ObjectScannerUseCases(
+    camera: camera,
+    deviceModels: DeviceModelUseCases(
+      manifest: manifest,
+      repository: repository,
+      downloadManager: _uncalledManager(repository, directory),
+      openRuntime:
+          ({required path, required manifest, required delegate}) async =>
+              runtime,
+    ),
+    vocabulary: VocabularyUseCases(
+      owners: owners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'id-${id++}',
+      nowUtc: () => DateTime.utc(2026, 9, 13),
+    ),
+    preprocessor: _FakePreprocessor(),
+  );
+  addTearDown(() async {
+    await scanner.dispose();
+    await database.close();
+    await directory.delete(recursive: true);
+  });
+  await scanner.initialize();
+  return (
+    scanner: scanner,
+    camera: camera,
+    runtime: runtime,
+    database: database,
+    owners: owners,
+  );
 }
