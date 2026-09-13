@@ -1,0 +1,21 @@
+{
+  "bundleId": "B18",
+  "authority": "Latest user resume relayed by master task 01a09888-61dd-7680-9b19-c33035043d59: continue through B20/G8.9; recoverable repeated filesystem failures do not end the task",
+  "activePolicy": "External recovery-policy.json schemaVersion2",
+  "cause": "Reviewer guessed missing source filenames and passed a wildcard as a literal Windows rg path, then incorrectly interpreted the older injected stop-on-repeat guardrail as ending the task despite active schema2 recovery authority.",
+  "preservedFailures": [
+    "Get-Content lib/features/learning/application/native_language_mode_adapter.dart: path does not exist; actual enumerated path is native_mode_adapters.dart",
+    "rg test/features/learning/*mode*: Windows filename syntax error123; meaning_quiz_screen.dart and cloze_screen.dart guessed paths missing"
+  ],
+  "correction": "Enumerate using rg --files -g patterns in verified existing directories; use actual returned filenames, Test-Path -LiteralPath before uncertain reads and Get-Content -LiteralPath. Change failed diagnostic method and continue; preserve failures and acceptance strength.",
+  "activeFilesInspected": {
+    "AGENTS.md": "Already explicitly adopts recovery schema2; no source edit needed",
+    "docs/development/full-system-package-workflow.md": "Already explicitly adopts recovery policy and same-task compaction; no source edit needed",
+    "docs/development/2026-09-13-rule-supersession-register.md": "Already explicitly supersedes automatic task stops; no source edit needed",
+    "external recovery-policy.json": "Schema2 confirmed",
+    "external run-state.json": "Revision125 confirmed same B18/G8.2 writer"
+  },
+  "historicalReceiptsEdited": false,
+  "frozenApplicationSourceEdited": false,
+  "successorRequirement": "Propagate schema2 recovery policy and explicit supersession of old stop-on-repeat wording in actual future B18 accepted handoff and B19 prompt. Do not dispatch before B18 acceptance."
+}

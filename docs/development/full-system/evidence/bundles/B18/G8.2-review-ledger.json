@@ -33739,11 +33739,18 @@
       "lines": 781,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full781 lines read. Duplicate lexical IDs fail closed, packaged reviewed artifact and core identity required. Blanks exactly one whole-word occurrence; missing/ambiguous examples explicitly skipped. Selected response is recognition, typed response independent recall, hints guided; typed/selected digests differ. Typed answers bounded160 scalars and nonempty, selected answers constrained to pinned options. Frozen feedback and pending command survive retry; postcommit hint reset errors do not manufacture retry. One-option and Unicode boundary edge cases require caller/oracle review.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          781
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
@@ -33788,11 +33795,18 @@
       "lines": 679,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full679 lines read. Duplicate lexical IDs fail closed through null sentinel. Missing/unreviewed/stale definitions become explicit skipped items; valid candidates require exact core revision/checksum and verified rich artifact. Distractors exclude normalized equivalent definition/answer; single-option case remains possible. Hint unknown defaults guided level2. Committed feedback precedes best-effort local hint reset, whose failure cannot fabricate a write retry. Exact pending evidence/close state retained; caller composition and tests pending.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          679
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/flashcard_mode_adapter.dart",
@@ -33802,11 +33816,18 @@
       "lines": 333,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full333 lines read. Rejects empty session and mismatched LearningUseCases authority. Reveal captures exposure and rating before reveal captures independent recall. Admitted-operation closure rechecks phase; pending evidence and close retain exact retry identity. Advance after reveal uses recovery admission for already accepted work. Local disposal suppresses notification while outer lifecycle owns admitted futures; caller/test cross-check pending.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          333
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/handwriting_self_check_adapter.dart",
@@ -33977,11 +33998,18 @@
       "lines": 615,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full615 lines read. Deterministic forward/reverse/mixed prompts and options exclude normalized equivalent answers/prompts. Pinned lexical feedback requires approved published packaged metadata and artifact identity; core-versus-rich consistency still needs caller/oracle review. Nonempty external distractor input triggers insufficient-option rejection, but default empty input permits a single option; compare production composition and intended tests before promoting. Answer freezes feedback and exact pending evidence before asynchronous commit, serial phase prevents ordinary reentry, completion retains pending close. No zone acceptance inferred.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          615
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/native_mode_adapters.dart",
@@ -33991,11 +34019,18 @@
       "lines": 558,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full558 lines read. Typed mode classification constrains prompt, skill, evidence class, support and provenance correctness suffix. Dictation uses normalized lexical equality, speaking transcript exactness and shadowing transcript similarity threshold80; these are not acoustic pronunciation proof. CEFR reading only records exposure, scramble modes recreational. Speech assessment checks UTC, percentage range and bounded provenance; transcript assessment authority and production capture callers still need cross-check. Associative classification delegates to typed recall contract.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          558
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/session_configuration_policy.dart",
@@ -34026,11 +34061,18 @@
       "lines": 1002,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1002 lines read. Bounded120-scalar response and at most8 normalization-distinct variants; versioned Latin decomposition then whitespace/lowercase normalization is explicitly bounded rather than universal Unicode normalization. Variant revision must equal core revision with checksum; capture uses shared prompt-artifact resolver and persists controlled response code rather than raw learner text. Mixed quiz intentionally keeps forward recognition and reverse typed recall; assistance unknown guided2. Pending evidence/feedback and terminal close retain exact retry. Skip does not reset hints unlike definition/cloze, a conservative carry-over observation pending UX contract. Legacy answer-set helper core-only return has no production caller beyond its declaration; do not confuse it with capture identity resolver.",
+      "sourceReadDate": "2026-09-13T22:29:04.069669+00:00",
+      "readRanges": [
+        [
+          1,
+          1002
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/unified_lesson_controller.dart",
@@ -34484,11 +34526,18 @@
       "lines": 225,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Domain-separated SHA256 commits prompt mode, core checksum and optional exact rich revision/checksum with NUL separators. Rich metadata required for meaning/definition/cloze and optional accepted variants for typed recall; matching core only. Adapter and reader share resolver and canonical formatted evidence revision. Inputs reject noncanonical hashes, invalid word identity/control characters and incomplete rich identity pair. This resolves why evidence checksum differs from raw rich-manifest checksum; it is integrity binding rather than external authorization.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          225
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/domain/session_configuration.dart",
@@ -34967,11 +35016,18 @@
       "lines": 1714,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1714 lines read. Route lifecycle serializes admission, retains settled accepted-operation futures and Zone leases, freezes one retirement cutoff, compensates unattached sessions, and preserves exact retry authority. Shell lease and mode host await retirement before controller disposal, narrowing the controller disposal observation. Feature loss retires the route; app lifecycle closes Pair continuation and reconciles pause/resume with identity/mounted guards. Ephemeral state clears on retirement and terminal status. Generic loaded session attachment checks expected owner/config but not a fresh active-owner lookup; caller admission race remains under review. Focus gate disables timer asynchronously with swallowed errors; persisted timer behavior and lifecycle oracles still need cross-check.",
+      "sourceReadDate": "2026-09-13T22:24:56.112309+00:00",
+      "readRanges": [
+        [
+          1,
+          1714
+        ]
+      ]
     },
     {
       "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
@@ -38552,11 +38608,20 @@
       "lines": 505,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV03-01"
+      ],
+      "reviewNotes": "Full file read. Dependency and evidence authority checks precede generic session start; lifecycle initializes raw session and abort compensates on lexical preparation failure. UI delegates scoring/persistence to typed controller, uses mounted guards and explicit evidence/close retry. Last skipped item terminal failure has no retry control because controls sit only in nonnull-question branch, while persistence lock prevents back; recorded B18-REV03-01. Generic admission owner candidate also applies. Lifecycle correctness and exact retry tests still pending.",
+      "sourceReadDate": "2026-09-13T22:26:20.045139+00:00",
+      "readRanges": [
+        [
+          1,
+          505
+        ]
+      ]
     },
     {
       "path": "lib/screens/dictation_quiz_screen.dart",
@@ -38608,11 +38673,18 @@
       "lines": 702,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Same lifecycle/authority preparation and failure compensation as definition. Typed input requires nonempty bounded160 scalar text with IME composition settled; selected input separate choice/confirm checks exact question identity. Responses delegated to adapter; sentence practice appears only after durable answer with session/question identity and interaction gate. Last skipped item terminal failure omits retry in null-question branch and locks navigation, also B18-REV03-01. Completion scoreboard navigation and retirement oracles pending.",
+      "sourceReadDate": "2026-09-13T22:26:20.045139+00:00",
+      "readRanges": [
+        [
+          1,
+          702
+        ]
+      ]
     },
     {
       "path": "lib/screens/game_launcher_screen.dart",
@@ -43637,11 +43709,18 @@
       "lines": 624,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Covers exact original sentence/literal underscores, multiple-match skip, reviewed content revision, deterministic normalized options and selected/typed/unknown-hint classifications. Real Drift checks selected and hinted typed exclude SRS while independent typed creates one state, invalid input leaves attempts empty, postcommit lost acknowledgment retries stable occurrence. Synthetic rich metadata fixtures do not prove pack loading. No widget terminal retry on final skipped item, and no non-BMP boundary oracle.",
+      "sourceReadDate": "2026-09-13T22:29:04.069669+00:00",
+      "readRanges": [
+        [
+          1,
+          624
+        ]
+      ]
     },
     {
       "path": "test/features/learning/contrastive_feedback_test.dart",
@@ -43693,11 +43772,18 @@
       "lines": 661,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Tests reviewed/stale/missing definition pinning, composite core/rich digest sensitivity, normalized ambiguity-safe deterministic distractors and guided hint policy. Real in-memory Drift validates recognition/guided attempts without SRS; lost-ack wrapper commits before throwing then compares exact command fields, one attempt and canonical event/decision rows. Unit artifact fixtures synthesize hashes and rich objects, so not end-to-end pack verification. No terminal close failure after skipped final item case.",
+      "sourceReadDate": "2026-09-13T22:29:04.069669+00:00",
+      "readRanges": [
+        [
+          1,
+          661
+        ]
+      ]
     },
     {
       "path": "test/features/learning/drift_associative_learning_adapter_test.dart",
@@ -47487,11 +47573,18 @@
       "lines": 494,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift widget fixtures verify 2x text semantics traversal, skipped first item continuation without evidence, shell hint guided evidence/reset, retained answer fenced after route retirement, and lexical-load failure abandons durable session. Bounded pump helper fails when expected UI absent. Skip case is nonterminal first item; does not exercise final skipped item close failure and hidden retry identified in B18-REV03-01. No test run inferred.",
+      "sourceReadDate": "2026-09-13T22:29:04.069669+00:00",
+      "readRanges": [
+        [
+          1,
+          494
+        ]
+      ]
     },
     {
       "path": "test/screens/dictation_quiz_screen_test.dart",

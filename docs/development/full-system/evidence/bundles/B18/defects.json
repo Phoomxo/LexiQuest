@@ -3,6 +3,20 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "findings": [
     {
+      "id": "B18-REV03-01",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/screens/definition_quiz_screen.dart",
+      "relatedFiles": ["lib/screens/fill_in_the_blanks_screen.dart", "lib/features/learning/application/definition_quiz_mode_adapter.dart", "lib/features/learning/application/cloze_mode_adapter.dart"],
+      "trigger": "Last item is skipped because reviewed content is missing/stale/ambiguous; finishing the session fails",
+      "expected": "User can explicitly retry the exact pending terminal command while skip produces no answer evidence",
+      "actual": "Both screens render completionRetryRequired action only inside question != null branch. Skipped last item keeps question null; controller transitions to completionRetryRequired, disabling advance and locking PopScope without any visible retry action",
+      "ownerPackage": "G2.1/G2.2",
+      "proposedRegression": "Widget tests for definition and cloze with last skipped item and finish failing once: exact retry visible and succeeds, no answer evidence inserted, stable captured terminal intent and no duplicate completion",
+      "fixSha": null,
+      "retest": null
+    },
+    {
       "id": "B18-REV01-01",
       "severity": "P2",
       "status": "open-static-confirmed-runtime-reproduction-pending",

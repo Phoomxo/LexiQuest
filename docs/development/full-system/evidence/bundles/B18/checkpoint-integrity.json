@@ -2,15 +2,15 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "trackedRawBytesVerified": 3610,
   "sourceAndConfigStatus": {
-    "pending-review": 1325,
-    "source-read-awaiting-cross-check": 100,
+    "pending-review": 1312,
+    "source-read-awaiting-cross-check": 113,
     "in-progress": 4
   },
   "ignoredFiles": [],
   "newReviewTooling": [
-    "docs/development/full-system/evidence/bundles/B18/merge_review_observations.py",
-    "docs/development/full-system/evidence/bundles/B18/review_observations_rev02.json",
-    "docs/development/full-system/evidence/bundles/B18/review_observations_rev03.json"
+    "docs/development/full-system/evidence/bundles/B18/recovery-policy-delta.json",
+    "docs/development/full-system/evidence/bundles/B18/review-cross-checks-rev03.json",
+    "docs/development/full-system/evidence/bundles/B18/review_observations_rev12.json"
   ],
   "semanticReviewComplete": false,
   "G82Accepted": false,
