@@ -1,0 +1,34 @@
+{
+  "packageId": "G5.6",
+  "status": "accepted-local-retained-baseline",
+  "requirements": ["A-CAM", "A-MODEL", "COV-f41", "FORM-09", "G5"],
+  "decision": "retain-baseline",
+  "baseline": {"id": "mobilenet-v1-imagenet", "sha256": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b", "bytes": 4287874, "outputs": 1001, "manifest": "lib/features/device_model/domain/model_manifest.dart", "sourceChanged": false},
+  "candidate": {"sha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96", "bytes": 12871389, "outputs": 16, "releaseEnabled": false, "distributionUri": null, "rollback": "Remove local development selection; production pin was never changed"},
+  "gates": {
+    "runtime": "B11 115tests/11files reused after1305 exact inputs + evidence-only attributes audit; no new full-suite run",
+    "candidateNative": "B11A actual LiteRt 4probe/16score test reused after1305exact+1CRLF-only relocated probe+evidence attributes audit",
+    "manifest": "B12 verify-scope targeted2tests passed;1306inputhashes exact; unchanged gate reused forG5.6",
+    "evaluationContracts": "B12 Python9tests passed; legacyF3/F4 acceptedG0.2 source unchanged after explicitLF/CRLF check",
+    "datasetTrainingExport": "B11A actual acquisition/training/export accepted and reused through immutable artifact pins",
+    "validationDevelopment": "109/120top1;99/120correctAccepted at fixed0.6;15/120rejected",
+    "unknown": "NOT RUN; denominator0, rate/interval null",
+    "freshCamera": "NOT RUN; no test opened",
+    "resources": "Host Python CPU diagnostics only; no paired baseline/pipeline/physical gate; native handle count not measured",
+    "quality": "NOT ACCEPTED: incomplete fresh/unknown coverage,16vs1001vocabulary, descriptive known accepted82.5% below85% and4classes below75%",
+    "fullRelease": "NOT RUN; only permitted on frozenPR/releaseSHA"
+  },
+  "review": {
+    "method": "Inline source/diff/contracts/artifact review under explicit no-subagent policy",
+    "findings": ["Separate development schema does not reinterpretF3/F4 freezes", "Exact predictionID/truth/argmax/vector/finite checks", "Dataset/curation/export/modelbytes/embeddedlabels pinned", "Whole freeze recomputed; exclusive outputs; never grants fresh authority", "Baseline mapping explicit and paired IDs exact; unknown acceptance counted independently of canonical label", "Zero denominators null; lowsoftmax threshold cannot pass", "No production app/source/flag/model change", "Host3 interference preserved and excluded; replacement4 measured alone", "Legacy precommit repair-manifest hashes stale; actual acceptedG0.2 commit used and explicitEOL audited"],
+    "requiredOpenDefects": []
+  },
+  "defects": [
+    {"id": "B12-01", "status": "closed", "evidence": "G5.4-cli-red.log;G5.4-cli-green.log", "cause": "Dataset schema mismatch", "fix": "Use actual accepted schema"},
+    {"id": "B12-02", "status": "closed", "cause": "psutil unavailable", "fix": "Windows GetProcessMemoryInfo measurement; no install"},
+    {"id": "B12-03", "status": "closed", "cause": "Host3 overlapping targeted verifier", "fix": "Preserve/exclude3; fresh isolated4"},
+    {"id": "B12-04", "status": "closed", "evidence": "G5.6-input-audit.log;G5.6-input-audit-corrected.log", "cause": "Historical precommit repair-manifest differs from final acceptedG0.2", "fix": "Compare to actual acceptedcommit, not stale precommit hash; no runtime source differences"}
+  ],
+  "externalGates": ["Device/nativepermissions/accessibility/livespeech/fullrelease NOT RUN", "FORM02speech G6.4/G6.5", "LegacySQLite import G7.2", "Finalflags G7.5/G7.7", "f28 not selected; research remains hidden", "No researchactivation/remotesync/studyassignment/statisticalreporting", "Freshcamera and independentunknown evaluation later; inspected improvement images become development and need newheldout set", "Effective service tier unverified; Astra medium/default requested", "No publication/deployment/newspending"],
+  "evidence": ["G5.4-acceptance.json", "G5.5-acceptance.json", "G5.6-input-audit.json"]
+}

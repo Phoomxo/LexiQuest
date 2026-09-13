@@ -1617,7 +1617,7 @@
         "tools/test_camera_accuracy.py"
       ],
       "verificationKind": "python-camera",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P5.3c"
       ],
@@ -1625,7 +1625,8 @@
       "plannedCommands": [],
       "displayId": "G5.4",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G5.4.md",
-      "bundleId": "B12"
+      "bundleId": "B12",
+      "evidence": "docs/development/full-system/evidence/bundles/B12/G5.4-acceptance.json"
     },
     {
       "id": "P5.5",
@@ -1645,7 +1646,7 @@
         "test/features/device_model/model_manifest_test.dart"
       ],
       "verificationKind": "camera-evaluation",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P5.4"
       ],
@@ -1653,7 +1654,8 @@
       "plannedCommands": [],
       "displayId": "G5.5",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G5.5.md",
-      "bundleId": "B12"
+      "bundleId": "B12",
+      "evidence": "docs/development/full-system/evidence/bundles/B12/G5.5-acceptance.json"
     },
     {
       "id": "P5.6",
@@ -1673,7 +1675,7 @@
         "test/features/device_model/model_manifest_test.dart"
       ],
       "verificationKind": "camera-release-boundary",
-      "status": "waiting-predecessor",
+      "status": "accepted",
       "dependencies": [
         "P5.5"
       ],
@@ -1681,7 +1683,8 @@
       "plannedCommands": [],
       "displayId": "G5.6",
       "taskBrief": "docs/superpowers/task-briefs/full-system/G5.6.md",
-      "bundleId": "B12"
+      "bundleId": "B12",
+      "evidence": "docs/development/full-system/evidence/bundles/B12/G5.6-acceptance.json"
     },
     {
       "id": "P6.1",
