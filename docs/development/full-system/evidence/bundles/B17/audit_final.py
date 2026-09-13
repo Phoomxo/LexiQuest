@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 root = Path.cwd()
-evidence = Path(__file__).parent
+evidence = Path(__file__).resolve().parent.relative_to(root)
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 def read(path): return json.loads(path.read_text(encoding='utf-8-sig'))
 def dart_closure(targets):

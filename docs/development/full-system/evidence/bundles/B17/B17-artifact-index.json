@@ -1,429 +1,429 @@
 {
   "artifacts": [
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/audit_final.py",
-      "bytes": 4507,
-      "sha256": "3ad237048da761ae365048b18067b88ad269285f650e79e2498a431acadb6b02"
+      "path": "docs/development/full-system/bundles/B17.md",
+      "bytes": 2483,
+      "sha256": "857218d7616d6f0377b8d0d8c035c2ae3dd90b916c6d0c9c8330c33585317fee"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/audit_reuse.py",
+      "path": "docs/development/full-system/evidence/bundles/B17/audit_final.py",
+      "bytes": 4535,
+      "sha256": "1755d05eb87f9d2b37507c584ff79967ab548a41567cbf61052e6deb7e0504ff"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B17/audit_reuse.py",
       "bytes": 3437,
       "sha256": "8f2f1b59e14e3ba76e1420155929eb14193824ee27927fa110a7639bbadbbb4f"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/capture_verifier.py",
+      "path": "docs/development/full-system/evidence/bundles/B17/capture_verifier.py",
       "bytes": 938,
       "sha256": "b272efdc8eff90386b1d8ee9a2de2ce24ac972e9488bcc5f9411ae750da21f7e"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/checkout-byte-restoration.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/checkout-byte-restoration.json",
       "bytes": 207696,
       "sha256": "8f167a34574558f81fa55f6a8b9083cb70e0cbafbb1d0020ebb2729540873e80"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/defects.json",
-      "bytes": 5404,
-      "sha256": "adf646d5eed43331eb4ce2c422be41e01cf25a852c74131558d229b93d454cc4"
+      "path": "docs/development/full-system/evidence/bundles/B17/defects.json",
+      "bytes": 5852,
+      "sha256": "4e8c7ea5e9df7d023db37a736f6977c4f0150ba6fb1c359b2339e79021d360ce"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/final-input-audit.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/final-input-audit.json",
       "bytes": 2544,
       "sha256": "dcee5408ced2695d5b87c118dde9ee5614da32825b2bd98986dd8851d578ced6"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-AI-API-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-AI-API-tests.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-AI-API-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-AI-API-tests.stdout.log",
       "bytes": 368,
       "sha256": "6c9abe35995af2165bf53978668b2e8d814805174c44ca34a1d217ef6bdadf64"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-run.log",
       "bytes": 230,
       "sha256": "8dd4134c64c9a313950719869380fe04291c7f16a680466361113ec64cc9ecca"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-green-verifier.json",
       "bytes": 18058,
       "sha256": "a561e156b6e45dafd8beec377d16d228e2ec0a6f7f3803add378b59ebc394d50"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-AI-API-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-AI-API-tests.stderr.log",
       "bytes": 2066,
       "sha256": "39cecdc1afd9ed1f50ef644b6d211be899cd209782fa4b02e7b2b0797b28be1b"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-AI-API-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-AI-API-tests.stdout.log",
       "bytes": 7810,
       "sha256": "8fd54606ed55c43aaa1caf1745b73d12da9ae1da0d2c8c0903e8ed306528d014"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-run.log",
       "bytes": 369,
       "sha256": "fc5d59e61d3b2da56205e6ced197af9eb9db13b2b3bc4bf0d65c7167c659a15b"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-ai-red-verifier.json",
       "bytes": 18058,
       "sha256": "ae445dc692f48e35f5b9b60aa7a0717b521ecad48a33a1c90d0a0230dbbca94c"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-contract-review.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-contract-review.json",
       "bytes": 2546,
       "sha256": "b8d36da3f4653a9f86112a2853a5a1a06968d4eba8486f2f67bb6c908625ac90"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-flutter-Explicit-Flutter-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-flutter-Explicit-Flutter-tests.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-flutter-Explicit-Flutter-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-flutter-Explicit-Flutter-tests.stdout.log",
       "bytes": 51980,
       "sha256": "fc161867e01ae4ea6137d1e36210676f60f5d04ca3700f6f4797b058917ec885"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-flutter-reuse.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-flutter-reuse.json",
       "bytes": 25368,
       "sha256": "32b2a423d58cf47efd1efafdf8a4d6fee36db11263245db9eb4ceb17a7bc98a8"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-flutter-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-flutter-run.log",
       "bytes": 289,
       "sha256": "6da9695e8dcd035bcd7381c374391cb5a7234e43ee923163f3ac2e6b54661535"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-flutter-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-flutter-verifier.json",
       "bytes": 254938,
       "sha256": "2ff993d2e9cd91a7202a8363a4ccb0b45d7932100113e216bb5171831ed03df9"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-lm-Local-LM-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-lm-Local-LM-tests.stderr.log",
       "bytes": 2086,
       "sha256": "c1ace69e0c546ae884dad54d3cb49838d34b2b2436f45515a09eaa518daf6038"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-lm-Local-LM-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-lm-Local-LM-tests.stdout.log",
       "bytes": 366,
       "sha256": "8cee9cb2010cf3c6df22b74c2425d61e08f2f472cd91051d6ce3d5679cececa8"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-lm-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-lm-run.log",
       "bytes": 232,
       "sha256": "59821245d9a3e01ed7687a5fa7e38aee0969dc0a64ee3e789ff8cfa229be43a3"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-lm-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-lm-verifier.json",
       "bytes": 20702,
       "sha256": "18f8688c0076130515a288f5c2f1b9d022a322e435316cc9e3f26d70d80b173c"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-voice-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-voice-run.log",
       "bytes": 239,
       "sha256": "8e6484adbbb7ad54723c8b78d515fb3e8c33bbdd3a351526e859c356ccd3c9b8"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-voice-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-voice-verifier.json",
       "bytes": 19815,
       "sha256": "8ccd88ac3d7b630a8a5897c9dc7d257439c287532a34fc54e1c44ad63bc6dc04"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-voice-Voice-API-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-voice-Voice-API-tests.stderr.log",
       "bytes": 2096,
       "sha256": "9555b81152b57a13ec33c8f134488d2a957f2bf76ad8875579ed42eed656e388"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.6-voice-Voice-API-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.6-voice-Voice-API-tests.stdout.log",
       "bytes": 366,
       "sha256": "db22b05e00a6d51133bdcf28687de42205dc28b052d471a9a7562496185adb7a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-fixed-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-fixed-run.log",
       "bytes": 301,
       "sha256": "ad3a3c1bbdbc64299ffddaf385dc1429748c8d85d6bf411f6600df844e9858ab"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-Explicit-Flutter-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-Explicit-Flutter-tests.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-Explicit-Flutter-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-Explicit-Flutter-tests.stdout.log",
       "bytes": 27490,
       "sha256": "52e6ef956f3d9636b46b14e64f0e713f31b697b835ef1676b2cc988430316559"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-green-verifier.json",
       "bytes": 263130,
       "sha256": "9667f35598ab0a9c0aee494f367b3b1a2ebdcf9f3f67ec82c3c85e5c50472690"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-Explicit-Flutter-tests.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-Explicit-Flutter-tests.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-Explicit-Flutter-tests.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-Explicit-Flutter-tests.stdout.log",
       "bytes": 72720,
       "sha256": "1199c7bd9e0a9847a40fa17ce83cc974d417392a6ab7e5b0b0fce14ea92c3dc5"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-red-verifier.json",
       "bytes": 263130,
       "sha256": "2d1ea434023038b48fd860df0691be1a16f7119103f613d307de64f356e33ab5"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-architecture-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-architecture-run.log",
       "bytes": 409,
       "sha256": "727223a9d44f3dbc0ab41beb5f259ba06ce96448834c1e2df36b727027822803"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-bundle-inspection.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-bundle-inspection.json",
       "bytes": 8905,
       "sha256": "68393f29fbd7f5bfe66345ed5c1ee0f6fb5516f990c4ae2ffdfb75929eea06b5"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-bundle-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-bundle-run.log",
       "bytes": 272,
       "sha256": "15505f501f694f96e1e4b7e05840be1586b878e92af1ae04c076245a2f3e8e2e"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-bundle-Unsigned-local-preview-Flutter-bundle.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-bundle-Unsigned-local-preview-Flutter-bundle.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-bundle-Unsigned-local-preview-Flutter-bundle.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-bundle-Unsigned-local-preview-Flutter-bundle.stdout.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-bundle-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-bundle-verifier.json",
       "bytes": 274200,
       "sha256": "20630271751b4763f119348b651cdb59f7773c28964eaafd13e57e40947b7528"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-r15-scope.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-r15-scope.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-r15-scope.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-r15-scope.tests.ps1.stdout.log",
       "bytes": 158,
       "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-run.log",
       "bytes": 435,
       "sha256": "33973a0d621f63fde5547aed95fbef9fc69723609618723cfce42edb4068b76b"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verifier.json",
       "bytes": 268620,
       "sha256": "31e72570c561b0337c42744b8c4e1cc26f916e2147757356602c649fb5ef01de"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verify-scope.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verify-scope.tests.ps1.stderr.log",
       "bytes": 2614,
       "sha256": "d170687137e9b9f475a11958ae29fad9b31ac55632ba7e63f87901f066a6d68c"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verify-scope.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-cli-red-verify-scope.tests.ps1.stdout.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-flutter-toolchain.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-flutter-toolchain.json",
       "bytes": 631,
       "sha256": "97cdf8ab5b4ae35460b23a163e4bfc75e615890d6be4b7a40b379354df734f12"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-manifest-security.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-manifest-security.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-manifest-security.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-manifest-security.tests.ps1.stdout.log",
       "bytes": 1620,
       "sha256": "3776fda5b55d3564b6f717eb80409b575baf409a338430be1bdefa056a2fe370"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-provenance.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-provenance.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-provenance.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-provenance.tests.ps1.stdout.log",
       "bytes": 124,
       "sha256": "37a85dc069d790250778f89cf9b8b742a2d26414985ccefaf4282ac5b0bdbece"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-signing.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-signing.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-signing.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-android-release-signing.tests.ps1.stdout.log",
       "bytes": 118,
       "sha256": "e1764dfed3269fd0e8f7e70215919d5ec06dc1e8a12095406c37e53acf5b1ce8"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-release-profile.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-release-profile.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-release-profile.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-release-profile.tests.ps1.stdout.log",
       "bytes": 176,
       "sha256": "2ecddd04733033bdf57fb15a02ab018e97709f2b6574ea238c6fe4dbc7c3dc63"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-run.log",
       "bytes": 468,
       "sha256": "084f44c55ea4c1c105fea2ca70c2b0f8cccec4352626a6e2c1b30ca242801724"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verifier.json",
       "bytes": 273453,
       "sha256": "7378094104adb47314b4053e9b1e84aec5f9e681d1c0620b844ebd7908bdb0f3"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verify-field-package.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verify-field-package.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verify-field-package.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-native-config-verify-field-package.tests.ps1.stdout.log",
       "bytes": 114,
       "sha256": "58cb15bdfe5d10c56ada674c3f984f967512bf951a3dd0f93abb53ce345c5083"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-release-profile.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-release-profile.tests.ps1.stderr.log",
       "bytes": 2916,
       "sha256": "b85c40e98a2133768944520eead2c5ffe8591cd1470fce4db370616c7fdfeb37"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-release-profile.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-release-profile.tests.ps1.stdout.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-missing-red-verifier.json",
       "bytes": 267427,
       "sha256": "6a623c3a338633b81f78988f799a264521c94445ec8f05fdd75dd92735fb7db1"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-release-profile.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-release-profile.tests.ps1.stderr.log",
       "bytes": 2864,
       "sha256": "2e3ed6e9f05c356c7228f2957ae36c64a35ebf8ce8e76523f7b3a999997b8345"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-release-profile.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-release-profile.tests.ps1.stdout.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-run.log",
       "bytes": 421,
       "sha256": "abe720f72d3879da30ac303d07edb937d77356c4b8c9ab5e911290b154ba174f"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-profile-red-verifier.json",
       "bytes": 268491,
       "sha256": "6e21982aacbaac689b5de057c4519b1a7d12367e8e9dc42d80a156a9a628a63c"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-readiness-pins.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-readiness-pins.json",
       "bytes": 4402,
       "sha256": "b3e1ffc316ae3e9efb9368bbb86c530cc3c1f75ac28f66f7ce0aa717391cff3f"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-fixed-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-fixed-run.log",
       "bytes": 373,
       "sha256": "6b956afe98cf3b69a5a5e3c3a101060120f31b5a224ba5668e18bad0a4aae675"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-package-field-release.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-package-field-release.tests.ps1.stderr.log",
       "bytes": 22128,
       "sha256": "850e131a031f9af7de88e0055233d31c753d6973ae25ec7b8309bcf4f812df78"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-package-field-release.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-package-field-release.tests.ps1.stdout.log",
       "bytes": 104,
       "sha256": "4530521af84bae6716463ea0096b1713abbe391f2876609c8e62417481e9158c"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-release-profile.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-release-profile.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-release-profile.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-release-profile.tests.ps1.stdout.log",
       "bytes": 176,
       "sha256": "2ecddd04733033bdf57fb15a02ab018e97709f2b6574ea238c6fe4dbc7c3dc63"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verifier.json",
       "bytes": 270458,
       "sha256": "be3683e4bde7cc3384e5b6051fcd71ff0dca3879c1d96cc6ca85f9b0464a4a30"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verify-scope.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verify-scope.tests.ps1.stderr.log",
       "bytes": 394,
       "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verify-scope.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-green-verify-scope.tests.ps1.stdout.log",
       "bytes": 452,
       "sha256": "b1263af7f8bca2ca6e5fb0174b6d05663c5e2b75203039cedce5cb16d4f0be2d"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-release-profile.tests.ps1.stderr.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-release-profile.tests.ps1.stderr.log",
       "bytes": 2916,
       "sha256": "b85c40e98a2133768944520eead2c5ffe8591cd1470fce4db370616c7fdfeb37"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-release-profile.tests.ps1.stdout.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-release-profile.tests.ps1.stdout.log",
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-verifier.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-hash-failure-verifier.json",
       "bytes": 267427,
       "sha256": "6a623c3a338633b81f78988f799a264521c94445ec8f05fdd75dd92735fb7db1"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-tooling-run.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-tooling-run.log",
       "bytes": 421,
       "sha256": "2bfa4028c3b17bc713a1ce27f66ac82448136eac09c3d195ce510dadee72e735"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/G7.7-uv-version.log",
+      "path": "docs/development/full-system/evidence/bundles/B17/G7.7-uv-version.log",
       "bytes": 56,
       "sha256": "42cd3076d67b8c9ecbc00060bad728823113ff4a23b01e1634e54c03ceda33a9"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/inherited-artifact-audit.json",
+      "path": "docs/development/full-system/evidence/bundles/B17/inherited-artifact-audit.json",
       "bytes": 403,
       "sha256": "5bb1d6f349998d53c8e53d0976824e5cf83bc5133596eac93d78a21f39de5e41"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/inspect_preview_bundle.py",
+      "path": "docs/development/full-system/evidence/bundles/B17/inspect_preview_bundle.py",
       "bytes": 2185,
       "sha256": "1bdd05c8eb842e155d4703915f3fc4668f1f078293f35ce485389c52baf7969b"
     },
     {
-      "path": "C:/Users/Phet/.codex/worktrees/9f44/LexiQuest/docs/development/full-system/evidence/bundles/B17/restore_checkout_bytes.py",
+      "path": "docs/development/full-system/evidence/bundles/B17/restore_checkout_bytes.py",
       "bytes": 1387,
       "sha256": "a18949976ed41fb167d717ab520d5b399d99cf8cb7ebb8d07f0abe2a6aa51f08"
-    },
-    {
-      "path": "docs/development/full-system/bundles/B17.md",
-      "bytes": 2483,
-      "sha256": "857218d7616d6f0377b8d0d8c035c2ae3dd90b916c6d0c9c8330c33585317fee"
     }
   ]
 }

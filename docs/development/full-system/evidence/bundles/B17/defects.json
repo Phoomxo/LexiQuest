@@ -96,6 +96,14 @@
       "status": "closed-record-corrected",
       "actual": "Two profile failure capture labels swapped initially",
       "fix": "Original receipts/rawlogs preserved with timestamps/fingerprints; G7.7-profile-missing-red is missing helper, G7.7-profile-red is actual hash failure. No false pass."
+    },
+    {
+      "id": "B17-AUDIT-02",
+      "status": "closed-path-correction",
+      "actual": "Committed blob audit received absolute Windows path and Git returned missing",
+      "cause": "Python __file__ is absolute; artifact index requires repository-relative paths",
+      "fix": "Resolve evidence relative to cwd; regenerate index and audit committed blobs before handoff",
+      "testEffect": "No production or test gate inputs changed"
     }
   ]
 }
