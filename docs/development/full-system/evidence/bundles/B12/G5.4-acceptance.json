@@ -1,0 +1,46 @@
+{
+  "packageId": "G5.4",
+  "status": "accepted-local",
+  "requirements": [
+    "A-MODEL",
+    "FORM-09",
+    "G5"
+  ],
+  "tests": {
+    "log": "G5.4-cli-green.log",
+    "passed": 5,
+    "exitCode": 0
+  },
+  "actualValidation": {
+    "top1": 0.9083333333333333,
+    "correct": 109,
+    "samples": 120,
+    "recomputed": true
+  },
+  "pins": {
+    "tools/camera_development_evaluation.py": "700a1809d046df09d5017bf5f92006d238e9b6bcf1cdc914e60da803255f88ac",
+    "tools/test_camera_development_evaluation.py": "8c8b962e0ac413db69b274d373dfeaf0139b2c3244cc784945844d6ec22a2f02",
+    "docs/development/full-system/evidence/bundles/B12/G5.4-config.json": "b8c630e2d02e7da30328346471e9565a88025f8614ae4193e26c25a18e0c3a2f",
+    "docs/development/full-system/evidence/bundles/B12/G5.4-freeze.json": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+    "docs/development/full-system/evidence/bundles/B12/G5.4-recomputed.json": "9c930061201823da8c9a74b87c1cb907c8081507afeb1bc604541ac41d7338ea",
+    "docs/development/full-system/evidence/bundles/B12/G5.4-cli-green.log": "a5c72acc0244c28a0dbb986d5b90f717779a6e39dcc8834d9e60cb350fb9fde5"
+  },
+  "coverage": "insufficient: development3-16/class; zero unknown; zero freshcamera; retainbaseline",
+  "review": "Inline review: exact ID/argmax/finite score/ordered embedded label/model+export+dataset+curation byte pins; freeze fully recomputed, immutable exclusive CLI. Existing F3/F4 source untouched",
+  "defects": [
+    {
+      "cause": "New loader used inferred rather than actual dataset schema string",
+      "id": "B12-01",
+      "fix": "Use accepted lexiquest-web-development-v1 schema",
+      "status": "closed",
+      "retest": "G5.4-cli-green.log",
+      "evidence": "G5.4-cli-red.log"
+    }
+  ],
+  "externalGates": [
+    "No physicalcamera or fresh test opened",
+    "Unknown evaluation pending",
+    "Pretrained overlap unknown",
+    "No release authorization"
+  ]
+}

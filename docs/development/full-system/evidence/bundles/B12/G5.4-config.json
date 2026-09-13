@@ -1,0 +1,50 @@
+{
+  "schema": "lexiquest-camera-development-config-v1",
+  "scope": "web-development",
+  "labels": [
+    "book",
+    "bottle",
+    "chair",
+    "cup",
+    "apple",
+    "bread",
+    "tomato",
+    "bowl",
+    "spoon",
+    "fork",
+    "knife",
+    "door",
+    "ladder",
+    "light bulb",
+    "tool",
+    "tap"
+  ],
+  "threshold": 0.6,
+  "thresholdSelection": "Fixed descriptive policy; not calibrated, no unknown or fresh camera opened",
+  "candidate_model": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+  "baseline_model": "d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b",
+  "dataset_sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f",
+  "preprocess": "EXIF transpose; annotated crop; bilinear224 RGB raw uint8; model embedded normalization",
+  "artifacts": {
+    "manifest": {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/manifest.json",
+      "sha256": "fee1d89640a928e5c1f4d6a88cb20e6aa90cce08a025a42f34268a2b78f1cd9f"
+    },
+    "acceptance": {
+      "path": "C:\\Users\\Phet\\.codex\\worktrees\\a357\\LexiQuest\\docs\\development\\full-system\\evidence\\bundles\\B11A\\G5.3b-acceptance.json",
+      "sha256": "6575c609ef5ce9ce32fc43b20b62f50228537a211013a2cf587e7ca1738a7527"
+    },
+    "export": {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/run-001/export.json",
+      "sha256": "7d1e956556866323a764cbe9d7253e23301ad2f0ceef99345469e93937377c9e"
+    },
+    "model": {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/run-001/candidate.tflite",
+      "sha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96"
+    },
+    "predictions": {
+      "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09bc7-f608-7380-bf02-adff13deb6d0/camera-training/run-001/tflite-validation-predictions.json",
+      "sha256": "915626d734c001affa42b35405b3257db635fab6c95aeac0596724831c970455"
+    }
+  }
+}
