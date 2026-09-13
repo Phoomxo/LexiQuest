@@ -11,6 +11,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/progress/application/learning_calendar_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_learning_calendar_reader.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
@@ -57,13 +58,74 @@ void main() {
   tearDown(() => database.close());
 
   test(
+    'B02 first five of six stays separate from repair and exposure',
+    () async {
+      final when = DateTime.utc(2026, 8, 26, 3);
+      for (var i = 0; i < 6; i++) {
+        await _insertSession(database, id: 'first-$i');
+        await _insertAttempt(
+          database,
+          id: 'first-$i',
+          sessionId: 'first-$i',
+          occurredAtUtc: when,
+          isCorrect: i < 5,
+          evidence: _practiceEvidence(skillId: 'meaning'),
+        );
+      }
+      await _insertAttempt(
+        database,
+        id: 'repair',
+        sessionId: 'first-5',
+        occurredAtUtc: when.add(const Duration(minutes: 1)),
+        isCorrect: true,
+        attemptNumber: 2,
+        evidence: _practiceEvidence(skillId: 'meaning'),
+      );
+      await _insertAttempt(
+        database,
+        id: 'exposure',
+        sessionId: 'first-5',
+        occurredAtUtc: when.add(const Duration(minutes: 2)),
+        isCorrect: true,
+        evidence: EvidenceContext.forNewEvidence(
+          evidenceClass: EvidenceClass.exposure,
+          skillId: 'meaning',
+          hintLevel: 0,
+          contentRevision: '1',
+          rolloutMode: EvidencePolicyRolloutMode.legacy,
+        ),
+      );
+      final calendar = await reader.loadWeek(
+        ownerId: 'owner-1',
+        referenceUtc: when,
+        timezoneId: 'Asia/Bangkok',
+      );
+      final progress = await DriftProgressQueries(
+        database,
+      ).load(ownerId: 'owner-1', nowUtc: when);
+      expect(calendar.weekly.accuracy.sampleSize, 6);
+      expect(calendar.weekly.accuracy.correctCount, 5);
+      expect(progress.sampleSize, 6);
+      expect(progress.correctCount, 5);
+      expect(progress.accuracy, 5 / 6);
+      expect(progress.weaknesses.single.sampleSize, 6);
+      expect(progress.weaknesses.single.errorRate, 1 / 6);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(8),
+      );
+    },
+  );
+
+  test(
     'uses the learner-local Monday boundary for daily and weekly buckets',
     () async {
       await _insertSession(database, id: 'session-week-boundary');
+      await _insertSession(database, id: 'session-prior-week');
       await _insertAttempt(
         database,
         id: 'attempt-prior-week',
-        sessionId: 'session-week-boundary',
+        sessionId: 'session-prior-week',
         occurredAtUtc: DateTime.utc(2026, 8, 23, 16, 59),
         isCorrect: false,
         evidence: _practiceEvidence(skillId: 'listening'),
@@ -442,6 +504,7 @@ Future<void> _insertAttempt(
   required DateTime occurredAtUtc,
   required bool isCorrect,
   required EvidenceContext evidence,
+  int attemptNumber = 1,
 }) => database
     .into(database.answerAttempts)
     .insert(
@@ -452,7 +515,7 @@ Future<void> _insertAttempt(
         wordId: 'word-1',
         promptMode: 'meaningChoice',
         isCorrect: isCorrect,
-        attemptNumber: 1,
+        attemptNumber: attemptNumber,
         occurredAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
         evidenceClass: Value(evidence.evidenceClass.name),
         evidenceContextJson: Value(jsonEncode(evidence.toJson())),

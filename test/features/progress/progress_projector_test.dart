@@ -354,7 +354,8 @@ void main() {
       nowUtc: DateTime.utc(2026, 7, 30, 12),
     );
 
-    expect(result.sampleSize, 7);
+    // Seven stored answers repeat two item identities within one session.
+    expect(result.sampleSize, 2);
     expect(result.streakDays, 3);
   });
 
@@ -368,7 +369,8 @@ void main() {
         nowUtc: DateTime.utc(2026, 7, 30, 12),
       );
 
-      expect(result.sampleSize, 7);
+      // Seven stored answers repeat two item identities within one session.
+      expect(result.sampleSize, 2);
       expect(result.streakDays, 0);
     },
   );

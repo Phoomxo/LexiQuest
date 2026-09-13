@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/first_answer_accuracy.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../vocabulary/data/packaged_starter_access.dart';
 import '../../vocabulary/data/packaged_starter_catalog.dart';
@@ -308,7 +309,11 @@ final class DriftProgressQueries {
     if (wordIds != null && wordIds.isEmpty) return const <AnswerAttempt>[];
     final query = database.select(database.answerAttempts)
       ..where((row) => row.ownerId.equals(ownerId))
-      ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]);
+      ..orderBy([
+        (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+        (row) => OrderingTerm.asc(row.attemptNumber),
+        (row) => OrderingTerm.asc(row.id),
+      ]);
     if (wordIds != null) {
       query.where((row) => row.wordId.isIn(wordIds.toList()));
     }
@@ -342,7 +347,18 @@ final class DriftProgressQueries {
         );
       }
     }
-    return storedAttempts.where(_isPracticeAttempt).toList(growable: false);
+    return FirstAnswerAccuracy.select(
+      storedAttempts,
+      contextOf: _canonicalEvidence,
+      identityOf: (row, context) => (
+        row.ownerId,
+        row.sessionId,
+        row.wordId,
+        row.promptMode,
+        context.contentRevision,
+        context.skillId,
+      ),
+    );
   }
 
   Future<Map<String, SrsState>> _loadSrsForWords({
@@ -437,6 +453,7 @@ final class DriftProgressQueries {
     final allowedIdSql = authorizedIds.isEmpty
         ? 'NULL'
         : List.filled(authorizedIds.length, '?').join(',');
+    final firstAttempts = await _loadValidatedPracticeAttempts(ownerId);
     final limitSql = limit == null ? '' : 'LIMIT ?';
     final rows = await database
         .customSelect(
@@ -454,7 +471,7 @@ final class DriftProgressQueries {
       LEFT JOIN srs_states s
         ON s.word_id = a.word_id AND s.owner_id = a.owner_id
       WHERE a.owner_id = ? AND w.is_deleted = 0
-        AND a.evidence_class NOT IN ('assessment', 'recreational')
+        AND a.id IN (SELECT value FROM json_each(?))
         AND json_extract(a.evidence_context_json, '\$.evidenceClass') =
             a.evidence_class
       GROUP BY a.word_id, w.spelling, w.meaning, s.due_at_utc_ms
@@ -469,6 +486,9 @@ final class DriftProgressQueries {
           variables: [
             for (final id in authorizedIds) Variable<String>(id),
             Variable<String>(ownerId),
+            Variable<String>(
+              jsonEncode(firstAttempts.map((row) => row.id).toList()),
+            ),
             if (limit != null) Variable<int>(limit),
           ],
           readsFrom: {
@@ -535,7 +555,7 @@ final class DriftProgressQueries {
         .toList(growable: false);
   }
 
-  bool _isPracticeAttempt(AnswerAttempt attempt) {
+  EvidenceContext _canonicalEvidence(AnswerAttempt attempt) {
     final decoded = jsonDecode(attempt.evidenceContextJson);
     if (decoded is! Map) {
       throw const FormatException('attempt evidence context must be an object');
@@ -545,8 +565,7 @@ final class DriftProgressQueries {
         attempt.evidenceContextJson != jsonEncode(context.toJson())) {
       throw const FormatException('attempt evidence metadata mismatch');
     }
-    return context.evidenceClass != EvidenceClass.assessment &&
-        context.evidenceClass != EvidenceClass.recreational;
+    return context;
   }
 }
 

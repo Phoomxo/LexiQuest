@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/first_answer_accuracy.dart';
 import '../../motivation/domain/timezone_policy.dart';
 import '../domain/learning_calendar.dart';
 
@@ -65,10 +66,23 @@ final class DriftLearningCalendarReader {
               ..where((row) => row.ownerId.equals(ownerId))
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+                (row) => OrderingTerm.asc(row.attemptNumber),
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    for (final attempt in attempts) {
+    final firstAttempts = FirstAnswerAccuracy.select(
+      attempts,
+      contextOf: _canonicalEvidence,
+      identityOf: (row, context) => (
+        row.ownerId,
+        row.sessionId,
+        row.wordId,
+        row.promptMode,
+        context.contentRevision,
+        context.skillId,
+      ),
+    );
+    for (final attempt in firstAttempts) {
       final day = TimezonePolicy.getLearningDay(
         DateTime.fromMillisecondsSinceEpoch(
           attempt.occurredAtUtcMs,
@@ -81,13 +95,7 @@ final class DriftLearningCalendarReader {
         continue;
       }
       final context = _canonicalEvidence(attempt);
-      // Assessment outcomes are intentionally separate from learning accuracy,
-      // skill distribution, and their trend. Their captured active time above
-      // remains legitimate effort.
-      if (context.evidenceClass == EvidenceClass.assessment ||
-          context.evidenceClass == EvidenceClass.recreational) {
-        continue;
-      }
+      // The shared projection excludes repair, support and exposure.
       bucket.recordPracticeAttempt(
         skillId: context.skillId,
         isCorrect: attempt.isCorrect,

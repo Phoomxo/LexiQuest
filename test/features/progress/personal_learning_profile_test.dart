@@ -44,10 +44,22 @@ void main() {
     'R15.5 ledger five of six and 79 active seconds ignores ten minute span',
     () async {
       await _insertSession(database, ownerId: 'owner-1', id: 'six-answers');
+      final template = (await database.select(database.vocabularyWords).get())
+          .singleWhere((row) => row.id == 'word:owner-1');
       for (var i = 0; i < 6; i++) {
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              template.copyWith(
+                id: 'six-word-$i',
+                spelling: 'item$i',
+                normalizedSpelling: 'item$i',
+              ),
+            );
         await _insertAttempt(
           database,
           ownerId: 'owner-1',
+          wordId: 'six-word-$i',
           id: 'answer:$i',
           sessionId: 'six-answers',
           occurredAtUtc: DateTime.utc(2026, 8, 25, 3, i),
@@ -663,6 +675,7 @@ Future<void> _insertSession(
 Future<void> _insertAttempt(
   AppDatabase database, {
   required String ownerId,
+  String? wordId,
   required String id,
   required String sessionId,
   required DateTime occurredAtUtc,
@@ -675,7 +688,7 @@ Future<void> _insertAttempt(
         id: id,
         ownerId: ownerId,
         sessionId: sessionId,
-        wordId: 'word:$ownerId',
+        wordId: wordId ?? 'word:$ownerId',
         promptMode: 'meaningChoice',
         isCorrect: isCorrect,
         attemptNumber: 1,
