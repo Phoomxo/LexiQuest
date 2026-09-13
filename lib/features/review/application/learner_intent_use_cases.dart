@@ -28,3 +28,10 @@ final class LearnerIntentUseCases {
     );
   }
 }
+
+/// Removes local learner intent through the same owner-scoped tombstone writer.
+final class UnsaveLearningItemUseCase {
+  const UnsaveLearningItemUseCase(this.repository);
+  final LearnerIntentRepository repository;
+  Future<void> call(ContentIdentity identity) => repository.unsave(identity);
+}

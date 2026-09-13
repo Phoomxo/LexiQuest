@@ -63,6 +63,13 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
     try {
       await widget.onSubmit(reason: reason, comment: comment);
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'บันทึกรายงานในเครื่องแล้ว ยังไม่ยืนยันการส่งถึงปลายทาง',
+          ),
+        ),
+      );
       if (Navigator.of(context).canPop()) Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
@@ -147,7 +154,7 @@ final class _ContentReportSheetState extends State<ContentReportSheet> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _reason == null || _submitting ? null : _submit,
-              child: Text(_submitting ? 'กำลังส่ง…' : 'ส่งรายงาน'),
+              child: Text(_submitting ? 'กำลังบันทึกรายงาน…' : 'ส่งรายงาน'),
             ),
           ],
         ),

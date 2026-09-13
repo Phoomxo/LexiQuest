@@ -8,6 +8,56 @@ import 'package:vocab_learning_app/features/review/domain/content_quality_report
 import 'package:vocab_learning_app/features/review/presentation/content_report_sheet.dart';
 
 void main() {
+  testWidgets('B07 report error preserves text and retries local write', (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: ContentReportSheet(
+      identity: _identity, onSubmit: ({required reason, comment}) async {
+        calls++; expect(comment, 'test comment');
+        if (calls == 1) throw StateError('database unavailable');
+      },
+    ))));
+    await tester.tap(find.text('ปัญหาข้อความ'));
+    await tester.enterText(find.byType(TextField), 'test comment');
+    await tester.tap(find.text('ส่งรายงาน'));
+    await tester.pumpAndSettle();
+    expect(find.text('ยังยืนยันการส่งรายงานไม่ได้'), findsOneWidget);
+    expect(find.text('test comment'), findsOneWidget);
+    expect(find.text('บันทึกรายงานในเครื่องแล้ว ยังไม่ยืนยันการส่งถึงปลายทาง'), findsNothing);
+    await tester.tap(find.text('ส่งรายงาน'));
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('บันทึกรายงานในเครื่องแล้ว ยังไม่ยืนยันการส่งถึงปลายทาง'), findsOneWidget);
+  });
+
+  testWidgets(
+    'B07 report acknowledges local persistence without remote success',
+    (tester) async {
+      final pending = Completer<void>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ContentReportSheet(
+              identity: _identity,
+              onSubmit: ({required reason, comment}) => pending.future,
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('ปัญหาข้อความ'));
+      await tester.pump();
+      await tester.tap(find.text('ส่งรายงาน'));
+      await tester.pump();
+      expect(find.text('กำลังบันทึกรายงาน…'), findsOneWidget);
+      pending.complete();
+      await tester.pumpAndSettle();
+      expect(
+        find.text('บันทึกรายงานในเครื่องแล้ว ยังไม่ยืนยันการส่งถึงปลายทาง'),
+        findsOneWidget,
+      );
+      expect(find.text('ส่งรายงานสำเร็จ'), findsNothing);
+    },
+  );
+
   testWidgets(
     'Task5 report close semantics dismisses only when submission is idle',
     (tester) async {

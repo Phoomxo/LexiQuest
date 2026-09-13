@@ -4,6 +4,7 @@ import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/learner_intent.dart';
 import '../features/review/presentation/content_report_sheet.dart';
+import '../features/review/presentation/bookmark_learning_item_button.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 
 /// Accessible, optional presentation of verified lexical metadata.
@@ -118,20 +119,9 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
             ),
             const SizedBox(height: 8),
             if (bookmark case final contract?) ...[
-              Semantics(
-                container: true,
-                explicitChildNodes: true,
-                button: true,
-                label: 'บันทึกไว้ทบทวน',
-                enabled: true,
-                onTap: () => contract.action(contract.identity),
-                child: ExcludeSemantics(
-                  child: OutlinedButton.icon(
-                    onPressed: () => contract.action(contract.identity),
-                    icon: const Icon(Icons.bookmark_add_outlined),
-                    label: const Text('บันทึกไว้ทบทวน'),
-                  ),
-                ),
+              BookmarkLearningItemButton(
+                identity: contract.identity,
+                onSave: contract.action,
               ),
               const SizedBox(height: 8),
             ],

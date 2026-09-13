@@ -320,6 +320,22 @@ void main() {
       expect(saved.single.contentRevision, 1);
       expect(outbox, hasLength(1));
       expect(weaknessCountAfter, weaknessCountBefore);
+      final pointsBefore = await database.select(database.pointsLedgerEntries).get();
+      await tester.ensureVisible(find.text('นำออกจากรายการที่บันทึก').first);
+      await tester.tap(find.text('นำออกจากรายการที่บันทึก').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('นำออกจากรายการที่บันทึก').first);
+      await tester.pumpAndSettle();
+      final removed = await database.select(database.savedLearningItems).getSingle();
+      expect(removed.isDeleted, isTrue);
+      final deleteOutbox = await (database.select(database.outboxOperations)
+        ..where((row) => row.entityType.equals('savedLearningItem'))
+        ..where((row) => row.operationKind.equals('delete'))).get();
+      expect(deleteOutbox, hasLength(1));
+      expect(await database.select(database.pointsLedgerEntries).get(), pointsBefore);
+      expect(await database.select(database.srsStates).get().then((rows) => rows.length), weaknessCountBefore);
+      expect(find.text('นำออกจากรายการในเครื่องแล้ว'), findsOneWidget);
+
     },
   );
 

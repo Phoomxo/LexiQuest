@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,27 +8,91 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
 
 void main() {
-  testWidgets('B07 expansion is read-only and resets for replacement content', (tester) async {
+  testWidgets('B07 bookmark pending is single-flight and failure can retry', (
+    tester,
+  ) async {
+    var calls = 0;
+    final pending = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: RichLexicalCard(
+              word: _word(),
+              bookmarkIdentity: const ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: 'word:station',
+                revision: 1,
+              ),
+              onBookmark: (_) async {
+                calls++;
+                if (calls == 1) await pending.future;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('บันทึกไว้ทบทวน'));
+    await tester.tap(find.text('บันทึกไว้ทบทวน'));
+    await tester.pump();
+    expect(calls, 1);
+    expect(find.text('กำลังบันทึก…'), findsOneWidget);
+    pending.completeError(StateError('storage unavailable'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('บันทึกไม่สำเร็จ ลองอีกครั้ง'), findsOneWidget);
+    await tester.tap(find.text('บันทึกไว้ทบทวน'));
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('บันทึกไว้ในเครื่องแล้ว'), findsOneWidget);
+  });
+
+  testWidgets('B07 expansion is read-only and resets for replacement content', (
+    tester,
+  ) async {
     var actions = 0;
     final word = _word(metadata: _verifiedMetadata());
     Future<void> show(VocabularyWord value) async {
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: RichLexicalCard(
-        word: value, onPlayAudio: () => actions++,
-        bookmarkIdentity: ContentIdentity(type: ContentType.lexicalMetadata, id: value.id, revision: value.contentRevision),
-        onBookmark: (_) async { actions++; },
-      )))));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RichLexicalCard(
+                word: value,
+                onPlayAudio: () => actions++,
+                bookmarkIdentity: ContentIdentity(
+                  type: ContentType.lexicalMetadata,
+                  id: value.id,
+                  revision: value.contentRevision,
+                ),
+                onBookmark: (_) async {
+                  actions++;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
     }
+
     await show(word);
     await tester.tap(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'));
     await tester.pump();
     expect(find.text('A place where trains stop.'), findsOneWidget);
     expect(actions, 0);
-    await show(word.copyWith(contentRevision: 2, richMetadata: RichLexicalMetadata(
-      verifiedContentRevision: 2,
-      verifiedArtifactChecksumSha256: 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
-      englishDefinition: 'A revised definition.',
-    )));
+    await show(
+      word.copyWith(
+        contentRevision: 2,
+        richMetadata: RichLexicalMetadata(
+          verifiedContentRevision: 2,
+          verifiedArtifactChecksumSha256:
+              'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
+          englishDefinition: 'A revised definition.',
+        ),
+      ),
+    );
     expect(find.text('A revised definition.'), findsNothing);
     expect(find.bySemanticsLabel('ดูรายละเอียดคำศัพท์'), findsOneWidget);
     expect(actions, 0);

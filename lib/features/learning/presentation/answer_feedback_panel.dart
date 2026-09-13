@@ -4,6 +4,7 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../review/domain/content_quality_report.dart';
 import '../../review/domain/learner_intent.dart';
 import '../../review/presentation/content_report_sheet.dart';
+import '../../review/presentation/bookmark_learning_item_button.dart';
 import '../../../runtime/registries/feature_registry.dart';
 import '../application/contrastive_feedback_use_cases.dart';
 import '../domain/answer_feedback.dart';
@@ -95,20 +96,9 @@ final class AnswerFeedbackPanel extends StatelessWidget {
               if (bookmarkIdentity case final identity?)
                 if (onBookmark case final bookmark?) ...[
                   const SizedBox(height: 12),
-                  Semantics(
-                    container: true,
-                    explicitChildNodes: true,
-                    button: true,
-                    label: 'บันทึกไว้ทบทวน',
-                    enabled: true,
-                    onTap: () => bookmark(identity),
-                    child: ExcludeSemantics(
-                      child: OutlinedButton.icon(
-                        onPressed: () => bookmark(identity),
-                        icon: const Icon(Icons.bookmark_add_outlined),
-                        label: const Text('บันทึกไว้ทบทวน'),
-                      ),
-                    ),
+                  BookmarkLearningItemButton(
+                    identity: identity,
+                    onSave: bookmark,
                   ),
                 ],
               if (report case final contract?) ...[

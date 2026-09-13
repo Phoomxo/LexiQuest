@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull, Column;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +29,38 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
+  testWidgets('B07 explanation expansion preserves outer reading position', (tester) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    final explanation = ContrastiveExplanation.reviewed(
+      manifestIdentity: _identity('word:station', 4), correctOptionId: 'word:station',
+      selectedDistractorId: 'word:terminal',
+      correctRationale: 'Correct rationale. Further reviewed detail.',
+      distractorRationale: 'Selected rationale. Further reviewed detail.',
+    );
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
+      controller: scroll, child: Column(children: [
+        const SizedBox(height: 500), ContrastiveFeedbackPanel(explanation: explanation),
+        const SizedBox(height: 800),
+      ]),
+    ))));
+    scroll.jumpTo(400);
+    await tester.pumpAndSettle();
+    final before = scroll.offset;
+    await tester.ensureVisible(find.text('ดูรายละเอียด'));
+    final readingPosition = scroll.offset;
+    await tester.tap(find.text('ดูรายละเอียด'));
+    await tester.pumpAndSettle();
+    expect(scroll.offset, readingPosition);
+    expect(find.text('Selected rationale. Further reviewed detail.'), findsOneWidget);
+    await tester.ensureVisible(find.text('ย่อรายละเอียด'));
+    final expandedPosition = scroll.offset;
+    await tester.tap(find.text('ย่อรายละเอียด'));
+    await tester.pumpAndSettle();
+    expect(scroll.offset, expandedPosition);
+    expect(before, greaterThan(0));
+  });
+
   group('ContrastiveFeedbackUseCases', () {
     test(
       'requests only the revision pinned by the committed attempt',
