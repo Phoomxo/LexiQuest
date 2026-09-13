@@ -505,7 +505,9 @@ NativeModeEvaluation _speechEvaluation({
   required bool isCorrect,
   required String code,
 }) {
-  if (assessment.similarityPercent < 0 ||
+  if (assessment.target.trim().isEmpty ||
+      assessment.transcript.trim().isEmpty ||
+      assessment.similarityPercent < 0 ||
       assessment.similarityPercent > 100 ||
       !assessment.occurredAtUtc.isUtc) {
     throw ArgumentError.value(assessment, 'assessment', 'is invalid');

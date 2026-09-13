@@ -54,6 +54,23 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('empty final has no score or durable answer and allows retry', (
+    tester,
+  ) async {
+    final gateway = _ResultLifecycleSpeechGateway();
+    final repository = _CountingLearningRepository();
+    await _pumpSpeechResultRegression(tester, gateway, repository);
+    gateway.emit('   ', isFinal: true);
+    await tester.pumpAndSettle();
+    expect(repository.commands, isEmpty);
+    expect(find.textContaining('0%'), findsNothing);
+    expect(find.byKey(const ValueKey('speech-error')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pumpAndSettle();
+    gateway.emit('station', isFinal: true);
+    await tester.pumpAndSettle();
+    expect(repository.commands, hasLength(1));
+  });
   testWidgets('failed native stop shows recovery and rejects late evidence', (
     tester,
   ) async {

@@ -285,8 +285,11 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
             _transcript = event.transcript;
             _assessment = assessment;
             _listening = false;
+            _error = assessment == null
+                ? _failureText(SpeechFailureCode.noMatch)
+                : null;
           });
-          unawaited(_recordEvidence(assessment));
+          if (assessment != null) unawaited(_recordEvidence(assessment));
         },
         onFailure: (failure) {
           if (!_acceptsModeOperations ||

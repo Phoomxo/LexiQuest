@@ -208,23 +208,17 @@ final class SpeechPracticeUseCases {
     return completion.future;
   }
 
-  TranscriptPronunciationAssessment assess({
+  /// Null means no final, nonempty text pair exists; it is not a zero score.
+  TranscriptPronunciationAssessment? assess({
     required String target,
     required SpeechRecognitionEvent event,
   }) {
     final canonicalTarget = _canonical(target);
     final canonicalTranscript = _canonical(event.transcript);
-    if (canonicalTarget.isEmpty || canonicalTranscript.isEmpty) {
-      return TranscriptPronunciationAssessment(
-        target: target,
-        transcript: event.transcript,
-        similarityPercent: 0,
-        isExactMatch: false,
-        method: 'transcript-edit-distance-v1',
-        engine: event.engine,
-        locale: event.locale,
-        occurredAtUtc: event.recognizedAtUtc,
-      );
+    if (!event.isFinal ||
+        canonicalTarget.isEmpty ||
+        canonicalTranscript.isEmpty) {
+      return null;
     }
     final distance = _levenshtein(canonicalTarget, canonicalTranscript);
     final denominator = math.max(

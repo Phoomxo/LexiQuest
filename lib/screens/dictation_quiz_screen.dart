@@ -49,6 +49,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   VoiceUseCases? _voiceProvider;
   bool _initialPlaybackScheduled = false;
   bool _audioUnavailable = false;
+  bool _audioReady = false;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
   bool _supportUsed = false;
@@ -118,6 +119,12 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
           contentType: 'dictation_quiz',
         ),
       );
+      if (mounted &&
+          identical(session, routeVoiceSession) &&
+          session.isCurrent &&
+          !_audioUnavailable) {
+        setState(() => _audioReady = true);
+      }
     } on Object {
       if (mounted &&
           identical(session, routeVoiceSession) &&
@@ -129,7 +136,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   }
 
   Future<void> _checkAnswer() async {
-    if (_audioUnavailable ||
+    if (!_audioReady ||
+        _audioUnavailable ||
         _interactionLocked ||
         !(_lifecycle?.acceptsOperations ?? true)) {
       return;
@@ -389,7 +397,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
                                     const SizedBox(height: 40),
                                     TextField(
                                       controller: _textController,
-                                      enabled: !_interactionLocked,
+                                      enabled:
+                                          _audioReady && !_interactionLocked,
                                       decoration: const InputDecoration(
                                         border: OutlineInputBorder(),
                                         hintText: 'พิมพ์คำศัพท์ที่คุณได้ยิน...',
@@ -400,7 +409,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
                                     ),
                                     const SizedBox(height: 20),
                                     ElevatedButton(
-                                      onPressed: _interactionLocked
+                                      onPressed:
+                                          !_audioReady || _interactionLocked
                                           ? null
                                           : _checkAnswer,
                                       style: ElevatedButton.styleFrom(

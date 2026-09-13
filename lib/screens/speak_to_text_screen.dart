@@ -273,10 +273,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     setState(() {
       _transcript = event.transcript;
       _assessment = assessment;
-      _recognitionFailure = null;
+      _recognitionFailure = assessment == null
+          ? SpeechFailureCode.noMatch
+          : null;
       _listening = false;
     });
-    unawaited(_recordEvidence(assessment));
+    if (assessment != null) unawaited(_recordEvidence(assessment));
   }
 
   Future<void> _recordEvidence(

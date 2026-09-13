@@ -16,7 +16,7 @@ def run():
         data = json.loads(source.read_text(encoding='utf-8-sig'))
         dest = OUT / 'gates' / source.parent.name / source.name
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, dest)
+        dest.write_bytes(source.read_bytes().replace(b'\r\n', b'\n'))
         mismatches = [entry['path'] for entry in data['inputClosure']
                       if not (ROOT / entry['path']).is_file()
                       or digest(ROOT / entry['path']).lower() != entry['sha256'].lower()]
@@ -35,7 +35,7 @@ def run():
                      'status': data['status'], 'fingerprint': data['fingerprint'],
                      'inputCount': len(data['inputClosure']),
                      'currentInputMismatches': mismatches, 'logs': logs})
-    (OUT / 'gate-audit.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
+    (OUT / 'gate-audit.json').write_bytes((json.dumps(rows, indent=2) + '\n').encode())
     print(json.dumps([{'status': r['status'], 'inputs': r['inputCount'],
                        'mismatches': len(r['currentInputMismatches'])} for r in rows]))
 

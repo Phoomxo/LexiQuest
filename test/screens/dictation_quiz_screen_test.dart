@@ -13,10 +13,12 @@ class FakeVoiceProvider implements VoiceProvider {
   final Completer<void> stopEntered = Completer<void>();
   int stopCalls = 0;
   Object? playbackError;
+  Completer<void>? allowPlayback;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     spokenRequests.add(request);
+    await allowPlayback?.future;
     if (playbackError != null) throw playbackError!;
     return const VoicePlaybackResult(
       requestedEngine: VoiceEngine.omniVoice,
@@ -34,6 +36,35 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('pending initial audio cannot submit before failed start', (
+    tester,
+  ) async {
+    final provider = FakeVoiceProvider()
+      ..allowPlayback = Completer<void>()
+      ..playbackError = StateError('delayed audio failure');
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DictationQuizScreen(targetWord: 'station', voice: voice),
+      ),
+    );
+    await tester.pump();
+    final check = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'),
+    );
+    final locked = check.onPressed == null;
+    provider.allowPlayback!.complete();
+    await tester.pumpAndSettle();
+    expect(locked, isTrue);
+    expect(
+      find.byKey(const ValueKey('media-dependency-unavailable')),
+      findsOneWidget,
+    );
+  });
   testWidgets('failed dictation audio offers a text activity without scoring', (
     tester,
   ) async {

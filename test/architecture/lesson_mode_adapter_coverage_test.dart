@@ -286,8 +286,21 @@ void main() {
       for (final screen in nativeScreens.entries) {
         if (!RegExp('\\b${screen.key}\\s*\\(').hasMatch(contents)) continue;
         final ownsDeclaration = path.endsWith(screen.value);
+        // The accepted local reading library opens an unscored article. Keep
+        // this exception specific to that screen and forbid session evidence.
+        final unscoredLibrary =
+            screen.key == 'CefrArticleReaderScreen' &&
+            path.endsWith('lib/screens/local_reading_library_screen.dart');
+        if (unscoredLibrary) {
+          expect(
+            contents,
+            isNot(matches(RegExp(r'\b(sessionId|wordId|evidenceAdapter)\s*:'))),
+          );
+        }
         expect(
-          ownsDeclaration || authorizedRoots.any(path.endsWith),
+          ownsDeclaration ||
+              unscoredLibrary ||
+              authorizedRoots.any(path.endsWith),
           isTrue,
           reason:
               '${screen.key} must be built only inside an authorized shell root',

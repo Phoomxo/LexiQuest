@@ -30,6 +30,49 @@ import '../support/accessibility_semantics_test_support.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('empty final shadowing remains unscored and retry records once', (
+    tester,
+  ) async {
+    final repository = _RetryLearningRepository(failAnswerOnce: false);
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(),
+      repository: repository,
+      generateId: () => 'shadow-empty',
+      nowUtc: () => DateTime.utc(2026, 9, 14),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final gateway = _ManualSpeechGateway();
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShadowingChallengeScreen(
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(gateway),
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final listen = find.byKey(
+      const ValueKey<String>('shadowing-listen-button'),
+    );
+    await tester.tap(listen);
+    await tester.pump();
+    gateway.emitFinal('  ');
+    await tester.pumpAndSettle();
+    expect(repository.commands, isEmpty);
+    expect(find.textContaining('0%'), findsNothing);
+    await tester.tap(listen);
+    await tester.pump();
+    gateway.emitFinal('Practice makes perfect');
+    await tester.pumpAndSettle();
+    expect(repository.commands, hasLength(1));
+  });
   for (final compact in [false, true]) {
     testWidgets('R15.10 visual shadowing compact=$compact', (tester) async {
       await loadR15Fonts();

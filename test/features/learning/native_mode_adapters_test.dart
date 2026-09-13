@@ -16,6 +16,28 @@ typedef _CaptureNativeSubmission =
     );
 
 void main() {
+  for (final text in [('', 'station'), ('station', ' ')]) {
+    test('speech adapters reject missing text pair $text', () {
+      final missing = TranscriptPronunciationAssessment(
+        target: text.$1,
+        transcript: text.$2,
+        similarityPercent: 0,
+        isExactMatch: false,
+        method: 'transcript-edit-distance-v1',
+        engine: 'test',
+        locale: 'en-US',
+        occurredAtUtc: DateTime.utc(2026, 9, 14),
+      );
+      expect(
+        () => const SpeakingModeAdapter().evaluate(assessment: missing),
+        throwsArgumentError,
+      );
+      expect(
+        () => const ShadowingModeAdapter().evaluate(assessment: missing),
+        throwsArgumentError,
+      );
+    });
+  }
   final assessment = TranscriptPronunciationAssessment(
     target: 'durable',
     transcript: 'durable',

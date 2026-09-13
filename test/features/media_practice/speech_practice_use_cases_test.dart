@@ -75,7 +75,7 @@ void main() {
       expect(gateway.permissionRequests, 1);
       expect(gateway.initializeCalls, 1);
       expect(received!.transcript, 'apple');
-      final assessment = useCases.assess(target: 'Apple', event: received!);
+      final assessment = useCases.assess(target: 'Apple', event: received!)!;
       expect(assessment.similarityPercent, 100);
       expect(assessment.isExactMatch, isTrue);
       expect(assessment.method, 'transcript-edit-distance-v1');
@@ -122,10 +122,32 @@ void main() {
       ),
     );
 
-    expect(assessment.similarityPercent, 0);
-    expect(assessment.hasAcousticPitchMeasurement, isFalse);
-    expect(assessment.hasPhonemeAlignment, isFalse);
+    expect(
+      assessment,
+      isNull,
+      reason: 'silence is missing evidence, not zero skill',
+    );
   });
+
+  for (final values in [
+    ('', 'station', true),
+    ('station', '   ', true),
+    ('station', 'station', false),
+  ]) {
+    test('unscorable transcript ${values.toString()} has no assessment', () {
+      final assessment = SpeechPracticeUseCases(_FakeSpeechGateway()).assess(
+        target: values.$1,
+        event: SpeechRecognitionEvent(
+          transcript: values.$2,
+          isFinal: values.$3,
+          recognizedAtUtc: DateTime.utc(2026, 9, 14),
+          engine: 'fixture',
+          locale: 'en-US',
+        ),
+      );
+      expect(assessment, isNull);
+    });
+  }
 
   test(
     'sessions serialize takeover and stale consumers cannot cancel the owner',
