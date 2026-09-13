@@ -1,0 +1,514 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-09-13-bundles-4",
+  "baseSha": "9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe",
+  "baseWorktree": "C:/Users/Phet/.codex/worktrees/e870/LexiQuest",
+  "orchestrationWorktree": "C:\\Users\\Phet\\.codex\\worktrees\\bundle4\\LexiQuest",
+  "applicationDelta": "none",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "97ea73f3278c701b4547b8d1fa78b98117b041a1722104a835b5e6fd4b10ed61",
+      "bytes": 3601
+    },
+    {
+      "path": "docs/development/2026-09-13-current-system-and-plan-readiness.md",
+      "sha256": "26b99c06d18128e9c45019c2eceaea54530316b5274cff539548775d34878890",
+      "bytes": 21806
+    },
+    {
+      "path": "docs/development/2026-09-13-full-system-work-ledger.json",
+      "sha256": "eab2c5f762d46a543f9b719d335e97dc47081c65305381af430dde1f93b67a63",
+      "bytes": 338880
+    },
+    {
+      "path": "docs/development/2026-09-13-rule-supersession-register.md",
+      "sha256": "40104c229940c26f690e7dc97e1af964c8ccb84283b8eb4831d8720306696869",
+      "bytes": 12717
+    },
+    {
+      "path": "docs/development/full-system-active-index.md",
+      "sha256": "64d53284ad36ed149b3b866f6a057f47797f0a46a3b96c67f061b1ffce1359bf",
+      "bytes": 2860
+    },
+    {
+      "path": "docs/development/full-system-bundle-map.md",
+      "sha256": "3e682ad78ddd41f52114f95305323fe7203231813f9b6d2f701ac710e68f0948",
+      "bytes": 6161
+    },
+    {
+      "path": "docs/development/full-system-package-workflow.md",
+      "sha256": "a7dd983780a85f2c4d2e831362b52f99c7a3bf6caf4abe2433be0e8c53ae6e30",
+      "bytes": 13151
+    },
+    {
+      "path": "docs/development/full-system-task-index.json",
+      "sha256": "6738fc38b077c49b4b40fca4b0803378ca221e7ca72392b19ae3dddf30e32441",
+      "bytes": 62963
+    },
+    {
+      "path": "docs/development/full-system/bundles-4-migration.md",
+      "sha256": "a622c1bf4dbbf8e0825df00e4a53f9451b83c90769aaa0f6cc99271576cd16af",
+      "bytes": 1266
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/bundle-definitions.json",
+      "sha256": "d12ebf9d0e856d07d2f36ef023d5f9f347839eb4a0c12a8d3bf5a0e4e5c72eac",
+      "bytes": 5803
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/coupling.json",
+      "sha256": "b17d82a403752c563ba310b760c7b0c5ee17fb5036ca7be0d750659dcc434dfc",
+      "bytes": 29842
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/git-diagnostics.json",
+      "sha256": "53879f3ec82a2405a37f755dd5fe9e732917dce2b4f65645ddee21ee4a0083ca",
+      "bytes": 21166
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/technical-preservation.json",
+      "sha256": "e7e258fbb2a64068acce9fcb756d09e3de356e94c7d57bab0e645fdf2c06e520",
+      "bytes": 10166
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles-4/verify_workflow.py",
+      "sha256": "03bce67048e4e080e35a126af061ca1fb2934e6ea2a4fd13d42b0ce80a817610",
+      "bytes": 12280
+    },
+    {
+      "path": "docs/development/r15-package-workflow.md",
+      "sha256": "c8413b294562a3d309e7439e45ac9f31a3dcbf704a231d90f3388b4d5a91d607",
+      "bytes": 559
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B01.md",
+      "sha256": "e73d92f9fbe47735c526afb75eab949563b521351a470eed800139a459b17f17",
+      "bytes": 4322
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B02.md",
+      "sha256": "b2315748d69e29a1740c73f456567bc52a5d659d6e0a67a69627be44c2e43ec6",
+      "bytes": 4230
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B03.md",
+      "sha256": "63d8376e2140258aa33250db2c4c0e2e6876302de94ea003997e11b00c546d19",
+      "bytes": 4366
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B04.md",
+      "sha256": "38aa2668c752d24c5d84f5c653f0c109f5a50b513f12f18003102c6d5938fdd4",
+      "bytes": 3997
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B05.md",
+      "sha256": "5905edbbb60a8b05fb38455e487ef35ba2be5ddb89ebabde5f8da7f8285116ac",
+      "bytes": 4188
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B06.md",
+      "sha256": "b24e3d34cf3d45995573b4b5fb4833625b87b4feb93a750a77502c659ad510a8",
+      "bytes": 4148
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B07.md",
+      "sha256": "bce4deaba20599ea5fb98a599577cc420f630bcf50593dfe07cfde77e961909b",
+      "bytes": 4121
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B08.md",
+      "sha256": "7ede4eaae693cfd3019069b00c4d2f6e41b4adb1a32e53589da495db2c734a76",
+      "bytes": 4305
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B09.md",
+      "sha256": "f9a2cc0708e0e691ed3a4129f10348f21aa856b0df7ef6f0b0ab303168c1cbbe",
+      "bytes": 4097
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B10.md",
+      "sha256": "d88f1276aeb814fac79ef80d5767d9e3d8909533e2e8b2a5a3e8a27e745c3c86",
+      "bytes": 4121
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B11.md",
+      "sha256": "f8f1e891c157529f56145c8abb8c18052ae7c2729668c4614bd37e24af8dae77",
+      "bytes": 4123
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B12.md",
+      "sha256": "f963956d2848574c7bed75bde00ea2806b07e24e90cf242bb737566097e7fd92",
+      "bytes": 4121
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B13.md",
+      "sha256": "00beaf8d3a80a0b51ac97754dbf22dc2567a75a7b88711c1354788712f55a008",
+      "bytes": 4115
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B14.md",
+      "sha256": "059bacbd9ba2832fff927b17f152332413cabd4b8975bc1b6afa9a30ca6f71b9",
+      "bytes": 4102
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B15.md",
+      "sha256": "01c2c8952baf6d4e5ff5122888874ba06ed9b92edca865ee4952abc836ffa9c7",
+      "bytes": 3974
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B16.md",
+      "sha256": "78b662425ac56f6890103a40fa49cd02d45910e30367083a13564f5c5da23bbe",
+      "bytes": 4200
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B17.md",
+      "sha256": "b3c6d6ab3c004ea290d25586172ad4a3303ec7ec8faa579b5a661357bbbeeee5",
+      "bytes": 4035
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B18.md",
+      "sha256": "c14a9c0b711b465115329c31f6f6f183fe2b21805e127c837166db989bcbf757",
+      "bytes": 4247
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B19.md",
+      "sha256": "aae14943c0b9ed73aaa1bb11710f6951d8c8790f5696ec2fe3a69abcfc96b154",
+      "bytes": 4332
+    },
+    {
+      "path": "docs/superpowers/bundle-briefs/B20.md",
+      "sha256": "df7c4064f3311e1362a7f5d930ac9c0dbff47d60f38416ec7bdc4eed5be4e8f4",
+      "bytes": 4032
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-13-lexiquest-full-system-master-plan.md",
+      "sha256": "7e1bb7ea91c23418dda19bbf47e1f065c125a808ecf6f1fb443a4126d17f35f5",
+      "bytes": 119100
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.1.md",
+      "sha256": "d2081918d250d145d8e18024f159e720feb6565bfe49eb5a6c678d0843dd7dd8",
+      "bytes": 4646
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.2.md",
+      "sha256": "e8cd27ff039b4f577080953c7dc3a4f4e7b8f13db084fe0ea802d2c506d06568",
+      "bytes": 4134
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.3.md",
+      "sha256": "380e77a8021db439c23db97af9034b101cf4c5d21827a3f001ae0b857b2ffd29",
+      "bytes": 4115
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.4.md",
+      "sha256": "6d07955769b957c8e38555611473ea20818510ed67229b9dafb07471cd33386a",
+      "bytes": 4012
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.5.md",
+      "sha256": "3d8425d8551c33d4e3dbc2f86a1a4a2330cd384a33d8a851a5d1522af0b3dc0a",
+      "bytes": 4111
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.6.md",
+      "sha256": "e7693266a84e1657e1d38ad67df34d4f3c41d6dddd1ea478ad6cc06ae69a18d6",
+      "bytes": 5259
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.7.md",
+      "sha256": "f97802e640d90e5389689ef190db857bf3c5edf7ef862f82082b4b5e2f6fc295",
+      "bytes": 5092
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G0.8.md",
+      "sha256": "f3878d6ea09d8c58fe2d29314511c88729555c39a8006273a8b0250fb4f8d1c6",
+      "bytes": 5173
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.1.md",
+      "sha256": "ffee2a2262dcb5ffe9f8b89c652ae0280bf660fb38d34804f99c5dc4af59f5ab",
+      "bytes": 5270
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.2.md",
+      "sha256": "3c763b96f96140931a60e97fc967c4633d38b4143fab333485b6973a9a5ac8e6",
+      "bytes": 5290
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.3.md",
+      "sha256": "e59debc9870d9099cb7e3bf3c08f846379b3e59d4a98bf462997412c057a79c6",
+      "bytes": 5102
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.4.md",
+      "sha256": "87802b122ae89e9e84a0596776e8adf5d6b81641443397ce1c5a05009bc6c6eb",
+      "bytes": 5261
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.5.md",
+      "sha256": "3c0efb56ecf1b54f31bfd9183e7f20b7aa251aa83a8e51cb7576abf7a59074e9",
+      "bytes": 5251
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.6.md",
+      "sha256": "d1b5d54d1fd9b1016f2c54abcd9a977e65f9d9b936d784af546eb0c2b32adb22",
+      "bytes": 5245
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G1.7.md",
+      "sha256": "0819c413a7a3ba4e57a4024749dbb06112f506755df3aff08fa02e3f64a38185",
+      "bytes": 5377
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.1.md",
+      "sha256": "278f99f400a774d19a752b46e4c0a338acedcb2d4b3fd7188bf985d541e95ef5",
+      "bytes": 5251
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.2.md",
+      "sha256": "a911642cb8ede06ead8859e451f7f41770ebdce1b5dd2d2e43996e5a9c13ea7b",
+      "bytes": 5117
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.3.md",
+      "sha256": "c5f880a7892b493032f87b18120f2d76a148cdce98467ba1c6234e3dd1c8e3b8",
+      "bytes": 5214
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.4.md",
+      "sha256": "6ab1019744961daecf115c0f5c0c05d19231408c191f1a6555339e29e2a174a4",
+      "bytes": 5075
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.5.md",
+      "sha256": "046ab7331d97bade96a92ee98e2945cf5be072a88178018488c68f36d114c145",
+      "bytes": 5144
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.6.md",
+      "sha256": "68971d0cbb0608c3f1ffb644abe14a9c8727f44a09467379945cc402f12c1f0c",
+      "bytes": 5366
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.7.md",
+      "sha256": "63fd81f9755d6525e05b4b7fc060e1744de887337bf8abc3fab554114988f1f1",
+      "bytes": 5405
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G2.8.md",
+      "sha256": "7886c898a42d199b1dae1ad1b412711faf1c66d91ebd37d321297f224e4bc7f1",
+      "bytes": 5306
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.1.md",
+      "sha256": "785003b05d8e4989081d2f4b6624a346f2ed0208fcb5e08ca99511ca9a5404be",
+      "bytes": 5156
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.2.md",
+      "sha256": "4603e93fd3060968836b013079df069cbc5caf52a69ed2dec35a4d589a0bbd0d",
+      "bytes": 5165
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.3.md",
+      "sha256": "9db0d86a11ed3a9d033c28305a929aba83795c875e03f0971616fbb759006598",
+      "bytes": 5283
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.4.md",
+      "sha256": "3afb1948b3f92d8d68eb9bafc39647bdfa25dbe48a073e876d63a57f3b681f0e",
+      "bytes": 5137
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.5.md",
+      "sha256": "37fc39e93c4b0b1ba27377ecf84942f0957eaa1449f8a4887cdb466ed9507aee",
+      "bytes": 5230
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.6.md",
+      "sha256": "5a1c5f9c7fc0a39e34d10b698b045ca87d24b922b5f491e98c9039acc5910874",
+      "bytes": 5391
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G3.7.md",
+      "sha256": "380581cd3c34a976a528e3dea241987ebd43cdf1e21bae8265445a7e723cbc7f",
+      "bytes": 5302
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.1.md",
+      "sha256": "732990763586d4422479c67d8543c51fb02f072cd87bba2e26c768b709e35676",
+      "bytes": 5225
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.2.md",
+      "sha256": "ab90ccffcacba357487aa8a633e7b00cefdb16c0fb547e85fe6f3bd41a080fac",
+      "bytes": 5198
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.3.md",
+      "sha256": "cce0f4ce42714e925ebb9aaef9a7abea72340dfd5a057ec19ce94dc267ebfec1",
+      "bytes": 5457
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.4.md",
+      "sha256": "3f2b9e6f20c2cde79e74759ffac30aa9d1731d81051d405ded369b28ff9093aa",
+      "bytes": 5095
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.5.md",
+      "sha256": "c62842cd7c28159c95be87fc47bd037754e541f515b5a0567652ea7b56c524a5",
+      "bytes": 5220
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G4.6.md",
+      "sha256": "47fc59ee4d9528cc6085cf526e8ae4b2330da264f10008ee4b61f45496eab222",
+      "bytes": 5277
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.1.md",
+      "sha256": "95185ea0b99183136daac87f5a519ad01bfe96707a5e5cacad3adc1fe406873f",
+      "bytes": 5199
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.2.md",
+      "sha256": "4dc33e6d3b59a0053a96ef5130f5d89db75f02111e9cd1339405dd2c4dcf2e34",
+      "bytes": 5141
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.3.md",
+      "sha256": "45b2d294a34640824cecf561cc48492635cfa1d777229be8acb5ae7d56141df9",
+      "bytes": 5187
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.4.md",
+      "sha256": "4161dd892e4a1e7b7eb4d05fe8acf9192aead73e1a67fe034c0abc8e5439047b",
+      "bytes": 4730
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.5.md",
+      "sha256": "f3e746e2587f1cc0939502fe9135be24218474be971024f9088a4ca21452f4bf",
+      "bytes": 4790
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G5.6.md",
+      "sha256": "bbacb72b958a4599f2d04c88927fee9843dbb0cbb5cde96146224a096c36f797",
+      "bytes": 4750
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.1.md",
+      "sha256": "4b678ec1b019f8062bd6beefc8b4b7286dc981c8ae9de0ac688bc34d89e15f99",
+      "bytes": 5131
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.2.md",
+      "sha256": "320a6130a3dd6d55c34057dd59b6b84180cbe9eda9bc9ba467271e18a6a76699",
+      "bytes": 5088
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.3.md",
+      "sha256": "f1d3f99a62328dbfe340d4c3527777c54847f8e762a59711cf6d2c4d532a5599",
+      "bytes": 5109
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.4.md",
+      "sha256": "120747b7baf85f8c1edcdbc22ea5b3be822203f952a5022429e55d5b7ee90ca9",
+      "bytes": 5310
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.5.md",
+      "sha256": "0897d4f765407e28865b619900ef2cbe733caeb50fa406107f5827aeb692bdbd",
+      "bytes": 5157
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G6.6.md",
+      "sha256": "f7894b8cda3374f9e59fa22f79460d7a398cf3277054ee55a8c47756f70b467e",
+      "bytes": 5008
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.1.md",
+      "sha256": "d836f99ede4db060206bf60c5bbdf05b09766e4b4222421a91f4280444d1878f",
+      "bytes": 4916
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.2.md",
+      "sha256": "14f41f8c4682834ee3e1d3622f14412f664464584ac96649499bf69ed07dc775",
+      "bytes": 5082
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.3.md",
+      "sha256": "bfccab7eefd1da8a7ab307f44e07bab032b1c9c950e0a540075502c8e6d6b923",
+      "bytes": 4791
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.4.md",
+      "sha256": "81aa35f50e3ff0663228c43530ba111edef9723fae99ad7a1d4815d56b5caf90",
+      "bytes": 5366
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.5.md",
+      "sha256": "15993d4674182caf433d86159ca10f67a76faad49a44d211af7b376483b304d7",
+      "bytes": 5342
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.6.md",
+      "sha256": "c42aec257b7b0252faac34d8f40638b0e2f41097de7e13c851213a6069d4f03f",
+      "bytes": 4836
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G7.7.md",
+      "sha256": "06b7c4753ec9e9ca274e6c6e23907cd5c3d0421e37fe8c4cc4de15d2d18bde1e",
+      "bytes": 4825
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.1.md",
+      "sha256": "48d8c6bc1f7d2a0a07ff271ea01708f8b9a61458ccdbe5a271c5e08d36d6032f",
+      "bytes": 4886
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.2.md",
+      "sha256": "f0e3e83ad423d9fd24e87938f61f7ae7db46b44a6240dd79ab7db4bcf2115b68",
+      "bytes": 5098
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.3.md",
+      "sha256": "8654fa74f3b7392a6efd29dd36228f173626346468a3df1429ace6576e403f69",
+      "bytes": 4848
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.4.md",
+      "sha256": "38f4fb2830fc9b21c576ef036f4544296af8b099ebf8756dbde17ed2af5e9915",
+      "bytes": 4911
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.5.md",
+      "sha256": "0533b2a9f0d466a6c37fbf7aa9b423b12a63e8c5c8a0ec11c4c5ef714b9ed960",
+      "bytes": 4866
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.6.md",
+      "sha256": "0039660f1f3cadec13b8de5480f5342156f5575ea5b64cf451af24dd641e6fbb",
+      "bytes": 4972
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.7.md",
+      "sha256": "54759a6df4ebd374a27a3931e748abeb29af1377a1a76c43cdc0a71b2b75a22e",
+      "bytes": 4852
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.8.md",
+      "sha256": "6621f62d7ae3b4f3acd7a5211f87dbac8b56e4083c6e09deb70bd86b15690368",
+      "bytes": 4981
+    },
+    {
+      "path": "docs/superpowers/task-briefs/full-system/G8.9.md",
+      "sha256": "6ec7ef1d705f407fdfa83a96c5e761cb3fa20422c62e047f892e6020658574b7",
+      "bytes": 4859
+    }
+  ],
+  "sourceEvidencePreserved": {
+    "g05SourceManifest": "docs/development/full-system/evidence/G0.5/source-manifest.json",
+    "g05SourceManifestSha256": "9a2a09a32edfd58b3213459f0ff94ec6df28f8c7dc9261dc414c7a273ac016a8"
+  }
+}

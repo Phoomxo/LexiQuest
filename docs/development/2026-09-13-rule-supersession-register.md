@@ -1,6 +1,6 @@
 # LexiQuest — Rule Supersession Register
 
-Revision `2026-09-13-sequential-3` · ผู้ใช้อนุมัติให้เริ่ม G0.1 และส่งต่อทีละ task ถึง G8.9; ใช้ GPT-6 Astra / Medium
+Revision `2026-09-13-bundles-4` · G0.1–G0.5 accepted; remaining59packages in20bundles; Astra / Medium
 
 เอกสารนี้ระบุว่ากติกาใดหมดผล กติกาใดเป็นเพียงค่าตั้งต้น และเกณฑ์ใดยังคงใช้ตรวจความถูกต้อง อ่านผ่าน [Active Index](full-system-active-index.md) และ [Master Plan](../superpowers/plans/2026-09-13-lexiquest-full-system-master-plan.md). การหมดผลของข้อจำกัดไม่ใช่คำรับรองว่าได้แก้โค้ด ลบไฟล์เก่า หรือทดสอบ runtime แล้ว
 
@@ -17,7 +17,7 @@ Revision `2026-09-13-sequential-3` · ผู้ใช้อนุมัติใ
 | ID | ข้อความ/ตำแหน่งเดิมที่ตรวจพบ | สถานะใหม่และผลที่ต้องใช้ |
 | --- | --- | --- |
 | RULE-01 | Master revision2: “หยุดรอตรวจแผน”, “ไม่เริ่มexecutionจนได้รับคำสั่ง” | **Superseded:** ผู้ใช้ตอบให้เริ่ม G0.1 และส่งต่ออัตโนมัติแล้ว ไม่หยุดขออนุมัติทุก package ซ้ำ |
-| RULE-02 | Master revision2: “ห้ามเริ่ม workers/tasks เบื้องหลัง”, “auto-created successor tasks” | **Replaced:** อนุญาตหนึ่ง successor task ตามลำดับหลังงานก่อนปิดแล้ว; ยังคงไม่ให้ parallel writers/background implementation workers |
+| RULE-02 | Master revision2: “ห้ามเริ่ม workers/tasks เบื้องหลัง”, “auto-created successor tasks” | **Replaced by revision4:** อนุญาตหนึ่ง successor bundle task หลังทุกpackageในbundleผ่านและปล่อยwriter; package.nextไม่dispatch; ไม่ให้parallel writers/background implementation workers |
 | RULE-03 | `r15-package-workflow.md` ของ 842c: “through R15.10”, “No codex/ branch prefix” | **Retired for Master:** ใช้ G0.1–G8.9, prefix `codex/` ตามค่าเริ่มต้นปัจจุบัน; ไม่เริ่ม R15.11 และไม่สร้าง task ย้อนกลับไปทำ milestone เดิมซ้ำ |
 | RULE-04 | R15 acceptance working protocol: R15.10 “expand only for reproduced voice/sync defect” | **Historical milestone limit:** ไม่จำกัด G0–G8; แก้ระบบอื่นที่อยู่ใน Master ได้ตาม owner package และ dependency reason |
 | RULE-05 | R15 roadmap: “คง approved catalog 8/44”; Master revision2 wording แบบ fixed scope | **Reframed:** 44 เป็น coverage baseline ที่ต้องตรวจ ไม่ใช่เพดานถาวร. ถ้าการออกแบบต้องเพิ่ม/เปลี่ยน contract ให้ version และ update coverage/change record โดยรักษาประวัติเดิม |
@@ -29,9 +29,13 @@ Revision `2026-09-13-sequential-3` · ผู้ใช้อนุมัติใ
 | RULE-11 | Package owner/write-set lists ที่เคยใช้จำกัดงานให้เล็ก | **Starting scope:** ขยายไฟล์/consumer/contract ที่เกี่ยวข้องได้เองโดยบันทึกเหตุผลและเพิ่ม coverage ที่กระทบ. ไม่หยุดงานเพียงเพราะ dependency อยู่นอก list เก่า |
 | RULE-12 | Old tests/goldens/source-string checks ที่ป้องกัน UI หรือกติกาเก่า | **Acceptance-led replacement:** เปลี่ยน assertions/goldens ที่ขัด design ใหม่ได้พร้อม rationale และ replacement tests. ห้ามลด assertion เพื่อซ่อน defect ของ behavior ที่ยังต้องการ |
 | RULE-13 | “มี test/code แล้ว”, old PASS counts, menu-only observations | **Evidence classification retained:** รับ baseline credit เมื่อ source/dependencies/config ตรง. ไม่อ้างว่าเล่นทุกคู่เทียบหรือ runtime ผ่านทั้งหมด; ช่องว่าง observation ไม่ห้ามพัฒนาฟีเจอร์ที่มี local contract ชัด |
-| RULE-14 | ข้อจำกัดให้ทำครบทั้งหมดใน task เดียว หรือวนอ่านประวัติทุกครั้ง | **Retired:** task ละหนึ่ง package; ใช้ brief + current checkpoint + exact source + เฉพาะ section/consumer ที่จำเป็น; 64 tasks สร้างทีละตัว |
+| RULE-14 | ข้อจำกัดให้ทำครบทั้งหมดใน task เดียว หรือวนอ่านประวัติทุกครั้ง | **Replaced by revision4:** taskละหนึ่งชุดงานที่ใช้source/context/testsร่วมกัน; packagebriefเป็นrequirement unitอ่านเมื่อถึงข้อ. ทำ/ตรวจ/commitภายในtaskเดียวและdispatchเฉพาะbundleจบ |
 
-RULE-03 และ UI draft ต้นทางที่ยังไม่ได้ checkout อยู่ใน `C:/Users/Phet/.codex/worktrees/842c/LexiQuest`. รอบนี้เปลี่ยน authority/headers/compatibility entry ใน 7712; ไม่เขียนชน source 842c. G0.1 นำ document revision นี้เข้า isolated source, G0.2/G0.3/G0.6 จัด disposition ของไฟล์เก่าที่รับมาภายหลัง
+| RULE-15 | revision3 one-task-per-package / next-package auto-dispatch ในAGENTS/Master/index/briefs | **Superseded after G0.5:** 5accepted history +59packagesใน20bundles. สร้างtaskเฉพาะจบbundle คง64requirements/dependencies/acceptanceทั้งหมด |
+| RULE-16 | revision17 executionAuthorized=false / paused-after-G0.5 | **Superseded for grouped execution:** pauseของsuccessionแบบเก่า; ผู้ใช้ผ่านoriginอนุมัติmasterปรับworkflowและเริ่มB01หลังchecks. Snapshot17เก็บประวัติและpauseใหม่ยังมีผลสูงสุด |
+| RULE-17 | รายงานMD/fullhistoryต่อทุกpackage/commit | **Replaced:** หนึ่งMDต่อbundle มีผลที่ทำ/ผลตรวจพร้อมlinks/งานค้าง; package receipts/logsเป็นstructured data ไม่ลบevidenceเก่า |
+
+RULE-03 และ UI draft ต้นทางที่ยังไม่ได้ checkout อยู่ใน `C:/Users/Phet/.codex/worktrees/842c/LexiQuest`. ข้อความนี้เป็นประวัติrevision3. Revision4ทำในisolatedworktreeจากacceptedG0.5 ไม่ทับseed7712; G0.6/G7.4รับcleanupที่ค้างตามbundlequeue
 
 ## เกณฑ์ที่ยังต้องตรวจ แต่ไม่ใช้ล็อก implementation
 

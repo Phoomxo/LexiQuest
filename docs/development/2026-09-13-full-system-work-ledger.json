@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 2,
-  "revision": "2026-09-13-sequential-3",
-  "executionState": "authorized-sequential-bootstrap",
+  "schemaVersion": 3,
+  "revision": "2026-09-13-bundles-4",
+  "executionState": "authorized-bundles-after-G0.5",
   "executionAuthorized": true,
   "source": {
     "reviewedPlanningWorktree": "C:/Users/Phet/.codex/worktrees/7712/LexiQuest",
@@ -143,12 +143,13 @@
       ],
       "testTargets": [],
       "verificationKind": "source-inspection",
-      "status": "ready",
+      "status": "accepted",
       "dependencies": [],
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.1.md",
+      "bundleId": null
     },
     {
       "id": "P0.2",
@@ -178,7 +179,8 @@
       "verificationArea": "Runtime",
       "plannedCommands": [],
       "displayId": "G0.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.2.md",
+      "bundleId": null
     },
     {
       "id": "P0.3",
@@ -221,7 +223,8 @@
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
       },
-      "checkpoint": "docs/development/full-system/checkpoints/G0.3.md"
+      "checkpoint": "docs/development/full-system/checkpoints/G0.3.md",
+      "bundleId": null
     },
     {
       "id": "P0.4",
@@ -259,7 +262,8 @@
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
       },
       "checkpoint": "docs/development/full-system/checkpoints/G0.4.md",
-      "evidence": "docs/development/full-system/evidence/G0.4/verification.json"
+      "evidence": "docs/development/full-system/evidence/G0.4/verification.json",
+      "bundleId": null
     },
     {
       "id": "P0.5",
@@ -296,7 +300,8 @@
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
       },
-      "acceptanceEvidence": "docs/development/full-system/evidence/G0.5/verification.json"
+      "acceptanceEvidence": "docs/development/full-system/evidence/G0.5/verification.json",
+      "bundleId": null
     },
     {
       "id": "P0.6",
@@ -329,7 +334,8 @@
           "D12"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B01"
     },
     {
       "id": "P0.7",
@@ -360,7 +366,8 @@
           "D03"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B01"
     },
     {
       "id": "P0.8",
@@ -403,7 +410,8 @@
           "D09"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B01"
     },
     {
       "id": "P1.1",
@@ -434,7 +442,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/learning_use_cases_test.dart','test/features/identity/upgrade_guest_owner_test.dart','test/features/learning/unified_lesson_controller_test.dart') -Resume"
       ],
       "displayId": "G1.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.1.md",
+      "bundleId": "B02"
     },
     {
       "id": "P1.2",
@@ -476,7 +485,8 @@
           "D04"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B02"
     },
     {
       "id": "P1.3",
@@ -505,7 +515,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/history/learning_history_reader_test.dart','test/features/history/learning_history_replay_test.dart','test/screens/learning_history_screen_test.dart') -Resume"
       ],
       "displayId": "G1.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.3.md",
+      "bundleId": "B02"
     },
     {
       "id": "P1.4",
@@ -544,7 +555,8 @@
           "D03"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B03"
     },
     {
       "id": "P1.5",
@@ -584,7 +596,8 @@
           "D03"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B03"
     },
     {
       "id": "P1.6",
@@ -617,7 +630,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/time_tracking/active_learning_time_controller_test.dart','test/features/time_tracking/learning_time_repository_test.dart','test/features/progress/learning_calendar_reader_test.dart') -Resume"
       ],
       "displayId": "G1.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.6.md",
+      "bundleId": "B03"
     },
     {
       "id": "P1.7",
@@ -656,7 +670,8 @@
           "D02"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B03"
     },
     {
       "id": "P2.1",
@@ -687,7 +702,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/unified_lesson_controller_test.dart','test/features/learning/r15_learning_feedback_visual_test.dart') -Resume"
       ],
       "displayId": "G2.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.1.md",
+      "bundleId": "B04"
     },
     {
       "id": "P2.2",
@@ -718,7 +734,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/pair_matching/pair_star_policy_test.dart','test/features/learning/matching_mode_adapter_test.dart') -Resume"
       ],
       "displayId": "G2.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.2.md",
+      "bundleId": "B04"
     },
     {
       "id": "P2.3",
@@ -752,7 +769,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/quiz_screen_test.dart','test/features/learning/definition_quiz_mode_adapter_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
       ],
       "displayId": "G2.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.3.md",
+      "bundleId": "B05"
     },
     {
       "id": "P2.4",
@@ -783,7 +801,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/cloze_mode_adapter_test.dart','test/screens/quiz_screen_test.dart') -Resume"
       ],
       "displayId": "G2.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.4.md",
+      "bundleId": "B05"
     },
     {
       "id": "P2.5",
@@ -814,7 +833,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/word_scramble_screen_test.dart','test/screens/sentence_scramble_screen_test.dart') -Resume"
       ],
       "displayId": "G2.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.5.md",
+      "bundleId": "B05"
     },
     {
       "id": "P2.6",
@@ -845,7 +865,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/srs_flashcards_screen_test.dart','test/features/learning/handwriting_scratchpad_test.dart','test/features/learning/lesson_mode_registry_test.dart') -Resume"
       ],
       "displayId": "G2.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.6.md",
+      "bundleId": "B06"
     },
     {
       "id": "P2.7",
@@ -877,7 +898,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/session_configuration_policy_test.dart','test/features/learning/session_configuration_sheet_test.dart','test/features/learning/session_configuration_store_test.dart') -Resume"
       ],
       "displayId": "G2.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.7.md",
+      "bundleId": "B06"
     },
     {
       "id": "P2.8",
@@ -918,7 +940,8 @@
           "D05"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B06"
     },
     {
       "id": "P3.1",
@@ -958,7 +981,8 @@
           "D05"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B07"
     },
     {
       "id": "P3.2",
@@ -988,7 +1012,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/widgets/rich_lexical_card_test.dart','test/features/learning_packs/content_quality_policy_test.dart','test/features/vocabulary/cefr_sense_review_test.dart') -Resume"
       ],
       "displayId": "G3.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.2.md",
+      "bundleId": "B07"
     },
     {
       "id": "P3.3",
@@ -1020,7 +1045,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/contrastive_feedback_test.dart','test/features/learning/hint_policy_test.dart','test/features/review/content_report_use_cases_test.dart') -Resume"
       ],
       "displayId": "G3.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.3.md",
+      "bundleId": "B07"
     },
     {
       "id": "P3.4",
@@ -1053,7 +1079,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/review/review_center_reader_test.dart','test/screens/review_center_screen_test.dart','test/features/history/learning_history_replay_test.dart') -Resume"
       ],
       "displayId": "G3.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.4.md",
+      "bundleId": "B08"
     },
     {
       "id": "P3.5",
@@ -1088,7 +1115,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/progress/personal_learning_profile_test.dart','test/features/progress/learning_calendar_reader_test.dart','test/screens/mastery_dashboard_screen_test.dart') -Resume"
       ],
       "displayId": "G3.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.5.md",
+      "bundleId": "B08"
     },
     {
       "id": "P3.6",
@@ -1118,7 +1146,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/assessment/assessment_comparison_test.dart','test/features/assessment/assessment_isolation_test.dart','test/screens/pre_post_assessment_screen_test.dart') -Resume"
       ],
       "displayId": "G3.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.6.md",
+      "bundleId": "B08"
     },
     {
       "id": "P3.7",
@@ -1156,7 +1185,8 @@
           "D05"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B08"
     },
     {
       "id": "P4.1",
@@ -1190,7 +1220,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/today_hub_screen_test.dart','test/widgets/recommendation_panel_test.dart','test/screens/production_shell_navigation_test.dart') -Resume"
       ],
       "displayId": "G4.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.1.md",
+      "bundleId": "B09"
     },
     {
       "id": "P4.2",
@@ -1221,7 +1252,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/goals/learning_goal_use_cases_test.dart','test/screens/learning_goals_screen_test.dart','test/screens/study_reminder_settings_screen_test.dart') -Resume"
       ],
       "displayId": "G4.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.2.md",
+      "bundleId": "B09"
     },
     {
       "id": "P4.3",
@@ -1252,7 +1284,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/time_tracking/focus_timer_controller_test.dart','test/features/time_tracking/focus_timer_widget_test.dart','test/features/time_tracking/active_learning_time_controller_test.dart') -Resume"
       ],
       "displayId": "G4.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.3.md",
+      "bundleId": "B09"
     },
     {
       "id": "P4.4",
@@ -1284,7 +1317,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/motivation/streak_use_cases_test.dart','test/features/motivation/timezone_policy_test.dart','test/widgets/gentle_streak_card_test.dart') -Resume"
       ],
       "displayId": "G4.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.4.md",
+      "bundleId": "B10"
     },
     {
       "id": "P4.5",
@@ -1326,7 +1360,8 @@
           "D11"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B10"
     },
     {
       "id": "P4.6",
@@ -1357,7 +1392,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/learning_preference_quiz_screen_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/preferences/display_preferences_controller_test.dart') -Resume"
       ],
       "displayId": "G4.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.6.md",
+      "bundleId": "B10"
     },
     {
       "id": "P5.1",
@@ -1396,7 +1432,8 @@
           "D10"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B11"
     },
     {
       "id": "P5.2",
@@ -1425,7 +1462,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/media_practice/object_scanner_use_cases_test.dart','test/screens/object_scanner_screen_test.dart') -Resume"
       ],
       "displayId": "G5.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.2.md",
+      "bundleId": "B11"
     },
     {
       "id": "P5.3",
@@ -1457,7 +1495,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/media_practice/object_scanner_use_cases_test.dart','test/screens/object_scanner_screen_test.dart','test/screens/offline_vocabulary_journey_test.dart') -Resume"
       ],
       "displayId": "G5.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3.md",
+      "bundleId": "B11"
     },
     {
       "id": "P5.4",
@@ -1483,7 +1522,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G5.4",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.4.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.4.md",
+      "bundleId": "B12"
     },
     {
       "id": "P5.5",
@@ -1510,7 +1550,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G5.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.5.md",
+      "bundleId": "B12"
     },
     {
       "id": "P5.6",
@@ -1537,7 +1578,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G5.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.6.md",
+      "bundleId": "B12"
     },
     {
       "id": "P6.1",
@@ -1574,7 +1616,8 @@
           "D05"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B13"
     },
     {
       "id": "P6.2",
@@ -1603,7 +1646,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/screens/ai_tutor_screen_test.dart','test/features/ai_tutor/ai_gateway_loopback_test.dart') -Resume"
       ],
       "displayId": "G6.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.2.md",
+      "bundleId": "B13"
     },
     {
       "id": "P6.3",
@@ -1633,7 +1677,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/ai_tutor/ai_gateway_loopback_test.dart','test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart','test/runtime/central_cost_policy_test.dart') -Resume"
       ],
       "displayId": "G6.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.3.md",
+      "bundleId": "B13"
     },
     {
       "id": "P6.4",
@@ -1674,7 +1719,8 @@
           "D05"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B14"
     },
     {
       "id": "P6.5",
@@ -1706,7 +1752,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/screens/shadowing_challenge_screen_test.dart','test/screens/speak_to_text_screen_voice_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
       ],
       "displayId": "G6.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.5.md",
+      "bundleId": "B14"
     },
     {
       "id": "P6.6",
@@ -1736,7 +1783,8 @@
         "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/scenarios/ai_voice_fallback_journey_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart') -Resume"
       ],
       "displayId": "G6.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.6.md",
+      "bundleId": "B14"
     },
     {
       "id": "P7.1",
@@ -1775,7 +1823,8 @@
           "D04"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B15"
     },
     {
       "id": "P7.2",
@@ -1814,7 +1863,8 @@
           "D04"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B15"
     },
     {
       "id": "P7.3",
@@ -1858,7 +1908,8 @@
         "source": "docs/development/full-system/G0.4-bounded-verification.md",
         "status": "Required; unavailable runtime gate is NOT RUN",
         "detail": "Reconcile functions/package.json and test:functions-emulator command before Economy verification"
-      }
+      },
+      "bundleId": "B16"
     },
     {
       "id": "P7.4",
@@ -1901,7 +1952,8 @@
           "D11"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B16"
     },
     {
       "id": "P7.5",
@@ -1944,7 +1996,8 @@
           "D09"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B16"
     },
     {
       "id": "P7.6",
@@ -1980,7 +2033,8 @@
           "D07"
         ],
         "acceptance": "Required source-disposition obligations; runtime gates remain with owner package"
-      }
+      },
+      "bundleId": "B17"
     },
     {
       "id": "P7.7",
@@ -2025,7 +2079,8 @@
         "source": "docs/development/full-system/G0.4-bounded-verification.md",
         "status": "Required; unavailable runtime gate is NOT RUN",
         "detail": "Reconcile Integration test and device runner paths before claiming journey/release readiness"
-      }
+      },
+      "bundleId": "B17"
     },
     {
       "id": "P8.1",
@@ -2057,7 +2112,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.1",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.1.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.1.md",
+      "bundleId": "B18"
     },
     {
       "id": "P8.2",
@@ -2090,7 +2146,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.2",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.2.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.2.md",
+      "bundleId": "B18"
     },
     {
       "id": "P8.3",
@@ -2116,7 +2173,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.3",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.3.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.3.md",
+      "bundleId": "B18"
     },
     {
       "id": "P8.4",
@@ -2147,7 +2205,8 @@
         "source": "docs/development/full-system/G0.4-bounded-verification.md",
         "status": "Required; unavailable runtime gate is NOT RUN",
         "detail": "Reconcile Integration test and device runner paths before claiming journey/release readiness"
-      }
+      },
+      "bundleId": "B19"
     },
     {
       "id": "P8.5",
@@ -2171,7 +2230,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.5",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.5.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.5.md",
+      "bundleId": "B19"
     },
     {
       "id": "P8.6",
@@ -2195,7 +2255,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.6",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.6.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.6.md",
+      "bundleId": "B19"
     },
     {
       "id": "P8.7",
@@ -2221,7 +2282,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.7",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.7.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.7.md",
+      "bundleId": "B19"
     },
     {
       "id": "P8.8",
@@ -2246,7 +2308,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.8",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.8.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.8.md",
+      "bundleId": "B20"
     },
     {
       "id": "P8.9",
@@ -2269,7 +2332,8 @@
       "verificationArea": "Learning",
       "plannedCommands": [],
       "displayId": "G8.9",
-      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.9.md"
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.9.md",
+      "bundleId": "B20"
     }
   ],
   "coverage": [
@@ -8765,13 +8829,22 @@
   "proseAuthority": "master plan; ledger indexes identifiers, dependencies, targets and status only",
   "packageCount": 64,
   "taskOrchestration": {
+    "executionMode": "bundles",
     "index": "docs/development/full-system-task-index.json",
     "workflow": "docs/development/full-system-package-workflow.md",
     "model": "gpt-6-astra",
     "thinking": "medium",
-    "statusAuthority": "external run-state and accepted handoffs",
-    "packageStatesAre": "initial scheduling states only; do not infer acceptance",
-    "controlDirectory": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration"
+    "packageCount": 64,
+    "acceptedHistoryCount": 5,
+    "remainingPackageCount": 59,
+    "bundleCount": 20,
+    "statusAuthority": "external schema2 run-state, package receipts and accepted bundle handoffs",
+    "packageStatesAre": "G0.1-G0.5 synchronized from accepted handoffs; later scheduling states are not runtime acceptance",
+    "controlDirectory": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration",
+    "dispatchPolicy": "only-after-entire-bundle-accepted-and-writer-released",
+    "reportPolicy": "one concise updating Markdown per bundle plus structured evidence",
+    "acceptedG05Sha": "9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe",
+    "migrationHandoff": "handoffs/orchestration/bundles-4.json"
   },
   "coverageTraceability": {
     "package": "P0.5",

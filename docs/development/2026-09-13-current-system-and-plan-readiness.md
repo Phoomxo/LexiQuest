@@ -1,5 +1,8 @@
 # LexiQuest — Current System and Plan Readiness
 
+> **Current authority — bundles-4:** execution/workflowด้านล่างเป็นsnapshotrevision2/3. G0.1–G0.5acceptedแล้ว ใช้ [Active Index](full-system-active-index.md) และ [Bundle Workflow](full-system-package-workflow.md) สำหรับ20bundles/59packagesที่เหลือ ไม่ใช้per-packageauto-dispatchหรือseed7712เป็นคำสั่งปัจจุบัน
+
+
 วันที่ 13 กันยายน 2026 · source-inspection snapshot revision2; authority update revision3
 
 **สถานะปัจจุบัน: ผู้ใช้อนุมัติเริ่ม G0.1 แล้วส่งต่อทีละ task ผ่าน G8.9.** คำสั่งใหม่นี้แทนจุดหยุดหลังแผนใน revision2; ทุก task ใช้ `gpt-6-astra` / `medium` ตาม [Sequential Workflow](full-system-package-workflow.md). ตาราง source และผลตรวจด้านล่างเป็นหลักฐานขณะวางแผน ไม่ใช่ผล execution ล่าสุด. G0.1 ต้องตรวจ pins/dirty state อีกครั้งก่อนรับงาน

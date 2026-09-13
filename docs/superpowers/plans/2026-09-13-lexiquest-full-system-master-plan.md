@@ -1,14 +1,14 @@
 # LexiQuest Full-System Master Development Plan
 
-> **Current execution authority:** ผู้ใช้อนุมัติ “เริ่ม G0.1 แล้วส่งต่อทีละ task”. ทำทีละ package ใน task ใหม่ตาม [Sequential Workflow](../../development/full-system-package-workflow.md); ทุก task ใช้ `gpt-6-astra` / `medium`. ไม่ใช้ subagents หรือ background implementation workers
+> **Current execution authority:** หลังG0.5 ผู้ใช้อนุมัติหนึ่งtaskต่อชุดงานที่ใช้code/context/testsร่วมกัน ตาม [Bundle Workflow](../../development/full-system-package-workflow.md). คง64requirement packages; Astra/Medium; writerหนึ่งตัว ไม่มีsubagents/parallel implementation
 
-**Revision:** 2026-09-13 / sequential-3  
-**Status:** EXECUTION AUTHORIZED — เริ่ม G0.1 แล้วส่งต่อทีละ task หลังตรวจรับ  
+**Revision:** 2026-09-13 / bundles-4
+**Status:** GROUPED EXECUTION AUTHORIZED — G0.1–G0.5 accepted; 59packagesใน20bundles
 **Goal:** ทำให้ LexiQuest เรียนภาษาอังกฤษแบบ local-first ได้จริง ปิด known coverage gaps โดยใช้ authority เดิม ตรวจโค้ดทั้งแอป แล้วทดสอบระบบที่พัฒนาเสร็จพร้อมเก็บปัญหาและผล retest  
 **Architecture:** view → controller/use case → canonical repository/event/receipt → read model → view; AI/voice/camera/sync เป็น adapters ที่มี cancellation และ failure boundaries การเรียนหลักใช้ได้โดยไม่ต้องมี AI/cloud/การจ่ายเงิน  
 **Tech Stack:** Flutter/Dart, Drift/SQLite, existing LiteRT/voice/AI gateways, Python camera tooling, existing backend/policy emulators และ `tool/cli/verify-scope.ps1`
 
-ผู้ใช้ยกเลิกจุดหยุดหลังแผนด้วยคำสั่ง “เริ่ม G0.1 แล้วส่งต่อทีละ task” และแก้ชื่อให้เป็น **G0.1–G8.9**. เตรียม 64 task briefs และสร้างทีละ task; task ถัดไปรับ source commit, handoff, requirements และผลตรวจของข้อก่อนหน้า. [Active Index](../../development/full-system-active-index.md) และ [Rule Supersession Register](../../development/2026-09-13-rule-supersession-register.md) กำหนดข้อใดเลิกใช้หรือยังเป็น acceptance ปัจจุบัน. การอนุมัติให้เริ่มไม่ได้แปลว่า package ใดผ่านแล้ว; สถานะจริงอยู่ใน external run-state ตาม workflow
+คำสั่งใหม่หลังG0.5 เปลี่ยนจากหนึ่งtaskต่อpackageเป็นหนึ่งtaskต่อbundle. Accepted G0.5 SHA `9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe` เป็นฐานrevisionนี้; 5ข้อแรกเก็บประวัติไม่ย้อนทำ. [Task/Bundle Index](../../development/full-system-task-index.json) แยก64requirementsจาก20futuredispatches. รับsourceจริงจากhandoff ไม่ใช้seed7712. [Rule Register](../../development/2026-09-13-rule-supersession-register.md) ยกเลิกper-packageauto-dispatchและบันทึกgroupedauthorizationที่แทนpause17; runtimePASSยังต้องมีหลักฐาน
 
 ## สารบัญและจำนวนงาน
 
@@ -65,16 +65,18 @@
 - ใช้ free-first/local-first และ synthetic data/local emulators. ไม่มี real participant data, credentials, production writes หรือ API spending จากแผนนี้
 - Research activation/synchronization/study assignment/statistical reporting อยู่ภายนอก production packages; ทดสอบขอบเขตด้วย synthetic fixtures ได้แต่ไม่เปิด research
 - Shipped camera baseline คงอยู่จน candidate ผ่าน coverage/open-set/resource/physical/rollback gates ที่กำหนด; ไม่ train วนตาม fresh-test result
-- ทำทีละ major package ใน user-owned task แยก: accepted handoff → release writer → สร้าง successor หนึ่งตัวตาม index. ไม่สร้าง 64 tasks พร้อมกัน ไม่ใช้ subagents/background implementation workers หรือ workflow ที่ AGENTS ห้าม
+- ทำทีละpackageภายในbundle/taskเดียว มีwriterหนึ่งตัว. ตรวจและcommitผลย่อยได้; all-packageacceptance → bundlehandoff → releasewriter → สร้างnextbundleหนึ่งtask. ไม่dispatchต่อpackage/commitและไม่ใช้subagents/background implementation workers
 - ใช้ verify-scope สำหรับ bounded targeted/subsystem checks; full release verifier เฉพาะ frozen PR/release SHA; Flutter/backend/Android/GPU ไม่รันพร้อมกัน
 - ห้าม rerun passed gate เมื่อ recorded relevant source/dependency/config fingerprint ไม่เปลี่ยน. การเปลี่ยนเอกสารเพียงอย่างเดียวไม่เป็นเหตุ rerun application suite
 - same command failure ซ้ำ, filesystem error ซ้ำ หรือไม่มี measurable progress 10 นาที: หยุดขั้นที่ผิดและรายงานพร้อมหลักฐาน; ห้ามวนคำสั่งเดิมโดยไร้ diagnosis
 - ผู้ใช้อนุญาตปรับ UI/กติกาเดิมที่เป็น workaround เมื่อ evidence/decision/acceptance รองรับ; Prototype 3 ไม่ใช่ design lock
 - Human/device/live evidence ที่ยังไม่มีเป็น NOT RUN/external-pending; แยก engineering completion กับ release acceptance และเปิดเผย edition ที่ยังไม่ครบ44runtime
 
-## แบ่งงานเป็น 64 tasks
+## หน่วยข้อกำหนด64ข้อ และชุดงานสำหรับdispatch
 
-G0–G8 มีหัวข้อย่อยตามลำดับ **8 / 7 / 8 / 7 / 6 / 6 / 6 / 7 / 9 = 64**. ใช้ G เป็นรหัส task; P ที่มีใน requirement ledger เป็น internal package alias ของข้อเดียวกัน เช่น G0.1 = P0.1. [Task Index](../../development/full-system-task-index.json) ระบุ previous/next และ path ของ brief ทุกข้อ. ทุก brief ระบุขอบเขต, acceptance, source ที่ต้องรับ, targeted read set, การตรวจ, defect logging และ durable handoff. คำสั่ง operational ที่มีผลคือ [Sequential Package Workflow](../../development/full-system-package-workflow.md); ส่งต่อหนึ่งข้อเมื่อข้อก่อนผ่าน ไม่ fork ประวัติทั้งหมด
+G0–G8 มีข้อย่อย **8 / 7 / 8 / 7 / 6 / 6 / 6 / 7 / 9 = 64**. G/Pเป็นrequirement aliases; Bเป็นbundle/task. G0.1–G0.5 acceptedแล้ว; remaining59อยู่ใน20bundlesตาม [ตารางชุดงาน](../../development/full-system-bundle-map.md) และ [index](../../development/full-system-task-index.json). ทุกข้อ/acceptance/dependencyยังครบ
+
+ทำpackagesตามลำดับในtask/worktreeเดียว อ่านbriefเมื่อถึงข้อและcommitacceptedsub-resultsตามเหมาะสม. ใช้MDหนึ่งรายงานต่อbundleกับstructuredlogs/receipts; ไม่เปิดtaskต่อcommitหรืออ่านประวัติทั้งหมด. สร้างsuccessorเฉพาะbundleจบตาม [workflow](../../development/full-system-package-workflow.md); nextPackageคือลำดับภายในเท่านั้น
 
 ## Workflow ของทุก package
 
@@ -124,7 +126,7 @@ G0–G8 มีหัวข้อย่อยตามลำดับ **8 / 7 / 8
 - [ ] **งานและการออกแบบ:** ตรวจ HEAD/branch/dirty files ของ own worktree, 7712 และ 842c รวม status ของ tasks ที่เกี่ยวข้อง; รับเอกสาร seed ตาม bootstrap manifest หลังตรวจ hash/collision; ระบุ writer เดียวและตั้ง isolated branch `codex/` จากฐานที่ตรวจจริง. Commit เอกสาร/bootstrap manifest ที่รับแล้วและระบุ source candidate + pending reconciliation ให้ G0.2; การรับ repairs อยู่ G0.2 และ main/R15 semantic reconciliation อยู่ G0.3
 - **Owner files:** `AGENTS.md`, `docs/development`, `docs/superpowers/plans`, `docs/superpowers/specs`, `docs/superpowers/task-briefs/full-system` (bootstrap เฉพาะ paths ใน manifest; ไม่แก้ application ใน G0.1)
 - **Requirements:** PLAN-01, G0 · **รับเข้าจาก:** คำสั่งอนุมัติของผู้ใช้
-- **ตรวจรับ:** มี own/source manifest, collision dispositions, current authority revision, accepted bootstrap commit และ writer ownership ที่ตรวจได้. ไม่มีการเขียน source842c หรือเริ่ม implementation ของ package อื่น; หลังปล่อย writer และเขียน handoff ให้สร้าง G0.2 หนึ่งตัวตามสิทธิ์ผู้ใช้
+- **ตรวจรับ:** มี own/source manifest, collision dispositions, current authority revision, accepted bootstrap commit และ writer ownership ที่ตรวจได้. ไม่มีการเขียน source842c หรือเริ่ม implementation ของ package อื่น; G0.1–G0.2ได้ส่งต่อและacceptedในประวัติแล้ว ไม่ใช้ข้อนี้dispatchซ้ำ; งานต่อใช้bundleworkflow
 - **Verification:** ตรวจตาม source-inspection protocol; ไม่ใช้การรัน Flutter แทนหลักฐานชนิดนี้
 
 ### P0.2 รับ F1–F4 และแยก generated files
@@ -819,4 +821,4 @@ CLI/Python recipes เป็น targeted exceptions ที่มีในR15 pro
 
 R15.1–R15.10เสร็จไม่ได้แปลว่าMasterเสร็จ; codeมีอยู่ไม่ได้แปลว่าruntimeเปิดหรือผ่าน. “ครบถ้วน” หมายถึงknown-agreed-scopeมีปลายทางและrequiredacceptanceมีหลักฐานตามedition ไม่ใช่รับรองว่าได้เล่นทุกfeatureของคู่เทียบหรือไม่มีunknowndefect. หากexternalrequiredยังไม่ผ่านต้องเปิดเผยและไม่เรียกfullreleasePASS
 
-**การดำเนินงานปัจจุบัน:** ผู้ใช้อนุมัติเริ่ม G0.1 และส่งต่อทีละ task จน G8.9. มี64briefsพร้อมลำดับใน [task index](../../development/full-system-task-index.json); จำนวนที่สร้าง/ผลที่ผ่านจริงดู run-state และ handoff ไม่อนุมานจากเอกสารพร้อม. ทุก task ใช้ GPT-6 Astra / Medium. ถ้าผู้ใช้สั่งพักใหม่ ให้หยุดส่งต่อและรักษา checkpoint
+**การดำเนินงานปัจจุบัน:** groupedexecutionหลังG0.5: 5accepted history +59requirementsใน20bundles. Astra/Medium, writerหนึ่งตัว, dispatchเมื่อbundleผ่านเท่านั้น. G8.2–G8.3 review/fixesต้องจบก่อนG8.4 Test Plan/execution. Pauseใหม่หยุดsuccession

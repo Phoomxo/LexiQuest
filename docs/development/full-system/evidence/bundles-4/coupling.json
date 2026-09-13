@@ -1,0 +1,841 @@
+{
+  "revision": "2026-09-13-bundles-4",
+  "sourceSha": "9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe",
+  "bundleCount": 20,
+  "bundles": [
+    {
+      "bundleId": "B01",
+      "packageIds": [
+        "G0.6",
+        "G0.7",
+        "G0.8"
+      ],
+      "rationale": "เอกสาร authority, formula registry และ edition decision ใช้ coverage/source pins ของ G0.5 ร่วมกันก่อนปิด G0",
+      "ownerPaths": [
+        "docs/development/r15-package-workflow.md",
+        "docs/development",
+        "docs/superpowers",
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/rewards/domain/avatar_progression_policy.dart",
+        "lib/features/learning/pair_matching/domain/pair_star_policy.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/time_tracking/application/focus_timer_rollout.dart"
+      ],
+      "existingOwnerPaths": [
+        "docs/development/r15-package-workflow.md",
+        "docs/development",
+        "docs/superpowers",
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/rewards/domain/avatar_progression_policy.dart",
+        "lib/features/learning/pair_matching/domain/pair_star_policy.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/time_tracking/application/focus_timer_rollout.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "cleanup-review",
+        "formula-inspection",
+        "delivery-review"
+      ],
+      "verificationAreas": [
+        "Runtime"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B02",
+      "packageIds": [
+        "G1.1",
+        "G1.2",
+        "G1.3"
+      ],
+      "rationale": "owner/session identity → answer acknowledgment → history/replay เป็นเส้นทางข้อมูลเดียวกัน",
+      "ownerPaths": [
+        "lib/features/learning/application/learning_use_cases.dart",
+        "lib/features/identity",
+        "lib/runtime/learning_dependencies.dart",
+        "lib/features/learning/application/current_activity_evidence.dart",
+        "lib/features/learning/pair_matching/domain",
+        "lib/features/rewards/application/reward_use_cases.dart",
+        "lib/features/history",
+        "lib/screens/learning_history_screen.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/learning/application/learning_use_cases.dart",
+        "lib/features/identity",
+        "lib/runtime/learning_dependencies.dart",
+        "lib/features/learning/application/current_activity_evidence.dart",
+        "lib/features/learning/pair_matching/domain",
+        "lib/features/rewards/application/reward_use_cases.dart",
+        "lib/features/history",
+        "lib/screens/learning_history_screen.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B03",
+      "packageIds": [
+        "G1.4",
+        "G1.5",
+        "G1.6",
+        "G1.7"
+      ],
+      "rationale": "persistence/recovery, evidence readers, SRS และ runtime composition ใช้ฐานข้อมูลและ lifecycle acceptance ต่อเนื่องกัน",
+      "ownerPaths": [
+        "lib/data/local",
+        "lib/features/learning/data",
+        "lib/features/sync",
+        "lib/features/learning/domain/evidence_context.dart",
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/learning/application",
+        "lib/features/time_tracking",
+        "lib/features/progress/data",
+        "lib/features/progress/domain",
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/runtime/production_feature_gate.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/data/local",
+        "lib/features/learning/data",
+        "lib/features/sync",
+        "lib/features/learning/domain/evidence_context.dart",
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/learning/application",
+        "lib/features/time_tracking",
+        "lib/features/progress/data",
+        "lib/features/progress/domain",
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/runtime/production_feature_gate.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B04",
+      "packageIds": [
+        "G2.1",
+        "G2.2"
+      ],
+      "rationale": "shared UI tokens/shell เป็นฐานของ Pair layout และ interaction states",
+      "ownerPaths": [
+        "lib/config/m3_theme.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart",
+        "lib/features/accessibility",
+        "lib/features/learning/pair_matching/presentation",
+        "lib/features/learning/pair_matching/domain"
+      ],
+      "existingOwnerPaths": [
+        "lib/config/m3_theme.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart",
+        "lib/features/accessibility",
+        "lib/features/learning/pair_matching/presentation",
+        "lib/features/learning/pair_matching/domain"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B05",
+      "packageIds": [
+        "G2.3",
+        "G2.4",
+        "G2.5"
+      ],
+      "rationale": "input/correctness/feedback adapters และ evidence ของโจทย์เลือก พิมพ์ และจัดตัวอักษรใช้ interaction contracts ร่วมกัน",
+      "ownerPaths": [
+        "lib/screens/quiz_screen.dart",
+        "lib/features/learning/application",
+        "lib/features/learning/presentation",
+        "lib/features/learning/application/cloze_mode_adapter.dart",
+        "lib/screens/word_scramble_screen.dart",
+        "lib/screens/sentence_scramble_screen.dart",
+        "lib/features/learning/application/current_activity_evidence.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/screens/quiz_screen.dart",
+        "lib/features/learning/application",
+        "lib/features/learning/presentation",
+        "lib/features/learning/application/cloze_mode_adapter.dart",
+        "lib/screens/word_scramble_screen.dart",
+        "lib/screens/sentence_scramble_screen.dart",
+        "lib/features/learning/application/current_activity_evidence.dart"
+      ],
+      "sharedOwnerPaths": [
+        "lib/screens/quiz_screen.dart",
+        "lib/features/learning/presentation"
+      ],
+      "sharedTestTargets": [
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B06",
+      "packageIds": [
+        "G2.6",
+        "G2.7",
+        "G2.8"
+      ],
+      "rationale": "study-mode configuration เชื่อม local tools, mode inventory และ Reading/Adventure/Ghost journeys",
+      "ownerPaths": [
+        "lib/screens/srs_flashcards_screen.dart",
+        "lib/features/learning/presentation/handwriting_scratchpad.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/learning/presentation/session_configuration_sheet.dart",
+        "lib/features/learning/domain/lesson_mode.dart",
+        "lib/features/adventure",
+        "lib/screens",
+        "lib/features/learning/application/native_mode_adapters.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/screens/srs_flashcards_screen.dart",
+        "lib/features/learning/presentation/handwriting_scratchpad.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/learning/presentation/session_configuration_sheet.dart",
+        "lib/features/learning/domain/lesson_mode.dart",
+        "lib/features/adventure",
+        "lib/screens",
+        "lib/features/learning/application/native_mode_adapters.dart"
+      ],
+      "sharedOwnerPaths": [
+        "lib/features/learning/application/lesson_mode_registry.dart"
+      ],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B07",
+      "packageIds": [
+        "G3.1",
+        "G3.2",
+        "G3.3"
+      ],
+      "rationale": "pack metadata/lexical presentation ใช้ content revision เดียวกับ hints/bookmarks/report",
+      "ownerPaths": [
+        "lib/features/learning_packs",
+        "lib/screens/learning_pack_catalog_screen.dart",
+        "lib/screens/learning_pack_detail_screen.dart",
+        "lib/widgets/rich_lexical_card.dart",
+        "lib/features/learning_packs/domain/content_quality_policy.dart",
+        "lib/features/vocabulary",
+        "lib/features/learning/presentation",
+        "lib/features/review",
+        "lib/screens/quiz_screen.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/learning_packs",
+        "lib/screens/learning_pack_catalog_screen.dart",
+        "lib/screens/learning_pack_detail_screen.dart",
+        "lib/widgets/rich_lexical_card.dart",
+        "lib/features/learning_packs/domain/content_quality_policy.dart",
+        "lib/features/vocabulary",
+        "lib/features/learning/presentation",
+        "lib/features/review",
+        "lib/screens/quiz_screen.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B08",
+      "packageIds": [
+        "G3.4",
+        "G3.5",
+        "G3.6",
+        "G3.7"
+      ],
+      "rationale": "learning history/read models เชื่อม review, dashboard/formulas, assessment metadata และ content-version recovery",
+      "ownerPaths": [
+        "lib/features/review",
+        "lib/features/history",
+        "lib/screens/review_center_screen.dart",
+        "lib/features/progress",
+        "lib/screens/mastery_dashboard_screen.dart",
+        "lib/screens/learning_calendar_screen.dart",
+        "lib/features/assessment",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/runtime/production_feature_contract.dart",
+        "lib/features/offline_content",
+        "lib/features/learning_packs",
+        "lib/screens/offline_content_manager_screen.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/review",
+        "lib/features/history",
+        "lib/screens/review_center_screen.dart",
+        "lib/features/progress",
+        "lib/screens/mastery_dashboard_screen.dart",
+        "lib/screens/learning_calendar_screen.dart",
+        "lib/features/assessment",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/runtime/production_feature_contract.dart",
+        "lib/features/offline_content",
+        "lib/features/learning_packs",
+        "lib/screens/offline_content_manager_screen.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B09",
+      "packageIds": [
+        "G4.1",
+        "G4.2",
+        "G4.3"
+      ],
+      "rationale": "Today/navigation, goals/reminders และ effort/timer ใช้ active learning/read models ร่วมกัน",
+      "ownerPaths": [
+        "lib/features/today_hub",
+        "lib/screens/today_hub_screen.dart",
+        "lib/widgets/recommendation_panel.dart",
+        "lib/features/goals",
+        "lib/screens/learning_goals_screen.dart",
+        "lib/screens/study_reminder_settings_screen.dart",
+        "lib/features/time_tracking",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/today_hub",
+        "lib/screens/today_hub_screen.dart",
+        "lib/widgets/recommendation_panel.dart",
+        "lib/features/goals",
+        "lib/screens/learning_goals_screen.dart",
+        "lib/screens/study_reminder_settings_screen.dart",
+        "lib/features/time_tracking",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B10",
+      "packageIds": [
+        "G4.4",
+        "G4.5",
+        "G4.6"
+      ],
+      "rationale": "reward/quest/streak readers ต่อกับ avatar/achievements และ lifecycle/preferences ของประสบการณ์เดียวกัน",
+      "ownerPaths": [
+        "lib/features/quest",
+        "lib/features/motivation",
+        "lib/widgets/gentle_streak_card.dart",
+        "lib/features/achievements",
+        "lib/features/rewards",
+        "lib/widgets/reward_avatar_preview.dart",
+        "lib/features/preferences",
+        "lib/screens/learning_preference_quiz_screen.dart",
+        "lib/config/m3_theme.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/quest",
+        "lib/features/motivation",
+        "lib/widgets/gentle_streak_card.dart",
+        "lib/features/achievements",
+        "lib/features/rewards",
+        "lib/widgets/reward_avatar_preview.dart",
+        "lib/features/preferences",
+        "lib/screens/learning_preference_quiz_screen.dart",
+        "lib/config/m3_theme.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B11",
+      "packageIds": [
+        "G5.1",
+        "G5.2",
+        "G5.3"
+      ],
+      "rationale": "permission/model lifecycle → uncertainty/accept decision → saved vocabulary เป็น runtime transaction ต่อเนื่อง",
+      "ownerPaths": [
+        "lib/screens/object_scanner_screen.dart",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/features/device_model",
+        "lib/features/media_practice",
+        "lib/features/vocabulary"
+      ],
+      "existingOwnerPaths": [
+        "lib/screens/object_scanner_screen.dart",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/features/device_model",
+        "lib/features/media_practice",
+        "lib/features/vocabulary"
+      ],
+      "sharedOwnerPaths": [
+        "lib/screens/object_scanner_screen.dart",
+        "lib/features/device_model",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart"
+      ],
+      "sharedTestTargets": [
+        "test/screens/object_scanner_screen_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart"
+      ],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B12",
+      "packageIds": [
+        "G5.4",
+        "G5.5",
+        "G5.6"
+      ],
+      "rationale": "dataset/model pins, metrics/resources และ device/rollback evidence ต้องอยู่บน evaluation freeze เดียวกัน",
+      "ownerPaths": [
+        "tools/camera_accuracy.py",
+        "tools/test_camera_accuracy.py",
+        "lib/features/device_model/domain/model_manifest.dart",
+        "lib/features/device_model",
+        "docs/superpowers/specs/2026-09-12-r15-engineering-spec.md",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "tool/cli/verify-camera-speech.ps1"
+      ],
+      "existingOwnerPaths": [
+        "tools/camera_accuracy.py",
+        "tools/test_camera_accuracy.py",
+        "lib/features/device_model/domain/model_manifest.dart",
+        "lib/features/device_model",
+        "docs/superpowers/specs/2026-09-12-r15-engineering-spec.md",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "tool/cli/verify-camera-speech.ps1"
+      ],
+      "sharedOwnerPaths": [
+        "tools/camera_accuracy.py",
+        "lib/features/device_model/domain/model_manifest.dart"
+      ],
+      "sharedTestTargets": [
+        "tools/test_camera_accuracy.py",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKinds": [
+        "python-camera",
+        "camera-evaluation",
+        "camera-release-boundary"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B13",
+      "packageIds": [
+        "G6.1",
+        "G6.2",
+        "G6.3"
+      ],
+      "rationale": "context/intent, request cancellation และ provider/usage finalization ใช้ attempt/session identity ร่วมกัน",
+      "ownerPaths": [
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/features/ai_tutor/data",
+        "lib/screens/ai_tutor_screen.dart",
+        "lib/features/ai_tutor/application",
+        "lib/runtime/central_cost_policy.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/features/ai_tutor/data",
+        "lib/screens/ai_tutor_screen.dart",
+        "lib/features/ai_tutor/application",
+        "lib/runtime/central_cost_policy.dart"
+      ],
+      "sharedOwnerPaths": [
+        "lib/features/ai_tutor/data",
+        "lib/features/ai_tutor/application"
+      ],
+      "sharedTestTargets": [
+        "test/features/ai_tutor/ai_gateway_loopback_test.dart"
+      ],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "AI"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B14",
+      "packageIds": [
+        "G6.4",
+        "G6.5",
+        "G6.6"
+      ],
+      "rationale": "speech gateways เชื่อม speaking/shadowing/dictation และ quality/no-key journey โดยคงแยก scored/unscored evidence",
+      "ownerPaths": [
+        "lib/features/media_practice",
+        "lib/screens/speak_to_text_screen.dart",
+        "lib/screens/shadowing_challenge_screen.dart",
+        "lib/features/media_practice/application",
+        "lib/features/learning/application/native_mode_adapters.dart",
+        "docs/development/2026-09-11-ai-tutor-quality-cases.md",
+        "lib/features/ai_tutor",
+        "lib/screens/today_hub_screen.dart"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/media_practice",
+        "lib/screens/speak_to_text_screen.dart",
+        "lib/screens/shadowing_challenge_screen.dart",
+        "lib/features/media_practice/application",
+        "lib/features/learning/application/native_mode_adapters.dart",
+        "docs/development/2026-09-11-ai-tutor-quality-cases.md",
+        "lib/features/ai_tutor",
+        "lib/screens/today_hub_screen.dart"
+      ],
+      "sharedOwnerPaths": [
+        "lib/screens/shadowing_challenge_screen.dart"
+      ],
+      "sharedTestTargets": [
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "AI"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B15",
+      "packageIds": [
+        "G7.1",
+        "G7.2"
+      ],
+      "rationale": "queue/lost ack/reopen และ owner/conflict/migration เป็น recovery protocol เดียวกัน",
+      "ownerPaths": [
+        "lib/features/sync",
+        "lib/data/local",
+        "lib/progress",
+        "lib/features/identity"
+      ],
+      "existingOwnerPaths": [
+        "lib/features/sync",
+        "lib/data/local",
+        "lib/progress",
+        "lib/features/identity"
+      ],
+      "sharedOwnerPaths": [
+        "lib/features/sync",
+        "lib/data/local"
+      ],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B16",
+      "packageIds": [
+        "G7.3",
+        "G7.4",
+        "G7.5"
+      ],
+      "rationale": "policy boundaries, export/delete และ runtime activation ต้องตรวจ ownership/edition ตาม data lifecycle เดียวกัน",
+      "ownerPaths": [
+        "firestore.rules",
+        "supabase",
+        "functions",
+        "lib/features/account",
+        "lib/features/review",
+        "lib/features/offline_content",
+        "lib/features/preferences",
+        "lib/runtime/production_feature_contract.dart",
+        "lib/runtime/production_feature_gate.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart"
+      ],
+      "existingOwnerPaths": [
+        "firestore.rules",
+        "supabase",
+        "lib/features/account",
+        "lib/features/review",
+        "lib/features/offline_content",
+        "lib/features/preferences",
+        "lib/runtime/production_feature_contract.dart",
+        "lib/runtime/production_feature_gate.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "policy-emulator",
+        "targeted"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B17",
+      "packageIds": [
+        "G7.6",
+        "G7.7"
+      ],
+      "rationale": "cross-service contracts/resources ต่อกับ dependency/native/release tooling readiness ก่อน freeze",
+      "ownerPaths": [
+        "backend",
+        "functions",
+        "lib/runtime/central_cost_policy.dart",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "android",
+        "tool/cli",
+        "tool/final_test_plan/generate_final_test_plan.dart"
+      ],
+      "existingOwnerPaths": [
+        "backend",
+        "lib/runtime/central_cost_policy.dart",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "android",
+        "tool/cli",
+        "tool/final_test_plan/generate_final_test_plan.dart"
+      ],
+      "sharedOwnerPaths": [],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "backend-subsystems",
+        "release-readiness"
+      ],
+      "verificationAreas": [
+        "BackendAI",
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B18",
+      "packageIds": [
+        "G8.1",
+        "G8.2",
+        "G8.3"
+      ],
+      "rationale": "source inventory/freeze, whole-app review และ remediation ต้องใช้ฐาน review เดียวกันก่อนอนุญาต System Test Plan",
+      "ownerPaths": [
+        "docs/development",
+        "lib",
+        "backend",
+        "functions",
+        "tool",
+        "android",
+        "ios",
+        "linux",
+        "macos",
+        "windows",
+        "tools",
+        "test",
+        "firestore.rules",
+        "supabase"
+      ],
+      "existingOwnerPaths": [
+        "docs/development",
+        "lib",
+        "backend",
+        "tool",
+        "android",
+        "ios",
+        "linux",
+        "macos",
+        "windows",
+        "tools",
+        "test",
+        "firestore.rules",
+        "supabase"
+      ],
+      "sharedOwnerPaths": [
+        "lib",
+        "tool",
+        "functions",
+        "backend",
+        "test",
+        "tools"
+      ],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "freeze-inventory",
+        "whole-code-review",
+        "review-remediation"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B19",
+      "packageIds": [
+        "G8.4",
+        "G8.5",
+        "G8.6",
+        "G8.7"
+      ],
+      "rationale": "สร้าง Test Plan หลัง B18 review accepted แล้วจึงรัน automated/build/device/fault/accessibility/resource cases บน pins ที่สัมพันธ์กัน",
+      "ownerPaths": [
+        "tool/final_test_plan/generate_final_test_plan.dart",
+        "docs/generated/alltcas-8-44-final-test-plan.json",
+        "docs/development",
+        "tool/cli/verify-scope.ps1",
+        "test",
+        "backend",
+        "functions",
+        "android",
+        "tool/cli/run-android-smoke.ps1",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "integration_test",
+        "tool/cli",
+        "lib/features/accessibility"
+      ],
+      "existingOwnerPaths": [
+        "tool/final_test_plan/generate_final_test_plan.dart",
+        "docs/generated/alltcas-8-44-final-test-plan.json",
+        "docs/development",
+        "tool/cli/verify-scope.ps1",
+        "test",
+        "backend",
+        "android",
+        "tool/cli/run-android-smoke.ps1",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "integration_test",
+        "tool/cli",
+        "lib/features/accessibility"
+      ],
+      "sharedOwnerPaths": [
+        "test",
+        "integration_test"
+      ],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "formal-test-plan",
+        "frozen-test-execution",
+        "device-acceptance",
+        "system-fault-acceptance"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    },
+    {
+      "bundleId": "B20",
+      "packageIds": [
+        "G8.8",
+        "G8.9"
+      ],
+      "rationale": "defect/retest/affected regression ปิดก่อนสรุป coverage/review/test/cleanup และ final release ledger",
+      "ownerPaths": [
+        "docs/development",
+        "test",
+        "lib",
+        "backend",
+        "tools",
+        "docs/generated",
+        "tool/cli"
+      ],
+      "existingOwnerPaths": [
+        "docs/development",
+        "test",
+        "lib",
+        "backend",
+        "tools",
+        "docs/generated",
+        "tool/cli"
+      ],
+      "sharedOwnerPaths": [
+        "docs/development"
+      ],
+      "sharedTestTargets": [],
+      "verificationKinds": [
+        "defect-retest",
+        "release-ledger"
+      ],
+      "verificationAreas": [
+        "Learning"
+      ],
+      "reviewBasis": "Existing source paths and requirement/test ownership at accepted G0.5; original dependencies preserved; no runtime acceptance inferred."
+    }
+  ]
+}
