@@ -1,0 +1,35 @@
+{
+  "packageId": "G3.4",
+  "bundleId": "B08",
+  "status": "accepted-local-automated",
+  "baseSha": "7a238ebef41af7d00002d6f5e870b85fa6ed2d8f",
+  "testsPassed": 167,
+  "verificationManifest": "docs/development/full-system/evidence/bundles/B08/G3.4-final/targeted-learning-f0d5e36b430df3502b5707c2c1f6b674610af05b94d24752f20ccb4e6f4cdf3e.json",
+  "fingerprint": "c57bbfab6516769e15eeb68d23fef6b00c82c677ae36effd09572fc3905067af",
+  "inputClosureVerified": true,
+  "rawLogsHashVerified": true,
+  "requirements": [
+    "COV-f06",
+    "COV-f14",
+    "COV-f15",
+    "COV-f22",
+    "COV-f43",
+    "G3"
+  ],
+  "outcomes": [
+    "Review reloads canonical queue after session retirement; async read failure displayed and retry restores content",
+    "Owner switch during queue composition fails closed",
+    "Due/mistake/saved sources, Bangkok due restart and exact revision launch retained",
+    "History first5/6 plus repair1/1 separated; replay uses fresh idempotent session without cloning source evidence/reward",
+    "Recommendation reason/manual choice and canonical result-to-review action covered"
+  ],
+  "review": {
+    "method": "Single-writer diff/callers/acceptance review; no schema changes",
+    "analyzer": "4 files: No issues found"
+  },
+  "requiredOpenDefects": [],
+  "externalGates": [
+    "Device/manual screen reader/live speech/full release NOT RUN",
+    "Effective tier unverified"
+  ]
+}

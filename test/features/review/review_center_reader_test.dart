@@ -1167,6 +1167,28 @@ void main() {
     expect(await _tableCounts(database), countsBefore);
   });
 
+  test(
+    'public load rejects an owner switch while composing the queue',
+    () async {
+      final capturingReader = _CapturingReader()
+        ..result = [_item()]
+        ..onCompose = () async {
+          await (database.update(database.localOwners)
+                ..where((row) => row.id.equals('owner-1')))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await _insertOwner(database, 'owner-new');
+        };
+      final useCases = ReviewCenterUseCases(
+        reader: capturingReader,
+        ownerIdentities: DriftReviewOwnerIdentityReader(database),
+        sessionLauncher: _SessionLauncher(),
+        nowUtc: () => _now,
+        timezoneId: 'Asia/Bangkok',
+      );
+      await expectLater(useCases.load(), throwsStateError);
+    },
+  );
+
   test('public load fails closed for zero or multiple active owners', () async {
     final capturingReader = _CapturingReader();
     final useCases = ReviewCenterUseCases(
@@ -2068,10 +2090,12 @@ Future<Map<String, int>> _tableCounts(AppDatabase database) async {
 final class _CapturingReader implements ReviewCenterReader {
   ReviewQueueFilter? filter;
   List<ReviewQueueItem> result = const [];
+  Future<void> Function()? onCompose;
 
   @override
   Future<List<ReviewQueueItem>> compose(ReviewQueueFilter filter) async {
     this.filter = filter;
+    await onCompose?.call();
     return result;
   }
 }

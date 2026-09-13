@@ -4,3 +4,6 @@ assets/content/**/*.json text eol=lf
 # B07 verification receipts must survive worktree checkout byte-for-byte.
 docs/development/full-system/evidence/bundles/B07/**/*.log binary
 docs/development/full-system/evidence/bundles/B07/**/*.json text eol=lf
+
+docs/development/full-system/evidence/bundles/B08/**/*.log binary
+docs/development/full-system/evidence/bundles/B08/**/*.json text eol=lf

@@ -141,7 +141,7 @@ final class ReviewCenterUseCases {
     int? limit,
   }) async {
     final ownerId = await ownerIdentities.requireSingleActiveOwnerId();
-    return reader.compose(
+    final items = await reader.compose(
       ReviewQueueFilter(
         ownerId: ownerId,
         evaluatedAtUtc: _now(),
@@ -150,6 +150,10 @@ final class ReviewCenterUseCases {
         limit: limit,
       ),
     );
+    if (await ownerIdentities.requireSingleActiveOwnerId() != ownerId) {
+      throw StateError('Review owner changed while loading the queue.');
+    }
+    return items;
   }
 
   Future<ReviewLessonLaunchRequest> launch(ReviewQueueItem item) async {

@@ -31,6 +31,44 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/review_center_screen.dart';
 
 void main() {
+  testWidgets('reloads canonical review queue after returning from practice', (
+    tester,
+  ) async {
+    final fixture = await _durableFixture();
+    addTearDown(fixture.database.close);
+    var loads = 0;
+    final useCases = ReviewCenterUseCases(
+      reader: _Reader(
+        load: () async {
+          loads += 1;
+          return loads == 1 ? [_item()] : [];
+        },
+      ),
+      ownerIdentities: fixture.useCases.ownerIdentities,
+      sessionLauncher: fixture.useCases.sessionLauncher,
+      nowUtc: fixture.useCases.nowUtc,
+      timezoneId: fixture.useCases.timezoneId,
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReviewCenterScreen(
+          useCases: useCases,
+          lessonShellBuilder: (_) =>
+              _lessonDestination(learning: fixture.learning, controllers: []),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('เริ่มทบทวน'));
+    await tester.pumpAndSettle();
+    expect(find.byType(UnifiedLessonShell), findsOneWidget);
+    Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
+    await tester.pumpAndSettle();
+    expect(loads, 2);
+    expect(find.text('ยังไม่มีรายการที่ต้องทบทวน'), findsOneWidget);
+    expect(find.text('station'), findsNothing);
+  });
+
   testWidgets('presents every typed reason and source detail', (tester) async {
     final item = _item(allReasons: true);
     await tester.pumpWidget(
@@ -471,6 +509,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ไม่สามารถเริ่มการทบทวนได้'), findsOneWidget);
+    expect(find.text('ไม่สามารถโหลดรายการทบทวนได้'), findsOneWidget);
+    expect(find.text('station'), findsNothing);
+    now = _now;
+    await tester.tap(find.text('ลองอีกครั้ง'));
+    await tester.pumpAndSettle();
+    expect(find.text('station'), findsOneWidget);
     expect(
       await fixture.database.select(fixture.database.learningSessions).get(),
       isEmpty,

@@ -1,0 +1,40 @@
+[
+  {
+    "fix": "Reload after lease retirement",
+    "retest": "167 tests passed",
+    "cause": "Future retained after route pop",
+    "id": "B08-G34-01",
+    "actual": "loads 1 instead of 2",
+    "expected": "Queue reloaded after practice",
+    "evidence": "G3.4-refresh-red",
+    "status": "resolved"
+  },
+  {
+    "fix": "Immediate observer on same future; FutureBuilder still renders error and retry",
+    "retest": "Negative-clock error and retry assertions passed",
+    "cause": "Listener attached after frame",
+    "id": "B08-G34-02",
+    "actual": "Early async error unhandled before FutureBuilder frame",
+    "expected": "Reload failures shown in error UI",
+    "evidence": "G3.4-refresh-regression-failure",
+    "status": "resolved"
+  },
+  {
+    "fix": "Recheck active owner before returning",
+    "retest": "Owner-switch regression passed",
+    "cause": "No post-await owner validation",
+    "id": "B08-G34-03",
+    "actual": "Old owner items returned",
+    "expected": "No foreign owner queue returned after switch",
+    "evidence": "G3.4-owner-red",
+    "status": "resolved"
+  },
+  {
+    "expected": "Existing path discovery before reads",
+    "actual": "rg named nonexistent production_shell_screen.dart",
+    "status": "resolved",
+    "cause": "Guessed path",
+    "id": "B08-TOOL-01",
+    "fix": "rg --files found main_navigation_screen.dart; subsequent reads succeeded"
+  }
+]

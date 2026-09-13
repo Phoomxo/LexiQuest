@@ -150,7 +150,16 @@ final class _ReviewCenterScreenState extends State<ReviewCenterScreen> {
           const SnackBar(content: Text('ไม่สามารถเริ่มการทบทวนได้')),
         );
       }
-      if (mounted) setState(() => _openingIdentity = null);
+      if (mounted) {
+        final next = widget.useCases.load();
+        // Observe immediately: an async read can fail before the next frame
+        // attaches FutureBuilder. The same future still renders its error UI.
+        next.ignore();
+        setState(() {
+          _openingIdentity = null;
+          _load = next;
+        });
+      }
     }
   }
 }
