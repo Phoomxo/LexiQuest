@@ -1,0 +1,13 @@
+[
+  {
+    "id": "B15-01",
+    "package": "G7.1",
+    "status": "closed",
+    "expected": "Sync can acquire process mutex after durable lease expires following release failure",
+    "actualBefore": "alreadyRunning forever",
+    "cause": "Awaited persistent release threw before mutex.release",
+    "fix": "Nested finally releases process mutex while error and persistent lease remain intact",
+    "red": "G7.1-red.stdout.log",
+    "green": "G7.1-green.stdout.log"
+  }
+]

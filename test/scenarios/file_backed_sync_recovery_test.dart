@@ -61,6 +61,27 @@ void main() {
         await database.customSelect('SELECT 1').getSingle();
         await _seedRestartInventory(database);
 
+        gateway.offline = true;
+        final offline = await buildEngine(database).run();
+        expect(offline.status, SyncRunStatus.partialFailure);
+        expect(offline.retryRecommended, isTrue);
+        expect(gateway.applyCounts, isEmpty);
+        final offlineSnapshot = await _restartSnapshot(database);
+        expect(offlineSnapshot['attemptIds'], {'attempt:local'});
+        expect(offlineSnapshot['srsIds'], {'srs:local'});
+        final pendingOffline = await database
+            .select(database.outboxOperations)
+            .get();
+        expect(pendingOffline, hasLength(4));
+        expect(
+          pendingOffline.every((row) => row.state == 'retryWaiting'),
+          isTrue,
+        );
+        await database.close();
+        database = openDatabase();
+        expect(await _restartSnapshot(database), offlineSnapshot);
+        nowUtc = nowUtc.add(const Duration(seconds: 3));
+        gateway.offline = false;
         final lostAcknowledgement = await buildEngine(database).run();
         final reserved =
             await (database.select(database.outboxOperations)
@@ -69,7 +90,7 @@ void main() {
 
         expect(lostAcknowledgement.status, SyncRunStatus.partialFailure);
         expect(reserved.state, 'retryWaiting');
-        expect(reserved.attemptCount, 1);
+        expect(reserved.attemptCount, 2);
         expect(gateway.requestCounts[_lostAckNamespaceKey], 1);
         expect(gateway.applyCounts[_lostAckNamespaceKey], 1);
         expect(
@@ -142,6 +163,7 @@ const String _lostAckOperationId = 'category:local:1';
 const String _lostAckNamespaceKey = 'firebase-a|category:local:1';
 
 final class _RestartCloud implements SyncGateway {
+  bool offline = false;
   int pushCalls = 0;
   final Map<String, int> requestCounts = <String, int>{};
   final Map<String, int> applyCounts = <String, int>{};
@@ -154,6 +176,7 @@ final class _RestartCloud implements SyncGateway {
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
+    if (offline) throw const OfflineSyncFailure();
     pushCalls += 1;
     final namespaceKey = '${mutation.firebaseUid}|${mutation.operationId}';
     final requestCount = requestCounts.update(

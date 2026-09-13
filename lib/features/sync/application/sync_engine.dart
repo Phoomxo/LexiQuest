@@ -361,9 +361,14 @@ final class SyncEngine {
       );
     } finally {
       if (!stopHeartbeat.isCompleted) stopHeartbeat.complete();
-      await heartbeat;
-      await ownerGate.release(token: runLeaseToken);
-      mutex.release(mutexKey);
+      try {
+        await heartbeat;
+        await ownerGate.release(token: runLeaseToken);
+      } finally {
+        // A storage cleanup failure must not strand this process forever.
+        // The durable lease still fences later runs until it expires.
+        mutex.release(mutexKey);
+      }
     }
   }
 

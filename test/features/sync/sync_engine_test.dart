@@ -92,6 +92,22 @@ void main() {
   }
 
   test(
+    'failed persistent gate release does not strand the process mutex',
+    () async {
+      final mutex = SyncMutex();
+      final gate = _FailOnceReleaseGate(DriftOwnerOperationGate(database));
+      final runner = engine(mutex: mutex, ownerGate: gate);
+      await expectLater(runner.run(), throwsStateError);
+      // The durable lease still fences work until expiration; process cleanup
+      // must not permanently prevent recovery after that expiration.
+      nowUtc = nowUtc.add(
+        SyncEngine.runLeaseDuration + const Duration(seconds: 1),
+      );
+      expect((await runner.run()).status, SyncRunStatus.completed);
+    },
+  );
+
+  test(
     'restored bookmark unsave translates real wire acknowledgement to local row',
     () async {
       store = DriftSyncStore(
@@ -1438,4 +1454,41 @@ Future<void> _seedAdditionalCategoryOperation(
           createdAtUtcMs: createdAtUtcMs,
         ),
       );
+}
+
+final class _FailOnceReleaseGate implements OwnerOperationGate {
+  _FailOnceReleaseGate(this.delegate);
+  final OwnerOperationGate delegate;
+  bool fail = true;
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.tryAcquire(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.renew(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+  @override
+  Future<void> release({required String token}) async {
+    if (fail) {
+      fail = false;
+      throw StateError('injected release failure');
+    }
+    await delegate.release(token: token);
+  }
 }

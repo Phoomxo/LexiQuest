@@ -1,0 +1,21 @@
+{
+  "packageId": "G7.1",
+  "bundleId": "B15",
+  "status": "accepted-local",
+  "requirements": [
+    "COV-f40",
+    "G7"
+  ],
+  "tests": 61,
+  "verifier": "G7.1-green-verifier.json",
+  "fingerprint": "d57e0e8b8bd2647aa1a18a0e7685bf01139397e989aaa48c0033835d94bf268b",
+  "outcomes": [
+    "Offline file-backed state survives reopen including learning attempts/SRS and all four pending operations",
+    "Lost ack replay applies each canonical cloud mutation once and persists local acknowledgements across two reopens",
+    "Retry bounded to five durable sends, timeout retry, kill switch/no UID, owner gate heartbeat and scheduler tests passed",
+    "Persistent gate cleanup failure surfaces; process recovers after persistent lease expiry"
+  ],
+  "review": "Single writer reviewed diff, callers, fault behavior and acceptance. No required open defect. No cloud/device claim. SyncRunResult partialFailure/skipped flags remain truthful; local persistence independent from remote availability.",
+  "phaseStatus": "G7 in progress through G7.7",
+  "reuse": "No previous passing gate rerun; new targeted selection at current source."
+}

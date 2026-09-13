@@ -1,0 +1,9 @@
+{
+ "bundleId":"B15","baseSha":"af40a0512070cd6804c6f01484d63348e87a86b6","revision":"2026-09-14-camera-training-5",
+ "constraints":["sole writer sequential packages","lexiquest/ only","synthetic transport; no remote research or paid/live services","preserve historical receipts and owner identity","reuse unchanged passed gates; bounded verify-scope only"],
+ "steps":[
+  {"package":"G7.1","paths":["lib/features/sync/application/sync_engine.dart","test/features/sync/sync_engine_test.dart","test/scenarios/file_backed_sync_recovery_test.dart"],"design":"Retain canonical mutation IDs and durable retry reservations. Extend file-backed scenario with offline phase and reopen before lost ack. Verify failed persistent gate release cannot leak the process mutex and prevent subsequent recovery. Preserve original error and persistent lease expiry fencing.","acceptance":"No duplicate remote application/local receipts or dropped pending work; offline local inventory survives; five-attempt bound and timeout coverage; truthful failure result.","verification":"verify-scope Targeted Learning: file_backed_sync_recovery, sync_engine, cloud_sync_policy, sync_trigger, background_sync_scheduler plus relevant local learning scenario"},
+  {"package":"G7.2","design":"Read brief at entry, inspect identity/conflict/migration callers and legacy learning.sqlite source. Add detailed migration mapping, atomicity/rollback and compatibility plan from actual code before implementation.","acceptance":"Inherited legacy import obligation plus actual G7.2 brief; owner isolation and historical evidence unchanged"}
+ ],
+ "delivery":"B15.md concise Thai, JSON plan/defects/acceptance and raw logs; commit each accepted package then actual-SHA receipt under locked revision compare; B16 dispatch only after final audit"
+}
