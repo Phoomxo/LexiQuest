@@ -84,7 +84,7 @@
   ],
   "sourceFingerprints": {
     "tools/test_camera_development_evaluation.py": "007d8a587313a0fd45f14c6e4873641340a87546aa04ed487a7cfa1eda6470b5",
-    "docs/development/full-system/evidence/bundles/B12/G5.5-metrics.json": "9e8af2b6811ca7308f3e08be0e1ca0e2a2851fb27e14caf7d5479075590c5e84",
+    "docs/development/full-system/evidence/bundles/B12/G5.5-metrics.json": "dfa6988ae273f14f79d31981fee323fbcca0a5955e96662e7e0a273d0f2e3274",
     "tools/camera_development_evaluation.py": "8dc6bb9cda7f5c123ec1e4346d32c884a5349cfe522386d1c8047d2003fd5e10",
     "docs/development/full-system/evidence/bundles/B12/measure_host.py": "22122b6cf7a569f5a1ebb9f04370171f672fc89fdbd63b39de1647c2ec4fed14"
   }
