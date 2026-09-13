@@ -2,6 +2,8 @@
 
 ## Current Full-System authority — 2026-09-13 revision 4
 
+- User branch policy: use `lexiquest/` only; never use codex/codeic in branch names. Inspect native worktree names and rename before source writes. Preserve accepted historical receipts; see external `branch-naming-policy.json`.
+
 - Subsequent tasks use Standard/default only: no Fast/1.5x or fast/priority service tier. Keep GPT-6 Astra/medium. Follow external `speed-policy.json`, propagate in each prompt/handoff, and verify effective tier when supported. `create_thread` has no serviceTier field; prompt/config alone do not prove runtime enforcement. If Fast is observed, switch through a supported control or report the limitation before continuing.
 
 - The latest user instruction after accepted G0.5 replaces one task per package with **one task per related-work bundle**. Preserve all9 phases/64 requirement packages and every acceptance criterion. G0.1–G0.5 are accepted history; the remaining59 packages execute in20 bundles B01–B20. Use GPT-6 Astra (`gpt-6-astra`) / `medium`.

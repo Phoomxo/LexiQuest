@@ -3080,6 +3080,36 @@ void main() {
       },
     );
 
+    test('B03 production factories construct without initialized Firebase', () {
+      expect(AppBootstrap.production, returnsNormally);
+    });
+
+    test('B03 non-completing optional initialization preserves local startup', () async {
+      final pending = Completer<void>();
+      var gatewayCreations = 0;
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () => pending.future,
+        initializeSupabase: () async {},
+        loadConfig: () => throw const AppConfigException('no key'),
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        cloudSyncEnabled: false,
+        accountGatewayFactory: () { gatewayCreations++; throw StateError('remote'); },
+      );
+      final dependencies = await bootstrap.initialize().timeout(const Duration(seconds: 5));
+      addTearDown(dependencies.dispose);
+      expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
+      expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.unavailable);
+      expect(dependencies.config, isNull);
+      expect(dependencies.learning, isNotNull);
+      expect(gatewayCreations, 0);
+      pending.complete();
+      await Future<void>.delayed(Duration.zero);
+      expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.unavailable);
+      expect(gatewayCreations, 0);
+    });
+
     test('records Firebase failure and still returns', () async {
       final database = _testDatabase();
       final bootstrap = AppBootstrap(

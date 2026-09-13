@@ -57,6 +57,57 @@
       "status": "resolved",
       "actual": "Nonexistent progress screen path read repeated os2",
       "fix": "Stopped guessed-path reads, reported to user; rg --files found mastery_dashboard_screen and learning_calendar_screen"
+    },
+    {
+      "id": "B03-RUNTIME-01",
+      "status": "fixed-tested-not-yet-accepted",
+      "actual": "Non-completing initializer caused5s regression timeout",
+      "cause": "Unbounded await optional initializer",
+      "fix": "2s deadline per optional service; freeze unavailable result",
+      "retest": "Named regression and118 bootstrap/readiness tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-01",
+      "status": "fixed-tested-not-yet-accepted",
+      "actual": "Five initial production safe-open tests failed",
+      "cause": "No preflight/version guard/WAL/timeout",
+      "fix": "Read-only preflight and typed readiness; future/corrupt/unversioned/legacy preserved; same canonical path",
+      "retest": "5 safe-open tests then123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-02",
+      "status": "fixed-tested-not-yet-accepted",
+      "actual": "After first fix four rejection tests failed with repeated async errors",
+      "cause": "drift_flutter delayed connection opens eagerly and close rethrows preflight future",
+      "fix": "Lazy preflight before constructing connection; close suppresses only already-reported typed preflight error",
+      "retest": "Malformed file preservation and dependency failure tests PASS"
+    },
+    {
+      "id": "B03-FIXTURE-01",
+      "status": "resolved",
+      "actual": "raw25 owner assertion Too many elements",
+      "cause": "Frozen fixture already includes owner",
+      "fix": "Compare entire owner snapshot before/after migration",
+      "retest": "123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-STORAGE-03",
+      "status": "fixed-tested-not-yet-accepted",
+      "actual": "Missing path-provider surfaced untyped PlatformException",
+      "cause": "Directory lookup outside typed error boundary",
+      "fix": "Wrap directory/preflight failures into unavailable storage status",
+      "retest": "123 database/migration/recovery tests PASS"
+    },
+    {
+      "id": "B03-OPS-07",
+      "status": "stopped-per-guardrail",
+      "actual": "Repeated os123 wildcard lookup and os2 guessed edition file read after earlier invalid paths",
+      "paths": [
+        "lib/app*",
+        "docs/development/full-system/evidence/bundles/B01/G0.8-edition.json"
+      ],
+      "cause": "Agent used unverified file paths",
+      "action": "Stopped implementation and dispatch; preserved completed verification and checkpoint. Resume only with rg --files inventory and exact discovered paths"
     }
   ]
 }

@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'app_database_open_policy.dart';
+import 'app_database_stub_path.dart'
+    if (dart.library.ffi) 'app_database_native_path.dart';
+
 import 'research_schema_guards.dart';
 import '../../features/quest/domain/quest_definition_codec.dart';
 import '../../features/quest/domain/quest_period.dart';
@@ -88,7 +92,27 @@ final class AppDatabase extends _$AppDatabase {
 
   AppDatabase(super.executor);
 
-  AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
+  AppDatabase.production() : super(LazyDatabase(() async {
+    // Run preflight before drift_flutter creates its eager delayed connection.
+    final path = await resolveAppDatabasePath(currentSchemaVersion);
+    return driftDatabase(
+      name: 'lexiquest',
+      native: path == null ? null : DriftNativeOptions(
+        databasePath: () async => path,
+        setup: (database) => configureAppDatabase(database, currentSchemaVersion),
+      ),
+    );
+  }));
+
+  @override
+  Future<void> close() async {
+    try {
+      await super.close();
+    } on AppDatabaseOpenException {
+      // A rejected read-only preflight has no open delegate to dispose.
+      // The readiness query already reported the typed failure to its caller.
+    }
+  }
 
   @override
   int get schemaVersion => currentSchemaVersion;

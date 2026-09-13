@@ -2,6 +2,8 @@
 
 Revision `2026-09-13-bundles-4` · Astra (`gpt-6-astra`) / `medium`
 
+- User branch policy: use `lexiquest/` only; never use codex/codeic in branch names. Inspect native worktree names and rename before source writes. Preserve accepted historical receipts; see external `branch-naming-policy.json`.
+
 ## สิทธิ์และหน่วยงาน
 
 ผู้ใช้เปลี่ยนวิธีส่งต่อหลัง G0.5 เสร็จ: **หนึ่ง task ต่อชุดงานที่ใช้ code/context/tests ร่วมกัน**. คง9phases/64requirement packages และ acceptanceทั้งหมด. G0.1–G0.5 เป็นประวัติ accepted; 59packagesที่เหลืออยู่ใน20bundles B01–B20 ตาม [index](full-system-task-index.json). G/P ยังเป็น aliases ของ requirement unit เดียวกัน; B คือหน่วย dispatch. `nextPackage` ไม่ใช่คำสั่งสร้าง task

@@ -7,6 +7,8 @@ import 'config/m3_theme.dart';
 import 'features/accessibility/presentation/accessibility_scope.dart';
 import 'features/preferences/application/display_preferences_controller.dart';
 import 'runtime/app_bootstrap.dart';
+import 'data/local/app_database_open_policy.dart';
+import 'runtime/local_storage_readiness_app.dart';
 import 'runtime/app_dependencies.dart';
 import 'features/sync/application/sync_trigger.dart';
 import 'features/sync/platform/background_sync_scheduler.dart';
@@ -16,7 +18,13 @@ import 'navigation/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final dependencies = await AppBootstrap.production().initialize();
+  late final AppDependencies dependencies;
+  try {
+    dependencies = await AppBootstrap.production().initialize();
+  } on AppDatabaseOpenException catch (failure) {
+    runApp(LocalStorageReadinessApp(failure: failure));
+    return;
+  }
   runApp(MyApp(dependencies: dependencies));
   final owners = dependencies.localOwners;
   if (owners != null) {

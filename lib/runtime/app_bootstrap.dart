@@ -1920,7 +1920,7 @@ final class AppBootstrap {
     RuntimeInitializer initializer,
   ) async {
     try {
-      await initializer();
+      await initializer().timeout(const Duration(seconds: 2));
       return RuntimeAvailability.ready;
     } catch (_) {
       return RuntimeAvailability.unavailable;

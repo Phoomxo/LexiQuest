@@ -1,0 +1,9 @@
+{
+  "oldBranch": "codex/b03-recovery-srs-local",
+  "currentBranch": "lexiquest/b03-recovery-srs-local",
+  "headPreserved": "8318462db868ac2b33030f0fed80e1d6b14eee8c",
+  "diffPreserved": true,
+  "stateRevision": 38,
+  "historicalReceipts": "Unchanged; old name retained as historical identity",
+  "policy": "lexiquest/ only; never codex/codeic in branch names"
+}
