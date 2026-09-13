@@ -69,6 +69,23 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
       (_review?.actionLocked ?? true) ||
       _completionCommitted;
 
+  bool get _typedAnswerReady {
+    final value = _typedAnswer.value;
+    return value.text.trim().isNotEmpty &&
+        value.text.runes.length <= 160 &&
+        !(value.composing.isValid && !value.composing.isCollapsed);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _typedAnswer.addListener(_typedAnswerChanged);
+  }
+
+  void _typedAnswerChanged() {
+    setState(() {});
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -423,7 +440,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                       const SizedBox(height: 10),
                       FilledButton(
                         key: const ValueKey<String>('cloze-submit-typed'),
-                        onPressed: review.isAnswered || _actionLocked
+                        onPressed: review.isAnswered || _actionLocked || !_typedAnswerReady
                             ? null
                             : _recordTyped,
                         child: const Text('ตรวจคำตอบ'),
@@ -523,7 +540,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
 
   Future<void> _recordTyped() async {
     final review = _review;
-    if (review == null || _actionLocked) return;
+    if (review == null || _actionLocked || !_typedAnswerReady) return;
     try {
       await review.answerTyped(
         text: _typedAnswer.text,
@@ -652,6 +669,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
   @override
   void dispose() {
     _responseStopwatch.stop();
+    _typedAnswer.removeListener(_typedAnswerChanged);
     _typedAnswer.dispose();
     _review?.removeListener(_onReviewChanged);
     _review?.dispose();
