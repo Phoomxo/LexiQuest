@@ -18,6 +18,137 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  for (final reset in [
+    'scenario',
+    'level',
+    'intent',
+    'new chat',
+    'level cancel failure',
+  ]) {
+    testWidgets(
+      'R15 review $reset cancels old speech and preserves new draft',
+      (tester) async {
+        final gateway = _FakeSpeechGateway(
+          emitResult: false,
+          cancelError: reset == 'level cancel failure'
+              ? StateError('synthetic cancellation failure')
+              : null,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AiTutorScreen(
+              aiTutor: _FakeAiTutor(),
+              voice: VoiceUseCases(
+                provider: _FakeVoice(),
+                disposeProvider: () async {},
+              ),
+              speechPractice: SpeechPracticeUseCases(gateway),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+        await tester.pumpAndSettle();
+        expect(gateway.isListening, isTrue);
+        final oldEvent = gateway.lastEvent!;
+        final oldFailure = gateway.lastFailure!;
+        final oldStatus = gateway.lastStatus!;
+        switch (reset) {
+          case 'scenario':
+            tester
+                .widget<DropdownButtonFormField<String>>(
+                  find.byType(DropdownButtonFormField<String>),
+                )
+                .onChanged!('Cafe Ordering');
+          case 'level':
+          case 'level cancel failure':
+            tester
+                .widget<DropdownButton<String>>(
+                  find.byKey(const ValueKey('ai-tutor-level')),
+                )
+                .onChanged!('B2');
+          case 'intent':
+            tester
+                .widget<DropdownButton<TutorIntent>>(
+                  find.byKey(const ValueKey('ai-tutor-intent')),
+                )
+                .onChanged!(TutorIntent.practice);
+          case 'new chat':
+            await tester.tap(find.byTooltip('เริ่มบทสนทนาใหม่'));
+        }
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const ValueKey('ai-tutor-input')),
+          'New draft',
+        );
+        oldStatus('listening');
+        oldFailure(SpeechFailureCode.engine);
+        oldEvent(
+          SpeechRecognitionEvent(
+            transcript: 'OLD SESSION TRANSCRIPT',
+            isFinal: true,
+            recognizedAtUtc: DateTime.utc(2026, 9, 13),
+            engine: 'synthetic',
+            locale: 'en-US',
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('ai-tutor-input')))
+              .controller!
+              .text,
+          'New draft',
+        );
+        expect(find.byKey(const ValueKey('ai-tutor-error')), findsNothing);
+        expect(gateway.isListening, isFalse);
+        gateway.emitResult = true;
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+        await tester.pumpAndSettle();
+        expect(gateway.startCalls, 2);
+        expect(
+          tester
+              .widget<TextField>(find.byKey(const ValueKey('ai-tutor-input')))
+              .controller!
+              .text,
+          'I have real project experience',
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+
+  testWidgets('R15 review reset while permission pending retires old start', (
+    tester,
+  ) async {
+    final permission = Completer<MediaPermissionState>();
+    final gateway = _FakeSpeechGateway(emitResult: false)
+      ..permissionGate = permission;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiTutorScreen(
+          aiTutor: _FakeAiTutor(),
+          speechPractice: SpeechPracticeUseCases(gateway),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+    await tester.pump();
+    tester
+        .widget<DropdownButton<String>>(
+          find.byKey(const ValueKey('ai-tutor-level')),
+        )
+        .onChanged!('B2');
+    permission.complete(MediaPermissionState.granted);
+    await tester.pumpAndSettle();
+    expect(gateway.startCalls, 0);
+    expect(gateway.isListening, isFalse);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
   for (final large in [false, true]) {
     testWidgets('R15 visual Thai reply and offline large=$large', (
       tester,
@@ -925,6 +1056,10 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   final Completer<void> cancelCompleted = Completer<void>();
   int cancelCalls = 0;
   int startCalls = 0;
+  SpeechEventCallback? lastEvent;
+  SpeechFailureCallback? lastFailure;
+  void Function(String)? lastStatus;
+  Completer<MediaPermissionState>? permissionGate;
 
   @override
   bool isListening = false;
@@ -943,11 +1078,16 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   Future<void> initialize({
     required SpeechFailureCallback onFailure,
     required void Function(String status) onStatus,
-  }) async {}
+  }) async {
+    lastFailure = onFailure;
+    lastStatus = onStatus;
+  }
 
   @override
   Future<MediaPermissionState> requestPermission() async =>
-      MediaPermissionState.granted;
+      permissionGate == null
+      ? MediaPermissionState.granted
+      : await permissionGate!.future;
 
   @override
   Future<void> start({
@@ -955,6 +1095,7 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
     required SpeechEventCallback onEvent,
   }) async {
     startCalls += 1;
+    lastEvent = onEvent;
     isListening = true;
     if (!emitResult) return;
     onEvent(

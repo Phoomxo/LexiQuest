@@ -67,36 +67,38 @@ function Get-Sha256Text {
 function Get-AreaPathPattern {
     param([string]$SelectedArea)
 
-    # R15 features share authorities across areas. Hash shared inputs as well
-    # as the selected tests; a wider fingerprint does not run wider suites.
+    # Frontend suites share feature authorities, bootstrap and test helpers.
+    # Conservative input coverage avoids reusing a pass after an unstaged
+    # dependency edit. This changes cache validity, not the selected tests.
+    $flutterInputs = '^(lib/|test/|assets/|tool/cli/|\.gitattributes$|pubspec\.(yaml|lock)$|analysis_options\.yaml$|dart_test\.yaml$|\.metadata$)'
     if ($TestTargets.Count -gt 0) {
-        return '^(lib/|test/|assets/|tool/cli/|\.gitattributes$|pubspec\.(yaml|lock)$)'
+        return $flutterInputs
     }
 
     switch ($SelectedArea) {
         'Learning' {
-            return '^(lib/(learning|progress|services/associative_|screens/associative_)|test/(learning|progress|services/associative_|screens/associative_))'
+            return $flutterInputs
         }
         'AI' {
-            return '^(lib/(ai|services/ai_|screens/ai_)|test/(ai|services/ai_|screens/ai_))'
+            return $flutterInputs
         }
         'Voice' {
-            return '^(lib/(voice|services/voice_|screens/.*voice)|test/(voice|services/.*voice|screens/.*voice))'
+            return $flutterInputs
         }
         'Economy' {
-            return '^(lib/(progress|config/remote_economy_policy|screens/(shop|score|achievements|setting))|test/(progress|screens/(shop|score|quiz_score|achievements|setting))|functions/|firebase\.json|firestore\.rules|test/security/firestore-rules\.test\.cjs|package(-lock)?\.json)'
+            return $flutterInputs + '|^(functions/|firebase\.json$|firestore\.rules$|package(-lock)?\.json$)'
         }
         'Runtime' {
-            return '^(lib/(runtime|config)|test/(runtime|config)|tool/cli/|android/|\.github/workflows/)'
+            return $flutterInputs + '|^(android/|\.github/workflows/)'
         }
         'BackendAI' { return '^backend/ai_api/' }
         'BackendVoice' { return '^backend/voice_api/' }
         'BackendLM' { return '^backend/lexiquest_lm/' }
         'Integration' {
-            return '^(integration_test/|tool/cli/verify-android-e2e\.ps1|android/|pubspec\.(yaml|lock)|\.github/workflows/)'
+            return $flutterInputs + '|^(integration_test/|android/|\.github/workflows/)'
         }
         'All' {
-            return '^(lib/|test/|backend/|tool/cli/|android/|firestore\.rules|storage\.rules|supabase/|\.github/workflows/|pubspec\.(yaml|lock)|package(-lock)?\.json)'
+            return $flutterInputs + '|^(integration_test/|backend/|functions/|tools/|android/|firebase\.json$|firestore\.rules$|storage\.rules$|supabase/|\.github/workflows/|package(-lock)?\.json$)'
         }
         default { throw ('Unsupported area: ' + $SelectedArea) }
     }
@@ -346,7 +348,7 @@ function Get-VerificationCommands {
                         '-ExecutionPolicy',
                         'Bypass',
                         '-File',
-                        (Join-Path $scriptDir 'tests\verify-scope.tests.ps1')
+                        (Join-Path $scriptDir 'tests\r15-scope.tests.ps1')
                     ) `
                     -SourceArea 'Runtime'))
             }

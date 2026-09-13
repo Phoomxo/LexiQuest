@@ -1,0 +1,47 @@
+[
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/fixes-source.json",
+    "sha256": "44bb03012124fc079a6b2cd6123fb6a0c1c6908e7c368aeccca59baea67e754f",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/camera-red.log",
+    "sha256": "d33423ec62aa6fba32a9a3d51807917e5579e36d63d34f76a87749b335dc21c9",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/camera-green.log",
+    "sha256": "722de7125d95146d492560516432729b50cca94d68ab516963a3f1c77d47fea6",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/scope-red.log",
+    "sha256": "2263b4079314bba686d433f3afe32d7ab3e569c433951efc308330ad5ea99f7e",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/scope-green.log",
+    "sha256": "2f074321ec6cd41c28387cef82b33a4a52196a10075c877a46e9cac95b2282ca",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/fixes-analyze.log",
+    "sha256": "0dd6167b00e0dfdc153caf96ede65854bdfe08be72daf6755119bbc93a6298bc",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/f4eebb895836349fbf8e9960312a78bad524d462/e57ac9c78d8d-6c829ed7efe6/Explicit-Flutter-tests.stdout.log",
+    "sha256": "11edca1e35e1b64babe82e9403b5f51cc03cb101cc5b2e31d7afcae6166d6ab5",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/f4eebb895836349fbf8e9960312a78bad524d462/d9c3ade053dc-abac5b94eee1/Explicit-Flutter-tests.stdout.log",
+    "sha256": "8aa918d9e243432bc4dfe5bfab505a6f10e2e555b0a9c0d83b0105e98a627588",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  },
+  {
+    "path": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/f4eebb895836349fbf8e9960312a78bad524d462/targeted-ai-2b607a6d1fdc381d135027a5c797cfc19d42fe2920043f4600d4dbc95cd6d9cd.json",
+    "sha256": "6041376a68113aff2639e6e5352ea0dc36c08cd7151147e993494442fdee5db1",
+    "status": "Read and pinned historical RED/GREEN; not promoted to fresh checkout PASS"
+  }
+]

@@ -81,6 +81,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     TutorIntent.practice: 'แบบฝึกหัด',
   };
   AiCancellation? _generationCancellation;
+  Future<void>? _resetSpeechCancellation;
   String _selectedScenario = _scenarios.first;
   bool _isGenerating = false;
   bool _isListening = false;
@@ -88,6 +89,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   String? _error;
   int _interactionEpoch = 0;
   int _voiceAttemptEpoch = 0;
+  int _speechAttemptEpoch = 0;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -129,6 +131,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       return;
     }
     final previous = _speechSession;
+    _speechAttemptEpoch++;
     _speechSession = null;
     _speech = resolved;
     _isListening = false;
@@ -147,6 +150,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   @override
   Future<void> onVoiceRouteCovered() async {
     _voiceAttemptEpoch++;
+    _speechAttemptEpoch++;
+    _isListening = false;
     final speechSession = _speechSession;
     _speechSession = null;
     await speechSession?.release();
@@ -159,6 +164,9 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   void _resetConversation() {
+    final cancellation = _retireSpeechAttempt();
+    _resetSpeechCancellation = cancellation;
+    cancellation.ignore();
     _interactionEpoch++;
     _generationCancellation?.cancel();
     _generationCancellation = null;
@@ -168,6 +176,13 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     _messages.clear();
     _inputController.clear();
     _error = null;
+  }
+
+  Future<void> _retireSpeechAttempt() {
+    // Invalidate callbacks synchronously, before native cancellation completes.
+    _speechAttemptEpoch++;
+    _isListening = false;
+    return _speechSession?.cancel() ?? Future<void>.value();
   }
 
   void _applyStatus(AiTutorSettingsStatus status) {
@@ -296,20 +311,29 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     _ensureSpeechSession();
     final speech = _speechSession;
     if (_isListening) {
-      await speech?.cancel();
-      if (mounted) setState(() => _isListening = false);
+      final cancellation = _retireSpeechAttempt();
+      setState(() {});
+      await cancellation;
       return;
     }
     if (speech == null) {
       setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งาน');
       return;
     }
+    final attempt = ++_speechAttemptEpoch;
+    final conversation = _sessionId;
+    bool isCurrent() =>
+        mounted &&
+        attempt == _speechAttemptEpoch &&
+        conversation == _sessionId &&
+        identical(speech, _speechSession) &&
+        speech.isCurrent;
     setState(() => _error = null);
     try {
       await speech.start(
         locale: 'en-US',
         onEvent: (event) {
-          if (!mounted) return;
+          if (!isCurrent()) return;
           if (event.isFinal) {
             setState(() {
               _isListening = false;
@@ -323,19 +347,19 @@ class _AiTutorScreenState extends State<AiTutorScreen>
           }
         },
         onFailure: (failure) {
-          if (!mounted) return;
+          if (!isCurrent()) return;
           setState(() {
             _isListening = false;
             _error = _speechFailureText(failure);
           });
         },
         onStatus: (status) {
-          if (mounted) setState(() => _isListening = status == 'listening');
+          if (isCurrent()) setState(() => _isListening = status == 'listening');
         },
       );
-      if (mounted) setState(() => _isListening = speech.isListening);
+      if (isCurrent()) setState(() => _isListening = speech.isListening);
     } on SpeechPracticeException catch (error) {
-      if (mounted) setState(() => _error = _speechFailureText(error.code));
+      if (isCurrent()) setState(() => _error = _speechFailureText(error.code));
     }
   }
 
@@ -408,17 +432,24 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _cancelSpeechForLifecycle() async {
+    final cancellation = _retireSpeechAttempt();
+    if (mounted) setState(() {});
     try {
-      await _speechSession?.cancel();
+      await cancellation;
     } on Object {
       // Best-effort microphone cleanup cannot block route voice cleanup.
     }
-    if (mounted && _isListening) setState(() => _isListening = false);
   }
 
-  Future<void> _cancelAudioForLifecycle() async {
+  Future<void> _finishConversationAudioReset() async {
     _voiceAttemptEpoch++;
-    await _cancelSpeechForLifecycle();
+    try {
+      // Reset already retired speech. Await that same native cleanup instead
+      // of enqueueing another cancel while the first one is still pending.
+      await _resetSpeechCancellation;
+    } on Object {
+      // A failed microphone cleanup must not prevent stopping reply playback.
+    }
     try {
       await routeVoiceSession?.stop();
     } on Object {
@@ -431,7 +462,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _generationCancellation = null;
-    await _cancelAudioForLifecycle();
+    await _finishConversationAudioReset();
     if (!mounted) return;
     setState(() {
       _isListening = false;
@@ -475,7 +506,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
             tooltip: 'เริ่มบทสนทนาใหม่',
             onPressed: () {
               setState(_resetConversation);
-              _cancelAudioForLifecycle().ignore();
+              _finishConversationAudioReset().ignore();
             },
             icon: const Icon(Icons.add_comment_outlined),
           ),

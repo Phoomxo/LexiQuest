@@ -1,0 +1,79 @@
+[
+  {
+    "path": "linux/flutter/generated_plugin_registrant.cc",
+    "originalSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugin_registrant.cc",
+    "preservedSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "baseGitBlob": "6fa91d106759c12cb6d08927d85d92fe08565d1e",
+    "filteredGitBlob": "6fa91d106759c12cb6d08927d85d92fe08565d1e",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "beebfdb222262c8de5c3e6c87d886a6a14e8cbf7f1047636358c1090a7850512",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugin_registrant.cc"
+  },
+  {
+    "path": "linux/flutter/generated_plugin_registrant.h",
+    "originalSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugin_registrant.h",
+    "preservedSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "baseGitBlob": "e0f0a47bc08f30b550b47b01de4c9206b6824dd9",
+    "filteredGitBlob": "e0f0a47bc08f30b550b47b01de4c9206b6824dd9",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugin_registrant.h"
+  },
+  {
+    "path": "linux/flutter/generated_plugins.cmake",
+    "originalSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugins.cmake",
+    "preservedSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "baseGitBlob": "61d80b5eb195ec4b1b67cb6fc6dd16cb383d9c6e",
+    "filteredGitBlob": "61d80b5eb195ec4b1b67cb6fc6dd16cb383d9c6e",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "d578d23fc0f2dbac6b2be33bf00cadc3043d992760862ecdae65e78d7ddf53fa",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\linux\\flutter\\generated_plugins.cmake"
+  },
+  {
+    "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+    "originalSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\macos\\Flutter\\GeneratedPluginRegistrant.swift",
+    "preservedSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "baseGitBlob": "3347e3d1dfa19b5ae9aa9b9b9f815456a115ea82",
+    "filteredGitBlob": "3347e3d1dfa19b5ae9aa9b9b9f815456a115ea82",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "2e4067e01f7efb16eeb0c2a477a5dc4797d383a26617dc30f90122cd71c9e015",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\macos\\Flutter\\GeneratedPluginRegistrant.swift"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.cc",
+    "originalSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugin_registrant.cc",
+    "preservedSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "baseGitBlob": "1daad6aaa32456b71413c5b9429daf714a1cca9f",
+    "filteredGitBlob": "1daad6aaa32456b71413c5b9429daf714a1cca9f",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "6da2d71920c70eb7b26626007ef7a137ba05e1bfb326c30c9d2e2d265d14493b",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugin_registrant.cc"
+  },
+  {
+    "path": "windows/flutter/generated_plugin_registrant.h",
+    "originalSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugin_registrant.h",
+    "preservedSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "baseGitBlob": "dc139d85a93101cc0f6e9db03a3e1a9f68e8dd7e",
+    "filteredGitBlob": "dc139d85a93101cc0f6e9db03a3e1a9f68e8dd7e",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugin_registrant.h"
+  },
+  {
+    "path": "windows/flutter/generated_plugins.cmake",
+    "originalSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "preservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugins.cmake",
+    "preservedSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "baseGitBlob": "334b4bf58dbf0f29f9fa46b5e104aa8843e4716c",
+    "filteredGitBlob": "334b4bf58dbf0f29f9fa46b5e104aa8843e4716c",
+    "disposition": "Excluded from repair commit; Git-clean-equivalent line endings; original untouched and raw backup retained; own checkout uses base generated content",
+    "ownGeneratedSha256": "a9ebc121801b0f511ada437608adc3b34a0d03f152d0b633854f8a5f12e9d424",
+    "ownPreservedCopy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\preserved\\G0.2\\842c\\windows\\flutter\\generated_plugins.cmake"
+  }
+]

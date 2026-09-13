@@ -98,10 +98,12 @@ class ModelProtocolTests(unittest.TestCase):
     def config(self):
         return dict(baseline_model='a' * 64, candidate_model='b' * 64,
             preprocess='rgb-full-frame-224-v1', threshold=0.6,
-            output_classes=4, score_type='softmax', environment='synthetic-test-only')
+            output_classes=4, score_type='softmax', environment='synthetic-test-only',
+            baseline_label_map={label: label for label in accuracy.LABELS})
 
     def predictions(self, rows, split):
         return [dict(id=r['id'], baseline=r['truth'],
+                     baseline_accepted=r['truth'] != 'unknown',
                      candidate='cup' if r['truth'] == 'unknown' else r['truth'],
                      confidence=0.5 if r['truth'] == 'unknown' else 0.9,
                      preprocess='rgb-full-frame-224-v1')
@@ -114,6 +116,103 @@ class ModelProtocolTests(unittest.TestCase):
                     self.predictions(self.rows(), 'validation'))
         self.assertEqual(result['status'], 'invalid-unknown-gate')
         self.assertEqual(result['decision'], 'retain-baseline')
+
+    def test_review_rejects_incomplete_or_inconsistent_validation_freeze(self):
+        rows, config = self.rows(), self.config()
+        frozen = accuracy.freeze_validation(rows, config, self.predictions(rows, 'validation'))
+        mutations = [
+            ('missing validation', lambda f: f.pop('validation')),
+            ('null validation', lambda f: f.update(validation=None)),
+            ('empty validation', lambda f: f.update(validation={})),
+            ('invalid hash', lambda f: f.update(validation_sha256='not-a-valid-hash')),
+            ('changed hash', lambda f: f.update(validation_sha256='c' * 64)),
+            ('missing predictions', lambda f: f.pop('validation_predictions', None)),
+            ('wrong schema', lambda f: f.update(schema_version='unsupported')),
+            ('wrong count', lambda f: f['validation']['candidate']['known_correct_accepted'].update(denominator=1)),
+            ('nonfinite metric', lambda f: f['validation']['candidate']['known_correct_accepted'].update(rate=float('nan'))),
+            ('wrong image IDs', lambda f: f['validation'].update(paired_image_ids=[])),
+        ]
+        for name, mutate in mutations:
+            with self.subTest(name=name):
+                damaged = deepcopy(frozen)
+                mutate(damaged)
+                with self.assertRaises(ValueError):
+                    accuracy.evaluate_frozen(rows, config, damaged, self.predictions(rows, 'test'))
+
+    def test_review_freeze_owns_validation_predictions(self):
+        rows, config = self.rows(), self.config()
+        predictions = self.predictions(rows, 'validation')
+        frozen = accuracy.freeze_validation(rows, config, predictions)
+        self.assertEqual(frozen.get('validation_predictions'), predictions)
+        predictions[0]['confidence'] = 0.3
+        result = accuracy.evaluate_frozen(rows, config, frozen, self.predictions(rows, 'test'))
+        self.assertTrue(result['quality_gate'])
+        damaged = deepcopy(frozen)
+        damaged['validation_predictions'][0]['confidence'] = 0.4
+        with self.assertRaises(ValueError):
+            accuracy.evaluate_frozen(rows, config, damaged, self.predictions(rows, 'test'))
+
+    def test_review_baseline_requires_mapping_and_explicit_acceptance(self):
+        rows, config = self.rows(), self.config()
+        frozen = accuracy.freeze_validation(rows, config, self.predictions(rows, 'validation'))
+        for split in ('validation', 'test'):
+            for invalid in ('INVALID-UNMAPPED-BASELINE-OUTPUT', '', None, []):
+                with self.subTest(split=split, invalid=invalid):
+                    predictions = self.predictions(rows, split)
+                    predictions[-1]['baseline'] = invalid
+                    with self.assertRaises(ValueError):
+                        if split == 'validation':
+                            accuracy.freeze_validation(rows, config, predictions)
+                        else:
+                            accuracy.evaluate_frozen(rows, config, frozen, predictions)
+            for accepted in (None, 0, 1, 'false'):
+                with self.subTest(split=split, accepted=accepted):
+                    predictions = self.predictions(rows, split)
+                    predictions[-1]['baseline_accepted'] = accepted
+                    with self.assertRaises(ValueError):
+                        if split == 'validation':
+                            accuracy.freeze_validation(rows, config, predictions)
+                        else:
+                            accuracy.evaluate_frozen(rows, config, frozen, predictions)
+        for mapping in (None, {}, {'cup': 'typo'}, {'': 'cup'}):
+            with self.subTest(mapping=mapping):
+                with self.assertRaises(ValueError):
+                    accuracy.freeze_validation(rows, {**config, 'baseline_label_map': mapping},
+                                               self.predictions(rows, 'validation'))
+
+    def test_review_baseline_metrics_use_explicit_decision_and_pinned_mapping(self):
+        rows, config = self.rows(), self.config()
+        config['baseline_label_map'].update({'coffee-mug': 'cup', 'car': 'unknown'})
+        frozen = accuracy.freeze_validation(rows, config, self.predictions(rows, 'validation'))
+        predictions = self.predictions(rows, 'test')
+        for prediction in predictions:
+            if prediction['baseline'] == 'cup':
+                prediction['baseline'] = 'coffee-mug'
+        predictions[0]['baseline_accepted'] = False
+        predictions[-1].update(baseline='car', baseline_accepted=True)
+        result = accuracy.evaluate_frozen(rows, config, frozen, predictions)
+        self.assertEqual(result['baseline']['known_correct_accepted']['numerator'], 119)
+        self.assertEqual(result['baseline']['unknown_false_accept']['numerator'], 1)
+        changed = deepcopy(config)
+        changed['baseline_label_map']['coffee-mug'] = 'chair'
+        with self.assertRaises(ValueError):
+            accuracy.evaluate_frozen(rows, changed, frozen, predictions)
+
+    def test_review_cli_rejects_damaged_freeze_without_creating_report(self):
+        rows, config = self.rows(), self.config()
+        frozen = accuracy.freeze_validation(rows, config, self.predictions(rows, 'validation'))
+        frozen['validation'] = None
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, freeze, output = root / 'input.json', root / 'freeze.json', root / 'result.json'
+            source.write_text(json.dumps(dict(samples=rows, config=config,
+                test_predictions=self.predictions(rows, 'test'))))
+            freeze.write_text(json.dumps(frozen))
+            result = subprocess.run([sys.executable, str(Path(accuracy.__file__)),
+                str(source), str(output), '--mode', 'evaluate', '--freeze', str(freeze)],
+                capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
 
     def test_frozen_test_metrics_alignment_and_missing_physical(self):
         rows, config = self.rows(), self.config()

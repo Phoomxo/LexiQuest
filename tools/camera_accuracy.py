@@ -5,6 +5,11 @@ validation_predictions; --mode evaluate takes samples/config/test_predictions
 and --freeze FILE. All outputs are exclusive; a freeze can open test only once.
 Model predictions and curator declarations are supplied evidence, not verified
 inference. Legacy compare() remains descriptive only. Never trains or uploads.
+
+Freeze v2 retains validation predictions for recomputation. Config must pin
+baseline_label_map (raw label -> book/bottle/chair/cup/unknown). Every paired
+prediction declares baseline_accepted as a boolean; canonical unknown means
+outside the four-class vocabulary, not an implicit rejection decision.
 """
 import argparse
 import hashlib
@@ -12,9 +17,11 @@ import json
 import math
 import re
 from pathlib import Path
+from copy import deepcopy
 
 KNOWN = ('book', 'bottle', 'chair', 'cup')
 LABELS = (*KNOWN, 'unknown')
+FREEZE_SCHEMA = 'r15-camera-freeze-v2'
 
 
 def fingerprint(value):
@@ -35,6 +42,8 @@ def audit_dataset(rows):
     counts = {s: dict.fromkeys(LABELS, 0) for s in ('validation', 'test')}
     inventory = dict.fromkeys(('train', 'validation', 'test', 'regression'), 0)
     for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError('Sample must be an object')
         for key in ('id', 'group', 'split', 'truth', 'sha256', 'source_url'):
             if not isinstance(row.get(key), str) or not row[key].strip():
                 raise ValueError('Missing sample field: ' + key)
@@ -71,6 +80,8 @@ def audit_dataset(rows):
 
 
 def _validate_config(config):
+    if not isinstance(config, dict):
+        raise ValueError('Configuration must be an object')
     for key in ('baseline_model', 'candidate_model'):
         if not re.fullmatch(r'[0-9a-f]{64}', str(config.get(key, ''))):
             raise ValueError('Immutable model SHA256 required: ' + key)
@@ -82,9 +93,18 @@ def _validate_config(config):
         raise ValueError('Invalid threshold')
     if config.get('score_type') != 'softmax' or config.get('output_classes') != 4:
         raise ValueError('This protocol is limited to the four-class softmax pilot')
+    mapping = config.get('baseline_label_map')
+    if (not isinstance(mapping, dict) or not mapping or
+            any(not isinstance(raw, str) or not raw.strip() or raw != raw.strip()
+                or canonical not in LABELS for raw, canonical in mapping.items())):
+        raise ValueError('Pinned baseline label mapping required')
 
 
 def _metrics(rows, config, predictions, split):
+    if (not isinstance(predictions, list) or any(
+            not isinstance(p, dict) or not isinstance(p.get('id'), str)
+            or not p['id'].strip() for p in predictions)):
+        raise ValueError('Predictions must be objects with image IDs')
     expected = {r['id']: r for r in rows if r['split'] == split and
                 r.get('fresh') is True and r.get('natural') is True and
                 r.get('view') == 'full-frame'}
@@ -101,10 +121,16 @@ def _metrics(rows, config, predictions, split):
             raise ValueError('Invalid four-class maximum softmax confidence')
         if prediction.get('preprocess') != config['preprocess']:
             raise ValueError('Paired preprocessing mismatch')
-        if prediction.get('candidate') not in KNOWN or not isinstance(prediction.get('baseline'), str) or not prediction['baseline']:
-            raise ValueError('Missing paired labels')
+        if prediction.get('candidate') not in KNOWN:
+            raise ValueError('Invalid candidate label')
+        baseline = prediction.get('baseline')
+        if not isinstance(baseline, str) or baseline not in config['baseline_label_map']:
+            raise ValueError('Unmapped baseline label')
+        if type(prediction.get('baseline_accepted')) is not bool:
+            raise ValueError('Explicit baseline acceptance decision required')
         accepted = prediction['candidate'] in KNOWN and confidence >= config['threshold']
-        observations.append((expected[prediction['id']]['truth'], prediction, accepted))
+        observations.append((expected[prediction['id']]['truth'], prediction, accepted,
+                             config['baseline_label_map'][baseline]))
 
     def rate(selected, predicate):
         n = len(selected)
@@ -126,10 +152,10 @@ def _metrics(rows, config, predictions, split):
         known_rejected=rate(known, lambda o: not o[2]),
         unknown_false_accept=rate(unknown, lambda o: o[2]),
         per_class={label: rate([o for o in known if o[0] == label], correct) for label in KNOWN}),
-        baseline=dict(known_correct_accepted=rate(known, lambda o: o[1]['baseline'] == o[0]),
-            unknown_false_accept=rate(unknown, lambda o: o[1]['baseline'] in KNOWN),
+        baseline=dict(known_correct_accepted=rate(known, lambda o: o[1]['baseline_accepted'] and o[3] == o[0]),
+            unknown_false_accept=rate(unknown, lambda o: o[1]['baseline_accepted']),
             per_class={label: rate([o for o in known if o[0] == label],
-                lambda o: o[1]['baseline'] == o[0]) for label in KNOWN}),
+                lambda o: o[1]['baseline_accepted'] and o[3] == o[0]) for label in KNOWN}),
         paired_image_ids=sorted(expected))
 
 
@@ -142,18 +168,38 @@ def freeze_validation(rows, config, predictions):
         return dict(status='invalid-unknown-gate', decision='retain-baseline',
                     reason='max softmax >= 0.25; this threshold cannot reject unknowns')
     metrics = _metrics(rows, config, predictions, 'validation')
-    return dict(status='validation-frozen', config_sha256=fingerprint(config),
+    return dict(schema_version=FREEZE_SCHEMA, status='validation-frozen', config_sha256=fingerprint(config),
         dataset_sha256=audit['dataset_sha256'], validation_sha256=fingerprint(predictions),
-        validation=metrics, decision='retain-baseline')
+        validation_predictions=deepcopy(predictions), validation=metrics, decision='retain-baseline')
+
+
+def _validate_frozen(rows, config, frozen, audit):
+    if (not isinstance(frozen, dict) or frozen.get('schema_version') != FREEZE_SCHEMA
+            or frozen.get('status') != 'validation-frozen'
+            or frozen.get('decision') != 'retain-baseline'):
+        raise ValueError('Complete v2 validation freeze required; old evidence is not fresh test authority')
+    for key in ('config_sha256', 'dataset_sha256', 'validation_sha256'):
+        if not isinstance(frozen.get(key), str) or not re.fullmatch(r'[0-9a-f]{64}', frozen[key]):
+            raise ValueError('Invalid freeze hash: ' + key)
+    if (frozen['config_sha256'] != fingerprint(config) or
+            frozen['dataset_sha256'] != audit['dataset_sha256']):
+        raise ValueError('Dataset/config/model changed after validation freeze')
+    if audit['status'] != 'coverage-ready' or config['threshold'] <= 1 / config['output_classes']:
+        raise ValueError('Validation freeze does not satisfy coverage/unknown gates')
+    predictions = frozen.get('validation_predictions')
+    metrics = _metrics(rows, config, predictions, 'validation')
+    if fingerprint(predictions) != frozen['validation_sha256']:
+        raise ValueError('Validation predictions changed after freeze')
+    # Recompute counts, IDs, rates and intervals instead of accepting a plausible
+    # JSON shape. This also rejects missing fields and nonfinite report metrics.
+    if not isinstance(frozen.get('validation'), dict) or fingerprint(frozen['validation']) != fingerprint(metrics):
+        raise ValueError('Validation report does not match its pinned predictions')
 
 
 def evaluate_frozen(rows, config, frozen, predictions):
     audit = audit_dataset(rows)
     _validate_config(config)
-    if (frozen.get('status') != 'validation-frozen' or
-            frozen.get('config_sha256') != fingerprint(config) or
-            frozen.get('dataset_sha256') != audit['dataset_sha256']):
-        raise ValueError('Dataset/config/model changed after validation freeze')
+    _validate_frozen(rows, config, frozen, audit)
     metrics = _metrics(rows, config, predictions, 'test')
     candidate = metrics['candidate']
     quality = (candidate['unknown_false_accept']['rate'] <= 0.05 and

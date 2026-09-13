@@ -1,0 +1,53 @@
+{
+  "flutter": {
+    "frameworkVersion": "3.44.7",
+    "channel": "stable",
+    "repositoryUrl": "https://github.com/flutter/flutter.git",
+    "frameworkRevision": "84fc5cbb223bc12f83d65b647ff8a56caf779ffd",
+    "frameworkCommitDate": "2026-07-17 10:20:17 -0700",
+    "engineRevision": "69c8c61792f04cc809dfef0c910414fb9afc06cd",
+    "engineCommitDate": "2026-07-15 20:46:58.000Z",
+    "engineContentHash": "7076f47b1d1a3a0edfd8837b17dc15be6abab661",
+    "engineBuildDate": "2026-07-16 08:25:28.220",
+    "dartSdkVersion": "3.12.2",
+    "devToolsVersion": "2.57.0",
+    "flutterVersion": "3.44.7",
+    "flutterRoot": "C:\\Users\\Phet\\AppData\\Local\\Programs\\flutter"
+  },
+  "python": "Python 3.14.5",
+  "powershell": "7.6.5",
+  "git": "git version 2.54.0.windows.1",
+  "dependencyConfig": [
+    {
+      "path": "pubspec.yaml",
+      "sha256": "c570ff70d610699bb84d5f4fd251aa8e80fabf00a07e3ee31d2aada8e9a22bbf"
+    },
+    {
+      "path": "pubspec.lock",
+      "sha256": "740de09ab34fba6110b498a87e6bd6a5b4b28237efca09fe8904ef7121d46f42"
+    },
+    {
+      "path": "analysis_options.yaml",
+      "sha256": "b63207cf529949ec4727b68c23dbb38ce255b6f6f4ae1effcb5c1dcf2852d238"
+    },
+    {
+      "path": ".metadata",
+      "sha256": "3e45700835606660e21d2f40c83ece3463570b294ba4f623e797609f4be28cf5"
+    },
+    {
+      "path": ".gitattributes",
+      "sha256": "a10a1c85da132d4c027fef84d7230f3b9c56a6cbfbc74b5933701e5e4c31729e"
+    },
+    {
+      "path": ".dart_tool/package_config.json",
+      "sha256": "61b509e6af31f0c1bbd393e4eb33b49772a0967ac9cdbbd3f8bf58a39f841e89"
+    },
+    {
+      "path": ".dart_tool/package_graph.json",
+      "sha256": "1a70d32b0dbbe826bbf2342e4f3734a05000640c905d1c74811f3f3faee5595d"
+    }
+  ],
+  "pythonDependencies": "standard library only; imported evaluator and test pinned in repair-manifest.json",
+  "cliDependencies": "PowerShell + Git + verifier/test script; selected-path existence audited by contract test",
+  "cliPowerShellVersion": "5.1.19041.6456"
+}

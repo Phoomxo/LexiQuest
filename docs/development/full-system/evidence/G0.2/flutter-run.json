@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "verify-scope-v1",
+  "headSha": "a66285dae472045b9bffd215f55c505a535de7ff",
+  "baseSha": "a66285dae472045b9bffd215f55c505a535de7ff",
+  "level": "Targeted",
+  "area": "AI",
+  "fingerprint": "5c1f005f74493ca3e5c2191630f95dbc1ff9f7ca0cb8da7af1fb3c39a4050d3b",
+  "timeoutSeconds": 600,
+  "startedAt": "2026-09-13T10:38:14.4483281+07:00",
+  "finishedAt": "2026-09-13T10:38:50.5256249+07:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Explicit Flutter tests",
+      "commandKey": "d9c3ade053dcee420f1442534b5805d5a3b618c25eced605a442cfdc99f3b43d",
+      "fingerprint": "5c1f005f74493ca3e5c2191630f95dbc1ff9f7ca0cb8da7af1fb3c39a4050d3b",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-13T10:38:15.7502505+07:00",
+      "FinishedAt": "2026-09-13T10:38:50.5051689+07:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\293e\\LexiQuest\\build\\verification\\a66285dae472045b9bffd215f55c505a535de7ff\\d9c3ade053dc-5c1f005f7449\\Explicit-Flutter-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\293e\\LexiQuest\\build\\verification\\a66285dae472045b9bffd215f55c505a535de7ff\\d9c3ade053dc-5c1f005f7449\\Explicit-Flutter-tests.stderr.log"
+    }
+  ]
+}
