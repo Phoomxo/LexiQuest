@@ -1,0 +1,14 @@
+[
+  {
+    "bundle": "B15",
+    "sourceSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+    "scope": "Accepted Git bytes restored; isolated B17 regression is untracked",
+    "verified": 106
+  },
+  {
+    "bundle": "B16",
+    "sourceSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+    "scope": "Accepted Git bytes restored; isolated B17 regression is untracked",
+    "verified": 115
+  }
+]

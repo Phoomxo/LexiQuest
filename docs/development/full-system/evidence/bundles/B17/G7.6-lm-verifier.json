@@ -1,0 +1,546 @@
+{
+  "schemaVersion": "verify-scope-v2",
+  "headSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+  "baseSha": "39876818cab140cbc8263a5aa9347a03791fcce0",
+  "level": "Subsystem",
+  "area": "BackendLM",
+  "fingerprint": "45aecbe722999783d9d834391a270b9ccc0e3fa351ef9c5eaeda56868a7ff7fa",
+  "environmentFingerprint": "81b1c9c5a9f3842b98c94e4781d81ed85d100cc18f7714996691ef9259124641",
+  "selection": [
+    {
+      "Name": "Local LM tests",
+      "FilePath": "uv",
+      "Arguments": [
+        "run",
+        "--project",
+        "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\backend\\lexiquest_lm",
+        "--frozen",
+        "--group",
+        "dev",
+        "--no-group",
+        "train",
+        "pytest",
+        "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\backend\\lexiquest_lm\\tests",
+        "-q"
+      ],
+      "SourceArea": "BackendLM",
+      "commandKey": "1e665b4c2945277ec995ac76dd73eddb48d8eb0c819fcaab98e1fa530b92f3ec"
+    }
+  ],
+  "inputClosure": [
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/collect_cefr_words.py",
+      "sha256": "EF14D557B2715F52DC235E9365BCA4D2537538ED9494E1B34C6E199BF85A3870"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/enrich_dictionary.py",
+      "sha256": "24D6562DE354B6E6A68CB429DFA56702E4C9CA20B3E1EE2DE320B4D0AD43E189"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/expand_wordlist.py",
+      "sha256": "33D1F0A735D8CD7BD30A738463FF2B12084E2D28AAFFC36B5CA6B0DBABAA6176"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/fetch_huggingface.py",
+      "sha256": "FF020A9D9E5AF8760CC121CFB5F5C910DEA280E3D9975F0E39A77A4614FF41DA"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/generate_synthetic.py",
+      "sha256": "5E201AAFEBC4A8CFFD219DADB6A034D9839886E9512CE4C374949AA6C8D8C627"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/dataset/merge_and_format.py",
+      "sha256": "E621ADF5C2401244ED8A56F1770048E280B46E78479A7ADBCB814A81BE1BD5A8"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/hf_space/app.py",
+      "sha256": "3C202298DD04D4F5FACE2DED4396AACECF8F09448830403E6ADB7928132973C1"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/hf_space/auth.py",
+      "sha256": "08D0ABF3B569DB8DF876EC793BC0BDD1EBE089759F64F239FE7CCF60C6D93D51"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/hf_space/Dockerfile",
+      "sha256": "ED4E25EBDF8526F2DE844FA58277E82DA2C08BE8C86A2291BDAD715AB2E5BEF4"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/hf_space/README.md",
+      "sha256": "E2A62AFB58596A83C21D6C5F631190654D7CB4D09562731FB4200D30EED42AC3"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/hf_space/requirements.txt",
+      "sha256": "A478E705532968F7E66886BEA16F75E1745A4BD62D9ED6CB6A64B578AC7211EF"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/deploy/upload_adapter.py",
+      "sha256": "F6E190E9AF8A82BEDCACAA3C0365AF385153FF93CAAD26C5FAB955996AFB5219"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/pyproject.toml",
+      "sha256": "EFEB7F6BD44B26718363D8538865854DE3B8AC0E01FDC7C1B4CBF0C1D44DBF8C"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/README.md",
+      "sha256": "0594D1BD6972FCA035B4EFC313A60EB44A22AD3EB5A0B2770ECD5B31EE83BC9E"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/scripts/DEPLOY.md",
+      "sha256": "96D3449323C34D204F52143CDAE425724ABBB69A93D40078AC74D7811D6430C2"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "sha256": "D2CF4C07F8A8F443D22FEB4FBDA83E96A93F2B31A6FE2092077703C4784E29EE"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/__init__.py",
+      "sha256": "5AFA2CE8EA86A603C1D28636DBFF16343370FF01708D11F16FF60F92A2D07B59"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/io.py",
+      "sha256": "803637763EABBE9A7B46E352DD37C5DCA12BB20D5DB39AA58429F8E6E5E21AA7"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/__init__.py",
+      "sha256": "EFEBD44D6073F9991780A2E4A0DB23EAC704815E6000702E99552EC7BAB5B084"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/conftest.py",
+      "sha256": "670ECC3A7E37039B1B9614D98774BBB50DCCA83C9A0D769CC3F72D7521D248B5"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_collect_cefr_words.py",
+      "sha256": "7A38621B79E347ACAC922F28083C915BF527EAA600C54D454ACCDD4E8D4C2FC7"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_dependency_pins.py",
+      "sha256": "A8AB38BAED3267DDC47FC5106A7972C3329BD8AA35006C2313FD5F8DD3B21403"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_enrich_dictionary.py",
+      "sha256": "644A0FE50C79EBD312A63F293C6238505ECA49BBFADC0B2404DF4834BF249649"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_evaluate.py",
+      "sha256": "E1F16F3AE14C953F47549BE053417BA36E04FA889FF4AD84582D691F1F3AC858"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_expand_wordlist.py",
+      "sha256": "F80616CECEF8FE63635A2280251FE966FA0B8886B560D97B3A57E110A16AA838"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_generate_synthetic.py",
+      "sha256": "9D5F622E5E7FD652AA0792C864E0E89A4FE34624F67A836D80AA11082A81B56A"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_hf_space_auth.py",
+      "sha256": "4871FF8E239EB727008CA3ED4EA319549C0E83BF996F1F417FFFA162B1DA151B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_hf_space_deployment.py",
+      "sha256": "210FC675B00E0A5DDF8043F0D1A7E38C062EAAD4461DC52B91649A98E35E8B4D"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_merge_and_format.py",
+      "sha256": "11DCA5C7E11C0599F67227A63E4BD6288AD0B364D924D9F157DFF51F9D6868C8"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+      "sha256": "31487A9744DECF6D9F1B9B1056B27CBBA64533751B8480F462C8A3B48E720A44"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/train/evaluate.py",
+      "sha256": "866B9C55BF48157CFE2DA739546D11D10C9A7871A9D8A05925E461A59AF66186"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/train/__init__.py",
+      "sha256": "276115D7E15F7153A9A85EA9C6C11601C1481A1D35776A910F62319500BDDD82"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/train/lora_finetune.py",
+      "sha256": "8F27EBA539ADAB648105CBAECCC3ACAC8EECA2905AF125EE9D74D9D9426CA272"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "sha256": "3A1FDBD59655B4AA732F72C1E3286D9C5CE84C91337692492D5D2D71F621D6C3"
+    },
+    {
+      "area": "BackendLM",
+      "path": "backend/lexiquest_lm/uv.lock",
+      "sha256": "AC7FDF16BF219E1446EB6C6EAE79A296F6C0307359CE56C50980CDB1EFFA1079"
+    },
+    {
+      "area": "BackendLM",
+      "path": ".gitattributes",
+      "sha256": "4A76C16BC777B8F12D6F3A8330A5ECF7800BCED4A0D633443306BFF67A12BAAC"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/collect-android-field-evidence.ps1",
+      "sha256": "D8504542011A4A724243794D8BB40B9FE40E1D2BB3915923919D4A6B42955740"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/configure-firebase-app-check.cjs",
+      "sha256": "F5B510067F3BE46921E233BE9507D003CDD66A224D4048354945EBAC1C8581E8"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/configure-firebase-budget.cjs",
+      "sha256": "5A456D8F50CE1D7C842D5C3255A107A4593D009FF694E4D8EF4F137AC056FDF4"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/configure-firebase-release-sha.cjs",
+      "sha256": "7CF0A961E12E0D274AB9867BAA6E57715AC87DC17536293F49AC869FDE77B6C8"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/doctor.ps1",
+      "sha256": "82B1E34D934D25577CD313937C45B38464D426FB3982D16AD788F67785B6955B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/initialize-field-evidence-signing.ps1",
+      "sha256": "DDDB7DE9046C63F53FF0CDF1DFF2793D46E1C902E6CCD5DD4E46B2DCBFC7B79B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/initialize-release-signing.ps1",
+      "sha256": "85D9BE5ED1676959EF61F4F67840F27C08B07DF952EABE5F7D56C238D5ECE463"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/lib/elf-canonical-hash.ps1",
+      "sha256": "CD348B800DC781A9ABEC16AF99E11DDBA8BED41A92B403FC45F9DA595D81BA83"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/lib/field-release-evidence.ps1",
+      "sha256": "60A5C1E47201FB4CD521140CC5281DC44F056D9AB1E0569BDCE2EE6DFC36E440"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/lib/runtime-probes.ps1",
+      "sha256": "9D5D327A3988030D7E1ED77642E1DBFBECF7B9A0FECC652239A59EECCDD30F6B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/new-field-evidence-receipt.ps1",
+      "sha256": "8B6DD55665575B92D9943BA1224DAB1B593C4DEBCD0FC216C68FE367ECAEFA7F"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/new-field-release-evidence.ps1",
+      "sha256": "798A43E196995C8291000147804DCBCABCFDB276F731E03ADAEDE97EEDDBAD2B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/package-field-release.ps1",
+      "sha256": "353BFB2941D6E169C236228B0B515BF6FBA111210CE958592E30F40AD67E21AA"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/prepare-field-model.ps1",
+      "sha256": "ED2EECA14E3D2E630310258B5F9F663B0215DFF1BD9713D67C04A78EAD4EA53D"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/profiles/local-learning-preview.json",
+      "sha256": "FC18F908F817463EC789117204076D2DF27814807377179027D6A6157415DFA4"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/run-adventure-performance-profile.ps1",
+      "sha256": "765172EF5A679588184B75C978530C1B532D46EC3ADE72CFE4E0A609F9CAAD08"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/run-android.ps1",
+      "sha256": "6DCD55108635A71D50E2E5EF48C0386E839F86DD1DDFC1ADF30B40715F0386E2"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/run-android-smoke.ps1",
+      "sha256": "7E8A723FDEA2A9A194D3AD76E79F03A18DB79CB6747C29DF083D105EB0ED6F75"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/set-firebase-app-check-enforcement.cjs",
+      "sha256": "86A2DCAEC446490C93C4E5A1A33A03202916AFB390E1B07C5A4C5CD6A6DE1694"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/set-firebase-cloud-policy.cjs",
+      "sha256": "9FC49FF6C9AD2881D54C02D8FE71C0964770E4C4E8FB97DC15060CD9EC6CD0A0"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/sign-android-field-evidence-result.ps1",
+      "sha256": "5D0F8E83D6BFE941878FFB44234279CBFA37D1B0C4085D69A51CC410C6060CF2"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/android-manifest-security.tests.ps1",
+      "sha256": "84D31162EBADABAA2FC140443F6F77242F8C75246DB1DDC2CE6B824C01E4E55C"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/android-release-provenance.tests.ps1",
+      "sha256": "C4B3812AE2610B763AB91FE98344A24FFBBDB48EF1DEAA7D3988B099EDEE950D"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/android-release-signing.tests.ps1",
+      "sha256": "2934EC67B39029A45EB66BB6C5F5FEEEFEE4DC1FAD78DDE8FADB1291DC865763"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/ci-workflow.tests.ps1",
+      "sha256": "8CAFE60587E0FE3B2B0FD505DF34D2CA6390D709F0E601271A811E02207DECB7"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/dependabot-config.tests.ps1",
+      "sha256": "97257736F16EEAA4BE6A203BAAB8849C494A8D022D58133AF314FCC6D1386D1B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/firebase-seed-security.tests.ps1",
+      "sha256": "8AAB2340CADC6EF5E6033B486F8E42080A4CB9EE2D57E9C852793B784E6C7434"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/firestore-rules-security.tests.ps1",
+      "sha256": "47615C8F591771D8FCAE087E4ABD04BA3AEA9D6FBADE1BAF20A62DBDAA14BE4C"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/model-loading-security.tests.ps1",
+      "sha256": "A4294B83931BC29FBA75DCEAAAD7BDAAA96E67AD6C5CD3956EAC8B60109D5E5A"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/osv-config.tests.ps1",
+      "sha256": "F6E5600FFE19CB7AE879DB3A66D60C32F91B304FE6E93753191BB96F7F7C25C9"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/osv-pr-workflow.tests.ps1",
+      "sha256": "B36B8EAF64BDF1AA84558FC6317C5EF9641601173A1BE2D66F4AD3245A13014B"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/osv-scheduled-workflow.tests.ps1",
+      "sha256": "C50298C3A1808E5D39535C0A11EE36029A69E34717563BFED52C7D929BC5A6A6"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/package-field-release.tests.ps1",
+      "sha256": "365AC99EACF750AD55CE78C202ED983E9C8BB38A441368A770C1D72DB8B649C2"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/prepare-field-model.tests.ps1",
+      "sha256": "4465C3114EC9CEA5F1183BDA59C9B36423888D0CFAD9BAC7799DB4A0B6990565"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/r15-scope.tests.ps1",
+      "sha256": "8A58289BFE236F9AD8F567D91F37FDEDCCAF2CE6895D61DB032AE4A7C1ACC3AA"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/run-adventure-performance-profile.tests.ps1",
+      "sha256": "75107845B4772C704D0B2F49D2731E6A49039771529947E1FD5A4F40B5B240DC"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/run-android-smoke.tests.ps1",
+      "sha256": "FDDEF7C20B8AAD3C4AA372C97D44BD846A673DE8ABB330E3D2A3B530F413C9BC"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/run-android.tests.ps1",
+      "sha256": "E474F3EDA9F26CBBE3F7A24955B59D12CF973C6AA8EBC660A9E93D419E6C6B9F"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/runtime-probes.tests.ps1",
+      "sha256": "00F446306DA8E656303BA2E643BE56DC9314ED79BBF4DD2733D343019F64FE82"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-apk-model-runtime.tests.ps1",
+      "sha256": "7E369738F88F81D9E79062CD92375230965161B7B9F627EE00DF0E89918FF26F"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-camera-speech.tests.ps1",
+      "sha256": "76BB7B3510EBE87145A60375968E4CFE8C4107990BBC58DF6F7359131E1CE805"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-device-model.tests.ps1",
+      "sha256": "FE2ABB74BCDC0189F741A4A66A081AEAC422A46C1CAAD12F554F7258EECC7096"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-field-package.tests.ps1",
+      "sha256": "49F514923FE11F69ADA5F3C7363A4C8888DECA5152714FF93F7E5772622051A3"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-field-release.tests.ps1",
+      "sha256": "78DEF2E87A5E2689C35100B54692111D9314EB8F05AB0069E3B948A7521D052D"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-gemini-byok.tests.ps1",
+      "sha256": "6C5BA8DFEE793EC3011BDDF1C481978806C7F75BCF62F28708203160388A4B5F"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-learning-core.tests.ps1",
+      "sha256": "999A498DFF51C6E6077E06D0E587EEDAFF4C7D287921B45A9537CE54ACA06525"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-product-completion.tests.ps1",
+      "sha256": "0342EB595F7467202B37810088FB9FD967643E55181725DF6E2288EDC0EE8DBE"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/tests/verify-scope.tests.ps1",
+      "sha256": "0C83931AC246B9999CE78538387588CECE376E619D13818A2A74CAF1D7F623DE"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/trusted-field-evidence-public-key.xml",
+      "sha256": "843AF0FC620440024677B972A8D098D0230E1990F7F1A832EFBC9BC93CAD27F3"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-apk-model-runtime.ps1",
+      "sha256": "75689741A1F5ADED6455E42B10558405B9F736C0A95A9B9F08F2449D3F0F97CE"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-camera-speech.ps1",
+      "sha256": "B48B3D44C6186831144340AA6AD2121D5B90F76C4845A5FC090F477FFDC1A9CA"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-device-model.ps1",
+      "sha256": "293868F81AA1B27EEBD46E365F264A81145D035C6007E9C41946EF29DBA4CFEF"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-field-package.ps1",
+      "sha256": "0EF54EA022D533EAB9D293AC2195FA9CA958F0B01655300612B885A67E42DB20"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-field-release.ps1",
+      "sha256": "54BE51C06D2B20843B7E66FF78FF3AAAF1F70B89E06AFB7A1F2BFE89C3EF20D1"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-gemini-byok.ps1",
+      "sha256": "AA5173C7AAE147C0166C9B3D29E670EAF01C1DF7A8E36A0F55F3AE6C9CFC9297"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-hosted-asset-links.ps1",
+      "sha256": "6A56B02D9118BF6DC0CAFD62979361EE6923F18BD7D255DA2177ACC363A2C6EF"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-learning-core.ps1",
+      "sha256": "1D247598289A796E2984B5C0FF36C74C2EF4046B1F59EA9AA1E3D44671233E4D"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-local-first.ps1",
+      "sha256": "96D40C9482AAE74B2018135D474AB8F3F3AFCEB8D2D24DB040816D3CD3065864"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-osv-locks.ps1",
+      "sha256": "ED5099983BE3F6A626FFD2AC11C6647CF31D23492774653A13DE513449DF74CC"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-product-completion.ps1",
+      "sha256": "40433997F062DA2A57F4F80054EDE7E174EF54D26CC48939E9F0360752BA5043"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify.ps1",
+      "sha256": "79F2C17530FBB0B450ECB2949C1F4DC000617F73EEC6AAA8BEF3660D68FEBDF0"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "1C6140E00C114D436D5FADD7450A8810D8A4F3717B8BC140DDC41192F14094DA"
+    },
+    {
+      "area": "BackendLM",
+      "path": "tool/cli/verify-sync.ps1",
+      "sha256": "B98DD40B8FADD0EA0C1A79D70B3B882322AFEC7BF39BFF02234C9C5C61A97FE9"
+    }
+  ],
+  "timeoutSeconds": 1200,
+  "startedAt": "2026-09-13T21:08:58.2404916+00:00",
+  "finishedAt": "2026-09-13T21:09:03.6284007+00:00",
+  "status": "Passed",
+  "commands": [
+    {
+      "Name": "Local LM tests",
+      "commandKey": "1e665b4c2945277ec995ac76dd73eddb48d8eb0c819fcaab98e1fa530b92f3ec",
+      "fingerprint": "45aecbe722999783d9d834391a270b9ccc0e3fa351ef9c5eaeda56868a7ff7fa",
+      "Status": "Passed",
+      "ExitCode": 0,
+      "StartedAt": "2026-09-13T21:08:59.0894926+00:00",
+      "FinishedAt": "2026-09-13T21:09:03.5925627+00:00",
+      "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\build\\verification\\39876818cab140cbc8263a5aa9347a03791fcce0\\1e665b4c2945-45aecbe72299\\Local-LM-tests.stdout.log",
+      "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\9f44\\LexiQuest\\build\\verification\\39876818cab140cbc8263a5aa9347a03791fcce0\\1e665b4c2945-45aecbe72299\\Local-LM-tests.stderr.log",
+      "StdoutHash": "8CEE9CB2010CF3C6DF22B74C2425D61E08F2F472CD91051D6CE3D5679CECECA8",
+      "StderrHash": "C1ACE69E0C546AE884DAD54D3CB49838D34B2B2436F45515A09EAA518DAF6038"
+    }
+  ]
+}

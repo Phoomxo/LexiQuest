@@ -1,0 +1,49 @@
+{
+  "bundleId": "B17",
+  "defects": [
+    {
+      "id": "B17-AI-01",
+      "package": "G7.6",
+      "expected": "Provider response allocations bounded and stream closed on all status paths",
+      "actual": "200/429/503 read unbounded bytes",
+      "cause": "urllib read without size on success and HTTPError",
+      "red": "G7.6-ai-red-verifier.json",
+      "fix": "Read at most 1MiB+1; throw typed ProviderError; do not swallow budget failure; context/finally closes streams",
+      "retest": "G7.6-ai-green-verifier.json",
+      "status": "closed-local"
+    },
+    {
+      "id": "B17-ENV-01",
+      "expected": "Predecessor evidence raw bytes retain recorded hashes",
+      "actual": "B15 audit_evidence.py hash differed immediately after checkout",
+      "cause": "System core.autocrlf=true transforms historical LF files",
+      "fix": "Restored only proven EOL transformations using accepted Git blobs; batch reader replaced slow per-file reader",
+      "retest": "inherited-artifact-audit.json",
+      "status": "closed-local"
+    },
+    {
+      "id": "B17-READ-01",
+      "expected": "Read current documentation and actual paths",
+      "actual": "Default seed lacked active index/workflow; guessed optional paths absent; creation receipt not yet written",
+      "cause": "Native worktree starts default branch; source-specific paths differ; asynchronous parent receipt",
+      "fix": "Accepted SHA checkout, rg file discovery, latest revision118 and env actual thread ID before exclusive claim119",
+      "status": "closed-no-source-effect"
+    },
+    {
+      "id": "B17-AUDIT-01",
+      "expected": "Find eligible historical passes",
+      "actual": "Initial reuse candidates empty",
+      "cause": "Historical verifier stores commands, not results; EOL variants also differ",
+      "fix": "Support actual schema and cryptographically verify EOL variants; no test was rerun on initial result",
+      "retest": "G7.6-flutter-reuse.json",
+      "status": "closed-local"
+    },
+    {
+      "id": "B17-EOL-02",
+      "status": "closed-local",
+      "actual": "Default diff whitespace treats CR as trailing whitespace; JSON text attributes normalize raw copied receipts",
+      "cause": "Mixed historical EOL plus Git defaults",
+      "fix": "B17 raw receipts JSON/logs binary; diff check cr-at-eol; exact staged byte audit before commit; preserve original source EOL"
+    }
+  ]
+}

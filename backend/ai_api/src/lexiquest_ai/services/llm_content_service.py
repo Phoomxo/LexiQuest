@@ -141,6 +141,12 @@ def _urllib_client() -> HttpClient:
     import urllib.error
     import urllib.request
 
+    def read_bounded(response) -> bytes:
+        body = response.read(1_048_577)
+        if len(body) > 1_048_576:
+            raise ProviderError("provider response exceeds 1MiB limit")
+        return body
+
     class _StdlibResponse:
         __slots__ = ("status", "body", "headers")
 
@@ -166,14 +172,16 @@ def _urllib_client() -> HttpClient:
                     response_headers = {
                         name.lower(): value for name, value in resp.headers.items()
                     }
-                    return _StdlibResponse(resp.status, resp.read(), response_headers)
+                    return _StdlibResponse(resp.status, read_bounded(resp), response_headers)
             except urllib.error.HTTPError as error:
                 response_headers = {
                     name.lower(): value for name, value in (error.headers or {}).items()
                 }
                 body = b""
                 try:
-                    body = error.read() or b""
+                    body = read_bounded(error) or b""
+                except ProviderError:
+                    raise
                 except Exception:  # pragma: no cover - defensive
                     body = b""
                 finally:
