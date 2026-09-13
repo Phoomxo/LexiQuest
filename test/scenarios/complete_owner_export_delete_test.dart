@@ -61,7 +61,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(39),
+        hasLength(40),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(

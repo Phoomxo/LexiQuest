@@ -722,6 +722,14 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
     ],
   ),
   OwnerLifecycleTableDescriptor(
+    tableName: 'legacy_learning_records',
+    alias: 'legacyLearningHistory',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['formatVersion', 'sourceTable', 'record'],
+  ),
+  OwnerLifecycleTableDescriptor(
     tableName: 'events_v2',
     alias: 'learningEvents',
     authority: OwnerLifecycleAuthority.directOwner,
@@ -871,6 +879,7 @@ const ownerLifecyclePhysicalDeletionOrder = <String>[
   'association_records',
   'associative_memory_states',
   'ai_usage_events',
+  'legacy_learning_records',
   'events_v2',
   'outbox_operations',
   'sync_checkpoints',

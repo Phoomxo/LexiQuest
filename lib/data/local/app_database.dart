@@ -76,6 +76,7 @@ part 'app_database.g.dart';
     StreakStates,
     LearningDayLog,
     AssociationRecords,
+    LegacyLearningRecords,
     AssociativeMemoryStates,
     AiUsageEvents,
     SpeechEvidence,
@@ -88,21 +89,27 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 26;
+  static const int currentSchemaVersion = 27;
 
   AppDatabase(super.executor);
 
-  AppDatabase.production() : super(LazyDatabase(() async {
-    // Run preflight before drift_flutter creates its eager delayed connection.
-    final path = await resolveAppDatabasePath(currentSchemaVersion);
-    return driftDatabase(
-      name: 'lexiquest',
-      native: path == null ? null : DriftNativeOptions(
-        databasePath: () async => path,
-        setup: (database) => configureAppDatabase(database, currentSchemaVersion),
-      ),
-    );
-  }));
+  AppDatabase.production()
+    : super(
+        LazyDatabase(() async {
+          // Run preflight before drift_flutter creates its eager delayed connection.
+          final path = await resolveAppDatabasePath(currentSchemaVersion);
+          return driftDatabase(
+            name: 'lexiquest',
+            native: path == null
+                ? null
+                : DriftNativeOptions(
+                    databasePath: () async => path,
+                    setup: (database) =>
+                        configureAppDatabase(database, currentSchemaVersion),
+                  ),
+          );
+        }),
+      );
 
   @override
   Future<void> close() async {
@@ -371,6 +378,11 @@ final class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await customStatement("""
+        CREATE TRIGGER IF NOT EXISTS legacy_learning_records_immutable
+        BEFORE UPDATE OF id, source_table, payload_json ON legacy_learning_records
+        BEGIN SELECT RAISE(ABORT, 'legacy_learning_history_immutable'); END
+      """);
       await _createLearningIndexes();
       await _createEventIndexes();
       await _createAiUsageIndexes();
@@ -898,6 +910,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('learning_day_log')) {
       await migrator.createTable(learningDayLog);
+    }
+    if (!await _tableExists('legacy_learning_records')) {
+      await migrator.createTable(legacyLearningRecords);
     }
     if (!await _tableExists('association_records')) {
       await migrator.createTable(associationRecords);

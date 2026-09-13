@@ -5976,6 +5976,8 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  await database.customInsert("INSERT INTO legacy_learning_records(id,owner_id,source_table,payload_json) VALUES('legacy-row','guest-owner','associations','{}')");
+
   final sessionConfiguration = SessionConfiguration.validated(
     schemaVersion: sessionConfigurationSchemaVersion,
     policyVersion: sessionConfigurationPolicyVersion,

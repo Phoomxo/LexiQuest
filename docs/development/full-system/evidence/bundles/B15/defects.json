@@ -9,5 +9,70 @@
     "fix": "Nested finally releases process mutex while error and persistent lease remain intact",
     "red": "G7.1-red.stdout.log",
     "green": "G7.1-green.stdout.log"
+  },
+  {
+    "id": "B15-02",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "No schema1 import and old path only probed documents instead of original support directory",
+    "fix": "Read-only schema1 snapshot, schema27 owner-scoped historical records, transactional temp database and final rename",
+    "red": "G7.2-red.stdout.log",
+    "limitations": "No conversion to new evidence/rewards/SRS; no old outbox sending; ambiguous multi-owner/future/unknown sources are preserved and rejected",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-03",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Initial implementation omitted explicit missing-table migration registry and placed immutability trigger in from<3 branch",
+    "fix": "Add legacy table to missing-table creation and install immutable guard on every open; permit current custodian owner movement only",
+    "red": "G7.2-integration-red.stdout.log",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-04",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Current assessment metadata schema27 rejected by old exact <=26 allowlist",
+    "fix": "Add integer27 to existing client and rules compatibility sets; retain strict historical pins and reject28/string/float. No research activation or remote synchronization",
+    "red": "G7.2-integration-red.stdout.log",
+    "emulator": "G7.2-rules.stdout.log; 176 passed",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-05",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Existing zero-byte destination bypassed legacy detection and silently created empty modern store",
+    "fix": "Inspect legacy paths for zero-byte destination and report legacyImportRequired without modifying either file",
+    "red": "G7.2-zero-red.stdout.log",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-TEST-01",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Current schema fixtures still required26/49 tables and lacked new owner row in full upgrade inventory",
+    "fix": "Current contract explicitly27/50 incl legacy_learning_records; frozen historical inventories unchanged by excluding new table, strengthen new-table upgrade/export/deletion and raw26 migration tests",
+    "red": "G7.2-count-red.stdout.log and G7.2-migrations-red.stdout.log",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-TOOL-01",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Nested Windows PowerShell CLI-contract subprocess could not resolve Get-FileHash; direct probe could. Explicit module preload did not fix nested execution",
+    "fix": "Self-contained .NET streaming SHA256 helper, standard abc test vector; retain source/environment/log-hash resume validity checks",
+    "red": "G7.2-cli-retest.log",
+    "note": "No claim that the host module-loader cause is fixed; dependency removed from runner",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
+  },
+  {
+    "id": "B15-TOOL-02",
+    "package": "G7.2",
+    "status": "closed",
+    "cause": "Existing Economy selector includes absent functions package and cannot isolate rules emulator",
+    "fix": "RulesOnly explicit Targeted/Economy selector, separate receipt, rejects release/mixed selections; uses existing npm test:rules and local demo emulator",
+    "finalVerification": "G7.2-final-verifier.json / G7.2-cli-verifier.json / G7.2-rules-verifier.json"
   }
 ]

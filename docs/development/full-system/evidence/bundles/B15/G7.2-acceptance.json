@@ -1,0 +1,49 @@
+{
+  "packageId": "G7.2",
+  "bundleId": "B15",
+  "status": "accepted-local",
+  "requirements": [
+    "COV-f40",
+    "COV-f43",
+    "G7"
+  ],
+  "schemaVersion": 27,
+  "tableCount": 50,
+  "verification": [
+    {
+      "kind": "targeted Flutter",
+      "tests": 851,
+      "targets": 45,
+      "receipt": "G7.2-final-verifier.json"
+    },
+    {
+      "kind": "local Firestore emulator",
+      "tests": 176,
+      "receipt": "G7.2-rules-verifier.json"
+    },
+    {
+      "kind": "CLI contracts",
+      "scripts": 2,
+      "receipt": "G7.2-cli-verifier.json"
+    }
+  ],
+  "outcomes": [
+    "Eight legacy schema1 tables copied losslessly as immutable historical records with original owner/IDs/algorithm versions/commits/tombstones/pending queue retained",
+    "Support and documents legacy paths handled; source read-only; destination published after complete transactional import; WAL committed snapshot retained",
+    "Invalid/future/ambiguous sources and zero-byte destination fail closed; rollback test removes partial rows and owner; repeat startup and deletion cannot automatically resurrect imported rows",
+    "Current custodian owner follows guest/account upgrade without rewriting historical payload; archive exposes owner-scoped records and deletion obeys the complete50-table lifecycle",
+    "Modern schema1-26 migrations preserve records; modern sync lost ack, conflicts, rewards, SRS, replay, owner isolation, bootstrap and architecture tests pass",
+    "Strict integer27 added to existing assessment/research transport metadata allowlists; all authorization and exact pins retained, research rollout stays disabled"
+  ],
+  "limitations": [
+    "Automatic legacy import supports fresh missing destination and unambiguous single-owner exact schema1 only. Existing nonempty destinations are never merged; multi-owner/conflicting/unknown files require explicit compatibility resolution and remain intact",
+    "Historical records are exportable preserved history, not current playable sessions, current SRS/skill evidence, new rewards or active remote queue",
+    "Original legacy file deliberately retained for rollback, including after deletion of imported records in the current database. No claim of erasing user-owned legacy backup files",
+    "No real installed user legacy database observed; all migration fixtures synthetic from pinned historical schema",
+    "No deployed rules change/live cloud, device, permissions, acoustic quality or full-release result"
+  ],
+  "review": "Single-writer source/diff/consumer/data lifecycle review; no subagent. Current table explicitly counted50; historical frozen inventories unchanged. All required demonstrated defects closed.",
+  "rollback": "Do not decrement user_version or run schema26 writer against27. Use compatible current binary or an explicitly preserved pre-migration backup; original legacy source stays available.",
+  "phaseStatus": "G7 remains in progress through G7.7; no G7 phase or release claim",
+  "countsNote": "851 final tests include G7.1 and some earlier G7.2 tests; counts across runs overlap, not unique total."
+}

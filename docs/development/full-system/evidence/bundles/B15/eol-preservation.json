@@ -1,0 +1,122 @@
+[
+  {
+    "path": "firestore.rules",
+    "eolOnly": true
+  },
+  {
+    "path": "lib/data/local/app_database.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "lib/data/local/app_database.g.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "lib/data/local/app_database_native_path.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "lib/data/local/tables/associative_tables.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "lib/features/export/application/owner_lifecycle_archive.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "lib/features/sync/domain/research_sync.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "lib/features/sync/domain/sync_entity.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "test/architecture/fitness_test.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "test/data/local/app_database_safe_open_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v14_to_v15_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v15_to_v16_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v16_to_v17_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v17_to_v18_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v18_to_v19_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v20_to_v21_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v21_to_v22_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v22_to_v23_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v23_to_v24_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v24_to_v25_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/database/migration_v25_to_v26_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/features/export/research_lifecycle_export_test.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "test/features/identity/drift_owner_upgrade_repository_test.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "test/features/sync/assessment_run_sync_test.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "test/scenarios/complete_owner_export_delete_test.dart",
+    "eolOnly": true
+  },
+  {
+    "path": "test/security/firestore-rules.test.cjs",
+    "eolOnly": true
+  },
+  {
+    "path": "test/support/current_database_contract.dart",
+    "eolOnly": false
+  },
+  {
+    "path": "tool/cli/tests/verify-scope.tests.ps1",
+    "eolOnly": false
+  },
+  {
+    "path": "tool/cli/verify-scope.ps1",
+    "eolOnly": false
+  }
+]

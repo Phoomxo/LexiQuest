@@ -1,0 +1,4 @@
+RUN: r15-scope.tests.ps1
+RUN: verify-scope.tests.ps1
+PASS: Subsystem/Runtime at 1e70c5221e5fea66b31c60a3b3d78049b47901d4
+Result: C:\Users\Phet\.codex\worktrees\a4f0\LexiQuest\build\verification\1e70c5221e5fea66b31c60a3b3d78049b47901d4\subsystem-runtime-cli.json

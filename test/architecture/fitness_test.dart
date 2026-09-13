@@ -1053,7 +1053,7 @@ void main() {
           .map((entry) => entry.tableName)
           .toList(growable: false);
 
-      expect(liveTables, hasLength(49));
+      expect(liveTables, hasLength(50));
       expect(manifestTables, hasLength(liveTables.length));
       expect(manifestTables.toSet(), hasLength(manifestTables.length));
       expect(manifestTables.toSet(), liveTables.toSet());

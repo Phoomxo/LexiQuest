@@ -39,7 +39,7 @@ void main() {
           raw.execute("INSERT INTO sentinel VALUES ('preserve-me')");
           raw.execute(
             'PRAGMA user_version = ${kind == 'future'
-                ? 27
+                ? AppDatabase.currentSchemaVersion + 1
                 : kind == 'legacy'
                 ? 1
                 : 0}',
@@ -109,7 +109,7 @@ void main() {
               .data
               .values
               .single,
-          26,
+          AppDatabase.currentSchemaVersion,
         );
       } finally {
         await database.close();
@@ -127,7 +127,7 @@ void main() {
     final database = AppDatabase.production();
     try {
       expect((await database.customSelect('SELECT * FROM local_owners ORDER BY id').get()).map((row) => row.data).toList(), ownersBefore);
-      expect((await database.customSelect('PRAGMA user_version').getSingle()).data.values.single, 26);
+      expect((await database.customSelect('PRAGMA user_version').getSingle()).data.values.single, AppDatabase.currentSchemaVersion);
       expect(await database.customSelect('PRAGMA foreign_key_check').get(), isEmpty);
     } finally { await database.close(); }
   });

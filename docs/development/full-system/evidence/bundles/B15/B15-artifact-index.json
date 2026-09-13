@@ -1,0 +1,535 @@
+{
+  "basis": "Current artifact bytes; validated against staged blobs before commit. Index excludes itself.",
+  "artifacts": [
+    {
+      "path": "docs/development/full-system/bundles/B15.md",
+      "sha256": "03795226bad5bf63438bc92774ae95e9970d2a7013f885a00f54e8f96f3d7f89",
+      "bytes": 2674
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/audit-longpath-red.log",
+      "sha256": "9b0a625918b7d5b0ed448111f1bd194f2f2f3847357f2c9210079e3d19d1d9c7",
+      "bytes": 1692
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/audit.log",
+      "sha256": "fecf1484bf6be75bd126a58979c3cb04569698adbbb1ef88bdfc57f93bc6c0b2",
+      "bytes": 97
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/audit_evidence.py",
+      "sha256": "428669457c8d5233b441ba96f056dc5dedfd528cf54e0870a195e7d0bb8a9443",
+      "bytes": 3646
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/defects.json",
+      "sha256": "e71e4ac4b670287b2077afed09aa067b20cc9c034a66b8e1212d4f33027c9df1",
+      "bytes": 4277
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/diagnose-powershell.ps1",
+      "sha256": "ae9b0a77f80f529b5777cc523aa23c9132d64f344fb29f63b7cd5b3dc9d70aa3",
+      "bytes": 1038
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/diagnostic-notes.json",
+      "sha256": "aa9b48c101005a9d56fa9de070679da83c94f3fdeead0e34848024b08839a967",
+      "bytes": 1369
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/eol-preservation.json",
+      "sha256": "0f8e5fe0c26095d86ac1277399ae63cc11a70d8a953d8e995884a01d8b494274",
+      "bytes": 2675
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/final-input-audit.json",
+      "sha256": "84ca315761d1ed1c59b8813b5d9112721cd8afd48941da6f48885354280b6964",
+      "bytes": 5826
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-acceptance.json",
+      "sha256": "b2af729787e0837cdbf76c491ceeddfff93def7fbb45bdca7256815b836dcd5c",
+      "bytes": 1129
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-green-verifier.json",
+      "sha256": "3ae591ad88d2be5483db71bd31f8a4119d2267f3ce5256e320a9864dc1ff842b",
+      "bytes": 256256
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-green.log",
+      "sha256": "6544f7c7e6cbbbb38b6fd8fdcb00537836f5a9e10bd7f9a7079513551a2ba232",
+      "bytes": 301
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-green.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-green.stdout.log",
+      "sha256": "63e743314a0c9c8dabd25fbdb0d7e67915534df08121dd53be54822dfb6dbdd2",
+      "bytes": 57246
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-red-verifier.json",
+      "sha256": "8316a528cbdd906e111fc12987843fefe175037087306692f893b13a73a8c1c9",
+      "bytes": 256010
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-red.stdout.log",
+      "sha256": "3d87a54c25c0ddd9a82173baaec910c2973125841268f40f8b1d3801ea63fab3",
+      "bytes": 16622
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.1-release-red.log",
+      "sha256": "6070a317c0266963cc68261f7606e399fbe345a992cdb1e8015192597fa45aae",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-acceptance.json",
+      "sha256": "9bf03ada88ab52378da53fd302491cbed7925d82e01bdce451d3bdd0597535aa",
+      "bytes": 3093
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-0.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-0.stdout.log",
+      "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466",
+      "bytes": 158
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-1.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-1.stdout.log",
+      "sha256": "2ea8c6ae861871aef0c757ed8d2d3818d9f068f1778b3f2caa7639de3b419071",
+      "bytes": 452
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-final.log",
+      "sha256": "09eaef9bf6c3d8edfa04b747bbbf1cd67920d7d94fd1c99f085f711d3ad23d09",
+      "bytes": 266
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-portable.log",
+      "sha256": "adf722ec130cebea55c9841701857e9918531a2ca3959ad8c183ec72702ce185",
+      "bytes": 435
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-retest.log",
+      "sha256": "105ba4733130adebf2475673bd2c38a2ba204a2049b405d6a94e1cc269d6f83c",
+      "bytes": 397
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-cli-verifier.json",
+      "sha256": "9015c662b38d4e16b2ee912622444f6f611d992bc380e79fbb0e4562d6381a71",
+      "bytes": 262251
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-codegen.log",
+      "sha256": "919ac2f82e6691e90d997164fd7a18eaaaf14c65ca6591a039b4ab0c02e469dc",
+      "bytes": 4613
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-count-red-verifier.json",
+      "sha256": "39b2ee7c1dc10a07317f4e05f27adbdd6a2b96727e7ac9afad9b911cc18124e2",
+      "bytes": 257309
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-count-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-count-red.stdout.log",
+      "sha256": "a50a94f3d1530c857100eecba19a5fddfbf4b57225a5aa137de5e777939512e0",
+      "bytes": 270778
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-final-0.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-final-0.stdout.log",
+      "sha256": "652608a835a7043738d764c1151a96b141684fa8aee8dbad613dfa6850f7f4f8",
+      "bytes": 519110
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-final-verifier.json",
+      "sha256": "2d6668c9ef71d899b48532c59f40849603b985c7aae077be80cffd82dc002f7c",
+      "bytes": 259077
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-final.log",
+      "sha256": "a48d187d92ccca0bc3c439158ebef735a19dc4789223f5e9f19d5a5105c02c96",
+      "bytes": 301
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-green.log",
+      "sha256": "c4bd4ab9c71d6a9e9c83dfa689065fa8f4849ff73de7e1d5902265cc32980aac",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-immutable-red-verifier.json",
+      "sha256": "27d1271a3650cca1c0e98fe086bcbffe143dad282127fd66ad1666b300110383",
+      "bytes": 256557
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-immutable-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-immutable-red.stdout.log",
+      "sha256": "bc892704dfd6b1c426c3a076cc0ffa1095ff869308a95ee7247ce69c5e63e88d",
+      "bytes": 95118
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-import-check.log",
+      "sha256": "27f035af6b08cf07996bd2e87826a63ad1e35cb2d453b4e7ffe12e8333a76020",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-import-red.log",
+      "sha256": "9d0f565392295968b84dbcc0e8ce8a6127b520d21c576d24f273b34ceab80553",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-integration-red-verifier.json",
+      "sha256": "521ff3b48e49bd10b5f81483ea89ad8670a9d2c9442361f45f715935d823dce0",
+      "bytes": 257049
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-integration-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-integration-red.stdout.log",
+      "sha256": "831cef01cd7a49784560dcd2bda9bf7a00ea9717e4a5d6a0697b57aa44d1cc91",
+      "bytes": 210128
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-migrations-red-verifier.json",
+      "sha256": "e865a64474c5fd4f4b524fcb56b8f4eb7eb1382135fd11a96f19dfb362876586",
+      "bytes": 257556
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-migrations-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-migrations-red.stdout.log",
+      "sha256": "da3bea1145376a1412a857dc3eb2907371be980a4f96f1c8c66594dac1d40b53",
+      "bytes": 156194
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-migrations.log",
+      "sha256": "10bbc816371c0a999dab1bf88dabc5a084c88c195cd89c40ae83f3e0203b49d6",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-npm-ci.log",
+      "sha256": "8dacc339bd6561cb6219934384aad090e20e64b38eba098bf595d3e4357470be",
+      "bytes": 619
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-partial-edit-red-verifier.json",
+      "sha256": "6cc2e280bad05a27027807135ad7002c193ca5ef4edeb908983ad11b9dec1ae4",
+      "bytes": 257309
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-partial-edit-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-partial-edit-red.stdout.log",
+      "sha256": "d481ec5ce02105d0ca2f691c6472d3994aebce074bca152a142a7b64863dc78e",
+      "bytes": 261738
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-red-verifier.json",
+      "sha256": "ab3faa782fe3f1363380e5ff3c9a27aef432dc71dd5fef743b3d9f22fbf9116d",
+      "bytes": 256315
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-red.stdout.log",
+      "sha256": "953b9cdd07a0b50fbb74bb104ea3ca906c5a728bca6bb9e1781a28fd8b7ece5b",
+      "bytes": 22872
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-retest.log",
+      "sha256": "da674b27282d8d5f9c8196cf9f07a065ff2d80de34a0635b29a011de76e8f8a1",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-retest2.log",
+      "sha256": "cf6c2405149b3339038490d195618d6eafc66d723a0f5392984a9ee7966d01f7",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules-selector-red-verifier.json",
+      "sha256": "d54b1819804bb82882fd5183fb45faa71110a0cc320b99ec48b6473bda7afe63",
+      "bytes": 261294
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules-selector-red.log",
+      "sha256": "87048937ce9eb2488c2adab3878f166eefd41fcd8efab520ca5224a071237c8d",
+      "bytes": 397
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules-verifier.json",
+      "sha256": "d6e0f05f5920f408b40f1bdfa19c9feff9890839548f18588d2750e89a5ad6e2",
+      "bytes": 255709
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules.log",
+      "sha256": "9130b63ae3032eee71ddfe43a5c90d5081244eeae3fe7ca237f6554551e4c8db",
+      "bytes": 239
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules.stderr.log",
+      "sha256": "98a42a6fc574271b9b7a8d551dc93682e618fd67945b4ceb95a4dc59417b684d",
+      "bytes": 2252
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-rules.stdout.log",
+      "sha256": "8caec555be260b3ea8ebe71375f8d3e94d0d6fd93987c57b468d94596e8c8c38",
+      "bytes": 502804
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-zero-red-verifier.json",
+      "sha256": "248ef21c5f7688f4338f900d29388187e3b0a3312439b5af4971fbcdc5e6599b",
+      "bytes": 256558
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-zero-red.log",
+      "sha256": "364a3f0b430b935830e03e9ddf16e7b1c457fcc418a873a55b34b721b1c9416d",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-zero-red.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-zero-red.stdout.log",
+      "sha256": "08f08306d59cfbdeac69c93ac57e260546fcd63a6ea526d6f17b6ab32803ee65",
+      "bytes": 13114
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/G7.2-zero-red2.log",
+      "sha256": "95064e72775bd57caf69fba5528683e4569d79f301e563ab1fb3e66793734607",
+      "bytes": 409
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/implementation-plan.json",
+      "sha256": "e88c2dea98f88c9d45219061659ae8896745e815f2ee0fa85fc813de9c786406",
+      "bytes": 3379
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/legacy-schema-contract.json",
+      "sha256": "2ae1966dddec15f33789b8fc47086799aecb84db281c3ccbd1befa8775cce1e8",
+      "bytes": 2174
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/0649f36af32b-84397b21ce82-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/0649f36af32b-84397b21ce82-Explicit-Flutter-tests.stdout.log",
+      "sha256": "08f08306d59cfbdeac69c93ac57e260546fcd63a6ea526d6f17b6ab32803ee65",
+      "bytes": 13114
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/0649f36af32b-bf38915f5f04-Explicit-Flutter-tests.stderr.log",
+      "sha256": "aacb6fbc57317f25576dd5d694cdae3113b1dcf628c7ec10849307cdf43e43c4",
+      "bytes": 1566
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/0649f36af32b-bf38915f5f04-Explicit-Flutter-tests.stdout.log",
+      "sha256": "d94721906919a554227b1c6c5e541ba7772071dce88f7ce83976b02cae5198aa",
+      "bytes": 11822
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/16a2854ff8ff-0ff7dba43071-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/16a2854ff8ff-0ff7dba43071-Explicit-Flutter-tests.stdout.log",
+      "sha256": "3d87a54c25c0ddd9a82173baaec910c2973125841268f40f8b1d3801ea63fab3",
+      "bytes": 16622
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-0db6cf5a14b0-r15-scope.tests.ps1.stderr.log",
+      "sha256": "95ebb1a6225385044910f0b3387b9bccb5913927a0887b42b98a14cbe414508e",
+      "bytes": 2630
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-0db6cf5a14b0-r15-scope.tests.ps1.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-511ba5cc45de-r15-scope.tests.ps1.stderr.log",
+      "sha256": "95ebb1a6225385044910f0b3387b9bccb5913927a0887b42b98a14cbe414508e",
+      "bytes": 2630
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-511ba5cc45de-r15-scope.tests.ps1.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-6951c80549e3-r15-scope.tests.ps1.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-6951c80549e3-r15-scope.tests.ps1.stdout.log",
+      "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466",
+      "bytes": 158
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-fd5a6003fa2b-r15-scope.tests.ps1.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/25f4cbd9237b-fd5a6003fa2b-r15-scope.tests.ps1.stdout.log",
+      "sha256": "f5e19adb3ceb47ed27c93409dcf23d1a885a1db7cbb07852b7440233404df466",
+      "bytes": 158
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/27893884cf7d-ae31b002a621-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/27893884cf7d-ae31b002a621-Explicit-Flutter-tests.stdout.log",
+      "sha256": "652608a835a7043738d764c1151a96b141684fa8aee8dbad613dfa6850f7f4f8",
+      "bytes": 519110
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/45e1056f00f6-45860aae610e-Firestore-rules-tests.stderr.log",
+      "sha256": "98a42a6fc574271b9b7a8d551dc93682e618fd67945b4ceb95a4dc59417b684d",
+      "bytes": 2252
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/45e1056f00f6-45860aae610e-Firestore-rules-tests.stdout.log",
+      "sha256": "8caec555be260b3ea8ebe71375f8d3e94d0d6fd93987c57b468d94596e8c8c38",
+      "bytes": 502804
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/4ea4847d2c7e-d57e0e8b8bd2-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/4ea4847d2c7e-d57e0e8b8bd2-Explicit-Flutter-tests.stdout.log",
+      "sha256": "63e743314a0c9c8dabd25fbdb0d7e67915534df08121dd53be54822dfb6dbdd2",
+      "bytes": 57246
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/a03e366b204a-61102c95fceb-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/a03e366b204a-61102c95fceb-Explicit-Flutter-tests.stdout.log",
+      "sha256": "bc892704dfd6b1c426c3a076cc0ffa1095ff869308a95ee7247ce69c5e63e88d",
+      "bytes": 95118
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/a953079d054a-bfc48693475d-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/a953079d054a-bfc48693475d-Explicit-Flutter-tests.stdout.log",
+      "sha256": "831cef01cd7a49784560dcd2bda9bf7a00ea9717e4a5d6a0697b57aa44d1cc91",
+      "bytes": 210128
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/c0f001a19c33-0e88a8f3d04c-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/c0f001a19c33-0e88a8f3d04c-Explicit-Flutter-tests.stdout.log",
+      "sha256": "d481ec5ce02105d0ca2f691c6472d3994aebce074bca152a142a7b64863dc78e",
+      "bytes": 261738
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/c0f001a19c33-ad415422d147-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/c0f001a19c33-ad415422d147-Explicit-Flutter-tests.stdout.log",
+      "sha256": "a50a94f3d1530c857100eecba19a5fddfbf4b57225a5aa137de5e777939512e0",
+      "bytes": 270778
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d28834a601f9-0a69eacc292b-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d28834a601f9-0a69eacc292b-Explicit-Flutter-tests.stdout.log",
+      "sha256": "da3bea1145376a1412a857dc3eb2907371be980a4f96f1c8c66594dac1d40b53",
+      "bytes": 156194
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d43a79c6718d-aa961d5687c6-Explicit-Flutter-tests.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d43a79c6718d-aa961d5687c6-Explicit-Flutter-tests.stdout.log",
+      "sha256": "953b9cdd07a0b50fbb74bb104ea3ca906c5a728bca6bb9e1781a28fd8b7ece5b",
+      "bytes": 22872
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d9c58374c3a7-96d424f526a0-verify-scope.tests.ps1.stderr.log",
+      "sha256": "8549d441673d9fd1460c9a812c63eaa54a196c4c5f2ea4ae5db549b7af541a2c",
+      "bytes": 2786
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d9c58374c3a7-96d424f526a0-verify-scope.tests.ps1.stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d9c58374c3a7-fd5a6003fa2b-verify-scope.tests.ps1.stderr.log",
+      "sha256": "45388781b89ceb414430c93ae56448a9c2c50529f7ba011ea1ab1e1d8f721d8a",
+      "bytes": 394
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B15/raw-verifier/d9c58374c3a7-fd5a6003fa2b-verify-scope.tests.ps1.stdout.log",
+      "sha256": "2ea8c6ae861871aef0c757ed8d2d3818d9f068f1778b3f2caa7639de3b419071",
+      "bytes": 452
+    }
+  ]
+}

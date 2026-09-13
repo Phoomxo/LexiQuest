@@ -1,0 +1,121 @@
+{
+  "baseSha": "af40a0512070cd6804c6f01484d63348e87a86b6",
+  "inheritedB14ArtifactsVerified": 69,
+  "inheritedClaim": "Committed source blob hashes match acceptedB14 artifact index; no implied current G6 global gate equivalence after schema27",
+  "gates": [
+    {
+      "gate": "G7.2-final",
+      "inputCount": 1311,
+      "exactInputs": 1302,
+      "changedInputs": [
+        "lib/features/export/application/owner_lifecycle_archive.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/architecture/fitness_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "rawLogsHashVerified": true,
+      "eolOnlyInputs": [
+        "lib/features/export/application/owner_lifecycle_archive.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/architecture/fitness_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "otherChangedInputs": []
+    },
+    {
+      "gate": "G7.2-cli",
+      "inputCount": 1342,
+      "exactInputs": 1333,
+      "changedInputs": [
+        "lib/features/export/application/owner_lifecycle_archive.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/architecture/fitness_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "rawLogsHashVerified": true,
+      "eolOnlyInputs": [
+        "lib/features/export/application/owner_lifecycle_archive.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/architecture/fitness_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "otherChangedInputs": []
+    },
+    {
+      "gate": "G7.2-rules",
+      "inputCount": 1315,
+      "exactInputs": 1294,
+      "changedInputs": [
+        "firestore.rules",
+        "lib/data/local/app_database.dart",
+        "lib/data/local/app_database_native_path.dart",
+        "lib/data/local/legacy_learning_import.dart",
+        "lib/data/local/tables/associative_tables.dart",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/architecture/fitness_test.dart",
+        "test/database/migration_v23_to_v24_test.dart",
+        "test/database/migration_v24_to_v25_test.dart",
+        "test/data/local/app_database_safe_open_test.dart",
+        "test/data/local/legacy_learning_import_test.dart",
+        "test/features/export/research_lifecycle_export_test.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs",
+        "test/support/current_database_contract.dart",
+        "tool/cli/tests/r15-scope.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1",
+        "tool/cli/verify-scope.ps1"
+      ],
+      "rawLogsHashVerified": true,
+      "eolOnlyInputs": [
+        "firestore.rules",
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "test/features/identity/drift_owner_upgrade_repository_test.dart",
+        "test/features/sync/assessment_run_sync_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/security/firestore-rules.test.cjs"
+      ],
+      "otherChangedInputs": [
+        "lib/data/local/app_database.dart",
+        "lib/data/local/app_database_native_path.dart",
+        "lib/data/local/legacy_learning_import.dart",
+        "lib/data/local/tables/associative_tables.dart",
+        "test/architecture/fitness_test.dart",
+        "test/database/migration_v23_to_v24_test.dart",
+        "test/database/migration_v24_to_v25_test.dart",
+        "test/data/local/app_database_safe_open_test.dart",
+        "test/data/local/legacy_learning_import_test.dart",
+        "test/features/export/research_lifecycle_export_test.dart",
+        "test/support/current_database_contract.dart",
+        "tool/cli/tests/r15-scope.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1",
+        "tool/cli/verify-scope.ps1"
+      ],
+      "reuseReason": "Exact or EOL-equivalent rules/test/config/locked dependencies. Later Flutter migration fixtures and CLI hashing/selector checks do not alter executed Firebase rules. No global fingerprint equality claim."
+    }
+  ],
+  "sourceReview": "Single writer reviewed actual diff and acceptance; all new legacy table lifecycle paths and immutable history tested. Source retained and unsafe/ambiguous imports rejected explicitly."
+}

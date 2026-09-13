@@ -155,6 +155,7 @@ final class OwnerLifecycleArchiveExporter {
   }) async {
     return switch (descriptor.tableName) {
       'local_owners' => _ownerRoot(ownerId),
+      'legacy_learning_records' => _legacyLearningHistory(ownerId),
       'research_consents' => _researchConsents(ownerId),
       'experiment_assignments' => _experimentAssignments(ownerId),
       'assessment_runs' => _assessmentRuns(ownerId),
@@ -181,6 +182,29 @@ final class OwnerLifecycleArchiveExporter {
       'model_downloads' => _modelDownloads(),
       _ => _countRecord(descriptor, ownerId),
     };
+  }
+
+  Future<List<Map<String, Object?>>> _legacyLearningHistory(
+    String ownerId,
+  ) async {
+    final rows = await database
+        .customSelect(
+          'SELECT source_table, payload_json FROM legacy_learning_records '
+          'WHERE owner_id = ? ORDER BY id',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.legacyLearningRecords},
+        )
+        .get();
+    return rows.map((row) {
+      final record = Map<String, Object?>.from(
+        jsonDecode(row.read<String>('payload_json')) as Map,
+      )..remove('owner_id');
+      return <String, Object?>{
+        'formatVersion': 1,
+        'sourceTable': row.read<String>('source_table'),
+        'record': record,
+      };
+    }).toList();
   }
 
   Future<List<Map<String, Object?>>> _ownerRoot(String ownerId) async {

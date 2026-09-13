@@ -1,9 +1,40 @@
 {
- "bundleId":"B15","baseSha":"af40a0512070cd6804c6f01484d63348e87a86b6","revision":"2026-09-14-camera-training-5",
- "constraints":["sole writer sequential packages","lexiquest/ only","synthetic transport; no remote research or paid/live services","preserve historical receipts and owner identity","reuse unchanged passed gates; bounded verify-scope only"],
- "steps":[
-  {"package":"G7.1","paths":["lib/features/sync/application/sync_engine.dart","test/features/sync/sync_engine_test.dart","test/scenarios/file_backed_sync_recovery_test.dart"],"design":"Retain canonical mutation IDs and durable retry reservations. Extend file-backed scenario with offline phase and reopen before lost ack. Verify failed persistent gate release cannot leak the process mutex and prevent subsequent recovery. Preserve original error and persistent lease expiry fencing.","acceptance":"No duplicate remote application/local receipts or dropped pending work; offline local inventory survives; five-attempt bound and timeout coverage; truthful failure result.","verification":"verify-scope Targeted Learning: file_backed_sync_recovery, sync_engine, cloud_sync_policy, sync_trigger, background_sync_scheduler plus relevant local learning scenario"},
-  {"package":"G7.2","design":"Read brief at entry, inspect identity/conflict/migration callers and legacy learning.sqlite source. Add detailed migration mapping, atomicity/rollback and compatibility plan from actual code before implementation.","acceptance":"Inherited legacy import obligation plus actual G7.2 brief; owner isolation and historical evidence unchanged"}
- ],
- "delivery":"B15.md concise Thai, JSON plan/defects/acceptance and raw logs; commit each accepted package then actual-SHA receipt under locked revision compare; B16 dispatch only after final audit"
+  "bundleId": "B15",
+  "baseSha": "af40a0512070cd6804c6f01484d63348e87a86b6",
+  "revision": "2026-09-14-camera-training-5",
+  "constraints": [
+    "sole writer sequential packages",
+    "lexiquest/ only",
+    "synthetic transport; no remote research or paid/live services",
+    "preserve historical receipts and owner identity",
+    "reuse unchanged passed gates; bounded verify-scope only"
+  ],
+  "steps": [
+    {
+      "package": "G7.1",
+      "paths": [
+        "lib/features/sync/application/sync_engine.dart",
+        "test/features/sync/sync_engine_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart"
+      ],
+      "design": "Retain canonical mutation IDs and durable retry reservations. Extend file-backed scenario with offline phase and reopen before lost ack. Verify failed persistent gate release cannot leak the process mutex and prevent subsequent recovery. Preserve original error and persistent lease expiry fencing.",
+      "acceptance": "No duplicate remote application/local receipts or dropped pending work; offline local inventory survives; five-attempt bound and timeout coverage; truthful failure result.",
+      "verification": "verify-scope Targeted Learning: file_backed_sync_recovery, sync_engine, cloud_sync_policy, sync_trigger, background_sync_scheduler plus relevant local learning scenario"
+    },
+    {
+      "package": "G7.2",
+      "design": "Schema27 adds immutable owner-scoped legacy_learning_records. Copy all eight schema1 tables exactly as versioned historical rows; retain original IDs, commits, events, algorithm versions, tombstones and pending outbox in JSON, never turn into modern score/reward/SRS or send old protocol. Validate exact table/column schema, row versions/owner IDs and bounded file/row sizes. Import single-owner supported source read-only from support or documents into isolated temp AppDatabase, transaction then checkpoint/close and atomic rename only if destination absent; failure leaves source untouched. Existing destinations not overwritten; conflicting sources or ambiguous multi-owner source fail with typed legacyImportRequired. Expose owner-scoped records through existing personal archive and integrate upgrade/export/delete inventories. Rollback retains original source; ordinary owner deletion keeps destination file so startup cannot reimport deleted records.",
+      "acceptance": "Inherited legacy import obligation plus actual G7.2 brief; owner isolation and historical evidence unchanged",
+      "paths": [
+        "lib/data/local/app_database_native_path.dart",
+        "lib/data/local/legacy_learning_import.dart",
+        "lib/data/local/tables/associative_tables.dart",
+        "lib/features/identity/domain/owner_lifecycle_manifest.dart",
+        "lib/features/identity/domain/owner_upgrade.dart",
+        "lib/features/export/application/owner_lifecycle_archive.dart"
+      ],
+      "verification": "File-backed production import, unsupported/future/corrupt/ambiguous files, deterministic restart, exact row retention, no new rewards/queue, schema26 migration, owner lifecycle inventory/export/delete/upgrade and required sync conflicts. No live services."
+    }
+  ],
+  "delivery": "B15.md concise Thai, JSON plan/defects/acceptance and raw logs; commit each accepted package then actual-SHA receipt under locked revision compare; B16 dispatch only after final audit"
 }

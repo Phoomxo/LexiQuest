@@ -8,7 +8,20 @@ foreach ($function in $ast.FindAll({ param($n) $n -is [System.Management.Automat
 }
 $repoRoot = Split-Path (Split-Path (Split-Path $runner -Parent) -Parent) -Parent
 $scriptDir = Split-Path $runner -Parent
+$hashFixture = Join-Path $repoRoot ('build/hash-vector-' + [guid]::NewGuid().ToString('N'))
+[IO.File]::WriteAllBytes($hashFixture, [Text.Encoding]::ASCII.GetBytes('abc'))
+if ((Get-VerificationFileHash -LiteralPath $hashFixture).Hash -ne 'BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD') { throw 'Portable file fingerprint differs from the standard SHA256 abc vector' }
+Remove-Item -LiteralPath $hashFixture
+
 $TestTargets = @(); $TestName = ''; $CliOnly = $false
+$RulesOnly = $true
+$rulesSelection = @(Get-VerificationCommands Targeted Economy)
+if ($rulesSelection.Count -ne 1 -or $rulesSelection[0].Name -ne 'Firestore rules tests') { throw 'RulesOnly must isolate the local rules emulator from Flutter/trusted-writer suites' }
+$rejected = $false
+try { Get-VerificationCommands Release Economy | Out-Null } catch { $rejected = $true }
+if (-not $rejected) { throw 'RulesOnly cannot replace a release gate' }
+$RulesOnly = $false
+
 $failures = [System.Collections.Generic.List[string]]::new()
 foreach ($area in @('BackendAI','BackendVoice','BackendLM')) {
     $pattern = Get-AreaPathPattern $area

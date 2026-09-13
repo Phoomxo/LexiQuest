@@ -77,3 +77,14 @@ class AssociativeMemoryStates extends Table {
     {ownerId, wordKey},
   ];
 }
+
+/// Immutable schema1 history. Never a modern score, reward or sync authority.
+/// ownerId is the current custodian; payload retains the historical owner.
+class LegacyLearningRecords extends Table {
+  TextColumn get id => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
+  TextColumn get sourceTable => text()();
+  TextColumn get payloadJson => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}

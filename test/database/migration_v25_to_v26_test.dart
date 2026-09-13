@@ -887,13 +887,13 @@ Future<List<Map<String, Object?>>> _schema(AppDatabase db) => _rows(
   "SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name IN (${[..._added, 'measurement_opportunities', 'research_session_proofs', 'learning_sessions_referenced_pins_v24_update'].map((s) => "'$s'").join(',')}) ORDER BY name",
 );
 Future<void> _expectLayout(AppDatabase db) async {
-  expect((await _rows(db, 'PRAGMA user_version')).single.values.single, 26);
+  expect((await _rows(db, 'PRAGMA user_version')).single.values.single, AppDatabase.currentSchemaVersion);
   expect(
     await _rows(
       db,
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
     ),
-    hasLength(49),
+    hasLength(50),
   );
   final names = (await _rows(
     db,

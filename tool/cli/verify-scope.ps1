@@ -41,6 +41,8 @@ param(
 
     [switch]$CliOnly,
 
+    [switch]$RulesOnly,
+
     [string]$FrozenSha = ''
 )
 
@@ -53,6 +55,17 @@ $timeoutSeconds = @{
     Targeted = 600
     Subsystem = 1200
     Release = 2700
+}
+
+function Get-VerificationFileHash {
+    param([string]$LiteralPath, [string]$Algorithm = 'SHA256')
+    if ($Algorithm -ne 'SHA256') { throw 'Only SHA256 is supported.' }
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        $hash = ([BitConverter]::ToString($hasher.ComputeHash($stream))).Replace('-', '')
+        return [pscustomobject]@{ Hash = $hash }
+    } finally { $hasher.Dispose(); $stream.Dispose() }
 }
 
 function Get-Sha256Text {
@@ -136,7 +149,7 @@ function Get-SourceFingerprint {
         if (-not (Test-Path -LiteralPath $absolutePath -PathType Leaf)) {
             continue
         }
-        $fileHash = (Get-FileHash -LiteralPath $absolutePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $fileHash = (Get-VerificationFileHash -LiteralPath $absolutePath -Algorithm SHA256).Hash.ToLowerInvariant()
         $parts.Add($relativePath + '=' + $fileHash)
     }
 
@@ -155,12 +168,12 @@ function Get-EnvironmentFingerprint {
     foreach ($tool in @('powershell.exe','git','flutter','dart','uv','python','node','npm','java')) {
         $resolved = Get-Command $tool -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($null -eq $resolved) { $parts.Add($tool + '=missing'); continue }
-        $parts.Add($tool + '=' + $resolved.Source + '=' + (Get-FileHash -LiteralPath $resolved.Source -Algorithm SHA256).Hash)
+        $parts.Add($tool + '=' + $resolved.Source + '=' + (Get-VerificationFileHash -LiteralPath $resolved.Source -Algorithm SHA256).Hash)
         if ($tool -eq 'flutter') {
             $sdk = Split-Path (Split-Path $resolved.Source -Parent) -Parent
             foreach ($pin in @('bin/cache/flutter.version.json','bin/cache/engine.stamp','bin/cache/dart-sdk/version')) {
                 $file = Join-Path $sdk $pin
-                if (Test-Path -LiteralPath $file -PathType Leaf) { $parts.Add($file + '=' + (Get-FileHash -LiteralPath $file).Hash) }
+                if (Test-Path -LiteralPath $file -PathType Leaf) { $parts.Add($file + '=' + (Get-VerificationFileHash -LiteralPath $file).Hash) }
             }
         }
     }
@@ -168,7 +181,7 @@ function Get-EnvironmentFingerprint {
         'backend/ai_api/.env','backend/voice_api/.env','backend/lexiquest_lm/.env',
         'backend/ai_api/.venv/pyvenv.cfg','backend/voice_api/.venv/pyvenv.cfg','backend/lexiquest_lm/.venv/pyvenv.cfg')) {
         $file = Join-Path $repoRoot $pin
-        $value = if (Test-Path -LiteralPath $file -PathType Leaf) { (Get-FileHash -LiteralPath $file).Hash } else { 'missing' }
+        $value = if (Test-Path -LiteralPath $file -PathType Leaf) { (Get-VerificationFileHash -LiteralPath $file).Hash } else { 'missing' }
         $parts.Add($pin + '=' + $value)
     }
     return Get-Sha256Text ($parts -join "`n")
@@ -183,7 +196,7 @@ function Test-ReusableCommand {
     if ($Previous.Status -ne 'Passed' -or $Previous.ExitCode -ne 0 -or $Previous.fingerprint -ne $Fingerprint) { return $false }
     foreach ($stream in @('Stdout','Stderr')) {
         if (-not (Test-Path -LiteralPath $Previous.$stream -PathType Leaf)) { return $false }
-        if ((Get-FileHash -LiteralPath $Previous.$stream).Hash -ne $Previous.($stream + 'Hash')) { return $false }
+        if ((Get-VerificationFileHash -LiteralPath $Previous.$stream).Hash -ne $Previous.($stream + 'Hash')) { return $false }
     }
     return $true
 }
@@ -268,6 +281,13 @@ function Get-VerificationCommands {
         [string]$SelectedLevel,
         [string]$SelectedArea
     )
+
+    if ((Get-Variable RulesOnly -ErrorAction SilentlyContinue) -and $RulesOnly) {
+        if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Economy' -or $TestTargets.Count -or $TestName -or $CliOnly) {
+            throw 'RulesOnly requires Targeted/Economy with no Flutter or CLI selection.'
+        }
+        return @(New-CommandSpec -Name 'Firestore rules tests' -FilePath 'npm' -Arguments @('run', 'test:rules') -SourceArea 'Economy')
+    }
 
     if ((Get-Variable CliOnly -ErrorAction SilentlyContinue) -and $CliOnly) {
         if ($SelectedLevel -ne 'Subsystem' -or $SelectedArea -ne 'Runtime' -or $TestTargets.Count -or $TestName) {
@@ -643,6 +663,7 @@ try {
     New-Item -ItemType Directory -Force -Path $resultDirectory | Out-Null
     $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '.json')
     if ($CliOnly) { $resultPath = Join-Path $resultDirectory 'subsystem-runtime-cli.json' }
+    if ($RulesOnly) { $resultPath = Join-Path $resultDirectory 'targeted-economy-rules.json' }
     if ($TestTargets.Count -gt 0) {
         $targetIdentity = $TestTargets -join "`n"
         if ($TestName) { $targetIdentity += "`nname=" + $TestName }
@@ -674,7 +695,7 @@ try {
                 $pattern = Get-AreaPathPattern $sourceArea
                 foreach ($path in @(& git ls-files --cached --others --exclude-standard | Sort-Object -Unique)) {
                     if ($path -match $pattern -and (Test-Path -LiteralPath (Join-Path $repoRoot $path) -PathType Leaf)) {
-                        [pscustomobject]@{ area = $sourceArea; path = $path; sha256 = (Get-FileHash -LiteralPath (Join-Path $repoRoot $path)).Hash }
+                        [pscustomobject]@{ area = $sourceArea; path = $path; sha256 = (Get-VerificationFileHash -LiteralPath (Join-Path $repoRoot $path)).Hash }
                     }
                 }
             }
@@ -718,7 +739,7 @@ try {
             -LogDirectory $resultDirectory `
             -SourceFingerprint $commandFingerprint
         foreach ($stream in @('Stdout','Stderr')) {
-            $hash = if (Test-Path -LiteralPath $commandResult.$stream -PathType Leaf) { (Get-FileHash -LiteralPath $commandResult.$stream).Hash } else { $null }
+            $hash = if (Test-Path -LiteralPath $commandResult.$stream -PathType Leaf) { (Get-VerificationFileHash -LiteralPath $commandResult.$stream).Hash } else { $null }
             $commandResult | Add-Member NoteProperty ($stream + 'Hash') $hash
         }
         $result.commands += $commandResult

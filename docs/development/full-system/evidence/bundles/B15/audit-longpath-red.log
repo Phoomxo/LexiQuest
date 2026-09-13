@@ -1,0 +1,16 @@
+fatal: failed to stat 'af40a0512070cd6804c6f01484d63348e87a86b6:docs/development/full-system/evidence/bundles/B14/gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-042629f3cc9afa5740687e895bb7acd4ba29cda8c3a9823f452e73ddcd58fde8.json': Filename too long
+Traceback (most recent call last):
+  File "C:\Users\Phet\.codex\worktrees\a4f0\LexiQuest\docs\development\full-system\evidence\bundles\B15\audit_evidence.py", line 13, in <module>
+    b=blob(BASE,item['path']);assert digest(b)==item['sha256'].lower(),item['path']
+  File "C:\Users\Phet\.codex\worktrees\a4f0\LexiQuest\docs\development\full-system\evidence\bundles\B15\audit_evidence.py", line 9, in blob
+    def blob(ref,path):return subprocess.check_output(['git','-C',str(ROOT),'show',f'{ref}:{path}'])
+                              ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 473, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "C:\Python314\Lib\subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', '-C', 'C:\\Users\\Phet\\.codex\\worktrees\\a4f0\\LexiQuest', 'show', 'af40a0512070cd6804c6f01484d63348e87a86b6:docs/development/full-system/evidence/bundles/B14/gates/09a0b5aff0757288ee285b8b7b0c09bbe38a1929/targeted-ai-042629f3cc9afa5740687e895bb7acd4ba29cda8c3a9823f452e73ddcd58fde8.json']' returned non-zero exit status 128.

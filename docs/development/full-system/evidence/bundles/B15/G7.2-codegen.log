@@ -1,0 +1,59 @@
+  1s compiling builders/aot
+  2s compiling builders/aot
+  3s compiling builders/aot
+  4s compiling builders/aot
+  5s compiling builders/aot
+  6s compiling builders/aot
+  7s compiling builders/aot
+  8s compiling builders/aot
+  9s compiling builders/aot
+  10s compiling builders/aot
+  11s compiling builders/aot
+  12s compiling builders/aot
+  13s compiling builders/aot
+  14s compiling builders/aot
+  16s compiling builders/aot
+  17s compiling builders/aot
+  18s compiling builders/aot
+  19s compiling builders/aot
+  20s compiling builders/aot
+  21s compiling builders/aot
+  22s compiling builders/aot
+  23s compiling builders/aot
+  24s compiling builders/aot
+  25s compiling builders/aot
+  26s compiling builders/aot
+  27s compiling builders/aot
+  28s compiling builders/aot
+  29s compiling builders/aot
+  30s compiling builders/aot
+  31s compiling builders/aot
+  33s compiling builders/aot
+  34s compiling builders/aot
+  35s compiling builders/aot
+  36s compiling builders/aot
+  37s compiling builders/aot
+W These options have been removed and were ignored: --delete-conflicting-outputs
+  0s drift_dev on 4464 inputs; assets/index.dart
+  2s drift_dev on 4464 inputs: 1 output; spent 2s sdk; integration_test/adventure_performance_profile_test.dart
+  10s drift_dev on 4464 inputs: 2 output; spent 6s analyzing, 2s sdk, 2s resolving; integration_test/field_trial_core_journey_test.dart
+  18s drift_dev on 4464 inputs: 3 output; spent 13s analyzing, 3s resolving, 2s sdk; integration_test/field_trial_feature_controls_test.dart
+  20s drift_dev on 4464 inputs: 524 output; spent 13s analyzing, 3s resolving, 2s sdk; lib/screens/today_hub_screen.dart
+  21s drift_dev on 4464 inputs: 754 output; spent 14s analyzing, 3s resolving, 2s sdk, 1s reading; test/features/identity/identity_mapping_test.dart
+  22s drift_dev on 4464 inputs: 890 output; spent 15s analyzing, 3s resolving, 2s sdk, 1s reading; test/features/sync/experiment_assignment_sync_test.dart
+  23s drift_dev on 4464 inputs: 1015 output; spent 15s analyzing, 4s resolving, 2s sdk, 1s reading, 1s building; test/screens/smart_audio_playlist_screen_test.dart
+  26s drift_dev on 4464 inputs: 1131 output, 4 no-op; spent 19s analyzing, 4s resolving, 2s sdk, 1s building, 1s reading; lib/data/local/app_database_native_path.dart
+  27s drift_dev on 4464 inputs: 1145 output, 6 no-op; spent 20s analyzing, 4s resolving, 2s sdk, 1s building, 1s reading; lib/data/local/tables/progress_tables.dart
+  29s drift_dev on 4464 inputs: 1148 output, 6 no-op; spent 21s analyzing, 4s resolving, 2s sdk, 1s building, 1s reading; lib/data/local/tables/review_tables.dart
+  30s drift_dev on 4464 inputs: 1154 output, 6 no-op; spent 22s analyzing, 4s resolving, 2s sdk, 1s building, 1s reading; lib/features/accessibility/domain/accessibility_policy.dart
+  31s drift_dev on 4464 inputs: 1760 output, 110 no-op; spent 23s analyzing, 4s resolving, 2s building, 2s sdk, 1s reading; test/features/identity/identity_mapping_test.dart
+  32s drift_dev on 4464 inputs: 2 skipped, 2122 output, 113 no-op; spent 23s analyzing, 4s resolving, 2s building, 2s sdk, 1s reading; integration_test/field_trial_core_journey_test.dart.types.temp.dart
+  35s drift_dev on 4464 inputs: 18 skipped, 2123 output, 128 no-op; spent 23s analyzing, 5s building, 4s resolving, 2s sdk, 1s reading; lib/data/local/app_database.dart.types.temp.dart
+  36s drift_dev on 4464 inputs: 436 skipped, 2123 output, 546 no-op; spent 24s analyzing, 5s building, 4s resolving, 2s sdk, 1s reading; lib/runtime/app_bootstrap.dart.types.temp.dart
+  37s drift_dev on 4464 inputs: 763 skipped, 2123 output, 873 no-op; spent 24s analyzing, 6s building, 4s resolving, 2s sdk, 1s reading; test/features/learning/data/drift_learning_projection_rebuilder_test.dart.types.temp.dart
+  38s drift_dev on 4464 inputs: 911 skipped, 2123 output, 1021 no-op; spent 24s analyzing, 7s building, 4s resolving, 2s sdk, 1s reading; test/features/today_hub/today_hub_reader_test.dart.types.temp.dart
+  38s drift_dev on 4464 inputs: 1116 skipped, 2123 output, 1225 no-op; spent 24s analyzing, 8s building, 4s resolving, 2s sdk, 1s reading
+  0s source_gen:combining_builder on 2232 inputs; assets/index.dart
+  0s source_gen:combining_builder on 2232 inputs: 244 skipped, 1 output, 244 no-op; lib/features/motivation/application/streak_use_cases.dart.types.temp.dart
+  0s source_gen:combining_builder on 2232 inputs: 1116 skipped, 1 output, 1115 no-op
+  Built with build_runner/aot in 81s; wrote 2124 outputs.

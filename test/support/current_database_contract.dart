@@ -36,6 +36,7 @@ const currentDatabaseTableInventory = <String>{
   'runtime_flags',
   'model_downloads',
   'events_v2',
+  'legacy_learning_records',
   'quest_definitions',
   'quest_instances',
   'quest_objective_progress',

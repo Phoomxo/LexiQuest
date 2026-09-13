@@ -29026,6 +29026,331 @@ class AssociationRecordsCompanion extends UpdateCompanion<AssociationRecord> {
   }
 }
 
+class $LegacyLearningRecordsTable extends LegacyLearningRecords
+    with TableInfo<$LegacyLearningRecordsTable, LegacyLearningRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LegacyLearningRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _sourceTableMeta = const VerificationMeta(
+    'sourceTable',
+  );
+  @override
+  late final GeneratedColumn<String> sourceTable = GeneratedColumn<String>(
+    'source_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, ownerId, sourceTable, payloadJson];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'legacy_learning_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LegacyLearningRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('source_table')) {
+      context.handle(
+        _sourceTableMeta,
+        sourceTable.isAcceptableOrUnknown(
+          data['source_table']!,
+          _sourceTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceTableMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LegacyLearningRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LegacyLearningRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      sourceTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_table'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $LegacyLearningRecordsTable createAlias(String alias) {
+    return $LegacyLearningRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class LegacyLearningRecord extends DataClass
+    implements Insertable<LegacyLearningRecord> {
+  final String id;
+  final String ownerId;
+  final String sourceTable;
+  final String payloadJson;
+  const LegacyLearningRecord({
+    required this.id,
+    required this.ownerId,
+    required this.sourceTable,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['source_table'] = Variable<String>(sourceTable);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  LegacyLearningRecordsCompanion toCompanion(bool nullToAbsent) {
+    return LegacyLearningRecordsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sourceTable: Value(sourceTable),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory LegacyLearningRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LegacyLearningRecord(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sourceTable: serializer.fromJson<String>(json['sourceTable']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sourceTable': serializer.toJson<String>(sourceTable),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  LegacyLearningRecord copyWith({
+    String? id,
+    String? ownerId,
+    String? sourceTable,
+    String? payloadJson,
+  }) => LegacyLearningRecord(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sourceTable: sourceTable ?? this.sourceTable,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  LegacyLearningRecord copyWithCompanion(LegacyLearningRecordsCompanion data) {
+    return LegacyLearningRecord(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sourceTable: data.sourceTable.present
+          ? data.sourceTable.value
+          : this.sourceTable,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LegacyLearningRecord(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, ownerId, sourceTable, payloadJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LegacyLearningRecord &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sourceTable == this.sourceTable &&
+          other.payloadJson == this.payloadJson);
+}
+
+class LegacyLearningRecordsCompanion
+    extends UpdateCompanion<LegacyLearningRecord> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sourceTable;
+  final Value<String> payloadJson;
+  final Value<int> rowid;
+  const LegacyLearningRecordsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sourceTable = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LegacyLearningRecordsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sourceTable,
+    required String payloadJson,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sourceTable = Value(sourceTable),
+       payloadJson = Value(payloadJson);
+  static Insertable<LegacyLearningRecord> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sourceTable,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sourceTable != null) 'source_table': sourceTable,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LegacyLearningRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sourceTable,
+    Value<String>? payloadJson,
+    Value<int>? rowid,
+  }) {
+    return LegacyLearningRecordsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sourceTable: sourceTable ?? this.sourceTable,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sourceTable.present) {
+      map['source_table'] = Variable<String>(sourceTable.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LegacyLearningRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sourceTable: $sourceTable, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AssociativeMemoryStatesTable extends AssociativeMemoryStates
     with TableInfo<$AssociativeMemoryStatesTable, AssociativeMemoryState> {
   @override
@@ -36561,6 +36886,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LearningDayLogTable learningDayLog = $LearningDayLogTable(this);
   late final $AssociationRecordsTable associationRecords =
       $AssociationRecordsTable(this);
+  late final $LegacyLearningRecordsTable legacyLearningRecords =
+      $LegacyLearningRecordsTable(this);
   late final $AssociativeMemoryStatesTable associativeMemoryStates =
       $AssociativeMemoryStatesTable(this);
   late final $AiUsageEventsTable aiUsageEvents = $AiUsageEventsTable(this);
@@ -36620,6 +36947,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     streakStates,
     learningDayLog,
     associationRecords,
+    legacyLearningRecords,
     associativeMemoryStates,
     aiUsageEvents,
     speechEvidence,
@@ -37404,6 +37732,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _associationRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LegacyLearningRecordsTable,
+    List<LegacyLearningRecord>
+  >
+  _legacyLearningRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.legacyLearningRecords,
+        aliasName: 'local_owners__id__legacy_learning_records__owner_id',
+      );
+
+  $$LegacyLearningRecordsTableProcessedTableManager
+  get legacyLearningRecordsRefs {
+    final manager = $$LegacyLearningRecordsTableTableManager(
+      $_db,
+      $_db.legacyLearningRecords,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _legacyLearningRecordsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -38404,6 +38757,32 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> legacyLearningRecordsRefs(
+    Expression<bool> Function($$LegacyLearningRecordsTableFilterComposer f) f,
+  ) {
+    final $$LegacyLearningRecordsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.legacyLearningRecords,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LegacyLearningRecordsTableFilterComposer(
+                $db: $db,
+                $table: $db.legacyLearningRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -39480,6 +39859,32 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> legacyLearningRecordsRefs<T extends Object>(
+    Expression<T> Function($$LegacyLearningRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$LegacyLearningRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.legacyLearningRecords,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LegacyLearningRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.legacyLearningRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> associativeMemoryStatesRefs<T extends Object>(
     Expression<T> Function($$AssociativeMemoryStatesTableAnnotationComposer a)
     f,
@@ -39756,6 +40161,7 @@ class $$LocalOwnersTableTableManager
             bool streakStatesRefs,
             bool learningDayLogRefs,
             bool associationRecordsRefs,
+            bool legacyLearningRecordsRefs,
             bool associativeMemoryStatesRefs,
             bool aiUsageEventsRefs,
             bool speechEvidenceRefs,
@@ -39854,6 +40260,7 @@ class $$LocalOwnersTableTableManager
                 streakStatesRefs = false,
                 learningDayLogRefs = false,
                 associationRecordsRefs = false,
+                legacyLearningRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
                 aiUsageEventsRefs = false,
                 speechEvidenceRefs = false,
@@ -39900,6 +40307,7 @@ class $$LocalOwnersTableTableManager
                     if (streakStatesRefs) db.streakStates,
                     if (learningDayLogRefs) db.learningDayLog,
                     if (associationRecordsRefs) db.associationRecords,
+                    if (legacyLearningRecordsRefs) db.legacyLearningRecords,
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
                     if (aiUsageEventsRefs) db.aiUsageEvents,
                     if (speechEvidenceRefs) db.speechEvidence,
@@ -40543,6 +40951,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (legacyLearningRecordsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LegacyLearningRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._legacyLearningRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).legacyLearningRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (associativeMemoryStatesRefs)
                         await $_getPrefetchedData<
                           LocalOwner,
@@ -40783,6 +41212,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool streakStatesRefs,
         bool learningDayLogRefs,
         bool associationRecordsRefs,
+        bool legacyLearningRecordsRefs,
         bool associativeMemoryStatesRefs,
         bool aiUsageEventsRefs,
         bool speechEvidenceRefs,
@@ -62482,6 +62912,330 @@ typedef $$AssociationRecordsTableProcessedTableManager =
       AssociationRecord,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$LegacyLearningRecordsTableCreateCompanionBuilder =
+    LegacyLearningRecordsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sourceTable,
+      required String payloadJson,
+      Value<int> rowid,
+    });
+typedef $$LegacyLearningRecordsTableUpdateCompanionBuilder =
+    LegacyLearningRecordsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sourceTable,
+      Value<String> payloadJson,
+      Value<int> rowid,
+    });
+
+final class $$LegacyLearningRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LegacyLearningRecordsTable,
+          LegacyLearningRecord
+        > {
+  $$LegacyLearningRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('legacy_learning_records__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LegacyLearningRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $LegacyLearningRecordsTable> {
+  $$LegacyLearningRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LegacyLearningRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LegacyLearningRecordsTable> {
+  $$LegacyLearningRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LegacyLearningRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LegacyLearningRecordsTable> {
+  $$LegacyLearningRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceTable => $composableBuilder(
+    column: $table.sourceTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LegacyLearningRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LegacyLearningRecordsTable,
+          LegacyLearningRecord,
+          $$LegacyLearningRecordsTableFilterComposer,
+          $$LegacyLearningRecordsTableOrderingComposer,
+          $$LegacyLearningRecordsTableAnnotationComposer,
+          $$LegacyLearningRecordsTableCreateCompanionBuilder,
+          $$LegacyLearningRecordsTableUpdateCompanionBuilder,
+          (LegacyLearningRecord, $$LegacyLearningRecordsTableReferences),
+          LegacyLearningRecord,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LegacyLearningRecordsTableTableManager(
+    _$AppDatabase db,
+    $LegacyLearningRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LegacyLearningRecordsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LegacyLearningRecordsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LegacyLearningRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sourceTable = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LegacyLearningRecordsCompanion(
+                id: id,
+                ownerId: ownerId,
+                sourceTable: sourceTable,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sourceTable,
+                required String payloadJson,
+                Value<int> rowid = const Value.absent(),
+              }) => LegacyLearningRecordsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sourceTable: sourceTable,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LegacyLearningRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LegacyLearningRecordsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LegacyLearningRecordsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LegacyLearningRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LegacyLearningRecordsTable,
+      LegacyLearningRecord,
+      $$LegacyLearningRecordsTableFilterComposer,
+      $$LegacyLearningRecordsTableOrderingComposer,
+      $$LegacyLearningRecordsTableAnnotationComposer,
+      $$LegacyLearningRecordsTableCreateCompanionBuilder,
+      $$LegacyLearningRecordsTableUpdateCompanionBuilder,
+      (LegacyLearningRecord, $$LegacyLearningRecordsTableReferences),
+      LegacyLearningRecord,
+      PrefetchHooks Function({bool ownerId})
+    >;
 typedef $$AssociativeMemoryStatesTableCreateCompanionBuilder =
     AssociativeMemoryStatesCompanion Function({
       required String id,
@@ -67575,6 +68329,8 @@ class $AppDatabaseManager {
       $$LearningDayLogTableTableManager(_db, _db.learningDayLog);
   $$AssociationRecordsTableTableManager get associationRecords =>
       $$AssociationRecordsTableTableManager(_db, _db.associationRecords);
+  $$LegacyLearningRecordsTableTableManager get legacyLearningRecords =>
+      $$LegacyLearningRecordsTableTableManager(_db, _db.legacyLearningRecords);
   $$AssociativeMemoryStatesTableTableManager get associativeMemoryStates =>
       $$AssociativeMemoryStatesTableTableManager(
         _db,
