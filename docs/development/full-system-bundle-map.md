@@ -1,6 +1,6 @@
 # LexiQuest — Bundle Map
 
-Revision `2026-09-13-bundles-4` · 9phases/64requirements · **accepted5 + remaining59 in20bundles**
+Revision `2026-09-14-camera-training-5` · 9phases/67requirements · **accepted5 + remaining62 in21bundles**
 
 G0.1–G0.5เป็นacceptedhistory. G0.5base `9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe`. ตารางเปลี่ยนหน่วยdispatchเท่านั้น; อ่านscope/acceptance/testsเดิมจากpackagebriefเมื่อถึงข้อ. [Index](full-system-task-index.json) เป็นregistry; [workflow](full-system-package-workflow.md) กำหนดwriter/commit/handoff
 
@@ -17,6 +17,7 @@ G0.1–G0.5เป็นacceptedhistory. G0.5base `9125ae7b9ccff15bb44ebbab455b8b
 | B09 | G4.1–G4.3 | 3 | [Navigation goals และ effort](../superpowers/bundle-briefs/B09.md) | Today/navigation, goals/reminders และ effort/timer ใช้ active learning/read models ร่วมกัน |
 | B10 | G4.4–G4.6 | 3 | [Motivation และ preferences](../superpowers/bundle-briefs/B10.md) | reward/quest/streak readers ต่อกับ avatar/achievements และ lifecycle/preferences ของประสบการณ์เดียวกัน |
 | B11 | G5.1–G5.3 | 3 | [Camera runtime](../superpowers/bundle-briefs/B11.md) | permission/model lifecycle → uncertainty/accept decision → saved vocabulary เป็น runtime transaction ต่อเนื่อง |
+| B11A | G5.3a–G5.3c | 3 | [Internet dataset และ actual training](../superpowers/bundle-briefs/B11A.md) | source rights/taxonomy → curated split → actual training/export |
 | B12 | G5.4–G5.6 | 3 | [Model evaluation และ evidence](../superpowers/bundle-briefs/B12.md) | dataset/model pins, metrics/resources และ device/rollback evidence ต้องอยู่บน evaluation freeze เดียวกัน |
 | B13 | G6.1–G6.3 | 3 | [AI session และ provider](../superpowers/bundle-briefs/B13.md) | context/intent, request cancellation และ provider/usage finalization ใช้ attempt/session identity ร่วมกัน |
 | B14 | G6.4–G6.6 | 3 | [Speech evidence และ quality](../superpowers/bundle-briefs/B14.md) | speech gateways เชื่อม speaking/shadowing/dictation และ quality/no-key journey โดยคงแยก scored/unscored evidence |
@@ -28,3 +29,7 @@ G0.1–G0.5เป็นacceptedhistory. G0.5base `9125ae7b9ccff15bb44ebbab455b8b
 | B20 | G8.8–G8.9 | 2 | [Defect closure และ final ledger](../superpowers/bundle-briefs/B20.md) | defect/retest/affected regression ปิดก่อนสรุป coverage/review/test/cleanup และ final release ledger |
 
 ไม่มีการข้ามdependency/เปลี่ยนลำดับ: review/fixes B18 ก่อนTest Plan/execution B19 แล้วdefect closure/finalledger B20. Package/commitไม่สร้างtask. การจัดกลุ่มตรวจร่วมกับexistingownerpaths/testownershipใน [coupling evidence](full-system/evidence/bundles-4/coupling.json)
+
+## Camera training amendment — 2026-09-14
+
+Canonical revision `2026-09-14-camera-training-5`: คง64 requirement IDsเดิม เพิ่ม G5.3a–c รวม67packages/21bundles (B11Aเพิ่มหนึ่งbundle). ลำดับ B11 → B11A → B12 → B13…B20. ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน. Trainingจริงเป็นrequired deliverable; baseline retentionหรือเอกสารไม่ปิดG5.3c. ใช้ source rights/actual compute และไม่เพิ่มค่าใช้จ่ายโดยอนุมาน.

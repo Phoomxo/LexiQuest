@@ -1,18 +1,18 @@
 # LexiQuest Full-System Master Development Plan
 
-> **Current execution authority:** หลังG0.5 ผู้ใช้อนุมัติหนึ่งtaskต่อชุดงานที่ใช้code/context/testsร่วมกัน ตาม [Bundle Workflow](../../development/full-system-package-workflow.md). คง64requirement packages; Astra/Medium; writerหนึ่งตัว ไม่มีsubagents/parallel implementation
+> **Current execution authority:** หลังG0.5 ผู้ใช้อนุมัติหนึ่งtaskต่อชุดงานที่ใช้code/context/testsร่วมกัน ตาม [Bundle Workflow](../../development/full-system-package-workflow.md). คง64IDsเดิม เพิ่ม3 รวม67requirement packages; Astra/Medium; writerหนึ่งตัว ไม่มีsubagents/parallel implementation
 
-**Revision:** 2026-09-13 / bundles-4
-**Status:** GROUPED EXECUTION AUTHORIZED — G0.1–G0.5 accepted; 59packagesใน20bundles
+**Revision:** 2026-09-14-camera-training-5
+**Status:** GROUPED EXECUTION AUTHORIZED — G0.1–G0.5 accepted; 62packagesหลังG0.5ใน21bundles
 **Goal:** ทำให้ LexiQuest เรียนภาษาอังกฤษแบบ local-first ได้จริง ปิด known coverage gaps โดยใช้ authority เดิม ตรวจโค้ดทั้งแอป แล้วทดสอบระบบที่พัฒนาเสร็จพร้อมเก็บปัญหาและผล retest  
 **Architecture:** view → controller/use case → canonical repository/event/receipt → read model → view; AI/voice/camera/sync เป็น adapters ที่มี cancellation และ failure boundaries การเรียนหลักใช้ได้โดยไม่ต้องมี AI/cloud/การจ่ายเงิน  
 **Tech Stack:** Flutter/Dart, Drift/SQLite, existing LiteRT/voice/AI gateways, Python camera tooling, existing backend/policy emulators และ `tool/cli/verify-scope.ps1`
 
-คำสั่งใหม่หลังG0.5 เปลี่ยนจากหนึ่งtaskต่อpackageเป็นหนึ่งtaskต่อbundle. Accepted G0.5 SHA `9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe` เป็นฐานrevisionนี้; 5ข้อแรกเก็บประวัติไม่ย้อนทำ. [Task/Bundle Index](../../development/full-system-task-index.json) แยก64requirementsจาก20futuredispatches. รับsourceจริงจากhandoff ไม่ใช้seed7712. [Rule Register](../../development/2026-09-13-rule-supersession-register.md) ยกเลิกper-packageauto-dispatchและบันทึกgroupedauthorizationที่แทนpause17; runtimePASSยังต้องมีหลักฐาน
+คำสั่งใหม่หลังG0.5 เปลี่ยนจากหนึ่งtaskต่อpackageเป็นหนึ่งtaskต่อbundle. Accepted G0.5 SHA `9125ae7b9ccff15bb44ebbab455b8b0251c8fcfe` เป็นฐานrevisionนี้; 5ข้อแรกเก็บประวัติไม่ย้อนทำ. [Task/Bundle Index](../../development/full-system-task-index.json) แยก67requirementsจาก21bundles. รับsourceจริงจากhandoff ไม่ใช้seed7712. [Rule Register](../../development/2026-09-13-rule-supersession-register.md) ยกเลิกper-packageauto-dispatchและบันทึกgroupedauthorizationที่แทนpause17; runtimePASSยังต้องมีหลักฐาน
 
 ## สารบัญและจำนวนงาน
 
-แผนมี **9 หัวข้อหลัก (G0–G8), 64 หัวข้อย่อย (P0.1–P8.9)**. จำนวนนี้เป็น work packages ไม่ใช่จำนวน features หรือ tests. แต่ละ package ปิดช่องว่างตามข้อมูลจริง; ของที่ทำแล้วและหลักฐานยังตรง source ได้รับ baseline credit
+แผนมี **9 หัวข้อหลัก (G0–G8), 67 หัวข้อย่อย (64IDsเดิม P0.1–P8.9 + P5.3a–P5.3c)**. จำนวนนี้เป็น work packages ไม่ใช่จำนวน features หรือ tests. แต่ละ package ปิดช่องว่างตามข้อมูลจริง; ของที่ทำแล้วและหลักฐานยังตรง source ได้รับ baseline credit
 
 | หัวข้อหลัก | จำนวนหัวข้อย่อย | ต้องผ่านก่อน | ผลส่งมอบหลัก |
 | --- | ---: | --- | --- |
@@ -21,7 +21,7 @@
 | G2 บทเรียน มินิเกม และ UI foundation | 8 | G1 | 14 LessonModes และ 2 journeys มี interaction/availability/accessibility contract แยกกัน |
 | G3 เนื้อหา การทบทวน และความก้าวหน้า | 7 | G1, G2 | content version, explanations, review, analytics และ assessment constraints ตรวจย้อนกลับได้ |
 | G4 Today การนำทาง และแรงจูงใจ | 6 | G2, G3 | เริ่มฝึกง่าย มีอิสระเลือก; timer/goals/rewards/preferences ไม่สร้างข้อมูลซ้ำ |
-| G5 กล้องและการประเมินโมเดล | 6 | G1, G4 | camera lifecycle และ uncertainty ใช้งานได้; candidate มีหลักฐานหรือคง baseline พร้อมข้อจำกัด |
+| G5 กล้องและการประเมินโมเดล | 9 | G1, G4 | camera lifecycle และ uncertainty ใช้งานได้; candidate มีหลักฐานหรือคง baseline พร้อมข้อจำกัด |
 | G6 AI Tutor และเสียง | 6 | G3, G4 | บริบทและ cancellation ปลอด stale state; no-key/no-audio fallback ใช้งานได้และบันทึก usage ตามจริง |
 | G7 Backend, sync, policy และการเตรียมส่งมอบ | 7 | G1, G3, G5, G6 | owner lifecycle, offline recovery, runtime edition และ backend boundaries ผ่าน local acceptance |
 | G8 รีวิวโค้ดทั้งแอป Test Plan และตรวจใช้งานจริง | 9 | G0, G1, G2, G3, G4, G5, G6, G7 | review ledger ครบ, Test Plan หลัง review, actual test/defect/retest evidence และ release ledger ที่ระบุข้อจำกัด |
@@ -425,7 +425,7 @@ G0–G8 มีข้อย่อย **8 / 7 / 8 / 7 / 6 / 6 / 6 / 7 / 9 = 64**. 
 - **ตรวจรับ:** preferences ไม่ถูกเรียกว่า validated placement/CEFR score; platform disableAnimations มีผลจริง; ไม่มีเสียงหรือ motion ก็ทำ task หลักครบ
 - **Verification:** `test/screens/learning_preference_quiz_screen_test.dart`, `test/features/preferences/learner_preferences_use_cases_test.dart`, `test/features/preferences/display_preferences_controller_test.dart`
 
-## G5 — กล้องและการประเมินโมเดล (6 หัวข้อย่อย)
+## G5 — กล้องและการประเมินโมเดล (9 หัวข้อย่อย)
 
 **Dependency:** G1, G4 · **Gate outcome:** camera lifecycle และ uncertainty ใช้งานได้; candidate มีหลักฐานหรือคง baseline พร้อมข้อจำกัด
 
@@ -453,11 +453,36 @@ G0–G8 มีข้อย่อย **8 / 7 / 8 / 7 / 6 / 6 / 6 / 7 / 9 = 64**. 
 - **ตรวจรับ:** save เดียวเกิดคำ/receipt ครั้งเดียว; retry ไม่มีข้อมูลค้างข้าม owner; failure มีทางทำซ้ำและไม่กล่าว saved ก่อน durable ack
 - **Verification:** `test/features/media_practice/object_scanner_use_cases_test.dart`, `test/screens/object_scanner_screen_test.dart`, `test/screens/offline_vocabulary_journey_test.dart`
 
+## Scope amendment: internet dataset และ actual training
+
+ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน.
+
+### P5.3a Taxonomy, source rights และ compute inventory
+
+- [ ] **งาน:** ตรวจ tools/train_camera_pilot.py, tools/export_camera_pilot.py, tools/camera_accuracy.py, existing model/label manifest และ compute จริงก่อนเลือก fine-tune. กำหนดประเภทสิ่งของเชื่อมคำศัพท์ ไม่อนุมาน SKU/แบรนด์. สำรวจ 7-Eleven, Big C, Lotus’s, Makro และแหล่งอาหาร/วัตถุดิบ/ของใช้/เครื่องมือ/วัสดุก่อสร้างอื่นจากเว็บจริง; บันทึก access/usage evidence และ alternatives. ภาพสาธารณะไม่ใช่สิทธิ์ฝึกอัตโนมัติ; ไม่ bypass access. ไม่รอผู้ใช้ถ่ายภาพกล้องเพื่อเริ่ม train.
+- **ตรวจรับ:** มี taxonomy/label-to-vocabulary contract, source inventory พร้อมหลักฐานสิทธิ์/การเข้าถึงจริงและทางเลือกที่ใช้ได้, toolchain/compute inventory กับวิธีฝึกที่ทำได้; ไม่ claim collection/training ก่อนมี artifacts.
+- **Requirements:** COV-f13, COV-f41, A-MODEL, FORM-09, G5 · **Dependency:** P5.3 · **Bundle:** B11A
+- **Verification:** source/rights/dataset/training/export artifactsจริง + relevant bounded contracts; รายละเอียดใน [brief](../task-briefs/full-system/G5.3a.md).
+
+### P5.3b Curated internet dataset และ group split
+
+- [ ] **งาน:** เก็บภาพอินเทอร์เน็ตจริงจากแหล่งที่ใช้งานได้ พร้อม URL/source/license-or-usage-evidence/SHA256/label/acquiredAt. ตรวจ labels/ภาพเสีย/exact และ near duplicates; group split ตามสินค้า/ภาพที่เกี่ยวข้อง/source group ไม่ให้ train/validation รั่วไหล. Version dataset, taxonomy, split seed และ manifest; ไม่ commit bulk images โดยปริยาย. Unknown coverage แยกชัดเจน; ภาพกล้องจริงเป็น evaluation ภายหลัง ไม่ปะปน training/validation.
+- **ตรวจรับ:** มี acquired dataset จริงและ reproducible manifest; validator ผ่าน label/provenance/hash/dedup/group-disjoint checks; train/validation ใช้ภาพเว็บ แยกกล้องจริงและ fresh test. แหล่งใช้ไม่ได้มี disposition/alternative จริง ไม่เติมข้อมูลเทียม.
+- **Requirements:** COV-f13, COV-f41, A-MODEL, FORM-09, G5 · **Dependency:** P5.3a · **Bundle:** B11A
+- **Verification:** source/rights/dataset/training/export artifactsจริง + relevant bounded contracts; รายละเอียดใน [brief](../task-briefs/full-system/G5.3b.md).
+
+### P5.3c Reproducible training และ compatible candidate export
+
+- [ ] **งาน:** ฝึก/fine-tune จริงด้วย toolchain/compute ที่ตรวจแล้ว; freeze dataset/config/seed และบันทึก raw training logs, checkpoint, measured train/validation metrics, dataset/model versions. Export candidate ให้เข้ากับ input/output/preprocess/label/background-class ของแอป พร้อม hash/compatible manifest และ rollback. ไม่มีสิทธิ์ค่าใช้จ่ายใหม่โดยอนุมาน; ทางเลือกที่เหมาะสมให้ทำต่อเอง. เอกสาร, synthetic pass หรือ baseline retention ไม่เท่ากับ training สำเร็จ.
+- **ตรวจรับ:** มี completed training run และ checkpoint/metrics/export bytes จริงตรวจ hash/load/shape/labels ได้; run/config/dataset pins replay ได้, rollback documented; B12 รับ candidate เหล่านี้ประเมินต่อ. หาก concrete external blocker ยังทำให้ฝึกจริงไม่ได้ ห้าม mark accepted หรือส่งต่อราวกับ training เสร็จ.
+- **Requirements:** COV-f13, COV-f41, A-MODEL, FORM-09, G5 · **Dependency:** P5.3b · **Bundle:** B11A
+- **Verification:** source/rights/dataset/training/export artifactsจริง + relevant bounded contracts; รายละเอียดใน [brief](../task-briefs/full-system/G5.3c.md).
+
 ### P5.4 Dataset provenance และ validation freeze
 
 - [ ] **งานและการออกแบบ:** รับ F3 v2 เป็น baseline; audit license/hash/source-group/splits/model identity, known/unknown natural images และ validation coverage; freeze threshold ก่อนเปิด fresh test; dataset ไม่ครบให้ reportgap และ retainbaseline
 - **Owner files:** `tools/camera_accuracy.py`, `tools/test_camera_accuracy.py`, `lib/features/device_model/domain/model_manifest.dart`
-- **Requirements:** A-MODEL, FORM-09, G5 · **รับเข้าจาก:** P5.3
+- **Requirements:** A-MODEL, FORM-09, G5 · **รับเข้าจาก:** P5.3c
 - **ตรวจรับ:** validation predictions/hash/counts/IDs/metrics recompute ตรงกัน; malformed/nonfinite/missingdata fail closed; เคยเปิด test แล้วคง development label ไม่ทำเป็น fresh
 - **Verification:** `tools/test_camera_accuracy.py`
 
@@ -822,3 +847,5 @@ CLI/Python recipes เป็น targeted exceptions ที่มีในR15 pro
 R15.1–R15.10เสร็จไม่ได้แปลว่าMasterเสร็จ; codeมีอยู่ไม่ได้แปลว่าruntimeเปิดหรือผ่าน. “ครบถ้วน” หมายถึงknown-agreed-scopeมีปลายทางและrequiredacceptanceมีหลักฐานตามedition ไม่ใช่รับรองว่าได้เล่นทุกfeatureของคู่เทียบหรือไม่มีunknowndefect. หากexternalrequiredยังไม่ผ่านต้องเปิดเผยและไม่เรียกfullreleasePASS
 
 **การดำเนินงานปัจจุบัน:** groupedexecutionหลังG0.5: 5accepted history +59requirementsใน20bundles. Astra/Medium, writerหนึ่งตัว, dispatchเมื่อbundleผ่านเท่านั้น. G8.2–G8.3 review/fixesต้องจบก่อนG8.4 Test Plan/execution. Pauseใหม่หยุดsuccession
+
+Current camera amendment: B11Aฝึกจริงก่อนB12ประเมิน. B18/G8รวม dataset/training/export/runtime changes ในwhole-app reviewเดียว; B19device testingเก็บกล้องจริงและunknown fresh set. Countsเดิม64/20ในข้อความประวัติไม่ใช่currentdispatch.

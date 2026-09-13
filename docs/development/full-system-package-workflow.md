@@ -1,12 +1,12 @@
 # LexiQuest — Workflow สำหรับชุดงาน
 
-Revision `2026-09-13-bundles-4` · Astra (`gpt-6-astra`) / `medium`
+Revision `2026-09-14-camera-training-5` · Astra (`gpt-6-astra`) / `medium`
 
 - User branch policy: use `lexiquest/` only; never use codex/codeic in branch names. Inspect native worktree names and rename before source writes. Preserve accepted historical receipts; see external `branch-naming-policy.json`.
 
 ## สิทธิ์และหน่วยงาน
 
-ผู้ใช้เปลี่ยนวิธีส่งต่อหลัง G0.5 เสร็จ: **หนึ่ง task ต่อชุดงานที่ใช้ code/context/tests ร่วมกัน**. คง9phases/64requirement packages และ acceptanceทั้งหมด. G0.1–G0.5 เป็นประวัติ accepted; 59packagesที่เหลืออยู่ใน20bundles B01–B20 ตาม [index](full-system-task-index.json). G/P ยังเป็น aliases ของ requirement unit เดียวกัน; B คือหน่วย dispatch. `nextPackage` ไม่ใช่คำสั่งสร้าง task
+ผู้ใช้เปลี่ยนวิธีส่งต่อหลัง G0.5 เสร็จ: **หนึ่ง task ต่อชุดงานที่ใช้ code/context/tests ร่วมกัน**. คง64IDsเดิม เพิ่ม3รายการ รวม9phases/67requirement packages และ acceptanceทั้งหมด. G0.1–G0.5 เป็นประวัติ accepted; 62packagesหลังG0.5อยู่ใน21bundles B01–B20+B11A ตาม [index](full-system-task-index.json). G/P ยังเป็น aliases ของ requirement unit เดียวกัน; B คือหน่วย dispatch. `nextPackage` ไม่ใช่คำสั่งสร้าง task
 
 คำอนุมัติใหม่ผ่าน origin task `01a095a8-40ba-7031-817d-406822b5d3aa` ให้ master แก้ workflow หลัง G0.5 completionจริง และเริ่ม B01/G0.6–G0.8 เมื่อ consistency checksผ่าน. ค่า executionAuthorized=false ใน run-state revision17 หยุด successionแบบเก่าเท่านั้น และถูกแทนด้วย grouped authorizationที่บันทึกในmigration. คำสั่ง pause/stopใหม่จากผู้ใช้ยังมีลำดับสูงสุด
 
@@ -43,7 +43,7 @@ Revision `2026-09-13-bundles-4` · Astra (`gpt-6-astra`) / `medium`
 Control directory:
 `C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration`
 
-- `run-state.json` schema2: executionMode, authorization/revision, packageStates64, acceptedHistory5, bundles20, currentWriter/currentPackageId, dispatchReservation และ accepted sourceล่าสุด
+- `run-state.json` schema2: executionMode, authorization/revision, packageStates67, acceptedHistory5, bundles21, currentWriter/currentPackageId, dispatchReservation และ accepted sourceล่าสุด
 - `migrations/bundles-4/`: revision17 snapshot และ migration evidence; bootstrap7712/G0.1–G0.5 receiptsคงเป็นประวัติ
 - `packages/Gx.y.json`: package acceptanceใหม่ภายในbundle; อ่านแทนold per-package task handoff
 - `handoffs/orchestration/bundles-4.json`: accepted workflow commit + G0.5parent + validationสำหรับ B01
@@ -76,3 +76,7 @@ B18ทำ G8.1 freeze → G8.2รีวิวโค้ดทั้งแอป�
 ถ้าcontextใกล้เต็มให้checkpointในbundle report + structuredstateและใช้compactionในtaskเดิม. ไม่dispatchกลางbundleเพื่อแก้contextและไม่ย้อนทำacceptedpackages; resumeจากreceipt/currentPackageIdและinputsที่เปลี่ยน. Pause/stopใหม่หยุดdispatchและรักษาcheckpoint
 
 - Recovery policy (user update 2026-09-13): stop a failed method, preserve evidence, diagnose, use a corrected bounded method and continue without repeated permission. Repeated failures or ten minutes without progress require a new diagnostic approach, not ending the task. Diagnose, fix and rerun affected tests autonomously until acceptance is proven. Stop only for a user pause or a concrete indispensable external blocker with no safe useful work remaining. Never skip/disable tests, weaken assertions or acceptance, hide errors, use noncompliant fallbacks, claim unproven PASS, or move unresolved defects to a successor to bypass a gate. Fixture corrections must preserve or strengthen real behavior checks and record the cause. Use `rg --files -g` for glob discovery and literal existing paths for reads; never put wildcards in Windows path arguments. Preserve gates and propagate external `recovery-policy.json` in every successor.
+
+## Camera training amendment — 2026-09-14
+
+Canonical revision `2026-09-14-camera-training-5`: คง64 requirement IDsเดิม เพิ่ม G5.3a–c รวม67packages/21bundles (B11Aเพิ่มหนึ่งbundle). ลำดับ B11 → B11A → B12 → B13…B20. ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน. Trainingจริงเป็นrequired deliverable; baseline retentionหรือเอกสารไม่ปิดG5.3c. ใช้ source rights/actual compute และไม่เพิ่มค่าใช้จ่ายโดยอนุมาน.

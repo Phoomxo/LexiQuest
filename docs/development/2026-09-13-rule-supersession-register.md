@@ -52,3 +52,7 @@ G0.6 มีงาน active-index / historical / superseded / archive / unrefere
 การแก้ครั้งนี้ทำให้ข้อจำกัดเก่าที่ขัดกัน **ไม่มีผลเป็นคำสั่งปัจจุบัน** และเตรียม task ที่รับผิดชอบ cleanup ไว้แล้ว. การลบ/ย้ายไฟล์ application และการอัปเดต GitHub เป็นงานคนละขั้น ไม่กล่าวว่าทำแล้วจากการแก้เอกสาร
 
 Latest user resume (2026-09-13): complete all authorized bundles through B20; prior pause is superseded. Recovery schema2 supersedes automatic task stops for repeated failures or ten-minute stalls. Change the diagnostic method, fix and retest without weakening acceptance; preserve failed evidence and propagate the policy.
+
+## Camera training scope amendment — 2026-09-14
+
+67requirements =64original IDs+G5.3a/G5.3b/G5.3c; 21bundles =B01–B20+B11A. Source rights/acquisition/group split/actual training/exportเป็นrequiredก่อนB12; originalcoverage/catalog44ยังเก็บidentityเดิมและextendCOV-f13/COV-f41. ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน. B18whole-app review/B19SystemTest/B20ledgerรวมผลใหม่. No runtime/training PASSจากการแก้แผนนี้.

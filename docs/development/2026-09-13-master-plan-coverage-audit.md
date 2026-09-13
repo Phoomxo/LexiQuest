@@ -160,3 +160,7 @@
 ## 8. Verification ของaudit
 
 อ่านsourcecatalogและLessonModeจาก842cเทียบเอกสาร4366, ตรวจmanifestภาพ49entriesและsource-reportlimitations, ค้นexistingpathsของscratchpad/assessment/preferences/share/offline/nativegamesและtests. ไม่รันFlutter/Pythonmodel/test/buildในauditนี้และไม่แก้worktree842cที่กำลังมีreviewchanges. การพบไฟล์มีอยู่ช่วยป้องกันสร้างซ้ำ ไม่เท่ากับruntimeverification
+
+## Camera training scope amendment — 2026-09-14
+
+67requirements =64original IDs+G5.3a/G5.3b/G5.3c; 21bundles =B01–B20+B11A. Source rights/acquisition/group split/actual training/exportเป็นrequiredก่อนB12; originalcoverage/catalog44ยังเก็บidentityเดิมและextendCOV-f13/COV-f41. ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน. B18whole-app review/B19SystemTest/B20ledgerรวมผลใหม่. No runtime/training PASSจากการแก้แผนนี้.

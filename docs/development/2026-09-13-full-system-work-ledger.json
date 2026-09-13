@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "revision": "2026-09-13-bundles-4",
+  "revision": "2026-09-14-camera-training-5",
   "executionState": "authorized-bundles-after-G0.5",
   "executionAuthorized": true,
   "source": {
@@ -76,13 +76,13 @@
     {
       "id": 5,
       "title": "กล้องและการประเมินโมเดล",
-      "count": 6,
+      "count": 9,
       "depends": [
         "G1",
         "G4"
       ],
       "gate": "G5",
-      "outcome": "camera lifecycle และ uncertainty ใช้งานได้; candidate มีหลักฐานหรือคง baseline พร้อมข้อจำกัด"
+      "outcome": "Camera runtime accepted; acquired internet dataset and actual reproducible training/export required; evaluate candidate with pending physical-camera gates disclosed."
     },
     {
       "id": 6,
@@ -1499,6 +1499,105 @@
       "bundleId": "B11"
     },
     {
+      "id": "P5.3a",
+      "displayId": "G5.3a",
+      "title": "Taxonomy, source rights และ compute inventory",
+      "requirements": [
+        "COV-f13",
+        "COV-f41",
+        "A-MODEL",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "tools/train_camera_pilot.py",
+        "tools/export_camera_pilot.py",
+        "tools/camera_accuracy.py",
+        "lib/features/device_model"
+      ],
+      "testTargets": [
+        "tools/test_camera_accuracy.py",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "source-rights-and-compute",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3a.md",
+      "bundleId": "B11A",
+      "scope": "ตรวจ tools/train_camera_pilot.py, tools/export_camera_pilot.py, tools/camera_accuracy.py, existing model/label manifest และ compute จริงก่อนเลือก fine-tune. กำหนดประเภทสิ่งของเชื่อมคำศัพท์ ไม่อนุมาน SKU/แบรนด์. สำรวจ 7-Eleven, Big C, Lotus’s, Makro และแหล่งอาหาร/วัตถุดิบ/ของใช้/เครื่องมือ/วัสดุก่อสร้างอื่นจากเว็บจริง; บันทึก access/usage evidence และ alternatives. ภาพสาธารณะไม่ใช่สิทธิ์ฝึกอัตโนมัติ; ไม่ bypass access. ไม่รอผู้ใช้ถ่ายภาพกล้องเพื่อเริ่ม train.",
+      "acceptance": "มี taxonomy/label-to-vocabulary contract, source inventory พร้อมหลักฐานสิทธิ์/การเข้าถึงจริงและทางเลือกที่ใช้ได้, toolchain/compute inventory กับวิธีฝึกที่ทำได้; ไม่ claim collection/training ก่อนมี artifacts."
+    },
+    {
+      "id": "P5.3b",
+      "displayId": "G5.3b",
+      "title": "Curated internet dataset และ group split",
+      "requirements": [
+        "COV-f13",
+        "COV-f41",
+        "A-MODEL",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "tools/train_camera_pilot.py",
+        "tools/export_camera_pilot.py",
+        "tools/camera_accuracy.py",
+        "lib/features/device_model"
+      ],
+      "testTargets": [
+        "tools/test_camera_accuracy.py",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "dataset-integrity",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.3a"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3b.md",
+      "bundleId": "B11A",
+      "scope": "เก็บภาพอินเทอร์เน็ตจริงจากแหล่งที่ใช้งานได้ พร้อม URL/source/license-or-usage-evidence/SHA256/label/acquiredAt. ตรวจ labels/ภาพเสีย/exact และ near duplicates; group split ตามสินค้า/ภาพที่เกี่ยวข้อง/source group ไม่ให้ train/validation รั่วไหล. Version dataset, taxonomy, split seed และ manifest; ไม่ commit bulk images โดยปริยาย. Unknown coverage แยกชัดเจน; ภาพกล้องจริงเป็น evaluation ภายหลัง ไม่ปะปน training/validation.",
+      "acceptance": "มี acquired dataset จริงและ reproducible manifest; validator ผ่าน label/provenance/hash/dedup/group-disjoint checks; train/validation ใช้ภาพเว็บ แยกกล้องจริงและ fresh test. แหล่งใช้ไม่ได้มี disposition/alternative จริง ไม่เติมข้อมูลเทียม."
+    },
+    {
+      "id": "P5.3c",
+      "displayId": "G5.3c",
+      "title": "Reproducible training และ compatible candidate export",
+      "requirements": [
+        "COV-f13",
+        "COV-f41",
+        "A-MODEL",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "tools/train_camera_pilot.py",
+        "tools/export_camera_pilot.py",
+        "tools/camera_accuracy.py",
+        "lib/features/device_model"
+      ],
+      "testTargets": [
+        "tools/test_camera_accuracy.py",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "actual-training-and-export",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.3b"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3c.md",
+      "bundleId": "B11A",
+      "scope": "ฝึก/fine-tune จริงด้วย toolchain/compute ที่ตรวจแล้ว; freeze dataset/config/seed และบันทึก raw training logs, checkpoint, measured train/validation metrics, dataset/model versions. Export candidate ให้เข้ากับ input/output/preprocess/label/background-class ของแอป พร้อม hash/compatible manifest และ rollback. ไม่มีสิทธิ์ค่าใช้จ่ายใหม่โดยอนุมาน; ทางเลือกที่เหมาะสมให้ทำต่อเอง. เอกสาร, synthetic pass หรือ baseline retention ไม่เท่ากับ training สำเร็จ.",
+      "acceptance": "มี completed training run และ checkpoint/metrics/export bytes จริงตรวจ hash/load/shape/labels ได้; run/config/dataset pins replay ได้, rollback documented; B12 รับ candidate เหล่านี้ประเมินต่อ. หาก concrete external blocker ยังทำให้ฝึกจริงไม่ได้ ห้าม mark accepted หรือส่งต่อราวกับ training เสร็จ."
+    },
+    {
       "id": "P5.4",
       "title": "Dataset provenance และ validation freeze",
       "requirements": [
@@ -1517,7 +1616,7 @@
       "verificationKind": "python-camera",
       "status": "waiting-predecessor",
       "dependencies": [
-        "P5.3"
+        "P5.3c"
       ],
       "verificationArea": "Learning",
       "plannedCommands": [],
@@ -3436,7 +3535,10 @@
         "P5.2",
         "P5.3",
         "P6.4",
-        "P6.5"
+        "P6.5",
+        "P5.3a",
+        "P5.3b",
+        "P5.3c"
       ],
       "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
       "sourcePin": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
@@ -6138,7 +6240,10 @@
       "packages": [
         "P0.8",
         "P1.7",
-        "P7.5"
+        "P7.5",
+        "P5.3a",
+        "P5.3b",
+        "P5.3c"
       ],
       "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
       "sourcePin": "e3b21146a7ba0b4f6366d0f70830b9cc2c6c6919",
@@ -8827,17 +8932,17 @@
   },
   "masterPlan": "docs/superpowers/plans/2026-09-13-lexiquest-full-system-master-plan.md",
   "proseAuthority": "master plan; ledger indexes identifiers, dependencies, targets and status only",
-  "packageCount": 64,
+  "packageCount": 67,
   "taskOrchestration": {
     "executionMode": "bundles",
     "index": "docs/development/full-system-task-index.json",
     "workflow": "docs/development/full-system-package-workflow.md",
     "model": "gpt-6-astra",
     "thinking": "medium",
-    "packageCount": 64,
+    "packageCount": 67,
     "acceptedHistoryCount": 5,
-    "remainingPackageCount": 59,
-    "bundleCount": 20,
+    "remainingPackageCount": 62,
+    "bundleCount": 21,
     "statusAuthority": "external schema2 run-state, package receipts and accepted bundle handoffs",
     "packageStatesAre": "G0.1-G0.5 synchronized from accepted handoffs; later scheduling states are not runtime acceptance",
     "controlDirectory": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration",
@@ -8853,5 +8958,82 @@
     "manifest": "docs/development/full-system/evidence/G0.5/source-manifest.json",
     "runtimeVerified": false,
     "compatibility": "Historical 44-feature generated catalog remains unchanged; 74 overlapping coverage identities preserved."
+  },
+  "scopeAmendment": {
+    "id": "camera-training-2026-09-14",
+    "authority": "Explicit user scope amendment relayed by master task01a09888-61dd-7680-9b19-c33035043d59",
+    "preservedOriginalPackageIds": [
+      "P0.1",
+      "P0.2",
+      "P0.3",
+      "P0.4",
+      "P0.5",
+      "P0.6",
+      "P0.7",
+      "P0.8",
+      "P1.1",
+      "P1.2",
+      "P1.3",
+      "P1.4",
+      "P1.5",
+      "P1.6",
+      "P1.7",
+      "P2.1",
+      "P2.2",
+      "P2.3",
+      "P2.4",
+      "P2.5",
+      "P2.6",
+      "P2.7",
+      "P2.8",
+      "P3.1",
+      "P3.2",
+      "P3.3",
+      "P3.4",
+      "P3.5",
+      "P3.6",
+      "P3.7",
+      "P4.1",
+      "P4.2",
+      "P4.3",
+      "P4.4",
+      "P4.5",
+      "P4.6",
+      "P5.1",
+      "P5.2",
+      "P5.3",
+      "P5.4",
+      "P5.5",
+      "P5.6",
+      "P6.1",
+      "P6.2",
+      "P6.3",
+      "P6.4",
+      "P6.5",
+      "P6.6",
+      "P7.1",
+      "P7.2",
+      "P7.3",
+      "P7.4",
+      "P7.5",
+      "P7.6",
+      "P7.7",
+      "P8.1",
+      "P8.2",
+      "P8.3",
+      "P8.4",
+      "P8.5",
+      "P8.6",
+      "P8.7",
+      "P8.8",
+      "P8.9"
+    ],
+    "addedPackageIds": [
+      "P5.3a",
+      "P5.3b",
+      "P5.3c"
+    ],
+    "sequence": "B11 → B11A → B12 → B13…B20",
+    "physicalCameraPolicy": "Internet train/validation now; real-camera evaluation later in actual device testing; pending until performed; inspected camera failures become development data and require a fresh held-out acceptance set."
   }
 }
