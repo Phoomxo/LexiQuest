@@ -41,6 +41,143 @@ void main() {
     if (await directory.exists()) await directory.delete(recursive: true);
   });
 
+  test(
+    'B08 cancellation drains staging without publishing and can retry',
+    () async {
+      final bytes = Uint8List.fromList(utf8.encode('cancelled-pack'));
+      final identity = await _seedManifest(database, 'cancel-pack', bytes);
+      final staged = Completer<void>();
+      final release = Completer<void>();
+      final adapter = _BlockingAdapter(bytes, staged: staged, release: release);
+      final manager = VerifiedOfflineContentManager(
+        repository: repository,
+        adapters: [adapter],
+        removalAuthority: const UnpinnedOfflineContentRemovalAuthority(),
+        rootDirectory: () async => directory,
+        nowUtc: () => nowUtc,
+      );
+      expect(await manager.requiredBytes(identity), bytes.length);
+      final pending = manager.download(identity);
+      await staged.future;
+      final cancellation = manager.cancelDownload(identity);
+      expect(
+        (await repository.state(identity)).status,
+        OfflineContentStatus.downloading,
+      );
+      release.complete();
+      expect(await cancellation, isTrue);
+      expect((await pending).status, OfflineContentStatus.interrupted);
+      expect(
+        await directory
+            .list(recursive: true)
+            .where((entry) => entry is File)
+            .length,
+        0,
+      );
+      expect((await repository.catalog()).single.identity, identity);
+      expect(
+        (await manager.repair(identity)).status,
+        OfflineContentStatus.verified,
+      );
+      expect(await manager.cancelDownload(identity), isFalse);
+      await manager.dispose();
+    },
+  );
+
+  test(
+    'B08 storage write failure stays interrupted and repairs without losing manifest',
+    () async {
+      final bytes = Uint8List.fromList([1, 2, 3]);
+      final identity = await _seedManifest(database, 'disk-full', bytes);
+      final manager = VerifiedOfflineContentManager(
+        repository: repository,
+        adapters: [
+          _BytesAdapter(
+            bytes,
+            stageErrorFirst: const FileSystemException(
+              'No space left on device',
+            ),
+          ),
+        ],
+        removalAuthority: const UnpinnedOfflineContentRemovalAuthority(),
+        rootDirectory: () async => directory,
+        nowUtc: () => nowUtc,
+      );
+      await expectLater(
+        manager.download(identity),
+        throwsA(isA<FileSystemException>()),
+      );
+      final interrupted = await repository.state(identity);
+      expect(interrupted.status, OfflineContentStatus.interrupted);
+      expect(interrupted.downloadedBytes, 1);
+      expect(interrupted.hasVerifiedBytes, isFalse);
+      expect(
+        (await manager.repair(identity)).status,
+        OfflineContentStatus.verified,
+      );
+      expect((await repository.catalog()).single.identity, identity);
+      await manager.dispose();
+    },
+  );
+
+  test(
+    'B08 new revision removal preserves pinned old bytes and session on reopen',
+    () async {
+      final bytes = Uint8List.fromList([4, 5, 6]);
+      final old = await _seedManifest(
+        database,
+        'same-pack',
+        bytes,
+        type: ContentType.learningPack,
+      );
+      final next = await _seedManifest(
+        database,
+        'same-pack',
+        bytes,
+        type: ContentType.learningPack,
+        revision: 2,
+      );
+      await _seedPinnedLearningSession(database, old, state: 'active');
+      final before = (await database.select(database.learningSessions).get())
+          .single
+          .toJson();
+      VerifiedOfflineContentManager create() => VerifiedOfflineContentManager(
+        repository: repository,
+        adapters: [_BytesAdapter(bytes)],
+        removalAuthority: DriftOfflineContentRemovalAuthority(database),
+        rootDirectory: () async => directory,
+        nowUtc: () => nowUtc,
+      );
+      final manager = create();
+      final oldState = await manager.download(old);
+      final nextState = await manager.download(next);
+      expect(nextState.localPath, isNot(oldState.localPath));
+      expect(await manager.canRemove(old), isFalse);
+      expect(await manager.removeBytes(next), bytes.length);
+      await manager.dispose();
+      final reopened = create();
+      await reopened.reconcile();
+      expect(
+        (await reopened.verify(old)).status,
+        OfflineContentStatus.verified,
+      );
+      expect(
+        (await repository.state(next)).status,
+        OfflineContentStatus.notDownloaded,
+      );
+      expect(
+        (await database.select(database.learningSessions).get()).single
+            .toJson(),
+        before,
+      );
+      expect(
+        await database.select(database.contentManifests).get(),
+        hasLength(2),
+      );
+      await reopened.dispose();
+    },
+  );
+
   test('f44 verified download is atomic, pinned, and restart safe', () async {
     final bytes = Uint8List.fromList(<int>[1, 2, 3, 4]);
     final identity = await _seedManifest(database, 'pack-a', bytes);
@@ -1398,13 +1535,14 @@ Future<ContentIdentity> _seedManifest(
   String id,
   Uint8List bytes, {
   ContentType type = ContentType.offlineArtifact,
+  int revision = 1,
 }) async {
-  final identity = ContentIdentity(type: type, id: id, revision: 1);
+  final identity = ContentIdentity(type: type, id: id, revision: revision);
   await database
       .into(database.contentManifests)
       .insert(
         ContentManifestsCompanion.insert(
-          id: 'manifest:$id:r1',
+          id: 'manifest:$id:r$revision',
           contentType: identity.type.name,
           contentId: identity.id,
           revision: identity.revision,
@@ -1504,11 +1642,17 @@ Future<void> _seedPinnedAssessmentRun(
 }
 
 final class _BytesAdapter implements OfflineContentDownloadAdapter {
-  _BytesAdapter(this.bytes, {this.failFirst = false, this.installedBytesError});
+  _BytesAdapter(
+    this.bytes, {
+    this.failFirst = false,
+    this.installedBytesError,
+    this.stageErrorFirst,
+  });
 
   final Uint8List bytes;
   final bool failFirst;
   final Object? installedBytesError;
+  final Object? stageErrorFirst;
   int calls = 0;
 
   @override
@@ -1517,6 +1661,10 @@ final class _BytesAdapter implements OfflineContentDownloadAdapter {
   @override
   Future<void> stage(ContentManifest manifest, File temporaryFile) async {
     calls += 1;
+    if (calls == 1 && stageErrorFirst != null) {
+      await temporaryFile.writeAsBytes(bytes.take(1).toList(), flush: true);
+      throw stageErrorFirst!;
+    }
     if (failFirst && calls == 1) throw StateError('interrupted');
     await temporaryFile.writeAsBytes(bytes, flush: true);
   }

@@ -25,6 +25,34 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  testWidgets('B08 shows manifest size and cancels a pending download', (
+    tester,
+  ) async {
+    final manager = _FakeManager([_state(OfflineContentStatus.notDownloaded)])
+      ..waitDownload = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OfflineContentManagerScreen(
+          manager: manager,
+          canInvoke: () => true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('พื้นที่ไฟล์อย่างน้อย 4.0 KB'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('offline-content/download/pack-a')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('offline-content/cancel/pack-a')),
+    );
+    await tester.pumpAndSettle();
+    expect(manager.cancelled, [_identity]);
+    expect(find.text('การดาวน์โหลดถูกขัดจังหวะ'), findsOneWidget);
+    expect(find.textContaining('พร้อมใช้งานออฟไลน์'), findsNothing);
+  });
+
   testWidgets(
     'offline primary label is faithful with exact identity available in details',
     (tester) async {
@@ -254,6 +282,8 @@ OfflineContentState _state(
       : null,
   failureCode: status == OfflineContentStatus.quarantined
       ? OfflineContentFailureCode.checksumMismatch
+      : status == OfflineContentStatus.interrupted
+      ? OfflineContentFailureCode.interrupted
       : null,
   updatedAtUtc: DateTime.utc(2026, 8, 30),
 );
@@ -327,11 +357,28 @@ final class _Guest implements GuestSessionService {
       const GuestSessionStarted(uid: 'synthetic-offline');
 }
 
-final class _FakeManager implements OfflineContentManager {
+final class _FakeManager
+    implements OfflineContentManager, OfflineContentDownloadControl {
   _FakeManager(this.values);
 
   final List<OfflineContentState> values;
   final downloaded = <ContentIdentity>[];
+  final cancelled = <ContentIdentity>[];
+  bool waitDownload = false;
+  final downloadCompleter = Completer<OfflineContentState>();
+
+  @override
+  Future<int> requiredBytes(ContentIdentity identity) async => 4096;
+
+  @override
+  Future<bool> cancelDownload(ContentIdentity identity) async {
+    cancelled.add(identity);
+    downloadCompleter.complete(
+      _replace(identity, OfflineContentStatus.interrupted),
+    );
+    return true;
+  }
+
   final removed = <ContentIdentity>[];
   final repaired = <ContentIdentity>[];
   final pinned = <ContentIdentity>{};
@@ -347,6 +394,7 @@ final class _FakeManager implements OfflineContentManager {
   @override
   Future<OfflineContentState> download(ContentIdentity identity) async {
     downloaded.add(identity);
+    if (waitDownload) return downloadCompleter.future;
     return _replace(identity, OfflineContentStatus.verified);
   }
 

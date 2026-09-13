@@ -25,6 +25,8 @@ final class _OfflineContentManagerScreenState
     extends State<OfflineContentManagerScreen> {
   Future<List<_OfflineContentEntry>>? _states;
   final Set<ContentIdentity> _busy = <ContentIdentity>{};
+  final Set<ContentIdentity> _downloads = <ContentIdentity>{};
+  final Set<ContentIdentity> _cancelling = <ContentIdentity>{};
 
   @override
   void didChangeDependencies() {
@@ -42,10 +44,14 @@ final class _OfflineContentManagerScreenState
 
   Future<void> _perform<T>(
     ContentIdentity identity,
-    Future<T> Function() operation,
-  ) async {
+    Future<T> Function() operation, {
+    bool download = false,
+  }) async {
     if (_busy.contains(identity) || !widget.canInvoke()) return;
-    setState(() => _busy.add(identity));
+    setState(() {
+      _busy.add(identity);
+      if (download) _downloads.add(identity);
+    });
     try {
       await operation();
     } on Object {
@@ -60,9 +66,37 @@ final class _OfflineContentManagerScreenState
       if (mounted) {
         setState(() {
           _busy.remove(identity);
+          _downloads.remove(identity);
           _states = _load();
         });
       }
+    }
+  }
+
+  Future<void> _cancel(ContentIdentity identity) async {
+    final manager = widget.manager;
+    if (!widget.canInvoke() ||
+        manager is! OfflineContentDownloadControl ||
+        _cancelling.contains(identity)) {
+      return;
+    }
+    setState(() => _cancelling.add(identity));
+    try {
+      final cancelled = await (manager as OfflineContentDownloadControl)
+          .cancelDownload(identity);
+      if (!cancelled && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่มีการดาวน์โหลดที่ยกเลิกได้แล้ว')),
+        );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ยกเลิกไม่สำเร็จ ลองใหม่ได้')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _cancelling.remove(identity));
     }
   }
 
@@ -116,6 +150,12 @@ final class _OfflineContentManagerScreenState
                         ),
                         const SizedBox(height: 12),
                         Text(_statusText(state)),
+                        if (!state.hasVerifiedBytes &&
+                            entry.requiredBytes != null)
+                          Text(
+                            'พื้นที่ไฟล์อย่างน้อย ${_byteLabel(entry.requiredBytes!)} '
+                            '· อาจต้องใช้พื้นที่ชั่วคราวเพิ่ม',
+                          ),
                         if (!entry.canRemove) ...[
                           const SizedBox(height: 12),
                           const Text('จำเป็นต่อการเรียนที่กำลังดำเนินอยู่'),
@@ -182,6 +222,10 @@ final class _OfflineContentManagerScreenState
           state: state,
           canRemove: canRemove,
           title: title ?? _typeLabel(state.identity.type),
+          requiredBytes: widget.manager is OfflineContentDownloadControl
+              ? await (widget.manager as OfflineContentDownloadControl)
+                    .requiredBytes(state.identity)
+              : null,
         );
       }),
     );
@@ -192,10 +236,29 @@ final class _OfflineContentManagerScreenState
     final identity = state.identity;
     if (_busy.contains(identity) ||
         state.status == OfflineContentStatus.downloading) {
-      return FilledButton(
+      final busy = FilledButton(
         key: ValueKey<String>('offline-content/busy/${identity.id}'),
         onPressed: null,
         child: const Text('กำลังดำเนินการ'),
+      );
+      return Column(
+        children: [
+          busy,
+          if (widget.manager is OfflineContentDownloadControl &&
+              (_downloads.contains(identity) ||
+                  state.status == OfflineContentStatus.downloading))
+            TextButton(
+              key: ValueKey('offline-content/cancel/${identity.id}'),
+              onPressed: _cancelling.contains(identity)
+                  ? null
+                  : () => _cancel(identity),
+              child: Text(
+                _cancelling.contains(identity)
+                    ? 'กำลังยกเลิกหลังขั้นตอนปัจจุบัน'
+                    : 'ยกเลิกการดาวน์โหลด',
+              ),
+            ),
+        ],
       );
     }
     return switch (state.status) {
@@ -213,14 +276,20 @@ final class _OfflineContentManagerScreenState
       OfflineContentStatus.quarantined ||
       OfflineContentStatus.interrupted => FilledButton(
         key: ValueKey<String>('offline-content/repair/${identity.id}'),
-        onPressed: () =>
-            _perform(identity, () async => widget.manager.repair(identity)),
+        onPressed: () => _perform(
+          identity,
+          () async => widget.manager.repair(identity),
+          download: true,
+        ),
         child: const Text('ตรวจสอบและซ่อมไฟล์'),
       ),
       OfflineContentStatus.notDownloaded => FilledButton(
         key: ValueKey<String>('offline-content/download/${identity.id}'),
-        onPressed: () =>
-            _perform(identity, () async => widget.manager.download(identity)),
+        onPressed: () => _perform(
+          identity,
+          () async => widget.manager.download(identity),
+          download: true,
+        ),
         child: const Text('ดาวน์โหลด'),
       ),
       OfflineContentStatus.downloading => const SizedBox.shrink(),
@@ -267,9 +336,11 @@ final class _OfflineContentEntry {
     required this.state,
     required this.canRemove,
     required this.title,
+    this.requiredBytes,
   });
 
   final OfflineContentState state;
   final bool canRemove;
   final String title;
+  final int? requiredBytes;
 }

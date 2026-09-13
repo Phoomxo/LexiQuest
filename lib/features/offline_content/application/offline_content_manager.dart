@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -68,8 +69,18 @@ abstract interface class OfflineContentStateInspector {
   Future<OfflineContentState> inspect(ContentIdentity identity);
 }
 
+/// Cancellation drains the current adapter write and stops before publication.
+/// It never removes adapter-owned files or canonical learner data.
+abstract interface class OfflineContentDownloadControl {
+  Future<int> requiredBytes(ContentIdentity identity);
+  Future<bool> cancelDownload(ContentIdentity identity);
+}
+
 final class VerifiedOfflineContentManager
-    implements OfflineContentManager, OfflineContentStateInspector {
+    implements
+        OfflineContentManager,
+        OfflineContentStateInspector,
+        OfflineContentDownloadControl {
   VerifiedOfflineContentManager({
     required this.repository,
     required List<OfflineContentDownloadAdapter> adapters,
@@ -88,6 +99,21 @@ final class VerifiedOfflineContentManager
   final _OfflineContentOperationQueue _operations =
       _OfflineContentOperationQueue();
   bool _disposed = false;
+  final Map<ContentIdentity, _DownloadControl> _downloads = {};
+
+  @override
+  Future<int> requiredBytes(ContentIdentity identity) async =>
+      (await repository.requireManifest(identity)).byteLength;
+
+  @override
+  Future<bool> cancelDownload(ContentIdentity identity) async {
+    _requireOpen();
+    final control = _downloads[identity];
+    if (control == null || control.publishing) return false;
+    control.cancelled = true;
+    await control.done.future;
+    return control.cancelledSuccessfully;
+  }
 
   @override
   Future<List<OfflineContentState>> catalog() async {
@@ -339,10 +365,25 @@ final class VerifiedOfflineContentManager
   }
 
   Future<OfflineContentState> _download(ContentIdentity identity) async {
+    final control = _DownloadControl();
+    _downloads[identity] = control;
+    try {
+      return await _downloadControlled(identity, control);
+    } finally {
+      if (identical(_downloads[identity], control)) _downloads.remove(identity);
+      control.done.complete();
+    }
+  }
+
+  Future<OfflineContentState> _downloadControlled(
+    ContentIdentity identity,
+    _DownloadControl control,
+  ) async {
     final manifest = await repository.requireManifest(identity);
     final paths = await _paths(manifest);
     final adapter = _adapterFor(manifest);
     if (await _verificationFailure(paths, paths.published, manifest) == null) {
+      control.publishing = true;
       await adapter.requireInstalledValid(manifest);
       return _persistPublished(manifest, paths);
     }
@@ -355,12 +396,28 @@ final class VerifiedOfflineContentManager
         updatedAtUtc: _currentUtc(),
       );
       await _requireSafeLeaf(paths, paths.temporary);
+      control.check();
       await adapter.stage(manifest, paths.temporary);
+      control.check();
       await adapter.requireInstalledValid(manifest);
+      control.check();
       await _requireVerifiedFile(paths, paths.temporary, manifest);
       await _requireSafeLeaf(paths, paths.published);
+      control.check();
+      control.publishing = true;
       await paths.temporary.rename(paths.published.path);
       return await _persistPublished(manifest, paths);
+    } on _DownloadCancelled {
+      await _deleteIfPresent(paths, paths.temporary);
+      await repository.markFailure(
+        manifest,
+        status: OfflineContentStatus.interrupted,
+        failureCode: OfflineContentFailureCode.interrupted,
+        downloadedBytes: 0,
+        updatedAtUtc: _currentUtc(),
+      );
+      control.cancelledSuccessfully = true;
+      return repository.state(identity);
     } on ContentQualityFailure catch (error) {
       await _deleteIfPresent(paths, paths.temporary);
       final code = switch (error.code) {
@@ -581,6 +638,18 @@ final class VerifiedOfflineContentManager
       throw ArgumentError.value(value, 'nowUtc', 'must return UTC');
     }
     return value;
+  }
+}
+
+final class _DownloadCancelled implements Exception {}
+
+final class _DownloadControl {
+  bool cancelled = false;
+  bool cancelledSuccessfully = false;
+  bool publishing = false;
+  final done = Completer<void>();
+  void check() {
+    if (cancelled) throw _DownloadCancelled();
   }
 }
 
