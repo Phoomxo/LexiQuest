@@ -123,5 +123,58 @@ class DevelopmentFreezeTests(unittest.TestCase):
                 evaluation.load_inputs(config)
 
 
+class MetricsTests(unittest.TestCase):
+    def test_known_reject_and_null_unknown(self):
+        _, config, predictions = DevelopmentFreezeTests().fixture()
+        report = evaluation.prediction_metrics(config['labels'], .6, predictions)
+        self.assertEqual(report['known_correct_accepted']['rate'], .5)
+        self.assertEqual(report['known_rejected']['rate'], .5)
+        self.assertEqual(report['per_class']['cup']['denominator'], 1)
+        self.assertIsNone(report['unknown_false_accept']['rate'])
+        self.assertIsNone(report['unknown_false_accept']['wilson95'])
+        self.assertIsNone(report['quality_gate'])
+        low, high = report['known_correct_accepted']['wilson95']
+        self.assertAlmostEqual(low, .0945312057)
+        self.assertAlmostEqual(high, .9054687943)
+
+    def test_unknown_and_paired_baseline_explicit_acceptance(self):
+        _, config, predictions = DevelopmentFreezeTests().fixture()
+        predictions.append(dict(id='u', truth='unknown', prediction='cup', probabilities=[.1,.9]))
+        baseline = [dict(id='a', raw_label='raw-book', accepted=True),
+                    dict(id='b', raw_label='raw-cup', accepted=False),
+                    dict(id='u', raw_label='other', accepted=True)]
+        mapping = {'raw-book': 'book', 'raw-cup': 'cup', 'other': 'unknown'}
+        report = evaluation.prediction_metrics(config['labels'], .6, predictions, baseline, mapping)
+        self.assertEqual(report['unknown_false_accept']['rate'], 1)
+        self.assertEqual(report['baseline']['unknown_false_accept']['rate'], 1)
+        self.assertEqual(report['baseline']['known_correct_accepted']['rate'], .5)
+        self.assertFalse(report['quality_gate'])
+        for value in [baseline[:1], baseline+[baseline[0]]]:
+            with self.assertRaises(ValueError):
+                evaluation.prediction_metrics(config['labels'], .6, predictions, value, mapping)
+        for key, value in [('raw_label', 'unmapped'), ('accepted', 1)]:
+            changed = deepcopy(baseline); changed[0][key] = value
+            with self.assertRaises(ValueError):
+                evaluation.prediction_metrics(config['labels'], .6, predictions, changed, mapping)
+
+    def test_uniform_threshold_cannot_pass_and_bad_scores_rejected(self):
+        predictions = [dict(id='a', truth='book', prediction='book', probabilities=[.25]*4)]
+        labels = ['book','cup','bottle','chair']
+        result = evaluation.prediction_metrics(labels, .25, predictions)
+        self.assertFalse(result['threshold_can_reject_uniform'])
+        self.assertFalse(result['quality_gate'])
+        for scores in [[float('nan')]*4, [.5]*4, [True,0,0,0]]:
+            changed = deepcopy(predictions); changed[0]['probabilities'] = scores
+            with self.assertRaises(ValueError):
+                evaluation.prediction_metrics(labels, .6, changed)
+
+    def test_empty_denominators_and_nonfinite_threshold(self):
+        result = evaluation.prediction_metrics(['book','cup'], .6, [])
+        self.assertIsNone(result['known_correct_accepted']['rate'])
+        for t in [True, float('nan'), -1, 2]:
+            with self.assertRaises(ValueError):
+                evaluation.prediction_metrics(['book','cup'], t, [])
+
+
 if __name__ == '__main__':
     unittest.main()

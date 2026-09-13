@@ -1,0 +1,313 @@
+{
+  "scope": "web development object crops; scores reused from actual B11A TFLite inference",
+  "sample_ids": [
+    "00a36f96e31731c4",
+    "01b9021aa05e6e46",
+    "0344cade36bbd4f4",
+    "0623368731dd66aa",
+    "062973d55a1303d6",
+    "07de9510e802a400",
+    "085622859f9b4eb2",
+    "0864de36d6df03db",
+    "0b0803480232cf3e",
+    "0dbd358b804cdc0d",
+    "105433f9d808d18e",
+    "10fd5df6c15ddcad",
+    "146316cdeb2aef2a",
+    "1532894cbf5219e4",
+    "157a69e616220d6f",
+    "1654c86093ada840",
+    "19aaf40e64cdfb7b",
+    "1a164284f6016581",
+    "1fb17ef223fd37dc",
+    "1fc8f41dad194e06",
+    "25beaca253df08d1",
+    "2788f5a9418ba0e0",
+    "28251670b2acb11c",
+    "29def08271143710",
+    "2eb849114cbb18d9",
+    "2eba94f606dbb3ea",
+    "2fe4f21e409f0a56",
+    "3110a68f30fd100f",
+    "3675c866682c18f6",
+    "3692c7b2c4697ed9",
+    "3a71be7ae113e593",
+    "3ba5380490084697",
+    "3f04eda70d443cd0",
+    "3f2e9a97de8f922f",
+    "419d0f32d305cbd0",
+    "49e6a10cc09950c8",
+    "4c67d72a6508d64c",
+    "4ce07056031fabb2",
+    "516a089e0750d8d5",
+    "51d504c4caf76111",
+    "5242f019fe380dae",
+    "5314058b185908c6",
+    "5396526cb47e235e",
+    "5b11689076a3cc49",
+    "5b18b22f53ccc661",
+    "5baabdc47aabff2a",
+    "5d4cd3f05e4d85c4",
+    "601f47f5b112ecf9",
+    "618ba0d0e6ddb4ce",
+    "62782d83696dc8d4",
+    "62f354d9f1b2bae1",
+    "66913729a0c61b51",
+    "678d8f787e832ca3",
+    "67b4747b6e5b641e",
+    "686799d087248d7f",
+    "688b68d6f8fdb47c",
+    "6bfb528ba0c5148e",
+    "6e72dbc6e751522a",
+    "70193f7825e12c5c",
+    "77153a3efa75f4a4",
+    "78be3cbbf29825e7",
+    "7b1eec52a7a1797b",
+    "7c455cd7bb04248b",
+    "7e94154b6aab1200",
+    "806a438a8ed53680",
+    "82a697d0de57ea28",
+    "833c568da41b3de0",
+    "841625bf625c8286",
+    "843a3e70bd9293da",
+    "8785945834fb5f26",
+    "8c5c8e7a603fac3e",
+    "904ec7162c3b4281",
+    "934b316736a84748",
+    "976649e55a61ced7",
+    "9986b0b0115d7425",
+    "9ebb007efd52d095",
+    "a13ad60d2ae08729",
+    "a1453b71ca9d7300",
+    "a183f4972bc4fb3c",
+    "a34275c238d98efa",
+    "a358a9eb26b043d3",
+    "a3aade02e5418967",
+    "a6fa6e875d6ae7fd",
+    "aa41ff683e2c5a60",
+    "ac0077fd03e9e741",
+    "aed59fc1d72f575d",
+    "b1cae8a8600781c6",
+    "b2e8313d6d38abf6",
+    "b4cb895b4eb903a4",
+    "bafd801621510353",
+    "be1d215b6513ccbd",
+    "bf7648f1cec9338a",
+    "c0670cfbacea9423",
+    "c0818fa38d34f5cd",
+    "c3850f8a5eaaeb52",
+    "c508797245ca5106",
+    "c6dac581c7146f23",
+    "c89d9010b8b2656e",
+    "ca8c48ccc6ac200a",
+    "ca926ec717b49d1f",
+    "caec78807407ad5f",
+    "ccfe0aca9965c819",
+    "cd4e964d17223b05",
+    "cfa5389b9eeba8f1",
+    "d1272206b83ad84a",
+    "d33f7a8c1726d0f8",
+    "d8e0c7825be12b2c",
+    "dd73560ba8ec0c40",
+    "ddebe5a86b2713c4",
+    "e1ffa13fb120c12b",
+    "eaa356e807b2e504",
+    "f2a2a1a0095f5d79",
+    "f3ea587606734ea0",
+    "f41bc46dbe16478d",
+    "f5502849058752e0",
+    "f6d564bd1a412584",
+    "faa37eb10c33a297",
+    "fab4600fdc2b48b7",
+    "fdb0cd7bbe63aaa6",
+    "fdc8c9fe489d9cad"
+  ],
+  "top1": {
+    "numerator": 109,
+    "denominator": 120,
+    "rate": 0.9083333333333333,
+    "wilson95": [
+      0.843291530273291,
+      0.9480428171514347
+    ]
+  },
+  "known_correct_accepted": {
+    "numerator": 99,
+    "denominator": 120,
+    "rate": 0.825,
+    "wilson95": [
+      0.7472429012735073,
+      0.8825946405543355
+    ]
+  },
+  "known_rejected": {
+    "numerator": 15,
+    "denominator": 120,
+    "rate": 0.125,
+    "wilson95": [
+      0.07723497273395374,
+      0.1960294020800739
+    ]
+  },
+  "unknown_false_accept": {
+    "numerator": 0,
+    "denominator": 0,
+    "rate": null,
+    "wilson95": null
+  },
+  "per_class": {
+    "book": {
+      "numerator": 5,
+      "denominator": 5,
+      "rate": 1.0,
+      "wilson95": [
+        0.5655175352168251,
+        1
+      ]
+    },
+    "bottle": {
+      "numerator": 8,
+      "denominator": 10,
+      "rate": 0.8,
+      "wilson95": [
+        0.49016247153664183,
+        0.9433178485456247
+      ]
+    },
+    "chair": {
+      "numerator": 8,
+      "denominator": 8,
+      "rate": 1.0,
+      "wilson95": [
+        0.6755924351161198,
+        1
+      ]
+    },
+    "cup": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1.0,
+      "wilson95": [
+        0.7224672001371107,
+        0.9999999999999999
+      ]
+    },
+    "apple": {
+      "numerator": 7,
+      "denominator": 7,
+      "rate": 1.0,
+      "wilson95": [
+        0.6456695649333126,
+        1
+      ]
+    },
+    "bread": {
+      "numerator": 8,
+      "denominator": 9,
+      "rate": 0.8888888888888888,
+      "wilson95": [
+        0.5650002944233439,
+        0.9801091123614551
+      ]
+    },
+    "tomato": {
+      "numerator": 5,
+      "denominator": 7,
+      "rate": 0.7142857142857143,
+      "wilson95": [
+        0.35893445183261935,
+        0.9177810759959433
+      ]
+    },
+    "bowl": {
+      "numerator": 6,
+      "denominator": 10,
+      "rate": 0.6,
+      "wilson95": [
+        0.31267376973365824,
+        0.8318196702937638
+      ]
+    },
+    "spoon": {
+      "numerator": 4,
+      "denominator": 5,
+      "rate": 0.8,
+      "wilson95": [
+        0.37553462976252533,
+        0.9637758913675698
+      ]
+    },
+    "fork": {
+      "numerator": 5,
+      "denominator": 6,
+      "rate": 0.8333333333333334,
+      "wilson95": [
+        0.43649717781352987,
+        0.9699466302516935
+      ]
+    },
+    "knife": {
+      "numerator": 11,
+      "denominator": 16,
+      "rate": 0.6875,
+      "wilson95": [
+        0.44404355834740666,
+        0.8583535614521796
+      ]
+    },
+    "door": {
+      "numerator": 7,
+      "denominator": 8,
+      "rate": 0.875,
+      "wilson95": [
+        0.5291118177871464,
+        0.9775825085499433
+      ]
+    },
+    "ladder": {
+      "numerator": 5,
+      "denominator": 5,
+      "rate": 1.0,
+      "wilson95": [
+        0.5655175352168251,
+        1
+      ]
+    },
+    "light bulb": {
+      "numerator": 0,
+      "denominator": 3,
+      "rate": 0.0,
+      "wilson95": [
+        5.551115123125783e-17,
+        0.5614970317550454
+      ]
+    },
+    "tool": {
+      "numerator": 6,
+      "denominator": 7,
+      "rate": 0.8571428571428571,
+      "wilson95": [
+        0.4868721707256811,
+        0.9743203756552565
+      ]
+    },
+    "tap": {
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0,
+      "wilson95": [
+        0.5101091635454027,
+        1
+      ]
+    }
+  },
+  "threshold_can_reject_uniform": true,
+  "baseline": {
+    "status": "NOT RUN"
+  },
+  "quality_gate": null,
+  "freeze_sha256": "fc79337be95aa854bd2009c8135cb00ee787b9bc9451a1af125416a0d19e85a6",
+  "config_sha256": "5aa35bf3242e4314d0c79bf0c3a9d4fb76be3438ff5faa28b8ae79e003eeea8a",
+  "model_sha256": "7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96",
+  "predictions_sha256": "878f12d08bdda9aa4cc62876a0308d7a721be08825bd3b5fde9763fd0017dab5"
+}

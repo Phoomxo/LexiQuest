@@ -1,0 +1,91 @@
+{
+  "packageId": "G5.5",
+  "status": "accepted-local-retain-baseline",
+  "tests": {
+    "manifestFlutter": 2,
+    "pythonContract": 9,
+    "rawLogs": [
+      "G5.5-green.log",
+      "G5.5-manifest.log"
+    ]
+  },
+  "metrics": "G5.5-metrics.json",
+  "result": {
+    "below75percentClasses": [
+      "tomato",
+      "bowl",
+      "knife",
+      "light bulb"
+    ],
+    "unknownFalseAccept": null,
+    "knownRejected": "15/120 (12.5%)",
+    "quality": "NOT ACCEPTED: no fresh/unknown coverage, descriptive accepted-known below85%",
+    "correctAccepted": "99/120 (82.5%)"
+  },
+  "host": {
+    "modelBytes": 12871389,
+    "p90Ms": [
+      36.96896000110428,
+      60.43401999959315,
+      51.96115999897302
+    ],
+    "includedRuns": [
+      1,
+      2,
+      4
+    ],
+    "comparison": "NOT RUN",
+    "sizeRatio": 3.0018113871816197,
+    "physicalResourceGate": "NOT RUN",
+    "activeNativeHandleProof": "NOT MEASURED",
+    "rssPeakDeltaBytes": [
+      32636928.0,
+      32636928.0,
+      32669696.0
+    ],
+    "warmupPerProcess": 5,
+    "cycleCount": 30,
+    "coldMs": [
+      80.73979999971925,
+      74.20609999826411,
+      68.23459999941406
+    ],
+    "scope": "Python host invoke only; no pipeline/preprocess/device latency acceptance",
+    "excludedRun3": "overlapped bounded Flutter verifier; preserved, excluded from summary and replaced with freshprocess4",
+    "p50Ms": [
+      34.42215000177384,
+      43.06130000077246,
+      37.21150000092166
+    ],
+    "delegate": "builtin CPU without default delegates",
+    "baselineModelBytes": 4287874,
+    "cpuThreads": 4,
+    "measuredPerProcess": 50
+  },
+  "limits": [
+    "Wilson descriptive sample intervals; within-split author groups may correlate; not unbiased independent camera benchmark",
+    "No baseline paired actual inference; explicit mapping contract tested synthetically only",
+    "No unknown natural images evaluated",
+    "TF2.20 interpreter deprecation warning preserved; native app uses LiteRT and B11A probe remains distinct"
+  ],
+  "defects": [
+    {
+      "status": "closed",
+      "cause": "psutil absent",
+      "id": "B12-02",
+      "resolution": "Use Windows GetProcessMemoryInfo in measurement helper, no dependency install"
+    },
+    {
+      "status": "closed",
+      "cause": "Host3 diagnostic overlapped targeted verifier",
+      "id": "B12-03",
+      "resolution": "Preserve run3, exclude from summary; measure replacement run4 alone"
+    }
+  ],
+  "sourceFingerprints": {
+    "tools/test_camera_development_evaluation.py": "007d8a587313a0fd45f14c6e4873641340a87546aa04ed487a7cfa1eda6470b5",
+    "docs/development/full-system/evidence/bundles/B12/G5.5-metrics.json": "9e8af2b6811ca7308f3e08be0e1ca0e2a2851fb27e14caf7d5479075590c5e84",
+    "tools/camera_development_evaluation.py": "8dc6bb9cda7f5c123ec1e4346d32c884a5349cfe522386d1c8047d2003fd5e10",
+    "docs/development/full-system/evidence/bundles/B12/measure_host.py": "22122b6cf7a569f5a1ebb9f04370171f672fc89fdbd63b39de1647c2ec4fed14"
+  }
+}

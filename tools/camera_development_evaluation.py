@@ -117,6 +117,87 @@ def validate_development(rows, config, frozen):
     return recomputed
 
 
+def _rate(items, predicate):
+    n = len(items)
+    k = sum(predicate(p) for p in items)
+    if not n:
+        return dict(numerator=0, denominator=0, rate=None, wilson95=None)
+    p, z = k/n, 1.959963984540054
+    d = 1 + z*z/n
+    center = (p + z*z/(2*n))/d
+    margin = z*math.sqrt(p*(1-p)/n + z*z/(4*n*n))/d
+    return dict(numerator=k, denominator=n, rate=p,
+                wilson95=[max(0, center-margin), min(1, center+margin)])
+
+
+def prediction_metrics(labels, threshold, predictions, baseline=None, mapping=None):
+    """Descriptive metrics on exactly paired IDs; caller supplies provenance.
+
+    Numeric quality criteria are not a fresh-data, independence or device gate.
+    Unknown is truth outside the declared vocabulary; acceptance is explicit.
+    """
+    _number(threshold)
+    if (not isinstance(labels, list) or len(labels) < 2
+            or any(not isinstance(s, str) or not s.strip() or s == 'unknown' for s in labels)
+            or len(set(labels)) != len(labels)):
+        raise ValueError('Unique known labels required')
+    if not isinstance(predictions, list):
+        raise ValueError('Prediction list required')
+    ids = set()
+    for p in predictions:
+        if (not isinstance(p, dict) or not isinstance(p.get('id'), str) or not p['id'].strip()
+                or p['id'] in ids or p.get('truth') not in [*labels, 'unknown']):
+            raise ValueError('Unique ID and declared truth required')
+        ids.add(p['id'])
+        scores = p.get('probabilities')
+        if not isinstance(scores, list) or len(scores) != len(labels):
+            raise ValueError('Full score vector required')
+        for score in scores:
+            _number(score)
+        if (not math.isclose(sum(scores), 1, abs_tol=1e-5)
+                or p.get('prediction') != labels[max(range(len(labels)), key=scores.__getitem__)]):
+            raise ValueError('Invalid probability vector or argmax')
+    known = [p for p in predictions if p['truth'] in labels]
+    unknown = [p for p in predictions if p['truth'] == 'unknown']
+    accepted = lambda p: max(p['probabilities']) >= threshold
+    correct = lambda p: accepted(p) and p['prediction'] == p['truth']
+    per_class = {label: _rate([p for p in known if p['truth'] == label], correct) for label in labels}
+    report = dict(scope='descriptive supplied predictions; no fresh or physical acceptance',
+        sample_ids=sorted(ids), top1=_rate(known, lambda p: p['prediction'] == p['truth']),
+        known_correct_accepted=_rate(known, correct), known_rejected=_rate(known, lambda p: not accepted(p)),
+        unknown_false_accept=_rate(unknown, accepted), per_class=per_class,
+        threshold_can_reject_uniform=threshold > 1/len(labels), baseline={'status': 'NOT RUN'},
+        quality_gate=None)
+    if threshold <= 1/len(labels):
+        report['quality_gate'] = False
+    elif known and unknown and all(v['denominator'] for v in per_class.values()):
+        report['quality_gate'] = (report['known_correct_accepted']['rate'] >= .85
+            and report['unknown_false_accept']['rate'] <= .05
+            and all(v['rate'] >= .75 for v in per_class.values()))
+    if baseline is not None:
+        if (not isinstance(mapping, dict) or not mapping
+                or any(not isinstance(k, str) or not k.strip() or v not in [*labels, 'unknown']
+                       for k, v in mapping.items())
+                or not isinstance(baseline, list)
+                or any(not isinstance(p, dict) or not isinstance(p.get('id'), str) for p in baseline)
+                or len({p['id'] for p in baseline}) != len(baseline)
+                or {p['id'] for p in baseline} != ids):
+            raise ValueError('Explicit mapping and exact paired baseline IDs required')
+        for p in baseline:
+            if (type(p.get('accepted')) is not bool or not isinstance(p.get('raw_label'), str)
+                    or p['raw_label'] not in mapping):
+                raise ValueError('Unmapped baseline label or nonboolean acceptance')
+        by_id = {p['id']: p for p in baseline}
+        base_accepted = lambda p: by_id[p['id']]['accepted']
+        base_correct = lambda p: base_accepted(p) and mapping[by_id[p['id']]['raw_label']] == p['truth']
+        report['baseline'] = dict(status='paired-descriptive', sample_ids=sorted(ids),
+            known_correct_accepted=_rate(known, base_correct),
+            known_rejected=_rate(known, lambda p: not base_accepted(p)),
+            unknown_false_accept=_rate(unknown, base_accepted),
+            per_class={label: _rate([p for p in known if p['truth'] == label], base_correct) for label in labels})
+    return report
+
+
 def read_pin(pin):
     if not isinstance(pin, dict) or not isinstance(pin.get('path'), str):
         raise ValueError('Artifact path/hash pin required')
