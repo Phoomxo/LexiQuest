@@ -54,8 +54,44 @@
       "fixSha": null,
       "retest": null
     }
+    ,{
+      "id": "B18-REV02-02",
+      "severity": "P2",
+      "status": "candidate-clock-regression-reproduction-pending",
+      "file": "lib/features/learning/data/drift_learning_repository.dart",
+      "trigger": "Wall clock moves backward during a generic quiz; captured finish or abandon time precedes stored session start",
+      "expected": "Canonical terminal mutation preserves a valid temporal interval; history remains readable and original captured intent is handled explicitly",
+      "actual": "finishSession and abandonSession validate UTC but do not compare terminal with startedAtUtcMs; history entry constructor rejects endedAtUtc before startedAtUtc",
+      "ownerPackage": "G1.4/G2.1",
+      "proposedRegression": "Controlled clock generic session close before start, then read history; verify atomic rejection or explicitly defined clock policy without hiding invalid timestamps",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV02-03",
+      "severity": "P2",
+      "status": "candidate-admission-race-reproduction-pending",
+      "file": "lib/features/learning/data/drift_learning_repository.dart",
+      "trigger": "Active owner changes between generic startQuiz owner lookup/scheduling and startSession insertion",
+      "expected": "Generic session start either admits the still-active owner atomically or reports owner drift",
+      "actual": "Generic _insertLearningSession performs insertOrIgnore with an owner FK but no active-owner transaction check; exact pinned/Pair starts have a stronger check. QuizScreen uses generic startQuiz in its ordinary path",
+      "ownerPackage": "G1.4/G2.1",
+      "proposedRegression": "Deferred start boundary with real Drift owner switch; inspect lifecycle initializeSession before asserting user-visible effect. Also confirm collision replay behavior of insertOrIgnore",
+      "fixSha": null,
+      "retest": null
+    }
   ],
   "toolingObservations": [
+    {
+      "id": "B18-ENV-02",
+      "status": "resolved-scoped-whitespace-check",
+      "command": "git -c core.autocrlf=false diff --check",
+      "rawFailureExcerpt": "docs/development/full-system/evidence/bundles/B18/G8.2-review-ledger.json:31639: trailing whitespace.\n+      \"status\": \"source-read-awaiting-cross-check\",",
+      "rawOutputLimitation": "Initial tool result truncated after reporting 1160 output lines; excerpt retained, no claim of full raw log capture",
+      "rootCause": "Python write_text used Windows newline translation; working ledger had51159 CRLF lines and HEAD50713. New CRLF lines were flagged under core.autocrlf=false, not semantic whitespace inside JSON values",
+      "action": "Set newline LF explicitly in current merge_review_observations.py and checkpoint_audit.py writers; regenerated only their B18 outputs",
+      "validation": "Same diff --check returned exit0 after fix; original3610 frozen files still exact raw bytes; no assertions weakened or application tests rerun"
+    },
     {
       "id": "B18-ENV-01",
       "status": "resolved-byte-audit",

@@ -32,5 +32,5 @@ report=dict(sourceSha=inventory['sourceSha'],trackedRawBytesVerified=len(ledger[
     newReviewTooling=[p for p in untracked if p],
     semanticReviewComplete=False,G82Accepted=False,G83Started=False,B19Dispatched=False,
     runtimeTestsRun=False,validation='Integrity only; source-read observations and candidate findings are not full semantic acceptance')
-(OUT/'checkpoint-integrity.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+(OUT/'checkpoint-integrity.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8',newline='\n')
 print(json.dumps(report))
