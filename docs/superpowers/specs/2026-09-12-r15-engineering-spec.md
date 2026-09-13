@@ -1,5 +1,7 @@
 # R15.1 Engineering Specification — LexiQuest
 
+> **Historical design baseline — authority update sequential-3:** ข้อกำหนด R15 ยังใช้อ้างอิง design/evidence ที่ current package เลือกใช้. Scope cap, frozen implementation/schema, dependency/session-only/no-streaming defaults ไม่ใช่ข้อห้ามการพัฒนาปัจจุบัน; เปลี่ยนได้ตาม design delta/version/acceptance. ใช้ [Active Index](../../development/full-system-active-index.md) และ [Rule Register](../../development/2026-09-13-rule-supersession-register.md) ก่อน อ่านเฉพาะ section ที่เกี่ยวข้อง
+
 วันที่ 2026-09-12 · source baseline `8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac` · เอกสารออกแบบสำหรับพัฒนา ไม่ใช่ผลการทดสอบ runtime
 
 เอกสารนี้เติมข้อกำหนดที่ roadmap R15 ยังไม่ได้กำหนด และมีลำดับเหนือถ้อยคำกว้าง ๆ ใน roadmap เฉพาะรายละเอียดการพัฒนารอบนี้ ผู้ใช้ยืนยันล่าสุดว่าข้อกำหนด UI/เกมเก่าจำนวนมากเป็นวิธีแก้ปัญหาเฉพาะจุดและปรับแทนได้ตามหลักฐานใหม่ จึงไม่ถือว่ารูปแบบหรือโค้ดเดิมเป็นข้อกำหนดถาวร ขอบเขต 8/44 และ frozen data contracts ยังเป็นฐานความเข้ากันได้ ไม่ใช่ข้อบังคับให้หน้าตาหรือวิธีฝึกเหมือนเดิม เลข R15.1 ในหัวเอกสารคือ revision ของชุดเอกสาร ไม่ใช่ package R15.1 หรือ APK version

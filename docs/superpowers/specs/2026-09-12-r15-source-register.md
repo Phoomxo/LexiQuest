@@ -1,5 +1,7 @@
 # R15 Source Register and Decision Traceability
 
+> **Evidence reference — sequential-3 authority:** observed/inferred/proposed และข้อจำกัดการเก็บข้อมูลในไฟล์นี้ยังต้องรายงานตรงหลักฐาน. Execution/scope decisions เดิมปรับได้ตาม [Rule Register](../../development/2026-09-13-rule-supersession-register.md) และ [Active Index](../../development/full-system-active-index.md); เอกสารนี้ไม่ใช่ roadmap หรือสิทธิ์หยุดการพัฒนาตาม Master
+
 วันที่ตรวจ 2026-09-12 · source baseline `8c160f87d77d8beb8ace2d8f2b7b0e92acb297ac`
 
 อ่านกับ [engineering spec](2026-09-12-r15-engineering-spec.md) และ [acceptance contract](../plans/2026-09-12-r15-acceptance-contract.md). ตารางนี้ระบุว่าแหล่งใดสนับสนุนเรื่องใด ไม่ใช้รายชื่อ URL รวมท้ายเล่มแทนการอ้างเหตุผลรายข้อ

@@ -1,0 +1,1215 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-09-13-sequential-3",
+  "packageCount": 64,
+  "phaseCounts": [
+    {
+      "phase": "G0",
+      "count": 8
+    },
+    {
+      "phase": "G1",
+      "count": 7
+    },
+    {
+      "phase": "G2",
+      "count": 8
+    },
+    {
+      "phase": "G3",
+      "count": 7
+    },
+    {
+      "phase": "G4",
+      "count": 6
+    },
+    {
+      "phase": "G5",
+      "count": 6
+    },
+    {
+      "phase": "G6",
+      "count": 6
+    },
+    {
+      "phase": "G7",
+      "count": 7
+    },
+    {
+      "phase": "G8",
+      "count": 9
+    }
+  ],
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "idConvention": "G is the user-facing task ID; P is the existing internal requirement package alias for the same package.",
+  "executionAuthority": "User authorized start G0.1 then create exactly one successor after accepted handoff; later user pause/stop takes precedence.",
+  "workflowPath": "docs/development/full-system-package-workflow.md",
+  "runtimeControlDirectory": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration",
+  "tasks": [
+    {
+      "ordinal": 1,
+      "packageId": "P0.1",
+      "displayId": "G0.1",
+      "title": "LexiQuest · G0.1 · ยืนยัน worktree และสิทธิ์เขียน",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.1.md",
+      "previous": null,
+      "next": "G0.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": null,
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": []
+    },
+    {
+      "ordinal": 2,
+      "packageId": "P0.2",
+      "displayId": "G0.2",
+      "title": "LexiQuest · G0.2 · รับ F1–F4 และแยก generated files",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.2.md",
+      "previous": "G0.1",
+      "next": "G0.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.1.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.1"
+      ]
+    },
+    {
+      "ordinal": 3,
+      "packageId": "P0.3",
+      "displayId": "G0.3",
+      "title": "LexiQuest · G0.3 · แจกแจง Git สองสายและเลือก authority",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.3.md",
+      "previous": "G0.2",
+      "next": "G0.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.2.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.2"
+      ]
+    },
+    {
+      "ordinal": 4,
+      "packageId": "P0.4",
+      "displayId": "G0.4",
+      "title": "LexiQuest · G0.4 · ยืนยันตัวตรวจแบบมีขอบเขตและการ reuse ผล",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.4.md",
+      "previous": "G0.3",
+      "next": "G0.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.3.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.3"
+      ]
+    },
+    {
+      "ordinal": 5,
+      "packageId": "P0.5",
+      "displayId": "G0.5",
+      "title": "LexiQuest · G0.5 · ปิดทะเบียน coverage และ traceability",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.5.md",
+      "previous": "G0.4",
+      "next": "G0.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.4.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.4"
+      ]
+    },
+    {
+      "ordinal": 6,
+      "packageId": "P0.6",
+      "displayId": "G0.6",
+      "title": "LexiQuest · G0.6 · จัดเอกสารเก่าและไฟล์ซ้ำอย่างย้อนกลับได้",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.6.md",
+      "previous": "G0.5",
+      "next": "G0.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.5.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.5"
+      ]
+    },
+    {
+      "ordinal": 7,
+      "packageId": "P0.7",
+      "displayId": "G0.7",
+      "title": "LexiQuest · G0.7 · ทำทะเบียนสูตรและข้อมูลอ้างอิง",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.7.md",
+      "previous": "G0.6",
+      "next": "G0.8",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.6.json",
+      "phase": "G0",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.6"
+      ]
+    },
+    {
+      "ordinal": 8,
+      "packageId": "P0.8",
+      "displayId": "G0.8",
+      "title": "LexiQuest · G0.8 · ตกลง edition และปิด gate เริ่มพัฒนา",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G0.8.md",
+      "previous": "G0.7",
+      "next": "G1.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.7.json",
+      "phase": "G0",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P0.7"
+      ]
+    },
+    {
+      "ordinal": 9,
+      "packageId": "P1.1",
+      "displayId": "G1.1",
+      "title": "LexiQuest · G1.1 · วงจร owner และ session ที่มี authority เดียว",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.1.md",
+      "previous": "G0.8",
+      "next": "G1.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G0.8.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G0"
+      ]
+    },
+    {
+      "ordinal": 10,
+      "packageId": "P1.2",
+      "displayId": "G1.2",
+      "title": "LexiQuest · G1.2 · first attempt, repair และ retry ที่ไม่เพิ่มรางวัลซ้ำ",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.2.md",
+      "previous": "G1.1",
+      "next": "G1.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.1.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.1"
+      ]
+    },
+    {
+      "ordinal": 11,
+      "packageId": "P1.3",
+      "displayId": "G1.3",
+      "title": "LexiQuest · G1.3 · History และ replay บน content version เดิม",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.3.md",
+      "previous": "G1.2",
+      "next": "G1.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.2.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.2"
+      ]
+    },
+    {
+      "ordinal": 12,
+      "packageId": "P1.4",
+      "displayId": "G1.4",
+      "title": "LexiQuest · G1.4 · restart, migration และการกู้จาก partial write",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.4.md",
+      "previous": "G1.3",
+      "next": "G1.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.3.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.3"
+      ]
+    },
+    {
+      "ordinal": 13,
+      "packageId": "P1.5",
+      "displayId": "G1.5",
+      "title": "LexiQuest · G1.5 · evidence eligibility และตารางทบทวน SRS",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.5.md",
+      "previous": "G1.4",
+      "next": "G1.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.4.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.4"
+      ]
+    },
+    {
+      "ordinal": 14,
+      "packageId": "P1.6",
+      "displayId": "G1.6",
+      "title": "LexiQuest · G1.6 · เวลาเรียนและตัวเลขจาก read models",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.6.md",
+      "previous": "G1.5",
+      "next": "G1.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.5.json",
+      "phase": "G1",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.5"
+      ]
+    },
+    {
+      "ordinal": 15,
+      "packageId": "P1.7",
+      "displayId": "G1.7",
+      "title": "LexiQuest · G1.7 · cold start แบบ local และ runtime fixes ที่เกี่ยวข้อง",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G1.7.md",
+      "previous": "G1.6",
+      "next": "G2.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.6.json",
+      "phase": "G1",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P1.6"
+      ]
+    },
+    {
+      "ordinal": 16,
+      "packageId": "P2.1",
+      "displayId": "G2.1",
+      "title": "LexiQuest · G2.1 · UI tokens และ shell ร่วมทุกโหมด",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.1.md",
+      "previous": "G1.7",
+      "next": "G2.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G1.7.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G1"
+      ]
+    },
+    {
+      "ordinal": 17,
+      "packageId": "P2.2",
+      "displayId": "G2.2",
+      "title": "LexiQuest · G2.2 · Pair Matching ทุก state และความหนาแน่น",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.2.md",
+      "previous": "G2.1",
+      "next": "G2.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.1.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.1"
+      ]
+    },
+    {
+      "ordinal": 18,
+      "packageId": "P2.3",
+      "displayId": "G2.3",
+      "title": "LexiQuest · G2.3 · Meaning, Definition และ Typed Recall",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.3.md",
+      "previous": "G2.2",
+      "next": "G2.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.2.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.2"
+      ]
+    },
+    {
+      "ordinal": 19,
+      "packageId": "P2.4",
+      "displayId": "G2.4",
+      "title": "LexiQuest · G2.4 · Cloze แบบเลือกและพิมพ์",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.4.md",
+      "previous": "G2.3",
+      "next": "G2.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.3.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.3"
+      ]
+    },
+    {
+      "ordinal": 20,
+      "packageId": "P2.5",
+      "displayId": "G2.5",
+      "title": "LexiQuest · G2.5 · WordQuest block spelling และ Sentence Scramble",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.5.md",
+      "previous": "G2.4",
+      "next": "G2.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.4.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.4"
+      ]
+    },
+    {
+      "ordinal": 21,
+      "packageId": "P2.6",
+      "displayId": "G2.6",
+      "title": "LexiQuest · G2.6 · Flashcard และ scratchpad ที่ไม่สร้างคะแนนเทียม",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.6.md",
+      "previous": "G2.5",
+      "next": "G2.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.5.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.5"
+      ]
+    },
+    {
+      "ordinal": 22,
+      "packageId": "P2.7",
+      "displayId": "G2.7",
+      "title": "LexiQuest · G2.7 · Session configuration และ interaction contract 14 โหมด",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.7.md",
+      "previous": "G2.6",
+      "next": "G2.8",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.6.json",
+      "phase": "G2",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.6"
+      ]
+    },
+    {
+      "ordinal": 23,
+      "packageId": "P2.8",
+      "displayId": "G2.8",
+      "title": "LexiQuest · G2.8 · Reading, Adventure และ Ghost journeys",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G2.8.md",
+      "previous": "G2.7",
+      "next": "G3.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.7.json",
+      "phase": "G2",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P2.7"
+      ]
+    },
+    {
+      "ordinal": 24,
+      "packageId": "P3.1",
+      "displayId": "G3.1",
+      "title": "LexiQuest · G3.1 · Catalog และ pack detail จาก metadata จริง",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.1.md",
+      "previous": "G2.8",
+      "next": "G3.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G2.8.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G1",
+        "G2"
+      ]
+    },
+    {
+      "ordinal": 25,
+      "packageId": "P3.2",
+      "displayId": "G3.2",
+      "title": "LexiQuest · G3.2 · Rich lexical card และคุณภาพเนื้อหา",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.2.md",
+      "previous": "G3.1",
+      "next": "G3.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.1.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.1"
+      ]
+    },
+    {
+      "ordinal": 26,
+      "packageId": "P3.3",
+      "displayId": "G3.3",
+      "title": "LexiQuest · G3.3 · เฉลย คำใบ้ Bookmark และ Report",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.3.md",
+      "previous": "G3.2",
+      "next": "G3.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.2.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.2"
+      ]
+    },
+    {
+      "ordinal": 27,
+      "packageId": "P3.4",
+      "displayId": "G3.4",
+      "title": "LexiQuest · G3.4 · Review Center และประวัติหลังฝึก",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.4.md",
+      "previous": "G3.3",
+      "next": "G3.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.3.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.3"
+      ]
+    },
+    {
+      "ordinal": 28,
+      "packageId": "P3.5",
+      "displayId": "G3.5",
+      "title": "LexiQuest · G3.5 · Dashboard, calendar และสูตรความก้าวหน้า",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.5.md",
+      "previous": "G3.4",
+      "next": "G3.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.4.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.4"
+      ]
+    },
+    {
+      "ordinal": 29,
+      "packageId": "P3.6",
+      "displayId": "G3.6",
+      "title": "LexiQuest · G3.6 · Assessment และ before/after ที่มี metadata ครบ",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.6.md",
+      "previous": "G3.5",
+      "next": "G3.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.5.json",
+      "phase": "G3",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.5"
+      ]
+    },
+    {
+      "ordinal": 30,
+      "packageId": "P3.7",
+      "displayId": "G3.7",
+      "title": "LexiQuest · G3.7 · Offline content readiness และการเปลี่ยน revision",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G3.7.md",
+      "previous": "G3.6",
+      "next": "G4.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.6.json",
+      "phase": "G3",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P3.6"
+      ]
+    },
+    {
+      "ordinal": 31,
+      "packageId": "P4.1",
+      "displayId": "G4.1",
+      "title": "LexiQuest · G4.1 · Today และ navigation ที่มีเหตุผล",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.1.md",
+      "previous": "G3.7",
+      "next": "G4.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G3.7.json",
+      "phase": "G4",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "ordinal": 32,
+      "packageId": "P4.2",
+      "displayId": "G4.2",
+      "title": "LexiQuest · G4.2 · Goal, countdown และ reminder แบบ opt-in",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.2.md",
+      "previous": "G4.1",
+      "next": "G4.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.1.json",
+      "phase": "G4",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P4.1"
+      ]
+    },
+    {
+      "ordinal": 33,
+      "packageId": "P4.3",
+      "displayId": "G4.3",
+      "title": "LexiQuest · G4.3 · Focus Timer และ automatic effort",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.3.md",
+      "previous": "G4.2",
+      "next": "G4.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.2.json",
+      "phase": "G4",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P4.2"
+      ]
+    },
+    {
+      "ordinal": 34,
+      "packageId": "P4.4",
+      "displayId": "G4.4",
+      "title": "LexiQuest · G4.4 · Quest และ Gentle Streak",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.4.md",
+      "previous": "G4.3",
+      "next": "G4.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.3.json",
+      "phase": "G4",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P4.3"
+      ]
+    },
+    {
+      "ordinal": 35,
+      "packageId": "P4.5",
+      "displayId": "G4.5",
+      "title": "LexiQuest · G4.5 · Achievements, avatar, companion และ share card",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.5.md",
+      "previous": "G4.4",
+      "next": "G4.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.4.json",
+      "phase": "G4",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P4.4"
+      ]
+    },
+    {
+      "ordinal": 36,
+      "packageId": "P4.6",
+      "displayId": "G4.6",
+      "title": "LexiQuest · G4.6 · Preferences, onboarding, theme และ motion",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G4.6.md",
+      "previous": "G4.5",
+      "next": "G5.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.5.json",
+      "phase": "G4",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P4.5"
+      ]
+    },
+    {
+      "ordinal": 37,
+      "packageId": "P5.1",
+      "displayId": "G5.1",
+      "title": "LexiQuest · G5.1 · Camera permission และ model lifecycle",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.1.md",
+      "previous": "G4.6",
+      "next": "G5.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G4.6.json",
+      "phase": "G5",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G1",
+        "G4"
+      ]
+    },
+    {
+      "ordinal": 38,
+      "packageId": "P5.2",
+      "displayId": "G5.2",
+      "title": "LexiQuest · G5.2 · Uncertainty, label mapping และ accept decision",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.2.md",
+      "previous": "G5.1",
+      "next": "G5.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.1.json",
+      "phase": "G5",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P5.1"
+      ]
+    },
+    {
+      "ordinal": 39,
+      "packageId": "P5.3",
+      "displayId": "G5.3",
+      "title": "LexiQuest · G5.3 · บันทึกคำจากกล้องและกู้คืน",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.3.md",
+      "previous": "G5.2",
+      "next": "G5.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.2.json",
+      "phase": "G5",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P5.2"
+      ]
+    },
+    {
+      "ordinal": 40,
+      "packageId": "P5.4",
+      "displayId": "G5.4",
+      "title": "LexiQuest · G5.4 · Dataset provenance และ validation freeze",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.4.md",
+      "previous": "G5.3",
+      "next": "G5.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.3.json",
+      "phase": "G5",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P5.3"
+      ]
+    },
+    {
+      "ordinal": 41,
+      "packageId": "P5.5",
+      "displayId": "G5.5",
+      "title": "LexiQuest · G5.5 · Metrics, latency และ resource budget",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.5.md",
+      "previous": "G5.4",
+      "next": "G5.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.4.json",
+      "phase": "G5",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P5.4"
+      ]
+    },
+    {
+      "ordinal": 42,
+      "packageId": "P5.6",
+      "displayId": "G5.6",
+      "title": "LexiQuest · G5.6 · Baseline retention และ device/rollback evidence",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G5.6.md",
+      "previous": "G5.5",
+      "next": "G6.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.5.json",
+      "phase": "G5",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P5.5"
+      ]
+    },
+    {
+      "ordinal": 43,
+      "packageId": "P6.1",
+      "displayId": "G6.1",
+      "title": "LexiQuest · G6.1 · AI context, level และ intent",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.1.md",
+      "previous": "G5.6",
+      "next": "G6.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G5.6.json",
+      "phase": "G6",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G3",
+        "G4"
+      ]
+    },
+    {
+      "ordinal": 44,
+      "packageId": "P6.2",
+      "displayId": "G6.2",
+      "title": "LexiQuest · G6.2 · Cancellation, late results และข้อความอ่านได้",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.2.md",
+      "previous": "G6.1",
+      "next": "G6.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.1.json",
+      "phase": "G6",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P6.1"
+      ]
+    },
+    {
+      "ordinal": 45,
+      "packageId": "P6.3",
+      "displayId": "G6.3",
+      "title": "LexiQuest · G6.3 · Provider errors, keys, retry และ usage",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.3.md",
+      "previous": "G6.2",
+      "next": "G6.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.2.json",
+      "phase": "G6",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P6.2"
+      ]
+    },
+    {
+      "ordinal": 46,
+      "packageId": "P6.4",
+      "displayId": "G6.4",
+      "title": "LexiQuest · G6.4 · Speech gateways และ fallback",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.4.md",
+      "previous": "G6.3",
+      "next": "G6.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.3.json",
+      "phase": "G6",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P6.3"
+      ]
+    },
+    {
+      "ordinal": 47,
+      "packageId": "P6.5",
+      "displayId": "G6.5",
+      "title": "LexiQuest · G6.5 · Speaking, shadowing และ dictation evidence",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.5.md",
+      "previous": "G6.4",
+      "next": "G6.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.4.json",
+      "phase": "G6",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P6.4"
+      ]
+    },
+    {
+      "ordinal": 48,
+      "packageId": "P6.6",
+      "displayId": "G6.6",
+      "title": "LexiQuest · G6.6 · AI quality rubric และ no-key journey",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G6.6.md",
+      "previous": "G6.5",
+      "next": "G7.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.5.json",
+      "phase": "G6",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P6.5"
+      ]
+    },
+    {
+      "ordinal": 49,
+      "packageId": "P7.1",
+      "displayId": "G7.1",
+      "title": "LexiQuest · G7.1 · Offline queue, lost ack และ reopen",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.1.md",
+      "previous": "G6.6",
+      "next": "G7.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G6.6.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G1",
+        "G3",
+        "G5",
+        "G6"
+      ]
+    },
+    {
+      "ordinal": 50,
+      "packageId": "P7.2",
+      "displayId": "G7.2",
+      "title": "LexiQuest · G7.2 · Owner switch, conflict และ migration compatibility",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.2.md",
+      "previous": "G7.1",
+      "next": "G7.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.1.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.1"
+      ]
+    },
+    {
+      "ordinal": 51,
+      "packageId": "P7.3",
+      "displayId": "G7.3",
+      "title": "LexiQuest · G7.3 · Backend access policy และ research boundaries",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.3.md",
+      "previous": "G7.2",
+      "next": "G7.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.2.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.2"
+      ]
+    },
+    {
+      "ordinal": 52,
+      "packageId": "P7.4",
+      "displayId": "G7.4",
+      "title": "LexiQuest · G7.4 · Export/delete และ lifecycle ของข้อมูลทั้งหมด",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.4.md",
+      "previous": "G7.3",
+      "next": "G7.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.3.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.3"
+      ]
+    },
+    {
+      "ordinal": 53,
+      "packageId": "P7.5",
+      "displayId": "G7.5",
+      "title": "LexiQuest · G7.5 · Activation matrix และ edition ที่ซื่อสัตย์",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.5.md",
+      "previous": "G7.4",
+      "next": "G7.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.4.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.4"
+      ]
+    },
+    {
+      "ordinal": 54,
+      "packageId": "P7.6",
+      "displayId": "G7.6",
+      "title": "LexiQuest · G7.6 · AI/voice/backend contracts และภาระทรัพยากร",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.6.md",
+      "previous": "G7.5",
+      "next": "G7.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.5.json",
+      "phase": "G7",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.5"
+      ]
+    },
+    {
+      "ordinal": 55,
+      "packageId": "P7.7",
+      "displayId": "G7.7",
+      "title": "LexiQuest · G7.7 · Dependency, native config และ release tooling readiness",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G7.7.md",
+      "previous": "G7.6",
+      "next": "G8.1",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.6.json",
+      "phase": "G7",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P7.6"
+      ]
+    },
+    {
+      "ordinal": 56,
+      "packageId": "P8.1",
+      "displayId": "G8.1",
+      "title": "LexiQuest · G8.1 · ปิด development gates และ freeze inventory",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.1.md",
+      "previous": "G7.7",
+      "next": "G8.2",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G7.7.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "G0",
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7"
+      ]
+    },
+    {
+      "ordinal": 57,
+      "packageId": "P8.2",
+      "displayId": "G8.2",
+      "title": "LexiQuest · G8.2 · รีวิวโค้ดทั้งแอปบน source ที่ freeze",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.2.md",
+      "previous": "G8.1",
+      "next": "G8.3",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.1.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.1"
+      ]
+    },
+    {
+      "ordinal": 58,
+      "packageId": "P8.3",
+      "displayId": "G8.3",
+      "title": "LexiQuest · G8.3 · แก้ผล review และปิด development review",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.3.md",
+      "previous": "G8.2",
+      "next": "G8.4",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.2.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.2"
+      ]
+    },
+    {
+      "ordinal": 59,
+      "packageId": "P8.4",
+      "displayId": "G8.4",
+      "title": "LexiQuest · G8.4 · จัดทำ System Test Plan หลัง code review",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.4.md",
+      "previous": "G8.3",
+      "next": "G8.5",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.3.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.3"
+      ]
+    },
+    {
+      "ordinal": 60,
+      "packageId": "P8.5",
+      "displayId": "G8.5",
+      "title": "LexiQuest · G8.5 · รัน local automated gates ตาม Test Plan",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.5.md",
+      "previous": "G8.4",
+      "next": "G8.6",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.4.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.4"
+      ]
+    },
+    {
+      "ordinal": 61,
+      "packageId": "P8.6",
+      "displayId": "G8.6",
+      "title": "LexiQuest · G8.6 · Build, install และเส้นทางใช้งานจริง",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.6.md",
+      "previous": "G8.5",
+      "next": "G8.7",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.5.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.5"
+      ]
+    },
+    {
+      "ordinal": 62,
+      "packageId": "P8.7",
+      "displayId": "G8.7",
+      "title": "LexiQuest · G8.7 · Fault injection, accessibility และ resource checks",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.7.md",
+      "previous": "G8.6",
+      "next": "G8.8",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.6.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.6"
+      ]
+    },
+    {
+      "ordinal": 63,
+      "packageId": "P8.8",
+      "displayId": "G8.8",
+      "title": "LexiQuest · G8.8 · Defect → fix → retest → regression",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.8.md",
+      "previous": "G8.7",
+      "next": "G8.9",
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.7.json",
+      "phase": "G8",
+      "phaseLast": false,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.7"
+      ]
+    },
+    {
+      "ordinal": 64,
+      "packageId": "P8.9",
+      "displayId": "G8.9",
+      "title": "LexiQuest · G8.9 · ตรวจรับสุดท้ายและ release ledger",
+      "briefPath": "docs/superpowers/task-briefs/full-system/G8.9.md",
+      "previous": "G8.8",
+      "next": null,
+      "model": "gpt-6-astra",
+      "thinking": "medium",
+      "requiredPredecessorHandoff": "handoffs/G8.8.json",
+      "phase": "G8",
+      "phaseLast": true,
+      "definitionStatus": "prepared",
+      "requirementDependencies": [
+        "P8.8"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026-09-13-sequential-3",
+  "verifiedAtUtc": "2026-09-13T03:26:53.6540512Z",
+  "kind": "documentation-and-orchestration-validation",
+  "result": "passed",
+  "runtimeTestsRun": false,
+  "checks": {
+    "phases": 9,
+    "packages": 64,
+    "phaseCounts": [
+      8,
+      7,
+      8,
+      7,
+      6,
+      6,
+      6,
+      7,
+      9
+    ],
+    "briefFiles": 64,
+    "chain": "G0.1 through G8.9 with one predecessor/one successor",
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "coverageRows": 74,
+    "formulaGroups": 12,
+    "wholeCodeReviewZones": 12,
+    "systemTestFamilies": 16,
+    "activeRelativeLinks": 481,
+    "sourceChanges": "AGENTS and docs only",
+    "noRuntimePassFabricated": true
+  },
+  "scope": "Current active workflow, master, readiness, policy links and 64 briefs. Historical docs may point to R15-only source and remain evidence references; G0.1-G0.3 reconcile source.",
+  "command": "First package/index checks passed before inventory checkpoint; resumed only inventory, links, authority, diff and bootstrap preparation from the saved script after diagnosing scalar zones field",
+  "physicalCleanup": "Queued for G0.6 and G7.4; no application or user data deleted",
+  "planningIssues": [
+    {
+      "id": "PLAN-OPS-02",
+      "category": "verification-tooling",
+      "firstCommand": "build/plan-review/prepare-sequential-bootstrap.ps1",
+      "firstExitCode": 1,
+      "firstActual": "Phase counts failed",
+      "expected": "8,7,8,7,6,6,6,7,9",
+      "rootCause": "PowerShell array .count returned collection length 9 instead of each phase count property",
+      "diagnostic": "Explicit ForEach-Object projection returned 8,7,8,7,6,6,6,7,9 and sum 64; no runtime control state created on first failure",
+      "fix": "Project per-item count before join",
+      "status": "closed-after-this-successful-validation",
+      "applicationImpact": "none"
+    },
+    {
+      "id": "PLAN-OPS-03",
+      "category": "verification-tooling",
+      "firstCommand": "build/plan-review/prepare-sequential-bootstrap.ps1",
+      "firstExitCode": 1,
+      "firstActual": "Unknown dependency G0",
+      "expected": "Dependencies resolve to a package or declared phase gate",
+      "rootCause": "Validator admitted only P package IDs although the ledger intentionally also references declared G phase gates",
+      "diagnostic": "All non-package dependencies are G0-G7 and resolve in ledger.phases; no unknown coverage owners",
+      "fix": "Validate dependencies against package IDs plus declared phase gates",
+      "status": "closed-after-this-successful-validation",
+      "applicationImpact": "none"
+    },
+    {
+      "id": "PLAN-OPS-04",
+      "category": "verification-tooling",
+      "firstCommand": "build/plan-review/prepare-sequential-bootstrap.ps1",
+      "firstExitCode": 1,
+      "firstActual": "Coverage/review/test inventory failed",
+      "expected": "74 coverage rows, 12 formula groups, 12 review zones, 16 test families",
+      "rootCause": "wholeCodeReview.zones is the scalar count 12; .Count on that scalar returned 1",
+      "diagnostic": "Targeted JSON projection confirmed zones=12 and the other inventory counts; 64 package/index/model/dependency checks had already passed",
+      "fix": "Compare scalar zones directly; stop rerunning monolithic checker and resume only unfinished checks",
+      "status": "closed-after-this-successful-validation",
+      "applicationImpact": "none"
+    }
+  ]
+}

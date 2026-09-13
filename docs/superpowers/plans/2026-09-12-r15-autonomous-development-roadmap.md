@@ -1,5 +1,7 @@
 # R15 Autonomous Development Roadmap
 
+> **HISTORICAL / SUPERSEDED for execution — sequential-3:** roadmap R15 นี้เก็บประวัติการตัดสินใจและ evidence links. ห้ามใช้ scope, old source/branch, worktree rule, pause หรือ successor instructions ของไฟล์นี้นำทางงานปัจจุบัน. ใช้ [Active Index](../../development/full-system-active-index.md), [current Master](2026-09-13-lexiquest-full-system-master-plan.md) และ [Sequential Workflow](../../development/full-system-package-workflow.md)
+
 > **For agentic workers:** ใช้ executing-plans เมื่อได้รับคำสั่งลงมือ ดำเนินทีละงานใน worktree เดิมโดยผู้พัฒนาคนเดียว ไม่ dispatch subagent และไม่เปิดบริการจริงโดยปริยาย
 
 **Goal:** จัดลำดับงานต่อจาก R14/Prototype 3 และผลศึกษา Duolingo–ALLTCAS ให้พัฒนาระบบภาษาอังกฤษต่อเนื่องได้โดยไม่ต้องรอผู้ใช้ในวงจรพัฒนาทั่วไป

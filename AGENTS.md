@@ -1,68 +1,19 @@
-# LexiQuest working instructions
+# LexiQuest Development Guardrails
 
-## Scope and safety
-- Follow the latest user request. Approved implementation includes local edits,
-  tests and bounded recovery; do not restart approval loops. Work on one major
-  package at a time, in the existing task worktree, without background workers
-  or subagents unless explicitly authorized.
-- Preserve user changes and other worktrees. Never bulk stage, reset, clean,
-  overwrite or kill unrelated processes. Discover paths before reading them.
-  Use apply_patch for text edits and normal generators for generated files.
-- No Codex Security, Security Scan, Deep Scan or worker workflow.
-- Keep approved 8/44 and frozen EvidenceContext/EventEnvelopeV2 compatibility,
-  canonical learning/reward authorities, historical truth and owner isolation.
-  New owner storage requires migration, export/delete and applicable sync/policy.
-- Research is optional; real enrollment/upload stays off. Nonparticipants create
-  no research records/outbox/uploads. Research gates fail closed without blocking
-  ordinary learning. Never expose credentials/PII or weaken consent/signature checks.
-- No purchase, paid service, deployment, push, merge, real-data upload or
-  destructive cleanup without applicable user authorization. Use explicit device
-  serials; preserve app identity and data on authorized device tests.
+## Current Full-System authority — 2026-09-13 revision 3
 
-## Execution and verification
-- Read the active checkpoint, then only the current package requirements.
-  Use regression-first changes and the smallest useful reproduction.
-- Diagnose errors before retrying. At most two recovery attempts for one cause,
-  with concrete corrective evidence. Repeated unchanged failures stop that
-  operation; report and continue safe relevant work. After ten minutes without
-  measurable progress, inspect the task-owned process; do not kill blindly.
-- Serialize Flutter test/build/dependency/codegen operations in this worktree.
-  Never run full Flutter/backend/Android/GPU gates concurrently.
-- Use tool/cli/verify-scope.ps1 for bounded checks. Do not rerun a passed gate
-  with unchanged relevant inputs. Full release verification requires a frozen
-  PR/release SHA. No source writers during integration checks.
-- Do not remove tests or weaken assertions to pass. Review current diff and
-  actual results before claims/commits. Local checks do not prove human,
-  physical, live-service, release or research acceptance.
-- Report concisely in Thai. Maintain a short active checkpoint with source,
-  results, unresolved work, process status and the next step.
+- The user has authorized starting G0.1 and continuing sequentially through G8.9, one new Codex task per package. There are 9 phases and 64 package tasks; the previous pause-after-plan instruction is superseded. Use GPT-6 Astra (`gpt-6-astra`) with `medium` reasoning for each task.
+- Read `docs/development/full-system-active-index.md`, `docs/development/full-system-package-workflow.md`, and `docs/development/2026-09-13-rule-supersession-register.md` before executing a Full-System package. Package labels G0.1–G8.9 map to the existing P0.1–P8.9 plan IDs; do not create C-prefixed IDs.
+- The current Master Plan governs development scope. Legacy milestone-only limits, fixed UI/workaround choices, narrow write sets, and old no-successor instructions do not restrict this plan. Necessary UI, game rules, routes, dependencies, APIs, storage, and schema changes are allowed with a documented design, compatibility/migration decision, and meaningful acceptance coverage.
+- The 44-feature catalog and 64-package list are the current coverage baseline, not a permanent product ceiling. Preserve historical catalog/evidence identity; version any actual contract expansion and assign it to the current master plan instead of silently rewriting past records.
+- Keep one active package writer. A completed task may create exactly its next task after verification, an accepted source commit, a durable handoff, and writer release. Do not launch all 64 tasks together. Do not start background implementation workers or subagents.
+- Use judgment to diagnose recoverable problems and adjust the current package without repeatedly asking for permission. Preserve data correctness, owner isolation, historical evidence/receipt interpretation, and truthful test results. These are acceptance properties, not a prohibition on refactoring or improving the architecture.
+- Newer user pause/stop instructions always override automatic task succession. Old files remain historical evidence unless the active index identifies a still-applicable contract.
 
-## Context budget
-- Keep full specs and logs on disk. Do not preload all packages or reread known
-  documents. Search with rg, then read bounded relevant ranges.
-- Default tool output budget: 1200 tokens; up to 3000 for a necessary source
-  excerpt. Split a truncated read by headings; do not repeat the same broad read.
-- Test output goes to per-command/source logs. Return exit status, count, log
-  path and the first relevant failure; inspect a stack trace only when needed.
-- Reuse observed paths and verified results. Poll only for a meaningful state
-  change; do not dump repeated progress lines or full inventories.
-- The active checkpoint is current state only, not an appended transcript.
-  Preserve completed investigations in referenced history files.
-- Extra plugins/skills, model settings and global instructions are not changed
-  merely to reduce this task's context. Compaction is not a reason to stop work.
-- Continue approved packages without asking the user to restart routine work.
-  Keep a coupled debugging cycle in one task. At an accepted package boundary,
-  use a fresh task with a compact handoff when accumulated context warrants it;
-  do not fork full history or create a new task for every command. Never overlap
-  source writers. Verify committed source or explicitly account for pending edits
-  before a handoff; do not recreate completed work or import another worktree.
-- Use the lightweight [package workflow](docs/development/r15-package-workflow.md).
-  Do not claim token/credit savings from file-size changes; record actual usage
-  only when available. Optimize cost per accepted package, not output brevity alone.
-
-Detailed guardrails remain in
-[the reference](docs/development/lexiquest-guardrails-reference.md).
-Read only the applicable section: scope/continuity (1), filesystem (2),
-recovery (3), verification (4), data/research (5), completion (6).
-This routing summary does not waive those requirements. Latest user instructions
-take precedence; historical checkpoint pauses are not permanent prohibitions.
+- Execute one major work package at a time. Do not start background implementation workers.
+- Do not invoke, install, resume, or recommend Codex Security, Security Scan, Deep Scan, or a Codex Security worker workflow.
+- Use `tool/cli/verify-scope.ps1` for bounded targeted and subsystem checks. Run the full release verifier only on a frozen PR or release SHA.
+- Do not rerun a passed gate when its recorded source fingerprint is unchanged.
+- Do not run full Flutter tests, full backend tests, Android builds, or GPU checks concurrently.
+- Stop and report when the same command failure repeats, a filesystem error repeats, or a command makes no measurable progress for 10 minutes.
+- Keep research activation, remote research synchronization, study assignment, statistical reporting, and unrelated document work outside the production-system work packages.

@@ -1,5 +1,7 @@
 # R15 Implementation and Acceptance Contract
 
+> **Historical R15 contract — superseded execution authority:** ใช้ Given/When/Then ที่ยังตรงกับ current design เป็นหลักฐาน/acceptance reference. Baseline, dependency ban, fixed write set และลำดับ R15 ในไฟล์นี้ไม่ควบคุมงาน G0.1–G8.9; [Active Index](../../development/full-system-active-index.md), current Master และ [Rule Register](../../development/2026-09-13-rule-supersession-register.md) มีลำดับเหนือ. อ่านเฉพาะ contracts ที่ own package อ้าง ไม่ต้องรับคำสั่งทั้งไฟล์
+
 > **For agentic workers:** ใช้ executing-plans ทำทีละ package โดยผู้พัฒนาคนเดียว ไม่เรียก subagents ไม่แก้ทุก subsystem พร้อมกัน
 
 **Goal:** แปลง [engineering spec](../specs/2026-09-12-r15-engineering-spec.md) เป็นงานที่เลือกไฟล์ เขียน regression ตรวจภาพ และปิดงานได้โดยไม่ต้องเดาความหมายจาก roadmap

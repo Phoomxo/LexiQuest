@@ -1,0 +1,4565 @@
+{
+  "schemaVersion": 2,
+  "revision": "2026-09-13-sequential-3",
+  "executionState": "authorized-sequential-bootstrap",
+  "executionAuthorized": true,
+  "source": {
+    "reviewedPlanningWorktree": "C:/Users/Phet/.codex/worktrees/7712/LexiQuest",
+    "planningHead": "7b8ac6cc029c0df43f9d4e7d161da3502e6f557b",
+    "candidateWorktree": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest",
+    "candidateHead": "f4eebb895836349fbf8e9960312a78bad524d462",
+    "candidateIncludesUncommittedFixes": true,
+    "fixesManifest": "C:/Users/Phet/.codex/worktrees/842c/LexiQuest/build/verification/r15-review/fixes-source.json",
+    "sourceReconciliationStatus": "G0.1-G0.3-before-application-development",
+    "runtimeTestsRunThisPlanningTurn": false
+  },
+  "catalog": {
+    "revision": "1.3.0",
+    "semanticHash": "41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4",
+    "capabilities": 44,
+    "domains": 8,
+    "lessonModes": 14,
+    "journeys": 2,
+    "minigameGroups": 14
+  },
+  "phases": [
+    {
+      "id": 0,
+      "title": "รวมฐานโค้ดและจัดระเบียบแผน",
+      "count": 8,
+      "depends": [],
+      "gate": "G0",
+      "outcome": "source และ authority ที่เลือกมีเหตุผลครบ; baseline fixes, coverage, delivery decisions และข้อมูลเก่ามีทะเบียน"
+    },
+    {
+      "id": 1,
+      "title": "ความถูกต้องของการเรียนและข้อมูล",
+      "count": 7,
+      "depends": [
+        "G0"
+      ],
+      "gate": "G1",
+      "outcome": "owner/session/history/reward/time/SRS ถูกต้องหลัง retry, restart และไม่มี cloud"
+    },
+    {
+      "id": 2,
+      "title": "บทเรียน มินิเกม และ UI foundation",
+      "count": 8,
+      "depends": [
+        "G1"
+      ],
+      "gate": "G2",
+      "outcome": "14 LessonModes และ 2 journeys มี interaction/availability/accessibility contract แยกกัน"
+    },
+    {
+      "id": 3,
+      "title": "เนื้อหา การทบทวน และความก้าวหน้า",
+      "count": 7,
+      "depends": [
+        "G1",
+        "G2"
+      ],
+      "gate": "G3",
+      "outcome": "content version, explanations, review, analytics และ assessment constraints ตรวจย้อนกลับได้"
+    },
+    {
+      "id": 4,
+      "title": "Today การนำทาง และแรงจูงใจ",
+      "count": 6,
+      "depends": [
+        "G2",
+        "G3"
+      ],
+      "gate": "G4",
+      "outcome": "เริ่มฝึกง่าย มีอิสระเลือก; timer/goals/rewards/preferences ไม่สร้างข้อมูลซ้ำ"
+    },
+    {
+      "id": 5,
+      "title": "กล้องและการประเมินโมเดล",
+      "count": 6,
+      "depends": [
+        "G1",
+        "G4"
+      ],
+      "gate": "G5",
+      "outcome": "camera lifecycle และ uncertainty ใช้งานได้; candidate มีหลักฐานหรือคง baseline พร้อมข้อจำกัด"
+    },
+    {
+      "id": 6,
+      "title": "AI Tutor และเสียง",
+      "count": 6,
+      "depends": [
+        "G3",
+        "G4"
+      ],
+      "gate": "G6",
+      "outcome": "บริบทและ cancellation ปลอด stale state; no-key/no-audio fallback ใช้งานได้และบันทึก usage ตามจริง"
+    },
+    {
+      "id": 7,
+      "title": "Backend, sync, policy และการเตรียมส่งมอบ",
+      "count": 7,
+      "depends": [
+        "G1",
+        "G3",
+        "G5",
+        "G6"
+      ],
+      "gate": "G7",
+      "outcome": "owner lifecycle, offline recovery, runtime edition และ backend boundaries ผ่าน local acceptance"
+    },
+    {
+      "id": 8,
+      "title": "รีวิวโค้ดทั้งแอป Test Plan และตรวจใช้งานจริง",
+      "count": 9,
+      "depends": [
+        "G0",
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7"
+      ],
+      "gate": "G8",
+      "outcome": "review ledger ครบ, Test Plan หลัง review, actual test/defect/retest evidence และ release ledger ที่ระบุข้อจำกัด"
+    }
+  ],
+  "packages": [
+    {
+      "id": "P0.1",
+      "title": "ยืนยัน worktree และสิทธิ์เขียน",
+      "requirements": [
+        "PLAN-01",
+        "G0"
+      ],
+      "ownerPaths": [
+        "AGENTS.md",
+        "docs/development",
+        "docs/superpowers/plans",
+        "docs/superpowers/specs",
+        "docs/superpowers/task-briefs/full-system"
+      ],
+      "testTargets": [],
+      "verificationKind": "source-inspection",
+      "status": "ready",
+      "dependencies": [],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.1.md"
+    },
+    {
+      "id": "P0.2",
+      "title": "รับ F1–F4 และแยก generated files",
+      "requirements": [
+        "PLAN-02",
+        "PLAN-03",
+        "G0"
+      ],
+      "ownerPaths": [
+        "lib/screens/ai_tutor_screen.dart",
+        "tool/cli/verify-scope.ps1",
+        "tools/camera_accuracy.py"
+      ],
+      "testTargets": [
+        "test/screens/ai_tutor_screen_test.dart",
+        "tool/cli/tests/r15-scope.tests.ps1",
+        "tools/test_camera_accuracy.py"
+      ],
+      "verificationKind": "baseline-evidence",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.1"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.2.md"
+    },
+    {
+      "id": "P0.3",
+      "title": "แจกแจง Git สองสายและเลือก authority",
+      "requirements": [
+        "PLAN-01",
+        "G0"
+      ],
+      "ownerPaths": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/data/local",
+        "functions"
+      ],
+      "testTargets": [],
+      "verificationKind": "source-inspection",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.2"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.3.md"
+    },
+    {
+      "id": "P0.4",
+      "title": "ยืนยันตัวตรวจแบบมีขอบเขตและการ reuse ผล",
+      "requirements": [
+        "PLAN-02",
+        "PLAN-11",
+        "G0"
+      ],
+      "ownerPaths": [
+        "tool/cli/verify-scope.ps1",
+        "tool/final_test_plan/generate_final_test_plan.dart"
+      ],
+      "testTargets": [
+        "tool/cli/tests/r15-scope.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "verificationKind": "cli-contract",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.3"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.4.md"
+    },
+    {
+      "id": "P0.5",
+      "title": "ปิดทะเบียน coverage และ traceability",
+      "requirements": [
+        "COV-f01–f44",
+        "MODE-all",
+        "MG-01–MG-14",
+        "G0"
+      ],
+      "ownerPaths": [
+        "docs/generated/alltcas-idea-integration-feature-map.json",
+        "lib/features/learning/domain/lesson_mode.dart",
+        "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md"
+      ],
+      "testTargets": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart"
+      ],
+      "verificationKind": "traceability",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.4"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.5.md"
+    },
+    {
+      "id": "P0.6",
+      "title": "จัดเอกสารเก่าและไฟล์ซ้ำอย่างย้อนกลับได้",
+      "requirements": [
+        "PLAN-04",
+        "PLAN-10",
+        "G0"
+      ],
+      "ownerPaths": [
+        "docs/development/r15-package-workflow.md",
+        "docs/development",
+        "docs/superpowers"
+      ],
+      "testTargets": [],
+      "verificationKind": "cleanup-review",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.5"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.6.md"
+    },
+    {
+      "id": "P0.7",
+      "title": "ทำทะเบียนสูตรและข้อมูลอ้างอิง",
+      "requirements": [
+        "FORM-01–FORM-12",
+        "G0"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/rewards/domain/avatar_progression_policy.dart",
+        "lib/features/learning/pair_matching/domain/pair_star_policy.dart"
+      ],
+      "testTargets": [],
+      "verificationKind": "formula-inspection",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.6"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.7.md"
+    },
+    {
+      "id": "P0.8",
+      "title": "ตกลง edition และปิด gate เริ่มพัฒนา",
+      "requirements": [
+        "COV-f12",
+        "COV-f23",
+        "COV-f28",
+        "COV-f41",
+        "G0"
+      ],
+      "ownerPaths": [
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/time_tracking/application/focus_timer_rollout.dart"
+      ],
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart"
+      ],
+      "verificationKind": "delivery-review",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P0.7"
+      ],
+      "verificationArea": "Runtime",
+      "plannedCommands": [],
+      "displayId": "G0.8",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G0.8.md"
+    },
+    {
+      "id": "P1.1",
+      "title": "วงจร owner และ session ที่มี authority เดียว",
+      "requirements": [
+        "COV-f05",
+        "COV-f13",
+        "COV-f40",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/application/learning_use_cases.dart",
+        "lib/features/identity",
+        "lib/runtime/learning_dependencies.dart"
+      ],
+      "testTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G0"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/learning_use_cases_test.dart','test/features/identity/upgrade_guest_owner_test.dart','test/features/learning/unified_lesson_controller_test.dart') -Resume"
+      ],
+      "displayId": "G1.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.1.md"
+    },
+    {
+      "id": "P1.2",
+      "title": "first attempt, repair และ retry ที่ไม่เพิ่มรางวัลซ้ำ",
+      "requirements": [
+        "COV-f17",
+        "COV-f24",
+        "COV-f43",
+        "FORM-01",
+        "FORM-04",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/application/current_activity_evidence.dart",
+        "lib/features/learning/pair_matching/domain",
+        "lib/features/rewards/application/reward_use_cases.dart"
+      ],
+      "testTargets": [
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/current_activity_evidence_test.dart','test/features/learning/learning_side_effect_reconciler_test.dart','test/features/rewards/reward_use_cases_test.dart') -Resume"
+      ],
+      "displayId": "G1.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.2.md"
+    },
+    {
+      "id": "P1.3",
+      "title": "History และ replay บน content version เดิม",
+      "requirements": [
+        "COV-f43",
+        "FORM-01",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/features/history",
+        "lib/screens/learning_history_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/learning_history_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/history/learning_history_reader_test.dart','test/features/history/learning_history_replay_test.dart','test/screens/learning_history_screen_test.dart') -Resume"
+      ],
+      "displayId": "G1.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.3.md"
+    },
+    {
+      "id": "P1.4",
+      "title": "restart, migration และการกู้จาก partial write",
+      "requirements": [
+        "COV-f40",
+        "COV-f43",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/data/local",
+        "lib/features/learning/data",
+        "lib/features/sync"
+      ],
+      "testTargets": [
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/scenarios/file_backed_sync_recovery_test.dart','test/features/learning/learning_recovery_foundation_test.dart','test/features/learning/drift_learning_repository_test.dart') -Resume"
+      ],
+      "displayId": "G1.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.4.md"
+    },
+    {
+      "id": "P1.5",
+      "title": "evidence eligibility และตารางทบทวน SRS",
+      "requirements": [
+        "COV-f06",
+        "COV-f11",
+        "COV-f15",
+        "FORM-03",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/domain/evidence_context.dart",
+        "lib/features/learning/domain/srs_policy.dart",
+        "lib/features/learning/application"
+      ],
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/evidence_eligibility_policy_test.dart','test/features/learning/srs_policy_test.dart','test/features/learning/assessment_evidence_isolation_test.dart') -Resume"
+      ],
+      "displayId": "G1.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.5.md"
+    },
+    {
+      "id": "P1.6",
+      "title": "เวลาเรียนและตัวเลขจาก read models",
+      "requirements": [
+        "COV-f24",
+        "COV-f25",
+        "COV-f36",
+        "FORM-06",
+        "FORM-07",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/features/time_tracking",
+        "lib/features/progress/data",
+        "lib/features/progress/domain"
+      ],
+      "testTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/time_tracking/active_learning_time_controller_test.dart','test/features/time_tracking/learning_time_repository_test.dart','test/features/progress/learning_calendar_reader_test.dart') -Resume"
+      ],
+      "displayId": "G1.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.6.md"
+    },
+    {
+      "id": "P1.7",
+      "title": "cold start แบบ local และ runtime fixes ที่เกี่ยวข้อง",
+      "requirements": [
+        "COV-f40",
+        "COV-f41",
+        "G1"
+      ],
+      "ownerPaths": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/runtime/production_feature_gate.dart"
+      ],
+      "testTargets": [
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P1.6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/production_shell_navigation_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart','test/screens/offline_vocabulary_journey_test.dart') -Resume"
+      ],
+      "displayId": "G1.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G1.7.md"
+    },
+    {
+      "id": "P2.1",
+      "title": "UI tokens และ shell ร่วมทุกโหมด",
+      "requirements": [
+        "COV-f05",
+        "COV-f38",
+        "COV-f39",
+        "A-UI",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/config/m3_theme.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart",
+        "lib/features/accessibility"
+      ],
+      "testTargets": [
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/unified_lesson_controller_test.dart','test/features/learning/r15_learning_feedback_visual_test.dart') -Resume"
+      ],
+      "displayId": "G2.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.1.md"
+    },
+    {
+      "id": "P2.2",
+      "title": "Pair Matching ทุก state และความหนาแน่น",
+      "requirements": [
+        "COV-f10",
+        "COV-f17",
+        "MG-05",
+        "A-PAIR",
+        "FORM-02",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/pair_matching/presentation",
+        "lib/features/learning/pair_matching/domain"
+      ],
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/pair_matching/pair_star_policy_test.dart','test/features/learning/matching_mode_adapter_test.dart') -Resume"
+      ],
+      "displayId": "G2.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.2.md"
+    },
+    {
+      "id": "P2.3",
+      "title": "Meaning, Definition และ Typed Recall",
+      "requirements": [
+        "COV-f07",
+        "COV-f08",
+        "COV-f11",
+        "MG-02",
+        "MG-06",
+        "MG-07",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/screens/quiz_screen.dart",
+        "lib/features/learning/application",
+        "lib/features/learning/presentation"
+      ],
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/quiz_screen_test.dart','test/features/learning/definition_quiz_mode_adapter_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
+      ],
+      "displayId": "G2.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.3.md"
+    },
+    {
+      "id": "P2.4",
+      "title": "Cloze แบบเลือกและพิมพ์",
+      "requirements": [
+        "COV-f09",
+        "COV-f17",
+        "MG-03",
+        "MG-04",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/screens/quiz_screen.dart",
+        "lib/features/learning/application/cloze_mode_adapter.dart",
+        "lib/features/learning/presentation"
+      ],
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/cloze_mode_adapter_test.dart','test/screens/quiz_screen_test.dart') -Resume"
+      ],
+      "displayId": "G2.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.4.md"
+    },
+    {
+      "id": "P2.5",
+      "title": "WordQuest block spelling และ Sentence Scramble",
+      "requirements": [
+        "COV-f13",
+        "MG-01",
+        "MG-08",
+        "FORM-11",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/screens/word_scramble_screen.dart",
+        "lib/screens/sentence_scramble_screen.dart",
+        "lib/features/learning/application/current_activity_evidence.dart"
+      ],
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/word_scramble_screen_test.dart','test/screens/sentence_scramble_screen_test.dart') -Resume"
+      ],
+      "displayId": "G2.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.5.md"
+    },
+    {
+      "id": "P2.6",
+      "title": "Flashcard และ scratchpad ที่ไม่สร้างคะแนนเทียม",
+      "requirements": [
+        "COV-f06",
+        "COV-f12",
+        "MG-11",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/screens/srs_flashcards_screen.dart",
+        "lib/features/learning/presentation/handwriting_scratchpad.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart"
+      ],
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/srs_flashcards_screen_test.dart','test/features/learning/handwriting_scratchpad_test.dart','test/features/learning/lesson_mode_registry_test.dart') -Resume"
+      ],
+      "displayId": "G2.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.6.md"
+    },
+    {
+      "id": "P2.7",
+      "title": "Session configuration และ interaction contract 14 โหมด",
+      "requirements": [
+        "COV-f05",
+        "COV-f16",
+        "COV-f19",
+        "MODE-all",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/presentation/session_configuration_sheet.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart",
+        "lib/features/learning/domain/lesson_mode.dart"
+      ],
+      "testTargets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/session_configuration_policy_test.dart','test/features/learning/session_configuration_sheet_test.dart','test/features/learning/session_configuration_store_test.dart') -Resume"
+      ],
+      "displayId": "G2.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.7.md"
+    },
+    {
+      "id": "P2.8",
+      "title": "Reading, Adventure และ Ghost journeys",
+      "requirements": [
+        "COV-f13",
+        "COV-f15",
+        "MG-10",
+        "MG-13",
+        "MG-14",
+        "G2"
+      ],
+      "ownerPaths": [
+        "lib/features/adventure",
+        "lib/screens",
+        "lib/features/learning/application/native_mode_adapters.dart"
+      ],
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P2.7"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/adventure/application/adventure_mixed_review_controller_test.dart','test/features/adventure/presentation/adventure_mixed_review_screen_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
+      ],
+      "displayId": "G2.8",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G2.8.md"
+    },
+    {
+      "id": "P3.1",
+      "title": "Catalog และ pack detail จาก metadata จริง",
+      "requirements": [
+        "COV-f01",
+        "COV-f02",
+        "COV-f04",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/learning_packs",
+        "lib/screens/learning_pack_catalog_screen.dart",
+        "lib/screens/learning_pack_detail_screen.dart"
+      ],
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G1",
+        "G2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/learning_pack_catalog_screen_test.dart','test/screens/learning_pack_detail_screen_test.dart','test/features/learning_packs/learning_pack_detail_test.dart') -Resume"
+      ],
+      "displayId": "G3.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.1.md"
+    },
+    {
+      "id": "P3.2",
+      "title": "Rich lexical card และคุณภาพเนื้อหา",
+      "requirements": [
+        "COV-f03",
+        "COV-f04",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/widgets/rich_lexical_card.dart",
+        "lib/features/learning_packs/domain/content_quality_policy.dart",
+        "lib/features/vocabulary"
+      ],
+      "testTargets": [
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/widgets/rich_lexical_card_test.dart','test/features/learning_packs/content_quality_policy_test.dart','test/features/vocabulary/cefr_sense_review_test.dart') -Resume"
+      ],
+      "displayId": "G3.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.2.md"
+    },
+    {
+      "id": "P3.3",
+      "title": "เฉลย คำใบ้ Bookmark และ Report",
+      "requirements": [
+        "COV-f18",
+        "COV-f19",
+        "COV-f20",
+        "COV-f21",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/learning/presentation",
+        "lib/features/review",
+        "lib/screens/quiz_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/learning/contrastive_feedback_test.dart','test/features/learning/hint_policy_test.dart','test/features/review/content_report_use_cases_test.dart') -Resume"
+      ],
+      "displayId": "G3.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.3.md"
+    },
+    {
+      "id": "P3.4",
+      "title": "Review Center และประวัติหลังฝึก",
+      "requirements": [
+        "COV-f06",
+        "COV-f14",
+        "COV-f15",
+        "COV-f22",
+        "COV-f43",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/review",
+        "lib/features/history",
+        "lib/screens/review_center_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/review/review_center_reader_test.dart','test/screens/review_center_screen_test.dart','test/features/history/learning_history_replay_test.dart') -Resume"
+      ],
+      "displayId": "G3.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.4.md"
+    },
+    {
+      "id": "P3.5",
+      "title": "Dashboard, calendar และสูตรความก้าวหน้า",
+      "requirements": [
+        "COV-f24",
+        "COV-f25",
+        "COV-f36",
+        "COV-f37",
+        "FORM-01",
+        "FORM-06",
+        "FORM-07",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/progress",
+        "lib/screens/mastery_dashboard_screen.dart",
+        "lib/screens/learning_calendar_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/progress/personal_learning_profile_test.dart','test/features/progress/learning_calendar_reader_test.dart','test/screens/mastery_dashboard_screen_test.dart') -Resume"
+      ],
+      "displayId": "G3.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.5.md"
+    },
+    {
+      "id": "P3.6",
+      "title": "Assessment และ before/after ที่มี metadata ครบ",
+      "requirements": [
+        "COV-f28",
+        "FORM-08",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/assessment",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/runtime/production_feature_contract.dart"
+      ],
+      "testTargets": [
+        "test/features/assessment/assessment_comparison_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/pre_post_assessment_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/assessment/assessment_comparison_test.dart','test/features/assessment/assessment_isolation_test.dart','test/screens/pre_post_assessment_screen_test.dart') -Resume"
+      ],
+      "displayId": "G3.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.6.md"
+    },
+    {
+      "id": "P3.7",
+      "title": "Offline content readiness และการเปลี่ยน revision",
+      "requirements": [
+        "COV-f04",
+        "COV-f44",
+        "G3"
+      ],
+      "ownerPaths": [
+        "lib/features/offline_content",
+        "lib/features/learning_packs",
+        "lib/screens/offline_content_manager_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart",
+        "test/screens/offline_content_settings_entry_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P3.6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/offline_content/offline_content_manager_test.dart','test/screens/offline_content_manager_screen_test.dart','test/screens/offline_content_settings_entry_test.dart') -Resume"
+      ],
+      "displayId": "G3.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G3.7.md"
+    },
+    {
+      "id": "P4.1",
+      "title": "Today และ navigation ที่มีเหตุผล",
+      "requirements": [
+        "COV-f01",
+        "COV-f02",
+        "COV-f14",
+        "COV-f37",
+        "COV-f42",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/today_hub",
+        "lib/screens/today_hub_screen.dart",
+        "lib/widgets/recommendation_panel.dart"
+      ],
+      "testTargets": [
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G2",
+        "G3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/today_hub_screen_test.dart','test/widgets/recommendation_panel_test.dart','test/screens/production_shell_navigation_test.dart') -Resume"
+      ],
+      "displayId": "G4.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.1.md"
+    },
+    {
+      "id": "P4.2",
+      "title": "Goal, countdown และ reminder แบบ opt-in",
+      "requirements": [
+        "COV-f26",
+        "COV-f27",
+        "FORM-07",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/goals",
+        "lib/screens/learning_goals_screen.dart",
+        "lib/screens/study_reminder_settings_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P4.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/goals/learning_goal_use_cases_test.dart','test/screens/learning_goals_screen_test.dart','test/screens/study_reminder_settings_screen_test.dart') -Resume"
+      ],
+      "displayId": "G4.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.2.md"
+    },
+    {
+      "id": "P4.3",
+      "title": "Focus Timer และ automatic effort",
+      "requirements": [
+        "COV-f23",
+        "COV-f24",
+        "FORM-06",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/time_tracking",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart"
+      ],
+      "testTargets": [
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P4.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/time_tracking/focus_timer_controller_test.dart','test/features/time_tracking/focus_timer_widget_test.dart','test/features/time_tracking/active_learning_time_controller_test.dart') -Resume"
+      ],
+      "displayId": "G4.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.3.md"
+    },
+    {
+      "id": "P4.4",
+      "title": "Quest และ Gentle Streak",
+      "requirements": [
+        "COV-f29",
+        "COV-f30",
+        "FORM-04",
+        "FORM-05",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/quest",
+        "lib/features/motivation",
+        "lib/widgets/gentle_streak_card.dart"
+      ],
+      "testTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart",
+        "test/widgets/gentle_streak_card_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P4.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/motivation/streak_use_cases_test.dart','test/features/motivation/timezone_policy_test.dart','test/widgets/gentle_streak_card_test.dart') -Resume"
+      ],
+      "displayId": "G4.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.4.md"
+    },
+    {
+      "id": "P4.5",
+      "title": "Achievements, avatar, companion และ share card",
+      "requirements": [
+        "COV-f31",
+        "COV-f32",
+        "COV-f33",
+        "COV-f34",
+        "FORM-04",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/achievements",
+        "lib/features/rewards",
+        "lib/widgets/reward_avatar_preview.dart"
+      ],
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P4.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/rewards/avatar_progression_policy_test.dart','test/features/achievements/achievement_share_card_use_cases_test.dart','test/widgets/reward_avatar_preview_test.dart') -Resume"
+      ],
+      "displayId": "G4.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.5.md"
+    },
+    {
+      "id": "P4.6",
+      "title": "Preferences, onboarding, theme และ motion",
+      "requirements": [
+        "COV-f35",
+        "COV-f38",
+        "COV-f39",
+        "G4"
+      ],
+      "ownerPaths": [
+        "lib/features/preferences",
+        "lib/screens/learning_preference_quiz_screen.dart",
+        "lib/config/m3_theme.dart"
+      ],
+      "testTargets": [
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P4.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/learning_preference_quiz_screen_test.dart','test/features/preferences/learner_preferences_use_cases_test.dart','test/features/preferences/display_preferences_controller_test.dart') -Resume"
+      ],
+      "displayId": "G4.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G4.6.md"
+    },
+    {
+      "id": "P5.1",
+      "title": "Camera permission และ model lifecycle",
+      "requirements": [
+        "COV-f13",
+        "A-CAM",
+        "G5"
+      ],
+      "ownerPaths": [
+        "lib/screens/object_scanner_screen.dart",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/features/device_model"
+      ],
+      "testTargets": [
+        "test/screens/object_scanner_screen_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G1",
+        "G4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/screens/object_scanner_screen_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/features/device_model/model_manifest_test.dart') -Resume"
+      ],
+      "displayId": "G5.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.1.md"
+    },
+    {
+      "id": "P5.2",
+      "title": "Uncertainty, label mapping และ accept decision",
+      "requirements": [
+        "A-CAM",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/screens/object_scanner_screen.dart",
+        "lib/features/device_model"
+      ],
+      "testTargets": [
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/screens/object_scanner_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/media_practice/object_scanner_use_cases_test.dart','test/screens/object_scanner_screen_test.dart') -Resume"
+      ],
+      "displayId": "G5.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.2.md"
+    },
+    {
+      "id": "P5.3",
+      "title": "บันทึกคำจากกล้องและกู้คืน",
+      "requirements": [
+        "COV-f13",
+        "COV-f20",
+        "COV-f40",
+        "A-CAM",
+        "G5"
+      ],
+      "ownerPaths": [
+        "lib/features/media_practice",
+        "lib/features/vocabulary",
+        "lib/screens/object_scanner_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/media_practice/object_scanner_use_cases_test.dart','test/screens/object_scanner_screen_test.dart','test/screens/offline_vocabulary_journey_test.dart') -Resume"
+      ],
+      "displayId": "G5.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.3.md"
+    },
+    {
+      "id": "P5.4",
+      "title": "Dataset provenance และ validation freeze",
+      "requirements": [
+        "A-MODEL",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "tools/camera_accuracy.py",
+        "tools/test_camera_accuracy.py",
+        "lib/features/device_model/domain/model_manifest.dart"
+      ],
+      "testTargets": [
+        "tools/test_camera_accuracy.py"
+      ],
+      "verificationKind": "python-camera",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G5.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.4.md"
+    },
+    {
+      "id": "P5.5",
+      "title": "Metrics, latency และ resource budget",
+      "requirements": [
+        "A-MODEL",
+        "FORM-09",
+        "G5"
+      ],
+      "ownerPaths": [
+        "tools/camera_accuracy.py",
+        "lib/features/device_model",
+        "docs/superpowers/specs/2026-09-12-r15-engineering-spec.md"
+      ],
+      "testTargets": [
+        "tools/test_camera_accuracy.py",
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "camera-evaluation",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G5.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.5.md"
+    },
+    {
+      "id": "P5.6",
+      "title": "Baseline retention และ device/rollback evidence",
+      "requirements": [
+        "A-CAM",
+        "A-MODEL",
+        "COV-f41",
+        "G5"
+      ],
+      "ownerPaths": [
+        "lib/features/device_model/domain/model_manifest.dart",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "tool/cli/verify-camera-speech.ps1"
+      ],
+      "testTargets": [
+        "test/features/device_model/model_manifest_test.dart"
+      ],
+      "verificationKind": "camera-release-boundary",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P5.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G5.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G5.6.md"
+    },
+    {
+      "id": "P6.1",
+      "title": "AI context, level และ intent",
+      "requirements": [
+        "A-AI",
+        "G6"
+      ],
+      "ownerPaths": [
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/features/ai_tutor/data"
+      ],
+      "testTargets": [
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+        "test/features/ai_tutor/ai_gateway_adapters_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G3",
+        "G4"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/ai_tutor/ai_tutor_use_cases_test.dart','test/features/ai_tutor/ai_gateway_adapters_test.dart') -Resume"
+      ],
+      "displayId": "G6.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.1.md"
+    },
+    {
+      "id": "P6.2",
+      "title": "Cancellation, late results และข้อความอ่านได้",
+      "requirements": [
+        "A-AI",
+        "PLAN-02",
+        "G6"
+      ],
+      "ownerPaths": [
+        "lib/screens/ai_tutor_screen.dart",
+        "lib/features/ai_tutor/application",
+        "lib/features/ai_tutor/data"
+      ],
+      "testTargets": [
+        "test/screens/ai_tutor_screen_test.dart",
+        "test/features/ai_tutor/ai_gateway_loopback_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P6.1"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/screens/ai_tutor_screen_test.dart','test/features/ai_tutor/ai_gateway_loopback_test.dart') -Resume"
+      ],
+      "displayId": "G6.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.2.md"
+    },
+    {
+      "id": "P6.3",
+      "title": "Provider errors, keys, retry และ usage",
+      "requirements": [
+        "A-AI",
+        "FORM-12",
+        "G6"
+      ],
+      "ownerPaths": [
+        "lib/features/ai_tutor/data",
+        "lib/runtime/central_cost_policy.dart",
+        "lib/features/ai_tutor/application"
+      ],
+      "testTargets": [
+        "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+        "test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart",
+        "test/runtime/central_cost_policy_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P6.2"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/ai_tutor/ai_gateway_loopback_test.dart','test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart','test/runtime/central_cost_policy_test.dart') -Resume"
+      ],
+      "displayId": "G6.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.3.md"
+    },
+    {
+      "id": "P6.4",
+      "title": "Speech gateways และ fallback",
+      "requirements": [
+        "A-SYS",
+        "VOICE-01",
+        "MODE-dictation",
+        "MODE-speaking",
+        "MODE-shadowing",
+        "G6"
+      ],
+      "ownerPaths": [
+        "lib/features/media_practice",
+        "lib/screens/speak_to_text_screen.dart",
+        "lib/screens/shadowing_challenge_screen.dart"
+      ],
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P6.3"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/features/media_practice/speech_practice_use_cases_test.dart','test/features/media_practice/plugin_speech_recognition_gateway_test.dart','test/screens/shadowing_challenge_screen_test.dart') -Resume"
+      ],
+      "displayId": "G6.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.4.md"
+    },
+    {
+      "id": "P6.5",
+      "title": "Speaking, shadowing และ dictation evidence",
+      "requirements": [
+        "COV-f13",
+        "MG-09",
+        "MG-12",
+        "FORM-10",
+        "G6"
+      ],
+      "ownerPaths": [
+        "lib/features/media_practice/application",
+        "lib/screens/shadowing_challenge_screen.dart",
+        "lib/features/learning/application/native_mode_adapters.dart"
+      ],
+      "testTargets": [
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P6.4"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/screens/shadowing_challenge_screen_test.dart','test/screens/speak_to_text_screen_voice_test.dart','test/features/learning/native_mode_adapters_test.dart') -Resume"
+      ],
+      "displayId": "G6.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.5.md"
+    },
+    {
+      "id": "P6.6",
+      "title": "AI quality rubric และ no-key journey",
+      "requirements": [
+        "A-AI",
+        "A-SYS",
+        "FORM-12",
+        "G6"
+      ],
+      "ownerPaths": [
+        "docs/development/2026-09-11-ai-tutor-quality-cases.md",
+        "lib/features/ai_tutor",
+        "lib/screens/today_hub_screen.dart"
+      ],
+      "testTargets": [
+        "test/scenarios/ai_voice_fallback_journey_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P6.5"
+      ],
+      "verificationArea": "AI",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area AI -TestTargets @('test/scenarios/ai_voice_fallback_journey_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart') -Resume"
+      ],
+      "displayId": "G6.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G6.6.md"
+    },
+    {
+      "id": "P7.1",
+      "title": "Offline queue, lost ack และ reopen",
+      "requirements": [
+        "COV-f40",
+        "G7"
+      ],
+      "ownerPaths": [
+        "lib/features/sync",
+        "lib/data/local",
+        "lib/progress"
+      ],
+      "testTargets": [
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/sync/cloud_sync_policy_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G1",
+        "G3",
+        "G5",
+        "G6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/scenarios/file_backed_sync_recovery_test.dart','test/features/sync/cloud_sync_policy_test.dart') -Resume"
+      ],
+      "displayId": "G7.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.1.md"
+    },
+    {
+      "id": "P7.2",
+      "title": "Owner switch, conflict และ migration compatibility",
+      "requirements": [
+        "COV-f40",
+        "COV-f43",
+        "G7"
+      ],
+      "ownerPaths": [
+        "lib/features/identity",
+        "lib/features/sync",
+        "lib/data/local"
+      ],
+      "testTargets": [
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/sync/srs_state_sync_test.dart",
+        "test/features/sync/reward_transaction_sync_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/identity/upgrade_guest_owner_test.dart','test/features/sync/srs_state_sync_test.dart','test/features/sync/reward_transaction_sync_test.dart') -Resume"
+      ],
+      "displayId": "G7.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.2.md"
+    },
+    {
+      "id": "P7.3",
+      "title": "Backend access policy และ research boundaries",
+      "requirements": [
+        "COV-f28",
+        "COV-f40",
+        "COV-f41",
+        "G7"
+      ],
+      "ownerPaths": [
+        "firestore.rules",
+        "supabase",
+        "functions"
+      ],
+      "testTargets": [
+        "test/security/firestore-rules.test.cjs",
+        "test/features/research/research_runtime_sync_integration_test.dart",
+        "test/features/sync/research_withdrawal_reopen_test.dart"
+      ],
+      "verificationKind": "policy-emulator",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G7.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.3.md"
+    },
+    {
+      "id": "P7.4",
+      "title": "Export/delete และ lifecycle ของข้อมูลทั้งหมด",
+      "requirements": [
+        "COV-f20",
+        "COV-f21",
+        "COV-f27",
+        "COV-f34",
+        "COV-f35",
+        "COV-f44",
+        "G7"
+      ],
+      "ownerPaths": [
+        "lib/features/account",
+        "lib/features/review",
+        "lib/features/offline_content",
+        "lib/features/preferences"
+      ],
+      "testTargets": [
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/features/account/local_data_deletion_test.dart','test/features/sync/learner_preferences_sync_test.dart','test/features/offline_content/offline_content_manager_test.dart') -Resume"
+      ],
+      "displayId": "G7.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.4.md"
+    },
+    {
+      "id": "P7.5",
+      "title": "Activation matrix และ edition ที่ซื่อสัตย์",
+      "requirements": [
+        "COV-f12",
+        "COV-f23",
+        "COV-f28",
+        "COV-f41",
+        "G7"
+      ],
+      "ownerPaths": [
+        "lib/runtime/production_feature_contract.dart",
+        "lib/runtime/production_feature_gate.dart",
+        "lib/runtime/app_dependencies.dart",
+        "lib/features/learning/application/lesson_mode_registry.dart"
+      ],
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "verificationKind": "targeted",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [
+        "& .\\tool\\cli\\verify-scope.ps1 -Level Targeted -Area Learning -TestTargets @('test/runtime/runtime_feature_controls_test.dart','test/features/learning/lesson_mode_registry_test.dart','test/scenarios/runtime_kill_switch_journey_test.dart') -Resume"
+      ],
+      "displayId": "G7.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.5.md"
+    },
+    {
+      "id": "P7.6",
+      "title": "AI/voice/backend contracts และภาระทรัพยากร",
+      "requirements": [
+        "A-AI",
+        "A-SYS",
+        "COV-f40",
+        "G7"
+      ],
+      "ownerPaths": [
+        "backend",
+        "functions",
+        "lib/runtime/central_cost_policy.dart"
+      ],
+      "testTargets": [
+        "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+        "test/runtime/central_cost_policy_test.dart"
+      ],
+      "verificationKind": "backend-subsystems",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.5"
+      ],
+      "verificationArea": "BackendAI",
+      "plannedCommands": [],
+      "displayId": "G7.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.6.md"
+    },
+    {
+      "id": "P7.7",
+      "title": "Dependency, native config และ release tooling readiness",
+      "requirements": [
+        "COV-f38",
+        "COV-f40",
+        "COV-f41",
+        "G7"
+      ],
+      "ownerPaths": [
+        "pubspec.yaml",
+        "pubspec.lock",
+        "android",
+        "tool/cli",
+        "tool/final_test_plan/generate_final_test_plan.dart"
+      ],
+      "testTargets": [
+        "test/architecture/final_8_44_test_plan_contract_test.dart",
+        "test/architecture/final_8_44_test_plan_review_contract_test.dart"
+      ],
+      "verificationKind": "release-readiness",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P7.6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G7.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G7.7.md"
+    },
+    {
+      "id": "P8.1",
+      "title": "ปิด development gates และ freeze inventory",
+      "requirements": [
+        "G0–G7",
+        "G8"
+      ],
+      "ownerPaths": [
+        "docs/development",
+        "lib",
+        "backend",
+        "functions",
+        "tool"
+      ],
+      "testTargets": [],
+      "verificationKind": "freeze-inventory",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "G0",
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.1",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.1.md"
+    },
+    {
+      "id": "P8.2",
+      "title": "รีวิวโค้ดทั้งแอปบน source ที่ freeze",
+      "requirements": [
+        "G8",
+        "REVIEW-ALL"
+      ],
+      "ownerPaths": [
+        "lib",
+        "backend",
+        "functions",
+        "android",
+        "ios",
+        "linux",
+        "macos",
+        "windows",
+        "tool",
+        "tools",
+        "test",
+        "firestore.rules",
+        "supabase"
+      ],
+      "testTargets": [],
+      "verificationKind": "whole-code-review",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.1"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.2",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.2.md"
+    },
+    {
+      "id": "P8.3",
+      "title": "แก้ผล review และปิด development review",
+      "requirements": [
+        "G8",
+        "REVIEW-ALL"
+      ],
+      "ownerPaths": [
+        "lib",
+        "backend",
+        "functions",
+        "tool",
+        "tools",
+        "test"
+      ],
+      "testTargets": [],
+      "verificationKind": "review-remediation",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.2"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.3",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.3.md"
+    },
+    {
+      "id": "P8.4",
+      "title": "จัดทำ System Test Plan หลัง code review",
+      "requirements": [
+        "G8",
+        "TEST-PLAN"
+      ],
+      "ownerPaths": [
+        "tool/final_test_plan/generate_final_test_plan.dart",
+        "docs/generated/alltcas-8-44-final-test-plan.json",
+        "docs/development"
+      ],
+      "testTargets": [
+        "test/architecture/final_8_44_test_plan_contract_test.dart",
+        "test/architecture/final_8_44_test_plan_review_contract_test.dart"
+      ],
+      "verificationKind": "formal-test-plan",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.3"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.4",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.4.md"
+    },
+    {
+      "id": "P8.5",
+      "title": "รัน local automated gates ตาม Test Plan",
+      "requirements": [
+        "G8",
+        "TEST-EXECUTION"
+      ],
+      "ownerPaths": [
+        "tool/cli/verify-scope.ps1",
+        "test",
+        "backend",
+        "functions"
+      ],
+      "testTargets": [],
+      "verificationKind": "frozen-test-execution",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.4"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.5",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.5.md"
+    },
+    {
+      "id": "P8.6",
+      "title": "Build, install และเส้นทางใช้งานจริง",
+      "requirements": [
+        "G8",
+        "TEST-DEVICE"
+      ],
+      "ownerPaths": [
+        "android",
+        "tool/cli/run-android-smoke.ps1",
+        "tool/cli/verify-apk-model-runtime.ps1",
+        "integration_test"
+      ],
+      "testTargets": [],
+      "verificationKind": "device-acceptance",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.5"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.6",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.6.md"
+    },
+    {
+      "id": "P8.7",
+      "title": "Fault injection, accessibility และ resource checks",
+      "requirements": [
+        "G8",
+        "TEST-FAULT",
+        "COV-f38",
+        "COV-f40"
+      ],
+      "ownerPaths": [
+        "integration_test",
+        "test",
+        "tool/cli",
+        "lib/features/accessibility"
+      ],
+      "testTargets": [],
+      "verificationKind": "system-fault-acceptance",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.6"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.7",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.7.md"
+    },
+    {
+      "id": "P8.8",
+      "title": "Defect → fix → retest → regression",
+      "requirements": [
+        "G8",
+        "DEFECT-LEDGER"
+      ],
+      "ownerPaths": [
+        "docs/development",
+        "test",
+        "lib",
+        "backend",
+        "tools"
+      ],
+      "testTargets": [],
+      "verificationKind": "defect-retest",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.7"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.8",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.8.md"
+    },
+    {
+      "id": "P8.9",
+      "title": "ตรวจรับสุดท้ายและ release ledger",
+      "requirements": [
+        "G8",
+        "MASTER-COMPLETION"
+      ],
+      "ownerPaths": [
+        "docs/development",
+        "docs/generated",
+        "tool/cli"
+      ],
+      "testTargets": [],
+      "verificationKind": "release-ledger",
+      "status": "waiting-predecessor",
+      "dependencies": [
+        "P8.8"
+      ],
+      "verificationArea": "Learning",
+      "plannedCommands": [],
+      "displayId": "G8.9",
+      "taskBrief": "docs/superpowers/task-briefs/full-system/G8.9.md"
+    }
+  ],
+  "coverage": [
+    {
+      "id": "COV-f01",
+      "kind": "capability",
+      "featureId": "f01",
+      "name": "Curriculum & Learning Pack Catalog",
+      "domain": "learningContentAndPacks",
+      "packages": [
+        "P3.1",
+        "P4.1"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/vocabulary",
+        "home/study-planning"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.vocabulary",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f02",
+      "kind": "capability",
+      "featureId": "f02",
+      "name": "Learning Pack Detail",
+      "domain": "learningContentAndPacks",
+      "packages": [
+        "P3.1",
+        "P4.1"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/vocabulary"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f03",
+      "kind": "capability",
+      "featureId": "f03",
+      "name": "Rich Lexical Card",
+      "domain": "learningContentAndPacks",
+      "packages": [
+        "P3.2"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/vocabulary"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f04",
+      "kind": "capability",
+      "featureId": "f04",
+      "name": "Content Version & Quality Control",
+      "domain": "learningContentAndPacks",
+      "packages": [
+        "P3.1",
+        "P3.2",
+        "P3.7",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/learning_pack_catalog_screen_test.dart",
+        "test/screens/learning_pack_detail_screen_test.dart",
+        "test/features/learning_packs/learning_pack_detail_test.dart",
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart",
+        "test/screens/offline_content_settings_entry_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f05",
+      "kind": "capability",
+      "featureId": "f05",
+      "name": "Unified Lesson Shell",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P1.1",
+        "P2.1",
+        "P2.7"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.writer.response-evidence",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f06",
+      "kind": "capability",
+      "featureId": "f06",
+      "name": "Flashcard Mode",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P1.5",
+        "P2.6",
+        "P3.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/srs"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.mastery-srs",
+      "evidenceProfileId": "evidence.flashcard-exposure-and-recall",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f07",
+      "kind": "capability",
+      "featureId": "f07",
+      "name": "Meaning Quiz",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P2.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/quiz"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f08",
+      "kind": "capability",
+      "featureId": "f08",
+      "name": "Definition Quiz",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P2.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/quiz"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f09",
+      "kind": "capability",
+      "featureId": "f09",
+      "name": "Cloze Test",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P2.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/quiz"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.cloze-recognition-and-recall",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f10",
+      "kind": "capability",
+      "featureId": "f10",
+      "name": "Matching Mode",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P2.2"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.writer.response-evidence",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f11",
+      "kind": "capability",
+      "featureId": "f11",
+      "name": "Typed Recall / Writing",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P1.5",
+        "P2.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/quiz"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.independent-recall",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f12",
+      "kind": "capability",
+      "featureId": "f12",
+      "name": "Handwriting Scratchpad",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P0.8",
+        "P2.6",
+        "P7.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "registry-default-implementedOff",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "delivery-decision-pending",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f13",
+      "kind": "capability",
+      "featureId": "f13",
+      "name": "LexiQuest Native Modes Integration",
+      "domain": "unifiedLearningExperience",
+      "packages": [
+        "P2.5",
+        "P2.8",
+        "P5.1",
+        "P5.2",
+        "P5.3",
+        "P6.4",
+        "P6.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/associative-reading",
+        "drawer/learning/ghost-duel",
+        "drawer/practice/object-scanner",
+        "drawer/practice/shadowing"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.native-modes",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart",
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/features/device_model/model_manifest_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "id": "COV-f14",
+      "kind": "capability",
+      "featureId": "f14",
+      "name": "Flashcard-First Recommendation",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P3.4",
+        "P4.1"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/srs"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f15",
+      "kind": "capability",
+      "featureId": "f15",
+      "name": "Active-Recall Ladder",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P1.5",
+        "P2.8",
+        "P3.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f16",
+      "kind": "capability",
+      "featureId": "f16",
+      "name": "Session Configuration",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P2.7"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f17",
+      "kind": "capability",
+      "featureId": "f17",
+      "name": "Immediate Answer Feedback",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P1.2",
+        "P2.1",
+        "P2.2",
+        "P2.3",
+        "P2.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.guided-practice",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/features/learning/cloze_mode_adapter_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f18",
+      "kind": "capability",
+      "featureId": "f18",
+      "name": "Contrastive Distractor Explanation",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P3.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/quiz"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.guided-practice",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f19",
+      "kind": "capability",
+      "featureId": "f19",
+      "name": "Hint, Strategy & Context",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P2.7",
+        "P3.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "drawer/ai-tutor/chat"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.guided-practice",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart",
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f20",
+      "kind": "capability",
+      "featureId": "f20",
+      "name": "Bookmark / Save",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P3.3",
+        "P5.3",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f21",
+      "kind": "capability",
+      "featureId": "f21",
+      "name": "Flag / Report Content",
+      "domain": "recallFeedbackAndControl",
+      "packages": [
+        "P3.3",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/contrastive_feedback_test.dart",
+        "test/features/learning/hint_policy_test.dart",
+        "test/features/review/content_report_use_cases_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f22",
+      "kind": "capability",
+      "featureId": "f22",
+      "name": "Review Center",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P3.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/learn/srs",
+        "home/today"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f23",
+      "kind": "capability",
+      "featureId": "f23",
+      "name": "Focus Timer",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P0.8",
+        "P4.3",
+        "P7.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "preview-internal-when-learningPreviewEnabled-and-dependencies-ready",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f24",
+      "kind": "capability",
+      "featureId": "f24",
+      "name": "Automatic Learning-Time Capture",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P1.2",
+        "P1.6",
+        "P4.3"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.writer.active-learning-time",
+      "authorityProfileId": "authority.writer.active-learning-time",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/current_activity_evidence_test.dart",
+        "test/features/learning/learning_side_effect_reconciler_test.dart",
+        "test/features/rewards/reward_use_cases_test.dart",
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/time_tracking/focus_timer_controller_test.dart",
+        "test/features/time_tracking/focus_timer_widget_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f25",
+      "kind": "capability",
+      "featureId": "f25",
+      "name": "Learning Calendar & Weekly Analytics",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P1.6",
+        "P3.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.read-model-only",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f26",
+      "kind": "capability",
+      "featureId": "f26",
+      "name": "Goal / Test Countdown",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P4.2"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/study-planning"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f27",
+      "kind": "capability",
+      "featureId": "f27",
+      "name": "Opt-in Study Reminder",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P4.2",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/study-planning"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/goals/learning_goal_use_cases_test.dart",
+        "test/screens/learning_goals_screen_test.dart",
+        "test/screens/study_reminder_settings_screen_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f28",
+      "kind": "capability",
+      "featureId": "f28",
+      "name": "Learning Assessment & Progress Comparison",
+      "domain": "reviewTimeAndAssessment",
+      "packages": [
+        "P0.8",
+        "P3.6",
+        "P7.3",
+        "P7.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "research/assessment"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.assessment",
+      "evidenceProfileId": "evidence.assessment",
+      "activationProfileId": "activation.protocol-assigned",
+      "baselineObservation": "protocol-assigned-research-entry",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/assessment/assessment_comparison_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/pre_post_assessment_screen_test.dart",
+        "test/security/firestore-rules.test.cjs",
+        "test/features/research/research_runtime_sync_integration_test.dart",
+        "test/features/sync/research_withdrawal_reopen_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "delivery-decision-pending",
+      "externalDependency": "research authority remains external; synthetic contract cases local only"
+    },
+    {
+      "id": "COV-f29",
+      "kind": "capability",
+      "featureId": "f29",
+      "name": "Evidence-Based Quest",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "drawer/rewards/quests"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.quest",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart",
+        "test/widgets/gentle_streak_card_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f30",
+      "kind": "capability",
+      "featureId": "f30",
+      "name": "Gentle Streak",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/today"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.streak",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/motivation/streak_use_cases_test.dart",
+        "test/features/motivation/timezone_policy_test.dart",
+        "test/widgets/gentle_streak_card_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f31",
+      "kind": "capability",
+      "featureId": "f31",
+      "name": "Achievement & Milestone",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/achievements"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f32",
+      "kind": "capability",
+      "featureId": "f32",
+      "name": "Avatar Level-Up & Cosmetic Unlock",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "drawer/rewards/shop"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f33",
+      "kind": "capability",
+      "featureId": "f33",
+      "name": "Contextual Companion",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "drawer/ai-tutor/chat"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f34",
+      "kind": "capability",
+      "featureId": "f34",
+      "name": "Achievement Share Card",
+      "domain": "motivationAndEngagement",
+      "packages": [
+        "P4.5",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/rewards/avatar_progression_policy_test.dart",
+        "test/features/achievements/achievement_share_card_use_cases_test.dart",
+        "test/widgets/reward_avatar_preview_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f35",
+      "kind": "capability",
+      "featureId": "f35",
+      "name": "Learning Preference & Goal Quiz",
+      "domain": "personalizationAndAccessibility",
+      "packages": [
+        "P4.6",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f36",
+      "kind": "capability",
+      "featureId": "f36",
+      "name": "Personal Learning Profile",
+      "domain": "personalizationAndAccessibility",
+      "packages": [
+        "P1.6",
+        "P3.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/mastery",
+        "home/weakness"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.read-model-only",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/time_tracking/active_learning_time_controller_test.dart",
+        "test/features/time_tracking/learning_time_repository_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f37",
+      "kind": "capability",
+      "featureId": "f37",
+      "name": "Recommendation Panel",
+      "domain": "personalizationAndAccessibility",
+      "packages": [
+        "P3.5",
+        "P4.1"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/today"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.read-model-only",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/progress/personal_learning_profile_test.dart",
+        "test/features/progress/learning_calendar_reader_test.dart",
+        "test/screens/mastery_dashboard_screen_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f38",
+      "kind": "capability",
+      "featureId": "f38",
+      "name": "Accessibility",
+      "domain": "personalizationAndAccessibility",
+      "packages": [
+        "P2.1",
+        "P2.7",
+        "P4.6",
+        "P8.7"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/features/learning/session_configuration_policy_test.dart",
+        "test/features/learning/session_configuration_sheet_test.dart",
+        "test/features/learning/session_configuration_store_test.dart",
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "id": "COV-f39",
+      "kind": "capability",
+      "featureId": "f39",
+      "name": "Motion & Theme Controls",
+      "domain": "personalizationAndAccessibility",
+      "packages": [
+        "P2.1",
+        "P4.6"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/features/learning/r15_learning_feedback_visual_test.dart",
+        "test/screens/learning_preference_quiz_screen_test.dart",
+        "test/features/preferences/learner_preferences_use_cases_test.dart",
+        "test/features/preferences/display_preferences_controller_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f40",
+      "kind": "capability",
+      "featureId": "f40",
+      "name": "Local-First Operation",
+      "domain": "localReliabilityOfflineAndRollout",
+      "packages": [
+        "P1.1",
+        "P1.4",
+        "P1.7",
+        "P7.1",
+        "P7.2",
+        "P7.4",
+        "P8.6"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "drawer/export/center"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/learning/learning_use_cases_test.dart",
+        "test/features/identity/upgrade_guest_owner_test.dart",
+        "test/features/learning/unified_lesson_controller_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart",
+        "test/features/sync/cloud_sync_policy_test.dart",
+        "test/features/sync/srs_state_sync_test.dart",
+        "test/features/sync/reward_transaction_sync_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "id": "COV-f41",
+      "kind": "capability",
+      "featureId": "f41",
+      "name": "Feature Flag & Controlled Rollout",
+      "domain": "localReliabilityOfflineAndRollout",
+      "packages": [
+        "P0.8",
+        "P1.7",
+        "P7.5"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [],
+      "foundationBoundary": "authority.read-only",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.always-on-foundation",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/production_shell_navigation_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart",
+        "test/screens/offline_vocabulary_journey_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "device/human/live subset separately declared in Test Plan"
+    },
+    {
+      "id": "COV-f42",
+      "kind": "capability",
+      "featureId": "f42",
+      "name": "Today Hub",
+      "domain": "dailyContinuityAndHistory",
+      "packages": [
+        "P4.1"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/today"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.read-model-only",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f43",
+      "kind": "capability",
+      "featureId": "f43",
+      "name": "Learning History",
+      "domain": "dailyContinuityAndHistory",
+      "packages": [
+        "P1.3",
+        "P1.4",
+        "P3.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "home/today"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.read-model-only",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/history/learning_history_reader_test.dart",
+        "test/features/history/learning_history_replay_test.dart",
+        "test/screens/learning_history_screen_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart",
+        "test/features/learning/learning_recovery_foundation_test.dart",
+        "test/features/learning/drift_learning_repository_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "COV-f44",
+      "kind": "capability",
+      "featureId": "f44",
+      "name": "Offline Content Manager",
+      "domain": "localReliabilityOfflineAndRollout",
+      "packages": [
+        "P3.7",
+        "P7.4"
+      ],
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredEntries": [
+        "settings/offline-content"
+      ],
+      "foundationBoundary": "not-a-route-free-foundation",
+      "authorityProfileId": "authority.writer.download-state",
+      "evidenceProfileId": "evidence.none",
+      "activationProfileId": "activation.runtime-flagged",
+      "baselineObservation": "catalog-contract-present-runtime-not-verified",
+      "contentContract": "canonical revision/checksum/readiness required by owning package; actual pin captured at execution",
+      "testTargets": [
+        "test/features/offline_content/offline_content_manager_test.dart",
+        "test/screens/offline_content_manager_screen_test.dart",
+        "test/screens/offline_content_settings_entry_test.dart",
+        "test/features/account/local_data_deletion_test.dart",
+        "test/features/sync/learner_preferences_sync_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source",
+        "planningReport": "docs/development/2026-09-13-current-system-and-plan-readiness.md"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-associativeReading",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "associativeReading",
+      "packages": [
+        "P2.8"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/associative-reading",
+      "contentContract": "authored word/context revision; exposure, no recall score",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-meaningQuiz",
+      "kind": "lesson-mode",
+      "featureId": "f07",
+      "modeId": "meaningQuiz",
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/quiz",
+      "contentContract": "reviewed lexical item; both language directions",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-typedRecall",
+      "kind": "lesson-mode",
+      "featureId": "f11",
+      "modeId": "typedRecall",
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/typed-recall",
+      "contentContract": "canonical full-word answers and normalization policy",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-definitionQuiz",
+      "kind": "lesson-mode",
+      "featureId": "f08",
+      "modeId": "definitionQuiz",
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/definition-quiz",
+      "contentContract": "reviewed English definition; unavailable if absent",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-cloze",
+      "kind": "lesson-mode",
+      "featureId": "f09",
+      "modeId": "cloze",
+      "packages": [
+        "P2.4"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/cloze",
+      "contentContract": "reviewed context/blank/answer/distractor revision; selected and typed",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-matching",
+      "kind": "lesson-mode",
+      "featureId": "f10",
+      "modeId": "matching",
+      "packages": [
+        "P2.2"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/matching",
+      "contentContract": "Pair4/6 canonical lexical plan; independent/support/repair",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-flashcard",
+      "kind": "lesson-mode",
+      "featureId": "f06",
+      "modeId": "flashcard",
+      "packages": [
+        "P2.6",
+        "P3.4"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/srs",
+      "contentContract": "canonical lexical front/back and due SRS; self-rating",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-handwritingScratchpad",
+      "kind": "lesson-mode",
+      "featureId": "f12",
+      "modeId": "handwritingScratchpad",
+      "packages": [
+        "P0.8",
+        "P2.6",
+        "P7.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/handwriting-scratchpad",
+      "contentContract": "ephemeral drawing/typing; no OCR or durable answer evidence",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/runtime/runtime_feature_controls_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/scenarios/runtime_kill_switch_journey_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "delivery-decision-pending",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-dictation",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "dictation",
+      "packages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "game/dictation",
+      "contentContract": "audio availability + canonical typed answer; no audio fallback",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "id": "MODE-speaking",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "speaking",
+      "packages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "practice/speaking",
+      "contentContract": "readable reference, recognized text provenance; no acoustic claim",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "id": "MODE-shadowing",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "shadowing",
+      "packages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "practice/shadowing",
+      "contentContract": "reference/audio/recognized text, native speech attempt identity",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "id": "MODE-cefrReading",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "cefrReading",
+      "packages": [
+        "P2.8"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "learning/cefr-reading",
+      "contentContract": "authored A1–C2 reading revision; CEFR estimate disclosed",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-sentenceScramble",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "sentenceScramble",
+      "packages": [
+        "P2.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "game/sentence-scramble",
+      "contentContract": "canonical token occurrences/punctuation and sentence revision",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-wordScramble",
+      "kind": "lesson-mode",
+      "featureId": "f13",
+      "modeId": "wordScramble",
+      "packages": [
+        "P2.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "declaredRoute": "game/word-scramble",
+      "contentContract": "canonical word/meaning; tile occurrence IDs including repeats",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "requiredStates": [
+        "launch",
+        "correct/wrong or explicitly unscored",
+        "help/skip or explicitly unsupported",
+        "duplicate/late-input",
+        "exit",
+        "restart or explicit reset policy",
+        "result/evidence/reward",
+        "owner-change",
+        "narrow/text-scale/reduced-motion"
+      ],
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-adventure-journey",
+      "kind": "journey",
+      "featureId": "f13",
+      "name": "Adventure mixed review",
+      "packages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "declaredEntry": "Adventure hub → mixed review → result; concrete entry resolved from reconciled production contract",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "contentContract": "existing journey prompt catalog / ghost identity pinned at execution",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MODE-ghost-duel",
+      "kind": "journey",
+      "featureId": "f13",
+      "name": "Ghost Shadow Duel",
+      "packages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "declaredEntry": "drawer/learning/ghost-duel",
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "contentContract": "existing journey prompt catalog / ghost identity pinned at execution",
+      "acceptanceReference": "docs/development/2026-09-13-master-plan-coverage-audit.md",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-01",
+      "kind": "interaction-group",
+      "name": "เติมตัวอักษรลงช่องบล็อก / WordQuest",
+      "relatedModeRecords": [
+        "MODE-wordScramble"
+      ],
+      "packages": [
+        "P2.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-02",
+      "kind": "interaction-group",
+      "name": "พิมพ์คำศัพท์ทั้งคำ",
+      "relatedModeRecords": [
+        "MODE-typedRecall"
+      ],
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-03",
+      "kind": "interaction-group",
+      "name": "เลือกเติมคำในประโยค",
+      "relatedModeRecords": [
+        "MODE-cloze"
+      ],
+      "packages": [
+        "P2.4"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-04",
+      "kind": "interaction-group",
+      "name": "พิมพ์เติมคำในประโยค",
+      "relatedModeRecords": [
+        "MODE-cloze"
+      ],
+      "packages": [
+        "P2.4"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/learning/cloze_mode_adapter_test.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-05",
+      "kind": "interaction-group",
+      "name": "จับคู่คำกับความหมาย",
+      "relatedModeRecords": [
+        "MODE-matching"
+      ],
+      "packages": [
+        "P2.2"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/learning/pair_matching/pair_star_policy_test.dart",
+        "test/features/learning/matching_mode_adapter_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-06",
+      "kind": "interaction-group",
+      "name": "เลือกความหมายสองทิศทาง",
+      "relatedModeRecords": [
+        "MODE-meaningQuiz"
+      ],
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-07",
+      "kind": "interaction-group",
+      "name": "เลือกคำจากคำจำกัดความอังกฤษ",
+      "relatedModeRecords": [
+        "MODE-definitionQuiz"
+      ],
+      "packages": [
+        "P2.3"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/quiz_screen_test.dart",
+        "test/features/learning/definition_quiz_mode_adapter_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-08",
+      "kind": "interaction-group",
+      "name": "เรียงคำเป็นประโยค",
+      "relatedModeRecords": [
+        "MODE-sentenceScramble"
+      ],
+      "packages": [
+        "P2.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/word_scramble_screen_test.dart",
+        "test/screens/sentence_scramble_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-09",
+      "kind": "interaction-group",
+      "name": "ฟังแล้วพิมพ์",
+      "relatedModeRecords": [
+        "MODE-dictation"
+      ],
+      "packages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "id": "MG-10",
+      "kind": "interaction-group",
+      "name": "บทอ่าน/บทสนทนาแล้วตอบ",
+      "relatedModeRecords": [],
+      "packages": [
+        "P2.8",
+        "P3.2",
+        "P3.6"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "authored dialogue/reading question set with explanation; do not equate exposure-only reading to Q&A acceptance",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/widgets/rich_lexical_card_test.dart",
+        "test/features/learning_packs/content_quality_policy_test.dart",
+        "test/features/vocabulary/cefr_sense_review_test.dart",
+        "test/features/assessment/assessment_comparison_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart",
+        "test/screens/pre_post_assessment_screen_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance",
+      "relatedCapabilityRecords": [
+        "COV-f13",
+        "COV-f28"
+      ],
+      "readingExposureIsNotQuestionAnswerAcceptance": true
+    },
+    {
+      "id": "MG-11",
+      "kind": "interaction-group",
+      "name": "พลิกบัตรทบทวน",
+      "relatedModeRecords": [
+        "MODE-flashcard"
+      ],
+      "packages": [
+        "P2.6",
+        "P3.4"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/learning/handwriting_scratchpad_test.dart",
+        "test/features/learning/lesson_mode_registry_test.dart",
+        "test/features/review/review_center_reader_test.dart",
+        "test/screens/review_center_screen_test.dart",
+        "test/features/history/learning_history_replay_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-12",
+      "kind": "interaction-group",
+      "name": "พูด/พูดตาม",
+      "relatedModeRecords": [
+        "MODE-speaking",
+        "MODE-shadowing"
+      ],
+      "packages": [
+        "P6.4",
+        "P6.5"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/screens/shadowing_challenge_screen_test.dart",
+        "test/screens/speak_to_text_screen_voice_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "physical audio/microphone/human subset; synthetic fallback is local"
+    },
+    {
+      "id": "MG-13",
+      "kind": "interaction-group",
+      "name": "เส้นทาง Adventure",
+      "relatedModeRecords": [
+        "MODE-adventure-journey"
+      ],
+      "packages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    },
+    {
+      "id": "MG-14",
+      "kind": "interaction-group",
+      "name": "ฝึกเทียบ Ghost",
+      "relatedModeRecords": [
+        "MODE-ghost-duel"
+      ],
+      "packages": [
+        "P2.8",
+        "P4.1"
+      ],
+      "sourcePin": "candidateHead-plus-uncommitted-fixes-as-described-in-source",
+      "acceptanceReference": "docs/superpowers/specs/2026-09-13-minigame-coverage-contract.md",
+      "contentContract": "inherit related modes with group-specific acceptance",
+      "testTargets": [
+        "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+        "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+        "test/features/learning/native_mode_adapters_test.dart",
+        "test/screens/today_hub_screen_test.dart",
+        "test/widgets/recommendation_panel_test.dart",
+        "test/screens/production_shell_navigation_test.dart"
+      ],
+      "evidence": {
+        "status": "not-run-on-reconciled-source"
+      },
+      "status": "needs-verification",
+      "externalDependency": "none for local synthetic acceptance"
+    }
+  ],
+  "formulaGroups": [
+    "FORM-01",
+    "FORM-02",
+    "FORM-03",
+    "FORM-04",
+    "FORM-05",
+    "FORM-06",
+    "FORM-07",
+    "FORM-08",
+    "FORM-09",
+    "FORM-10",
+    "FORM-11",
+    "FORM-12"
+  ],
+  "cleanup": {
+    "state": "authority-updated-physical-cleanup-queued-G0.6-G7.4",
+    "candidateTrackedFailurePngCount": 76,
+    "protected": [
+      "golden baselines",
+      "referenced evidence",
+      "owner data",
+      "learning history",
+      "reward receipts",
+      "migrations",
+      "consent/protocol",
+      "dataset provenance/model freezes"
+    ],
+    "archiveManifestRequiredBeforeDeletion": true
+  },
+  "wholeCodeReview": {
+    "state": "scheduled-after-development",
+    "inventoryMustBeRegeneratedAtFreeze": true,
+    "zones": 12,
+    "inspectedR15TrackedDartSourceCount": 611,
+    "inspectedR15TrackedDartTestFileCount": 468,
+    "notAClaimOfCompletedCodeReview": true
+  },
+  "systemTestPlan": {
+    "state": "scheduled-after-whole-code-review",
+    "existingGenerator": "tool/final_test_plan/generate_final_test_plan.dart",
+    "familyIds": [
+      "ST-01",
+      "ST-02",
+      "ST-03",
+      "ST-04",
+      "ST-05",
+      "ST-06",
+      "ST-07",
+      "ST-08",
+      "ST-09",
+      "ST-10",
+      "ST-11",
+      "ST-12",
+      "ST-13",
+      "ST-14",
+      "ST-15",
+      "ST-16"
+    ],
+    "actualTestsExecutedThisPlanningTurn": 0,
+    "defectAndRetestEvidenceRequired": true
+  },
+  "masterPlan": "docs/superpowers/plans/2026-09-13-lexiquest-full-system-master-plan.md",
+  "proseAuthority": "master plan; ledger indexes identifiers, dependencies, targets and status only",
+  "packageCount": 64,
+  "taskOrchestration": {
+    "index": "docs/development/full-system-task-index.json",
+    "workflow": "docs/development/full-system-package-workflow.md",
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "statusAuthority": "external run-state and accepted handoffs",
+    "packageStatesAre": "initial scheduling states only; do not infer acceptance",
+    "controlDirectory": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration"
+  }
+}
