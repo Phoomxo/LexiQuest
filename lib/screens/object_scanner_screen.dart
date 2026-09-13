@@ -43,6 +43,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   ModelCancellation? _captureCancellation;
   ModelCancellation? _downloadCancellation;
   int _captureEpoch = 0;
+  int _benchmarkEpoch = 0;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -122,6 +123,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   }
 
   void _invalidateCapture() {
+    _benchmarkEpoch += 1;
+    _benchmarking = false;
+    _benchmarks = const [];
     _captureEpoch += 1;
     _captureCancellation?.cancel();
     _captureCancellation = null;
@@ -302,7 +306,22 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   Future<void> _benchmarkModel() async {
     final scanner = _scanner;
-    if (scanner == null || _benchmarking) return;
+    final lease = _scannerLease;
+    if (scanner == null ||
+        lease == null ||
+        !lease.isReady ||
+        !_cameraForeground ||
+        _benchmarking) {
+      return;
+    }
+    final epoch = ++_benchmarkEpoch;
+    bool isCurrent() =>
+        mounted &&
+        epoch == _benchmarkEpoch &&
+        identical(_scanner, scanner) &&
+        identical(_scannerLease, lease) &&
+        lease.isCurrent &&
+        _cameraForeground;
     setState(() {
       _benchmarking = true;
       _benchmarks = const [];
@@ -310,19 +329,19 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     });
     try {
       final results = await scanner.benchmarkModel();
-      if (mounted) setState(() => _benchmarks = results);
+      if (isCurrent()) setState(() => _benchmarks = results);
     } on ModelLifecycleException {
-      if (mounted) {
+      if (isCurrent()) {
         setState(
           () => _error = 'ไม่สามารถทดสอบประสิทธิภาพโมเดลบนเครื่องนี้ได้',
         );
       }
     } catch (_) {
-      if (mounted) {
+      if (isCurrent()) {
         setState(() => _error = 'การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ');
       }
     } finally {
-      if (mounted) setState(() => _benchmarking = false);
+      if (isCurrent()) setState(() => _benchmarking = false);
     }
   }
 
@@ -422,7 +441,16 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
             }
           })
           .catchError((_) {
-            if (mounted) setState(() => _error = 'เปิดกล้องอีกครั้งไม่สำเร็จ');
+            if (mounted &&
+                identical(_scanner, scanner) &&
+                identical(_scannerLease, lease) &&
+                lease.isCurrent &&
+                _cameraForeground) {
+              setState(() {
+                _initializing = false;
+                _error = 'เปิดกล้องอีกครั้งไม่สำเร็จ';
+              });
+            }
           });
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||

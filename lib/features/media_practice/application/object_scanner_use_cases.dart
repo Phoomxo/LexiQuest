@@ -280,22 +280,24 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   @override
   Future<void> initialize() async {
     _checkNotDisposed();
-    final permission = await camera.requestPermission();
-    switch (permission) {
-      case MediaPermissionState.granted:
-        break;
-      case MediaPermissionState.permanentlyDenied:
-        throw const CameraPracticeException(
-          CameraFailureCode.permissionPermanentlyDenied,
-        );
-      case MediaPermissionState.denied:
-      case MediaPermissionState.restricted:
-        throw const CameraPracticeException(CameraFailureCode.permissionDenied);
-      case MediaPermissionState.unavailable:
-        throw const CameraPracticeException(CameraFailureCode.unavailable);
-    }
-    if (_disposed) return;
     try {
+      final permission = await camera.requestPermission();
+      switch (permission) {
+        case MediaPermissionState.granted:
+          break;
+        case MediaPermissionState.permanentlyDenied:
+          throw const CameraPracticeException(
+            CameraFailureCode.permissionPermanentlyDenied,
+          );
+        case MediaPermissionState.denied:
+        case MediaPermissionState.restricted:
+          throw const CameraPracticeException(
+            CameraFailureCode.permissionDenied,
+          );
+        case MediaPermissionState.unavailable:
+          throw const CameraPracticeException(CameraFailureCode.unavailable);
+      }
+      if (_disposed) return;
       await camera.initialize();
       if (_disposed) {
         await camera.pause();

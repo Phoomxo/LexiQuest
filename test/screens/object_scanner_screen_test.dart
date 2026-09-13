@@ -18,6 +18,78 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('B11 old resume failure cannot overwrite replacement scanner', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final pending = Completer<void>();
+    final first = _FakeScanner()..resumePending = pending;
+    final second = _FakeScanner();
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    Widget app(_FakeScanner scanner) => MaterialApp(
+      home: ObjectScannerScreen(scanner: scanner, voice: voice),
+    );
+    await tester.pumpWidget(app(first));
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(first.resumeCalls, 1);
+    await tester.pumpWidget(app(second));
+    await tester.pumpAndSettle();
+    pending.completeError(StateError('old resume'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('object-scanner-error')), findsNothing);
+    expect(find.byKey(const ValueKey('camera-preview')), findsOneWidget);
+  });
+
+  for (final fails in [false, true]) {
+    testWidgets('B11 stale benchmark after scanner replacement fails=$fails', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final pending = Completer<void>();
+      final first = _FakeScanner()..benchmarkPending = pending;
+      final second = _FakeScanner();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      Widget app(_FakeScanner scanner) => MaterialApp(
+        home: ObjectScannerScreen(scanner: scanner, voice: voice),
+      );
+      await tester.pumpWidget(app(first));
+      await tester.pumpAndSettle();
+      final button = find.byKey(
+        const ValueKey('object-scanner-benchmark-model'),
+      );
+      await tester.tap(button);
+      await tester.pump();
+      await tester.pumpWidget(app(second));
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump();
+      expect(tester.widget<OutlinedButton>(button).onPressed, isNotNull);
+      if (fails) {
+        pending.completeError(StateError('old benchmark'));
+      } else {
+        pending.complete();
+      }
+      await tester.pumpAndSettle();
+      expect(find.textContaining('peakRSS='), findsNothing);
+      expect(find.text('การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ'), findsNothing);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(second.benchmarkCalls, 1);
+      expect(find.textContaining('peakRSS='), findsNWidgets(2));
+    });
+  }
+
   testWidgets(
     'R15.6 unsupported result offers existing manual vocabulary route',
     (tester) async {
@@ -1078,6 +1150,8 @@ final class _FakeScanner implements ObjectScannerController {
   ObjectScanResult captureResult = _fakeObjectScanResult();
   Completer<void>? initializePending;
   Completer<void>? acceptPending;
+  Completer<void>? benchmarkPending;
+  Completer<void>? resumePending;
   Completer<ModelDownloadRecord>? downloadPending;
   ModelCancellation? downloadCancellation;
   bool modelRuntimeAvailable = true;
@@ -1151,6 +1225,7 @@ final class _FakeScanner implements ObjectScannerController {
     int measuredRuns = 20,
   }) async {
     benchmarkCalls += 1;
+    await benchmarkPending?.future;
     return const [
       ModelBenchmarkResult(
         delegate: ModelDelegate.cpu,
@@ -1224,6 +1299,7 @@ final class _FakeScanner implements ObjectScannerController {
   @override
   Future<void> resume() async {
     resumeCalls += 1;
+    await resumePending?.future;
     isReady = modelRuntimeAvailable;
   }
 }

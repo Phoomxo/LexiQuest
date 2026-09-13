@@ -22,6 +22,33 @@ import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_rep
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 
 void main() {
+  test(
+    'B11 permission plugin exception becomes recoverable initialization failure',
+    () async {
+      final camera = _FakeCamera()
+        ..permissionFailure = StateError('native permission');
+      final scanner = ObjectScannerUseCases(
+        camera: camera,
+        deviceModels: _unavailableDeviceModels(),
+        vocabulary: _throwingVocabulary(),
+        preprocessor: _FakePreprocessor(),
+      );
+      await expectLater(
+        scanner.initialize(),
+        throwsA(
+          isA<CameraPracticeException>().having(
+            (e) => e.code,
+            'code',
+            CameraFailureCode.initializationFailed,
+          ),
+        ),
+      );
+      expect(camera.initializeCalls, 0);
+      expect(scanner.isReady, isFalse);
+      await scanner.dispose();
+    },
+  );
+
   test('denied camera permission stops before initialization', () async {
     final camera = _FakeCamera()
       ..permission = MediaPermissionState.permanentlyDenied;
@@ -389,6 +416,7 @@ VocabularyUseCases _throwingVocabulary() => VocabularyUseCases(
 
 final class _FakeCamera implements CameraGateway {
   MediaPermissionState permission = MediaPermissionState.granted;
+  Object? permissionFailure;
   int initializeCalls = 0;
   @override
   bool isInitialized = false;
@@ -420,7 +448,11 @@ final class _FakeCamera implements CameraGateway {
   }
 
   @override
-  Future<MediaPermissionState> requestPermission() async => permission;
+  Future<MediaPermissionState> requestPermission() async {
+    final failure = permissionFailure;
+    if (failure != null) throw failure;
+    return permission;
+  }
 
   @override
   Future<void> resume() => initialize();

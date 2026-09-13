@@ -1,0 +1,44 @@
+{
+  "packageId": "G5.1",
+  "status": "local-accepted",
+  "requirements": [
+    "COV-f13",
+    "A-CAM-01",
+    "A-CAM-05",
+    "G5"
+  ],
+  "design": "Existing lease/controller, benchmark epoch guards and scoped resume failure, permission exception normalization; no schema or model policy change",
+  "defects": [
+    {
+      "id": "B11-CAM-01",
+      "cause": "benchmark mounted-only callbacks and inherited busy",
+      "fix": "epoch + scanner/lease/foreground guard; reset on lifecycle",
+      "red": "G5.1-benchmark-red",
+      "retest": "G5.1-final"
+    },
+    {
+      "id": "B11-CAM-02",
+      "cause": "resume error mounted-only callback",
+      "fix": "scanner/lease/foreground guard and clear initializing",
+      "fixtureCorrection": "First test used 600px lazy viewport; strengthened to render error at 1400px and demonstrated failure before fix",
+      "red": "G5.1-lifecycle-red",
+      "retest": "G5.1-final"
+    },
+    {
+      "id": "B11-CAM-03",
+      "cause": "permission request outside initialization try",
+      "fix": "normalize native exception to initializationFailed",
+      "red": "G5.1-final/b8d2b93496f9-0b8dfca644dc",
+      "retest": "G5.1-final"
+    }
+  ],
+  "review": [
+    "permission denied/permanent copy and retry tested",
+    "model missing/cancel/invalid integrity covered with download manager and device models",
+    "capture background/replacement/disposal fixtures fence old results",
+    "ordinary manual vocabulary route retained for unsupported; Categories remains independent",
+    "download remains explicit verified action; no implicit download or false scan result",
+    "physical camera and native permission NOT RUN"
+  ],
+  "requiredLocalOpenDefects": []
+}
