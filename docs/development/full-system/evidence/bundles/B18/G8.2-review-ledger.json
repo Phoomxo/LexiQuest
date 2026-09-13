@@ -30838,11 +30838,18 @@
       "lines": 1220,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1220 lines read. Profile-only20 samples/3warmups, fresh entry IDs, actual packaged catalog validation and rendered hub markers. Alternating paired Standard command construction versus Adventure compose/bridge overhead explicitly excludes shared controller startup; preserves exact command/config/content inputs. Idle test uses production controller with fake configured repository and injected601s clock, expects300s effort plus301s excluded. Each20 transition frame group must have matching nonempty build/raster samples; aggregates max pipeline phase, nearest-rank p95 and long-frame counts. Timeline capped100000 events after capture; matches20 async markers but aggregates synchronous events across full trace, not individually clipped marker intervals; incomplete stacks omitted. Scope is local synthetic fixture, no real database/full application startup or device certification. No B18 profile execution.",
+      "sourceReadDate": "2026-09-13T23:09:17.344032+00:00",
+      "readRanges": [
+        [
+          1,
+          1220
+        ]
+      ]
     },
     {
       "path": "integration_test/field_trial_core_journey_test.dart",
@@ -41795,11 +41802,18 @@
       "lines": 150,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full150 lines read. Filesystem source-text denylist scans Adventure imports/call spellings, forbids persistence/receipt synthesis in motivation reader, and checks bootstrap barrier drain versus request plus navigation forbidden mutations. These are textual architecture tripwires, not semantic alias/transitive-call proof or runtime read-only guarantees. Exact bootstrap substring anchors intentionally fail when missing; broad source scans can match comments. Complements manual source review; no new finding or B18 execution.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          150
+        ]
+      ]
     },
     {
       "path": "test/architecture/alltcas_idea_feature_contract_docs_test.dart",
@@ -42565,11 +42579,18 @@
       "lines": 716,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full716 lines read. Cartesian density/direction/timer fixtures mount real Pair host and controller with Drift and deterministic IDs/clocks. Standard versus Adventure scripts compare captured callbacks, durable checkpoint, answers/session/events, result roles/stars and evidence calls; recursive normalizer replaces only UTC-named metadata including nested JSON, not IDs/hashes/order. Exercises wrong/repair/guided/reveal and answer/close lost-ack retries. Nine held-write fallback cases retain host/controller/snapshot when feature disabled, constructor fails or late health reports; release then single canonical completion. Synthetic same-owner recovered plans never exercise owner migration; original UTC values not compared by design. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          716
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/application/adventure_diagnostics_test.dart",
@@ -43083,11 +43104,18 @@
       "lines": 673,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full673 lines read. Four goldens use bundled Thai/material fonts, real in-memory Drift recovery/evidence and fake lesson host: Adventure active, Standard exact recovery, dark high contrast committed support, narrow320 text2x reduced-motion flash repair after three intervening answers. Effective accessibility flags asserted inside rendered widgets and continue button hit-tested and tapped. MaterialApp builder installs MediaQuery explicitly. Fixture core is private/manual while supplied rich lexical metadata simulates approved packaged enrichment with synthetic artifact hashes; this is UI/catalog coverage, not actual package verification or host lifecycle ownership. Golden files not regenerated or viewed/executed in B18.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          673
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
@@ -43139,11 +43167,18 @@
       "lines": 633,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full633 lines read. Real PairHarness/Drift owner invalidation keeps mounted Pair host while removing decoration and making old decoration callback inert. Standard and Adventure entries preserve exact Today source/launch identity across rebuild; emergency-off removes decoration; incompatible/stale context denies identity and stale setup denies new session. Shared double-tap navigation guard and post-owner-lookup freshness tested; mismatched review payload forwards original list. History/recommendation fallback intentionally remains usable after stale review context. Synthetic allEnabled capability and same owner fixtures do not cover migrated-owner feedback expiry B18-REV03-02. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          633
+        ]
+      ]
     },
     {
       "path": "test/features/adventure/presentation/adventure_pair_renderer_test.dart",
@@ -43706,11 +43741,18 @@
       "lines": 1576,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1576 lines read across resume boundary; final176 lines confirmed separately. Mounted host tests preserve exact Today/context through Standard escape, stable entry ID across presentation changes, new ID on refresh, guarded mission callbacks and owner changes during pending reads. Real local Drift plus research fixture tests exercise baseline skip/completion/post deadline/withdrawal and delayed presentation queue suppression, without external activation. Permit renewal fixture recomputes local payload hash retaining test signature; verifier fixture still needs cross-check, no production-auth finding inferred. Controlled preference writers serialize latest choice and expose retry; old-generation errors hidden; fakes do not independently enforce repository mutation guard. AllEnabled build flags are fixtures, not installed flags. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          1576
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
@@ -47857,11 +47899,18 @@
       "lines": 545,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full545 lines read. Quarantine restart case reuses an in-memory mutable store across operation instances, not process/SQLite restart; flap test uses injected failures and records bounded backoff. Separate removal case uses real Drift manager/temp bytes/checksum but synthetic direct-seeded learning/projection rows, asserting seven table counts plus actual reward account fields. Counts do not prove unchanged row payloads; no new persistence guarantee inferred. Owned dispose case holds operation until released and verifies one manager close. No network/research activation or B18 execution.",
+      "sourceReadDate": "2026-09-13T23:08:03.973725+00:00",
+      "readRanges": [
+        [
+          1,
+          545
+        ]
+      ]
     },
     {
       "path": "test/scenarios/ai_voice_fallback_journey_test.dart",
@@ -50244,11 +50293,18 @@
       "lines": 42,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full42 lines read. Failure response retained; output explicitly configured by environment, directory prefix restricts intended build/adventure-performance root and retains only adventurePerformance response, not raw timeline. File.absolute prefix alone does not visibly normalize dot segments/symlinks; supported PowerShell caller supplies GetFullPath-validated absolute output and sanitized generated basename, so no reachable untrusted-path finding established. No B18 driver execution.",
+      "sourceReadDate": "2026-09-13T23:09:17.344032+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "tool/cli/collect-android-field-evidence.ps1",
@@ -50482,11 +50538,18 @@
       "lines": 1165,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1165 lines read. Explicit Android device selection; normalized output root containment; pre/post committed-source clean and sameHEAD checks. Device emulator flag yields rehearsal/physical/unclassified and certification remains not_certified. Profile schema validates strict finite/numeric/bool types, exact budgets/counts, viewport consistency, active-effort clock evidence and recomputed pass flags, distinguishing invalid/budget/test/source failures. Restores driver output env and working directory in finally; sanitized generated output supports driver path trust. Flutter output held in memory and test has Timeout.none, outer operational no-progress guard still required; no bounded-command run here. Evidence proves preparation/frame fixture scope only, not installed production flags. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:09:17.344032+00:00",
+      "readRanges": [
+        [
+          1,
+          1165
+        ]
+      ]
     },
     {
       "path": "tool/cli/run-android-smoke.ps1",
@@ -50776,11 +50839,18 @@
       "lines": 1144,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1144 lines read. Actual runner child PowerShell with PATH-local Flutter/Git batch stubs writes synthetic integration JSON; no real build/device. Asserts exact drive arguments, pre/post source changes and inspection failures, emulator/physical/unknown classification never certification, warning stderr versus exit code, coherent budget/invariant failure and schema/type/metric/viewport/clock mutations. Explicit device/platform/output rejection before drive; nested cleanup restores all env vars and verifies temp/evidence root before recursive removal. Synthetic SHA shape and mocked stat-only Git output test reporting contracts, not actual Git reproducibility or performance. Outside-output case does not cover driver direct dot-segment input; normalized supported caller reviewed separately. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:09:47.955577+00:00",
+      "readRanges": [
+        [
+          1,
+          1144
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/run-android-smoke.tests.ps1",
