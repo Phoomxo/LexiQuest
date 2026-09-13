@@ -34056,11 +34056,18 @@
       "lines": 117,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full117 lines read. Child rollout implementedOff/internal separate from broad quiz; incorrect self-consistent committed attempt required. Attempt identity receipt pins fingerprint and shared resolution, conflicting attempt rejected. Requires exact verified manifest identity/hash and packaged approved published timestamps, parses verified artifact then exact mode/correct/distractor rationale. Any missing/stale/malformed error hides explanation without fallback generation. Receipt map caches even absent resolution for resolver lifetime; no eviction or production lifetime conclusion without callers. No mutation.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          117
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/application/current_activity_evidence.dart",
@@ -35363,11 +35370,18 @@
       "lines": 162,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full162 lines read. Pure committed feedback presentation, canonical answer, optional reviewed explanation, bookmarks and validated report identity; action callback selected by correctness matches nextAction computed in answer_feedback domain cross-check. Report UI wraps captured identity/action and explicit semantics, bounded-height parent gets scroll. No direct evidence writes. Caller next/retry ownership and modal duplicate/report tests remain cross-check; no new finding.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          162
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/contrastive_feedback_panel.dart",
@@ -35377,11 +35391,18 @@
       "lines": 269,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full269 lines read. Resolves only committed attempt with live broad quiz gate and optional use cases; generation guards async result against feedback/gate/disposal, removable feature listener. Fingerprint dedup is attempt-only, so replacing resolver while same attempt remains mounted keeps old resolution; actual dependency-replacement reachability and desired pin semantics needed before finding. Reviewed text excerpt rune-bounded180 and expandable internally scrolling panel, no generated text. Resolver swallows optional-content failures; native accessibility/render oracles pending.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          269
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/handwriting_scratchpad.dart",
@@ -35391,11 +35412,18 @@
       "lines": 338,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full338 lines read. Bounded32 strokes x128 points, immutable stroke views and local120-character typed alternative. Background/lesson lifecycle/controller replacement/dispose clear both forms; revision+selection dedup self-check callback passes classification only, no raw text/strokes. Actual handwriting adapter cross-read confirms all persistence policy flags false and classify/next always reject lesson evidence. No OCR/scoring implied. Painter accepts gesture coordinates and fixed ink palette; pixel/native accessibility tests still pending.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          338
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
@@ -35405,11 +35433,18 @@
       "lines": 114,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full114 lines read. Unscored owner-observed tool; delivery and broad quiz gates before showing stroke widget. Exactly one active owner must match; owner/error/dependency/feature/widget owner change permanently retires and clears local strokes. Feature listener and stream cancelled on disposal, no session/evidence API. Subscription remains until disposal after retirement but inert via retired guard. Caller navigation/widget retirement tests pending; no new finding.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          114
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/hint_panel.dart",
@@ -35419,11 +35454,18 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full52 lines read. Unknown/unavailable/exhausted states have distinct copy and disabled reveal; callback only enabled for available nonexhausted and caller-enabled. Displays only state.revealedHints with live region once nonempty. Hint accounting remains caller/controller responsibility; no independent evidence or persistence.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/legacy_matching_mode_screen.dart",
@@ -35447,11 +35489,18 @@
       "lines": 422,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full422 lines read. Optional ephemeral voice/speech rehearsal, no learning writes. Epoch invalidation clears transcript synchronously and releases captured handles; cleanup futures retained serially before new starts. Route/app/lesson/canInteract guards and speech feature changes fence late permission/result callbacks; final transcript described as heard speech not acoustic score. A failed retained cleanup barrier propagates into subsequent starts, may intentionally fail closed for native ownership; concrete release/stop semantics and tests required before promoting. Same identity dependency replacement clears state; callbacks use captured session currentness. No native execution. Subsequent focused oracle460-522 expressly requires retained failure across repeated retries while skip remains available; no cleanup-barrier defect promoted. Partial VoiceSession501-620 contract supports requiring confirmed cleanup.",
+      "sourceReadDate": "2026-09-13T23:13:17.246234+00:00",
+      "readRanges": [
+        [
+          1,
+          422
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/session_configuration_sheet.dart",
@@ -35461,11 +35510,18 @@
       "lines": 714,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full714 lines read. Read-only configuration form validates defaults/recovered snapshot through policy, exposes reset rather than silently changing incompatible initial config. IME composition and malformed numeric input block submit; synchronous submitting guard and validated pop result. Preview is policy-validated; actual owner/limits freshness still must be revalidated by caller before start. Item bounds intersect capabilities/protocol; optional pinned pack chooses first supplied option and final validation rejects mismatch. Focus restoration and scroll/large labels; no direct session creation. Widget inputs assumed stable for mounted modal, no didUpdateWidget reset; caller/test review pending.",
+      "sourceReadDate": "2026-09-13T23:12:21.557021+00:00",
+      "readRanges": [
+        [
+          1,
+          714
+        ]
+      ]
     },
     {
       "path": "lib/features/learning/presentation/unified_lesson_shell.dart",
@@ -35650,11 +35706,18 @@
       "lines": 330,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full330 lines read via contiguous1-240 and241-end. Session ownership and attempt/final epochs fence supersession, permission/init/start awaits and late callbacks. Accepted stop queued behind start retains one stopping-final attempt; cancel/release revoke ownership synchronously, native operations serialized via tail whose per-operation errors propagate through completion while queue survives. Takeover cancel failures intentionally ignored at queue layer; caller cleanup contract must retain proof, no new finding without consumer context. Transcript assessment normalizes and computes rune edit-distance for final nonempty text only, null not zero for missing input; no acoustic inference. Disposal drains pending tail or cancels active native work. No runtime execution.",
+      "sourceReadDate": "2026-09-13T23:14:10.535668+00:00",
+      "readRanges": [
+        [
+          1,
+          330
+        ]
+      ]
     },
     {
       "path": "lib/features/media_practice/data/drift_speech_evidence_repository.dart",
@@ -46002,11 +46065,18 @@
       "lines": 823,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full823 lines read with contiguous ranges assembled around focused460-522 cross-check. Real widget/voice/speech facades over fake native gateways: natural completion, exclusive playback/microphone, first-final only, empty/silence/error retry, skip/item/route/background/owner-predicate retirement, pending permission, service replacement and newer consumer ownership. Runtime/nonlistenable gates fence stale actions. Explicit failed cleanup cases require subsequent attempts blocked until route cleanup, never assume silence; pending cancel/start/final-stop completers prove drain order. Narrow2x48px semantics action actually cancels speech. In-memory DB only supplies inert dependency scope, no real provider/device or acoustic score. No B18 execution.",
+      "sourceReadDate": "2026-09-13T23:14:10.535668+00:00",
+      "readRanges": [
+        [
+          1,
+          823
+        ]
+      ]
     },
     {
       "path": "test/features/learning/session_configuration_mode_matrix_test.dart",
