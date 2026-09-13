@@ -17,6 +17,7 @@ import '../features/learning/domain/learning_repository.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
+import '../features/learning/presentation/handwriting_scratchpad_route.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
 import '../navigation/app_routes.dart';
@@ -76,7 +77,14 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     final cefrReading = modes?.resolve(LessonMode.cefrReading);
     final sentenceScramble = modes?.resolve(LessonMode.sentenceScramble);
     final wordScramble = modes?.resolve(LessonMode.wordScramble);
+    final handwriting = modes?.resolve(LessonMode.handwritingScratchpad);
     final tiles = <_LearningTile>[
+      if (features?.isVisible(Feature.quiz) == true && handwriting != null)
+        _LearningTile(
+          key: const ValueKey<String>('home/learn/handwriting-scratchpad'),
+          glossary: NavigationGlossary.require('home/learn/handwriting-scratchpad'),
+          onTap: () => _openScratchpad(context),
+        ),
       if (features?.isVisible(Feature.reading) == true)
         _LearningTile(
           key: const ValueKey<String>('home/learn/associative-reading'),
@@ -332,6 +340,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
         'home/learn/quiz/definition',
         'home/learn/srs',
         'home/learn/quiz/word-scramble',
+        'home/learn/handwriting-scratchpad',
       ],
       'อ่านและประโยค': [
         'home/learn/associative-reading',
@@ -474,6 +483,34 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
     data: Theme.of(context).cardTheme.copyWith(margin: EdgeInsets.zero),
     child: Padding(padding: const EdgeInsets.only(bottom: 12), child: card),
   );
+
+  Future<void> _openScratchpad(BuildContext context) async {
+    if (_openingMode) return;
+    _openingMode = true;
+    try {
+      final dependencies = AppDependenciesScope.maybeOf(context);
+      final database = dependencies?.database;
+      final registration = dependencies?.lessonModes?.resolve(LessonMode.handwritingScratchpad);
+      if (database == null || registration == null ||
+          dependencies?.features.isEnabled(Feature.quiz) != true) return;
+      final owners = await (database.select(database.localOwners)
+        ..where((row) => row.isActive.equals(true))).get();
+      if (!context.mounted || owners.length != 1 ||
+          dependencies?.features.isEnabled(Feature.quiz) != true) return;
+      await AppNavigator.pushPage<void>(context, AppPage<void>(
+        name: registration.routeName,
+        builder: (_) => HandwritingScratchpadRoute(ownerId: owners.single.id),
+      ));
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('กระดานฝึกเขียนยังไม่พร้อมใช้งาน')),
+        );
+      }
+    } finally {
+      _openingMode = false;
+    }
+  }
 
   Future<void> _openReadingLibrary(
     BuildContext context,
@@ -1200,6 +1237,7 @@ String _modeDescription(String id) => switch (id) {
   'home/learn/quiz/matching' => 'จับคู่คำกับความหมาย',
   'home/learn/quiz/definition' => 'เลือกคำให้ตรงคำอธิบาย',
   'home/learn/srs' => 'ทบทวนคำที่เคยเรียน',
+  'home/learn/handwriting-scratchpad' => 'เขียนหรือพิมพ์เพื่อตรวจด้วยตนเอง',
   'home/learn/quiz/word-scramble' => 'เรียงตัวอักษรให้เป็นคำศัพท์',
   'home/learn/associative-reading' => 'อ่านแล้วฝึกคำศัพท์',
   'home/learn/quiz/cloze' => 'เลือกคำเติมช่องว่างให้ประโยคสมบูรณ์',

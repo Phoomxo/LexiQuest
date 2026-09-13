@@ -237,6 +237,35 @@ void main() {
     expect(undo.onPressed, isNotNull);
   });
 
+  testWidgets('B06 rotation keeps bounded scratch work until exit', (tester) async {
+    final controller = HandwritingScratchpadController();
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 800);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: HandwritingScratchpad(controller: controller))));
+    final canvas = find.bySemanticsLabel('พื้นที่ฝึกเขียนในเครื่อง');
+    await tester.ensureVisible(canvas);
+    await tester.drag(canvas, const Offset(80, 0));
+    await tester.pump();
+    expect(controller.hasHandwriting, isTrue);
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'temporary');
+    final count = controller.strokeCount;
+    tester.view.physicalSize = const Size(800, 320);
+    await tester.pump();
+    expect(controller.strokeCount, count);
+    expect(find.text('temporary'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('ล้างสิ่งที่เขียน'));
+    await tester.tap(find.text('ล้างสิ่งที่เขียน'));
+    await tester.pump();
+    expect(controller.strokeCount, 0);
+    expect(find.text('temporary'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('scratchpad remains usable at narrow 200 percent text', (
     tester,
   ) async {

@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show TableUpdate;
 import 'package:flutter/material.dart';
+import 'package:vocab_learning_app/features/learning/presentation/handwriting_scratchpad.dart';
+import 'package:vocab_learning_app/features/learning/presentation/handwriting_scratchpad_route.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
@@ -105,6 +108,16 @@ Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
 
   await tester.ensureVisible(entry);
   await tester.pump();
+}
+
+Future<void> _tapReachable(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  final context = tester.element(finder);
+  ScaffoldMessenger.maybeOf(context)?.removeCurrentSnackBar();
+  await tester.pumpAndSettle();
+  expect(finder.hitTestable(), findsOneWidget);
+  await tester.tap(finder);
 }
 
 void _expectSingleThaiGlossaryAction({
@@ -659,6 +672,69 @@ void main() {
     expect(find.byType(UnifiedLessonShell), findsNothing);
     expect(find.text('โหมดการเรียนนี้ไม่พร้อมใช้งานแล้ว'), findsOneWidget);
   });
+
+  testWidgets('B06 scratchpad direct route fails closed when not delivered', (tester) async {
+    final harness = await _SrsGateHarness.create();
+    addTearDown(harness.close);
+    final owner = await harness.dependencies.localOwners!.getOrCreateActiveOwner();
+    await tester.pumpWidget(AppDependenciesScope(
+      dependencies: harness.dependencies,
+      child: MaterialApp(home: HandwritingScratchpadRoute(ownerId: owner.id)),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(HandwritingScratchpad), findsNothing);
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
+
+  for (final retire in ['exit', 'owner', 'emergency']) {
+    testWidgets('B06 scratchpad route $retire clears without durable mutations', (tester) async {
+      final harness = await _SrsGateHarness.create(enableHandwriting: true);
+      addTearDown(harness.close);
+      Future<List<String>> snapshot() async => [
+        for (final table in harness.database.allTables)
+          if (table.actualTableName != 'local_owners')
+            '${table.actualTableName}:${await harness.database.customSelect('SELECT * FROM "${table.actualTableName}"').get().then((rows) => rows.map((r) => r.data).toList())}',
+      ];
+      final before = await snapshot();
+      await harness.pump(tester);
+      await _scrollToModeEntry(tester, 'home/learn/handwriting-scratchpad');
+      await tester.tap(find.byKey(const ValueKey('home/learn/handwriting-scratchpad')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionConfigurationSheet), findsNothing);
+      expect(find.byType(HandwritingScratchpad), findsOneWidget);
+      final field = find.byType(TextField);
+      await tester.ensureVisible(field);
+      await tester.enterText(field, 'private scratch answer');
+      await tester.ensureVisible(find.text('ตรวจด้วยตัวเองแล้ว'));
+      await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
+      await tester.pump();
+      final controller = tester.widget<HandwritingScratchpad>(find.byType(HandwritingScratchpad)).controller!;
+      controller.beginStroke(const Offset(10, 10));
+      if (retire == 'exit') {
+        Navigator.of(tester.element(find.byType(HandwritingScratchpad))).pop();
+      } else if (retire == 'emergency') {
+        harness.features.emergencyOff(Feature.quiz);
+      } else {
+        await harness.database.customStatement('UPDATE local_owners SET is_active = 0');
+        harness.database.notifyUpdates({TableUpdate.onTable(harness.database.localOwners)});
+      }
+      await tester.pumpAndSettle();
+      expect(find.byType(HandwritingScratchpad), findsNothing);
+      expect(controller.strokeCount, 0);
+      if (retire == 'emergency') {
+        harness.features.clearOverride(Feature.quiz);
+        await tester.pumpAndSettle();
+        expect(find.byType(HandwritingScratchpad), findsNothing);
+      }
+      expect(find.text('private scratch answer'), findsNothing);
+      expect(await snapshot(), before);
+      expect(harness.controllers, isEmpty);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+    });
+  }
 
   testWidgets('f13 shows every registered production native mode', (
     tester,
@@ -1960,11 +2036,11 @@ void main() {
         itemCount: 2,
       );
       const wordId = 'word:srs-gate-vocabulary';
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('matching-word-$wordId')),
       );
       await tester.pumpAndSettle();
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
       );
       await tester.runAsync(
@@ -2024,14 +2100,14 @@ void main() {
         'word:srs-gate-vocabulary',
         'word:srs-gate-vocabulary-two',
       ]) {
-        await tester.tap(find.byKey(ValueKey<String>('matching-word-$wordId')));
+        await _tapReachable(tester, find.byKey(ValueKey<String>('matching-word-$wordId')));
         await tester.pumpAndSettle();
-        await tester.tap(
+        await _tapReachable(tester,
           find.byKey(ValueKey<String>('matching-meaning-$wordId')),
         );
         await tester.pumpAndSettle();
       }
-      await tester.tap(find.byKey(const ValueKey<String>('matching-finish')));
+      await _tapReachable(tester, find.byKey(const ValueKey<String>('matching-finish')));
       await tester.runAsync(
         () => harness.repository.matchingCloseCommitted.future.timeout(
           const Duration(seconds: 1),
@@ -2084,7 +2160,7 @@ void main() {
         itemCount: 1,
         timeLimitSeconds: 60,
       );
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('flashcard-remembered')),
       );
       await tester.pumpAndSettle();
@@ -2105,7 +2181,7 @@ void main() {
         const ValueKey<String>('current-evidence-retry'),
       );
       await tester.ensureVisible(retry);
-      await tester.tap(retry);
+      await _tapReachable(tester, retry);
       await tester.pumpAndSettle();
 
       expect(harness.repository.answerCalls, 2);
@@ -2142,11 +2218,11 @@ void main() {
       timeLimitSeconds: 60,
     );
     const wordId = 'word:srs-gate-vocabulary';
-    await tester.tap(
+    await _tapReachable(tester,
       find.byKey(const ValueKey<String>('matching-word-$wordId')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(
+    await _tapReachable(tester,
       find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
     );
     await tester.pumpAndSettle();
@@ -2231,7 +2307,7 @@ void main() {
       harness.repository.blockConfigurationEffort();
       harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
 
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('flashcard-remembered')),
       );
       await tester.runAsync(
@@ -2267,14 +2343,14 @@ void main() {
         timeLimitSeconds: 60,
       );
       const wordId = 'word:srs-gate-vocabulary';
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('matching-word-$wordId')),
       );
       await tester.pumpAndSettle();
       harness.repository.blockConfigurationEffort();
       harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
 
-      await tester.tap(
+      await _tapReachable(tester,
         find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
       );
       await tester.runAsync(
@@ -3165,6 +3241,7 @@ final class _SrsGateHarness {
     bool loseMatchingCloseAckOnce = false,
     bool blockMatchingCheckpoint = false,
     bool enableMatching = false,
+    bool enableHandwriting = false,
     bool enableTypedHintSequence = false,
     bool deterministicConfigurationClock = false,
     String? vocabularyCefrLevel = 'A1',
@@ -3281,6 +3358,9 @@ final class _SrsGateHarness {
       const BuildFeatureRegistry.allEnabled(),
     );
     final modes = buildLessonModeRegistry(
+      handwritingDeliveryState: enableHandwriting
+          ? LessonModeDeliveryState.enabled
+          : LessonModeDeliveryState.implementedOff,
       matchingDeliveryState: enableMatching
           ? LessonModeDeliveryState.enabled
           : LessonModeDeliveryState.implementedOff,

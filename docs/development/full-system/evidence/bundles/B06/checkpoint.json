@@ -1,0 +1,18 @@
+{
+  "bundleId": "B06",
+  "baseSha": "8d820cc69394c46cfc241bd7eea4c347f87eaf0b",
+  "currentPackageId": "G2.6",
+  "plan": [
+    "Add failing scratchpad menu, lifecycle, and no-durable-mutation route tests; preserve current flashcard semantics.",
+    "Compose scratchpad delivery only for learningPreviewEnabled && !cloudSyncEnabled; use registry/feature guard and read-only active-owner observation; retire permanently on identity loss.",
+    "Add preview route using existing bounded in-memory component, no session/configuration persistence; extend rotation/cleanup tests.",
+    "Run bounded G2.6 targets, review changes, commit and write package receipt before G2.7."
+  ],
+  "design": "Ephemeral route separated from measured learning command admission; owner observation reads canonical database only. Existing self-check adapter rejects durable classification. No schema, evidence policy, or vocabulary change.",
+  "effectiveServiceTier": "unverified; no supported inspector",
+  "requiredServiceTier": "default",
+  "requiredBranchPrefix": "lexiquest/",
+  "recoveryPolicy": "stop failed method, diagnose, correct, verify, continue; preserve failed evidence",
+  "status": "G2.6-verified-pending-commit",
+  "requiredOpenFindings": []
+}

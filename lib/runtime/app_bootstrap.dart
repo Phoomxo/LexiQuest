@@ -1393,6 +1393,9 @@ final class AppBootstrap {
       researchStateProvider: currentResearchStateProvider,
     );
     final lessonModes = buildLessonModeRegistry(
+      handwritingDeliveryState: learningPreviewEnabled && !cloudSyncEnabled
+          ? LessonModeDeliveryState.enabled
+          : LessonModeDeliveryState.implementedOff,
       internalPairMatching: learningPreviewEnabled,
       matchingDeliveryState: learningPreviewEnabled
           ? LessonModeDeliveryState.enabled

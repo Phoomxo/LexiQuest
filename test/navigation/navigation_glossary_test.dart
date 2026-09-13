@@ -240,6 +240,10 @@ const _expectedEntries = <String, _ExpectedEntry>{
     'เลือกคำศัพท์จากคำอธิบายที่ตรวจทานแล้ว',
     Icons.menu_book_outlined,
   ),
+  'home/learn/handwriting-scratchpad': _ExpectedEntry(
+    'กระดานฝึกเขียน', 'กระดานฝึกเขียน', 'เปิดกระดานฝึกเขียน',
+    'ฝึกเขียนหรือพิมพ์ในเครื่องโดยไม่คิดคะแนน', Icons.draw_outlined,
+  ),
   'home/learn/srs': _ExpectedEntry(
     'ทบทวนคำศัพท์',
     'ทบทวนคำศัพท์',

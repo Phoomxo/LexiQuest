@@ -659,6 +659,22 @@ void main() {
       });
     }
 
+    for (final preview in [false, true]) {
+      for (final cloud in [false, true]) {
+        test('B06 scratchpad edition preview=$preview cloud=$cloud', () async {
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {}, initializeSupabase: () async {},
+            loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            learningPreviewEnabled: preview, cloudSyncEnabled: cloud,
+          ).initialize();
+          addTearDown(dependencies.dispose);
+          expect(dependencies.lessonModes!.resolve(LessonMode.handwritingScratchpad) != null, preview && !cloud);
+        });
+      }
+    }
+
     test('learning preview build composes only approved capabilities', () async {
       const preview = bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW');
       final dependencies = await AppBootstrap(

@@ -62,6 +62,7 @@ abstract final class NavigationGlossary {
     'home/learn/quiz/cloze',
     'home/learn/quiz/definition',
     'home/learn/srs',
+    'home/learn/handwriting-scratchpad',
     'home/learn/reading/cefr',
     'home/learn/quiz/dictation',
     'home/learn/quiz/sentence-scramble',
@@ -319,6 +320,14 @@ abstract final class NavigationGlossary {
       semanticsLabel: 'เปิดกิจกรรมเลือกคำจากคำอธิบาย',
       tooltip: 'เลือกคำศัพท์จากคำอธิบายที่ตรวจทานแล้ว',
       icon: Icons.menu_book_outlined,
+    ),
+    'home/learn/handwriting-scratchpad': NavigationGlossaryEntry(
+      id: 'home/learn/handwriting-scratchpad',
+      fullThaiLabel: 'กระดานฝึกเขียน',
+      shortThaiLabel: 'กระดานฝึกเขียน',
+      semanticsLabel: 'เปิดกระดานฝึกเขียน',
+      tooltip: 'ฝึกเขียนหรือพิมพ์ในเครื่องโดยไม่คิดคะแนน',
+      icon: Icons.draw_outlined,
     ),
     'home/learn/srs': NavigationGlossaryEntry(
       id: 'home/learn/srs',
