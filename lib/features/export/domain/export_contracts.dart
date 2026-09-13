@@ -86,6 +86,7 @@ enum ExportFailureCode {
   permissionDenied,
   insufficientSpace,
   writeFailed,
+  cleanupFailed,
   unavailable,
 }
 

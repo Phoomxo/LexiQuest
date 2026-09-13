@@ -43,6 +43,8 @@ param(
 
     [switch]$RulesOnly,
 
+    [switch]$AndroidCompileOnly,
+
     [string]$FrozenSha = ''
 )
 
@@ -165,7 +167,7 @@ function Get-EnvironmentFingerprint {
     foreach ($entry in (Get-ChildItem Env: | Sort-Object Name)) {
         $parts.Add($entry.Name + '=' + $entry.Value)
     }
-    foreach ($tool in @('powershell.exe','git','flutter','dart','uv','python','node','npm','java')) {
+    foreach ($tool in @('powershell.exe','git','flutter','dart','uv','python','node','npm','java','gradle')) {
         $resolved = Get-Command $tool -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($null -eq $resolved) { $parts.Add($tool + '=missing'); continue }
         $parts.Add($tool + '=' + $resolved.Source + '=' + (Get-VerificationFileHash -LiteralPath $resolved.Source -Algorithm SHA256).Hash)
@@ -177,7 +179,7 @@ function Get-EnvironmentFingerprint {
             }
         }
     }
-    foreach ($pin in @('.dart_tool/package_config.json','.dart_tool/package_graph.json','.packages','.env','uv.toml','.python-version',
+    foreach ($pin in @('android/local.properties','.dart_tool/package_config.json','.dart_tool/package_graph.json','.packages','.env','uv.toml','.python-version',
         'backend/ai_api/.env','backend/voice_api/.env','backend/lexiquest_lm/.env',
         'backend/ai_api/.venv/pyvenv.cfg','backend/voice_api/.venv/pyvenv.cfg','backend/lexiquest_lm/.venv/pyvenv.cfg')) {
         $file = Join-Path $repoRoot $pin
@@ -282,6 +284,15 @@ function Get-VerificationCommands {
         [string]$SelectedArea
     )
 
+    if ((Get-Variable AndroidCompileOnly -ErrorAction SilentlyContinue) -and $AndroidCompileOnly) {
+        if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Integration' -or $TestTargets.Count -or $TestName -or $CliOnly -or $RulesOnly) {
+            throw 'AndroidCompileOnly requires Targeted/Integration with no other selection.'
+        }
+        return @(New-CommandSpec -Name 'Android native Kotlin compile' -FilePath 'gradle' -Arguments @(
+            '-p', (Join-Path $repoRoot 'android'), ':app:compileDebugKotlin', '-x', 'compileFlutterBuildDebug',
+            '--offline', '--no-daemon', '--max-workers=2', '-Dorg.gradle.jvmargs=-Xmx2G -XX:MaxMetaspaceSize=1G'
+        ) -SourceArea 'Integration')
+    }
     if ((Get-Variable RulesOnly -ErrorAction SilentlyContinue) -and $RulesOnly) {
         if ($SelectedLevel -ne 'Targeted' -or $SelectedArea -ne 'Economy' -or $TestTargets.Count -or $TestName -or $CliOnly) {
             throw 'RulesOnly requires Targeted/Economy with no Flutter or CLI selection.'
@@ -664,6 +675,7 @@ try {
     $resultPath = Join-Path $resultDirectory ($Level.ToLowerInvariant() + '-' + $Area.ToLowerInvariant() + '.json')
     if ($CliOnly) { $resultPath = Join-Path $resultDirectory 'subsystem-runtime-cli.json' }
     if ($RulesOnly) { $resultPath = Join-Path $resultDirectory 'targeted-economy-rules.json' }
+    if ($AndroidCompileOnly) { $resultPath = Join-Path $resultDirectory 'targeted-integration-native.json' }
     if ($TestTargets.Count -gt 0) {
         $targetIdentity = $TestTargets -join "`n"
         if ($TestName) { $targetIdentity += "`nname=" + $TestName }

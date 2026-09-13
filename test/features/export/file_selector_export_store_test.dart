@@ -1,9 +1,12 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/export/data/file_selector_export_store.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final artifact = ExportArtifact(
     format: ExportFormat.csv,
     suggestedFileName: 'lexiquest.csv',
@@ -15,6 +18,138 @@ void main() {
     generatedAtUtc: DateTime.utc(2026, 7, 30),
     timeZone: 'UTC',
     exclusions: <String>[],
+  );
+
+  test(
+    'Android cancellation discards completed document before reporting cancelled',
+    () async {
+      final cancellation = ExportCancellation();
+      String? discarded;
+      final store = FileSelectorExportStore(
+        isAndroid: true,
+        androidSaver: (_) async {
+          cancellation.cancel();
+          return 'content://downloads/own-export';
+        },
+        androidDiscarder: (path) async => discarded = path,
+      );
+      await expectLater(
+        store.save(artifact, cancellation: cancellation),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.cancelled,
+          ),
+        ),
+      );
+      expect(discarded, 'content://downloads/own-export');
+    },
+  );
+
+  test(
+    'failed Android cleanup must not claim successful cancellation',
+    () async {
+      final cancellation = ExportCancellation();
+      final store = FileSelectorExportStore(
+        isAndroid: true,
+        androidSaver: (_) async {
+          cancellation.cancel();
+          return 'content://downloads/own-export';
+        },
+        androidDiscarder: (_) async =>
+            throw const FileSystemException('cleanup denied'),
+      );
+      await expectLater(
+        store.save(artifact, cancellation: cancellation),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.cleanupFailed,
+          ),
+        ),
+      );
+    },
+  );
+
+  for (final existing in [false, true]) {
+    test(
+      'desktop cancelled write restores destination (existing=$existing) and clears staging',
+      () async {
+        final root = await Directory.systemTemp.createTemp(
+          'lexiquest-export-cancel-',
+        );
+        addTearDown(() => root.delete(recursive: true));
+        final target = File('${root.path}/result.csv');
+        if (existing) await target.writeAsString('previous-file');
+        final cancellation = ExportCancellation();
+        final store = FileSelectorExportStore(
+          isAndroid: false,
+          desktopLocation: (_) async => target.path,
+          temporaryDirectory: () async => root,
+          desktopSaver: (source, destination) async {
+            await File(source).copy(destination);
+            cancellation.cancel();
+          },
+        );
+        await expectLater(
+          store.save(artifact, cancellation: cancellation),
+          throwsA(
+            isA<ExportException>().having(
+              (e) => e.code,
+              'code',
+              ExportFailureCode.cancelled,
+            ),
+          ),
+        );
+        expect(await target.exists(), existing);
+        if (existing) expect(await target.readAsString(), 'previous-file');
+        expect(
+          await root.list().where((e) => e is Directory).toList(),
+          isEmpty,
+        );
+      },
+    );
+  }
+
+  test(
+    'failed rollback preserves previous bytes for recovery and reports cleanup failure',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'lexiquest-export-recovery-',
+      );
+      addTearDown(() => root.delete(recursive: true));
+      final target = File('${root.path}/result.csv');
+      await target.writeAsString('previous-file');
+      final store = FileSelectorExportStore(
+        isAndroid: false,
+        desktopLocation: (_) async => target.path,
+        temporaryDirectory: () async => root,
+        desktopSaver: (_, destination) async {
+          await File(destination).delete();
+          await Directory(destination).create();
+          throw const FileSystemException('destination became unavailable');
+        },
+      );
+      await expectLater(
+        store.save(artifact, cancellation: ExportCancellation()),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.cleanupFailed,
+          ),
+        ),
+      );
+      final backups = await root
+          .list(recursive: true)
+          .where((e) => e is File && e.path.endsWith('previous'))
+          .cast<File>()
+          .toList();
+      expect(backups, hasLength(1));
+      expect(await backups.single.readAsString(), 'previous-file');
+    },
   );
 
   test('Android saver writes through the system document flow', () async {
@@ -36,6 +171,87 @@ void main() {
     expect(result.path, 'content://downloads/lexiquest.csv');
     expect(result.bytesWritten, 3);
   });
+
+  test(
+    'desktop same destination is serialized and successful export leaves no staging',
+    () async {
+      final root = await Directory.systemTemp.createTemp(
+        'lexiquest-export-overlap-',
+      );
+      addTearDown(() => root.delete(recursive: true));
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final target = File('${root.path}/result.csv');
+      final store = FileSelectorExportStore(
+        isAndroid: false,
+        desktopLocation: (_) async => target.path,
+        temporaryDirectory: () async => root,
+        desktopSaver: (source, destination) async {
+          started.complete();
+          await release.future;
+          await File(source).copy(destination);
+        },
+      );
+      final first = store.save(artifact, cancellation: ExportCancellation());
+      await started.future;
+      await expectLater(
+        store.save(artifact, cancellation: ExportCancellation()),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.unavailable,
+          ),
+        ),
+      );
+      release.complete();
+      expect((await first).bytesWritten, 3);
+      expect(await target.readAsBytes(), [1, 2, 3]);
+      expect(await root.list().toList(), hasLength(1));
+    },
+  );
+
+  test(
+    'real Android channel acknowledges discard after cancellation',
+    () async {
+      const channel = MethodChannel('com.lexiquest.app/export');
+      final cancellation = ExportCancellation();
+      final calls = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls.add(call);
+            if (call.method == 'saveExportFile') {
+              cancellation.cancel();
+              return 'content://synthetic/own-export';
+            }
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+      await expectLater(
+        const FileSelectorExportStore(
+          isAndroid: true,
+        ).save(artifact, cancellation: cancellation),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.cancelled,
+          ),
+        ),
+      );
+      expect(calls.map((c) => c.method), [
+        'saveExportFile',
+        'finishExportFile',
+      ]);
+      expect(calls.last.arguments, {
+        'location': 'content://synthetic/own-export',
+        'discard': true,
+      });
+    },
+  );
 
   test('Android document picker cancellation is typed', () async {
     final store = FileSelectorExportStore(

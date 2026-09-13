@@ -1,0 +1,50 @@
+[
+  {
+    "path": "lib/learning/storage/learning_database.dart",
+    "bytes": 2,
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "consumerReferences": [
+      "lib/data/local/legacy_learning_import.dart",
+      "test/support/legacy_learning_v1.sql"
+    ],
+    "disposition": "remove whitespace-only unused placeholder",
+    "referenceInterpretation": "Only historical schema provenance comments; no import/export/route/schema/generator consumers",
+    "rollbackSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa"
+  },
+  {
+    "path": "lib/learning/storage/learning_database_factory.dart",
+    "bytes": 2,
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "consumerReferences": [],
+    "disposition": "remove whitespace-only unused placeholder",
+    "referenceInterpretation": "Only historical schema provenance comments; no import/export/route/schema/generator consumers",
+    "rollbackSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa"
+  },
+  {
+    "path": "lib/learning/storage/learning_database_factory_native.dart",
+    "bytes": 2,
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "consumerReferences": [],
+    "disposition": "remove whitespace-only unused placeholder",
+    "referenceInterpretation": "Only historical schema provenance comments; no import/export/route/schema/generator consumers",
+    "rollbackSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa"
+  },
+  {
+    "path": "lib/learning/storage/learning_database_factory_stub.dart",
+    "bytes": 2,
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "consumerReferences": [],
+    "disposition": "remove whitespace-only unused placeholder",
+    "referenceInterpretation": "Only historical schema provenance comments; no import/export/route/schema/generator consumers",
+    "rollbackSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa"
+  },
+  {
+    "path": "lib/learning/storage/learning_database_open_exception.dart",
+    "bytes": 2,
+    "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "consumerReferences": [],
+    "disposition": "remove whitespace-only unused placeholder",
+    "referenceInterpretation": "Only historical schema provenance comments; no import/export/route/schema/generator consumers",
+    "rollbackSha": "6a7b21bc01535ff2e960bcee0b36b3d49e4cb3aa"
+  }
+]

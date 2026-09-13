@@ -243,6 +243,8 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
     ExportFailureCode.insufficientSpace => 'พื้นที่จัดเก็บไม่เพียงพอ',
     ExportFailureCode.writeFailed =>
       'ยังยืนยันการบันทึกไฟล์ไม่ได้ กรุณาตรวจตำแหน่งที่เลือกก่อนลองอีกครั้ง',
+    ExportFailureCode.cleanupFailed =>
+      'ล้างไฟล์ส่งออกไม่สำเร็จ อาจมีไฟล์ค้างอยู่ กรุณาตรวจตำแหน่งที่เลือก',
     ExportFailureCode.unavailable => 'ระบบบันทึกไฟล์ไม่พร้อมใช้งาน',
   };
 }

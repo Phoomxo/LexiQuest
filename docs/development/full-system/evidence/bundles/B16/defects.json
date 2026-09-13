@@ -23,6 +23,40 @@
       "red": "G7.3-red-Firestore-rules-tests.stdout.log",
       "fix": "Profile-only affected keys; wallpaper-only state mutations; client purchases denied. Preserve trusted score fields on profile edits.",
       "retest": "G7.3-final-verifier.json"
+    },
+    {
+      "id": "B16-EXPORT-01",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Cancelled export leaves no new destination payload and preserves overwritten file",
+      "actual": "Previous store checked cancellation after publishing but cleaned only temporary file; Android had no discard channel",
+      "cause": "Destination lifecycle not included in cancellation cleanup",
+      "fix": "Unique staging, destination serialization and backup restore; Android tracks new export URI and requires discard acknowledgement; cleanupFailed UI cannot claim cancelled",
+      "red": "G7.4-red-verifier.json",
+      "retest": "G7.4-final-verifier.json",
+      "nativeCompile": "G7.4-native-verifier.json"
+    },
+    {
+      "id": "B16-EXPORT-02",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Rollback failure preserves original bytes for recovery",
+      "actual": "Initial new store deleted backup in finally after rollback failed",
+      "cause": "Unconditional staging deletion",
+      "red": "G7.4-rollback-red-verifier.json",
+      "fix": "Retain previous backup on rollback failure while deleting new export payload; explicit cleanup failure",
+      "retest": "G7.4-final-verifier.json",
+      "nativeCompile": "G7.4-native-verifier.json"
+    },
+    {
+      "id": "B16-TOOL-01",
+      "package": "G7.4",
+      "status": "closed-local",
+      "expected": "Native Kotlin change can be compiled within bounded verifier without full Android packaging",
+      "actual": "No selector for native compile",
+      "red": "G7.4-cli-red-verifier.json",
+      "fix": "AndroidCompileOnly Targeted/Integration; reject mixed/subsystem/release selectors; gradle launcher/local properties included in environment fingerprint",
+      "retest": "G7.4-cli-final-verifier.json"
     }
   ],
   "diagnostics": [
@@ -37,6 +71,14 @@
     {
       "kind": "SDK-fixture-correction",
       "detail": "@firebase/util createMockUserToken inserts firebase.sign_in_provider=custom for empty options. First post-fix run179/180 exposed this test issue, not a rule bypass. Explicit firebase:undefined omits the JWT claim; final180/180 passed. Empty map, empty/nonstring/anonymous provider also denied."
+    },
+    {
+      "kind": "test-edit",
+      "detail": "Initial export regression compile also exposed misplaced dart:io import from patch insertion. Moved import to directives before implementation verification; missing API errors and later real rollback failure retained."
+    },
+    {
+      "kind": "evidence-packaging",
+      "detail": "Initial diff --check treats preserved CRLF as whitespace. Subsequent cr-at-eol source diff check passed; raw logs force-added as binary with B16 attributes. No test was skipped."
     }
   ]
 }

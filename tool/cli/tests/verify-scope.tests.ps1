@@ -21,6 +21,20 @@ $rejected = $false
 try { Get-VerificationCommands Release Economy | Out-Null } catch { $rejected = $true }
 if (-not $rejected) { throw 'RulesOnly cannot replace a release gate' }
 $RulesOnly = $false
+$AndroidCompileOnly = $true
+$nativeSelection = @(Get-VerificationCommands Targeted Integration)
+if ($nativeSelection.Count -ne 1 -or $nativeSelection[0].Arguments -notcontains ':app:compileDebugKotlin' -or $nativeSelection[0].Arguments -notcontains '-x' -or $nativeSelection[0].Arguments -notcontains 'compileFlutterBuildDebug') { throw 'AndroidCompileOnly must isolate native Kotlin compile without Flutter packaging' }
+foreach ($level in @('Subsystem','Release')) {
+    $rejected = $false
+    try { Get-VerificationCommands $level Integration | Out-Null } catch { $rejected = $true }
+    if (-not $rejected) { throw 'AndroidCompileOnly must not replace broader gates' }
+}
+$RulesOnly = $true
+$rejected = $false
+try { Get-VerificationCommands Targeted Economy | Out-Null } catch { $rejected = $true }
+if (-not $rejected) { throw 'Mixed native/rules selectors must fail' }
+$RulesOnly = $false
+$AndroidCompileOnly = $false
 
 $failures = [System.Collections.Generic.List[string]]::new()
 foreach ($area in @('BackendAI','BackendVoice','BackendLM')) {
