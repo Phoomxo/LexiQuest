@@ -1,0 +1,89 @@
+{
+  "packageId": "G1.5",
+  "status": "accepted-local-automated",
+  "requirements": [
+    "COV-f06",
+    "COV-f11",
+    "COV-f15",
+    "FORM-03",
+    "G1"
+  ],
+  "runs": [
+    {
+      "path": "G1.5-runs/targeted-learning-06a3cd64cd7dabefc744127f26ce4e391dccac8b42e2d7fc3d5a38d84dffa03d.json",
+      "status": "Passed",
+      "fingerprint": "46e2a19af91e0a7515cfd29fd045db38ed84f710fdf0d602639ba30946806214",
+      "targets": [
+        "test",
+        "test/features/learning/drift_associative_learning_adapter_test.dart",
+        "--reporter",
+        "compact",
+        "--plain-name",
+        "B03 compound"
+      ],
+      "counts": [
+        "1"
+      ]
+    },
+    {
+      "path": "G1.5-runs/targeted-learning-079e9b993761074015e2e9af36ce6dc630c1dcd38fcbe5ba890c03b996e4a160.json",
+      "status": "Passed",
+      "fingerprint": "63f6669e12edd38d8d144c831101abe9223a3f63419bca10ed626488c07864c2",
+      "targets": [
+        "test",
+        "test/features/learning/evidence_eligibility_policy_test.dart",
+        "test/features/learning/srs_policy_test.dart",
+        "test/features/learning/assessment_evidence_isolation_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "27"
+      ]
+    },
+    {
+      "path": "G1.5-runs/targeted-learning-29e7ee934c74bc433e96368ad0a1e7c6b39b8df78ed1aa4f68c552e9e1d48638.json",
+      "status": "Passed",
+      "fingerprint": "f55e86861542af9620d8680a5462483259fb65536659ce42b0236131e7061a59",
+      "targets": [
+        "test",
+        "test/learning/associative_scheduler_validation_test.dart",
+        "test/learning/adaptive_associative_scheduler_test.dart",
+        "test/features/learning/drift_associative_learning_adapter_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": [
+        "22"
+      ]
+    },
+    {
+      "path": "G1.5-runs/targeted-learning-42fcdfd33f42bba569511bf53431df44d609c7b36c3d65ee002239c151598e5e.json",
+      "status": "Failed",
+      "fingerprint": "43622068e743f627f96e4e3235db0cb9dc0d04ca571170c5d87958277cfa6a78",
+      "targets": [
+        "test",
+        "test/learning/associative_scheduler_validation_test.dart",
+        "--reporter",
+        "compact"
+      ],
+      "counts": []
+    }
+  ],
+  "acceptance": {
+    "srs": "BinarySm2 policy2 UTC, intervals1/3/7/14 then double capped36500, wrong reset1; required27 tests passed",
+    "eligibility": "Recognition/guided/exposure denied mastery; self-rating remains declared self report, assessment engagement protocol-controlled and default isolated; classification/rollout matrix and assessment effect snapshots passed",
+    "D03": "12 validation/formula tests + existing scheduler2/adapter8 passed (22); added compound rollback retry test1 passed",
+    "formulaComparison": "Main associative-v1 uses normalized latency/cue quality/confidence/transfer/lapse history. Current supplementary v1.0.0 uses correctness, cue and confidence: unaided factor1.4, aided1.1, confidence>=4 adds0.2, success clamp stability0.5..365, wrong halves floor0.5; canonical vocabulary SRS remains separate policy2. No replacement, no replay of old memory receipts",
+    "boundedValidation": "Supplementary computation rejects blank owner/session/attempt, mismatched word, nonUTC now/occurrence, nonfinite/nonpositive stability, difficulty outside1..10, cue outside0..1, negative lapses. RecallAttempt already rejects negative latency/int confidence outside1..5. Validation revision1 preserves valid v1.0.0 outputs",
+    "atomic": "Real SQLite abort on memory insert rolls association back; successful duplicate retry leaves one row in each projection",
+    "B01-FORM-01": "No change to stored attempt/global ordinal or derived selector; G1.6 checks readers; broader G3.5 obligation retained"
+  },
+  "review": [
+    "Supplementary scheduler currently has no runtime caller; no new activation",
+    "Canonical SRS/evidence policy unchanged; schema and existing data preserved",
+    "Adapter runtime consumer retains transaction and owner/word match"
+  ],
+  "reuse": "Required policy suite unaffected by supplementary scheduler-only production edit; prior adapter suite reused after independent fixture addition",
+  "phaseStatus": "G1-partial"
+}

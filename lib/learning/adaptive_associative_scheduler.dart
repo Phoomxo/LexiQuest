@@ -12,6 +12,26 @@ class AdaptiveAssociativeScheduler {
     required RecallAttempt attempt,
     required DateTime now,
   }) {
+    // Validation revision 1: preserve v1.0.0 arithmetic for valid inputs.
+    // Reject corrupt snapshots before clamping can disguise their provenance.
+    if (currentState.ownerId.trim().isEmpty ||
+        currentState.wordKey.trim().isEmpty ||
+        currentState.wordKey != attempt.wordKey ||
+        attempt.attemptId.trim().isEmpty ||
+        attempt.sessionId.trim().isEmpty) {
+      throw ArgumentError('Scheduling identities must be non-empty and match.');
+    }
+    if (!now.isUtc || !attempt.occurredAt.isUtc) {
+      throw ArgumentError('Scheduling timestamps must be UTC.');
+    }
+    if (!currentState.stability.isFinite || currentState.stability <= 0 ||
+        !currentState.difficulty.isFinite || currentState.difficulty < 1 ||
+        currentState.difficulty > 10 ||
+        !currentState.cueDependency.isFinite || currentState.cueDependency < 0 ||
+        currentState.cueDependency > 1 || currentState.lapseCount < 0) {
+      throw ArgumentError('Invalid associative memory state.');
+    }
+
     double newStability = currentState.stability;
     double newDifficulty = currentState.difficulty;
     double newCueDependency = currentState.cueDependency;

@@ -20,6 +20,28 @@ void main() {
 
   tearDown(() async => database.close());
 
+  test('B03 compound association rollback leaves no partial projection', () async {
+    final now = DateTime.utc(2026, 9, 13);
+    final record = AssociationRecord(associationId: 'atomic', ownerId: 'owner-da',
+      wordKey: 'atomic', type: 'keyword', content: 'one', createdAtUtc: now);
+    final memory = AssociativeMemoryState(ownerId: 'owner-da', wordKey: 'atomic',
+      stability: 1, difficulty: 5, cueDependency: 0, lapseCount: 0,
+      nextDueAtUtc: now, algorithmVersion: 'v1.0.0');
+    await database.customStatement("""
+      CREATE TRIGGER b03_abort_memory AFTER INSERT ON associative_memory_states
+      BEGIN SELECT RAISE(ABORT, 'B03 memory fault'); END
+    """);
+    await expectLater(adapter.saveAssociationAndMemoryState(record, memory),
+      throwsA(predicate((error) => error.toString().contains('B03 memory fault'))));
+    expect(await adapter.getAssociationsForWord('owner-da', 'atomic'), isEmpty);
+    expect(await adapter.getMemoryState('owner-da', 'atomic'), isNull);
+    await database.customStatement('DROP TRIGGER b03_abort_memory');
+    await adapter.saveAssociationAndMemoryState(record, memory);
+    await adapter.saveAssociationAndMemoryState(record, memory);
+    expect(await adapter.getAssociationsForWord('owner-da', 'atomic'), hasLength(1));
+    expect(await adapter.getAllMemoryStates('owner-da'), hasLength(1));
+  });
+
   group('DriftAssociativeLearningAdapter — D8.3', () {
     // ── Associations ────────────────────────────────────────────────────────
 

@@ -27,6 +27,21 @@
       "cause": "PowerShell logs UTF-16; missing command failure guards",
       "fix": "BOM-aware decoder; complete artifacts in subsequent commit before acceptance; use explicit exit guards thereafter",
       "retest": "all three manifests/logs archived and counts decoded"
+    },
+    {
+      "id": "B03-SRS-01",
+      "status": "fixed",
+      "expected": "Invalid scheduling state rejected before computation",
+      "actual": "10 tests failed before fix: malformed snapshots accepted or nonfinite rounding error",
+      "cause": "Missing computation-boundary validation in v1.0.0 scheduler",
+      "fix": "Validation revision1; valid formula and stored state unchanged",
+      "retest": "22 scheduler/adapter tests PASS; raw red and green logs retained"
+    },
+    {
+      "id": "B03-OPS-05",
+      "status": "resolved",
+      "actual": "Read-only rg used nonexistent guessed paths os2",
+      "fix": "Full lib/test search confirmed actual consumers; use discovered paths only"
     }
   ]
 }
