@@ -32,6 +32,8 @@ Revision `2026-09-13-bundles-4` · Astra (`gpt-6-astra`) / `medium`
 
 ใช้ Markdownหนึ่งไฟล์ต่อbundle: `docs/development/full-system/bundles/Bxx.md` อัปเดตระหว่างทำงาน. เนื้อหามีเพียงผลที่ทำ / ผลตรวจพร้อมlinks / งานค้างและข้อจำกัด. ไม่เล่าcommand historyซ้ำ ไม่สร้างรายงานMarkdownต่อทุกpackage. เก็บrawlogs, manifests, defects และละเอียดเชิงเครื่องใน structured evidence directoryตาม bundle brief; หลักฐานเก่าไม่ถูกลบ
 
+คำสั่งผู้ใช้ล่าสุด: ทั้งแชตและรายงานหลักต้องกระชับ เน้นผลลัพธ์/การเปลี่ยนแปลง ผลตรวจ ปัญหา/งานค้าง และลิงก์หลักฐาน ไม่เกริ่นหรือสรุปซ้ำ; ส่งต่อแนวทางนี้ใน prompt/handoff ของทุก bundle โดยไม่ลดการตรวจสอบ
+
 หลังaccepted sub-result commit ให้บันทึก package receipt ที่ external `packages/Gx.y.json` พร้อม packageId, bundleId, actualacceptedSHA, requirement/evidence/verification/fingerprint/defects/phaseStatus. อัปเดต packageStates และ currentPackageId แล้ว **ทำข้อต่อไปในtaskและworktreeเดิม**. Package receiptไม่ปล่อยbundle writerและไม่อนุญาตdispatch. SHAต้องเป็นcommitจริงหลังcommit; ไม่สร้างcommitที่ต้องบรรจุSHAตัวเอง
 
 ## Control state และ handoff

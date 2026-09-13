@@ -1,0 +1,91 @@
+{
+  "packageId": "G1.1",
+  "status": "accepted-local-automated",
+  "baseSha": "ad94af69d4512d71daed8c55c415813865617b39",
+  "requirements": [
+    "COV-f05",
+    "COV-f13",
+    "COV-f40",
+    "G1"
+  ],
+  "results": [
+    {
+      "status": "Passed",
+      "fingerprint": "968ee6e69c9bca3e2099680db7c7de5c83892056f28f8f4d5c7780a9ae628f52",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/screens/today_hub_screen_test.dart",
+            "test/screens/game_launcher_screen_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "70c33ba04f7439193e9b33b55d96c6a12d5ca4e905ca9a4e05198af3bbe377a5"
+        }
+      ],
+      "evidence": "G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-learning-56ba599e6aa2b434d7f1e9fc328a4ce54739b5576b6c33a39ead9d277931461d.json"
+    },
+    {
+      "status": "Passed",
+      "fingerprint": "3de308e924637902bf55dd14830ddf8e8f349539840227a6bc0c354d71ab5db0",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/features/learning/learning_use_cases_test.dart",
+            "test/features/identity/upgrade_guest_owner_test.dart",
+            "test/features/learning/unified_lesson_controller_test.dart",
+            "--reporter",
+            "compact"
+          ],
+          "SourceArea": "Learning",
+          "commandKey": "c22ddac1a33cbea9c9376da3d220623690fed092b95787bdadfc832af48d253a"
+        }
+      ],
+      "evidence": "G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-learning-7468d325e15bb4c0b0a24808265fa32acf873751e204bd7432a3d229fcd40d81.json"
+    },
+    {
+      "status": "Passed",
+      "fingerprint": "719d06a319c24181530a8cb50689f3db8237055c8c7b6099ac59b1dce18b5ae4",
+      "selection": [
+        {
+          "Name": "Explicit Flutter tests",
+          "FilePath": "flutter",
+          "Arguments": [
+            "test",
+            "test/runtime/app_bootstrap_test.dart",
+            "--reporter",
+            "compact",
+            "--plain-name",
+            "records Firebase failure and still returns"
+          ],
+          "SourceArea": "Runtime",
+          "commandKey": "b28d06ca3bc1f3a9cd90a60dd4f0d4d18ea42ef7405bdde3b199a3cbad5100d5"
+        }
+      ],
+      "evidence": "G1.1-runs/ad94af69d4512d71daed8c55c415813865617b39-targeted-runtime-0ce440e3c008766ef990c8b410ded585be9591093a57a68c47b9a6d143e1e138.json"
+    }
+  ],
+  "acceptance": {
+    "ownerIsolation": "Existing owner drift across launch await and owner-bound evidence/close retry tests passed",
+    "singleSessionAuthority": "Existing canonical start and deduplicated completion tests passed",
+    "offlineLearning": "Extended Firebase failure bootstrap test creates vocabulary, starts, answers and finishes one durable local session"
+  },
+  "actualAuthority": [
+    "lib/features/learning/application/learning_use_cases.dart",
+    "lib/features/learning/application/unified_lesson_controller.dart",
+    "lib/runtime/app_bootstrap.dart"
+  ],
+  "reuse": "Core/Today gates precede isolated bootstrap-test-only change; production inputs unchanged. Test file normalized back to original CRLF after successful test; content identical modulo EOL.",
+  "externalGates": [
+    "Physical device/build local-preview config NOT RUN, owners G1.7/G7.5/G7.7"
+  ],
+  "phaseStatus": "G1 partial; G1.2-G1.7 outstanding",
+  "design": "Retain existing owner-pinned authority; no schema/API/runtime change required by tested G1.1 delta"
+}

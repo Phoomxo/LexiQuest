@@ -3107,6 +3107,36 @@ void main() {
       );
       expect(dependencies.runtimeStatus.voice, RuntimeAvailability.ready);
       expect(dependencies.config, isNotNull);
+
+      // G1.1: local availability must include a durable learning journey.
+      final category = await dependencies.vocabulary!.createCategory(
+        'Offline owner acceptance',
+      );
+      await dependencies.vocabulary!.createWord(CreateWordCommand(
+        categoryId: category.id,
+        spelling: 'station',
+        meaning: 'station meaning',
+        partOfSpeech: 'noun',
+        cefrLevel: 'A1',
+      ));
+      final learning = dependencies.learning!;
+      final session = await learning.startQuiz(limit: 1);
+      expect(session.questions, hasLength(1));
+      await learning.recordAnswer(
+        sessionId: session.id,
+        wordId: session.questions.single.word.id,
+        promptMode: 'meaning',
+        isCorrect: true,
+        responseTimeMs: 1000,
+        attemptNumber: 1,
+      );
+      await learning.finishSession(session.id);
+      final sessions = await database.select(database.learningSessions).get();
+      final attempts = await database.select(database.answerAttempts).get();
+      expect(sessions, hasLength(1));
+      expect(sessions.single.state, 'completed');
+      expect(attempts, hasLength(1));
+      expect(attempts.single.ownerId, sessions.single.ownerId);
     });
 
     test('records Supabase failure and still returns', () async {

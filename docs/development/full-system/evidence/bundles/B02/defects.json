@@ -1,0 +1,18 @@
+[
+  {
+    "cause": "Search assumed nonexistent lib/features/today path",
+    "fix": "Used rg --files and resolved lib/features/today_hub",
+    "id": "B02-OPS-01",
+    "status": "closed",
+    "impact": "Read-only discovery, no application changes"
+  },
+  {
+    "evidence": "G1.1-runs/b28d06ca3bc1-4a0f69069a17-Explicit-Flutter-tests.stderr.log",
+    "status": "closed",
+    "id": "B02-TEST-01",
+    "impact": "Test compilation only; no production defect claim",
+    "fix": "Supply promptMode, responseTimeMs and attemptNumber",
+    "cause": "New bootstrap fixture omitted required recordAnswer parameters",
+    "retest": "Targeted Runtime selected Firebase failure journey passed, 1 test"
+  }
+]
