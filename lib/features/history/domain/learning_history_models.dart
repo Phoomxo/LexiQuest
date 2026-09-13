@@ -1,6 +1,7 @@
 import '../../assessment/domain/assessment_models.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/first_answer_accuracy.dart';
 import '../../learning/domain/lesson_mode.dart';
 import '../../learning/pair_matching/domain/pair_matching_history_projection.dart';
 import '../../learning/domain/lesson_session_state.dart';
@@ -267,6 +268,51 @@ final class LearningHistoryEntry {
   final LearningHistoryAssessmentSummary? assessmentSummary;
   final PairMatchingHistoryProjection? pairSummary;
   final bool pairPurposeUnavailable;
+
+  /// Display-only first/repair axes; legacy aggregate fields above stay intact.
+  ({int correct, int total}) get firstAnswers {
+    final first = _firstEvidence;
+    return (
+      correct: first.where((row) => row.isCorrect).length,
+      total: first.length,
+    );
+  }
+
+  ({int correct, int total}) get repairAnswers {
+    final firstIds = _firstEvidence.map((row) => row.attemptId).toSet();
+    final repair = evidence.where(
+      (row) =>
+          FirstAnswerAccuracy.includes(row.evidenceContext) &&
+          !firstIds.contains(row.attemptId),
+    );
+    return (
+      correct: repair.where((row) => row.isCorrect).length,
+      total: repair.length,
+    );
+  }
+
+  List<LearningHistoryEvidence> get _firstEvidence {
+    final ordered = evidence.toList()
+      ..sort((a, b) {
+        final time = a.occurredAtUtc.compareTo(b.occurredAtUtc);
+        if (time != 0) return time;
+        final ordinal = ((a.event.payload['attemptNumber'] as int?) ?? 0)
+            .compareTo((b.event.payload['attemptNumber'] as int?) ?? 0);
+        return ordinal != 0 ? ordinal : a.attemptId.compareTo(b.attemptId);
+      });
+    return FirstAnswerAccuracy.select(
+      ordered,
+      contextOf: (row) => row.evidenceContext,
+      identityOf: (row, context) => (
+        ownerId,
+        sessionId,
+        row.wordId,
+        row.promptMode,
+        context.contentRevision,
+        context.skillId,
+      ),
+    );
+  }
 
   /// Only the validated configuration identifies this local activity. Do not
   /// infer historical content from today's catalog or mutable vocabulary.

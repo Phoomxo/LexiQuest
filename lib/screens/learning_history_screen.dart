@@ -578,6 +578,15 @@ final class _HistoryCard extends StatelessWidget {
               const SizedBox(height: 4),
               if (assessment == null) ...[
                 Text(modeLabel),
+                Text(
+                  entry.firstAnswers.total == 0
+                      ? 'ยังไม่มีคำตอบครั้งแรกที่ใช้คำนวณความถูกต้อง'
+                      : 'คำตอบครั้งแรก ${entry.firstAnswers.correct}/${entry.firstAnswers.total}',
+                ),
+                if (entry.repairAnswers.total > 0)
+                  Text(
+                    'ฝึกซ้ำแก้คำตอบ ${entry.repairAnswers.correct}/${entry.repairAnswers.total}',
+                  ),
                 if (entry.mode == LessonMode.meaningQuiz ||
                     entry.mode == LessonMode.definitionQuiz)
                   const Text('กิจกรรมเลือกจำแนกคำตอบจากตัวเลือก'),

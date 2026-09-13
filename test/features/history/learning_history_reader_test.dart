@@ -1,3 +1,6 @@
+import 'package:timezone/data/latest_all.dart' as timezone_data;
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_learning_calendar_reader.dart';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -56,6 +59,92 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'B02 history first answers agree with progress and calendar without rewriting summary',
+    () async {
+      final when = DateTime.utc(2026, 8, 31, 9);
+      await _seedTerminalSession(
+        database,
+        id: 'first-six',
+        state: 'completed',
+        startedAtUtc: when,
+        endedAtUtc: when.add(const Duration(minutes: 10)),
+        configuration: _configuration(
+          mode: LessonMode.typedRecall,
+          itemCount: 6,
+        ),
+        correctCount: 6,
+        wrongCount: 1,
+        score: 86,
+      );
+      final template =
+          (await database.select(database.vocabularyWords).get()).single;
+      final context = EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'retention',
+        hintLevel: 0,
+        contentRevision: 'old-1',
+        engagementAllowed: false,
+      );
+      for (var i = 0; i < 6; i++) {
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              template.copyWith(
+                id: 'first-word-$i',
+                spelling: 'word$i',
+                normalizedSpelling: 'word$i',
+              ),
+            );
+        await _seedAttemptAndEvent(
+          database,
+          sessionId: 'first-six',
+          attemptId: 'first-$i',
+          wordId: 'first-word-$i',
+          isCorrect: i < 5,
+          attemptNumber: i + 1,
+          occurredAtUtc: when.add(Duration(seconds: i)),
+          evidence: context,
+        );
+      }
+      await _seedAttemptAndEvent(
+        database,
+        sessionId: 'first-six',
+        attemptId: 'repair',
+        wordId: 'first-word-5',
+        isCorrect: true,
+        attemptNumber: 7,
+        occurredAtUtc: when.add(const Duration(minutes: 1)),
+        evidence: context,
+      );
+      final before = await _sourceSnapshot(database);
+      final entry = (await reader.list(
+        const HistoryFilter(ownerId: 'owner:history'),
+      )).single;
+      expect(entry.firstAnswers, (correct: 5, total: 6));
+      expect(entry.repairAnswers, (correct: 1, total: 1));
+      expect(
+        entry.correctCount,
+        6,
+      ); // Stored historical aggregate stays intact.
+      expect(entry.score, 86);
+      final progress = await DriftProgressQueries(
+        database,
+      ).load(ownerId: 'owner:history', nowUtc: when);
+      timezone_data.initializeTimeZones();
+      final calendar = await DriftLearningCalendarReader(database).loadWeek(
+        ownerId: 'owner:history',
+        referenceUtc: when,
+        timezoneId: 'UTC',
+      );
+      expect(progress.correctCount, entry.firstAnswers.correct);
+      expect(progress.sampleSize, entry.firstAnswers.total);
+      expect(calendar.weekly.accuracy.correctCount, entry.firstAnswers.correct);
+      expect(calendar.weekly.accuracy.sampleSize, entry.firstAnswers.total);
+      expect(await _sourceSnapshot(database), before);
+    },
+  );
 
   test(
     'unpinned CEFR history has truthful metadata without replay or source writes',
@@ -1591,6 +1680,9 @@ Future<void> _seedActiveSegment(
 Future<EventEnvelopeV2> _seedAttemptAndEvent(
   AppDatabase database, {
   required String sessionId,
+  String wordId = 'word:station',
+  bool isCorrect = true,
+  int attemptNumber = 1,
   required String attemptId,
   required DateTime occurredAtUtc,
   required EvidenceContext evidence,
@@ -1603,11 +1695,11 @@ Future<EventEnvelopeV2> _seedAttemptAndEvent(
           id: attemptId,
           ownerId: 'owner:history',
           sessionId: sessionId,
-          wordId: 'word:station',
+          wordId: wordId,
           promptMode: 'typedRecall',
-          isCorrect: true,
+          isCorrect: isCorrect,
           responseTimeMs: const Value(900),
-          attemptNumber: 1,
+          attemptNumber: attemptNumber,
           occurredAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
           evidenceClass: Value(evidence.evidenceClass.name),
           evidenceContextJson: Value(jsonEncode(evidence.toJson())),
@@ -1618,10 +1710,10 @@ Future<EventEnvelopeV2> _seedAttemptAndEvent(
         sourceEvidenceId: attemptId,
         ownerId: 'owner:history',
         sessionId: sessionId,
-        wordId: 'word:station',
+        wordId: wordId,
         promptMode: 'typedRecall',
-        isCorrect: true,
-        attemptNumber: 1,
+        isCorrect: isCorrect,
+        attemptNumber: attemptNumber,
         occurredAtUtc: occurredAtUtc,
         evidenceContext: evidence,
         learningEventContext:
