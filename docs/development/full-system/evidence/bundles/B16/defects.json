@@ -104,6 +104,10 @@
     {
       "kind": "evidence-packaging",
       "detail": "Initial diff --check treats preserved CRLF as whitespace. Subsequent cr-at-eol source diff check passed; raw logs force-added as binary with B16 attributes. No test was skipped."
+    },
+    {
+      "kind": "artifact-audit-path-correction",
+      "detail": "Python314 __file__ is absolute; initial index carried absolute evidence paths and committed blob lookup failed before acceptance. Normalize artifact paths relative to repository, retain failed log and original commit91959fbf, regenerate index and verify every blob. No production input or test result changed."
     }
   ]
 }

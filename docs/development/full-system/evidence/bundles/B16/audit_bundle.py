@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 
 root = Path.cwd()
-evidence = Path(__file__).parent
+evidence = Path(__file__).resolve().parent.relative_to(root)
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
