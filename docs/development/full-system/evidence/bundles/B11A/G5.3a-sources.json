@@ -1,0 +1,149 @@
+{
+  "sources": [
+    {
+      "source": "7eleven",
+      "url": "https://allonline.7eleven.co.th/terms/",
+      "checkedAt": "2026-09-13T17:24:10.010886+00:00",
+      "status": 200,
+      "finalUrl": "https://allonline.7eleven.co.th/terms/",
+      "bytes": 143809,
+      "sha256": "23067538047d189aeb597a99752940569e0ff16e16b89ed189fdab51e06c0339",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\7eleven.html",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "bigc",
+      "url": "https://www.bigc.co.th/terms-conditions",
+      "checkedAt": "2026-09-13T17:24:10.355783+00:00",
+      "status": "unavailable",
+      "error": "HTTP Error 404: Not Found",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "lotuss",
+      "url": "https://corporate.lotuss.com/en/terms/",
+      "checkedAt": "2026-09-13T17:24:10.614770+00:00",
+      "status": 200,
+      "finalUrl": "https://my.lotuss.com/th",
+      "bytes": 652803,
+      "sha256": "bc687a45d6cc2f38286111a4879008ef47968b0624d50623f876e573d93af08a",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\lotuss.html",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "makro",
+      "url": "https://www.makro.pro/en/static/terms-conditions",
+      "checkedAt": "2026-09-13T17:24:11.727592+00:00",
+      "status": 200,
+      "finalUrl": "https://www.makro.pro/en/static/terms-conditions",
+      "bytes": 795516,
+      "sha256": "ea57531b76ec87304240b718c7f1fa5f358ccc0662b9b70a4ea6c48693a8fc08",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\makro.html",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "homepro",
+      "url": "https://www.homepro.co.th/policy/termsofuse.jsp",
+      "checkedAt": "2026-09-13T17:24:12.197892+00:00",
+      "status": 200,
+      "finalUrl": "https://www.homepro.co.th/policy/termsofuse.jsp",
+      "bytes": 366109,
+      "sha256": "b7e4e0c8f241a2c2aa73ede1f7eb5b2dd0069ef3ed25ef2294a095380c048052",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\homepro.html",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "thaiwatsadu",
+      "url": "https://www.thaiwatsadu.com/",
+      "checkedAt": "2026-09-13T17:24:12.460127+00:00",
+      "status": 200,
+      "finalUrl": "https://www.thaiwatsadu.com/",
+      "bytes": 158852,
+      "sha256": "e18af5eb4ecb8bf9957ddb72b882787d0d56a2aad9db9f33cfd094fd8529ffd6",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\thaiwatsadu.html",
+      "trainingUse": "excluded-no-explicit-training-use-permission"
+    },
+    {
+      "source": "openimages",
+      "url": "https://storage.googleapis.com/openimages/web/factsfigures_v7.html",
+      "checkedAt": "2026-09-13T17:24:12.730061+00:00",
+      "status": 200,
+      "finalUrl": "https://storage.googleapis.com/openimages/web/factsfigures_v7.html",
+      "bytes": 45543,
+      "sha256": "03f731edf0a6524ae0403253fb3d805b51a42bbaf45a436bfc4491a650fa4fb0",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\openimages.html",
+      "trainingUse": "conditional-per-image-verification-attribution-required"
+    },
+    {
+      "source": "ccby2",
+      "url": "https://creativecommons.org/licenses/by/2.0/",
+      "checkedAt": "2026-09-13T17:24:13.034178+00:00",
+      "status": 200,
+      "finalUrl": "https://creativecommons.org/licenses/by/2.0/",
+      "bytes": 32050,
+      "sha256": "30b0fd9759bb31c507b3e01fc78321eb621b2aa6cb96d68dbd15d5ea64737ae6",
+      "artifact": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\ccby2.html",
+      "trainingUse": "conditional-per-image-verification-attribution-required"
+    },
+    {
+      "source": "bigc-register",
+      "url": "https://www.bigc.co.th/terms-conditions/register",
+      "status": 403,
+      "checkedAt": "2026-09-13T17:28:14.654221+00:00",
+      "trainingUse": "excluded-access-denied; no retry/bypass"
+    }
+  ],
+  "alternative": {
+    "name": "Open Images V7 metadata / Flickr owner page",
+    "annotationLicense": "CC-BY-4.0",
+    "imageLicense": "CC-BY-2.0 verified on each acquired owner landing page",
+    "accessProbe": [
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\flickr-7d00af2927a57eeb.html",
+        "sha256": "12e14ff4455aa39809186adb95e861c2d6fe9d576009fc997505e9872b9761b5"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\flickr-914dd6fb5eb17e85.html",
+        "sha256": "16b49aa3982faa62975fe87a4b90d6f91c0f00709dd8eb53fe78a9473a4d8fe6"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\flickr-ba82c70cc6cdf449.html",
+        "sha256": "6f2a283aa15755822e8b57fb3b14657ff8e6c360deb1501978d1867c3de653f6"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09bc7-f608-7380-bf02-adff13deb6d0\\camera-training\\sources\\flickr-eb59a7a5d5518d31.html",
+        "sha256": "6ab8ff7df5cd00224b598495c222a66f32aca937687b6362c3c5f5b7edde2684"
+      }
+    ],
+    "policy": "Only accept current owner page containing the exact image id and CC BY license; missing/deleted/rights mismatch excluded; retain per-image evidence hash and location. No retailer images acquired."
+  },
+  "firecrawl": "Installed 1.19.24, unauthenticated; web search and ordinary HTTP public read fallback; no bypass/no purchased compute",
+  "bigcSearchEvidence": {
+    "url": "https://www.bigc.co.th/terms-conditions/register",
+    "access": "web search indexed terms; direct read403",
+    "summary": "Clause5 identifies website text/images/layout as company copyright; no image training permission established"
+  },
+  "sourceMetadata": [
+    {
+      "file": "images.csv",
+      "url": "https://storage.googleapis.com/openimages/2018_04/validation/validation-images-with-rotation.csv",
+      "bytes": 15245485,
+      "sha256": "ed93a0e121fe345effdfc7359b848dbc64a1ff6778c8c73563157cb500b33a17",
+      "acquiredAt": "2026-09-13T17:23:30.493778+00:00"
+    },
+    {
+      "file": "boxes.csv",
+      "url": "https://storage.googleapis.com/openimages/v5/validation-annotations-bbox.csv",
+      "bytes": 25105048,
+      "sha256": "d8bbd59410af14835d7733165a7bb8a3f0213981b22dd5077b0b9f7878991ff2",
+      "acquiredAt": "2026-09-13T17:23:34.057811+00:00"
+    },
+    {
+      "file": "classes.csv",
+      "url": "https://storage.googleapis.com/openimages/v7/oidv7-class-descriptions-boxable.csv",
+      "bytes": 12064,
+      "sha256": "1839e0e7e84130ae281f7f67413768601b031581c0c42e7fc17527b8e2a99aa9",
+      "acquiredAt": "2026-09-13T17:23:34.429695+00:00"
+    }
+  ]
+}

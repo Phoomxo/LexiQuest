@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "checkedSourceSnapshots": [
+    "7eleven",
+    "lotuss",
+    "makro",
+    "homepro",
+    "thaiwatsadu",
+    "openimages",
+    "ccby2"
+  ],
+  "labels": 16,
+  "pretrainedForward": "passed",
+  "trainingPerformed": false,
+  "physicalCamera": "NOT RUN",
+  "inputs": {
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\G5.3a-compute.json": "43e3291bc201d733c733045070770f7d58497ae8f2d100680845c76fcfba8d6d",
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\G5.3a-sources.json": "04328e8842c69f10385f12140788b3a8b371e933412838fbbe11c44eeea29055",
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\implementation-plan.json": "1da6aecc266a9d3fce9f1d872f633cae0fdb6baadd0b85a2817991407dcfaac4",
+    "docs\\development\\full-system\\evidence\\bundles\\B11A\\taxonomy.json": "c07fc79fc0c084325bfa5a7ae308b6a606ffe8bf98fb1e534c37523007ef31e3"
+  }
+}

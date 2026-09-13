@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "approvedScope": "camera-training-2026-09-14; no repeated plan approval per user",
+  "approaches": [
+    {
+      "method": "MobileNet pretrained frozen features + trained dense head, optional bounded last-layer fine-tune",
+      "selected": true,
+      "reason": "CPU forward verified; same input size/preprocessing family; reproducible modest data"
+    },
+    {
+      "method": "Train from scratch",
+      "selected": false,
+      "reason": "Insufficient dataset and compute justification"
+    },
+    {
+      "method": "Reuse legacy four-class trainer",
+      "selected": false,
+      "reason": "Incompatible preflight and export; cannot satisfy scope"
+    }
+  ],
+  "steps": [
+    {
+      "package": "G5.3a",
+      "files": [
+        "taxonomy.json",
+        "G5.3a-sources.json",
+        "G5.3a-compute.json"
+      ],
+      "acceptance": "Verify taxonomy unique indices, per-source actual access, CPU pretrained forward and parameter hash"
+    },
+    {
+      "package": "G5.3b",
+      "files": [
+        "tools/camera_web_dataset.py",
+        "tools/test_camera_web_dataset.py"
+      ],
+      "tasks": [
+        "Test rejection of missing rights, tampered bytes, source-group leakage, near duplicates and path traversal",
+        "Acquire bounded per-category Open Images/Flickr images; exact owner-page license, URL, original source metadata, timestamp and SHA256",
+        "Reject corrupt/ambiguous labels; inspect contact sheets and record explicit exclusions",
+        "Merge owner/image/content/perceptual groups before deterministic seeded train/validation split; disjoint by author; train minimum8 and validation minimum3 each",
+        "Record dataset manifests/hashes, label curation and attribution outside git for bulk images; commit metadata only"
+      ]
+    },
+    {
+      "package": "G5.3c",
+      "files": [
+        "tools/train_camera_web.py",
+        "tools/export_camera_web.py",
+        "tools/test_camera_web_training.py"
+      ],
+      "tasks": [
+        "Reject non-web development schemas and test split inputs; verify file hashes before training",
+        "Fixed seed20260914, MobileNet frozen feature extraction, train head30 epochs batch16 Adam0.001 with validation-loss checkpoint; record all epoch metrics and raw logs",
+        "Save actual candidate.keras checkpoint and dataset/config/environment/input fingerprints; validation-only model selection",
+        "Export raw uint8 RGB wrapper; embed16labels; assert float32 output, null background, topK10 valid; load/invoke/parity on validation",
+        "Verify candidate local runtime load compatibility using actual artifact and existing bounded contracts; keep baseline rollback and production activation false",
+        "Review and package evidence then actual accepted SHA receipts; only after all3 dispatch B12"
+      ]
+    }
+  ],
+  "constraints": [
+    "One writer and sequential gates",
+    "No fresh camera/test data consumed",
+    "No synthetic metrics or baseline-retention training acceptance",
+    "Bulk imagery/checkpoints external locations with hashes",
+    "One concise B11A.md report; structured plan supersedes skill default separate Markdown"
+  ]
+}
