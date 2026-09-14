@@ -7,7 +7,9 @@
       "severity": "P2",
       "status": "open-static-confirmed-runtime-reproduction-pending",
       "file": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
-      "relatedFiles": ["lib/features/adventure/presentation/adventure_mixed_review_screen.dart"],
+      "relatedFiles": [
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart"
+      ],
       "trigger": "Initialize a recovered mixed-review run in closing phase; retrying its exact close or durable acknowledgement fails transiently",
       "expected": "Retain the exact pending close and expose an actionable completion retry even though no question prompt has been restored",
       "actual": "_complete sets completionRetryRequired and rethrows, then initialize catch overwrites phase with failed. UI displays a fixed failure message without retry. Merely preserving the retry phase is insufficient because _retryControls is nested inside the nonnull prompt branch and recovered closing run has no prompt",
@@ -34,7 +36,11 @@
       "severity": "P2",
       "status": "open-static-confirmed-runtime-reproduction-pending",
       "file": "lib/screens/definition_quiz_screen.dart",
-      "relatedFiles": ["lib/screens/fill_in_the_blanks_screen.dart", "lib/features/learning/application/definition_quiz_mode_adapter.dart", "lib/features/learning/application/cloze_mode_adapter.dart"],
+      "relatedFiles": [
+        "lib/screens/fill_in_the_blanks_screen.dart",
+        "lib/features/learning/application/definition_quiz_mode_adapter.dart",
+        "lib/features/learning/application/cloze_mode_adapter.dart"
+      ],
       "trigger": "Last item is skipped because reviewed content is missing/stale/ambiguous; finishing the session fails",
       "expected": "User can explicitly retry the exact pending terminal command while skip produces no answer evidence",
       "actual": "Both screens render completionRetryRequired action only inside question != null branch. Skipped last item keeps question null; controller transitions to completionRetryRequired, disabling advance and locking PopScope without any visible retry action",
@@ -94,8 +100,8 @@
       "proposedRegression": "Synthetic read-only WAL fixture over declared budget; ensure rejection without mutating source/destination and bound preflight reads",
       "fixSha": null,
       "retest": null
-    }
-    ,{
+    },
+    {
       "id": "B18-REV02-02",
       "severity": "P2",
       "status": "candidate-clock-regression-reproduction-pending",
@@ -118,6 +124,19 @@
       "actual": "Generic _insertLearningSession performs insertOrIgnore with an owner FK but no active-owner transaction check; exact pinned/Pair starts have a stronger check. QuizScreen uses generic startQuiz in its ordinary path",
       "ownerPackage": "G1.4/G2.1",
       "proposedRegression": "Deferred start boundary with real Drift owner switch; inspect lifecycle initializeSession before asserting user-visible effect. Also confirm collision replay behavior of insertOrIgnore",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-04",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/screens/email_action_screen.dart",
+      "trigger": "Open valid reset-password action route and submit a password shorter than8 characters",
+      "expected": "Local password validation keeps the editable reset form and same action code so learner can correct input and retry",
+      "actual": "AccountUseCases._password throws weakPassword before gateway request; EmailActionScreen catch writes nonnull _status, while reset form and submit are rendered only when _status is null. Only return-to-login remains. Network AccountException likewise hides retry and uses invalid-link copy.",
+      "ownerPackage": "G1.1",
+      "proposedRegression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
       "fixSha": null,
       "retest": null
     }

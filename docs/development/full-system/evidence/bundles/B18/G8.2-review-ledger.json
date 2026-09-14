@@ -38969,11 +38969,18 @@
       "lines": 818,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full818 lines read. Distinct interaction/voice/speech epochs, contextScopeId resets conversation on owner/credential change; settings reread before attaching history and after response. Cancellation on lifecycle/new conversation/settings, bounded priorTurns via contract, display messages in memory only and typed errors/cost consent copy. RouteVoice mixin retires mic on cover; settings resets await same cancellation then stop playback. Scenario/level/intent reset cancels speech but does not call playback reset helper, unpromoted audio persistence question. Mic final populates editable text, manual send only; send flips listening false without retiring existing speech attempt, late final may repopulate draft during generation, need exact oracle/provider contract. Request preparation cancellation button has no generation token until settings resolved; no claimed defect yet. No live provider/device or B18 execution.",
+      "sourceReadDate": "2026-09-14T00:16:26.547849+00:00",
+      "readRanges": [
+        [
+          1,
+          818
+        ]
+      ]
     },
     {
       "path": "lib/screens/ai_tutor_settings_screen.dart",
@@ -39060,11 +39067,18 @@
       "lines": 281,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full281 lines read. Stream identity key avoids stale subscription state; retry reacquires owner through same vocabulary use case, read-only categories hide deletion. Add/delete dialog uses captured use case but no opening-owner/livefeature guard; add has no single-flight. Cross-read VocabularyUseCases168-231: create obtains currently active owner on submit, delete scopes by current owner, unlike expectedOwner import API. MainNavigation gates only parent and child VocabList route not wrapped here. Potential stale overlay/gate/owner-draft crossover requires real registry/owner widget reproduction before promotion; uniqueness may prevent duplicate insert but no assumed full protection. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:15:22.076965+00:00",
+      "readRanges": [
+        [
+          1,
+          281
+        ]
+      ]
     },
     {
       "path": "lib/screens/cefr_article_reader_screen.dart",
@@ -39244,11 +39258,20 @@
       "lines": 119,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV03-04"
+      ],
+      "reviewNotes": "Full119 lines read. Parsed email verification auto-applies once on dependency load; reset takes obscured password with busy guard. Confirmed REV03-04: any AccountException nonnull status removes reset form, including locally correctable weakPassword before gateway call. AccountUseCases74-85,199-204 and AppRouteFactory initial/email-route path cross-checked. Account null leaves blank body for verification, no dependency retry; no didUpdateWidget account/action rebind, lower reachability pending. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:14:41.809782+00:00",
+      "readRanges": [
+        [
+          1,
+          119
+        ]
+      ]
     },
     {
       "path": "lib/screens/export_center_screen.dart",
@@ -39258,11 +39281,18 @@
       "lines": 250,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full250 lines read. Single-flight freezes export format/selection, Anki words-only and owner archive selection-independent wording, cancellation on action/disposal and honest indeterminate write/cleanup text. Archive displays actual manifest disposition/field allowlist, distinguishes personal from consent-required researchJson. Catches typed ExportException and clearsbusy; dependency bound once with no replacement hook. Export owner fences/file rollback already inherited B16, UI oracle pending; no export/research operation executed.",
+      "sourceReadDate": "2026-09-14T00:15:22.076965+00:00",
+      "readRanges": [
+        [
+          1,
+          250
+        ]
+      ]
     },
     {
       "path": "lib/screens/fill_in_the_blanks_screen.dart",
@@ -39328,11 +39358,18 @@
       "lines": 408,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full408 lines read. Reachable main navigation drawer route. Canonical progress requires sample/weakness/timing before weakness practice, typed response captures owner/session evidence and applies HP/log only after ACK; exact evidence and terminal close retry with PopScope. StopWatch not route/lifecycle paused; disposal asynchronously finishes even incomplete game via pending close, callback throw not handled by then onError (only original load error). Potential error/duration/terminal semantics need tests and current evidence policy; no separate finding yet. Evidence adapter nonnull but identity validation delegated. No fabricated zero-history start; no B18 execution.",
+      "sourceReadDate": "2026-09-14T00:15:58.679036+00:00",
+      "readRanges": [
+        [
+          1,
+          408
+        ]
+      ]
     },
     {
       "path": "lib/screens/learning_calendar_screen.dart",
@@ -39625,11 +39662,18 @@
       "lines": 111,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full111 lines read. Email-link verification despite legacy OTP name; refreshVerification emailVerified controls home reset, shared busy fences refresh/resend; catches typed AccountException and always clearsbusy, no numeric OTP collected. Optional account binds once, missing shows toast on check. No live provider or B18 execution; gateway contract normalization/oracles pending.",
+      "sourceReadDate": "2026-09-14T00:14:41.809782+00:00",
+      "readRanges": [
+        [
+          1,
+          111
+        ]
+      ]
     },
     {
       "path": "lib/screens/pair_matching_learn_screen.dart",
@@ -39751,11 +39795,18 @@
       "lines": 183,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full183 lines read. Busy admitted before account registration unlike guest-login candidate; disables email/password/privacy fields, waits owner-binding account result then optional separate research-consent dialog decision, preserves guest-history copy. Only AccountException caught; research consent failure may escape after account creation, no new finding until domain errors/caller oracles reviewed. Details acceptance retained until privacy unchecked. No registration/research activation or runtime B18 execution.",
+      "sourceReadDate": "2026-09-14T00:14:41.809782+00:00",
+      "readRanges": [
+        [
+          1,
+          183
+        ]
+      ]
     },
     {
       "path": "lib/screens/result_screen.dart",
@@ -39877,11 +39928,18 @@
       "lines": 846,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full846 lines read. Theme/motion controller and feature registry listeners rebind, live offline manager entry identity/dependency gate; logout serial and leaves historical owner data via use case. Research export consent details pin owner across dialog and re-read status on failure, separate signed participation entry not activation by rendering. Local erasure resolves owner only after confirmation unlike consent, and busy begins after dialog; owner change during overlay and duplicate retained callback need bounded reproduction/eraser policy cross-check before promotion. Account/eraser/owner/offline deps use once-only binding while injected consent/display replace; stale dependency implications pending. Password dialog disposes controllers before gateway, typed errors. Read only; no erasure/account/research actions or B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T00:17:09.032674+00:00",
+      "readRanges": [
+        [
+          1,
+          846
+        ]
+      ]
     },
     {
       "path": "lib/screens/shadowing_challenge_screen.dart",
@@ -49124,11 +49182,18 @@
       "lines": 19,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full20 lines read. Bare no-account verification screen displays supplied email and unavailable snackbar on check. No provider success/failure, resend, owner binding or route transition exercise, and no email-action password correction test. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:15:58.679036+00:00",
+      "readRanges": [
+        [
+          1,
+          19
+        ]
+      ]
     },
     {
       "path": "test/screens/phonetic_explorer_screen_test.dart",
