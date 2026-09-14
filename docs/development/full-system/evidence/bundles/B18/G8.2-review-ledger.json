@@ -49693,11 +49693,18 @@
       "lines": 2189,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2189. Sevenentrypaths awaitrefreshonce beforeID/timeadmission, ownerdriftacrossrefresh rejects; checkpointinitialstateawait ownerrecheck, emptycontent nohook. Realmemory orderedpinnedcontent immutablebeforeownerawait andinitialstatecallback, exactcount/configpersist, mixedactiveowner/lexicalrevisionafterread rejected at exactpinnedadmission. GenericstartQuiz allowspeers andpartialanswerfinish deliberate; no last-owner-read→genericinsertTX race and no terminal-before-start test. Stableevidence197Unicode scalars reservesall256derivedIDs,198denybeforeprovider; UTC/ms exactreplay andcanonicalsecondsenvelope. Actualfileclose/reopen recognition replayoneattempt/noSRS/provider0calls, +1msdeny; changed/throwingproviderbypassed forauthenticatedcommitted source, missing/corruptsourcedenybeforeprovider/callback. Declaredmetadata mismatchmatrix leavesanswers/source/decisions/outboxempty, syntheticcontext only. Resolvercapturesoneowner+samefrozencommand; no ownerchangeatwrite. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:32:44.297807+00:00",
+      "readRanges": [
+        [
+          1,
+          2189
+        ]
+      ]
     },
     {
       "path": "test/features/learning/lesson_mode_registry_test.dart",
@@ -54392,11 +54399,18 @@
       "lines": 1233,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1233. FakeAI scriptedwronganswer intentionallyvisible notqualitypass, missingkey/failureexplicit; Thai3901x/3202xdark optionalPNGcapturesnotgoldens. Completedpairs onlycontext, newchat/scenario/level/intent reset; noncooperativecancel/latescopechange dropsoldreply/draft. Voice explicitplay/stop notauto, background/settings cancelgeneration andmic; deferredpermission resetpreventsstart, staleSTTstatus/failure/textignored, cancelerror preservesdraft/voicecleanupcontinues, facade replacement releasesold. Fakecancel setsisListeningfalse BEFOREthrow so failurecase doesnot prove nativeuncertainstop; no physicalaudio/realprovider/paidusage or actualownerDB. Settings opensmissingRegistry only, no actualrevokequeueoverlap test. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:32:44.297807+00:00",
+      "readRanges": [
+        [
+          1,
+          1233
+        ]
+      ]
     },
     {
       "path": "test/screens/ai_tutor_settings_screen_test.dart",
@@ -54742,11 +54756,18 @@
       "lines": 1000,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1000. ActualmemoryDrift+UI blank/IME noanswer, typednormalization independentRecallSRS, selectedchoicebeforeconfirm noanswer/recognitionnoSRS, laterhint guided1nofurtherSRS. Renderedfeedbacktraversal andselected2x. OptionalsentenceTTS/STTfakes onlyafteranswer, replay/skip/staleevent/deferredpermissionnextquestion preservefullanswer/points/reward/SRSrows and speechEvidenceempty; twoanswerssamecompletedSession. Invalidfirstmetadata skip noanswer, retainedcallback/metadata-delayedterminal fences→abandon, loaderfailureabandons. Synthetic approvedlexicalmetadata/artifactchecksums; nofile/nativeproof/ownerchange/lastskipfinishfailure regression, REV03-01 remains. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:32:44.297807+00:00",
+      "readRanges": [
+        [
+          1,
+          1000
+        ]
+      ]
     },
     {
       "path": "test/screens/game_launcher_screen_test.dart",
@@ -55323,11 +55344,18 @@
       "lines": 1995,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1995. RealmemoryDrift defaultrecognition alternatingdirection/noSRS, typedmixed secondindependentSRS; headercommitcount excludes skips/stale/nonmonotonic/outofrangereflection. Deterministicambiguous-equivalence options, attacheddistractorbank needsrealalternative; corruptfeedbackbeforewrite leavesnoretrydebt. Configpinnedidentityvalid/staleabandoned. ActualdelegatecommitThenLostACK preservesID/event/hint1 despitemutable2, oneanswer/header0untilretry. Raw+normalizedcanary supplied actualacceptedvariant absentfullattempt/event/outbox/checkpoint/loggablepayloads; variant fixture synthesizedbywrapper, noartifactauthorityhere. Duplicatecapturedfutureidentical/onewrite. Renderedsemantics+question scrollreset/CEFRexampleaftercommit, IMEdeny, hapticfailurecannotunlockanswer. Skipallcompleted0 deliberate, standardnoskip. Actualrecognitionterminalfirstfailure frozenowner/session/time retry+Pop/stalecallbackblocked; no recoveredmixedclosing case/file reboot, REV03-03remains. Wrapper omits replay interface, actualdelegate stillvalidatescommit. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:32:44.297807+00:00",
+      "readRanges": [
+        [
+          1,
+          1995
+        ]
+      ]
     },
     {
       "path": "test/screens/registration_flow_test.dart",
@@ -57850,11 +57878,18 @@
       "lines": 36,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full36. Baseline4,287,874byteD394modelnottrainedcamera candidate; validexistinghashreuse, stale.downloadremove, HTTPSfullInvokeWebRequest thenexactlength/hash andsamefoldermove. Noboundedstream/timeout/downloadcleanupfinally; mismatchkeeps.download, nextcallremoves. Source-only review nofetch. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          36
+        ]
+      ]
     },
     {
       "path": "tool/cli/profiles/local-learning-preview.json",
@@ -58193,11 +58228,18 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full28. StaticmodelURLname/hash/bytes/GetFileHash/MoveItempresence andwhile/for(;;)regexdeny only. No actualdownload/cache/hashmismatch/atomicpreservationtest. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/r15-scope.tests.ps1",
@@ -58312,11 +58354,18 @@
       "lines": 82,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full82. Staticgatecommand/depversion/manifestpermissionpresence andrawscreenplugin/randomregex, absentfourobsoletefiles. Notruntimepermission/inference/acousticquality/syntaxoracle. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          82
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/verify-device-model.tests.ps1",
@@ -58326,11 +58375,18 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full31. StaticContains requiredcommands/paths andspecificregex forbidsoneunscopedflutterform. Comments satisfyformat/buildmarkers; noexecution/failure-propagationproof orAST. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/verify-field-package.tests.ps1",
@@ -58368,11 +58424,20 @@
       "lines": 209,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV12-04"
+      ],
+      "reviewNotes": "Full209. StaticContains namespace/versionedsecurestorecrypto/backupoff/bootstrap/indexfence/gatewayabort/error/keyuri/nolog/maskedinput strings; checkslimitedsecrettestoraclemarkers. ActualResolveToolsOnlychildchecks2toolpaths, notSDKversion/execution. Lines133-135hardcodecurrentSchemaVersion26 rejectsactual27, newREV12-04. Rawregexstringsnotcompiledbehavior or nativekeystore/revokequeue/secretproof. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          209
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/verify-learning-core.tests.ps1",
@@ -58382,11 +58447,18 @@
       "lines": 32,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full32. StaticContains gatecommands/paths plusonefluttertestregex; markersincomments accepted, nocallgraph/scope/failureexecution oracle. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          32
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/verify-product-completion.tests.ps1",
@@ -58438,11 +58510,18 @@
       "lines": 126,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full126. ResolveAPK/AAR paths, immutableAARsha and9vendorrawlibrarypins; 3ABIcustomops canonicalhashperDebug/Release onlyGNUbuildIDnormalization delegatedexistingELFpolicy. Autochoosesmodefilename(debugsubstring), explicitmode available; exactruntimeSetchecks/GPUacceleratorreject/archivefinally. No APKsignature/installedmodel/deviceexecution or independentAARentrycomparison (pinnedbytesauthority). Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          126
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-camera-speech.ps1",
@@ -58452,11 +58531,18 @@
       "lines": 91,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full91. LegacyP5 sequentialCLI/modelprepare/format/fullanalyze/scopedmediaandbootstraptests/debugAPK/runtimehash/diff, nonzeroexitthrows. Fixturepreparecanfetch, debugbuildnotnativecertification, nofingerprintcache. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          91
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-device-model.ps1",
@@ -58466,11 +58552,18 @@
       "lines": 94,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full94. LegacyP4 contracts thenpinnedfixturedownload, format/fullanalyze/modelDBbootstraptests/debugAPK+runtimehash/diff; checksLASTEXITCODE. NoGPUinference/deviceinstallation/provenancecertificate orscopefingerprintreuse. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          94
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-field-package.ps1",
@@ -58508,11 +58601,18 @@
       "lines": 153,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full153. ResolvesPATHbeforeFVM/env/localFlutter,DartindependentlyPATHfirst; Unauthorizedmetadata fallbacktrustspathuntilinvoke. ResolveToolsOnly noexecution; normalCLI→format/fullanalyze/scopedAI+bootstrap/navtests/debugAPK+runtimehash/diff. Legacyversion+1, nofingerprintreuse. Calls stale-schema CLI oracle directly beforework (REV12-04). Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          153
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-hosted-asset-links.ps1",
@@ -58536,11 +58636,18 @@
       "lines": 127,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full127. LegacyP3 sequential CLIformat/fullanalyze/explicitFluttertargets/emulator/debugAPK/diffcheck, capturesLASTEXITCODE eachgate. Hardcodedversion1.0.0+1 andemulatorendpoints, nofingerprintreuse/frozenSHA; existingboundedverify-scope authoritative notthislegacywideentry. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          127
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-local-first.ps1",
@@ -58550,11 +58657,18 @@
       "lines": 137,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full137. LegacyP0P1 scopedformat/analyze/testdirectories thenrgfourvocabularyscreens correct0/1/errorhandling, Androiddebug+1/diffcheck; exceptionfailfastfinallylocationrestore. No cachedsourcefingerprints, requiresnewboundedselectorworkflow. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          137
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-osv-locks.ps1",
@@ -58606,11 +58720,18 @@
       "lines": 143,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full143. LegacyP2 serialscopedformat/analyze/tests withruntime+owner suites, rawrgfourUIboundaries, emulatorrules/debugAPK cloudsyncenabledtrue/version+1. Checks everyexternalexit andrestoreslocation. No proofinstalledflags/runtimecloud or fingerprintcache; do notinvokeasB18targetedgate. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
+      "readRanges": [
+        [
+          1,
+          143
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify.ps1",

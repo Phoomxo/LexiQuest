@@ -275,6 +275,24 @@
       "proposedRegression": "Run targeted existing Pair boundary test to record RED, align to exact current database table inventory and keep f45/extra-route/star-table and same-count substitution negatives meaningful. Do not regenerate historic final test plan or reduce schema27 to26.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV12-04",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "tool/cli/tests/verify-gemini-byok.tests.ps1",
+      "relatedFiles": [
+        "lib/data/local/app_database.dart",
+        "tool/cli/verify-gemini-byok.ps1",
+        "tool/cli/verify-scope.ps1"
+      ],
+      "trigger": "Run existing Gemini BYOK CLI contract (direct legacy gate prerequisite or explicit Targeted/Runtime CliTestTargets).",
+      "expected": "Validate the current schema authority and credential metadata invariants without rejecting accepted schema27.",
+      "actual": "Lines133-135 require literal currentSchemaVersion =26 and emit schema-26 error; app_database.dart92 declares27. All prior checks succeeding necessarily reaches this rejection. Runtime reproduction pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use verify-scope Targeted/Runtime with only verify-gemini-byok.tests.ps1 for RED then GREEN. Replace stale26 assertion with current contract authority while preserving schema getter, credential namespace/owner fences/secret negatives. Do not lower application schema or run full legacy gate/APK/network.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -306,6 +324,12 @@
       "status": "method-corrected",
       "actual": "Two rg arguments in one cross-check used guessed absent paths lib/features/learning/domain/evidence_capture.dart and lib/app_bootstrap.dart; existing evidence_context and sync_entity results remained readable.",
       "action": "Stopped guessed-path method; used rg --files discovery and existing lib/runtime/app_bootstrap.dart, then symbol discovery located lib/config/research_runtime_config.dart. No source mutation or tests skipped."
+    },
+    {
+      "id": "B18-READ-04",
+      "status": "method-corrected",
+      "actual": "One rg cross-check included nonexistent guessed tool/cli/lib/verification-scopes.ps1; existing app_database and verify-scope results readable.",
+      "action": "Stopped guessedpath method, enumerated rg --files tool/cli/lib and read existing verify-scope selector lines. No repeated failure, source edits or runtime tests."
     }
   ]
 }
