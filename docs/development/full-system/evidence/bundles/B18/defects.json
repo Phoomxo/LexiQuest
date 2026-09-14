@@ -160,13 +160,14 @@
       "file": "lib/features/sync/data/drift_sync_store.dart",
       "relatedFiles": [
         "lib/features/sync/data/firestore_sync_gateway.dart",
-        "test/features/sync/drift_sync_store_test.dart"
+        "test/features/sync/drift_sync_store_test.dart",
+        "test/features/sync/learning_event_sync_test.dart"
       ],
-      "trigger": "Category revision1 commits remotely but its ACK is lost; local category edited to revision2 before expired operation1 is replayed",
+      "trigger": "Category revision1 commits remotely but its ACK is lost; local category edited to revision2 before expired operation1 is replayed; also SRS revision1 remote commit followed by a second recorded review before replay",
       "expected": "Replay validates and records original remote receipt without losing later edit, then sends revision2 exactly once",
-      "actual": "claimPending preserves attempted operation1 ID but _reconstructMutation uses current category.localRevision2. FirestoreSyncCodec.decodeAcknowledgement requires receipt resultingRevision equal expectedMutation.localRevision, so real revision1 receipt throws InvalidSyncPayloadFailure. Existing file-backed regression bypasses codec: _IdempotentFakeCloud returns saved PushAcknowledged directly and store accepts it. Thus regression does not cover production gateway rejection; later pull may resolve newer local edit as cloudWins.",
+      "actual": "claimPending preserves attempted operation1 ID but _reconstructMutation uses current category.localRevision2. FirestoreSyncCodec.decodeAcknowledgement requires receipt resultingRevision equal expectedMutation.localRevision, so real revision1 receipt throws InvalidSyncPayloadFailure. Existing file-backed regression bypasses codec: _IdempotentFakeCloud returns saved PushAcknowledged directly and store accepts it. Thus regression does not cover production gateway rejection; later pull may resolve newer local edit as cloudWins. Cross-check learning_event_sync_test lost-SRS-ACK fixture explicitly expects replay localRevision2 and saved ACK1 through _SrsIdempotentFakeCloud, confirming the same mismatch for real recordAnswer-produced SRS work.",
       "ownerPackage": "G8.3",
-      "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks.",
+      "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks. Include SRS via actual recordAnswer plus reopen, using the same real codec boundary and preserving immutable answer evidence/projection authority.",
       "fixSha": null,
       "retest": null
     }

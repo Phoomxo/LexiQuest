@@ -37689,11 +37689,18 @@
       "lines": 1597,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read in bounded ranges after combined output truncation. Transport requires explicit emulator rollout, one active UID-bound owner, live gate and unfenced owner. Withdrawal can enqueue without positive authorizer, durable identity retained. Bounded first candidates per collection; denied leading rows may starve later rows, caller/oracle cross-check pending. Claim compares current snapshot identity and optional payload before send. Authorization rechecks mutable local context after callback but passes same sampled now; real gateway freshness boundary remains relevant. Signed permit revisions untouched by ACK; local tombstone/withdrawal wins; pull authority failure rolls back cursor; provenance rechecked after await. Immutable fact wrapper reconciliation ACKs exact old/current identities only; mutable clean revisions advance with monotonic terminal/reference pins. Proof validates exact timestamp, sibling start core, collision and historical wrapper. No capture/projection activation. Event insertion omits optional context columns but exact contract likely requires absent fields; cross-check pending. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:10:59.297564+00:00",
+      "readRanges": [
+        [
+          1,
+          1597
+        ]
+      ]
     },
     {
       "path": "lib/features/sync/data/drift_sync_store.dart",
@@ -48542,11 +48549,18 @@
       "lines": 1137,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory Drift and repository save cover off/stale rules pending, singleton canonical payload-hash identity distinct across devices, latest-only offline edits, lost ACK followed by newer semantic edit superseding old identity then explicit cloud-conflict rebase, pull rebase retains retry delay, new edit retires terminal barrier and fifth-attempt conflict creates fresh reservation. Pull replay retains local display and rejects extra fields with cursor rollback; v2 queued upgrade and v1 pull preserve home, v1 push conflicts requeue preserved/full v2 intent. New store instance is not file restart; no actual codec transaction or simultaneous repository writes. This directly resolves preference revision-gap suspicion through cloud-base+1 semantics. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:10:59.297564+00:00",
+      "readRanges": [
+        [
+          1,
+          1137
+        ]
+      ]
     },
     {
       "path": "test/features/sync/learning_event_sync_test.dart",
@@ -48556,11 +48570,18 @@
       "lines": 3170,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift legacy ingress/claim and actual file reopen tests establish SRS enqueue after recordAnswer, distinct acknowledged revisions and duplicate answer idempotence, closing missing enqueue oracle in srs_state_sync_test. Synthetic v2 declared assignment fixtures check row-specific v1/v2, refuse downgrade, UID cloud/local assignment translation with event original assignment time and export, dependency pull order, consent-blocked row does not starve category, malformed/foreign owner/word/context rollback and immutable conflict quarantine. Starter assets exercised; local SRS/reading projection repaired via later-server replay, deleted word history retained. Lost SRS ACK test explicitly expects replay localRevision2 for original operation1 then accepts saved receipt1 through _SrsIdempotentFakeCloud, bypassing actual Firestore codec: same B18-REV09-01 applies to SRS. Multi-device uses separate files but sequential fake cloud calls; legacy gap normalizes once after gate and reopen. Fixture cleanup/runtime warning restoration only in late finally can leak on earlier failure. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:13:14.520927+00:00",
+      "readRanges": [
+        [
+          1,
+          3170
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_assessment_rollout_test.dart",
@@ -48626,11 +48647,18 @@
       "lines": 407,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure codec/preflight synthetic fixture covers explicit loopback emulator hosts versus lookalikes, exact signed canonical permit hash/pins and revision preservation, no wire gate token, signed tombstone outer binding and upload denial, immutable withdrawal receipt replay, malformed payload despite positive authorizer with zero transactions, bounded frozen event envelope keys and UUID occurrence binding. Synthetic signature accepted structurally is not issuer verification; no live remote research operation or actual transaction. Stale RED comments are history, not current failure evidence. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:10:59.297564+00:00",
+      "readRanges": [
+        [
+          1,
+          407
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_withdrawal_reopen_test.dart",
@@ -48654,11 +48682,18 @@
       "lines": 2375,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory Drift reward purchase/claim and synthetic cloud entities cover exact catalog payload/time/key shape, canonical earning source dedup without altering Points, immutable replay/conflict, projection balance/ownership/equip, duplicate purchase single debit and later funds activating pending purchase. Avatar legacy cutoff, exact carry and v2 XP hash, tampered/late raw quarantine with unrelated coin/category progress, rules-first selective permission retry preserving attempts/exhaustion, deferred v1 replay after marker repair and durable echo promotion before marker opening covered. Two trusted echoes and concurrent purchases are sequential page applications, not server/device concurrency; all authority hashes are synthetic self-contained contract fixtures, not remote attestation. Deferred repair deletes synthetic mismatched row directly, not production repair UX. No file reopen, provider transaction or B18 execution.",
+      "sourceReadDate": "2026-09-14T01:11:56.740222+00:00",
+      "readRanges": [
+        [
+          1,
+          2375
+        ]
+      ]
     },
     {
       "path": "test/features/sync/srs_state_sync_test.dart",
@@ -48668,11 +48703,18 @@
       "lines": 380,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory Drift plus actual starter assets tests v1 cloud cache restoration, owner-specific SRS identities for shared starter, corrupt starter/foreign-private rejection with cursor rollback, mutable revision2 and preserved old physical ID, and immutable local failed first answer rebuilding algorithm2 over cloud cache. Test titled outbox enqueued after recordAnswer only asserts initial empty outbox and never records an answer; it provides no enqueue coverage. Numeric malformed range and unknown algorithm cache cases not covered here. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:11:56.740222+00:00",
+      "readRanges": [
+        [
+          1,
+          380
+        ]
+      ]
     },
     {
       "path": "test/features/sync/study_reminder_sync_test.dart",
@@ -48682,11 +48724,18 @@
       "lines": 72,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Actual memory Drift reminder repository creates platform desired-state outbox and direct cloud claim returns none without changing pending state. Owner is localGuest yet direct store receives arbitrary firebase UID; this checks outbox separation, not authenticated engine flow or platform scheduling. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:11:56.740222+00:00",
+      "readRanges": [
+        [
+          1,
+          72
+        ]
+      ]
     },
     {
       "path": "test/features/sync/sync_contract_test.dart",
@@ -48717,11 +48766,18 @@
       "lines": 1494,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory Drift plus fake owner/gateway verifies release exception does not strand mutex after durable expiry, post-gate UID reread, kill switch/unbound no claim, retry and terminal failure behavior, consent rollback, exact cloud/local ACK translation, timeout, heartbeat renewal/loss and late completion fence, five durable reservations, exhausted same-entity barrier with unrelated progress, release unstarted rows and pull hasMore/optional collection order. Separate-isolates test uses two mutex objects with same database in one isolate; not actual isolate/device evidence. Fake gateway bypasses codec and records handler results directly, so does not close B18-REV09-01. Lost-ACK exhaustion uses set bookkeeping, not remote transaction. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:10:59.297564+00:00",
+      "readRanges": [
+        [
+          1,
+          1494
+        ]
+      ]
     },
     {
       "path": "test/features/sync/sync_server_read_provenance_test.dart",
