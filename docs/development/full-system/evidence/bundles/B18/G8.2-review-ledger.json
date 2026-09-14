@@ -39032,11 +39032,18 @@
       "lines": 179,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full179 lines read. Required nonempty supplied questions, normalized nonempty answer comparison reduces remaining exactly one, terminal fence, no rewards/SRS/durable writes. Caller maps owner words at launch but page has no live owner gate. Tight unscrollable Column may overflow with keyboard/large text; exact production reachability pending. Retained demo does not claim XP/coins/proficiency. Follow-up GameLauncher is sole caller and has no external lib caller; no production entry found.",
+      "sourceReadDate": "2026-09-14T00:03:10.382765+00:00",
+      "readRanges": [
+        [
+          1,
+          179
+        ]
+      ]
     },
     {
       "path": "lib/screens/categories_page.dart",
@@ -39209,11 +39216,18 @@
       "lines": 508,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full508 lines read; combined-output7token truncation repaired by reread443-487. Typed support-aware evaluation and frozen capture, shell feedback only after durable result. Epoch/current-session protects superseded autoplay; failed audio becomes unavailable and cannot score. Correct owned session exact-close retry; wrong attempts increment. Slow replay marks support before voice acquisition (conservative). Unowned legacy success string interpolates widget then literal .targetWord, but production choose-mode/game-launcher use shell; not yet promoted. Scoped lifecycle guards retained callbacks; native audio acknowledgment is not acoustic proof.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          508
+        ]
+      ]
     },
     {
       "path": "lib/screens/email_action_screen.dart",
@@ -39272,11 +39286,18 @@
       "lines": 226,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full226 lines read. Bounded10-word prerequisite load starts once, error states typed, postframe mounted/once navigation. Native dictation/scramble resolves typed registered adapter/controller then replaces with UnifiedLessonModeHost and fresh bounded question loader, so preliminary words are not evidence authority. Boss receives readonly-mapped local words but no lifecycle/owner revalidation in this legacy path; verify production caller before promotion. No provider fallback or speculative content. Follow-up exact lib import/symbol search finds no external caller, narrowing Boss ungated path to retained dormant launcher.",
+      "sourceReadDate": "2026-09-14T00:03:10.382765+00:00",
+      "readRanges": [
+        [
+          1,
+          226
+        ]
+      ]
     },
     {
       "path": "lib/screens/gemini_settings_screen.dart",
@@ -39398,11 +39419,18 @@
       "lines": 183,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full183 lines read. Legacy static six CEFR campaign nodes with first three unlocked; every unlocked route goes same unfiltered legacy selection, no progression writes. Exact lib symbol/import search finds no caller. Retained demo not production game progression or evidence of CEFR achievement.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          183
+        ]
+      ]
     },
     {
       "path": "lib/screens/local_reading_library_screen.dart",
@@ -39450,11 +39478,18 @@
       "lines": 2193,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2193 lines read. Profile always-visible ensures nonempty primary list; selected stable ID reconciles live registry changes, indexed children retain state with ticker fencing and per-feature lazy gates. Today owner checks and canonical recommendation routing, exact mixed-review snapshot recovery plus terminal recovery card independent of Adventure presentation; card generations reject stale loads. Mission config revalidated against owner/protocol/adapter, active-owner config save, snapshot before accepted run. Result/companion promotion requires live Adventure authority otherwise standard score. Registered drawer shadowing uses one-word loader and shell so local fallback is not its production path. Today guard pops only its current route, covered child preserved until pop. Review/history replay caller captures owner and uses explicit quiz gate. MainNavigation imports neither dormant GameLauncher/Boss nor legacy CEFR/world-map. Remaining cross-check: historical terminal mixed-review catalog reconstruction validates original prompts even closing, follow existing recovered-closing finding/oracles. No runtime or new authority claim.",
+      "sourceReadDate": "2026-09-14T00:03:10.382765+00:00",
+      "readRanges": [
+        [
+          1,
+          2193
+        ]
+      ]
     },
     {
       "path": "lib/screens/mastery_dashboard_screen.dart",
@@ -39499,11 +39534,18 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full52 lines read. Typed absent media dependency view, explicit unchanged saved learning data and accessible alternative button attempts Navigator.maybePop. No platform fallback/provider/write. Root route maybePop may do nothing; actual production entry pushed so caller context matters.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ]
     },
     {
       "path": "lib/screens/object_scanner_screen.dart",
@@ -39576,11 +39618,18 @@
       "lines": 213,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full213 lines read. Six illustrative IPA symbols speak example word via route-owned runtime voice, absent dependency fails closed, no learning writes/assessment. Hardcoded two-column grid likely needs scaled layout verification if enabled. Exact lib symbol search finds declaration only, no production caller; phonetic assessment is separate screen. Audio failure consumed with selected state visual only.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          213
+        ]
+      ]
     },
     {
       "path": "lib/screens/pre_post_assessment_screen.dart",
@@ -39751,11 +39800,18 @@
       "lines": 434,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full434 lines read. Whitespace tokenization with duplicate occurrences kept as list entries, random presentation shuffle; typed evaluation preserves punctuation/case policy. Route-owned optional autoplay, no audio if blank/unmounted/retired. Capture locks selection until evidence acknowledgment and exact terminal close; retries outside prompt guards. Correct completed sessions fence new input, wrong attempts increment identity. Chip callbacks remain visually enabled while locked but handlers fence mutation. Native configured launcher owns target lifecycle; no unvalidated proficiency score.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          434
+        ]
+      ]
     },
     {
       "path": "lib/screens/setting_screen.dart",
@@ -39779,11 +39835,18 @@
       "lines": 638,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full638 lines read. Optional local quiz prompt initialized through lifecycle, exact session/owner/word retained; fully configured launcher supplies reference. Raw speech cleared at background/cover while durable pending retained. First final/failure epochs gate callbacks; assessment descriptive transcript similarity80 threshold with explicit no pitch/phoneme. EvidenceSaved fences duplicate finals and pending locks media/back, exact close retry visible outside prompt branch. Prompt-load failure has no retry button, but caller normally supplies prompt; direct local fallback exposure requires caller cross-check. Native stop/cancel physical success not proven.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          638
+        ]
+      ]
     },
     {
       "path": "lib/screens/shop_page.dart",
@@ -39821,11 +39884,18 @@
       "lines": 623,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full623 lines read. Owned voice/speech rebind, route cover/dispose/background clear raw transcript/assessment, shell registers ephemeral state. Per-utterance first final only, final nonempty transcript assessment explicitly text similarity not acoustic accuracy; capture ID/time/context locked across retry and terminal close. Lower SpeechPracticeSession invalidates attempt on failure, resolving apparent missing screen epoch increment. Configured shell completes once; unowned learning-ID fixture path leaves session closure to caller. Underlying queued cancel serializes takeover; no proof of physical silence implied.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          623
+        ]
+      ]
     },
     {
       "path": "lib/screens/srs_flashcards_screen.dart",
@@ -39947,11 +40017,18 @@
       "lines": 597,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full597 lines read. Grapheme-preserving stable rotation and distinct occurrence indexes support duplicate letters/undo/drag/keyboard. Blank target fails closed. Captured attempts freeze result/time before await, interaction locked through pending evidence/terminal; feedback only after acknowledgment, incorrect increments occurrence, correct closes through lifecycle and retry remains outside question guard. Unowned mode evaluates locally, no fake write. Sessionless reset retains wallclock timing (descriptive), mutable widget target unsupported by didUpdateWidget; production one-question route pins target. No new actionable finding from source.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          597
+        ]
+      ]
     },
     {
       "path": "lib/screens/wordbook_import_screen.dart",
@@ -48368,11 +48445,18 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Source forbidden strings guard absence of synthetic rewards/demo hardcoding; one provided real-word answer reaches0HP and visible victory without XP/coins. No owner switch, multiquestion, keyboard/scale or lifecycle proof.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ]
     },
     {
       "path": "test/screens/cefr_article_reader_screen_test.dart",
@@ -48536,11 +48620,18 @@
       "lines": 354,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Held/throwing initial audio keeps check disabled; superseded replay cancellation ignored, unavailable branch removes input, runtime voice request speed and inactive/stop behavior verified by fake. 2x narrow layout checks every control hit-testable. Correct feedback assertion only contains success prefix, misses legacy target interpolation. No durable evidence adapter or real database in this file; shell/controller oracles separate.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          354
+        ]
+      ]
     },
     {
       "path": "test/screens/export_center_flow_test.dart",
@@ -48592,11 +48683,18 @@
       "lines": 412,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Deferred bounded-usecase fake loaded once despite dependency notifications; unavailable distinctions and redacted raw exception, missing registered shell never constructs native game. Test named at-most-one route actually expects zero because shell authority absent, so no successful scheduling assertion. Boss caps10 supplied owner-tagged words; fake repository ignores owner filter, real VocabularyUseCases boundary separate. ResearchDrift only inert scope fixture; not actual game persistence.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          412
+        ]
+      ]
     },
     {
       "path": "test/screens/gemini_settings_screen_test.dart",
@@ -48718,11 +48816,18 @@
       "lines": 18,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full18 lines read. Legacy smoke shows title and A1 node only; no progression/lock/nav/durable assertions. Exact lib search confirms no production caller.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          18
+        ]
+      ]
     },
     {
       "path": "test/screens/local_reading_library_screen_test.dart",
@@ -48767,11 +48872,18 @@
       "lines": 3615,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full3615 lines read. Real Drift Pair replay verifies canonical practice lineage and unchanged reward rows; real Today correct/wrong attached sessions and zero SRS, insufficient-distractor abandon, live gate/owner rejection and selected-route-only pop. Feature authority identity/dependency matrix, registry replacement, stable profile fallback, drawer/semantics and narrow2x widgets. Real mixed-review pinned catalog read failure leaves zero sessions, snapshot recovery without Adventure dependencies, completed-unpresented terminal summary with Adventure off. Held configuration fake validates owner only after persistence release, proving caller uses atomic save interface rather than real storage concurrency. Mixed-review terminal recovery lacks transient closing fault, so REV03-03 remains open. Helpers generally fake learning/vocabulary with optional actual Drift overrides; no device or B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T00:07:35.759406+00:00",
+      "readRanges": [
+        [
+          1,
+          3615
+        ]
+      ]
     },
     {
       "path": "test/screens/mastery_dashboard_screen_test.dart",
@@ -48914,11 +49026,18 @@
       "lines": 103,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Bare screen shows IPA and exact example-word request then background triggers owned fake stop. Bounded stop and lifecycle restoration, no physical speech/IPA validity/scaled layout proof.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          103
+        ]
+      ]
     },
     {
       "path": "test/screens/pre_post_assessment_screen_test.dart",
@@ -49040,11 +49159,18 @@
       "lines": 426,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Duplicate tokens/punctuation selection undo, post-completion/unmounted callback no extra fake command, empty target no audio/evidence; exact retry preserves ID/time/responseTime/context. Actual replay button and semantics/keyboard check at360x640/2x14tokens with scroll. Voice is recording fake/no physical playback. No realDrift terminal-close failure coverage here.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          426
+        ]
+      ]
     },
     {
       "path": "test/screens/setting_screen_data_erasure_test.dart",
@@ -49082,11 +49208,18 @@
       "lines": 1540,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1540 lines read. All failure codes then late final blocked; empty final no0score, manual delayed final accepted, first final fences late native callbacks/start failures, held start takeover/disposal, raw draft background clearance. Fake retry repository asserts same exact owner/session/end timestamp and one answer during terminal-close retry/system-back lock. RealDrift separate tests verify actual provenance and missing media produces no session. Visual captures320dark2x/390light use realfonts but no images reviewed/executed in B18. No device acoustic validation.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          1540
+        ]
+      ]
     },
     {
       "path": "test/screens/smart_audio_playlist_screen_test.dart",
@@ -49110,11 +49243,18 @@
       "lines": 1756,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1756 lines read. Fake voice and controlled actual SpeechPracticeUseCases gateways exercise route replacement/cover-pop, pending start disposal and takeover ordering, background raw clearing even injected cancel error, absent dependency, ID guards, exact evidence retry and system-back lock. First final before start return/throw wins; failure then late final denied until fresh attempt, empty final no0score, manual stop delayed final accepted once, unrelated playback error retained. Transcript similarity may display while persistence fails by explicit oracle/caveat. Counting repository alwaysinserted/finish Unimplemented, no actualDrift or owned shell close test; successful callback counts are not durable database verification.",
+      "sourceReadDate": "2026-09-14T00:01:52.849071+00:00",
+      "readRanges": [
+        [
+          1,
+          1756
+        ]
+      ]
     },
     {
       "path": "test/screens/srs_flashcards_screen_test.dart",
@@ -49222,11 +49362,18 @@
       "lines": 550,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real pointer drag/tap and Enter/Space duplicate-occurrence undo at320/390/840 with dark2x/reducedmotion, typed exact case/punctuation tests. Fake repository records one recreational command, fences retained callbacks after completion/unmount/retirement, exact pending ID/time/context retry before feedback. Empty target no commands and semantic ordering. No actualDrift close-failure fixture in this file; source-name absence checks not transitive-route proofs.",
+      "sourceReadDate": "2026-09-13T23:59:07.172999+00:00",
+      "readRanges": [
+        [
+          1,
+          550
+        ]
+      ]
     },
     {
       "path": "test/screens/wordbook_import_screen_test.dart",
