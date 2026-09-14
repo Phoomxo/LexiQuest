@@ -39004,11 +39004,18 @@
       "lines": 906,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full906 lines read. One-time dependencies, recovery candidate discovery followed exact content authentication, pinned word variants/checksums and deterministic document identity, fresh configured round only after canonical completed predecessor. New/active recovered session compensating abandonment bounded with terminal-authority single claim; route observes both reading/quiz kill and controller retirement, fallback original owner. Completed recovery avoids active lifecycle. Empty vocab action replaces route with bare CategoriesPage (gate concern), supplied config revalidation result ignored but stronger start/lifecycle checks may reject drift. Passage literally spelling means meaning used for both reading stages; inspect cue-fading claim in session. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:19:06.799249+00:00",
+      "readRanges": [
+        [
+          1,
+          906
+        ]
+      ]
     },
     {
       "path": "lib/screens/associative_reading_session_screen.dart",
@@ -39018,11 +39025,18 @@
       "lines": 1648,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1648 lines read. Six stages with exact recovery content/owner/revision validation and authenticated recall restoration; legacy progress never fabricates recall result, initiation compensation ownership separates route rollback from failure rendering. Per-response frozen prompts/text before writes, serial pending evidence retry, committed prefixes retained, checkpoint version advances after ACK; typed quiz gate/lifecycle checks. Association batch immutable IDs/time and committed prefix retry; blank cue needs existing memory+association. Complete closes session before legacy progress, distinct visible retry; explicit back abandons via lifecycle. Stage2 says no translations but renders same launcher passage containing Thai meaning; stage5 ephemeral unvalidated sentence and no evaluation claim, stage3 result assigned before evidence ACK though summary only after stage transition. `_captureAssociationDraft` outside catch and mutable supplied word list assumptions, duplicate finish/lifecycle-lock behavior need exact oracles. No B18 runtime/research activation.",
+      "sourceReadDate": "2026-09-14T00:19:06.799249+00:00",
+      "readRanges": [
+        [
+          1,
+          1648
+        ]
+      ]
     },
     {
       "path": "lib/screens/avatar_equipment_screen.dart",
@@ -39725,11 +39739,18 @@
       "lines": 307,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full307 lines read. Assigned command-only screen starts/reloads durable presentation, skips answered IDs on recovery, no per-item correctness feedback; complete comparison explicitly missing/incompatible. Single-flight response, lifecycle foreground notifications and stopwatch pause, detach on dispose. Load/finish retry buttons lack synchronous single-flight; response ACK after background resumes stopwatch unconditionally, durable use-case foreground authority must be checked before judging timing impact. Unawaited detach/foreground calls have no catches except failure path; no dynamic command rebind. No assessment assignment/activation/execution; oracles pending.",
+      "sourceReadDate": "2026-09-14T00:19:06.799249+00:00",
+      "readRanges": [
+        [
+          1,
+          307
+        ]
+      ]
     },
     {
       "path": "lib/screens/profile_settings_screen.dart",
@@ -49224,11 +49245,18 @@
       "lines": 599,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full599 lines read. Actual in-memory Drift assessment and active-time controller with synthetic one-item protocol/form/consent/assignment verifies pre/post sample sizes and percentage-points, no immediate correctness feedback,8seconds foreground excluding1hour background, delayed start foreground fence2seconds, failure UI stops at5seconds after consent withdrawn. Monotonic fake drives canonical segments; UI response Stopwatch is real so not verified, and one item cannot reveal submit-ACK-background next-item timer restart. Seeded synthetic research rows solely test fixture, no live assignment/activation; source denylist lexical assertions only. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:19:52.447065+00:00",
+      "readRanges": [
+        [
+          1,
+          599
+        ]
+      ]
     },
     {
       "path": "test/screens/production_shell_navigation_test.dart",
