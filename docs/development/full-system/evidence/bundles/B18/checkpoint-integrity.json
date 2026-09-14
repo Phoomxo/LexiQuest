@@ -2,8 +2,8 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "trackedRawBytesVerified": 3610,
   "sourceAndConfigStatus": {
-    "pending-review": 925,
-    "source-read-awaiting-cross-check": 500,
+    "pending-review": 897,
+    "source-read-awaiting-cross-check": 528,
     "in-progress": 4
   },
   "ignoredFiles": [],

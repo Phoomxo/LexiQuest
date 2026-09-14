@@ -33572,11 +33572,18 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full52 lines read. Configured consent version; resolves current owner and captures UTC clock before repository decision; committed mutation callback errors swallowed to avoid duplicate consent. No callback deadline and no owner recheck in use case. Read may create initial owner by repository contract. No research activation.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ]
     },
     {
       "path": "lib/features/consent/data/drift_research_consent_repository.dart",
@@ -33586,11 +33593,18 @@
       "lines": 233,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full233 lines read. Owner/version projection with monotonic decision and reaccept strictly after withdrawal. Negative decision atomically creates immutable permit-scoped withdrawal intents preserving existing delivery metadata, closes relevant runs/opportunities without moving prior completion time, supersedes only research-scoped uploads including proof/assessment and neutral events. Generic learning unaffected. Direct repository lacks input UTC/version checks and owner fence; composition contract pending. No consent mutation executed.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          233
+        ]
+      ]
     },
     {
       "path": "lib/features/consent/domain/research_consent.dart",
@@ -33600,11 +33614,18 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full27 lines read. Typed status with nullable decision/withdrawal; owner/version-scoped repository interface and explicit accepted decision. DTO itself does not certify consent provenance. Source only.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "lib/features/device_model/application/device_model_use_cases.dart",
@@ -36826,11 +36847,18 @@
       "lines": 405,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full405 lines read. Read-only persisted rollout defaults Legacy on absent/malformed/ambiguous/withdrawn context; exact singleton assignment and catalog/consent timestamps. Nonlegacy current activity requires matching resolved mode. Evidence resolver preserves original assignment identity through concrete Drift lineage matcher and validates constructed context. Context-free legacy is explicit compatibility. Consent snapshot and assignment reads are sequential rather than atomically fresh; canonical capture boundary must remain final authority. No activation.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          405
+        ]
+      ]
     },
     {
       "path": "lib/features/research/application/experiment_assignment_use_cases.dart",
@@ -36840,11 +36868,18 @@
       "lines": 47,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full47 lines read. Snapshot consent grant and decision preceding assignment before immutable repository call; repository validates canonical assignment fields. No explicit owner fence or consent reread around await here; production caller and final capture checks needed before classifying race. No study assignment performed.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ]
     },
     {
       "path": "lib/features/research/application/motivation_measurement_use_cases.dart",
@@ -36896,11 +36931,18 @@
       "lines": 528,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full528 lines read. Immutable deterministic local/UID identities with merged-owner ancestor matching; atomic insert-or-ignore then exact equality readback. Remote persist has no outbox echo; replay preserves acknowledged missing outbox, new inserts exact stable outbox. Conflict-aware reads deny malformed/related quarantine. Validation bounds trimmed text/runes but positive version lacks upper bound here, protocol boundary separately constrained. Ancestor traversal converges by set size so nominal cyclic throw is not a full graph cycle detector; need actual accepted migration caller/oracles before finding. No assignment executed.",
+      "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
+      "readRanges": [
+        [
+          1,
+          528
+        ]
+      ]
     },
     {
       "path": "lib/features/research/data/drift_measurement_opportunity_repository.dart",
@@ -36910,11 +36952,18 @@
       "lines": 517,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full517 lines read. Deterministic UUIDv4-entry opportunity and post-authority refreshed snapshots; baseline required before presented event. Optimistic revision presentation changes record first10 then count suppression. Accepted session must have real owner/config/mode/purpose and exposure/time checks, unique mapping; completion uses canonical terminal time. Event and opportunity CAS atomic, separate neutral events avoid learning projection rewind. Linked-event check validates payload/type/correlation but not aggregate here; stronger proof reader checks aggregate. No execution or activation.",
+      "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
+      "readRanges": [
+        [
+          1,
+          517
+        ]
+      ]
     },
     {
       "path": "lib/features/research/data/drift_motivation_measurement_repository.dart",
@@ -36924,11 +36973,18 @@
       "lines": 330,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full330 lines read. Deterministic permit/instrument-bound run; active participant and exact protocol/build/schema/content pins, conflicting assignment run rejected. Immutable response identity with same-code replay, no baseline after exposure, post only within30minutes of canonical index completion. Load derives first exposure from UUID event order and first accepted session rather than first completed; verifies response catalog/ordinal. Repeated close read-only, withdrawal needs owner fence and may narrow terminal state. Close does not explicitly reject backwards clock; compare temporal contract/oracles before promotion. No execution.",
+      "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
+      "readRanges": [
+        [
+          1,
+          330
+        ]
+      ]
     },
     {
       "path": "lib/features/research/data/drift_research_participation_repository.dart",
@@ -36938,11 +36994,18 @@
       "lines": 381,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full381 lines read. Transaction owner write fence and singular active owner; consent predates assignment and signed issuance. Active validation rereads local context/permit after async receipts and fresh expiry clock. Imports preserve immutable pins, signed revisions verbatim, prohibit resurrection and same-revision drift, permit inactive update only to existing record and prevent second active permit. Read-active filters requested time then revalidates current time. No research activation.",
+      "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
+      "readRanges": [
+        [
+          1,
+          381
+        ]
+      ]
     },
     {
       "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
@@ -36952,11 +37015,18 @@
       "lines": 786,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full786 lines read. Bounded1..50 phase-key scan, finite upper ceiling/cycle cursor; exact canonical source/owner/gate snapshots and fresh time around authorizer, immutable proof/outbox atomic writes. Revalidates all admitted tuples before local-only checkpoint; late denial retains earlier admitted inserts but skips checkpoint. Cursor advances only after admitted candidates, so all-denied first page may starve later valid keys; oracle/requirements pending. Source reader checks consent/assignment/quarantine/permit, canonical session purpose/lineage, linked aggregate/time/mode, sibling start-core and exact operation identity; does not itself authorize receipt transport. No sync executed.",
+      "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
+      "readRanges": [
+        [
+          1,
+          786
+        ]
+      ]
     },
     {
       "path": "lib/features/research/data/drift_research_sync_authorizer.dart",
@@ -37029,11 +37099,18 @@
       "lines": 63,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full63 lines read. Immutable DTO equality/hash includes every assignment field and exact time, supporting immutable replay comparisons. Typed conflict toString includes owner and experiment identity; diagnostics exposure requires caller trace. No execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          63
+        ]
+      ]
     },
     {
       "path": "lib/features/research/domain/measurement_opportunity.dart",
@@ -37211,11 +37288,18 @@
       "lines": 171,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full171 lines read. Validates bounded canonical mapping fields and positive versions on each lookup, rejects duplicates and ambiguous consent mappings; null protocol mapping wildcard supported. Constructor retains supplied list despite immutable catalog comment, per-call copy does not stop later caller mutation; actual composition uses need cross-check. No activation.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          171
+        ]
+      ]
     },
     {
       "path": "lib/features/research/domain/research_session_proof.dart",
@@ -37225,11 +37309,18 @@
       "lines": 499,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full499 lines read. Strict fixed-key immutable proof with128KiB total/16KiB config bounds, canonical identity and phase1 active versus phase2 completed temporal consistency. Exact stable config/owner/hash; Pair reconstructs initial checkpoint and validates full canonical history before compact proof, bounded sorted owner lineage and immutable nested copies. Start-core includes signed permit revision, so renewed permit deliberately defers sibling. Decode establishes consistency not provenance. No execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          499
+        ]
+      ]
     },
     {
       "path": "lib/features/research/presentation/motivation_measurement_form.dart",
@@ -37239,11 +37330,18 @@
       "lines": 368,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full368 lines read. Serializes writes and preserves exact unconfirmed answer across same-run rebuilds, validates returned identity/answer preservation, generation fences stale completions. Completion retry is independent of current question so no definition/cloze retry pattern here. Scroll/focus/live-region bilingual UI, skip/withdraw available after failure but pending write blocks. Hung callback behavior awaits composition bounds. No runtime execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          368
+        ]
+      ]
     },
     {
       "path": "lib/features/research/presentation/research_participation_panel.dart",
@@ -37253,11 +37351,18 @@
       "lines": 364,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full364 lines read. Explicit clipboard paste preserves opaque JSON bytes bounded16KiB, obscured readonly controller cleared on disposal/context change. Serial import/withdraw with retry and generation fencing, learning continuation always enabled. Permit verification belongs caller. Withdrawal button requires nonnull validated permit; unavailable receipt hides it, but SettingScreen local consent withdrawal is independent fallback, so not a global inability to withdraw. No activation.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          364
+        ]
+      ]
     },
     {
       "path": "lib/features/research/presentation/research_participation_screen.dart",
@@ -37267,11 +37372,18 @@
       "lines": 225,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full225 lines read. Owner/runtime generation keys scrub panel input and guard old action closures; current permit hidden while refreshing, backgrounded or authority unavailable. Expiry timer and resume fresh read prevent cached verified status. Watch errors hide authority and disposal invalidates late results. Actual local mutation admission delegated runtime. Offline/unavailable receipt withdrawal button issue narrowed by independent settings consent path. No execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          225
+        ]
+      ]
     },
     {
       "path": "lib/features/review/application/content_report_use_cases.dart",
@@ -42396,11 +42508,18 @@
       "lines": 37,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full37 lines read. Returns explicit decision, nondismissible modal but negative button/back default false; no data mutation. Copy hardcodes currentVersion1 while use-case supports configured consent versions, callers login/register need configured-version parity cross-check. Says settings withdrawal available; actual SettingScreen307-398 and632+ confirms local consent path without remote receipt lookup. No activation.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          37
+        ]
+      ]
     },
     {
       "path": "lib/widgets/reward_avatar_preview.dart",
@@ -45357,11 +45476,18 @@
       "lines": 126,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full126 lines read. Real memory owner/consent flow validates explicit later-time reaccept, no permit no withdrawal outbox, configured version callback failure after commit and corrupt accepted-with-withdrawal reads denied. No owner-switch-between-await or hung notification oracle. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          126
+        ]
+      ]
     },
     {
       "path": "test/features/device_model/device_model_use_cases_test.dart",
@@ -48059,11 +48185,18 @@
       "lines": 221,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full221 lines read. Off composition null, exact DB deferred receipt factory, configured real P256 rejects synthetic signature, microsecond clock normalized, committed mutation callback failure cannot undo capture/withdrawal. Exact owner document retry/import and preserved response/signature withdrawal. Synthetic receipts not real issuer. No hung callback or native deployment proof; no execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          221
+        ]
+      ]
     },
     {
       "path": "test/features/research/drift_experiment_assignment_repository_test.dart",
@@ -48087,11 +48220,18 @@
       "lines": 245,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full245 lines read. Real memory Drift synthetic authority checks no-participant zero rows, deterministic start/same-response original timestamp, malformed/opposite owner, no post before completion, terminal skip no resurrection, null incomplete scores, expiry/signature/receipt denial, async withdrawal no response and independent minor refs. Broad anything matcher for malformed inputs; durable wording is memory reload not disk reopen. No backwards terminal-clock oracle here. No execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          245
+        ]
+      ]
     },
     {
       "path": "test/features/research/firestore_research_receipt_authority_test.dart",
@@ -48115,11 +48255,18 @@
       "lines": 541,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full541 lines read. Real memory Drift/synthetic authority, seeded canonical sessions; replay purpose denied, denominator before exposure retained after skip/event-trigger failure, retry exact event, both presentations, concurrent same-revision switch ordinal suppression, receipt denial. First accepted index cannot be replaced by later completion, exact30-minute post allowed/+1ms denied,999ms exposure and expired baseline eligibility. Reload is repository reconstruction not file-backed. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          541
+        ]
+      ]
     },
     {
       "path": "test/features/research/motivation_instrument_test.dart",
@@ -48143,11 +48290,18 @@
       "lines": 641,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full641 lines read. Synthetic UI immediate single answer/serial pending actions, immutable resumed answers, exact failed-answer retry preserved parent rebuild, skip/withdraw/complete retry and stale/disposed completion. Failed Skip retains pending answer lock;32items th/en320px2x scrolling and keyboard semantics. Independent completion retry oracle strong, but no real persistence/receipt integration or hung callback bound. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          641
+        ]
+      ]
     },
     {
       "path": "test/features/research/motivation_measurement_use_cases_test.dart",
@@ -48157,11 +48311,18 @@
       "lines": 247,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full247 lines read. Real memory Drift seeded sessions validates replay exclusion, same standard/adventure linkage, repeat reconcile idempotency/no answer or reward writes, pre-exposure exclusion, denied authority leaves canonical session unchanged. Observer no-loop uses20ms real delay. Restart only reconstructs use case, no file reopen. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          247
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_p256_signature_verifier_test.dart",
@@ -48199,11 +48360,18 @@
       "lines": 600,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full600 lines read. Synthetic invalid permit deliberately UI-only, bilingual/minor statuses, opaque exact16KiB and multibyte rejection, visible/semantic masking independent of controller, serial imports/withdrawal and exact retry, disposal scrubbing, stale permit suppression,320px2x reachability and keyboard semantics. Parent owns trust. No production receipt or offline withdrawal proof. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          600
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_participation_permit_validator_test.dart",
@@ -48227,11 +48395,18 @@
       "lines": 629,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full629 lines read. Actual screen/panel/runtime/SQLite with synthetic issuer and clipboard covers import/withdraw navigation, owner database/prop and runtime replacement, stale closures, expiry timer/resume, unavailable authority and disposal. Harness pumps bounded fake-zone/real-IO futures and releases gates before DB teardown. Counts omit withdrawal outbox despite being named research counts; no source assertion changed. Does not test withdrawing from unverified/offline panel. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:27:31.349857+00:00",
+      "readRanges": [
+        [
+          1,
+          629
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_permit_document_test.dart",
@@ -48269,11 +48444,18 @@
       "lines": 549,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full549 lines read. Real Drift learning start/finish plus composed adapter/authorizer with explicitly synthetic signature/receipts; zero-answer phase1/2, no ordinary-learning mutation, off/null/nonparticipant no calls/writes, denied no provisional rows, trigger rollback and exact ACK metadata preservation. Owner/time expiry and latest-version withdrawal during await deny. No actual cloud or file reopen and no B18 execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          549
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_session_proof_source_integrity_test.dart",
@@ -48283,11 +48465,18 @@
       "lines": 1040,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1040 lines read. Actual Pair start and canonical completion before neutral completion event, restored-positive corruption controls, postapproval linked/config/quarantine changes deny, renewed permit preserves original sibling/ACK.50 acknowledged prefix and limit1 finite cursor wrap/lower inserted key/repository reconstruction covered, malformed cursor mutates only with approval, cursor insert trigger atomically rolls back. Does not cover all-denied leading page followed by valid candidate; restart reconstructs repository on same memory DB. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          1040
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_session_proof_test.dart",
@@ -51566,11 +51755,18 @@
       "lines": 185,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full185 lines read. Explicit synthetic bilingual two-item questionnaire and memory DB. Fixture signature verifier accepts marker string/boolean and receipt authority global boolean callback, not real cryptography or issuer. Seeded accepted consent and exact deterministic assignment predate permit; enroll flag controls only import, not seeded consent/assignment. No execution.",
+      "sourceReadDate": "2026-09-14T01:25:16.847323+00:00",
+      "readRanges": [
+        [
+          1,
+          185
+        ]
+      ]
     },
     {
       "path": "test/support/pair_measurement_fixture.dart",
