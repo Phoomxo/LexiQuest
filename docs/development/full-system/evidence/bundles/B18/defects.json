@@ -257,6 +257,24 @@
       "proposedRegression": "Use bounded non-executing node --check or equivalent parser oracle to demonstrate RED and GREEN after repairing duplicated splice; add syntax oracle to targeted maintainer scope. Do not run seed or initialize Firebase. Preserve environment guard and inspect reviewed vocabulary changes rather than silently bulk-seeding remote data.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV12-03",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "test/architecture/pair_matching_f10_boundary_test.dart",
+      "relatedFiles": [
+        "lib/data/local/app_database.dart",
+        "lib/data/local/app_database.g.dart",
+        "test/support/current_database_contract.dart"
+      ],
+      "trigger": "Existing TC-PMT-001 builds current generated allTables snapshot after schema27 added the50th table, then calls the49-table validator.",
+      "expected": "Architecture oracle validates current accepted schema inventory while preserving f10-only routing and prohibition of separate star authority tables.",
+      "actual": "The baseline expects returnsNormally but validator line83 rejects tableNames.length !=49. Current source annotation and generated allSchemaEntities36909-36960 contain50tables; current_database_contract also enumerates50. No application schema change is warranted. Runtime RED pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Run targeted existing Pair boundary test to record RED, align to exact current database table inventory and keep f45/extra-route/star-table and same-count substitution negatives meaningful. Do not regenerate historic final test plan or reduce schema27 to26.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
