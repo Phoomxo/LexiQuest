@@ -37703,11 +37703,20 @@
       "lines": 6575,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV09-01"
+      ],
+      "reviewNotes": "Full file read, all6575 lines. Serialized transactional claim gate with SQL write fence, paginated advancing candidate scan (page bound but no total scan bound), grouped coalescing except ordered assessment/research revisions, capped send reservations and lease recovery. Consent cancellation restores prior reservation. ACK/conflict/pull writes are gate fenced, cursor and applied page commit atomically; exact last cursor enforced and PullPage constructor enforces unique IDs and strict internal tuple ordering. Engine obtains active owner after gate acquisition, resolving captured-owner-before-gate suspicion. Preferences repository supersedes prior intent and uses cloudRevision+1, resolving multi-pending revision-gap concern. Mutable reconstruction reads latest row rather than saved attempted payload; word/goal edit/delete while lost ACK needs oracle cross-check. Declared v2 pull without research assignment reaches unconditional null-assignment rejection; ResearchRuntimeConfig only allows v2 with shadow/enforced research, so declared legacy v2 is not established production rollout; retain as unpromoted boundary concern. Immutable collisions quarantine preserving local evidence, canonical achievement reconciliation permits only undelivered local loser and retains snapshots. Starter IDs protected, restored saved IDs owner-specific, active-time overlap rejected and synthetic session state explicit. SRS uses local answer authority; raw inbound numeric SRS ranges rely on DB/rules, to cross-check. Research identity/consent and assessment revision prerequisites remain explicit, no activation. Legacy avatar carry-forward/cutover deferral/replay maintains conflicts; deferred replay unbounded. No runtime test or zone acceptance.",
+      "sourceReadDate": "2026-09-14T01:03:14.465923+00:00",
+      "readRanges": [
+        [
+          1,
+          6575
+        ]
+      ]
     },
     {
       "path": "lib/features/sync/data/firestore_sync_gateway.dart",
@@ -37780,11 +37789,18 @@
       "lines": 572,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Rollout has off/emulator-only constructors, exact rules identity; authorizer exceptions deny. Request normalizes process-local positive UTC to milliseconds, maps recursively frozen but nested lists not copied. Contract validates exact schemas,16KiB JSON bound (proof own bound), canonical ASCII IDs/digests/timestamps, minor receipt presence, permit hash and matching revisions; signature trust delegated explicitly. Immutable response/proof/event revision1; measurement run/opportunity state/range/order checks and event identity/owner/privacy/consent/aggregate linkage. Operation fingerprint recursively sorts maps. No issuer trust from checksum and no research activation or remote action.",
+      "sourceReadDate": "2026-09-14T01:03:14.465923+00:00",
+      "readRanges": [
+        [
+          1,
+          572
+        ]
+      ]
     },
     {
       "path": "lib/features/sync/domain/sync_entity.dart",
@@ -48470,11 +48486,18 @@
       "lines": 2607,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory/file-backed Drift covers owner-specific restored saved IDs, preserved old ID on unsave ACK, coalescing, concurrent claims, global cross-handle gate/renewal/reopen expiry, fifth reservation crash terminal unknown, duplicate ACK no regression, stale token denial for all transitions, pull transactional cursor rules and starter/foreign owner collision rollback. Fixtures often direct rows and unbound/inactive owner; source adapters are not exercised. Lost-ACK reopen test uses _IdempotentFakeCloud saved ACK directly, bypassing actual Firestore codec; revision1 receipt accepted by store despite reconstructed revision2 mutation, exposing B18-REV09-01. Orphan-word failure fixture has incomplete v1 shape, so throwsAnything does not prove orphan reference branch. Tests read, not run.",
+      "sourceReadDate": "2026-09-14T01:05:49.550057+00:00",
+      "readRanges": [
+        [
+          1,
+          2607
+        ]
+      ]
     },
     {
       "path": "test/features/sync/experiment_assignment_sync_test.dart",
@@ -48498,11 +48521,18 @@
       "lines": 3443,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Codec/preflight unit oracles cover exact newer envelopes, legacy dual-read compatibility, canonical achievement IDs, immutable time/report and versioned assessment graph, every ACK field and same-revision preference payload identity, singleton cursor and zero transaction on preflight deny. Ordinary collection roundtrip uses placeholder payloads for categories/reading/reward/SRS, not backend validity. Real memory Drift tests cover word v1/v2 content revision/hash preservation, migrated null hash v1, saved exact attempted intent/delete replay and numeric same-time9/10 order, natural-key restoration/rebase and320-local/256-wire ID separation; report consent before claim and before begin attempt; time overlap quarantine/cursor advance and goal mutable replay. Test named restart-idempotent never closes/reopens DB. No real Firestore transaction retry or auth/consent change during reads, nor mutable word/goal lost-ACK edit scenario. Tests read, not run.",
+      "sourceReadDate": "2026-09-14T01:04:05.523986+00:00",
+      "readRanges": [
+        [
+          1,
+          3443
+        ]
+      ]
     },
     {
       "path": "test/features/sync/learner_preferences_sync_test.dart",
@@ -48666,11 +48696,18 @@
       "lines": 965,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Exhaustive21 collection supported/write versions and exact rollout pins; canonical goals/preferences/words/saved/report/time payload mutation tests, private v2 word hashes, preference envelope mismatch, unknown JSON objects and version denial. Cursor UTC/microseconds, strict tuple order, unique IDs and exact final tuple; immutable time explicitly accepts backwards wall clock with positive active duration. Report secret-pattern examples and bounded comment; stable error strings and expiry exact boundary. Constructor-only safe placeholder payloads are not end-to-end codec/rules acceptance. Tests read, not run.",
+      "sourceReadDate": "2026-09-14T01:03:14.465923+00:00",
+      "readRanges": [
+        [
+          1,
+          965
+        ]
+      ]
     },
     {
       "path": "test/features/sync/sync_engine_test.dart",
@@ -48694,11 +48731,18 @@
       "lines": 118,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure synthetic envelope tests confirm explicit receipt creation, owner/collection/ID/revision/payload transplant rejection, stable nested map ordering and fingerprint invalidation after aliased nested mutation. Process-local authorizer clock precision normalized without changing payload. Does not prove real server metadata or cryptographic issuer authority. Tests read, not run.",
+      "sourceReadDate": "2026-09-14T01:03:14.465923+00:00",
+      "readRanges": [
+        [
+          1,
+          118
+        ]
+      ]
     },
     {
       "path": "test/features/sync/sync_trigger_test.dart",

@@ -152,6 +152,23 @@
       "proposedRegression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV09-01",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/sync/data/drift_sync_store.dart",
+      "relatedFiles": [
+        "lib/features/sync/data/firestore_sync_gateway.dart",
+        "test/features/sync/drift_sync_store_test.dart"
+      ],
+      "trigger": "Category revision1 commits remotely but its ACK is lost; local category edited to revision2 before expired operation1 is replayed",
+      "expected": "Replay validates and records original remote receipt without losing later edit, then sends revision2 exactly once",
+      "actual": "claimPending preserves attempted operation1 ID but _reconstructMutation uses current category.localRevision2. FirestoreSyncCodec.decodeAcknowledgement requires receipt resultingRevision equal expectedMutation.localRevision, so real revision1 receipt throws InvalidSyncPayloadFailure. Existing file-backed regression bypasses codec: _IdempotentFakeCloud returns saved PushAcknowledged directly and store accepts it. Thus regression does not cover production gateway rejection; later pull may resolve newer local edit as cloudWins.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -177,6 +194,12 @@
       "status": "method-corrected",
       "actual": "A broad rg search included nonexistent lib/providers; large combined source output truncated",
       "action": "Use discovered paths and bounded line reads; unread ranges remain pending and no review PASS inferred"
+    },
+    {
+      "id": "B18-READ-03",
+      "status": "method-corrected",
+      "actual": "Two rg arguments in one cross-check used guessed absent paths lib/features/learning/domain/evidence_capture.dart and lib/app_bootstrap.dart; existing evidence_context and sync_entity results remained readable.",
+      "action": "Stopped guessed-path method; used rg --files discovery and existing lib/runtime/app_bootstrap.dart, then symbol discovery located lib/config/research_runtime_config.dart. No source mutation or tests skipped."
     }
   ]
 }
