@@ -10,11 +10,18 @@
       "lines": 38,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full38 lines read. ExactLF contentJSON and B07-B16JSON, binarylogs; B17JSON/logsbinary. No generalB18rule so explicitUTF8LF writers and core.autocrlf=false required inreview; actualfreeze bytesverifiedseparately.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ]
     },
     {
       "path": ".github/ISSUE_TEMPLATE/field-feedback.yml",
@@ -24,11 +31,18 @@
       "lines": 64,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full64 lines read. Publicissue privacywarning and required pseudonymousstudycode/build/device/network/steps/result/checkbox. Freeform notautomaticallyredacted; studycode itselflinkable, no publicationorassignmentperformed.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          64
+        ]
+      ]
     },
     {
       "path": ".github/dependabot.yml",
@@ -38,11 +52,18 @@
       "lines": 110,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full110 lines read. Nine ecosystemlocations weeklyMondayBangkok/PRlimit5 and grouped version-update:semver-minor/patch strings. Group schema validity requires matching CLIoracle/docs before promotion; configuration intent not actualdependabotrun.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          110
+        ]
+      ]
     },
     {
       "path": ".github/workflows/ci.yml",
@@ -52,11 +73,18 @@
       "lines": 133,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full133 lines read. Readonlypermissions pinnedactions,45minUbuntu serialCLI/Firestore/Supabase/Flutter/backendCPU/debugAPK stages, cancellationperref. No fullreleaseverifier or auth emulator command; Flutterpubgetunfrozen, versiondefine1.0.0+1 vsmanifest+14 and emulator URLsdebugonly. CLIstep invokesseveralPowerShellscripts without explicitLASTEXITCODE perline; oracleexit semantics pending. Configreview only no workflow invocation.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          133
+        ]
+      ]
     },
     {
       "path": ".github/workflows/gitleaks.yml",
@@ -66,11 +94,18 @@
       "lines": 35,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full35 lines read. Existingpinned readonlymainpush/PR/merge workflow fullhistory10min, checkoutcredentialsfalse and commentsdisabled. Sourceinspection only; no scan/workflow invoked or recommended.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          35
+        ]
+      ]
     },
     {
       "path": ".github/workflows/osv-scanner-pr.yml",
@@ -80,11 +115,18 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full16 lines read. Existingpinned reusablePR/mergeworkflow withreadcontents/actions andsecurityeventswrite; no directsteps/concurrency/timeout locally, reusableauthorityexternal notexecuted.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          16
+        ]
+      ]
     },
     {
       "path": ".github/workflows/osv-scanner-scheduled.yml",
@@ -94,11 +136,18 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full16 lines read. Existingpinned reusablemainpush/weeklyUTC21Sunday workflow; no workflow/schedulecreatedorinvoked. External reusableimplementation not read here.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          16
+        ]
+      ]
     },
     {
       "path": ".gitignore",
@@ -108,11 +157,18 @@
       "lines": 92,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full92 lines read. Generated/runtime/localbackend data/checkpoints/field evidence/node_modules and model/audio artifacts ignored; duplicatesbenign. Does not generallyignore every possible.env, no secretsearchoruntrackedsource inference. Existingcheckpoint checks verify ignoredinventory.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          92
+        ]
+      ]
     },
     {
       "path": ".gitleaks.toml",
@@ -122,11 +178,18 @@
       "lines": 93,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full93 lines read. Defaultsrulesextended plus scoped pathANDfixedsentinel/publicclient-key regex allowlists, mostlysecret/match target; lastPaircases specificgenericrule. Sourceonly, not assurance of parserversion semantics/noactive scan.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ]
     },
     {
       "path": ".gitleaksignore",
@@ -136,11 +199,18 @@
       "lines": 40,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full40 lines read. Fixedhistorical commit:path:rule:line suppressions forremovedpublicclientJWT/dummykeys/leaseidentities; no wildcard currenttree suppression. Comments notproof priorcredentialrotation, no scan.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          40
+        ]
+      ]
     },
     {
       "path": ".metadata",
@@ -150,11 +220,18 @@
       "lines": 45,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full45 lines read. Flutter creation/migration revision2663184 stable across7platforms, unmanagedmain/iOSproject. This trackscreation notactualSDK revision84fc5cbb usedinpreviouscrosscheck.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          45
+        ]
+      ]
     },
     {
       "path": ".superpowers/sdd/task-5-acceptance.md",
@@ -206,11 +283,18 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-06",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full4 lines read. Java interactive update plus Gradle8.10.2 importsetting and wrapperenabled whereasactualwrapper9.1; editor setting not build authority.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          4
+        ]
+      ]
     },
     {
       "path": "AGENTS.md",
@@ -262,11 +346,18 @@
       "lines": 28,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Includes flutter_lints recommended defaults; rules block comments only, no source exclusions or global disabled checks.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "android/.gitignore",
@@ -276,11 +367,18 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Excludes generated wrappers/cache/localproperties and all signing keystores/keyproperties; ignoredstatus check separate.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "android/app/build.gradle.kts",
@@ -290,11 +388,18 @@
       "lines": 135,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full135 lines read. API26 floor/compile36, Java17 desugaring and NDK28.2 pin; release signing requires actual keystore plus four properties, provenance 40hex commit/12prefix/64hex model. taskGraph packageRelease/bundleRelease prefix gate only; no artifact/keystore authenticity verified here. Firebase BOM pin, inherited targetSDK and Flutter version. No build.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          135
+        ]
+      ]
     },
     {
       "path": "android/app/google-services.json",
@@ -304,11 +409,18 @@
       "lines": 48,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Two public Android clients legacy example and com.lexiquest.app; productionclient appID matches DefaultFirebaseOptions.android. OAuth arrays empty, not sign-in capability proof.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          48
+        ]
+      ]
     },
     {
       "path": "android/app/proguard-rules.pro",
@@ -318,11 +430,18 @@
       "lines": 6,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Keeps WorkManager reflected Room WorkDatabase_Impl zeroarg constructor to avoid startup failure; no broad keepall rules or build execution.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          6
+        ]
+      ]
     },
     {
       "path": "android/app/src/debug/AndroidManifest.xml",
@@ -332,11 +451,18 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Only debug network security override; release inherits main cleartextfalse.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          4
+        ]
+      ]
     },
     {
       "path": "android/app/src/debug/res/xml/network_security_config.xml",
@@ -346,11 +472,18 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Debug permits all cleartext at native layer and system anchors only; Dart config must enforce host allowlist. Does not constrain native plugin HTTP by itself.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          10
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/AndroidManifest.xml",
@@ -360,11 +493,18 @@
       "lines": 90,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Camera/microphone optional hardware, explicit network/notification/boot permissions; backup and cleartext disabled. Exported singleTop launcher, verified HTTPS auth/action prefix, no custom scheme. Nonexported notification receivers and speech/TTS/process text queries. Actual mergedmanifest/device approval not established by source.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          90
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/kotlin/com/example/vocab_learning_app/MainActivity.kt",
@@ -374,11 +514,18 @@
       "lines": 5,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full5 lines read. Empty legacy package FlutterActivity, actual namespace/manifest points com.lexiquest.app; no custom channel implementation here.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          5
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
@@ -388,11 +535,18 @@
       "lines": 201,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full201 lines read. Actual manifest activity provides storage StatFs and SAF export. One pending picker, sanitizes suggested basename, in-memory payload/result and unsettled URI authority; write/flush/close before success and delete-on-failure with ENOSPC cause classification. Writes synchronous on activity result thread, no byte bound or process/activity restoration/teardown settlement; only ActivityNotFound caught on picker launch. Dart owner/revocation completion handshake needs cross-check; no native test/device claim.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          201
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
@@ -402,11 +556,18 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. API21+ splash uses theme colorBackground; optionalbitmap commented.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/drawable/ic_stat_lexiquest.xml",
@@ -416,11 +577,18 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. 24dp monochrome white notification bell vector; no executable behavior.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          10
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/drawable/launch_background.xml",
@@ -430,11 +598,18 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy splash fixedwhite background; optionalbitmap commented, darktheme legacycontrast limited.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
@@ -514,11 +689,18 @@
       "lines": 3,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Resource shrinker retains named notification icon used dynamically by plugin.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          3
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/values-night/styles.xml",
@@ -528,11 +710,18 @@
       "lines": 18,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Dark no-title launch and normal theme backgrounds; drawableversion determines actual splashcolor.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          18
+        ]
+      ]
     },
     {
       "path": "android/app/src/main/res/values/styles.xml",
@@ -542,11 +731,18 @@
       "lines": 18,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Light no-title launch and normal window backgrounds; runtimeFlutter manages actual UI.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          18
+        ]
+      ]
     },
     {
       "path": "android/app/src/profile/AndroidManifest.xml",
@@ -556,11 +752,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Profile requests INTERNET only, no debug cleartext override.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "android/app/src/release/AndroidManifest.xml",
@@ -570,11 +773,18 @@
       "lines": 13,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Release source/build/model fingerprint metadata use Gradle placeholders; source declaration not proof installed values.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ]
     },
     {
       "path": "android/build.gradle.kts",
@@ -584,11 +794,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full24 lines read. Google/MavenCentral repository order, common build root ../../build and per-subproject directories; all evaluation depends app; clean deletes configured build root. Source only, no clean/build executed.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "android/gradle.properties",
@@ -598,11 +815,18 @@
       "lines": 6,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. 8Gheap/4Gmetaspace and heapdump diagnostics, AndroidX, AGP9 compatibility disables newDSL/builtinKotlin, bundled GPUacceleratorfalse. Config only no memory/build claim.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          6
+        ]
+      ]
     },
     {
       "path": "android/gradle/wrapper/gradle-wrapper.properties",
@@ -612,11 +836,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Gradle9.1.0 HTTPS all distribution,10snetworktimeout, URLvalidation but no distributionSha256Sum pin. Existing wrapper usage/provenance must remain scoped, no download.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "android/key.properties.example",
@@ -626,11 +857,18 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Explicit nonsecret signing placeholders and file instructions, release failclosed claim implemented separately in Gradle; no keystore created.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          16
+        ]
+      ]
     },
     {
       "path": "android/settings.gradle.kts",
@@ -640,11 +878,18 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full27 lines read. Requires local.properties flutter.sdk, included Flutter Gradle build; pinned loader1 AGP9.0.1 Kotlin2.3.20 GoogleServices4.4.2, app only. Local SDK path authority not validated by this file.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "android_emulator_screenshot.png",
@@ -1620,11 +1865,18 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full142 lines read. Regexliteralparser on legacycefr_service.dart, no AST/comments/escape/string-awareparenhandling; zeroonlyfail canpartialdrop fields whileclaimingalignment. Parent[3]correctdespitedocfivelevels. Currentcanonicalcatalog usesseparateassets, legacyliteralsnotwholeappcurriculum. No collectionrun.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          142
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/dataset/enrich_dictionary.py",
@@ -1634,11 +1886,18 @@
       "lines": 349,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full349 lines read. Seed-firstcasefoldunion fillsgaps beforelimit preservescuratedfields; serialHTTP/readunbounded/throttled, emptydataontransport failure; malformednestednoniterable canraise despiteNeverraises. Firstdictionarysense/POS maymismatchinput; synonymscap5, Thaiunchanged despiteheader. Sourceoverwritesenriched evenifnoAPI data losingcontributors. Outputstreamtruncates/periodicflush notfsync, partialdataset retainednotresume. No externalcalls.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          349
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/dataset/expand_wordlist.py",
@@ -1662,11 +1921,18 @@
       "lines": 188,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full188 lines read. StreamingHFdataset defaultunpinned externalcorpus; targetcasefold butsentence tokensnotcasefold, setiteration nondeterministic, firstcompletedword canstarveothermatch. Perword capboundsstoredrows butnotscanlength; cap0/negativeunvalidated. Missingdatasets overwritesemptyoutput andreturns0. No datasetfetch or attribution/licensingvalidation.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          188
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/dataset/generate_synthetic.py",
@@ -1676,11 +1942,18 @@
       "lines": 535,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full535 lines read in1-300/301-535. SeededPOS/CEFRtemplatechoices withpronoununiversal fix; genericfunctiontemplates stillmisfitconjunctions/determiners, naiveverbs+s andnounarticles semanticquality notvalidated. Explanations treatalltagsassynonyms despitecategorytags, unknownCEFRdefaultsA1 andselectedlowerband mislabeledtargetlevel. Actualenrichedexample_sentence unused. Gemini requireskey+fraction, rpm_limitunused onlydelay4.5, promptargumentunused rephrasecantargetworddrop, responseunbounded/typeerrorsuncaught. Allrowsmaterialized; no sampling/generation/network/training activated.",
+      "sourceReadDate": "2026-09-14T03:38:22.267197+00:00",
+      "readRanges": [
+        [
+          1,
+          535
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/dataset/merge_and_format.py",
@@ -1690,11 +1963,18 @@
       "lines": 257,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full257 lines read. Whitelistinstructionfields, dedupeexactprompt/responsefirstprovenancewins, seededkindstratifiedsplit butinputorder-dependent andnogroupbyword/template separation. Smallkindtest/val canempty; finitefractionsvalidated via comparisons. Sequentialtruncate4outputfiles nonatomically, manifestcounts onlynotbyte/sourcehash/seed. No merge/researchreportperformed.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          257
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/deploy/hf_space/Dockerfile",
@@ -1704,11 +1984,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines read. DigestpinnedPython3.11base, nonrootUID1000, requirements pip directpinsbuttransitivesunlocked, flatcopiedapp/auth/readme, port7860.120sstartperiod livehealth notready/auth; no build/deploy.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/deploy/hf_space/README.md",
@@ -1732,11 +2019,18 @@
       "lines": 267,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full267 lines read. Eager torch/tokenizer/modelload safetensorsCPUfloat32, defaultuntrainedbase/mainmutable revision; no lifespan until modelready. Firebase verificationbeforemanual10messages/2000charbound but Pydanticbody alreadymaterialized, rolesarbitrary and ignoredrolesleadHello. ChatML flattensassistant/user and folds systems into userdata; specialtokensunescaped. Tokenizationbefore nonblockingglobalgenerationlock; no generationdeadline/ratebudget/cancellation, lockreleasedfinally. Stopreason alwaysstop even tokenlimit, secondprecisionresponseID, exactlocaltokencounts. Readiness only modelnonNull+projectID, no credential/providerprobe. Claims latency/quality/thesis not verified; no modeldownload/inference/deploy.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          267
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/deploy/hf_space/auth.py",
@@ -1746,11 +2040,18 @@
       "lines": 111,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full111 lines read. CaseinsensitiveexactBearerparts, configuredproject gate, lazyprojectnamedFirebaseSDK decoderwithcheck_revokedtrue and initracefallback, all decoderexceptions sanitized. Injectabledecodertrusted, UID/sub mustnonemptystring trimmed; defaultSDKowns signatureaudiencechecks. No rate/consent/AppCheck admission; separate servicecontractneeded.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          111
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/deploy/hf_space/requirements.txt",
@@ -1760,11 +2061,18 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full12 lines read. Exactdirect CPUservingpins FastAPI/uvicorn/idna/FirebaseAdmin/torch/transformers/peft/pydantic; nohashes/transitivelock, notequalCUDAtrainruntime. No installation.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/deploy/upload_adapter.py",
@@ -1774,11 +2082,18 @@
       "lines": 71,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full71 lines read. Explicitmaintainerupload script defaults publicrepo, tokenCLI/env, hardcodedadapterdir existenceonly andentirefolderuploadwithoutallowlist; importHfApi heavydep outsideguard. No contentvalidation/card/provenance/catch and no uploadperformed.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          71
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/pyproject.toml",
@@ -1788,11 +2103,18 @@
       "lines": 49,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full49 lines read. Python3.11only, lightdataset httpx/tqdm; pytestdev separate fromtrainCUDA13.2torch/transformers/peft/datasets/accelerate/bitsandbytes. ExplicitPyTorchindexboundonlytorch; installedwheelonlysrc package whiletestsadd scriptpaths. NoGPUorcollection activated.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          49
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/scripts/DEPLOY.md",
@@ -1816,11 +2138,18 @@
       "lines": 214,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full214 lines read. Alternateupload defaults public, --dry-run stillimportsHF and whoami network ifnousername beforedrybranch contradictshelp; no callperformed. Non-dry createsrepo then overwriteslocalREADME withhardcodedtrainingstats beforefilteredupload; staticclaims notderivedfromselectedadapter/provenance. Allowjson/safetensors/bin/md/txt exclusions notproof folderprivacy. No training/reporting/publicationperformed.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          214
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/src/lexiquest_lm/__init__.py",
@@ -1830,11 +2159,18 @@
       "lines": 10,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full10 lines read. Packageversion0.1only; doc says train subpackage but actual scripts outside installedsrc. No importsideeffect.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          10
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/__init__.py",
@@ -1844,11 +2180,18 @@
       "lines": 14,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full14 lines read. Documentationonly sourcecollectionprovenance/isolation intent, notexecution or idempotencyproof.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/io.py",
@@ -1858,11 +2201,18 @@
       "lines": 87,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full87 lines read. FrozenCefrWord no validation, tupletagstoJSON; rootrelativepaths, writecreatesglobaldirs then truncatesdestination andstreamsrows nonatomically; customparentnotcreated, serializationfailure partialfile. readJSONL unbounded/nonobjectaccepted despiteannotation; internalofflinepipeline only.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          87
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/conftest.py",
@@ -1872,11 +2222,18 @@
       "lines": 37,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full37 lines read. Testsys.path injections fordataset/train/src and tempJSONLhelper; no heavyimports/network, helpersnewlinehostdependent.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          37
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_collect_cefr_words.py",
@@ -1886,11 +2243,18 @@
       "lines": 104,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full104 lines read. SyntheticDartstrings exactfields/multiple/dynamic skip/balancedparen/zeroerror. Notactualcanonicalcatalog, escapedquote/comment/unbalancedstringparen orpartialparse detection. Sourceonly.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          104
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_dependency_pins.py",
@@ -1900,11 +2264,18 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full54 lines read. RealTOML exacttqdm andCUDAindex/trainversion partition assertions; no hash/download/runtimecompatibility validation.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_enrich_dictionary.py",
@@ -1914,11 +2285,18 @@
       "lines": 128,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full128 lines read. ActualtempJSONL/main withfakeHTTP/zero-delay provesseed-only/expanded-only/casefoldunion andcuratednonemptypriority/deterministiclimit. No realAPI/shapeerrors/timeout/partialdiskfailure or lexicalsensevalidity.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          128
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_evaluate.py",
@@ -1928,11 +2306,18 @@
       "lines": 264,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full264 lines read. ActualCLI withmonkeypatchedtorch/transformers/peft andconstantperplexity12.5 verifies requestedadaptermissing/disappearing/failure nofallback/nooutput, baseversusadapterreportedidentity. samplecount0 deliberatelyskipsgeneration. Pureexactmatch/report/stubtests do notverifycausalshiftweighting/nonfinite or scientificvalidity. Noexecution.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          264
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_expand_wordlist.py",
@@ -1942,11 +2327,18 @@
       "lines": 55,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full55 lines read. Five pure tests uniqueness/count>100/source tags, A1/A2 source band levels and casefold seed exclusion. No B2/C1 alternating-level authenticity, lexical/license provenance or promised3000 coverage oracle. No execution.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          55
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_generate_synthetic.py",
@@ -1956,11 +2348,18 @@
       "lines": 215,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full215 lines read. PurePOSmapping/pronoun exactuniversal strings/levelfallback/kinds/seed andsubstringverb/prepositionguards; testabout avoidsnounprefix butdoesnotestgrammaticalcorrectness ofprepositionslots. Explaineronlychecksmetadata inclusion, notsynonym validity. Geminionlymissingkeydisabled, no HTTP/error/throttle/prompttargetpreservation coverage. Noexecution.",
+      "sourceReadDate": "2026-09-14T03:38:22.267197+00:00",
+      "readRanges": [
+        [
+          1,
+          215
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_hf_space_auth.py",
@@ -1970,11 +2369,18 @@
       "lines": 202,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full202 lines read. Fake decoder/Bearer negatives, no-projectno-call, exceptiontextredaction andUIDfallback; fakeSDK cache/initrace verified. Signatureaudience/revocation SDKargs accepted butcheck_revoked notassertedbyfake, no realHTTPendpoint boundary.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          202
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_hf_space_deployment.py",
@@ -1984,11 +2390,18 @@
       "lines": 194,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full194 lines read. ASTextractexecpureprompt confirms trainingtemplatebyteparity, staticDockerpin/nonroot/health and tokenizer/max/min shape; does not instantiateFastAPI, loadmodel, validateactuallimits/errors/auth or runimage. Positivefloor alone notenvironmentupperbound.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          194
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_merge_and_format.py",
@@ -1998,11 +2411,18 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full129 lines read. TempJSONL shape trim/skip, exactpairdedup and300-rowkindsplit30/30/240 plussameinputseed fixture. Doesnotestinputorder independence, smallkindempty, word/templateleakage or output4fileatomicity; sourceonlyno statisticalreport.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          129
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
@@ -2012,11 +2432,18 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full109 lines read. Stub tokenizer tests positive maskedprefix/unmaskedcount/lengthlimit andsameinstance determinism; EOSassertcontainsmarker missesduplicate, truncationdoesnotassertroleboundary/exactmask, no realBPE tokenizationorprocesshashproof. Readonly.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          109
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/train/__init__.py",
@@ -2026,11 +2453,18 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full15 lines read. Documentationonly dryrun/train/evaluate descriptions, no GPUortraining starts onimport.",
+      "sourceReadDate": "2026-09-14T03:36:17.994223+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/train/evaluate.py",
@@ -2040,11 +2474,18 @@
       "lines": 319,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full319 lines read. Explicitadapterpathvalidatedbeforeheavyimports andadapterloadfailpropagateswithoutbasefallback; dryrunidentityclearlystub/Noneperplexity. Actualperplexity loopsrows tokenweighted but countsunshiftedlabels whilecausalLMshifts, relevantwhenpromptremoved; zero labelsreturnsinf andJSONdefaultallowsInfinity, math.exp mayoverflow. Generationpromptunbounded/defaultnoim_end stop override unlikeSpace; sampleexactmatchdenominator differsn_test. No evaluation/reportgenerated; researchvalidationoutsideproductionpackage.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          319
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/train/lora_finetune.py",
@@ -2054,11 +2495,18 @@
       "lines": 411,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full411 lines read. Actualmainrequiresdryrun/trainexplicit despiteheaddefaulttrainclaim. DryrunpurePythonlogisticnotTinyLM; _featurise indexeslabels bylen(feats), firstmaskedlabel causesalltokensskipped=>fallback[0], so maskingloopvalidationclaimweak. epochs0leavesaccunset, gradientsigmoidcanoverflow. Realtrainlazyheavyimports, broadquantizationfallback, mutablemodelrevision, onflytokenizationbeforecap, LoRAanddynamiccollator; savesadapteronly notmerged. NoGPU/trainingexecution or researchreport.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          411
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/train/tokenise_dataset.py",
@@ -2068,11 +2516,18 @@
       "lines": 267,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full267 lines read. ExplicitChatMLprompt matches serving butcompletion appends im_end twice. Stub usesPython randomizedhash so stability onlysameprocess. Overflow removes tail ofprompt beforekeepingcompletion contrary comment preservingprompt; canloseassistantheader. No positive max_length validation/BPEprefixalignmentoracle; fullrows materialized beforelimit and dryruncreatesoutdir. Offline sourceonly no tokenization/trainingperformed.",
+      "sourceReadDate": "2026-09-14T03:37:40.316047+00:00",
+      "readRanges": [
+        [
+          1,
+          267
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/uv.lock",
@@ -31132,11 +31587,18 @@
       "lines": 42,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Firestore/storage rulepaths, dedicated auth hosting publicdirectory and assetlinks contenttype/300scache, emulator auth9099/firestore8080 loopback. No deploy or emulator invocation.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "firestore.rules",
@@ -31160,11 +31622,18 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Exact com.lexiquest.app app-link association with one cert fingerprint; local publishedsource does not prove hosted retrieval or matching installed signature.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "hosting/public/field-support/index.html",
@@ -31174,11 +31643,18 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full59 lines read. Static Thai responsive support page with public GitHub privacy warning/private account/deletion direction and offline preservation guidance. External issue link explicit; no scripts/forms/data collection. Actual private channel availability/distribution not evidenced.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ]
     },
     {
       "path": "integration_test/adventure_performance_profile_test.dart",
@@ -31279,11 +31755,18 @@
       "lines": 34,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full34 lines read. Xcode/CocoaPods/generated Flutter intermediates and registrant ignored, legacy default IDE files excepted; generated plugin provenance cannot be inferred from checkout.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          34
+        ]
+      ]
     },
     {
       "path": "ios/Flutter/AppFrameworkInfo.plist",
@@ -31293,11 +31776,18 @@
       "lines": 26,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Generated Flutter framework identity with MinimumOS12; Runner deploymenttarget may differ and determinesappbuild.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "ios/Flutter/Debug.xcconfig",
@@ -31307,11 +31797,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Includes Generated.xcconfig only; resolved SDK/build configuration external generated input.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "ios/Flutter/Release.xcconfig",
@@ -31321,11 +31818,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Includes same Generated.xcconfig; no local release override.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcodeproj/project.pbxproj",
@@ -31335,11 +31839,18 @@
       "lines": 616,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full616 lines read. Target/scheme UUIDs resolve Runner/tests, resources/storyboards and generated ObjC registrar wired. Flutter build/embed scripts always out of date, empty framework lists/no Pod or SPM integration in frozen file; generated Flutter tooling may modify later, no build proof. iOS13 project target vs framework plist12, Swift5, legacy bundle ID, no development team or associated-domain entitlement. Version inherited Flutter, automatic signing tests only.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          616
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
@@ -31349,11 +31860,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full7 lines read. Project internal workspace self reference only.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -31363,11 +31881,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
@@ -31377,11 +31902,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
@@ -31391,11 +31923,18 @@
       "lines": 98,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full98 lines read. Runner app and test UUID references, Debug run/test/analyze, Profile profiling, Release archive; parallel build/test flags source only, no tests invoked.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          98
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcworkspace/contents.xcworkspacedata",
@@ -31405,11 +31944,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full7 lines read. Root workspace references Runner project only, no Pods project entry.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -31419,11 +31965,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
@@ -31433,11 +31986,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "ios/Runner/AppDelegate.swift",
@@ -31447,11 +32007,18 @@
       "lines": 13,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full13 lines read. Registers generated plugins then delegates launch to FlutterAppDelegate; no custom export/storage/auth handlers.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
@@ -31461,11 +32028,18 @@
       "lines": 122,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full122 lines read. Nineteen iPhone/iPad/marketing size-scale references, including1024 store icon. Manifest source only; pixel dimensions/branding not inspected.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          122
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
@@ -31685,11 +32259,18 @@
       "lines": 23,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full23 lines read. Universal launch image1x/2x/3x references, no pixel/content validation or branding claim.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          23
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
@@ -31755,11 +32336,18 @@
       "lines": 37,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full37 lines read. White static launch view with centered intrinsic LaunchImage and autolayout; no app controls or runtime state.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          37
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Base.lproj/Main.storyboard",
@@ -31769,11 +32357,18 @@
       "lines": 26,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines read. Single FlutterViewController initial scene, white resizable600x600 design frame; actual logical layout owned by Flutter.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Info.plist",
@@ -31783,11 +32378,18 @@
       "lines": 55,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Runtime buildidentifier/version substitutions, camera/microphone/speech usage explanations and landscape/iPad support; placeholder Vocab Learning App name remains. No associateddomains/background modes specifiedhere; no native iOS verification.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          55
+        ]
+      ]
     },
     {
       "path": "ios/Runner/Runner-Bridging-Header.h",
@@ -31797,11 +32399,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Imports generated plugin registrar header only.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "ios/RunnerTests/RunnerTests.swift",
@@ -31811,11 +32420,18 @@
       "lines": 12,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full12 lines read. Empty testExample has no assertion, does not verify native startup/media/export.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "lib/add_default_categories.js",
@@ -44560,11 +45176,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Only flutter/ephemeral ignored by platform file; root ignore applies separately.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "linux/CMakeLists.txt",
@@ -44574,11 +45197,18 @@
       "lines": 145,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full145 lines read. Legacy binary/application names, C++14 warnings-as-errors, sysroot isolation, GTK3 and relative lib rpath. Install removes build bundle and re-copies assets/native libraries; non-Debug AOT install. Generated plugin list included. No Linux build or install executed.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          145
+        ]
+      ]
     },
     {
       "path": "linux/flutter/CMakeLists.txt",
@@ -44588,11 +45218,18 @@
       "lines": 88,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full88 lines read. Reads ephemeral generated config, GTK/GLib/GIO Flutter shared library interface; publishes project asset/AOT paths. Phony output forces Flutter backend with supplied environment/platform/build type. Generated dependencies require actual SDK/build to validate.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          88
+        ]
+      ]
     },
     {
       "path": "linux/flutter/generated_plugin_registrant.cc",
@@ -44602,11 +45239,18 @@
       "lines": 35,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full35 lines read. Six native registrars audioplayers/file selector/secure storage/gtk/record/URL launcher match generated_plugins.cmake native list. No Firebase, speech or custom Android channels registered here; platform capability remains separate. Generated content source inspected, regeneration not run.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          35
+        ]
+      ]
     },
     {
       "path": "linux/flutter/generated_plugin_registrant.h",
@@ -44616,11 +45260,18 @@
       "lines": 15,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full15 lines read. Guarded single Flutter plugin registry function declaration, matches source signature; generated provenance pending SDK comparison.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "linux/flutter/generated_plugins.cmake",
@@ -44630,11 +45281,18 @@
       "lines": 31,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full31 lines read. Six native plugin directories linked and bundled, two FFI entries flutter_litert/jni bundled without registrars as expected. Source native list matches registrant; installed dependency metadata cross-check pending.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ]
     },
     {
       "path": "linux/main.cc",
@@ -44644,11 +45302,18 @@
       "lines": 6,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full6 lines read. Autoptr owns app, returns g_application_run exit status.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          6
+        ]
+      ]
     },
     {
       "path": "linux/my_application.cc",
@@ -44658,11 +45323,18 @@
       "lines": 124,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full124 lines read. GTK app GNOME/X11 header-bar fallback, 1280x720 view/plugin registration, command arguments copied and disposed, nonunique app allows separate processes. No product channels or lifecycle persistence beyond Flutter plugins; no Linux runtime proof.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          124
+        ]
+      ]
     },
     {
       "path": "linux/my_application.h",
@@ -44672,11 +45344,18 @@
       "lines": 18,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full18 lines read. Final GTK application type declaration and constructor; no extra state/API.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          18
+        ]
+      ]
     },
     {
       "path": "macos/.gitignore",
@@ -44686,11 +45365,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full7 lines read. Pods/Flutter ephemeral and Xcode user files ignored.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "macos/Flutter/Flutter-Debug.xcconfig",
@@ -44700,11 +45386,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Includes ephemeral Flutter generated config only.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "macos/Flutter/Flutter-Release.xcconfig",
@@ -44714,11 +45407,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1 line read. Same generated config include, entitlements controlled in project configuration.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
@@ -44728,11 +45428,18 @@
       "lines": 38,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full38 lines read. Fourteen plugin imports/registrations pair correctly for Firebase/media/links/preferences/storage/notifications. Registration does not supply missing Info.plist usage descriptions or sandbox entitlements; dependency metadata reproducibility pending.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ]
     },
     {
       "path": "macos/Runner.xcodeproj/project.pbxproj",
@@ -44742,11 +45449,18 @@
       "lines": 705,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full705 lines read. Runner depends Flutter Assemble with generated input/output tripwire and embed script; scheme UUIDs match. Swift5/macOS10.14/C++14, threeconfig entitlement links correct DebugProfile versus Release; actual previously-read entitlements lack network-client/media/file grants. Empty framework lists/no dependency integration in frozen file, no build/signing/notarization proof; test target uses legacy product.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          705
+        ]
+      ]
     },
     {
       "path": "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -44756,11 +45470,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
@@ -44770,11 +45491,18 @@
       "lines": 98,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full98 lines read. Legacy app product Runner UUID and tests, Debug run/test/analyze/Profile/Release archive; no native execution.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          98
+        ]
+      ]
     },
     {
       "path": "macos/Runner.xcworkspace/contents.xcworkspacedata",
@@ -44784,11 +45512,18 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full7 lines read. Root workspace points Runner project only.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          7
+        ]
+      ]
     },
     {
       "path": "macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
@@ -44798,11 +45533,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "macos/Runner/AppDelegate.swift",
@@ -44812,11 +45554,18 @@
       "lines": 9,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full9 lines read. Flutter app delegate terminates after last window closes; no restore/export/storage channels.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          9
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
@@ -44826,11 +45575,18 @@
       "lines": 68,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full68 lines read. Ten mac1x/2x icon slots16..512 with16..1024 filenames; assets visual validation excluded here.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          68
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
@@ -44938,11 +45694,18 @@
       "lines": 343,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full343 lines read. Cocoa responder-chain menus edit/find/spelling/substitution/speech/window and800x600 resizable Flutter window wired delegate; preferences item has no action, help empty. APP_NAME template replacement delegated Flutter, native menu features not equivalent to app study controls. No macOS accessibility/runtime test.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          343
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Configs/AppInfo.xcconfig",
@@ -44952,11 +45715,18 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Template app name/example bundle ID/copyright2024 remain; iOS/macOS Firebaseoptions use same examplebundleidentifier.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Configs/Debug.xcconfig",
@@ -44966,11 +45736,18 @@
       "lines": 2,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Includes generated Flutter Debug then shared warning settings.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          2
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Configs/Release.xcconfig",
@@ -44980,11 +45757,18 @@
       "lines": 2,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Includes generated Flutter Release then shared warning settings.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          2
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Configs/Warnings.xcconfig",
@@ -44994,11 +45778,18 @@
       "lines": 13,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Enables nativecompiler warning set including shadow/unreachable/strictselectors; not executed.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ]
     },
     {
       "path": "macos/Runner/DebugProfile.entitlements",
@@ -45008,11 +45799,18 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Sandbox plus JIT and incomingnetworkserver only; lacks outgoingnetworkclient/audio/camera/fileuserselected entitlements. Native capability unverified.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Info.plist",
@@ -45022,11 +45820,18 @@
       "lines": 32,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Template bundle/build/nib/OS metadata, lacks camera/microphone/speech privacy usage descriptions; platform support must be checked before claiming media availability.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          32
+        ]
+      ]
     },
     {
       "path": "macos/Runner/MainFlutterWindow.swift",
@@ -45036,11 +45841,18 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full15 lines read. Instantiates Flutter controller from nib preserving window frame, registers plugins before superclass awake. No custom channels.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "macos/Runner/Release.entitlements",
@@ -45050,11 +45862,18 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Sandbox only; missing networkclient/media/file permissions compared with crossplatform services. Appbuild support/caller gating still to assess, no macOS runtimeclaim.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          8
+        ]
+      ]
     },
     {
       "path": "macos/RunnerTests/RunnerTests.swift",
@@ -45064,11 +45883,18 @@
       "lines": 12,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full12 lines read. Empty native testExample; no startup/plugin/permission oracle.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          12
+        ]
+      ]
     },
     {
       "path": "osv-scanner.toml",
@@ -45078,11 +45904,18 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full10 lines read. Oneadvisoryexception through2026-10-26 tiedtooptionalstorage uuid9transitivefirebase-admin14.2; scope rationale stated, current dependency reachability/lock inspection separate. No networkadvisorycheck or scan.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          10
+        ]
+      ]
     },
     {
       "path": "package-lock.json",
@@ -45106,11 +45939,18 @@
       "lines": 23,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Private Node>=22 maintainer seed and two explicit demo-project emulator test commands. firebase-admin14/Firebase12/rules-testing5 and scoped brace-expansion override; firebase CLI expectedexternal, no install or seed.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          23
+        ]
+      ]
     },
     {
       "path": "pubspec.lock",
@@ -45134,11 +45974,18 @@
       "lines": 99,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Dart>=3.12<4 version1.0.0+14; deliberate exact native camera/model/notification/audio/security pins plus ranged coredeps.32 explicitcontent/font assetentries with Thai font family; no bundled remote model or claim absent required Adventure assets without adapter cross-check. Lock/generated provenance separate.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          99
+        ]
+      ]
     },
     {
       "path": "storage.rules",
@@ -45148,11 +45995,18 @@
       "lines": 11,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full11 lines read. Recursive all-bucket/all-object client read/write false, intentionally unused Firebase Storage. Rules source only, deployment and admin bypass outside claim.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          11
+        ]
+      ]
     },
     {
       "path": "supabase/config.toml",
@@ -45162,11 +46016,18 @@
       "lines": 27,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Local project with PostgreSQL17/API/storage, dedicated6543xports, studio/SMTP/analytics disabled; no productionref or secret and no serverstarted.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "supabase/migrations/20260727000000_image_bucket_public_readonly.sql",
@@ -45176,11 +46037,18 @@
       "lines": 75,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full75 lines read. Upserts public Image bucket preserving owner, probes RLS before conditional enable, exact Image SELECT anon/authenticated. Restrictive false write policies intentionally cover ALL storage.objects buckets for client roles, not just Image; preserves service-role bypass/noFORCE. Drop/create sequence relies migration transaction. No migration/cloud activation.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          75
+        ]
+      ]
     },
     {
       "path": "test/ai/ai_models_test.dart",
@@ -45253,11 +46121,18 @@
       "lines": 313,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full313 lines read. Actualgenerator deterministic order/provenance/LF/hash, current identity supported, revisionexcludedbydesign. Tempdirectory missing/tampered/read-only CRLF/check/noargs/write sameversiondrift and revision-onlywarning. No frozen production artifact regeneration or two-file IO failure atomicity oracle; no B18 execution.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          313
+        ]
+      ]
     },
     {
       "path": "test/architecture/alltcas_idea_feature_contract_models_test.dart",
@@ -45267,11 +46142,18 @@
       "lines": 250,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full250 lines read. Exact20persisted runtime names/44ordinal/8domain and collection defensive copy plus unmodifiable mutation checks. Const constructor fixture deeplyconst; noinvalidsemantic factory test, validating means freeze only.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          250
+        ]
+      ]
     },
     {
       "path": "test/architecture/alltcas_idea_feature_contract_test.dart",
@@ -45281,11 +46163,18 @@
       "lines": 817,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full817 lines read. Exact44 names/purposes/domains/coveragebaseline/provenance/dependencyDAG/profilematrix/20runtimeentry mapping and immutable collections. Actual evidenceEligibilityV1 enum and every7x11decision parity checks resolve descriptive matrix divergence concern for currentruntime. Source-string constructor/sealed-policy guard only structural; no arbitraryhistorical profile semantic hash binding, installedfeature delivery or44behavioral proof.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          817
+        ]
+      ]
     },
     {
       "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
@@ -45554,11 +46443,18 @@
       "lines": 149,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full149 lines read. Source XML string checks main/profile/release no cleartext true, debug config permits via network policy and no duplicate activity/permissions. Missingoptionalsets yield empty and pass, no XML/mergedmanifest parser or native HTTP proving Dartallowlist coversplugins.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          149
+        ]
+      ]
     },
     {
       "path": "test/config/app_config_test.dart",
@@ -45589,11 +46485,18 @@
       "lines": 94,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full94 lines read. Root-resolving raw pubspec regex absent9/retained18 dependency names. No YAML sections/versions/transitive/plugin-platform viability or actual importreachability oracle.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          94
+        ]
+      ]
     },
     {
       "path": "test/config/m3_theme_test.dart",
@@ -53921,11 +54824,18 @@
       "lines": 214,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full214 lines read. Transaction rollback sentinel with catalog exact read policy/RLS checks and real SET ROLE anon SELECT/INSERT/UPDATE/DELETE, authenticated INSERT only. Restrictive false predicates not checked directly nor authenticated read/update/delete/other-bucket behavior; postgres sentinel bypass differs service-role HTTP. No execution or external mutation.",
+      "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
+      "readRanges": [
+        [
+          1,
+          214
+        ]
+      ]
     },
     {
       "path": "test/seed_db_script.dart",
@@ -53991,11 +54901,18 @@
       "lines": 49,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full49 lines. Actual local reading B2 coverage/revision assertions; voice legacy adapter reports success/engine from stub implementation, no audio or provider request oracle. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          49
+        ]
+      ]
     },
     {
       "path": "test/services/apriori_error_miner_service_test.dart",
@@ -54005,11 +54922,18 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full29 lines. Empty and four-session synthetic support/confidence fixture checks first directed rule only; no duplicates/ties/threshold invalidity or production telemetry proof. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          29
+        ]
+      ]
     },
     {
       "path": "test/services/associative_memory_test.dart",
@@ -54019,11 +54943,18 @@
       "lines": 77,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full77 lines. In-memory legacy repository user+curated retrieval and widget save callback; no durable owner-fenced canonical adapter/restart or blank/disposed dialog cases. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          77
+        ]
+      ]
     },
     {
       "path": "test/services/background_audio_player_service_test.dart",
@@ -54075,11 +55006,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full24 lines. Legacy literals level/category/tag/Thai search examples; not packaged canonical CEFR catalog/editorial coverage. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "test/services/cognitive_attention_analyzer_service_test.dart",
@@ -54089,11 +55027,18 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full31 lines. Two synthetic dwell values850/250 assert heuristic score and Thai labels; not measured attention/cognitive validity, exact600 boundary absent. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ]
     },
     {
       "path": "test/services/collocation_service_test.dart",
@@ -54103,11 +55048,18 @@
       "lines": 14,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full14 lines. Known decision phrase and unknownword nonempty fallback; nonempty does not prove grammatical/editorial correctness. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "test/services/crisp_dm_analytics_service_test.dart",
@@ -54117,11 +55069,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full24 lines. Synthetic confusion matrix rounded metrics and six stage names only; no zero/invalid counts or validated SRS performance. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "test/services/custom_wordbook_importer_test.dart",
@@ -54152,11 +55111,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full30 lines. Synthetic100-item counts70/15/15 plus empty; no overlap/content identity/reproducibility/learner isolation oracle. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "test/services/dynamic_story_contextualizer_service_test.dart",
@@ -54166,11 +55132,18 @@
       "lines": 22,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full22 lines. Known template metadata/target inclusion and unknown fallback substring; no target grammar/CEFR validity or model generation proof. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          22
+        ]
+      ]
     },
     {
       "path": "test/services/ghost_model_trainer_service_test.dart",
@@ -54180,11 +55153,18 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full27 lines. Synthetic100 logs checks positive average/exact0.5 accuracy/intervalfloor/nonnegativeMAE/string summary; no independent predictions/heldout leakage or model training quality verification. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "test/services/ghost_shadow_duel_service_test.dart",
@@ -54194,11 +55174,18 @@
       "lines": 47,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full47 lines. Fixed snapshot verifies HP/interval/weakword and correct fastbonus/incorrect nohit; no extreme/NaN/empty or durable gameplay evidence. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ]
     },
     {
       "path": "test/services/guest_session_service_test.dart",
@@ -54250,11 +55237,18 @@
       "lines": 34,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full34 lines. Three handpicked points expected one per persona; no clustering convergence/centroid/objective/order/empty oracle. Does not validate scientific KMeans claim. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          34
+        ]
+      ]
     },
     {
       "path": "test/services/lexical_diversity_evaluator_service_test.dart",
@@ -54264,11 +55258,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines. Five unique and five repeated ASCII tokens verify raw TTR/labels; no Unicode/punctuation/case/empty boundary. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "test/services/local_reading_catalog_test.dart",
@@ -54278,11 +55279,18 @@
       "lines": 42,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full42 lines. Six distinct fixed passages >45words/reflection, unknownlevelthrows, adapter fallback stableID and actualbook coverage. No editorial CEFR suitability or all targetedword boundaries. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "test/services/local_user_progress_store_test.dart",
@@ -54292,11 +55300,18 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full59 lines. Mock SharedPreferences sequential level/streak/worddedup/SRSJSON/clear behavior, no physical restart/owner isolation/concurrent mutation/damaged storage. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ]
     },
     {
       "path": "test/services/object_vocabulary_database_test.dart",
@@ -54369,11 +55384,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines. Synthetic350ms/1800ms assert fixedlabels andscores; no measured fluency/accuracy validity or invalidtime inputs. Read-only oracle review; no execution.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "test/services/research_experiment_test.dart",
@@ -54733,11 +55755,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full24 lines read. Real50ms delay lowerbound40 and fixed hesitation thresholds, no stop-before-start/restart/monotonic drift or exactthreshold behavior; walltime-sensitive unit oracle.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "test/voice/bundled_voice_asset_provider_test.dart",
@@ -55391,11 +56420,18 @@
       "lines": 41,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full41 lines read. Stateful parent UK choice updates callback plus labels; no actual voice/accent availability or persistence.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          41
+        ]
+      ]
     },
     {
       "path": "test/widgets/cefr_collocation_tree_widget_test.dart",
@@ -55405,11 +56441,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines read. Provided root/level/two collocation strings rendered; no overflow/accessibility or lexical validity.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "test/widgets/gentle_streak_card_test.dart",
@@ -55440,11 +56483,18 @@
       "lines": 20,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full20 lines read. Only widget/any CustomPaint presence; Scaffold itself may supply paints, no waveform geometry/amplitude range/audio pipeline oracle.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          20
+        ]
+      ]
     },
     {
       "path": "test/widgets/local_study_datetime_field_test.dart",
@@ -55538,11 +56588,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full26 lines read. Currentdate input title/28 tooltips only; no datebucket/color/value correctness or timezone boundary.",
+      "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "test/widgets/study_time_picker_test.dart",
@@ -55804,11 +56861,18 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full4 lines read. Canonical localpreview explicitlylearningtrue/cloudfalse stringdefines; no research flag or installedstateproof.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          4
+        ]
+      ]
     },
     {
       "path": "tool/cli/run-adventure-performance-profile.ps1",
@@ -55909,11 +56973,18 @@
       "lines": 74,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read in focused untruncatedoutput. Mainmanifest regex and localassetlinks/fingerprint/hostedverifier source existence, not mergedrelease manifest/native app-link association. Bothdomain checks are source strings notHTTP. No execution.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          74
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/android-release-provenance.tests.ps1",
@@ -55951,11 +57022,18 @@
       "lines": 285,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read with focused remainder200-end to recover outputtruncation. Regex/source presence enforces actions/toolversions/triggers/CPUgroups and no secretpatterns; global frozen count not percommand and permissioncontainsread not exclusivity. Does not runworkflow, check eachPowerShell exit propagation or parseYAML/schema. No execution.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          285
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/dependabot-config.tests.ps1",
@@ -55965,11 +57043,18 @@
       "lines": 58,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Regex checks schema version, nine ecosystem/directory presence and forbidden ownership/registry keys; does not parse YAML or validate grouping update-types/schedule. Existing config group token concern remains unverified; no execution.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          58
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/firebase-seed-security.tests.ps1",
@@ -56028,11 +57113,18 @@
       "lines": 100,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Regex counts exactroot1/voice8 exceptions and immutableexpiry2026-09-11 (already beforecurrentdate), assertsoptionalGPU sourcegroups/rationale docs plus scoped6lock gate calls. No currentclockexpiry assertion/advisoryvalidation; comments/strings not actualdependencyreachability. Sourceinspection only, no scanner execution.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          100
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/osv-pr-workflow.tests.ps1",
@@ -56042,11 +57134,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Source regex triggerbranchcount/3knownpermissions and pinnedreusableworkflow. Permissioncount counts onlyknownnames so extra grants couldpass; noYAML/externalworkflow runtimeproof, no invocation.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/osv-scheduled-workflow.tests.ps1",
@@ -56056,11 +57155,18 @@
       "lines": 40,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Source regex fixedweeklyUTCcron andknownread/write grants/pin; no extra-permission exclusion or reusablebehavior verification. No scheduling/workflow invocation.",
+      "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
+      "readRanges": [
+        [
+          1,
+          40
+        ]
+      ]
     },
     {
       "path": "tool/cli/tests/package-field-release.tests.ps1",
@@ -56525,11 +57631,18 @@
       "lines": 387,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read in1-290/remainder. DeterministicJSON/Markdown sorts setfields and IDs, checklineendingnormalizeCRLF/CRonly, writesUTF8flush. Same-revision hashdrift or malformed prioridentity blocks both outputs; differentversion arbitrarystringhash permits write and twofiles written sequentially without rollback. Currenttrustedcatalog no untrustedMarkdownpath; no regeneration performed.",
+      "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
+      "readRanges": [
+        [
+          1,
+          387
+        ]
+      ]
     },
     {
       "path": "tool/final_test_plan/generate_final_test_plan.dart",
@@ -56903,11 +58016,18 @@
       "lines": 38,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full38 lines read. Flutter build base placeholder, UTF8 LexiQuest metadata/icons/manifest and asynchronous bootstrap script. No inline cloud code, CSP/offline policy or runtime feature proof here.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ]
     },
     {
       "path": "web/manifest.json",
@@ -56917,11 +58037,18 @@
       "lines": 35,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Template standalone PWA metadata, portraitprimary, four192/512maskableicon references; no offlinecache or browsercapability guarantee.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          35
+        ]
+      ]
     },
     {
       "path": "windows/.gitignore",
@@ -56931,11 +58058,18 @@
       "lines": 17,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full17 lines read. Ephemeral, VisualStudio user/build/cache ignores with directory exception; no executable behavior.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          17
+        ]
+      ]
     },
     {
       "path": "windows/CMakeLists.txt",
@@ -56945,11 +58079,18 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full109 lines read. CMake3.14/C++17 Unicode warnings-as-errors, profile release flags, Flutter and runner/plugin inclusion. Install next to executable, asset directory removal/re-copy and native assets/AOT config selection. No configure/build/install run.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          109
+        ]
+      ]
     },
     {
       "path": "windows/flutter/CMakeLists.txt",
@@ -56959,11 +58100,18 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full109 lines read. Ephemeral SDK config and C++ wrappers, fallback windows-x64, Flutter DLL import interface and static wrapper libraries. Symbolic phony output drives tool_backend.bat per config; no actual SDK ABI or packaged library verification.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          109
+        ]
+      ]
     },
     {
       "path": "windows/flutter/generated_plugin_registrant.cc",
@@ -56973,11 +58121,18 @@
       "lines": 50,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full50 lines read. Thirteen native registrars match generated CMake list including Firebase/Auth/AppCheck/TTS/speech/record/links. No Android export/storage custom channels. Source parity only, generation/dependency platform metadata pending.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          50
+        ]
+      ]
     },
     {
       "path": "windows/flutter/generated_plugin_registrant.h",
@@ -56987,11 +58142,18 @@
       "lines": 15,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full15 lines read. Guarded Flutter registry function declaration matches implementation.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "windows/flutter/generated_plugins.cmake",
@@ -57001,11 +58163,18 @@
       "lines": 39,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full39 lines read. Thirteen native entries match registrant and three FFI entries LiteRT/local notifications/JNI; links native target and collects bundled libraries via ephemeral symlinks. Generated reproducibility not executed.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          39
+        ]
+      ]
     },
     {
       "path": "windows/runner/CMakeLists.txt",
@@ -57015,11 +58184,18 @@
       "lines": 40,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full40 lines read. Four native source files plus generated registrar/resource/manifest, Flutter version definitions and NOMINMAX; flutter wrapper and dwmapi links. No release signing/provenance gate in this target.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          40
+        ]
+      ]
     },
     {
       "path": "windows/runner/Runner.rc",
@@ -57029,11 +58205,18 @@
       "lines": 121,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full121 lines read. UTF8 resource source, icon101, Flutter-derived version with1.0.0 fallback, legacy company/product/copyright strings; no signature or source/model provenance.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          121
+        ]
+      ]
     },
     {
       "path": "windows/runner/flutter_window.cpp",
@@ -57043,11 +58226,18 @@
       "lines": 71,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full71 lines read. Controller checked at create, plugin registration before child attach, first-frame show+forced redraw. Controller reset on destroy; font-change branch dereferences without same null guard used for plugin message dispatch. Native timing reproduction/platform support required before promotion. No execution.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          71
+        ]
+      ]
     },
     {
       "path": "windows/runner/flutter_window.h",
@@ -57057,11 +58247,18 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full33 lines read. Owns copied DartProject and unique controller, virtual lifecycle/message overrides; no extra export/storage channels.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          33
+        ]
+      ]
     },
     {
       "path": "windows/runner/main.cpp",
@@ -57071,11 +58268,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full43 lines read. STA COM then data-relative project with UTF8 args, 1280x720 legacy title, quit on close. GetMessage loop treats -1 as truthy and early create failure skips COM uninitialize; native failure behavior not tested here.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "windows/runner/resource.h",
@@ -57085,11 +58289,18 @@
       "lines": 16,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full16 lines read. Icon101 matches resource and win32 load, designer next IDs only.",
+      "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
+      "readRanges": [
+        [
+          1,
+          16
+        ]
+      ]
     },
     {
       "path": "windows/runner/resources/app_icon.ico",
@@ -57113,11 +58324,18 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. PerMonitorV2 DPI and Windows10/11 compatibility declaration, no elevation requested.",
+      "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "windows/runner/utils.cpp",
@@ -57127,11 +58345,18 @@
       "lines": 65,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full65 lines read. Frees CommandLineToArgvW memory, strict UTF16 conversion; first conversion zero minus1 assigned unsigned can become UINT_MAX and evade max_size guard on64bit, attempt4GiB allocation on malformed UTF16. Source candidate pending native oracle; console freopen checks inverted success convention. No native execution.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          65
+        ]
+      ]
     },
     {
       "path": "windows/runner/utils.h",
@@ -57141,11 +58366,18 @@
       "lines": 19,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full19 lines read. Console and UTF16/argv conversion interfaces document empty on failure, source implementation failure-path caveat recorded separately.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          19
+        ]
+      ]
     },
     {
       "path": "windows/runner/win32_window.cpp",
@@ -57155,11 +58387,18 @@
       "lines": 288,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full288 lines read. Window-class singleton/global count, DPI scale/create, GWLP_USERDATA routing, resize/focus/theme-registry handling, recursive destroy made handle-null first on WM_DESTROY. Registration/API return values largely ignored, base DefWindowProc uses stored handle; singleton intentionally lifetime-long. No installed/native lifecycle validation.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          288
+        ]
+      ]
     },
     {
       "path": "windows/runner/win32_window.h",
@@ -57169,11 +58408,18 @@
       "lines": 102,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-10",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full102 lines read. Virtual base owns HWNDs plus quit flag, unsigned origin/size, friend WndProc registrar; initial null handles and public create/show/destroy interfaces. No product persistence behavior.",
+      "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
+      "readRanges": [
+        [
+          1,
+          102
+        ]
+      ]
     }
   ],
   "reviewProgress": {
