@@ -38785,11 +38785,18 @@
       "lines": 672,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full672 lines read in contiguous1-335/336-672. Runtime-owned provider/disposer, owner/activity/provider epochs and serialized control tail; public timeout bounded while raw stop tail remains fail-closed. Takeover/release invalidate stale sessions. Natural completion required for speakUntilCompleted; missing signal triggers stop/unsupported; cancellation/failure reports after confirmed stop or cleanupIncomplete. Ordinary provider failures assume handler cleanup, pending route/player cross-check. Dispose bounds tail/disposer/pending calls separately and settles completion waits. No execution or physical silence proof.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          672
+        ]
+      ]
     },
     {
       "path": "lib/features/voice/presentation/route_voice_session_mixin.dart",
@@ -41215,11 +41222,18 @@
       "lines": 80,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-06",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Static persona-to-two-quest templates with advertised rewards but no durable grant; no production caller in lib symbol search. Dormant alternate DailyQuest model, canonical quest system separately reviewed. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          80
+        ]
+      ]
     },
     {
       "path": "lib/services/adaptive_decay_scheduler.dart",
@@ -41250,11 +41264,18 @@
       "lines": 50,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Local curated catalog fallback always true regardless offline flag, intersects requested words with actual English passage tokens; no remote AI generation. No production caller in lib search. Returned targets preserve original requested spelling/case even normalized membership. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          50
+        ]
+      ]
     },
     {
       "path": "lib/services/anki_dictionary_exporter_service.dart",
@@ -41285,11 +41306,18 @@
       "lines": 76,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pairwise session error cooccurrence with duplicate removal and directed counts; delimiter-concatenated pair identity collides for words containing double colon, tie order depends input, thresholds/numeric bounds unchecked. No production caller in lib search; dormant analytical helper, not run. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          76
+        ]
+      ]
     },
     {
       "path": "lib/services/associative_memory_service.dart",
@@ -41299,11 +41327,18 @@
       "lines": 78,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy local repository user association plus two-word curated system prompts; private user creation uses millisecond-only ID and separate wall timestamps without input/active-owner checks here. No production caller in lib search; actual reading association path is separate. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          78
+        ]
+      ]
     },
     {
       "path": "lib/services/background_audio_player_service.dart",
@@ -41313,11 +41348,18 @@
       "lines": 216,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Opaque current VoiceSession, epoch checks before/after speak and cancellable delay, stop joins run despite voice-stop failure then rethrows; dispose attempts release even after stop failure, repeated lifecycle calls share futures. Start during stop chains retry and active run deduplicates. Outer playlist list immutable but inner maps retained; callback errors propagate while speech errors mapped. Live caller SmartAudioPlaylist passes route-owned session; no microphone/global voice authority. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          216
+        ]
+      ]
     },
     {
       "path": "lib/services/brahmawong_research_analytics_service.dart",
@@ -41369,11 +41411,18 @@
       "lines": 48,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fixed dwell/1000 clamp and600ms threshold, clinical-sounding processing/load copy without actual measurement validation, negative times silently0. No production caller in lib search; no clinical or statistical inference made. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          48
+        ]
+      ]
     },
     {
       "path": "lib/services/collocation_service.dart",
@@ -41383,11 +41432,18 @@
       "lines": 32,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Three fixed word entries and templated unknown-word strings, normalization trim/lower. Default text is generic scaffold rather than validated collocation. No production caller in lib search. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          32
+        ]
+      ]
     },
     {
       "path": "lib/services/cosine_similarity_evaluator_service.dart",
@@ -41397,11 +41453,18 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Research-only ASCII alphanumeric term-frequency cosine, empty/non-ASCII-only maps0; no semantic embedding or meaningful multilingual evaluation. No production caller in lib search and no report executed. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ]
     },
     {
       "path": "lib/services/crisp_dm_analytics_service.dart",
@@ -41411,11 +41474,18 @@
       "lines": 69,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Static six CRISP-DM stage names plus binary confusion-count ratios rounded3places; negative counts unvalidated and missing denominator0 treated0. No production caller in lib search, dormant thesis helper type dependency only; not camera trained model evidence. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          69
+        ]
+      ]
     },
     {
       "path": "lib/services/custom_wordbook_importer.dart",
@@ -41425,11 +41495,18 @@
       "lines": 64,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy parser coerces JSON values and swallows malformed structure, CSV comma split cannot preserve quoted fields/newlines and header only first physical line. Actual caller WordbookImportScreen reviewed earlier previews parsed data; production durable import contract/route reachability requires cross-check before promoting parser behavior. Source review only. Caller reachability cross-check: WordbookImportScreen itself has no production caller in lib symbol search; dormant path, no new production finding.",
+      "sourceReadDate": "2026-09-14T01:46:36.877705+00:00",
+      "readRanges": [
+        [
+          1,
+          64
+        ]
+      ]
     },
     {
       "path": "lib/services/dataset_partitioning_service.dart",
@@ -41439,11 +41516,18 @@
       "lines": 58,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-07",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Sort copy by timestamp and rounded70/85percent boundaries, mutable returned lists and no group/dedup/tie isolation. Not current camera group-split pipeline; no production caller in lib search. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          58
+        ]
+      ]
     },
     {
       "path": "lib/services/dynamic_story_contextualizer_service.dart",
@@ -41453,11 +41537,18 @@
       "lines": 60,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Two fixed story examples plus generic interpolated fallback taggedB2 without validated linguistic grading. No model call, no production caller in lib search, no generated/published content claim. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          60
+        ]
+      ]
     },
     {
       "path": "lib/services/ghost_model_trainer_service.dart",
@@ -41467,11 +41558,18 @@
       "lines": 85,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Arithmetic train means, validation mean blend/clamp for interval and testMAE against unblended mean; missing training syntheticdefault80percent/2500ms and missingtestMAE0 are not measured accuracy. No production caller in lib search; not production Ghost history or actual ML training evidence. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          85
+        ]
+      ]
     },
     {
       "path": "lib/services/ghost_shadow_duel_service.dart",
@@ -41481,11 +41579,18 @@
       "lines": 96,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure opponent HP/interval clamp and correct-answer15/25damage depending speed versus observed snapshot; no persistence/reward authority. Lists retain snapshot reference and generic API lacks finite/negative guard, but actual Ghost screen validates finite positive observed average, typed progress and Stopwatch answer latency before use. Game feedback not learner mastery proof. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          96
+        ]
+      ]
     },
     {
       "path": "lib/services/guest_session_service.dart",
@@ -41495,11 +41600,18 @@
       "lines": 282,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Actual bootstrap local-first guest starts before optional background Firebase binding, typed sanitized provider mapping, bounded5 attempts15s jitter and shared binding future. Dispose races provider/retry futures then drains already-started upgrade, suppresses bound callback. No provider timeout while live but localstart returns; old-owner upgrade revalidates in repository. Caller-supplied onOwnerBound throw is caught by outer retry and could reattempt provider, actual callback must be nonthrowing. No runtime execution. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          282
+        ]
+      ]
     },
     {
       "path": "lib/services/interleaved_srs_scheduler.dart",
@@ -41530,11 +41642,18 @@
       "lines": 72,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Despite class name uses fixed accuracy/time thresholds, no centroids/training/K-means; sessionMinutes ignored. Three mutable groups, no numeric validation. No production caller in lib search; dormant not used to certify AI personalization. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          72
+        ]
+      ]
     },
     {
       "path": "lib/services/lexical_diversity_evaluator_service.dart",
@@ -41544,11 +41663,18 @@
       "lines": 68,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Whitespace/ASCII-word-regex raw TTR with punctuation removal joining tokens, fixed labels ignoring text-length bias and empty0. No production caller in lib search; no learner proficiency/statistical claim. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          68
+        ]
+      ]
     },
     {
       "path": "lib/services/local_reading_catalog.dart",
@@ -41579,11 +41705,18 @@
       "lines": 87,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy global SharedPreferences keys lack owner scope, nonatomic read-modify-write counters/mastered set, invalid JSON fallbackempty and ignore write booleans for some operations. No production caller in lib symbol search; not canonical durable SRS/streak authority. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          87
+        ]
+      ]
     },
     {
       "path": "lib/services/object_vocabulary_database.dart",
@@ -41670,11 +41803,18 @@
       "lines": 50,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fixed latency thresholds including negative input rating100, fluency/accuracy labels not based on acoustic correctness. No production caller in lib search; dormant and not voice pronunciation evidence. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          50
+        ]
+      ]
     },
     {
       "path": "lib/services/research_data_exporter_service.dart",
@@ -41831,11 +41971,18 @@
       "lines": 98,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-06",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Explicitly deprecated/quarantined in-memory alternate quest model, default invented streak/freeze, mutable quest objects escape unmodifiable outer list, negative progress accepted. No production caller in lib symbol search; canonical QuestUseCases/Drift authority separate. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          98
+        ]
+      ]
     },
     {
       "path": "lib/services/suggestion_service.dart",
@@ -41845,11 +41992,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. One-line blank placeholder, no implementation or successful suggestion evidence. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/services/thesis_appendix_exporter_service.dart",
@@ -41880,11 +42034,18 @@
       "lines": 36,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Stub reports success/native fallback without invoking playback; no production caller in lib symbol search. Actual route voice uses VoiceSession, never treat this helper as physical audio or fallback evidence. Source review only.",
+      "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
+      "readRanges": [
+        [
+          1,
+          36
+        ]
+      ]
     },
     {
       "path": "lib/services/weakness_clinic_service.dart",
@@ -41992,11 +42153,18 @@
       "lines": 76,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full76 lines read. Capability/privacy guard, sanitized lowercased voice/content filename may collide; ignores actual text/language/speed, no hash validation despite verified comment. Factory does not use this provider. Asset bytes copied via VoiceAudio, errors sanitized. No production reachability or execution inferred.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          76
+        ]
+      ]
     },
     {
       "path": "lib/voice/file_standard_voice_pack_store.dart",
@@ -42006,11 +42174,18 @@
       "lines": 61,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full61 lines read. Strict pack ID/version before local paths; load parses manifest and checks matching ID/version/all file sizes/streamed hashes. Corrupt active marker removed, returns null. Root/marker reads and invalid-version deletion outside catch may throw; filesystem failure inside catch deletion can escape. No symlink/concurrent marker replacement protection. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          61
+        ]
+      ]
     },
     {
       "path": "lib/voice/firestore_voice_telemetry.dart",
@@ -42020,11 +42195,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full30 lines read. Serializes fixed event contract then injected writer or collection add, swallows all errors. No consent/owner gating internally; factory defaults Noop and caller wiring controls activation. No remote write/execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "lib/voice/http_standard_voice_pack_source.dart",
@@ -42034,11 +42216,18 @@
       "lines": 67,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full67 lines read. HTTPS/nonnegative range and pre-cancel, header timeout, exact206 start parse. Returns stream to manager for bounded body, HTTP default redirects and invalid206 stream disposal require downstream review; send timeout does not abort underlying request. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          67
+        ]
+      ]
     },
     {
       "path": "lib/voice/installed_voice_pack_provider.dart",
@@ -42048,11 +42237,18 @@
       "lines": 68,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full68 lines read. Requires standard capability/privacy plus content ID and normalized text hash, file length and SHA checked each synthesis; reports immutable pack provenance. Does not compare request language/voice/speed against pack metadata; no live factory caller supplies installed pack at current bootstrap2068. Keep mismatch/silent default composition observations unpromoted pending package contract. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          68
+        ]
+      ]
     },
     {
       "path": "lib/voice/native_tts_provider.dart",
@@ -42062,11 +42258,18 @@
       "lines": 299,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full299 lines read. Lazy FlutterTts, explicit installed/nonnetwork inventory and acknowledged selection for localOnly. Deterministic voice selection, language/speed/volume/pitch applied. Plugin terminal callbacks lack utterance IDs: after interruption natural-completion trust permanently withheld until adapter replacement, ordinary speech remains. Stop failure settles completion with failure, native failures sanitized. Plugin speak return value ignored, adapter acknowledgment not acoustic proof. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          299
+        ]
+      ]
     },
     {
       "path": "lib/voice/native_voice_route_handler.dart",
@@ -42076,11 +42279,18 @@
       "lines": 39,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full39 lines read. Native standard/dynamic noncached descriptor, cancellation checked before and after provider acknowledgment; no native abort token propagation. Stop delegated. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          39
+        ]
+      ]
     },
     {
       "path": "lib/voice/omni_voice_provider.dart",
@@ -42090,11 +42300,18 @@
       "lines": 283,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full283 lines read. Explicit rollback route; dynamic quota/circuit and whole-operation timeout, single401refresh. Body buffered unbounded with no cancellation, nonempty engine header accepted but actual engine always OmniVoice. Factory test deliberately returns VoxCPM header for Omni rollback; contract mismatch requires backend ownership review before finding. Fixed failure codes, sanitized details. No execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          283
+        ]
+      ]
     },
     {
       "path": "lib/voice/platform_filesystem_capacity.dart",
@@ -42104,11 +42321,18 @@
       "lines": 22,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full22 lines read. Absolute path method-channel request, rejects absent/negative result. Capacity native implementation/platform tests separate; no device query executed.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          22
+        ]
+      ]
     },
     {
       "path": "lib/voice/reading_voice_enrichment.dart",
@@ -42118,11 +42342,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full one-line blank file read. No implementation or runtime capability.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/voice/standard_voice_pack_download_manager.dart",
@@ -42132,11 +42363,18 @@
       "lines": 731,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full731 lines read in contiguous1-260/261-510/511-end. Manifest fingerprint dedup and per-pack serial install/remove, disposal cancels active/queued and bounds wait. Exact storage includes manifest/marker/receipt/reserve. Valid existing directory reused; conflicting same-version fingerprint rejected; checksum partial cleaned, network partial resumable. Per-body byte/inactivity/total limits and bounded iterator cancel, flush/close remain filesystem awaits. Real PCM chunk validator and no-link rooted file checks. Activation deletes old marker then renames new (crash gap), cancellation not rechecked after final rename/activation. HTTP bad-status stream rejected before iterator disposal and parent directory create precedes resolved descendant validation; investigate oracles. minimumAppVersion enforced elsewhere if at all. No execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          731
+        ]
+      ]
     },
     {
       "path": "lib/voice/standard_voice_pack_manifest.dart",
@@ -42146,11 +42384,18 @@
       "lines": 227,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full227 lines read. Immutable max2000files/256MiB, strict ID/version/locale/license/HTTPS/UTC, sum bytes, unique content/path(case insensitive), hashes and raw relative traversal checks. Unknown keys tolerated. Encoded URL segments may normalize differently from raw filesystem names; schemaVersion1.0 passes equality then int cast rejects generically. Parsing does not enforce running minimumAppVersion itself, manager pending. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          227
+        ]
+      ]
     },
     {
       "path": "lib/voice/synthesized_voice_route_handler.dart",
@@ -42160,11 +42405,18 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full142 lines read. Cache eligible only standard descriptor and request; key includes actual engine/model and validates provenance before insertion. Cancellation checked after each await, synthesis not aborted. Playback future propagated. No explicit stop on player start failure or fallback boundary, investigate actual adapter failure semantics and tests. Mirror never cached. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          142
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_audio_cache.dart",
@@ -42174,11 +42426,18 @@
       "lines": 163,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full163 lines read. Standard-only immutable request/engine/model key, positive runtime size constraints, synchronous async-map operations with defensive byte copies, true get-refresh LRU and bounded entries/bytes. Oversize replacement removes previous key then discards new payload. No disk persistence or participant cache. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          163
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_audio_player.dart",
@@ -42188,11 +42447,18 @@
       "lines": 229,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full229 lines read. Lazy injected plugin, operation generation and active completion subscription, cancellation/error settlements before stream cancellation. Stop/dispose retire in finally even if platform throws. Play failure retires subscription but does not explicitly stop native sound; cleanup/fallback uncertainty remains for partially successful platform start. Byte copies and empty validation. Completion callback is plugin event not acoustic proof. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          229
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_auth_token_provider.dart",
@@ -42202,11 +42468,18 @@
       "lines": 62,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full62 lines read. Lazy Firebase currentUser snapshot, forceRefresh forwarded; missing/blank/reader failures sanitized. No owner recheck after async token retrieval, surrounding session epochs responsible for stale playback. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          62
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_capability.dart",
@@ -42216,11 +42489,18 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full15 lines read. Five capability values and two privacy scopes; STT/pronunciation excluded from synthesis request validation. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_mirror_gateway.dart",
@@ -42230,11 +42510,18 @@
       "lines": 357,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full357 lines read. Separate authenticated enroll/heartbeat/speech/delete, single401refresh each,204/404idempotent delete. Timeout per send/body excludes auth and whole retry, full Response buffering unbounded. Lease strict integer fields but no cap/order/current-time check. WAV nonempty/MIME/metadata only, hardcoded mirror engine ignores actual header, no PCM validation. Enroll input not byte-bounded here despite comment; recorder applies post-read bound. Fixed taxonomy sanitizes provider detail. No remote calls.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          357
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_mirror_recorder.dart",
@@ -42244,11 +42531,18 @@
       "lines": 309,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full309 lines read. UUID cache WAV,10sauto-stop, permission and size taxonomy, deletes on ordinary stop/cancel/errors with next-start purge intended. No pending-start epoch/lock: cancel/dispose during permission/start can allow late session; multiple starts overlap. Reads entirefile before2MiB check; deletion failure swallowed yet stop returns audio, purge not proven called, automatic stop discards returned bytes. These are dormant component risks: no production caller found; real microphone never used. No execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          309
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_mirror_session_controller.dart",
@@ -42258,11 +42552,18 @@
       "lines": 234,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full234 lines read. Separate consent, absolute expiry, success-only quota and best-effort session deletion. Unfenced enroll/heartbeat completions can restore session after withdraw/dispose; synth quota checked beforeawait charged after, concurrent calls exceed client quota and late audio returned after withdrawal. Background cleanup requires another background callback at5min and resumed resets start without checking elapsed; fire-and-forget cleanup errors unobserved. Account change ends session but retains consent. Tests only serial happy/control scenarios. Sole registration factory; no live enrollment/lifecycle host callers found, so dormant risks recorded without asserting rollout. No execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          234
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_models.dart",
@@ -42272,11 +42573,18 @@
       "lines": 198,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full198 lines read. Private validated request normalizes whitespace/en-th, bounds text1..500 UTF16 and finite speed.5..1.5; localOnly forbids research/mirror/transient, research requires assigned engine and synthesis excludes STT/pronunciation. Mirror iff transient. IDs nonempty but no upper bound. Playback acknowledgment distinct from optional natural completion. No runtime test.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          198
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_orchestrator.dart",
@@ -42286,11 +42594,18 @@
       "lines": 249,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full249 lines read. Per-request generation, stops handlers before one policy read, cross-checks descriptor engine/capability/privacy and reconstructs request per fallback so transient mirror does not enter standard cache. Typed allowlisted fallback only, research strict. Natural completion/provenance forwarded, telemetry best effort. Unpromoted concern: cancelled stop-all continues remaining stops, direct concurrent request could stop newer playback; actual facade serial control and cancellation tests require cross-check. Failed handler cleanup before fallback not explicit. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          249
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_policy.dart",
@@ -42300,11 +42615,18 @@
       "lines": 346,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full346 lines read in contiguous1-180/181-346. Mirror live consent/session overlay on fixed deployment context. Standard offline-pack/remote/native; localOnly excludes remote and dynamic pack. Mirror consent/session required before permitted fallback, research exact assigned engine. Actual factory online means configured endpoint, not connectivity probe. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          346
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_provider.dart",
@@ -42314,11 +42636,18 @@
       "lines": 13,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full13 lines read. Provider-neutral speak/stop; managed extension dispose, natural completion not required by base interface. No physical sound claim.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_provider_descriptor.dart",
@@ -42328,11 +42657,18 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full33 lines read. Defensive immutable nonempty capability set; transient disallows standard cache. Capability/privacy pairing enforced by higher request/routing checks, not constructor. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          33
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_provider_registry.dart",
@@ -42342,11 +42678,18 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full29 lines read. Rejects empty registry and duplicate engine, immutable map/engine view. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          29
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_request_quota.dart",
@@ -42356,11 +42699,18 @@
       "lines": 47,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full47 lines read. Synchronous reservation before await charges failed attempts and finally decrements active; reset rejected during active work. Positive constructor checks are debug asserts; factory defaults positive but injectable configuration needs scrutiny. UTF16 character accounting. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_route_handler.dart",
@@ -42370,11 +42720,18 @@
       "lines": 40,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full40 lines read. Cooperative polling cancellation token and descriptor/speak/stop boundary; token does not imply network abort. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          40
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_service_factory.dart",
@@ -42384,11 +42741,18 @@
       "lines": 323,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full323 lines read. Config/client paired validation, lazy native and shared player/client ownership, default20requests4000chars1concurrent. Installed pack handler can be registered without remote config while default audio player is Noop, potentially silent offline pack success; verify bootstrap caller/injected player before finding. Configured endpoint supplies online policy, remote errors fallback. Mirror live controller and noncached descriptor. Managed disposal idempotent, bounded each cleanup and closes HTTP even after failure, typed cleanupIncomplete. No execution. Subsequent production search found sole caller bootstrap2068 passes only config/client, never installedVoicePack; silent no-config pack route not currently established as live, remains unpromoted.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          323
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_synthesis_provider.dart",
@@ -42398,11 +42762,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full30 lines read. Defensive byte copies in/out; sample rate/model provenance otherwise trusts provider. Handler checks engine identity. No execution.",
+      "sourceReadDate": "2026-09-14T01:51:42.561067+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "lib/voice/voice_telemetry.dart",
@@ -42412,11 +42783,18 @@
       "lines": 183,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full183 lines read. Closed scalar schema excludes source text/audio/error bodies, enforces nonnegative latency and fallback reason consistency, converts timestampUTC. Content IDs/type and provider request/model strings preserved verbatim; caller provenance constraints matter, privacy-safe claim not arbitrary-string sanitization. Success means acknowledgment, not natural playback end. No execution.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          183
+        ]
+      ]
     },
     {
       "path": "lib/voice/vox_cpm_mirror_provider.dart",
@@ -42426,11 +42804,18 @@
       "lines": 47,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full47 lines read. Only mirror/transient, noncached descriptor, forwards content/text/language to live controller. Does not enforce speed/voice (mirror fixed). No production enrollment caller found in features/runtime/screens. No activation or execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ]
     },
     {
       "path": "lib/voice/vox_cpm_standard_provider.dart",
@@ -42440,11 +42825,18 @@
       "lines": 250,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full250 lines read. Standard/dynamic only, dynamic synchronous quota, shared circuit breaker, outer request timeout includes auth/retry with single401refresh. Sanitized error taxonomy. HTTP Response.fromStream buffers body without byte ceiling and timeout does not abort; response engine header required nonempty but value discarded in favor of hardcoded VoxCPM enum, so handler provenance check cannot detect wrong-engine service. Request/body/header metadata trusted endpoint; tests/backend cross-check pending. No execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          250
+        ]
+      ]
     },
     {
       "path": "lib/widgets/accent_selector_widget.dart",
@@ -51542,11 +51934,18 @@
       "lines": 128,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full128lines read. Actual VoiceUseCases/session with immediate fake provider verifies playlist order, interruptible1min interitem delay, network failurecallback. Cancellation-named test injects network only, no stopfailure/releasefailure/concurrent restart or real playback. No execution.",
+      "sourceReadDate": "2026-09-14T01:46:36.877705+00:00",
+      "readRanges": [
+        [
+          1,
+          128
+        ]
+      ]
     },
     {
       "path": "test/services/brahmawong_research_analytics_service_test.dart",
@@ -51633,11 +52032,18 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full27lines read. Legacy parser one simple JSON plus unquoted CSV positive; no escaped quotes/multiline/malformed type or limit oracle. WordbookImportScreen has no production caller in lib search, separate from actual durable importer. No execution.",
+      "sourceReadDate": "2026-09-14T01:46:36.877705+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "test/services/dataset_partitioning_service_test.dart",
@@ -51703,11 +52109,18 @@
       "lines": 633,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full633lines read. Gateway typed/sanitized failures and invalid UID, local success within100ms despite unresolved provider, exact5attempt/4delay transient cap, permanent immediate stop, local/entrywrite failure no success. Deferred provider/retry disposal returns without later upgrade/callback, in-flight upgrade disposal drains before finish. All owner/entry/provider fakes; no actual auth cancellation, database owner-switch or jitter bounds. Initial pending-provider test leaves unresolved service but no active timer; no B18 execution.",
+      "sourceReadDate": "2026-09-14T01:46:36.877705+00:00",
+      "readRanges": [
+        [
+          1,
+          633
+        ]
+      ]
     },
     {
       "path": "test/services/interleaved_srs_scheduler_test.dart",
@@ -52431,11 +52844,18 @@
       "lines": 446,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full446 lines read. Immediate async gatewayfake tests serial consent/start/end/account/activity, absolute expiry, heartbeat call, successful sequential quotas, disposal and failed-delete local clear. Background test manually injects repeated paused callbacks rather than actual transition after elapsed time; no in-flight enroll/renew/synthesis retirement or concurrent quota, no gateway transport/server tests. Fake WAV arbitrary bytes intentionally. No runtime execution.",
+      "sourceReadDate": "2026-09-14T01:55:01.613587+00:00",
+      "readRanges": [
+        [
+          1,
+          446
+        ]
+      ]
     },
     {
       "path": "test/voice/voice_models_test.dart",
@@ -52557,11 +52977,18 @@
       "lines": 952,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read via contiguous1-230/231-570/571-end. SDK-independent HTTP/native/player fakes with real pipeline/VoiceUseCases, actual temp pack bytes and SHA corruption. LocalOnly proves zero HTTP/token reads plus installed/nonnetwork selection; same service positive remote control, malformed local proof fails. Quota fallback, timeout, exact-once disposal and bounded blocked native stop, consent denial. Every installed pack test injects player AND remote config, so no default no-config pack coverage. Bootstrap2068 supplies only config/client and currently no installed pack, narrowing silent-player concern to unused composition. No test execution or native sound proof.",
+      "sourceReadDate": "2026-09-14T01:52:48.081799+00:00",
+      "readRanges": [
+        [
+          1,
+          952
+        ]
+      ]
     },
     {
       "path": "test/voice/voice_telemetry_test.dart",
