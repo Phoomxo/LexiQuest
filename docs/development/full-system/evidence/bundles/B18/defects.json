@@ -170,6 +170,23 @@
       "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks. Include SRS via actual recordAnswer plus reopen, using the same real codec boundary and preserving immutable answer evidence/projection authority.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV12-01",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "test/features/research/research_sync_authorizer_test.dart",
+      "relatedFiles": [
+        "lib/features/sync/domain/research_sync.dart",
+        "lib/data/local/app_database.dart"
+      ],
+      "trigger": "Schema transport table includes integer27 but line867 accepts only24/25/26, after current schema and transport allowlist advanced to27.",
+      "expected": "Oracle accepts exactly supported integer schemas24/25/26/27 and rejects unsupported schemas and noninteger/coerced values.",
+      "actual": "research_sync.dart369 accepts27 and currentSchemaVersion is27; existing test requires SyncFailure for27. Static deterministic oracle mismatch; B18 test not run yet.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Run bounded targeted existing schema matrix to record RED; correct expected supported set to include27 and add28 plus string/floating27 negatives. Retain24 historical pin rejection in current-run authorizer and every malformed-type assertion. This is a stale oracle correction, not relaxing transport.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [

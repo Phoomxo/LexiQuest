@@ -37145,8 +37145,8 @@
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": "Full file read. Deeply immutable locale/options/items; exact Thai/English labels and bounded trimmed text; unique ordered option ordinals and item IDs per timepoint. Canonical JSON checksum and strict decoder. Scoring validates all responses, returns null for missing selected items, normalizes/reverses ordinal range and averages. No built-in questionnaire or psychometric validity inferred; no statistical execution.",
-      "sourceReadDate": "2026-09-14T01:22:04.117903+00:00",
+      "reviewNotes": "Full file read. Deeply immutable locale/options/items; exact Thai/English labels and bounded trimmed text; unique ordered option ordinals and globally unique item IDs across timepoints. Canonical JSON checksum and strict decoder. Scoring validates all responses, returns null for missing selected items, normalizes/reverses ordinal range and averages. No built-in questionnaire or psychometric validity inferred; no statistical execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
       "readRanges": [
         [
           1,
@@ -48206,11 +48206,18 @@
       "lines": 510,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full510 lines read. Real memory immutable assignment replay/conflict/owner-version isolation and invalid input no mutations; one actual file reopen with nullable DB finally cleanup verifies all assignment fields. Feature registry toggles tested separately from assignment repository so no implicit enrollment dependency shown. Outbox/consent race and migrated lineage covered separately. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:30:42.266561+00:00",
+      "readRanges": [
+        [
+          1,
+          510
+        ]
+      ]
     },
     {
       "path": "test/features/research/drift_motivation_measurement_repository_test.dart",
@@ -48241,11 +48248,18 @@
       "lines": 486,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full486 lines read. Real memory local consent/owner plus SDK-only fakes assert exact server path/Source.server and reject cache/pending/malformed fields, local/auth pre/post mutation and time rollback/expiry.20ms timeout plus late result cannot resurrect;1s outer bound. Fake factory getter is not live Firestore; no actual network proof or B18 execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          486
+        ]
+      ]
     },
     {
       "path": "test/features/research/measurement_opportunity_repository_test.dart",
@@ -48276,11 +48290,18 @@
       "lines": 877,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full877 lines read. Deep input/output immutability; globally unique item IDs across timepoints, UTF8-rune boundaries, strict keys/types/ordinal ordering, normalized unequal ranges/reverse/null missing vs true zero. Fixed independently labelled checksum, reordered maps invariant/list order significant, each pin changes checksum and malformed expected digest denied. Synthetic formula correctness not questionnaire validity. No statistics or B18 execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          877
+        ]
+      ]
     },
     {
       "path": "test/features/research/motivation_measurement_form_test.dart",
@@ -48332,11 +48353,18 @@
       "lines": 382,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full382 lines read. Fixed RFC6979 vectors and separately generated .NET-labelled UTF8 fixture, independent scalar/key malformed matrices with positive companion, immutable allowlist, bit flips and canonical base64/UTF16-surrogate aliases. Strong verifier oracles; comments about independent verification not rerun in B18. No current test execution or production issuer approval.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          382
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_participation_lifecycle_test.dart",
@@ -48346,11 +48374,18 @@
       "lines": 955,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full955 lines read. Real P256 verifier with deliberately synthetic private scalar1 signs renewal/revocation changes; fake receipts capture old state then callback to check second-round protection. Immutable pins/revisions, expiry/withdrawal/owner during await deny. Real consent suppression preserves signed/response/denominator evidence, exact research-only intents/leases, atomic trigger rollback, personal export after withdrawal and no permit resurrection after reaccept. Memory DB, not disk durability or real issuer. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          955
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_participation_panel_test.dart",
@@ -48381,11 +48416,18 @@
       "lines": 281,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full281 lines read. Synthetic signature/receipt doubles exercise exact denial reason for owner/assignment/protocol/revision/expiry/revocation and independent minor refs; positive active projection. Receipt-kind set cannot establish two-round call multiplicity; lifecycle tests separately exercise stale first receipt. No cryptographic execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          281
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_participation_screen_test.dart",
@@ -48416,11 +48458,18 @@
       "lines": 67,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full67 lines read. Exact signed canonical payload roundtrip, invalid object/type/schema/keys/UTC and bounded document, sanitized parser errors. Synthetic signature unchanged is transport not authority; multibyte boundary additionally tested UI. No execution.",
+      "sourceReadDate": "2026-09-14T01:29:24.393845+00:00",
+      "readRanges": [
+        [
+          1,
+          67
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_runtime_sync_integration_test.dart",
@@ -48500,11 +48549,20 @@
       "lines": 1707,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": null
+      "findingIDs": [
+        "B18-REV12-01"
+      ],
+      "reviewNotes": "Full1707 lines read. Real P256 with explicitly synthetic scalar1 issuer, seeded canonical facts and fake receipts. Pull-only exact server provenance or exact local prior wrapper allows historical refs after renewal; never grants new upload authority. Owner/gate/consent/assignment/permit read-set races, cutoff narrowing, current pins, typed response/neutral event/Pair purpose and zero total_changes checked. Schema matrix line867 stale:27 expected failure although actual transport allows27, recorded B18-REV12-01; correction must retain unsupported28/noninteger negatives and current-run historical pin refusal. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:30:42.266561+00:00",
+      "readRanges": [
+        [
+          1,
+          1707
+        ]
+      ]
     },
     {
       "path": "test/features/review/content_quality_report_repository_test.dart",
