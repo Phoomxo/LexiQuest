@@ -37060,7 +37060,9 @@
       "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
-      "findingIDs": [],
+      "findingIDs": [
+        "B18-REV09-02"
+      ],
       "reviewNotes": "Full786 lines read. Bounded1..50 phase-key scan, finite upper ceiling/cycle cursor; exact canonical source/owner/gate snapshots and fresh time around authorizer, immutable proof/outbox atomic writes. Revalidates all admitted tuples before local-only checkpoint; late denial retains earlier admitted inserts but skips checkpoint. Cursor advances only after admitted candidates, so all-denied first page may starve later valid keys; oracle/requirements pending. Source reader checks consent/assignment/quarantine/permit, canonical session purpose/lineage, linked aggregate/time/mode, sibling start-core and exact operation identity; does not itself authorize receipt transport. No sync executed.",
       "sourceReadDate": "2026-09-14T01:23:49.098918+00:00",
       "readRanges": [
@@ -48682,11 +48684,18 @@
       "lines": 970,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full970lines read. Pure actual Pair engine/start/checkpoint/configuration serializers validate full measured/reservation/ACK/terminal prefix before compact proof; v1/v2, completed-first siblings, abandoned started-only, replay exclusion, merged original actor/current custodian projected config and compact lineage. Strict phase/null-key/type/time/digest/UTF8 bounds and nested defensive-copy mutation negatives with independent identity-array digest. Full prefix synthetic evidence has actual decoder-compatible data, no DB admission/canonical persistence/signature authority. Does not close migrated live feedback timer defect because controller absent. No execution.",
+      "sourceReadDate": "2026-09-14T01:40:57.855909+00:00",
+      "readRanges": [
+        [
+          1,
+          970
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_sync_authorizer_test.dart",
@@ -49146,11 +49155,18 @@
       "lines": 1958,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1958lines read. Real memory Drift plus boolean synthetic authority covers separate rollout/default-off, exact signed payload/revision preservation, gate tokens, no-attempt withdrawal/pin-race denial, immutable event wrapper renewal with new operation only for undelivered and ACK no-requeue. Permit revocation/tombstone updates authenticate without enrolling unknowns/resurrection. Atomic deny-only intent survives reaccept/repeatedwithdraw, retry metadata/identity, malformed denial rejection and owner/fence/UID expiry denial; temporary trigger fails whole consent/run transaction. New permit case explicitly first proves real API reenrollment cutoff then trusted SQL isolates transport exact-ID denial. Two-memory-device actual gateway plus modeled server denial verifies create-once lost-ACK marker and blocks subsequent receiver writes, does not execute rules. Restart means new store object; separate file-reopen oracle already read. No denied-prefix page progress test. No B18 execution or activation.",
+      "sourceReadDate": "2026-09-14T01:42:22.401748+00:00",
+      "readRanges": [
+        [
+          1,
+          1958
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_session_proof_transport_test.dart",
@@ -49160,11 +49176,18 @@
       "lines": 1767,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1767lines read. Actual Drift source/receiver, repository atomic Pair start, authorizer/store/gateway with SDK-shaped atomic staging and timestamp/id cursor fake. Started before answers and completed-first phases restore only research mirrors, zero canonical/economy changes; syncedEvidence placeholder retained versus contradictory real session denial; multiparent page rolls back first insert until proof dependency arrives. Same-ID renewed pin conflict, exact tombstone ignored without resurrection, standalone unmarked decode denied before positive genuine gateway provenance. Actual gateway lost-ACK decode succeeds only exact immutable mutation replay; no changed category/SRS revision, so REV09-01 remains open. Receipt-await injected same-transaction mutations rollback and positive replay follows; tests do not simulate independently committed concurrent withdrawal. Mirrored admission cannot authorize new outbound even with existing ACK; exact historical local ACK supports lost-checkpoint unmarked recovery only. Fake source server/atomicity is not Firebase rules/network, all databases memory. No execution or activation.",
+      "sourceReadDate": "2026-09-14T01:41:41.377013+00:00",
+      "readRanges": [
+        [
+          1,
+          1767
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_sync_contract_test.dart",

@@ -187,6 +187,23 @@
       "proposedRegression": "Run bounded targeted existing schema matrix to record RED; correct expected supported set to include27 and add28 plus string/floating27 negatives. Retain24 historical pin rejection in current-run authorizer and every malformed-type assertion. This is a stale oracle correction, not relaxing transport.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV09-02",
+      "severity": "P2",
+      "status": "open-candidate-runtime-reproduction-pending",
+      "file": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "relatedFiles": [
+        "lib/features/sync/data/drift_research_sync_adapter.dart",
+        "test/features/research/research_session_proof_source_integrity_test.dart"
+      ],
+      "trigger": "Bounded proof candidate page begins with limit-many structurally eligible opportunities that fail current source/permit admission, while later opportunities have valid current authority. Repeated preparation starts with absent or unchanged local cursor.",
+      "expected": "Later independently authorized proofs are eventually inspected within bounded work, without admitting denied facts or weakening no-unauthorized-persistence rules.",
+      "actual": "Candidate SQL sorts opportunity ID/phase and limits before authority validation. Every denied candidate continues without setting frontier; scheduling cursor writes only after admitted frontier. Repeated calls can reread the same entirely denied page forever. Existing 50-ACK progress test uses admitted rows and does not cover denied-prefix starvation. Other research collection enqueue queries likewise bound before allowed checks, so related scope needs RED confirmation.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Synthetic local real-Drift fixture with limit1 denied leading opportunity and separately valid later opportunity, repeat bounded preparation and recreate repository; later valid proof/outbox must appear, denied evidence/ACK/consent must remain unchanged. Preserve all-denied no-cursor-write, rollout-off, owner-fence, finite scan and late-withdrawal invariants; no live research activity. Confirm intended no-write authority constraints before selecting local scheduling design; do not simply persist denial as authorization.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
