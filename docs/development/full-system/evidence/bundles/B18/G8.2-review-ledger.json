@@ -49483,11 +49483,18 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full59. Six words with one corrected retry retain5/6 first results; separate owner/content revision produce distinct identities. Eligibility iterates all nonassessment classes at hint0/1; caller supplies identity, no SQL ordering or assessment coverage. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          59
+        ]
+      ]
     },
     {
       "path": "test/features/learning/handwriting_scratchpad_test.dart",
@@ -49497,11 +49504,18 @@
       "lines": 294,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full294. Guided self-check no projected writes; adapter rejects durable classify. Bounded strokes/points undo/clear, typed self-check idempotent per selection excludes typed text from outcome string. Actual shell background/route retirement/controller replacement wipes memory; simulated rotation retains work then clear, narrow2x usable. Ephemeral rendering/no OCR/native handwriting or persisted evidence. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          294
+        ]
+      ]
     },
     {
       "path": "test/features/learning/hint_policy_test.dart",
@@ -49511,11 +49525,18 @@
       "lines": 90,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full90. Two-stage strategy/context deterministic budget, exhausted/unavailable return unchanged object; actual panel reveals appropriate text then disables button. No durable answer classification/timing or owner transition. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          90
+        ]
+      ]
     },
     {
       "path": "test/features/learning/learning_recovery_foundation_test.dart",
@@ -49567,11 +49588,18 @@
       "lines": 228,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full228. Exact14 enum/registration/feature/route maps, concrete adapter types, duplicate rejection; matching/handwriting default registry implementedOff with explicit enable. Enum matching defaultDelivery enabled differs deliberately from registry override; test exposes both, not proof runtime route accessible. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          228
+        ]
+      ]
     },
     {
       "path": "test/features/learning/matching_mode_adapter_test.dart",
@@ -49595,11 +49623,18 @@
       "lines": 196,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full196. Speaking/shadowing missing target/transcript rejected. Six native-mode captures preserve original owner across fake first record failure/retry after active owner changes. Fake repository unconditionally accepts second write and has no SQL authority/session; proves command binding only, not authorization after owner drift or acoustic assessment. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          196
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/failures/english_reverse_selected_isolatedDiff.png",
@@ -50554,11 +50589,18 @@
       "lines": 1147,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1147. Real Drift unavailable disposition classifies committed versus uncommitted frozen answer after synthetic withdrawal, never resubmits first write, preserves answer receipts and exact first terminal cutoff across before/after ACK failures. Last committed answer completes three terminal receipts; orphan decisions/count mismatch/stale checkpoint/owner drift reject. Inflight local dispose drains admitted operation but blocks later calls; concurrent answer between inspect and abandon causes retry preserving newer answer. Actual host temporary protocol retry keeps same session; withdrawn hosts remount terminal or explicit abandonment, then ordinary baseline may start. In-memory reconstruction, no disk restart; same owner throughout host paths so REV03-02 remains. Full source read; no B18 runtime or research activation.",
+      "sourceReadDate": "2026-09-14T04:14:57.895505+00:00",
+      "readRanges": [
+        [
+          1,
+          1147
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_atomic_start_test.dart",
@@ -50610,11 +50652,18 @@
       "lines": 840,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full840. Legacy adapter generates genuine v5 then downcasts fields to synthetic v1-v4, restores by appending without overwriting old bytes. Progressed Pair codecs1-4 retain unknown elapsed and canonical engine; schema6 initial distinct measured codec4. Old reader rejects initial/pending/terminal Pair and future/malformed shapes with exact four-table snapshots. Explicit capability gates fresh start but accepted retry allowed; ordinary Quiz still records. Real local sync writer1 fails closed preserving outbox, writer2 claims exact attempt v2; no transport. Actual parent Quiz emergencyOff during held answer/close drains admitted identity and direct recovery finishes with starts disabled. All same-owner memory DB, no old installed binary/device/cloud evidence. Full source read; no B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T04:14:57.895505+00:00",
+      "readRanges": [
+        [
+          1,
+          840
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_configuration_test.dart",
@@ -50939,11 +50988,18 @@
       "lines": 1369,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1369. Synthetic P256 permit signature binding checked with recomputed tamper digest and wrong issuer public key. Actual Today standard/Adventure UI x two directions keeps captured snapshot/entry denominator through in-session timeout restart, repair, rebuild, terminal ACK retry and result replay. Canonical prior recall creates nonempty SRS/points; exact points per permitted correct recognition and no SRS advancement, full primary/research rows preserved by replay. Reconcile/form completions assert stable local denominator, not scientific validity. Absent/expired/denied/withdrawn authority baseline cases separate evidence protocol pins from presentation permit; real local enqueue/claim authorizer and exact pre-existing denial preserved, no remote transport. UI identity/loader/reward adapters synthetic, no disk restart or owner merge. Full source read only; no research activation, assignment, synchronization or runtime execution.",
+      "sourceReadDate": "2026-09-14T04:14:57.895505+00:00",
+      "readRanges": [
+        [
+          1,
+          1369
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_practice_replay_test.dart",
@@ -50953,11 +51009,18 @@
       "lines": 871,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full871. UTC microsecond normalization retains source terminal bound, local time reject, exact start retry; source/content/owner changes before start reject without second session. Same normal/replay schedules descriptive stars equal, recreational evidence. Actual UnifiedLessonShell pointer/keyboard/semantics interactions plus background/focus produce zero time segments for replay, not native a11y. Canonical normal baseline and synthetic nonempty authority rows with real quest reconcile; full16table snapshots and progress metrics stable, external sinks never invoked, four notApplicable receipts per answer. Exact noResearch context/tamper negative; History latest/best normal excludes better replay, replay best tracked separately, before/after answer/close lost ACK idempotency via memory coordinator restore. No disk/process restart, host migrated-owner final feedback path absent. Full source read; no B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T04:14:57.895505+00:00",
+      "readRanges": [
+        [
+          1,
+          871
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_repair_policy_test.dart",
@@ -51114,11 +51177,18 @@
       "lines": 90,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full90. Actual contrastive summary/details and unavailable feedback at2x360phone rendered into PNG via capture helper; real fonts, scroll reachable next button and no frameworkexception. Synthetic committed result and reviewed explanation do not prove durable answer or reviewed catalog. Capture-only, no golden comparison. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          90
+        ]
+      ]
     },
     {
       "path": "test/features/learning/sentence_practice_panel_test.dart",
@@ -51149,11 +51219,18 @@
       "lines": 58,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full58. Iterates all14 modes with explicit matching/handwriting enable, exact serialize/revalidate and stale owner/implementedOff negative. Prints capabilities including handwriting route configuration false. Policy contract matrix, not UI/real persistence or all option combinations. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          58
+        ]
+      ]
     },
     {
       "path": "test/features/learning/session_configuration_policy_test.dart",
@@ -51163,11 +51240,18 @@
       "lines": 505,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full505. Exact adapter capability intersection and numeric clamp, pinned pack cannot omitted, bounded untimed alternative, stablehash tamper/schema negatives; protocol/owner/pack drift typed resets. Pair density metadata roundtrips draft. Synthetic untimed-only and unconfigured adapters, catalog resolves exact assignment/consent/protocol identity or stale rejects. Pure policy snapshots despite persisted label; actual providers tested separately. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          505
+        ]
+      ]
     },
     {
       "path": "test/features/learning/session_configuration_sheet_test.dart",
@@ -51177,11 +51261,18 @@
       "lines": 573,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full573. IME composing/blank numeric inputs keep modal; completed input accepts via captured callback. Adapter-specific compactcap/source/options, semantic close restores launcherfocus, default exact policyserialization, disclosure retains draft/clamps, Thai2x360 and shortreset reachable. Stale/invalid protocol typed reset and reset action. Widget/fake semantics only; no persisted authority changing while modal open. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          573
+        ]
+      ]
     },
     {
       "path": "test/features/learning/session_configuration_store_test.dart",
@@ -51191,11 +51282,18 @@
       "lines": 388,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full388. Memory Drift new store retains bytes/hash; active-owner atomic save accepts sole owner, rejects inactive/ambiguous with zero rows. Durable tamper typed rejection. Real synthetic persisted consent/assignment provider resolves bounds without assignment rewrite, absent consent yields standard. No concurrent midtransaction race or file/process reopen despite durable title. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          388
+        ]
+      ]
     },
     {
       "path": "test/features/learning/srs_policy_test.dart",
@@ -56135,11 +56233,18 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full57. Deterministic fixed owner/generatedIDs/incremented ms clock with optional first record failure and captured command list. Fake second result insertedtrue no DB/idempotency/authority check; downstream retry tests prove command stability only. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          57
+        ]
+      ]
     },
     {
       "path": "test/support/inert_research_dependencies.dart",
@@ -56212,11 +56317,18 @@
       "lines": 482,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full482. Synthetic base SQL receipts and enrollment fixture composed with real P256 verifier and deterministic ECDSA signer private scalar1 explicitly test-only. Standard/Adventure signed assignment, absent/denied/expired/withdrawn permit authority independent from evidence protocol catalog; actual content checksum, synthetic allowlist and Today due snapshot. Real current evidence/configuration and owner repository, optional delegated close ACK fault; prior recall written canonically before Today produces real baseline. No production issuer, device or remote activation evidence. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          482
+        ]
+      ]
     },
     {
       "path": "test/support/pair_purpose_fixture.dart",
@@ -56275,11 +56387,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full43. Loads Thai/MaterialIcons assets; settles, asserts no framework exception, recursively marks render subtree dirty then PNG capture. Unconditionally writes build/verification/r15-visual/{env phase default after}/{caller name}. PNG is artifact not comparison oracle; no capture executed. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:16:14.989385+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "test/support/schema_v25_fixture.dart",
