@@ -1144,11 +1144,18 @@
       "lines": 61,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full61 lines read. Synthetic defaults only; automatic cloudfallback and keyrotation described. BlankallFALLBACKexample conflicts URLnonempty validator; use emptymodel works. Costzero forever/freequota staticcomments are not verified currentbilling/authorization and do not authorize trial or deployment. No actualenv or keys read.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          61
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/pyproject.toml",
@@ -1158,11 +1165,18 @@
       "lines": 38,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full38 lines read. Python3.11, exact4runtime/3dev pins andoptionalhttpx.28.1 separatefromhttpx2dev. Hatchlingbuildbackendunfixed; packagingcorrectsrc. PronunciationscoringPhase2description doesnotproveimplementation. No installation.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/__init__.py",
@@ -1172,11 +1186,18 @@
       "lines": 11,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full11 lines read; package documentation and static0.1.0 export only.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          11
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/app.py",
@@ -1186,11 +1207,18 @@
       "lines": 199,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full199 lines read. Actual-body100000byte middleware rejects before parsing/auth/provider without draining offending stream; disconnect exits. Firebase verified then configured text limit; sync generator response and safe type-only correlated503/429 maps. Health ready means config only. Returned UID unused by shared generator/cache; no per-owner admission or total chain deadline here. Response construction occurs outside generator exception mapping. No execution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          199
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/auth.py",
@@ -1200,11 +1228,18 @@
       "lines": 121,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full121 lines read. Strict two-part bearer, injected or revoked-checking Firebase decoder, invalid401 distinct from infrastructure503 with type-only logs. UID string/nonempty accepted including whitespace; established user currently discarded by app, no persisted data here. No real credential verification.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          121
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/config.py",
@@ -1214,11 +1249,18 @@
       "lines": 221,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full221 lines read. Frozen prefixed root.env resolved independentlycwd; bounded request/config/decoding/entrylimits. Base URLs reject credentials/control/query/fragment/nonloopbackHTTP/linklocal/metadata/legacyIP, preserve configured HTTPSinternalhosts and no DNSvalidation claim. Both primary/fallback URL validators reject blank even though comment says emptybase disables; emptymodel still disables. Defaultfallback model+URL enables unauthenticatedremote attempt despite emptykey. gemini_keys normalizes notdedups until chain. Secret stringfields repr notexplicitlyhidden though validationerrors hideinputs. Static comments freequota/cost not verifiedcommercial guarantees. No envreads beyond syntheticexample, no requests.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          221
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/errors.py",
@@ -1228,11 +1270,18 @@
       "lines": 116,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full116 lines read. Stable detail.code and sanitized static messages, correlated generation/providererrors and positive retryafter, Firebase401 separate from upstream credential503. RATE_LIMITED copy says all providers limited but service also emits it for mixed availability/rate errors. No runtime verification.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          116
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/main.py",
@@ -1242,11 +1291,18 @@
       "lines": 58,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full58 lines read. Eager Firebase initialization and config on import; no LLM call until generation. One process-global4096-entry7daycache keyed configured serviceversion. No per-user identity passed to cache, no singleflight or persistent cache; restart clears. Wrapper threads configuredversion independently actual chosen fallback model. Read only, never imported productionassembly.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          58
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/models.py",
@@ -1256,11 +1312,18 @@
       "lines": 73,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full73 lines read. Extra-forbid request2000codepoint absolute ceiling plus configured500; whitespace normalization, closed kind/CEFR/en-th, server-owned model. Immutable ContentResult lacks output length/schema checks; ContentResponse metadata broadly str with no generated quality/type provenance guarantee. No execution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          73
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/services/__init__.py",
@@ -1270,11 +1333,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1line module docstring, no initialization.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/services/base.py",
@@ -1284,11 +1354,18 @@
       "lines": 32,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full32 lines read. Structural sync generator protocol/configreadiness and ContentResult contract only; nocancel/deadline/owner APIs.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          32
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/services/cache.py",
@@ -1298,11 +1375,18 @@
       "lines": 163,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full163 lines read. Threadsafe individuallylocked LRU/TTL immutable results; lazy expiry uses >TTL and wallclock, entriesboundednotbytes. Key casefolds text with restricted kind/CEFR/lang, modelversionoperatorowned. Consecutivehitsavoidprovider, concurrentmisses can duplicate requests because get/generate/put notsingleflight, so exactlyonce costcomment overstates. Casefold can conflate case-sensitive targetmeanings Polish/polish; actualcaller semantic contract pending. Defaultrealtransport1MiB cap bounds output notllm_max_tokens enforcement, allowing materially larger aggregate memory than comment. Shared across users but only samecontentkey; no authenticatedidentity retention. No tests run.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          163
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/services/llm_content_service.py",
@@ -1312,11 +1396,18 @@
       "lines": 452,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full452 lines read. Ordered dedup(model,url,key) primary/fallback/extrakey chain, templateuserinput, serverconfigmodel and serviceversion. Realurllib response read1MiB+1 bothsuccess/error with finallyclose; timeout is eachtransport/socket, notabsolutechain. Chainlength scalesunbounded operator keylist; response JSONtext onlynonblank notmaxTokens/quality/provenance. Local429 raises ProviderUnavailable then outerhandler continues tocloud, contradicting explicit no-cloud-on-local429 comment; localhostclassification rawsubstring also missesIPv6andmatcheshostname/pathlookalikes. Mixedratelimit+availability final429 regardlessnotalllimited. Keyrotation uses sameURLlimiter; callableclient lazyinit race only injectedfactory path. Standardurllibredirectpolicy notcustomized, endpointsoperator-owned. No tests/network performed; local429/casefold concerns await requirement cross-check before promotion.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          452
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/src/lexiquest_ai/services/rate_limiter.py",
@@ -1326,11 +1417,18 @@
       "lines": 114,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full114 lines read. Processlocal perURL monotonic deque reservation beforeHTTP, failurescharged, threadlocks bound burst; now capturedbeforelock can insert outoforder underthreadpreemption. Retry integer+1 conservative atintegerboundary. URLkey means all Geminikeys shareoneRPMwindow despite rotationquota comments; daily/multiprocessquotas not enforced. Client forwards deadline but doesnot cancel/own chain. No execution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          114
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/conftest.py",
@@ -1340,11 +1438,18 @@
       "lines": 135,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full135 lines read. Fakeauth/generator recordsynthetictext; failsecret/type/providermaps. Settingsdefault reads possible operatorenv in mostfixtures, notfullyisolated. TestClientnofinalcontext and no realprovider/Firebase. Testsourceonly.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          135
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_app.py",
@@ -1354,11 +1459,18 @@
       "lines": 345,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full345 lines read. ActualASGI99,999/100,000vs100,001 withdeclared/missing/lying/chunkedheaders,authboth,emptychunk,invalidJSON,disconnect andnodrainoracle. Fakeprovider HTTPresponse/errorcorrelation/no-secret/readiness/configlength; no realcache/providerchain or concurrency. No B18 testexecution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          345
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_auth.py",
@@ -1368,11 +1480,18 @@
       "lines": 153,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full153 lines read. Injecteddecoder withrealFirebaseexceptionclasses testscredential401 versuscertificate503 withsecret/logcanaries andUIDmissing; no production token/revocationnetwork. Extraheaderpartsnotexplicitcase but parserrejects. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          153
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_dependency_pins.py",
@@ -1382,11 +1501,18 @@
       "lines": 34,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full34 lines read. Actualpyprojectparse pinsFastapionce andexcludesgroupduplicate. Doesnotverifyallruntime/dev/lock availability. Read only.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          34
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_llm_content_service.py",
@@ -1396,11 +1522,18 @@
       "lines": 84,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full84 lines read. Realurllib adapter with monkeypatchedurlopen andactualHTTPError/addinfourl validatesheadercase/retryafter3600/missing/invalid andclosedheadersnapshot. Oneexternalfakeendpointfallbackdisabled, no local429/fallback/cache/rateburstcontract. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          84
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_models.py",
@@ -1410,11 +1543,18 @@
       "lines": 231,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full231 lines read. Closedrequestschema, CEFR/kind/modelrejection, normalization, configHTTPloopback/HTTPS/internalacceptance plusmetadata/obfuscatedIP/credential/controlcharnegative andshort+longsecreterrors. MostSettingsfixtureenvnotisolated; no blankfallback disable test or currentprovideravailability. Read only.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          231
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/tests/test_response_budget.py",
@@ -1424,11 +1564,18 @@
       "lines": 35,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full35 lines read. RecordingBytesIO provesrealurllib boundedread1048577 andclose on200/429/503 oversizedsyntheticbody. No wallclock/trickling/redirectchain assurance; no network or B18 run.",
+      "sourceReadDate": "2026-09-14T02:11:54.878767+00:00",
+      "readRanges": [
+        [
+          1,
+          35
+        ]
+      ]
     },
     {
       "path": "backend/ai_api/uv.lock",
@@ -1438,11 +1585,18 @@
       "lines": 978,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Complete structured TOML review of978lines:63packages,319HTTPS files.pythonhosted.org artifacts with validsha256 shapes/suppliedpositive sizes, all ordinary dependency references resolve. Root3.11lock andruntime/dev/optional metadata align with pyproject; bothhttpx/httpx2 intentional independent package identities. Markers/extragroups inspected; no download/install/scan and no remoteavailability or safetyclaim.",
+      "sourceReadDate": "2026-09-14T02:12:21.968717+00:00",
+      "readRanges": [
+        [
+          1,
+          978
+        ]
+      ]
     },
     {
       "path": "backend/lexiquest_lm/README.md",
@@ -1942,11 +2096,18 @@
       "lines": 15,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Synthetic defaults match settings modelrevision/generationparams, no credentials; no productionenvironment value supplied so deployment mustset. No env applied. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/.python-version",
@@ -1956,11 +2117,18 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Single3.11 matches requires-python range; no interpreter switch. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/README.md",
@@ -1984,11 +2152,18 @@
       "lines": 47,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Read-only historical eight optionalGPU exception entries, all expiry2026-09-11 already past currentdate. File explicitly says unshipped research stack/releaseblocked and notfixed; preserve historicalmeaning. No scanner/tool/workflow invoked orrecommended, no exceptionextended. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          47
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/pyproject.toml",
@@ -1998,11 +2173,18 @@
       "lines": 50,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Python3.11only, exact directruntime/dev/GPU pins and explicit dedicated torchindex, hatchsourcewheel and pytestpaths. Buildbackend itself unpinned here; lock/provenance reviewed separately. Existing httpx2 pin deliberate current dependency, do not change from memory. No dependencyinstall/update/scan. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          50
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/research/golden_texts.json",
@@ -2012,11 +2194,18 @@
       "lines": 38,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Sixsynthetic en/th word/sentence examples, unique IDs and no participantdata; convenience development corpus not heldout evaluation or acousticgroundtruth. Notused for execution. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          38
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/research/run_golden_set.py",
@@ -2026,11 +2215,18 @@
       "lines": 69,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Dormant manual modelrunner firstlatency includesload, actualgenerationtry catches raw exception into JSON and continues; SpeechRequestconstruct outsidecatch, no nonzeroexit summary, audio bytecount only noquality. Research execution outside productionpackage; read only no output generated. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          69
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/__init__.py",
@@ -2040,11 +2236,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. One-line package docstring only. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/app.py",
@@ -2054,11 +2257,18 @@
       "lines": 150,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. ASGI actual body ceiling100000 before JSON even absent/false contentlength, disconnect returns, offending chunk not appended/drained. Production disables docs, readiness engine only. Synchronous authenticated endpoint enforces configurable text then engine; logs exception type and opaque requestID only. Returns actual engine/model/rate and no-store. No request concurrency/quota/deadline at app layer; engine serial lock only. Unused imports minor. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          150
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/auth.py",
@@ -2068,11 +2278,18 @@
       "lines": 112,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Strict2part case-insensitive Bearer, Firebase revoked checks enabled, invalid/expired/revoked/disabled ->401 and infrastructure ->503, logs exception type only. UID nonempty string, whitespace accepted but no local persistence use. Decoder nonMapping failure outside try trusts interface; SDK verified claims. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          112
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/config.py",
@@ -2082,11 +2299,18 @@
       "lines": 93,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Frozen env config fixed root independentcwd, model revision pinned, English instruction allowlist, length1..2000 and numeric ranges. Environment defaultdevelopment, modelId/revision/version overridable and no SHA shape check; configured version label not actual model artifact attestation. No configload/import execution. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/engines/__init__.py",
@@ -2096,11 +2320,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. One-line engines package docstring only. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/engines/base.py",
@@ -2110,11 +2341,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Runtime-checkable protocol readiness/load/synthesize and immutable result boundary; no resource/deadline enforcement itself. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
@@ -2124,11 +2362,18 @@
       "lines": 107,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Doublechecked load lock and generation lock serialize GPU/model WAV conversion; exact model snapshot revision, fp16 and configurableASR. Generates requesttext/language/speed plus fixedvoice instruction; firstgeneratedaudio, configured sample rate. Output engine literalomnivoice confirms client hardcodedenum only correct for matching endpoint; no outputbytes/durationbound or queued-work admission. Loader/generation exceptions bubble to sanitized app. No GPU execution. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          107
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/errors.py",
@@ -2138,11 +2383,18 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fixed401/503/422 taxonomy with safe requestID, retryafter5 for synthesis/auth outage. No raw provider exception or usertext included. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          57
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/main.py",
@@ -2152,11 +2404,18 @@
       "lines": 19,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Production assembly initializes Firebase and eagerly loads pinned GPU model at module import before app creation; readiness unavailable during loading/failure. Read only; never imported/launched/downloaded. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          19
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/models.py",
@@ -2166,11 +2425,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Extra fields forbidden, bounded text2000/codepoints and normalized whitespace, en/th teacher_female only, speed.5..1.5 and wav. Float coercion default not strict, clientUTF16 ceiling stricter for astraltext. Frozen AudioResult trustsbytes/media/engine/model values. No execution. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/src/lexiquest_voice/runtime_compat.py",
@@ -2180,11 +2446,18 @@
       "lines": 99,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Metadata-only exact torch/torchaudio2.8+cu128 andomnivoice.2.1 pins before importingGPU; missing package incompatible, injectableversionreader. Does not establish CUDA/device availability or artifacthash, no actualenvironmentcheck executed. No B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T02:04:58.303184+00:00",
+      "readRanges": [
+        [
+          1,
+          99
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/conftest.py",
@@ -2194,11 +2467,18 @@
       "lines": 71,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake token asserts exact validtoken, ready/unavailable/failing engines return synthetic RIFF bytes; actual FastAPI TestClient fixture uses Settings env defaults (not fully env-isolated). NoGPU. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          71
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/integration/test_firebase_omnivoice_e2e.py",
@@ -2208,11 +2488,18 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Optin environment+token guard before realFirebase/GPU create, oneEnglishrequest validates mono24k RIFF viawave positive<30sduration. No Thai/latency/acousticassessment; skipped without external enable is notlivePASS. Notenabled/run. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          57
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_app.py",
@@ -2222,11 +2509,18 @@
       "lines": 371,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Full371lines. Raw ASGI exchange tests true100000byte boundary/missing/lying/chunkeddeclared headers, auth/non-auth oversize rejection withoutdrain/provider, replay exactlyonce anddisconnect. Real FastAPI validation and fixederror/correlatedrequestID with caplog privacy; fakeengine. No bounded synth queue/time or server realdeployment. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          371
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_auth.py",
@@ -2236,11 +2530,18 @@
       "lines": 148,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Injected decoder exercises missingheader/scheme/missingUID, Firebase invalid/expired/revoked/disabled taxonomy, certificatefetch503 and caplog suppresses token/message. No actual revocationservice. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          148
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_config.py",
@@ -2250,11 +2551,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Independent project-root calculation and actual tempdotenv from unrelatedcwd, clears sample-rateenv for precedence. Does not cover production config matrix. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_dependency_pins.py",
@@ -2264,11 +2572,18 @@
       "lines": 90,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Parsesactualpyproject exactGPUlist/singleFastAPIexplicitindex and torchsource/nooldcu132. Does not inspect actual installed runtime or model snapshot integrity. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          90
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_golden_texts.py",
@@ -2278,11 +2593,18 @@
       "lines": 25,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fixtureexists/list>=4, unique IDs/nonblank text/en-th/category; no synthesis or statistical quality claim. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          25
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_models.py",
@@ -2292,11 +2614,18 @@
       "lines": 69,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Exact defaultpins/ASRoff/generation settings, invalidvoiceinstruction, whitespace, boundaryspeed and clientmodel extra rejected. Research-safe testtitle does not certify model/research. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          69
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_omnivoice_engine.py",
@@ -2306,11 +2635,18 @@
       "lines": 176,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake loader/writer fixedconfiguration forwarding and once-load/readiness, emptygeneration, actual two-thread serialization maxactive1, guardbeforeloader. No physicalGPU, realWAV or upstream modeloutput. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          176
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/tests/test_runtime_compat.py",
@@ -2320,11 +2656,18 @@
       "lines": 143,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Metadata fixture exact supportedpins and missing/mismatchedCPU/CUDA/Omni variants. Pure evaluator/guard only, noactual runtime orGPUimport. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:05:47.624167+00:00",
+      "readRanges": [
+        [
+          1,
+          143
+        ]
+      ]
     },
     {
       "path": "backend/voice_api/uv.lock",
@@ -2334,11 +2677,18 @@
       "lines": 2042,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Complete structured TOML provenance review of2042 lines, with bounded follow-up after truncated package summary.139 packages/620 artifacts; HTTPS hosts files.pythonhosted.org and download-r2.pytorch.org, all sha256 shapes valid and supplied sizes positive. Four PyTorch wheels omit size; absence alone is not invalid. Every ordinary dependency resolves to lock package; root runtime/dev/GPU exact pins match pyproject and explicit dedicated torch index. Metadata/platform branches and optional groups inspected. Upload timestamps are registry metadata, not freshness or vulnerability evidence. No install, resolution, scan or GPU execution; hash structure does not prove remote bytes availability or package safety.",
+      "sourceReadDate": "2026-09-14T02:10:11.836306+00:00",
+      "readRanges": [
+        [
+          1,
+          2042
+        ]
+      ]
     },
     {
       "path": "docs/adventure-motivation-mode/00-document-set-index.md",
@@ -33250,11 +33600,18 @@
       "lines": 767,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full767 lines read. Allactionsserialtransition plusglobalownerlease, capturedcredentialowner andcontextscope rotateonkey/provider/model/consent; priorpairsretainedonlysamesession/scenario/scope. Durablependingbefore everyproviderlogicaloperation, successesmarkpaidboundary, sanitizeusage/finalizetwice thenpendingrecover ratherthanrepeatpaidcall; errorspreservetypedcause. Configurationdiscovery+probe beforeatomicreplace. Revocation/remove cancelsanddrains snapshotoperations beforequeuingmutation; newoperations canenterduringdrain, needUI/concurrentcrosscheck. Active cancellationSet sharedexternaltoken couldremovebeforeothertrackedcall completes; coordinatorstillownstoken. Dispose hasunboundeddrain ofstorage/progress/gate/providerfuture; transport boundedonlyonepart. _accounted markresultCommitted appliesalsodiscovery precedingfuturemutations, leasecheckprotectswrites. Summaryconsentedaggregatesboundedthreeweaknessesbutnot600chars untilgatewayvalidation. No execution.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          767
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/application/owner_operation_coordinator.dart",
@@ -33264,11 +33621,18 @@
       "lines": 318,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full318 lines read. GlobalTask5lease acquiredwith5secondretrywallclock,20secondheartbeat/1minutelease,2minpendingrecover thenownerpin. Cancellation/lease loss signalsbutawaitsoriginalbody todrain; irreversiblepaidmarker preventsdiscardaftercleanupfailure, leaseonlycontrolswrite. Acquisitiongate/delay/activeowner/recovery/heartbeatrenew/release eachunboundedfuture, runtimeworkerhang notfixedby5secondloopdeadline. No activeownerrecheckinsidebody assumesaccounttransitionsrespectsamegate. DefaultdelaycancelstimerbutretainswhenCancelledcallbackuntiltokenGC/cancel. Test/caller cross-check needed.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          318
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/abortable_ai_http.dart",
@@ -33278,11 +33642,18 @@
       "lines": 121,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full121 lines read. PrecancellationbeforeHTTP, AbortableRequest caller/timeoutcausefirstwins, singleheader+bodytimeout and256KiBstreamcap beforeappend. Reconstructrequest copiesheaders/body but notredirect/maxredirectsettings. Bodyloop earlythrow invokesstreamcancel; timeout dependsclientabortcompliance for underlyingdrain. whenCancelled listeners attached withoutdetach aftersuccess; sourcependingfuturecanretainclosures untilcancel/GC. Error taxonomy sanitized, no responsepayloadlogs. No run.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          121
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/ai_credential_version_index.dart",
@@ -33292,11 +33663,18 @@
       "lines": 546,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full546 lines read. SQLiteopaqueversionpointer/intent inruntimeflags, exactleasewrite-lock+expectedpointerCAS atomicpointer/committedintent. Recoveryprefixrange returnsallintents, completeanderasefenced. JSONstrictrequiredtypesschema butextraallowed androwkeynotcrosscheckeddecodedowner/op; trustedDBsource. Volatiletestfallbackweakercommitexpectedintent/leasevalidationthanDrift. TokenssafeASCIImax256; Base64ownerlengthmayexceedforverylongowner butliveFirebase/UUIDbounded elsewhere. No secretsstoredhere; no runtime.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          546
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
@@ -33306,11 +33684,18 @@
       "lines": 357,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full357 lines read. SharedHTTP, providerspecificbreakers, Gemini retrywithinbudget andothersbreakeronly; MaxPlusdisabled withoutnetwork. Explicitmodelrequired, customURIvalidated, exhaustiveGeminierrortranslation/cancellationbridge;Geminiusageomitted ratherthanestimated. createForStore separateasyncfieldreads couldmixowner/profile but liveusecasesresolves capturedcredentialdirectly; callercheckpending. Partialinjectedbreakermapnullassert onlytest/customconstruction. No requests. Subsequent libcallersearch: createForStore has no caller outsideitsdeclaration; mixedasyncprofile concern dormant.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          357
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/ai_tutor_settings_store.dart",
@@ -33320,11 +33705,18 @@
       "lines": 711,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full711 lines read. AtomicsecureJSONprofile withownerbase64namespace; productionDriftindex, immutableversionedblob stage→leaseCASpointer→retryablecleanup andlostACKpointerread. Deleteprivacyfirstmissingblobfailsclosed, durableintentsrecover; ownereraseenumeratespointer+intents beforemetadataerase. Unfencedcompatwritewriteslegacyprofile butreadspreferversionpointer, solegacysetterupdatesignoredonceversioned; liveusecaseusesfencedAPI, callersearchpending. Recoverdoesnotrecheckleasebeforeeachplatformdelete, CAS/completefencesDB andimmutableversionslimitdamage;staleorphanblobwriterlatecompletionrequiresactualtakeovertests. Unscopedlegacydiscardonread intentionalnotmigrationofunknownowner. No platformstorageexecution. Subsequent libcallersearch: unfencedwriteCredentialForOwner/writeModel/writeProviderConsent onlycompatibilityselfcalls; liveAiTutor usesfencedreplacement, soignoredlegacysetterconcern dormant.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          711
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/anthropic_gateway.dart",
@@ -33334,11 +33726,18 @@
       "lines": 255,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full255 lines read. Anthropicversionheader,modeldiscoveryfirstpage/no pagination,dedicatedsystem/messages, context/outputcaps, boundedreplytext andrefusalfilter. Token totalderivedinput+output whilecache_read separate; downstreamrejectscached>total, so semantics needproviderfixturecrosscheck beforeclaimaccuratecachedbilling. Usageunknownnull; no providerreportedcostinvented. Defaultofflinecheckimmediate butinjectedawaitoutsidebudget. No run.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          255
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
@@ -33348,11 +33747,18 @@
       "lines": 350,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full350 lines read. Ownedlease no-opUPDATEfirstinsideeverytransactionestablishesSQLitewritelock, owner+eventpendingCAS andexactterminalreplay; optionalleaseprovider bypass onlyheadlessconstruction. Recoveryactiveowneroldpending→indeterminate nofakecost,90daypurge/clear retainpending. Summaries materializeallterminalownerrows (unbounded) andall-knownonly totals/cost, knownpartialtokens explicit. Globallease token notboundownerparameter, applicationpinsowner. Aggregateexportboolrequiresconsent but noremoteresearchaction. No DB run.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          350
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
@@ -33362,11 +33768,18 @@
       "lines": 268,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full268 lines read. ModelsboundedID/dedup/sorted, requestscenario80/message500/summary600runes, context/system separation andtoken cap. Abortable256KiBbodybudget then4000UTF16replycap, blockedchoice/refusalrecognition. SeparateofflineawaitoutsideHTTPdeadline andduplicatecheck onPOST; default immediatefalse. Usagekeepsunknownnull; costnum multiplicationround lacksfinitecheck forJSONhugeexponent andusageparser runsbefore paidreplyreturns, possiblepaidresultdiscard onmalformedcounter. No execution; tests cross-check pending.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          268
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/data/openai_responses_gateway.dart",
@@ -33376,11 +33789,18 @@
       "lines": 230,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full230 lines read. Dedicatedresponses endpoint, instructions/contextinput/max_output_tokens, modelsortedfiltered. Abortablebodybudget, responseblock/directtextnonempty4000limit, refusal/safetyincomplete reasonsblocked. Otherincompletereasons/max_tokens textacceptedwithoutcompletionindicator; no store:false field (externalservicepolicy notasserted). Advisorytokenfieldsnonnegative only, downstreamsanitize. Offlineawaitoutsidebudget injectiononly. No externalAPIrequests.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          230
+        ]
+      ]
     },
     {
       "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
@@ -33390,11 +33810,18 @@
       "lines": 651,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full651 lines read. Closedprovider/failureenum, idempotentcancel, explicitmodelselection/nohardcodeddefault, ephemeralwhole-paircontext6turns3000codepoints and160/320/480intentcaps. Instructions prohibitacoustic/CEFRcertification; opaqueownerscope notserialized. Completionvalidatesnonnegative/totalrelationships; simpleTokenUsage/Eventweaker untilsanitize. CustomHTTPSvalidation onlysomeprivateIPv4/localhost, permitslinklocal/IPv6private/query/noncanonicalIP; operatorBYOKinput noDNSresolutionproof. Explicitsettingsfencedmutation APIs pluslegacycompatibility remain. No runtime.",
+      "sourceReadDate": "2026-09-14T02:14:05.750726+00:00",
+      "readRanges": [
+        [
+          1,
+          651
+        ]
+      ]
     },
     {
       "path": "lib/features/assessment/application/assessment_comparison.dart",
@@ -45772,11 +46199,18 @@
       "lines": 598,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full598 lines read after cp874stdoutUnicodefailure correctedwithsys.stdout.reconfigureUTF8, nofileschanged. All3adapterscaps/codepoints/context/roles,URLsheadersusagehappy,typedstatus,keyvalidation,pre/active/lateabort/stalledbody,completebodywinscancel/refusalchecks. Syntheticclientmodelsabortcontract; no hugeexponentcost orcachedtokens>input+output oracle. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          598
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
@@ -45786,11 +46220,18 @@
       "lines": 271,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full271 lines read. ActualHTTPserver/client sockets syntheticresponses cover3adapters×reply/auth/quota/rate/server/malformed/timeout/cancel,UTF8context/authheaders/basepaths/caps andexactonePOST;Gemini503chainthreeoronecancelbackoff. Realtransportwithoutlivequality/costassertion. Timeout400ms andsocketcleanup finallyteardown; nocachedtoken/hugecost/bodyoversizefixture. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          271
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
@@ -45800,11 +46241,18 @@
       "lines": 959,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full959 lines read. Actualusecases+securestoreVolatileindex withfakegateway/gate/journal verifiespreHTTPpending/duplicateID/repositoryerrors/contextownerprovider/scenario/sessionfences,consentedaggregateprovenance andnoevidencenull,paidresultretainedduringfinalize/leasefailure,typedfailurepriority. Callerownerchangesduringprovider intentionallykeepsaccountingownerA. Gatealwaysacquire/noexpiry andfakesfixedreusedleasetoken so notproductionconfigurationmultioperationprobe/recoverytest. No configure/removeKey/disposeconcurrentrevocationorbadnumericrawHTTPcountercases. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:16:17.887334+00:00",
+      "readRanges": [
+        [
+          1,
+          959
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/authored_quality_transport_test.dart",
@@ -45814,11 +46262,18 @@
       "lines": 89,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full89 lines read. Parses12authoredMarkdownprompts, assertsallIDs, MockClient preservesliteralUnicodeanswers andseparatesinstruction/user/session/key;320cap andunknownusagenull. Honesttransportpolicyonly notproviderteachingquality; no B18 run.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          89
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
@@ -45828,11 +46283,18 @@
       "lines": 518,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full518 lines read. ActualDriftmemory+file-reopen andtwohandles exercisependingCAS/exactreplay/contradictoryterminal,ownerisolatedunknownvsreportedzero mixedoutcomescosts,indeterminate recovery andpendingretention. Explicitoracle missingtotalnotinferredfrominput+output; Anthropicadapter currentlydoesinfer sum, cross-layermeaningconcern remains. Productionlease staleobservation retestedwithactualconditionalwrite, no livebilling. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:16:17.887334+00:00",
+      "readRanges": [
+        [
+          1,
+          518
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/owner_operation_coordinator_test.dart",
@@ -45842,11 +46304,18 @@
       "lines": 209,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full209 lines read. Fakegate verifiesacquire→recover→owner→body, delayedbodycancel/heartbeatlossdrainbeforeexactrelease andpaidresultsurviveslatelease loss. Fakegatealwaysacquires and ignoresactualexpiry/token; notSQLitecrossprocess. No stalledlease/storageboundedness. No B18 run.",
+      "sourceReadDate": "2026-09-14T02:15:12.154506+00:00",
+      "readRanges": [
+        [
+          1,
+          209
+        ]
+      ]
     },
     {
       "path": "test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart",
@@ -45856,11 +46325,18 @@
       "lines": 682,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full682 lines read. Fakeplatformstore+actualDrift index/gate testownernamespace/wildcardcaseexacterase,unknownlegacydiscard,unownednoerase,pausedstaleversionwriterlease-losscleanup,committedsupersededcleanupchain,retryfailedphysicaldeletebeforerecoverytombstone andfile-reopenorphan. Strictownererase titlementionscandidatebutfixtureonlyactiveversion; noactualplatformkeychain orlatewriteraftercompletedownererase. No B18 execution.",
+      "sourceReadDate": "2026-09-14T02:16:17.887334+00:00",
+      "readRanges": [
+        [
+          1,
+          682
+        ]
+      ]
     },
     {
       "path": "test/features/assessment/assessment_comparison_test.dart",
