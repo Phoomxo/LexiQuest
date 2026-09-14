@@ -33789,11 +33789,18 @@
       "lines": 428,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Coherent active snapshot with exact consent version for research JSON; personal archive separate selection-independent path. Cancellation before/after read/font/encode and before store, deterministic timestamps/content digest, explicit provenance-free fields, CSV quoting/BOM and leading formula escaping, Anki flattened tabs/newlines, PDF Thai font and exact selected rows. Artifact sample count reflects all selected dataset even Anki emits vocabulary only; UI forces vocabulary-only pending caller cross-check. Integrity counts duplicate attempts and total<10 only, does not prove sequence completeness or statistical sufficiency. No B18 execution or research export performed. Caller cross-check ExportCenterScreen47-49 forces Anki vocabulary-only and disables attempts/reading; mixed-selection artifact count concern not reachable from production UI.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          428
+        ]
+      ]
     },
     {
       "path": "lib/features/export/application/owner_lifecycle_archive.dart",
@@ -33803,11 +33810,18 @@
       "lines": 1353,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1353lines read. Exact live-table/manifest set, single owner and all projections in one transaction; deterministic content/envelope/manifest digests, explicit fields checked per table and runtime namespace. Personal research retained without active consent, controlled assessment responses validate pinned run metadata/time; time duration and wall clock separate; AI nullable total/cost preserve unknowns, bounded download-window semantics exposed. Legacy JSON removes owner_id but otherwise preserves retained source record, requiring validated importer provenance contract; nested fields not generic-recursively redacted. Source URL/paths excluded through dedicated projections, vocabulary user text retained. Runtime effectiveState derives field defaults rather than injected build registry, actual preview diagnostic claim requires config cross-check. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          1353
+        ]
+      ]
     },
     {
       "path": "lib/features/export/data/drift_export_reader.dart",
@@ -33817,11 +33831,18 @@
       "lines": 511,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Single-active-owner and exact accepted/nonwithdrawn consent read with selected rows in one transaction. Vocabulary joins category same owner; attempt joins exact permitted owned/verified-packaged word, rejects invalid evidence metadata and never loads provider provenance. Personal saved intent retains tombstones; time segment preserves independent monotonic duration/wall timestamps; goals/preferences explicit fields. Public owner-specific methods rely on caller transaction/authority. Lists fixed-length but mutable. No execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          511
+        ]
+      ]
     },
     {
       "path": "lib/features/export/data/file_selector_export_store.dart",
@@ -33831,11 +33852,18 @@
       "lines": 206,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Desktop staging flush, backup before touching destination, restore old/delete new on cancellation/failure; preserve backup after failed restore and typed cleanup failure; same absolute-string destination admission released finally. Windows path case/alias identity is not normalized beyond absolute, concurrent alias callers not covered yet. Android save then explicit finish/discard handshake with typed sanitized platform errors. Cancellation while final finish await and native commit semantics require native cross-check. No file writes executed in review.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          206
+        ]
+      ]
     },
     {
       "path": "lib/features/export/data/research_lifecycle_export_reader.dart",
@@ -33845,11 +33873,18 @@
       "lines": 279,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Owner-bound explicit columns preserve revoked/tombstoned personal runs/responses/permits/opportunities, deterministic ordinal aliases retain linkage without hashing identifiers. Strict proof decode before projection validates configuration/Pair purpose; missing parent alias or malformed bounded canonical code fails sanitized. Counts separate motivation/engagement, null ordinal preserved. Caller archive supplies coherent transaction; no research authority needed for personal history. No execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          279
+        ]
+      ]
     },
     {
       "path": "lib/features/export/domain/export_contracts.dart",
@@ -33859,11 +33894,18 @@
       "lines": 117,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Closed formats/failure enums, cooperative cancellation and artifact/store boundary. Artifact bytes, exclusion/integrity lists retain caller references rather than defensive copies; production immediate preparation computes digest before picker await, mutable caller contract not promoted without mutation path. Integrity model advertises sequence gaps but builder only duplicates/sample insufficiency. No execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          117
+        ]
+      ]
     },
     {
       "path": "lib/features/gemini/application/gemini_tutor_use_cases.dart",
@@ -41220,11 +41262,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full one-line file read: blank compatibility placeholder; production export uses ExportUseCases Anki path, not an implementation here.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/services/apriori_error_miner_service.dart",
@@ -41276,11 +41325,18 @@
       "lines": 96,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read, caller search lib/test/tool finds dormant service used by thesis helper/tests only. Empty/degenerate data mapped0, nonfinite/out-of-range inputs unchecked, effect magnitude mislabeled statistical significance and unweighted variance assumes particular design. Not a valid production research/statistical claim; no activation or statistical report run, outside production remediation unless a live caller is found.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          96
+        ]
+      ]
     },
     {
       "path": "lib/services/cefr_service.dart",
@@ -41549,11 +41605,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full one-line file read: blank compatibility placeholder; no export implementation or evidence claimed.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/services/phrasal_verb_service.dart",
@@ -41619,11 +41682,18 @@
       "lines": 96,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read, no production caller in lib/test/tool symbol search. Legacy validator counts arbitrary list entries as valid and looks for attempt.id while current exported schema uses evidenceId, no actual schema/required-field validation. Generic10-record sufficiency is no inferential guarantee. Dormant research-only helper observations retained, not activated or used to certify real exports.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          96
+        ]
+      ]
     },
     {
       "path": "lib/services/research_experiment_service.dart",
@@ -41633,11 +41703,18 @@
       "lines": 99,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read, caller search only standalone unit test. Dormant in-memory consent/events, millisecond event IDs can collide, shallow three-key removal leaves nested data and prompt fields, retained mutable maps allow later changes. Does not implement production signed permit/current authority/durable withdrawal; no runtime composition found and no activation.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          99
+        ]
+      ]
     },
     {
       "path": "lib/services/research_export_errors.dart",
@@ -41647,11 +41724,18 @@
       "lines": 41,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy research-only aggregate/error DTO permits raw entityId/message in toString and mutable errors list; validity totals supplied by caller, isClean means list empty only. No production export authority inferred.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          41
+        ]
+      ]
     },
     {
       "path": "lib/services/research_report_pdf_exporter_service.dart",
@@ -41661,11 +41745,18 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read, no caller found in lib/test/tool. Despite name only record-count comparison with caller minimum, no PDF/provenance/chart generation; negative minimum unvalidated. Dormant research-only stub, no actual reporting.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "lib/services/sentence_service.dart",
@@ -41766,11 +41857,18 @@
       "lines": 46,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read, only unit test caller found. Dormant LaTeX string helper hardcodes Thai pass labels for both E1/E2 regardless actual values and interpolates labels without LaTeX escaping; no statistical verification or production export route. Out-of-scope statistical report not run or newly integrated.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          46
+        ]
+      ]
     },
     {
       "path": "lib/services/voice_reading_adapter.dart",
@@ -45665,11 +45763,18 @@
       "lines": 1282,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1282lines read. Real memory Drift explicit selected output/metadata/provenance exclusions, packaged exact-word acceptance and tamper/foreign rejection, tombstones/preferences after withdrawal, canonical timezone redaction, assessment typed personal audit and exact field set. Real file WAL two-connection owner-upgrade interleave ensures snapshot consent/data same source, accepts SQLite serialization then retries upgrade; post-upgrade withdrawal blocks save. File readback byte equality all formats; PDF signature only, not rendered layout/Thai glyph QA; small fixture formula first-character coverage only. Anki test selects vocabulary only, no mixed-selection count oracle; generic no-data-named test lacks empty dataset case. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          1282
+        ]
+      ]
     },
     {
       "path": "test/features/export/file_selector_export_store_test.dart",
@@ -45679,11 +45784,18 @@
       "lines": 300,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real temp files prove cancel restores existing/deletes new, successful staging cleanup and failed restore backup preservation, same exact path competing save rejection. Android injected saver and mocked channel assert discard/typed errors; no actual SAF/native commit. No Windows case/alias concurrency or cancellation during final finish ACK tested. No B18 execution.",
+      "sourceReadDate": "2026-09-14T01:37:36.357641+00:00",
+      "readRanges": [
+        [
+          1,
+          300
+        ]
+      ]
     },
     {
       "path": "test/features/export/research_lifecycle_export_test.dart",
@@ -45693,11 +45805,18 @@
       "lines": 538,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full538lines read. Real memory Drift50-entry exact manifest/deletion order, owner-isolated ordinal aliases/typed response exact fields, forbidden private identifiers, deterministic read-only hashes, revoked/tombstoned personal access, null-versus0 and malformed metadata rejection. Multiple parents preserve exact linkage, physical erase idempotent/foreign/global rows preserved, late SQL trigger failure rolls graph back. Seeded synthetic research shape not signed authority and no live research execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          538
+        ]
+      ]
     },
     {
       "path": "test/features/export/research_session_proof_lifecycle_test.dart",
@@ -45707,11 +45826,18 @@
       "lines": 572,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full572lines read. Real Drift strict proof codec/Pair serializer fixture exports reverse-inserted phases linked via aliases without canonical history, malformed Pair start denial and revoked/tombstone access. Source erase child order/late-trigger atomicrollback and foreign-owner preservation. Pending/retry/inFlight proof uploads superseded on local withdrawal with lease clear but attempt history, ACK/denial/ordinarylearning/foreign operations unchanged. Research-owner rebind conflict before secrets and same-bind replay preserve snapshots. In-memory and synthetic authority, no live research execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          572
+        ]
+      ]
     },
     {
       "path": "test/features/gemini/ai_tutor_gateway_factory_test.dart",
@@ -45882,11 +46008,18 @@
       "lines": 205,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full205lines read. Shared synthetic SQL seeds four historical research tables with current-schema-compatible historical24 run pin, marker signature and optional parents/tombstones. Opportunity event IDs are markers with no actual neutral event rows; snapshot covers listed graph plus outbox/conflicts, excludes proofs unless caller extends. Not production research capture/authority. No execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          205
+        ]
+      ]
     },
     {
       "path": "test/features/identity/research_owner_upgrade_test.dart",
@@ -45896,11 +46029,18 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full129lines read. Real Drift rejects source permit/run/full/tombstone history before merge/new-bind owner or secret mutation and repeated attempts unchanged; research-free positive merge/newbind, target research preservation and already-bound replay. Synthetic marker signatures, snapshots limited to helper graph, no process reopen or actual Firebase service. No execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          129
+        ]
+      ]
     },
     {
       "path": "test/features/identity/upgrade_guest_owner_test.dart",
@@ -48479,11 +48619,18 @@
       "lines": 1455,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1455lines read. Actual configured runtime/P256 synthetic key and Drift authorizer/store capture baseline/opportunities, seeded canonical Standard/Adventure completion and proof phases, withdrawal while claims held and receipt-free denial recovery, renewal invalidates old wrappers while immutable facts survive, submillisecond normalization, historical pull and parent-first separate-memory-device recovery with no upload echo. Server provenance mismatch in revision/time/UID fails without checkpoint/ACK; forged signature cannot capture. Delivery helper uses preflight plus sentinel transaction callback and codec encode, not actual gateway transaction or ACK decoding; lost-ACK historical event fixture therefore does not exercise REV09-01 current-revision replay mismatch. Device fixture already seeds consent/assignment; reopened adapter shares memory database, not process persistence. No B18 execution or research activation.",
+      "sourceReadDate": "2026-09-14T01:36:02.815060+00:00",
+      "readRanges": [
+        [
+          1,
+          1455
+        ]
+      ]
     },
     {
       "path": "test/features/research/research_session_proof_repository_test.dart",
@@ -48957,11 +49104,18 @@
       "lines": 694,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full694 lines read. Combined exact rules catalog required for assignment-before-assessment claims; off/standalone/wrong rules retain pending0attempt/no lease, direct ACK unlocks dependent claim. Real engine pagination with fake gateway defers assessment until assignment hasMore false and avoids echo. Store default pull behavior intentionally separate from upload rollout. Synthetic source/ACK, no live research or B18 execution.",
+      "sourceReadDate": "2026-09-14T01:32:09.713838+00:00",
+      "readRanges": [
+        [
+          1,
+          694
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_gateway_transaction_fence_test.dart",
@@ -48971,11 +49125,18 @@
       "lines": 367,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full367 lines read. Actual FirestoreSyncGateway executes SDK-shaped transaction with staged vs committed writes, final authority/auth checks after reads and on retry; loss commits zero, retry first staged batch discarded. Pull/conflict provenance requires same UID committed server metadata; ordinary codec cannot mint provenance. Callback is boolean synthetic authority and query fake ignores ordering/limit, so validates gateway branches not database policy or live server. Resolves earlier concern that final research authority omitted from transaction retry. No execution.",
+      "sourceReadDate": "2026-09-14T01:32:09.713838+00:00",
+      "readRanges": [
+        [
+          1,
+          367
+        ]
+      ]
     },
     {
       "path": "test/features/sync/research_measurement_sync_test.dart",
@@ -49034,11 +49195,18 @@
       "lines": 238,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full238 lines read. Actual consent denial before enqueue, later reaccept, VACUUM INTO bound path and two real file reopens preserve exact permit/withdrawal intent/ACK metadata. No positive authorizer needed for denial claim;2attempt backoff then direct synthetic ACK, restart creates no new work. Nullable DB cleanup checks resolved temp path. Not actual remote acknowledgement or B18 execution.",
+      "sourceReadDate": "2026-09-14T01:32:09.713838+00:00",
+      "readRanges": [
+        [
+          1,
+          238
+        ]
+      ]
     },
     {
       "path": "test/features/sync/reward_transaction_sync_test.dart",
@@ -50371,11 +50539,18 @@
       "lines": 321,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full321lines read. Real UI button through real vocabulary/consent/export/Drift with injected Android saver writes synthetic temp bytes; all formats read back, JSON parse/PDF header only. Consent denial/no-file then personal archive, cancelled picker retries, platform error scrubbing/retry and same-frame duplicate start blocked; pending format controls disabled. Bounded pump with realIO yields and closed DB plus resolved temp-root cleanup. No actual document picker/native ACK/rendered PDF or owner-switch-during-picker oracle. No execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          321
+        ]
+      ]
     },
     {
       "path": "test/screens/export_center_screen_test.dart",
@@ -50385,11 +50560,18 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full57lines read. Archive hides selection without losing prior CSV choice;360px/2x text scaler injected inside MaterialApp builder verifies no framework exception. Dependency-free layout only, no native export or broad accessibility assertions. No execution.",
+      "sourceReadDate": "2026-09-14T01:39:34.411035+00:00",
+      "readRanges": [
+        [
+          1,
+          57
+        ]
+      ]
     },
     {
       "path": "test/screens/fill_in_the_blanks_screen_test.dart",
@@ -51351,11 +51533,18 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Dormant service empty=0 and one equal-size positive synthetic fixture; exact E1/E2 but only d>1 and label Large. Does not validate inferential significance, unequal samples, nonfinite input or zero-variance undefined result. No execution or statistical report.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          33
+        ]
+      ]
     },
     {
       "path": "test/services/cefr_service_test.dart",
@@ -51652,11 +51841,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. In-memory missing-consent negative/accepted positive and top-level email omission only; no withdrawal/ID collision/nested data/durable signed authority oracle. Dormant helper, no activation.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "test/services/spaced_review_reminder_service_test.dart",
@@ -51715,11 +51911,18 @@
       "lines": 37,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Positive synthetic report/model string inclusion only; does not catch unconditional pass labels for failing/insufficient data or LaTeX escaping. Dormant helper, no report run.",
+      "sourceReadDate": "2026-09-14T01:38:26.144797+00:00",
+      "readRanges": [
+        [
+          1,
+          37
+        ]
+      ]
     },
     {
       "path": "test/services/weakness_clinic_service_test.dart",
@@ -51785,11 +51988,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full30 lines read. No-op consent/assignment registries and fixed Legacy rollout keep test-shell research inert while retaining real assignment repository behind denied consent use case. Does not authorize enrollment or external runtime. Source only.",
+      "sourceReadDate": "2026-09-14T01:32:09.713838+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "test/support/legacy_learning_v1.sql",
