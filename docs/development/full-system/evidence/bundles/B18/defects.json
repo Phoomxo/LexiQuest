@@ -204,6 +204,42 @@
       "proposedRegression": "Synthetic local real-Drift fixture with limit1 denied leading opportunity and separately valid later opportunity, repeat bounded preparation and recreate repository; later valid proof/outbox must appear, denied evidence/ACK/consent must remain unchanged. Preserve all-denied no-cursor-write, rollout-off, owner-fence, finite scan and late-withdrawal invariants; no live research activity. Confirm intended no-write authority constraints before selecting local scheduling design; do not simply persist denial as authorization.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV08-01",
+      "severity": "P2",
+      "status": "open-candidate-runtime-reproduction-pending",
+      "file": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "relatedFiles": [
+        "lib/screens/ai_tutor_settings_screen.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "test/features/gemini/gemini_tutor_use_cases_test.dart",
+        "test/features/ai_tutor/ai_tutor_use_cases_test.dart"
+      ],
+      "trigger": "An active reply is draining cancellation while removeKey() or updateConsents(providerConsent:false) is awaiting _cancelActiveOperations(); another reply enters the same live controller before the revoke mutation is queued.",
+      "expected": "Revocation reserves ordering immediately so newly arriving replies cannot use the credential being revoked; already accepted operations drain without weakening owner/lease or paid-result accounting.",
+      "actual": "Live AiTutorUseCases queues the mutation only after awaited drain, allowing the new reply to reserve _transitionGate first and escape the cancellation snapshot. Legacy Gemini controller already has explicit regression for this sequence and reserves transition before draining. Production bootstrap instantiates AiTutorUseCases; settings calls its revoke/remove methods. Current settings page has local saving guard but shared controller boundary is still callable. Runtime confirmation pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Deferred cancellation-aware provider, actual AiTutorUseCases with unique operation/event IDs and actual secure/Drift fenced composition where practical: start replyA; request remove/revoke; synchronously submit replyB during drain; releaseA; assert only one provider generation and replyB blocked, credential revoked, pending/terminal records truthful. Repeat for both operations; preserve paid-completed-result and lease-loss oracles.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-02",
+      "severity": "P2",
+      "status": "open-candidate-runtime-reproduction-pending",
+      "file": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+      "relatedFiles": [
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "test/features/ai_tutor/ai_gateway_adapters_test.dart"
+      ],
+      "trigger": "A200 OpenAI-compatible response contains valid reply text but usage.cost is an extremely large nonnegative JSON number whose multiplication by1e6 cannot be rounded as a finite integer.",
+      "expected": "Malformed advisory usage must become unknown and preserve the successfully received reply without encouraging another paid request; finite legitimate cost and zero retain meaning.",
+      "actual": "Gateway calls (value*1000000).round() inside _parseUsage before returning AiGatewayReply; only FormatException is caught by _parseReply. Later use-case _sanitizedUsage protects invalid AiTokenUsage values but cannot recover a gateway parse exception before reply exists. Current rawHTTP fixtures cover normalcost12micros only. Runtime JSON/nonfinite behavior reproduction pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
