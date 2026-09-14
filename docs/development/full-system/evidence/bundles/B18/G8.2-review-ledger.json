@@ -31489,11 +31489,18 @@
       "lines": 152,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full152 lines read. Closed content kind/CEFR unknown taxonomy, request private factory normalizes whitespace and limits500UTF16units plus en/th; immutable response fields but no constructor validation. AiFailure safe-message claim is convention, arbitrary supplied message echoed by toString. Backend scalar parity and caller boundary separate.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          152
+        ]
+      ]
     },
     {
       "path": "lib/ai/ai_service_factory.dart",
@@ -31503,11 +31510,18 @@
       "lines": 69,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full69 lines read. Config validated before HTTP client allocation, managed wrapper owns even injected client and idempotentclose rejects new calls after dispose. Inflight token await could resume using closed client; constructor exception after allocation not cleanup-wrapped, supplied provider constructor trivial. No request/cost action.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          69
+        ]
+      ]
     },
     {
       "path": "lib/ai/content_provider.dart",
@@ -31517,11 +31531,18 @@
       "lines": 225,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full225 lines read. Auth token beforepost, one401refresh replay; fixed status/code errors. Response buffered unbounded viafromStream and timeout does not abort underlying future; no full token+retry deadline. Success unchecked casts can throwTypeError outside typedfailure, no kind/language echo validation or outputsize. Token provider may throw voice failure. Need production reachability and oracle before promote; no network execution.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          225
+        ]
+      ]
     },
     {
       "path": "lib/ai/generated_reading_content_source.dart",
@@ -31545,11 +31566,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-08",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full30 lines read. Deterministic quotedword question, fixed encouragement no actual analysis, levelcatalog passage. No write despite text message has been noted; caller usage/reachability must avoid persistence implication. Not live AI generation.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "lib/config/adventure_research_runtime_config.dart",
@@ -31559,11 +31587,18 @@
       "lines": 41,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full41 lines read. Off holds no study/issuer/receipt. Configured requires exactly one receipt authority or DB-bound factory and nonempty key map with code-valid IDs, immutable map; key cryptography and study validity delegated to validators. No authority provision, activation or research operation performed.",
+      "sourceReadDate": "2026-09-14T00:33:35.188186+00:00",
+      "readRanges": [
+        [
+          1,
+          41
+        ]
+      ]
     },
     {
       "path": "lib/config/app_config.dart",
@@ -31573,11 +31608,18 @@
       "lines": 137,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full137 lines read. Immutable root origins reject userinfo/query/fragment/nonrootpath and nonHTTP schemes; releaseHTTPS, debugHTTP exact loopback/emulator or canonical numeric RFC1918 only. AI omitted inherits voice; explicit empty invalid; errors/toString redact raw input. HTTPS hosts unrestricted by design configured service origin, no network request performed.",
+      "sourceReadDate": "2026-09-14T00:33:35.188186+00:00",
+      "readRanges": [
+        [
+          1,
+          137
+        ]
+      ]
     },
     {
       "path": "lib/config/learning_feedback_theme.dart",
@@ -31587,11 +31629,18 @@
       "lines": 51,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full51 lines read. Immutable four semantic colors with brightness fallback, partial copy and linear interpolation. Support distinct from success, UI still must supply text/icons, no contrast claim without measured oracle. No runtime changes.",
+      "sourceReadDate": "2026-09-14T00:33:35.188186+00:00",
+      "readRanges": [
+        [
+          1,
+          51
+        ]
+      ]
     },
     {
       "path": "lib/config/m3_theme.dart",
@@ -31601,11 +31650,18 @@
       "lines": 166,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full166 lines read. Shared Thai role fonts/line heights and48px buttons in light/dark, feedback extension, pairhold450/fade150. Reduced motion preference OR platformdisable preserves OS request and durationzero; no text scaling override. Static theme defaults cannot prove every screen contrast/semantics/device fonts; tests pending.",
+      "sourceReadDate": "2026-09-14T00:33:35.188186+00:00",
+      "readRanges": [
+        [
+          1,
+          166
+        ]
+      ]
     },
     {
       "path": "lib/config/remote_economy_policy.dart",
@@ -31629,11 +31685,18 @@
       "lines": 97,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full97 lines read. Exact rollout/writeVersion/rulesRevision pair failclosed, defaults legacy/1; shadow/enforced require2 canonicalrules string. Revision whitespace/empty/256runes constrained, enum switch maps sync payload. Values indicate local configuration compatibility only, not deployed rules or activated research; no run.",
+      "sourceReadDate": "2026-09-14T00:33:35.188186+00:00",
+      "readRanges": [
+        [
+          1,
+          97
+        ]
+      ]
     },
     {
       "path": "lib/data/local/app_database.dart",
@@ -38187,11 +38250,18 @@
       "lines": 42,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Immutable legacy badge fields; JSON defaults coinReward50 and unlockedfalse, no grant behavior. Must not treat missing legacy reward as durable canonical entitlement. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "lib/models/background_model.dart",
@@ -38201,11 +38271,18 @@
       "lines": 5,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-06",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Nullable URL value only with no fetch/mutation; consumer trust boundary separate. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          5
+        ]
+      ]
     },
     {
       "path": "lib/models/card_theme.dart",
@@ -38215,11 +38292,18 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Immutable presentation theme/pricing/unlocked DTO and copy; no checkout or entitlement enforcement here. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          30
+        ]
+      ]
     },
     {
       "path": "lib/models/category_model.dart",
@@ -38229,11 +38313,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Whitespace-only file, no executable declarations or re-export. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/models/cefr_word.dart",
@@ -38243,11 +38334,18 @@
       "lines": 42,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy lexical DTO defaults missing CEFR A1/categoryGeneral and stringifies arbitrary tags; list remains caller-mutable, no validation/provenance/assessment authority. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "lib/models/phrasal_verb.dart",
@@ -38257,11 +38355,18 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy phrase DTO defaults missing CEFR B1 and empty strings, no lexical review or proficiency evidence. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          27
+        ]
+      ]
     },
     {
       "path": "lib/models/sentence_model.dart",
@@ -38271,11 +38376,18 @@
       "lines": 13,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Splits literal spaces and shuffles mutable words on factory construction; consecutive spaces create empty tokens, no normalization or seeded randomness. Production screen takes sentence separately; service caller pending. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          13
+        ]
+      ]
     },
     {
       "path": "lib/models/srs_item.dart",
@@ -38285,11 +38397,18 @@
       "lines": 103,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-05",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy five-box schedule2/5/10/30days and incorrect1day with ease clamp; initialdue immediate, local optional clock, permissive JSON. Comment HLR does not describe an actual trained half-life model; canonical SrsPolicy separate. No owner/idempotency in DTO. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          103
+        ]
+      ]
     },
     {
       "path": "lib/models/suggestion_model.dart",
@@ -38299,11 +38418,18 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Whitespace-only file, no executable declarations or re-export. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          1
+        ]
+      ]
     },
     {
       "path": "lib/models/user_model.dart",
@@ -38313,11 +38439,18 @@
       "lines": 55,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy AppUser profile mapping defaults age0 and empty text with pointsnull; separate UserModel defaults points0. No canonical reward provenance/mutation. Dynamic malformed values throw implicit type errors, not validated input. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          55
+        ]
+      ]
     },
     {
       "path": "lib/models/user_rank.dart",
@@ -38327,11 +38460,18 @@
       "lines": 26,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Closed five XP thresholds and presentation next-tier subtraction; can return negative for inconsistent constructed tier/XP, callers expected to choose tier. No grant or mastery measurement. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          26
+        ]
+      ]
     },
     {
       "path": "lib/models/vocab_model.dart",
@@ -38341,11 +38481,18 @@
       "lines": 36,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy nullableID/uid dictionary mapping and serialization with empty defaults; no owner enforcement. Canonical VocabularyWord/Drift path separate. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          36
+        ]
+      ]
     },
     {
       "path": "lib/models/word_model.dart",
@@ -38355,11 +38502,18 @@
       "lines": 46,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Firestore DocumentSnapshot conversion requires fields and Timestamp; serialization retains userId/global flag but no data access policy here. No network requests in DTO. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
+      "readRanges": [
+        [
+          1,
+          46
+        ]
+      ]
     },
     {
       "path": "lib/navigation/app_route_factory.dart",
@@ -40218,7 +40372,9 @@
       "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
-      "findingIDs": [],
+      "findingIDs": [
+        "B18-REV03-05"
+      ],
       "reviewNotes": "Full266 lines read. Owner-scoped stream recreated each build/search; starter categories and readonly words hide edits, stacked actions reserve bottom space. Pushes bare editor/import/examples using AppNavigator without injected overrides or production feature wrapper; actual AppNavigator constructs MaterialPageRoute directly. Delete captures word ID but resolves current owner after confirmation; storage rejects foreign ID. Live-off descendant mutation and duplicate callbacks remain cross-check candidates; no runtime claim.",
       "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
       "readRanges": [
@@ -40299,11 +40455,18 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-05",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy heuristic exp(-elapsed/2^(box*ease)) with elapsedhours/24 and clamp; variable called halfLife but mathematically e-folding interval, not measured or trained HLR. Invalid/nonfinite inputs not checked; no research calculation executed. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "lib/services/ai_reading_content_adapter.dart",
@@ -40558,11 +40721,18 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-05",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy deterministic insertion-order box buckets sorted intervalDays, alternates boxes when possible and removeAt0 quadratic worstcase. Comments category/HLR overstate actual grouping, which has no category or decay computation. No canonical due-queue writer. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ]
     },
     {
       "path": "lib/services/kmeans_learner_profiler_service.dart",
@@ -40663,11 +40833,18 @@
       "lines": 45,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Constant five phrase examples/CEFR labels and normalized exact filter; content examples only, no external source validity or proficiency proof. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          45
+        ]
+      ]
     },
     {
       "path": "lib/services/rank_service.dart",
@@ -40677,11 +40854,18 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy pure tier-from-XP and correctanswer20or50 plus10 under1500ms, negative latency also earns bonus. No durable reward writer and must not replace canonical reward policy. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ]
     },
     {
       "path": "lib/services/rapid_naming_speed_service.dart",
@@ -40761,11 +40945,18 @@
       "lines": 93,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Static managed AI lazy client and injectable provider return shuffled SentenceModel, all errors nullable with typed failure category/message logged. Default disposal clears pointer before await; existing consumers not cancelled here. Comments quota/auth/caching require actual factory/provider cross-check; no request performed. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ]
     },
     {
       "path": "lib/services/spaced_review_reminder_service.dart",
@@ -40775,11 +40966,18 @@
       "lines": 11,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-03",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy pure boolean now>nextReview or box<=2, does not calculate60percent retention or schedule platform notification. Wall clock noninjectable; canonical reminder usecases separate. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          11
+        ]
+      ]
     },
     {
       "path": "lib/services/srs_service.dart",
@@ -40789,11 +40987,18 @@
       "lines": 72,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-05",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Deprecated single-user SharedPreferences global map, catch malformed JSON to empty and subsequent write could overwrite; read-modify-write uncoordinated and bool setString result ignored. Not canonical Drift, production caller search required. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          72
+        ]
+      ]
     },
     {
       "path": "lib/services/streak_and_daily_quest_service.dart",
@@ -40859,11 +41064,18 @@
       "lines": 16,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-05",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy copy-sort box thenease, take requested limit; no due filter or threshold despite comment, no argument validation. No persistence. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          16
+        ]
+      ]
     },
     {
       "path": "lib/services/word_service.dart",
@@ -40873,11 +41085,18 @@
       "lines": 124,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Legacy direct Firestore categories/words CRUD, nontransactional50count then write, unbounded collection read/deletebatch, raw word debug logs and Datamuse userId camelcase override alongside user_id. No local owner/feature guard. Must remain unreachable from production canonical UI, no cloud action performed. No B18 execution. Exact symbol search across lib found definitions only, no production callers.",
+      "sourceReadDate": "2026-09-14T00:36:06.073997+00:00",
+      "readRanges": [
+        [
+          1,
+          124
+        ]
+      ]
     },
     {
       "path": "lib/utils/index.dart",
@@ -42259,11 +42478,18 @@
       "lines": 98,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure enum parse and request whitespace500ASCIIboundary/language validation; failure test checks category/nonempty name rather than arbitrary sensitive message. No nonBMP scalar/backend parity. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          98
+        ]
+      ]
     },
     {
       "path": "test/ai/content_provider_test.dart",
@@ -42273,11 +42499,18 @@
       "lines": 431,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. MockClient validates endpoint/auth/body success, one401refresh, status mapping, timeout and network fixed failure, missing fields/emptytext. No output-size cap, wrong-typed fields, tokenfailure, cancellation/disposal, response/request identity mismatch test. Only dormant SentenceService calls production factory; no live request. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          431
+        ]
+      ]
     },
     {
       "path": "test/architecture/adventure_authority_boundary_test.dart",
@@ -42581,11 +42814,18 @@
       "lines": 73,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Synthetic fixture verifies off holds no authorities, exactly one instance/factory and lazy factory not invoked, nonempty cloned immutable issuer map. Synthetic zero public key is config fixture only, not cryptographic permit validity or enrollment; no activation or B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:09.564401+00:00",
+      "readRanges": [
+        [
+          1,
+          73
+        ]
+      ]
     },
     {
       "path": "test/config/android_network_security_test.dart",
@@ -42609,11 +42849,18 @@
       "lines": 338,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure parser origin positive/negative matrix release versus debug loopback/privateIPv4, credentials/query/path/malformed hosts, fixed error labels and sentinels; AI default and distinct origin mirror HTTP matrix. No real endpoint/TLS/network or installed dart-defines assertion. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:09.564401+00:00",
+      "readRanges": [
+        [
+          1,
+          338
+        ]
+      ]
     },
     {
       "path": "test/config/flutter_dependency_surface_test.dart",
@@ -42637,11 +42884,18 @@
       "lines": 97,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure actual theme properties verifyMaterial3brightness,48minimum on six button styles, unrounded4.5luminance ratio for five text/surface pairs, platformmotion OR and zero duration. Does not cover feedback extension colors or rendered touch/semantics and all custom screens. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:09.564401+00:00",
+      "readRanges": [
+        [
+          1,
+          97
+        ]
+      ]
     },
     {
       "path": "test/config/research_runtime_config_test.dart",
@@ -42651,11 +42905,18 @@
       "lines": 99,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Pure config defaults explicitlegacy1, shadow/enforced2matchingrules, invalid combinations and redacted exception. Does not verify installed defines or deployed rules even when title says production environment; no B18 execution.",
+      "sourceReadDate": "2026-09-14T00:34:09.564401+00:00",
+      "readRanges": [
+        [
+          1,
+          99
+        ]
+      ]
     },
     {
       "path": "test/data/local/app_database_migration_test.dart",
@@ -47985,11 +48246,18 @@
       "lines": 709,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift guard expiry on final atomic create check rolls back category+word+outbox with positive counterpart; ordinary CRUD streams/reconstruction/normalization50cap/revisions/private hashes/idempotent sameID outbox/cross-owner explicit read-delete refusal. Rich metadata fake verified resolver exercises actual parser schema/byte/depth/revision failures and deterministic order; no real manifest store. No tombstone recreate, category movement cap, ordinary active-owner race or pinned metadata-await owner change. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          709
+        ]
+      ]
     },
     {
       "path": "test/features/vocabulary/expanded_cefr_catalog_test.dart",
@@ -48013,11 +48281,18 @@
       "lines": 198,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real Drift empty receipt, normalized mixed accepted/duplicate/rejected rows, canonical CEFR checksum, exact source replay single import/word and51row cap. Cancellation test is already true before usecase starts, so name before commit does not exercise midtransaction or final receipt-tail cancellation. No changed CEFR source-hash identity, owner race or tombstoned replay case. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          198
+        ]
+      ]
     },
     {
       "path": "test/features/vocabulary/packaged_starter_catalog_test.dart",
@@ -48041,11 +48316,18 @@
       "lines": 175,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Actual Drift normalization/stable owner IDs, first subscription local mutation, blank/oversize/UTC rejection, rename/delete and notification counts after success versus duplicate failure. Owner-scoped named test uses same owner only, cross-owner behavior in repository file. No current-owner change during awaits, game limit validation, notifier throwing or live gate coverage. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          175
+        ]
+      ]
     },
     {
       "path": "test/features/voice/route_voice_session_mixin_test.dart",
@@ -48573,11 +48855,18 @@
       "lines": 164,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Actual file-backed AppBootstrap with unavailable cloud creates local word, explicit inactive-owner repository fixtures, disposes/reopens and checks active owner and exact category/word text/identity. This confirms test oracle is disk reopen not same-memory widget only, but has no abrupt process kill/concurrent migration or import recovery. Inactive-owner ordinary repository creation intentionally used for fixture; no live operation or B18 execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          164
+        ]
+      ]
     },
     {
       "path": "test/scenarios/runtime_kill_switch_journey_test.dart",
@@ -49301,11 +49590,18 @@
       "lines": 345,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real memory Drift journey creates category+word through pushed editor, reconstructs widgets using same DB and compares visible content, empty offline cleanup0; narrow320dark2x final row and landscape keyboard controls hit tested. Called device regression but purely widget surface. No import route exercise, feature registry withdrawal, owner switch overlay or save cancellation; database close is explicit late cleanup, manager not disposed in fixture. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          345
+        ]
+      ]
     },
     {
       "path": "test/screens/otp_screen_test.dart",
@@ -49665,11 +49961,18 @@
       "lines": 427,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake category streams verify retry/rebind cancels old subscriptions and late data ignored; owner switch only detected after forced retry or dependency replacement. Starter versus personal actions, examples page unchanged same fake word identity; mutation methods unimplemented. Pushed starter route merely type asserted, no data loading with injected parent dependency. No live-off/stale create/delete/import coverage; no runtime execution.",
+      "sourceReadDate": "2026-09-14T00:32:19.762062+00:00",
+      "readRanges": [
+        [
+          1,
+          427
+        ]
+      ]
     },
     {
       "path": "test/screens/weakness_clinic_screen_test.dart",
@@ -49798,11 +50101,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. One synthetic5day example checks boundedness and belowthreshold, no half-life0.5calibration or actual recall dataset. Dormant heuristic, not scientific validation. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "test/services/ai_voice_reading_adapters_test.dart",
@@ -50022,11 +50332,18 @@
       "lines": 45,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Empty/single and threeitems two-box smoke asserts firsttwo differ; no general optimalinterleaving/inputpermutation/performance or category/HLR proof. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          45
+        ]
+      ]
     },
     {
       "path": "test/services/kmeans_learner_profiler_service_test.dart",
@@ -50106,11 +50423,18 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Two static CEFR filter firstphrase checks; no independent lexical quality evidence. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          15
+        ]
+      ]
     },
     {
       "path": "test/services/rank_service_test.dart",
@@ -50120,11 +50444,18 @@
       "lines": 42,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Five representative XP tiers and fastnormal/boss/wrong cases; no thresholds exact/negative latency and no durable grant/reward provenance. Dormant service. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          42
+        ]
+      ]
     },
     {
       "path": "test/services/rapid_naming_speed_service_test.dart",
@@ -50176,11 +50507,18 @@
       "lines": 65,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. MockSharedPreferences two-word roundtrip and box1initial/correct2day/incorrect1day exact injectedUTC due boundaries. No concurrency/corruptcache/nonfinite/owner isolation, not canonical Drift SRS. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:37:05.508224+00:00",
+      "readRanges": [
+        [
+          1,
+          65
+        ]
+      ]
     },
     {
       "path": "test/services/streak_and_daily_quest_service_test.dart",

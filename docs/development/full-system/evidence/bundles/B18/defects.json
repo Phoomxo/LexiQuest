@@ -139,6 +139,19 @@
       "proposedRegression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV03-05",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/screens/vocab_list_screen.dart",
+      "trigger": "Open production Vocabulary tab, push a personal category and AddWordScreen, then emergencyOff Feature.vocabulary while editor remains on Navigator stack; submit a valid new word",
+      "expected": "Withdrawal disables the open vocabulary route and rejects any newly initiated mutation through retained UI callbacks",
+      "actual": "MainNavigation gates only CategoriesPage. CategoriesPage pushes bare VocabListScreen, which pushes bare editor/import routes. AppNavigator.pushPage directly builds MaterialPageRoute with no feature wrapper. Editor/usecases/repository ordinary create path has no live feature check; parent gate rebuild cannot remove sibling Navigator routes, so a new word and outbox write remain admissible after withdrawal. Existing widget tests do not toggle registry on these pushed routes.",
+      "ownerPackage": "G4.1",
+      "proposedRegression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
