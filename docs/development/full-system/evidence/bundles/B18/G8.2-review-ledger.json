@@ -32219,11 +32219,18 @@
       "lines": 205,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full205 lines read. Register/sign-in normalize email and validate8..128password before gateway; reset shares same synchronous validation, confirms REV03-04 UI recoverability trigger. Bind+entry clear failure signs provider out best effort and refreshes actual owner display; logout captures entry then creates guest before provider signout and best-effort rollback. Gateway register failure occurs before binding catch, so provider account created but verification-send failure is an unpromoted reconciliation case. Current-password/sign-in share new-password policy; existing shorter credentials not proven in project. No runtime action.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          205
+        ]
+      ]
     },
     {
       "path": "lib/features/account/application/local_data_deletion.dart",
@@ -32233,11 +32240,18 @@
       "lines": 177,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full177 lines read. Manifest child-before-parent SQL deletes parameterize owner, special indirect import/quest children, local owner last; runtime flags intentionally untouched except separate secure eraser. Shared coordinator requires first-transaction lease fence, reminders span erase, secrets removed before SQL with explicit nonrollback policy. Uncoordinated fallback accepts explicit owner and no active-owner check, so production composition/UI owner capture remains essential; no erasure performed.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          177
+        ]
+      ]
     },
     {
       "path": "lib/features/account/data/firebase_account_gateway.dart",
@@ -32247,11 +32261,18 @@
       "lines": 202,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full202 lines read. Anonymous register links credential else creates user then sends verification before returning session. Failure after creation may leave authenticated provider without local bind; next startup reconciles, current UI recovery remains unpromoted. Typed Firebase errors redacted to closed codes; register/sign-in catch arbitrary errors but other methods only FirebaseAuthException. Password reset verifies code then confirms, verification checks/applies/reloads. No live provider calls or current platform guarantees inferred.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          202
+        ]
+      ]
     },
     {
       "path": "lib/features/account/domain/account_contracts.dart",
@@ -32261,11 +32282,18 @@
       "lines": 89,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-09",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full89 lines read. Immutable session/error/action contracts; parse trims nonempty oobCode and maps unknown mode explicitly, does not authorize URI host/path (route boundary handles admission). Gateway separates registration, verification, reset, change and logout. No length constraint on action code here, provider validation authority; no new finding.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          89
+        ]
+      ]
     },
     {
       "path": "lib/features/achievements/application/achievement_share_card_use_cases.dart",
@@ -37654,11 +37682,18 @@
       "lines": 155,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full155 lines read. Owner+UTC captured before all row preparation, invalid rows retain failure code; source hash includes sourceName and normalized spelling/meaning/POS but omits CEFR, potentially conflating changed CEFR imports. Category and sourceName nonblank only, no overall row/byte cap; perfield limits120/500/60. Cancellation passed to transactional persistence. No active-owner revalidation here; no runtime execution.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          155
+        ]
+      ]
     },
     {
       "path": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
@@ -37668,11 +37703,18 @@
       "lines": 374,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full374 lines read. Normalizes bounded text/UTC/nonblank IDs, ordinary CRUD resolves owner at invocation and notifies after store ACK. Atomic create-or-reuse requires expected owner+guard and strong repository. Streams capture owner once; getGameWords reads all then shuffles bounded selection and returns old core selection on any pinned metadata read failure, so caller freshness essential. Category creation lacks opening owner/guard, unlike atomic importer path. CEFR manual accepts arbitrary nonempty<=12text while import enum normalizes. No new finding promoted.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          374
+        ]
+      ]
     },
     {
       "path": "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
@@ -37738,11 +37780,18 @@
       "lines": 242,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full242 lines read. Transaction groups words/outbox/import receipts; sourceHash replay returned before live category lookup; category owner checked, per-row protected starter check but prepared row owner/category not compared with import container. Public usecase constructs consistent rows.50word cap, natural-key set added before capacity rejection so later same rejected word called duplicate. Cancellation checked before and per input row but not final receipt loop/commit; disposal during tail may still commit. Real cancellation oracle pending. No active-owner fence, unlike atomic creation; no execution.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          242
+        ]
+      ]
     },
     {
       "path": "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
@@ -37752,11 +37801,18 @@
       "lines": 691,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full691 lines read. Ordinary CRUD transactions enforce explicit owner/category and starter immutability, canonical outbox revision; only createOrReuse has active-owner pre/post+guard fence. Natural keys include soft-deleted rows, intentional tombstone compatibility requires tests. createWord cap50, update moving category lacks capacity check but UI keeps original category. Category softdelete children without individual revision/outbox, sync category cascade contract pending. Pinned read captures sole active owner then optional verified-rich await without final owner recheck; caller fences needed. Verified packaged metadata requires core checksum+approved/publishedmanifest identity and parse; unknown enum defaults fail closed. No new runtime evidence.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          691
+        ]
+      ]
     },
     {
       "path": "lib/features/vocabulary/data/packaged_starter_access.dart",
@@ -38941,11 +38997,18 @@
       "lines": 124,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full124 lines read. Simple comma-per-line parser ignoring extra columns, whole input allocated before importer with no visible row/byte limit. Dispose sets shared cancellation flag; duplicate stale handler has no singleflight guard and can reset cancellation. Success reports counts then pops, failures recoverable. No feature gate or pinned owner; importer validates category ownership. No execution.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          124
+        ]
+      ]
     },
     {
       "path": "lib/screens/add_vocab_screen.dart",
@@ -38955,11 +39018,18 @@
       "lines": 174,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full174 lines read. Create/edit form captures command synchronously before await, renders busy but handler has no own reentry check; fields remain editable and back allowed during save. Uses category/word IDs and lower owner-qualified storage, no feature gate or opening-owner guard. Typed errors retain form. Pushed route receives scope rather than optional parent injected vocabulary. Live-off and stale action behavior needs widget oracle.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          174
+        ]
+      ]
     },
     {
       "path": "lib/screens/ai_tutor_screen.dart",
@@ -40145,11 +40215,18 @@
       "lines": 266,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-04",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full266 lines read. Owner-scoped stream recreated each build/search; starter categories and readonly words hide edits, stacked actions reserve bottom space. Pushes bare editor/import/examples using AppNavigator without injected overrides or production feature wrapper; actual AppNavigator constructs MaterialPageRoute directly. Delete captures word ID but resolves current owner after confirmation; storage rejects foreign ID. Live-off descendant mutation and duplicate callbacks remain cross-check candidates; no runtime claim.",
+      "sourceReadDate": "2026-09-14T00:30:23.366637+00:00",
+      "readRanges": [
+        [
+          1,
+          266
+        ]
+      ]
     },
     {
       "path": "lib/screens/weakness_clinic_screen.dart",
@@ -42938,11 +43015,18 @@
       "lines": 627,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Fake provider/upgrade/entry repositories verify ordering, register normalization, signout on local bind/entry failure, rollback and refresh display to actual remaining owner even when rollback fails. Fake upgrade does not prove durable merge preservation despite test title. Validation only registration short/email; parser positive code and missing code; email-action application methods empty fakes with no reset correction/network test. No Firebase gateway test or B18 execution.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          627
+        ]
+      ]
     },
     {
       "path": "test/features/account/local_data_deletion_test.dart",
@@ -42952,11 +43036,18 @@
       "lines": 671,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full file read. Real in-memory Drift seeded12rows per owner, indirect children and global quest definition retention, late SQL trigger rollback versus irreversible mock-secret erasure, secret failure zero DB deletes. Actual gate/coordinator and reminder use cases plus fake scheduler show serialization through secrets/SQL, replacement lease fences all deletes and committed result survives later lease loss. Seed covers subset not every manifest table; inventory equality structural, counts not unchanged full payloads. No UI confirmation-owner race, native secret erasure or B18 execution.",
+      "sourceReadDate": "2026-09-14T00:29:22.879951+00:00",
+      "readRanges": [
+        [
+          1,
+          671
+        ]
+      ]
     },
     {
       "path": "test/features/achievements/achievement_share_card_test.dart",
@@ -48363,11 +48454,18 @@
       "lines": 766,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full766 lines read. File-backed production AppBootstrap with unavailable cloud and mocked TTS: configured one-word launcher completes1canonical session/1correct attempt. Other reopen tests instantiate session without sessionId, so exercise legacy reading-progress and association durability rather than canonical recall/recovery. Actual SQLite trigger abort guarantees association+memory rollback, empty retry after reopen remains stage4, then1pair; two-target transient second-write failure preserves first pair and retry yields exactly2pairs. Explicit inactive foreign-owner rows survive and active-owner reader excludes cues. Does not test cue-fading translations, actual process kill/device audio, canonical lost-ACK/owner migration in this file. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:24:05.622113+00:00",
+      "readRanges": [
+        [
+          1,
+          766
+        ]
+      ]
     },
     {
       "path": "test/scenarios/complete_owner_export_delete_test.dart",
@@ -48559,11 +48657,18 @@
       "lines": 2443,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2443 lines read. Actual Drift exact recovery uses VACUUM INTO before widget disposal to model committed process-death snapshot, preserving session/content/configuration, answer IDs and event/SRS/reward counts; partial recall disables committed occurrence only and retries remaining trigger failure. Completed recovery read-only and explicit fresh round after content edit/delete retain old pins/evidence. Verified lexical metadata fixture exercises real manifest checksum and accepted variant. Real lifecycle tests inject abandon failures/lost ACK, shared terminal claim, delayed owner/progress and emergency-off; accepted blocked answer drains once before abandonment with2000ms preserved and stale submission denied. Fake repository mixins delegate exact admission/recovery but simulate progress and failures; owner switch attachment deliberately retains old active session and denies mutation. Empty vocabulary route only asserts CategoriesPage navigation, no live vocabulary gate test. No stage2 translation-fading oracle, actual process kill, device or B18 runtime execution.",
+      "sourceReadDate": "2026-09-14T00:27:43.152080+00:00",
+      "readRanges": [
+        [
+          1,
+          2443
+        ]
+      ]
     },
     {
       "path": "test/screens/associative_reading_session_screen_test.dart",
@@ -48573,11 +48678,18 @@
       "lines": 2095,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2095 lines read. Stage2 explicitly preserves exact passage while removing target cue list; English-only fixture does not verify production launcher translation cue wording. Real Drift tests guided then independent per-item hint reset/SRS and initialization compensation; most retries use recording fake LearningRepository and in-memory associations. Stage3 freezes all raw responses and retries only incomplete occurrence; invalid mappings and121scalar input keep editable with zero capture. Stage6 separately retries close then legacy completion progress, pinned owner and exact identity/time across calls, stale callbacks and system back fenced. Stage checkpoint and association failures block exit; deferred owner resolution freezes cues and word IDs; Stage5 draft locked while progress retry. Bare session fixture lacks canonical reading checkpoint; actual exact recovery tested in launcher file. No production shell recovered-completion failure or translation-fading oracle here. No B18 execution.",
+      "sourceReadDate": "2026-09-14T00:28:11.973079+00:00",
+      "readRanges": [
+        [
+          1,
+          2095
+        ]
+      ]
     },
     {
       "path": "test/screens/avatar_equipment_screen_test.dart",
