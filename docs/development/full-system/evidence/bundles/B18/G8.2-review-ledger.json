@@ -50470,11 +50470,18 @@
       "lines": 502,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full502. ActualWidgetsemantics/keyevents Tab/Enter/Space/semanticsTapexactonecallback, typedtargetidentity/neutralback, stablefocusnodeacrosslocale/resize/unrelatedstate, newlymatchedfocusnextprompt. Narrow359/2x/accessibleNavigation/explicitfocusedchoosefocusedflow; reverse language labelsunique, guidedconfirmationrevision exactandbusy/pending removessemanticTap. LongThai320x2 noellipsis/overflow. Syntheticengine/model notcanonicalpersistence; no physicalscreenreader. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:06:52.659869+00:00",
+      "readRanges": [
+        [
+          1,
+          502
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_board_golden_test.dart",
@@ -50484,11 +50491,18 @@
       "lines": 172,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full172. LoadsactualThaiandMaterialfonts, setsphysicalviewport412/320/1280; seven cases/eightPNGcaptures regular4/6/reverse/longThai2xinitial+scroll/widebound/darkhighcontrastwrong/guidedreducedmotion. Usesisolatedpureengineboard andgoldencomparison, noDB/host lifecycle; no B18 render/goldenexecution. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:06:52.659869+00:00",
+      "readRanges": [
+        [
+          1,
+          172
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_board_view_test.dart",
@@ -50498,11 +50512,18 @@
       "lines": 604,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full604. SharedhelperactualM3theme/AccessibilityScope andMediaQueryinsidebuilder withLocalizations.override, syntheticchecksumplan andpureengineACK. Order/identity/symmetriccolumnheights/56or64tileheights/800maxwidth, progress/placeholders/removedsemantics, supportivewrongrepairicon+border, explicitguidedcallbackandpronunciation48target/noautoreveal/textfallback. Nonaligned30/10timerliveannouncementsdedup round/phase; politefeedbackslotcallbackpreserved. Widehelper setsMediaQuerysize only notphysicalviewport inonecase so800boundtestweaker thanrealwidegolden. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:06:52.659869+00:00",
+      "readRanges": [
+        [
+          1,
+          604
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_completion_clock_test.dart",
@@ -50547,11 +50568,18 @@
       "lines": 733,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full733. RealDrift+queryinterceptor atomicinitial+measuredzero receipts; before/afterrevision2trigger andpreCOMMITfailure rollbacksession/bothevents, postcallercommitlostACK gateoffexactretry. Historicalinitialcannotretrofitcoverage; genericappend/changedoccurrence/reinitafterdurablenullreject. Genericstart APIs cannotforgePaircheckpoint; same-revisionchecksum/report/deleted/category/retired/revision/gate/owner checks. Oneownernegative remainsconfoundedbypriorrevision2 butindependentSQLinterceptorracecoversownercheck. Concurrentduplicateonesession, alteredbuilddeny, progressedcheckpointretryauthenticatesinitialbytes. Actualfileclose/reopen serializedlaunch singularsession/event (notnewOSprocess); DBtestteardowndoubleclosesoriginalmemorydb harmlessifidempotent, nofailureobserved. Gatecallbacknthcheck exercisesrevocationinsidepersistence. No realkill/crashprocess orliveflags. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:08:52.343472+00:00",
+      "readRanges": [
+        [
+          1,
+          733
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_checkpoint_codec_test.dart",
@@ -50680,11 +50708,18 @@
       "lines": 2548,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2548 lines read in seven bounded chunks. RealDrift host/controller/route integration withheldcommit decorators andfakevoice/composedresearchproviders. R15 staleinput/dispose/ownerrevocation feedbackcleanup; finaldurableACK before450+150msfeedbackandpresentedreceipt includingreducedmotion, butallsameplan/runtimeowner. No merged-owner hostfeedback case, so REV03-02 remainsuncovered. Canonicalclose rejects65rowoverflow/hiddenPairmarker/missingorcorruptpurpose/incompleteboard; ownerlogout/switch/insideSQLclose full6tableunchanged. Narration actualfakecompletion/nativestopACK/takeover/failure keepsclockpaused/inputblocked untilretry; notphysicalaudio. Coveredrouteacceptedwrite resumesclock, exactcloseBefore/After/resultread retries samecontroller/endtime/3terminalreceipts; timedcapacityescape, parentgatependingreveal/timer/capture/answer/close drain acceptedwork andreadonlyrecovery whilefreshstartsdisabled. Background excludeshiddenelapsed, decorationreplacement preservescontroller, actualHistory/resultreplay freshpracticecontroller/timewith16tableeffectsnapshot unchanged. Configuredlimit incompleteabandon retry same timestamp versus admittedfinalanswerfinish; two directions freshsetupattachmentretry samepersistedsession, opaquelearnerinitiatedlocalOnlyvoice, focusedresizeidentity. SharedharnessmemoryDB, widgetremount notprocessrestart; syntheticdependencies/clock and no installedflags. No B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:05:59.089438+00:00",
+      "readRanges": [
+        [
+          1,
+          2548
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_host_golden_test.dart",
@@ -50694,11 +50729,18 @@
       "lines": 267,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full267. RealDrift hostsyntheticruntime screenshotsetup/timeout/measuredresult/replay; actualboundedfeedbackhold+fade advancement beforecapture fixesTimerpumpAndSettlelimitation. Localeen/th/en on samehost verifycompanionupdates; frameworklocalizations explicitlyEnglishstubwhilePaircopyrealThai. ActualThai/iconfonts/physical412viewport; no mergedowner/native/deviceproof. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:06:52.659869+00:00",
+      "readRanges": [
+        [
+          1,
+          267
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_idempotency_test.dart",
@@ -50750,11 +50792,18 @@
       "lines": 1132,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1132. Actualpackagedstarterprovision/assets andfullowner/category/word/manifest equality throughmerge, noSRSfromrecognition/nopackageoutbox. Near64KiBplannedtail→escaped256owneroverflow rejectsatomic7tablesnapshot thenoldtailremainsusable; admissibleThai/control256R completesnewactorR whilePplanunchanged. Anonymousbindinitialeventexact; collisionnone/category/word xdirections preservescheckpointpayloadPactor whileRconfigurationprojects/rehashedandcollidingwordtombstoned. Malformed/marker-onlyv1..5preflightrejects beforecollisionwrites; reallegacyadaptershape v1..5 survives unchanged; no-checkpointordinarylegacy policyretained. Fractionalpendingtimestamp, later-createdR chronology,10lineage/pinsnegative and12self-consistentconfiguration replacementsdenyfullsnapshotunchanged. Logout/newguest/secondmerge flattendirectmarkers withPeventkey, stalechainreject; historicalownerquery capturesP/frozen/checkpointactors. No actualFirebase auth despitefilename; allinmemory. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:08:52.343472+00:00",
+      "readRanges": [
+        [
+          1,
+          1132
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_owner_upgrade_test.dart",
@@ -50764,11 +50813,18 @@
       "lines": 1033,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1033. ActualDriftOwnerUpgrade helper optionalcategory/wordcollision, immutableplanP/runtimeR andhistoricalactorpreserved; eightdiskreopen answer/clear before/after xmeasured cases freezeidentity/eventcontext/exactterminalrows andnewcapturesR. Widgetmergedconfigured/unconfigured cases answerONLYONEpair; configuredcap abandons afterone, recoveredcomplete staleprotocol casealreadycompletesbeforemount, so noneexerciseREV03-02 newfinalfeedbackexpiryunderR. Staleheldprotocolresolution aftermerge leavesfull4tablesunchanged; freshbounddispositioncanrecover. SQLanswer/checkpointowner-races rollback, longescapedP/fractionaltimestampreservationtoR retained; terminalbefore/afterACK unchangedelapsed/engine/evidence; curatedexportcollisionresolved fromfrozenlexicaldata andarchiveexcludeslineage/rawpayload/foreignowner,erasepreservesforeignownerrow andcannotreviveretiredlineage. Practice replay projectsconfigurationR/newactor andthreeeffecttablesunchanged; collisionpreventsnewreplaysourcelexicaladmission. No liveauth orresearchactivation. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:07:57.365916+00:00",
+      "readRanges": [
+        [
+          1,
+          1033
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_matching_plan_test.dart",
@@ -50995,11 +51051,18 @@
       "lines": 466,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full466. Capacity atrevision23 pluslostACK preservesownedmodal/narration/backgroundleases untilContinue; tight5-of6andmaximumThai4 futurebytes/revision<=64 includefullrepair/threeclose receipts. Actualhostcloseownership callback once, clockfaultContinue unpauses, staleleases harmless, boundedrestartcycle reserveslastanswers andextension orrejectsbeforeentitlement. Heldanswerat59s excludes999sdelay andfencesrestart untilACK, thenexpiry. Restartkeepshistoricalsupport/ticketspacing.8terminalbefore/afterfaultboundary cases restorememory exacttimestamp/revision+3/4answers; nofileorwidgetexecutionhere. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:07:57.365916+00:00",
+      "readRanges": [
+        [
+          1,
+          466
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/pair_timeout_recovery_test.dart",
@@ -51009,11 +51072,18 @@
       "lines": 498,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full498. OFF measuredcoverage capacity/clockloss degradesnull remainsplayable andthreecanonicalterminalreceipts. Readonlyrestartavailability reservesfutureanswers; capturefailure typedretry; measuredpauseclock stopsatboardcompletion andcoordinatorrestoreexcludeshiddenelapsed.20actualdiskreopen cases5actions xbefore/afterwrite xmeasured/historical verifyexactdurablecheckpointbytes/timerstate/round/entitlement/noanswer/newpausedlease. NoIDminttripwires. Tamperedelapsed/remaining/extension/roundseed/terminal rejected; expiryextendonce/restart/continue retainsoriginalplan andidempotentthreecloseACK/presentedreceipt. Mostotherreopenwording meansmemorycoordinatorrestore. Filecleanupregisteredafterinitialclose leavesearlierfailurecleanupgap. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:07:57.365916+00:00",
+      "readRanges": [
+        [
+          1,
+          498
+        ]
+      ]
     },
     {
       "path": "test/features/learning/pair_matching/r15_pair_feedback_test.dart",
@@ -51023,11 +51093,18 @@
       "lines": 152,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full152. Actualpalettecontrast>=4.5 light/dark success/support; episodeonlynewACK correct notpending/duplicate/wrong.30boardvisualcasesdensity2 xwidth3 xstate5,320dark2x; correct/supportlabels distinct/tilesremoved/terminalstate. Unconditionallywritesbuild/verification/r15-pair-visualPNG screenshots viaRenderRepaintBoundary, no goldenbaselinecomparison; nohosttimedexpiry ormergedowner. Source review only; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:06:52.659869+00:00",
+      "readRanges": [
+        [
+          1,
+          152
+        ]
+      ]
     },
     {
       "path": "test/features/learning/r15_learning_feedback_visual_test.dart",
