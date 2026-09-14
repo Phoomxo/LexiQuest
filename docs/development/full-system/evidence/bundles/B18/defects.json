@@ -330,6 +330,12 @@
       "status": "method-corrected",
       "actual": "One rg cross-check included nonexistent guessed tool/cli/lib/verification-scopes.ps1; existing app_database and verify-scope results readable.",
       "action": "Stopped guessedpath method, enumerated rg --files tool/cli/lib and read existing verify-scope selector lines. No repeated failure, source edits or runtime tests."
+    },
+    {
+      "id": "B18-READ-05",
+      "status": "method-corrected",
+      "actual": "Initial checkpoint read guessed nonexistent resume.md; actual resume.json discovered immediately. Some multi-file source outputs truncated.",
+      "action": "No repeated absent-path read. Used rg --files and exact bounded recovery of omitted source ranges before recording full-source observations. No application changes or tests."
     }
   ]
 }

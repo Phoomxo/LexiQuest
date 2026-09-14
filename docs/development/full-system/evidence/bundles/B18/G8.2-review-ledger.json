@@ -5617,11 +5617,18 @@
       "lines": 222,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full222. Historical pinned48main/382R15 nonmerge semantic dispositions plus10merges; full changedpath raw binary patchSHA, endpoint blob/size comparisons. Ordered regex ownership defaults residualP0.5, explicit main decisions/cumulative R15 source adoption not percommit tested. Writes old census/ledger; never rerun against current checkout. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          222
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/G0.3/semantic-ledger.json",
@@ -5659,11 +5666,18 @@
       "lines": 136,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full136. Historical exactcommonGitdir/HEAD/branch constraints; independent log compares430commit/pathsets and4886rows1603paths, perpath endpoint blobs and permitted disposition/owner. PatchSHA syntax only not recomputation. Preserve old ledger via normalization and docs-only diff/untracked, links and sourcepins; assert-based inspection evidence output not runtime acceptance. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          136
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/G0.4/cli-result.json",
@@ -5799,11 +5813,18 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full24. Prior1325input closure hashes/sourceblob/logs/two resumedcommand duration/status and20entry10negative registry evidence plusP0.4 accepted. Trusts retainedmanifest and recordedcommands, does not independently execute/replay. Historical count assertions not current gates. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          24
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/G0.4/verify_registry.ps1",
@@ -5813,11 +5834,18 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full57. Static registry command path extraction, Economy/Integration missingtargets explicitly unavailable. Ten child verifier rejections and Release PlanOnly no frozenvalidSHA, checks native exit/status. Writes historical registryverification; expected rejection anynonzero not specific reason/dispatch observer. No execution here. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          57
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/G0.5/build_traceability.py",
@@ -5827,11 +5855,18 @@
       "lines": 164,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full164. Documentation-only regex catalog/default/delivery extraction, explicit17routefree boundaries/14mode mapping/74overlapping records, contentprofiles. Pins working bytes to historical SOURCE Git with EOL-only normalization; preserves observed runtime-not-run but mutates oldledgerP0.5 accepted as generator step. Historic schema26 intentional, must not regenerate current. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          164
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/G0.5/source-manifest.json",
@@ -5869,11 +5904,18 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full129. Exact74identities44/14/2/14 eightdomains, pins/sourceblobs/EOL/authority/readiness/testpaths/routes and unchangedstatuses. Literal declaration checks notruntime; application dirs diffunchanged; selected exception ledger preservation and links. Writes historical accepted inspection explicitruntimefalse, asserts normal Python only. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          129
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles-4/bundle-definitions.json",
@@ -5967,11 +6009,18 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full129. Historic BASE/revision18orchestration guard;64uniqueordered requirement bodies unchanged,5history+59remaining20bundles,dependencies precede packages,74coverage preserved andactualhandoffancestry. Currentwriter no future dispatch, relative links/stale workflow markers/docs-only changes. Writes report/index/manifest acyclic; inspection not runtime and obsolete controlrevision means never rerun. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          129
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/G0.6-cleanup-dry-run.json",
@@ -6079,11 +6128,18 @@
       "lines": 77,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full77. Baseline Git census docs active/support/historical classification retain-in-place;76failurePNGs literal refs/textunder2MB plusgoldenstem and restoreblob SHA. No deletes/moves; missingliteralref explicitly notunusedproof, dynamicrefs limitation. Writes historical registry only. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          77
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/build_edition.py",
@@ -6093,11 +6149,18 @@
       "lines": 104,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full104. Local preview specification true/cloudfalse, Android target historical not observed, fourdeliverydecisions incl f12pending/f28hidden;74activationrows carry runtimeNOTRUN, featurestate insufficient. AdoptsD01-D12body hashes/oldunavailableobligations, sixexternalgates/no spending/research. Schema26 and oldf12sourceintent historic notcurrent compiledflags. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          104
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/build_formulas.py",
@@ -6107,11 +6170,18 @@
       "lines": 215,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full215. Twelve explicit source-symbol/hash/HEADblob authority registries and60 downstream fixtures; writers/readers/tests existence only, separates existing firstansweraggregate and emptytranscript defects from desired behavior. Null denominators/XPvscoin/monotonic/UTC/recreational/textsimilarity/costunknown preserved; fixture specifications not executed or language/model/statistical science. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          215
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/bundle-verification.json",
@@ -6149,11 +6219,18 @@
       "lines": 51,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full51. Reuse3passed inspectiongates fingerprint/source/verifier checks, docs-only allowlist/no deletions, exact2open-owned formula defects andlinks. Structuredselfreview explicit no subagents/runtime; no semantic proof beyond manualreport/hash. Never rerun oldbundle to claimcurrent acceptance. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          51
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/verify_cleanup.py",
@@ -6163,11 +6240,18 @@
       "lines": 70,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full70. Exactbaseline docset76failure records hashes/blob recovery, retain/no deletion, priorworkflow pins checked byacceptedGitEOLvariants andlinks. Historicaldocs-onlydiff; untracked scope not checked here (bundle verifier does). Writes inspection receipt not runtime. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          70
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/verify_edition.py",
@@ -6177,11 +6261,18 @@
       "lines": 125,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full125. Exact74rows/fourdecisions/default profile/noinstalledbuild, literalcurrent-at-B01 declarations/handwriting omission;169oldGitpins andpreviousgates checks, exactoldwriter/G0.8/ancestor receipts. Development readiness only; actual binaryflags/native/remote absent. Obsoleteoldsource checks are historical not new defects. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          125
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B01/verify_formulas.py",
@@ -6191,11 +6282,18 @@
       "lines": 81,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full81. NormalPython asserts12registry closure/symbolline/hashes/testpaths; selected independentFraction/integer/date/Wilson arithmetic values (notall60 runtime fixtures). Preserves2downstreamdefects/docs-only. Explicit noDartbehavior/run; no report execution here. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          81
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B02/G1.1-runs/70c33ba04f74-968ee6e69c9b-Explicit-Flutter-tests.stderr.log",
@@ -22333,11 +22431,18 @@
       "lines": 62,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full62. Hardcodedlocalexternal trainedSHA/12871389bytes/exportparity and realLiteRt CPU16class runtime;fourdevelopmentvalidation rawRGB pins scores within.001, class0book andtop10ordering. Probe depends localexternalartifacts, no camera/device/quality generalization; no run here. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          62
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B11A/dataset-audit.json",
@@ -22949,11 +23054,18 @@
       "lines": 82,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full82. Three prior closures exact/EOL or explicitattribute exception and relocatedcandidate test; oldF3/F4 Gitbyte preservation and source delta pinnedB11A. Recomputes config/freeze/metrics but no model inference. Attribute delta checks additions only, historical scoped trust not blanket fingerprint. Exclusiveoutput, not executed/reporting outside package. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          82
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B12/implementation-plan.json",
@@ -22977,11 +23089,18 @@
       "lines": 86,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full86. Top-levelCPU TensorFlow WindowsRSS ctypes, pinnedexport probes,4threadbuiltins nodelegates. Coldload+first,5warm50invoke andoptional30GCcycles; includesmetadataget+set/get timing, PythonGCnotnativeleak proof. Exactshape/finite/sum checks andexclusiveoutput; no baseline/nativecamera, never run review. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          86
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B13/B13-artifact-index.json",
@@ -23593,11 +23712,18 @@
       "lines": 60,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full60. Retainedlogs exacthash, gateclosure deltas allowed seven specificpaths/manual dispositions, red hash differences recorded; Passed commands exits0 but not exactnewfingerprint. Sourcechange bounded and baseline/EOL unchanged; no physical/live. Allowlist alone not byteproof of matching supplementarytestversion; preserve scoped inherited claim. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          60
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B13/implementation-plan.json",
@@ -23901,11 +24027,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full43. Copies allcurrent buildverification targeted receipts/logs intoB14 overwriting destinations, normalizesreceiptEOL retainsrawlogs; current input mismatches recorded, optional loghash assertion. Collection/audit notacceptance and canemptyglob; do not rerun historical copier. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B14/final-audit.log",
@@ -23943,11 +24076,18 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full54. B13committedartifactsha/bytes+workingEOLcheck, B14gate logs hashes/deltas reported not rejected; only forbidai_tutor productiondelta while scopedUI/speech reverified externally. No aggregatepass/fingerprint equality; writesaudit. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          54
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B14/gate-audit.json",
@@ -25483,11 +25623,18 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full52. ExactinheritedB14Gitblobs BASEandHEAD,3recorded commands passed/lograwhash. FinalFlutterCLI allclosure exact/EOL; rules gate requires5rules/test/config/lockpins unchanged whileotherdelta explicitlyscoped. AcceptedmixedEOL explained notraw equality; no currentruntimeclaim. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          52
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B15/defects.json",
@@ -25511,11 +25658,18 @@
       "lines": 14,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full14. Toolresolution diagnostic then parses verify-scope AST and InvokeExpression eachfunction declaration before GetEnvironmentFingerprint. No fullgate, but definition import/fingerprint probes host not pureparse; parseerrorsunchecked and dependscurrentroot. Not executed. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          14
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B15/diagnostic-notes.json",
@@ -27625,11 +27779,18 @@
       "lines": 85,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full85. Regexownpackage import/export/part transitiveclosure withpubspec for6receipts, supplementalarchitecturepins; missing/changed lists reported noassert until optionalcommittedartifactcheck. Unknown/nonfile paths silentlyskip, non-Dartdynamicassets outside closure. Writesaudit/index; receipt import hash evidence scopednot fullenvironment. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          85
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B16/capture_verifier.py",
@@ -27639,11 +27800,18 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full28. Rawselectedreceipt copy and recursiveexisting.log string copies basenameprefixed. Missinglogs silentlyskip/possiblebasenamecollision, nohashvalidation here, laterauditrequired; arbitraryoperator paths not trustedremote input. Overwrites destination; do not rerun. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B16/defects.json",
@@ -28773,11 +28941,18 @@
       "lines": 65,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full65. TwoexactDartclosure+pubspec assertions andsixscopedbackend/lib receipts, CLI conservative deltas only recorded; ignoresmissingCLI inputs inthatloop. InheritedB15B16artifacthash and actualbundleZIPSHA; createsindex plusoptionalGitbatchbyteassert. Fullverifierenvironment equality expresslyexcluded, no newruntime. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          65
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B17/audit_reuse.py",
@@ -28787,11 +28962,18 @@
       "lines": 64,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full64. Fourrequestedtargets matching previousB13/14/16 receipt selection, Passed/Reused commands, rejectsnamefiltered runs. Ownpackage regeximports/pubspec hashes+explicitEOLvariants, returnslastmatching traversal notchronological; externalassets/plugins/environment omitted scoped limitation. No newexecution, no blanketfingerprint. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          64
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B17/capture_verifier.py",
@@ -28801,11 +28983,18 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full28. Same rawreceipt/recursiveexistinglog capture asB16, staleB16docstring only. Missinglogsilentlyskipped/basenamecollision possible andnohashvalidation; finalaudit mustvalidate. Operatorhelper writesB17, noexecutionhere. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          28
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B17/checkout-byte-restoration.json",
@@ -28871,11 +29060,18 @@
       "lines": 35,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full35. Actualflutter_assets everyfilehash, literalpubspecasset files bytecompare/nonemptykernel/no candidate filename, capturedZIP exclusiveprecheck. Regexdirectoryassets wouldnotwork butactualprofile files selected; check-to-makearchive race notglobalexclusive. Claims unsigneddebugbundle notAPK/no independentlydecodedflags; preservesexternalpath. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          35
+        ]
+      ]
     },
     {
       "path": "docs/development/full-system/evidence/bundles/B17/restore_checkout_bytes.py",
@@ -28885,11 +29081,18 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full31. Gitbatch allHEADblob reads, onlyNUL-free/EOL-normalizedequal files rewritten toexactGitbytes; nonEOLerrorraises afterpreviouspartialrestores (noatomicwholecheckout). Diagnosticreceipt explicitlyremainingrestoration, notcompleteearlierhistory; not safe to rerun after intentionalEOLedits and notexecuted. Full source read; no B18 runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          31
+        ]
+      ]
     },
     {
       "path": "docs/development/lexiquest-guardrails-reference.md",
@@ -58692,11 +58895,18 @@
       "lines": 186,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full186. Legacy P7 serial CLI/packaging contracts, wide format/analyze, generator --check, selected product Flutter and three host fake integration tests break on failure. Auth/rules emulators then cloudsync debug1+1 APK/runtime integrity/diff. Host fakes explicitly distinct from physical certification; no fingerprint or frozen SHA enforcement. Do not regenerate historical final plan or execute wide gate during G8.2. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          186
+        ]
+      ]
     },
     {
       "path": "tool/cli/verify-scope.ps1",
@@ -58741,11 +58951,18 @@
       "lines": 224,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full224. Legacy serial foundation gate resets LASTEXITCODE, preserves LexiQuestExitCode and fail-fast phase receipt. CI child contracts each checked; Flutter pubget, tracked Dart format including .g.dart, full analyze/full Flutter then frozen no-sync CPU backend suites and debug APK version1+1/loopback. Runtime doctor probes last. No source-fingerprint reuse/frozen-SHA enforcement; current verify-scope controls supersede. Not executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          224
+        ]
+      ]
     },
     {
       "path": "tool/feature_contract/generate_feature_map.dart",
@@ -58790,11 +59007,18 @@
       "lines": 114,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full114. Offline pinned CEFRJ/LEXiTRON exact-spelling/POS join; lowercase dedup lowest source level/first equal wins, first supported slash spelling, integer source-ID sorted senses. Thai/control/500char checks; A1/A2 then spread B1/B2 exactly3000 unique, non-frequency disclosure. Source SHA uses assert (disabled under python -O); fixed normal CLI caller, no optimization claim. Writes catalog then separate license files nonatomically; source-joined not reviewed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          114
+        ]
+      ]
     },
     {
       "path": "tools/build_expanded_cefr_catalog.py",
@@ -58804,11 +59028,18 @@
       "lines": 86,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full86. Explicit SHA mismatch exceptions for original/core/advanced/dictionary. Preserve original rows; deterministic lexical spread new B1/B2/C1 plus C2 supplement with shared casefold seen; insufficient pool rejects no padding/relabel. Advanced profile and independent Thai assets separate, original source retained, hashes logged. Multiasset writes nonatomic; license declarations source metadata not independent legal verification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          86
+        ]
+      ]
     },
     {
       "path": "tools/camera_accuracy.py",
@@ -58818,11 +59049,18 @@
       "lines": 305,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full305. Metadata-only fresh/natural/fullframe group/hash uniqueness and 30known/200unknown per validation/test; source/license URLs declarations not image verification. Four-softmax max confidence>=.25 finite strict bool/explicit mapped baseline acceptance. Freeze pins retained predictions and recomputes entire metrics; evaluate exact fresh ID sets, descriptive thresholds retain baseline regardless quality. CLI exclusive output and .test-opened receipt before reading predictions stays on failure; path-local receipt not global anti-copy authority. No execution/statistical report. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          305
+        ]
+      ]
     },
     {
       "path": "tools/camera_development_evaluation.py",
@@ -58832,11 +59070,18 @@
       "lines": 271,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full271. Separate web-only no-fresh authority, strict full finite normalized score vectors/argmax/truth/exact IDs and group/hash/author split boundaries. Freeze full recomputation; absent unknown yields null metrics/gate, not0. load_inputs actual artifact SHA/bytes/export/tensor declared metadata/ZIP labels and accepted dataset counts; model not parsed/interpreted, CLI synthetic ZIP oracle demonstrates limitation. Acceptance hash trusted prior curation not independent image audit; retain baseline/no URL. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          271
+        ]
+      ]
     },
     {
       "path": "tools/camera_web_dataset.py",
@@ -58846,11 +59091,18 @@
       "lines": 343,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full343. Bounded20s reads2MBrights/8MBimages; photo-specific ImageObject license/path/photoid and stable author, explicit full-image visual dispositions, EXIF pHash/crop hashes. Union group links before excluding bridge rows, deterministic separate split hash, near/exact dedup; validate safe paths/checksums/image decode/taxonomy/min8train3val and crossauthor/product no fresh data. Curate reads raw paths before safe-path validate; trusted acquired inputs, no remote activation. Acquire resumable request log, partial errors preserved, final acquired blocks rerun even shortages; no downloads performed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          343
+        ]
+      ]
     },
     {
       "path": "tools/export_camera_pilot.py",
@@ -58860,11 +59112,18 @@
       "lines": 76,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full76. Historical actual Keras-to-TFLite rawuint8 rescale/float4, embedded labels and validation-only crop parity top1 all/max.001, exclusive candidate file; assert tensor/image checks can disable under -O. Writes report before failed parity, production disabled, no broad baseline replacement. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          76
+        ]
+      ]
     },
     {
       "path": "tools/export_camera_web.py",
@@ -58874,11 +59133,18 @@
       "lines": 116,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full116. Pinned trained checkpoint/manifest; CPU real conversion exclusive candidate, exact1input/output dtype/shape/ZIP orderedlabels/no background. All developmentvalidation image bytes/pixels parity finite output/top1all/max.001, first4samevalidation rawRGB probes; writes failed evidence then throws. distributionUri null/releaseEnabled false/rollback baseline, no native or fresh-data claim. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          116
+        ]
+      ]
     },
     {
       "path": "tools/generate_float_classifier_fixture.py",
@@ -58888,11 +59154,18 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full29. Top-level TensorFlow conversion writes exclusive test fixture: uint8[1,1,1,3] to float four fixed base scores plus tiny pixel offset; ZIP label timestamp fixed. Synthetic scores can sum>1 intentionally adapter fixture not calibrated learned probabilities, hash printed; import has side effects so never imported/run in review. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          29
+        ]
+      ]
     },
     {
       "path": "tools/prepare_openimages_pilot.py",
@@ -58902,11 +59175,18 @@
       "lines": 93,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full93. Legacy bounded downloads cap+1 timeout45/exclusive destination but preexisting files reused without upstream pins. Known four classes ordered box selection one ID per split, metadata CC URL only; official validation train/val and official test heldout small counts, no author/perceptual independence. Superseded fresh protocol will reject missing fresh/natural/unknown; no acquisition run. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          93
+        ]
+      ]
     },
     {
       "path": "tools/shadow_rewards_analyzer.dart",
@@ -58916,11 +59196,18 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full142. Historical manual JSONL analyzer never queries reward_transactions despite header: parity is wouldSucceed true divided by eligible count, false called already-granted; errors may overlap eligible causing negative notEligible. Empty log exits0; no minimum7days/sample/real production comparison. Descriptive legacy tool not cutover authority; do not activate shadow mode or run reporting. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          142
+        ]
+      ]
     },
     {
       "path": "tools/test_build_cefr_catalog.py",
@@ -58930,11 +59217,18 @@
       "lines": 44,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full44. Synthetic May exact-case/POS/lowest-level provenance and invalid Thai/control/no-placeholder negatives; deterministic exact5 unique spread/not prefix and shortage. No actual pinned source main/optimized-Python or output atomicity oracle. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          44
+        ]
+      ]
     },
     {
       "path": "tools/test_build_expanded_cefr_catalog.py",
@@ -58944,11 +59238,18 @@
       "lines": 20,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full20. Synthetic original preservation/shared uppercase duplicate exclusion, main4+supplement1 deterministic, shortage reject. No live source/license/hash/output roundtrip. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          20
+        ]
+      ]
     },
     {
       "path": "tools/test_camera_accuracy.py",
@@ -58958,11 +59259,18 @@
       "lines": 312,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full312. Synthetic640 metadata rows/predictions exercise coverage/nonfresh/crops/duplicates/crosssplit, frozen tamper11ways/nonfinite/exact IDs and explicit mapped acceptance. CLI subprocess temp files exclusive reports, second opening denied, damagedfreeze no report; legacy trainer insufficient preflight no output. No image inference/physical data, Wilson shape only not statistical certification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          312
+        ]
+      ]
     },
     {
       "path": "tools/test_camera_development_evaluation.py",
@@ -58972,11 +59280,18 @@
       "lines": 180,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full180. Synthetic exact IDs/vector/argmax/config/provenance/tamperedfreeze; actual file SHA and exclusive CLI output using ZIP-only fake .tflite labels, proves metadata binding not real tensor inference. Null unknown/empty metrics and Wilson numeric fixture, explicit paired baseline accepted bool/mapping/coverage gate. No real model quality evaluation. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          180
+        ]
+      ]
     },
     {
       "path": "tools/test_camera_web_dataset.py",
@@ -58986,11 +59301,18 @@
       "lines": 155,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full155. Synthetic photo-specific graph/license/alias/product/transitive grouping and order-independent deterministic split; path escapes. Real temp synthetic PNG/HTML checks changed rights/image/crossowner, coverage=False for small fixture; taxonomy/near crop duplicate negatives. No actual acquisition/remote rights/curator review or full coverage oracle. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          155
+        ]
+      ]
     },
     {
       "path": "tools/test_camera_web_training.py",
@@ -59000,11 +59322,18 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full43. Synthetic training_rows excludes wrongschema/freshtest/empty; real temp exclusive directory preserves checkpoint and SHA mismatch rejects. No TensorFlow optimization, numerical convergence, real learned quality or config full negatives. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          43
+        ]
+      ]
     },
     {
       "path": "tools/test_validate_cefr_editorial.py",
@@ -59014,11 +59343,18 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full33. Synthetic valid structure explicitly not language certification; missing/duplicate/inflected target/out-ofbounds/status rejects. C2 and complete two-sense partition negatives duplicate/missing/control rationale. No actual editorial quality certification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          33
+        ]
+      ]
     },
     {
       "path": "tools/train_camera_pilot.py",
@@ -59028,11 +59364,18 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full142. Legacy trainer deliberately unreachable under current R15 preflight: coverage requires unknown while next check rejects all unknown; guard before TensorFlow imports/output. Historical code fixed-seed MobileNet head/fine-tune best val then test, pinned baseline SHA, four-crop limitation. No training/GPU/network executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          142
+        ]
+      ]
     },
     {
       "path": "tools/train_camera_web.py",
@@ -59042,11 +59385,18 @@
       "lines": 174,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full174. Actual accepted manifest/receipt/backbone SHA checked, train/validation only, bounded epochs/batch/seed, exclusive run directory, CPU deterministic env then image SHA/safe-path EXIF crop. Frozen backbone cached features, seeded shuffled head batches best val loss, raw epoch log and initial-selected finite weight delta, checkpoint hashes. Reuses curation receipt rather than repeat gate; hardcoded16way prose relies accepted16labels. No fresh camera/unknown/rollout, no training run. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          174
+        ]
+      ]
     },
     {
       "path": "tools/validate_cefr_editorial.py",
@@ -59056,11 +59406,18 @@
       "lines": 139,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-11",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full139. Pinned original four assets joined by IDs; exact editorial coverage, fields, strict int sense bounds (bool denied), target-form/Thai/control/text limits, source ID60; sentence length/punctuation only warnings. Full source-sense partition including exclusions/reasons and no duplicate indices. Explicit no language certification; --write-manifest rewrites Dart pins from current batch bytes, not independent editorial truth. Report then manifest nonatomic; no regeneration here. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
+      "readRanges": [
+        [
+          1,
+          139
+        ]
+      ]
     },
     {
       "path": "web/favicon.png",
