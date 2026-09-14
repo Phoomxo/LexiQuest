@@ -240,6 +240,23 @@
       "proposedRegression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV12-02",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/add_default_categories.js",
+      "relatedFiles": [
+        "package.json",
+        "tool/cli/tests/firebase-seed-security.tests.ps1"
+      ],
+      "trigger": "Maintainer invokes the registered npm seed command or imports its exported helpers.",
+      "expected": "The guarded maintenance module must parse before any initialization or seed mutation; source-only checks must not report executable validity from regex presence.",
+      "actual": "The defaultCategories array closes its Nature object then immediately contains a naked quoted words property without a comma/object boundary, followed by duplicated category data. This is invalid JavaScript syntax. package.json routes seed directly to this file, while existing PowerShell contract only matches strings and cannot detect the parse failure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use bounded non-executing node --check or equivalent parser oracle to demonstrate RED and GREEN after repairing duplicated splice; add syntax oracle to targeted maintainer scope. Do not run seed or initialize Firebase. Preserve environment guard and inspect reviewed vocabulary changes rather than silently bulk-seeding remote data.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
