@@ -49301,11 +49301,18 @@
       "lines": 482,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full482. Actual widget excerpt180/full detail toggle, scrolloffset retention, explanation replacement collapses details; explicit unavailable state. Semantics bookmark/report carries pinned revision and reason, missingidentity hides action; correct/wrong noncolor/live region+next/retry, reducedmotion/staticcontrastive. Synthetic committed result and reviewed metadata do not establish durable commit/review provenance or native a11y. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          482
+        ]
+      ]
     },
     {
       "path": "test/features/learning/assessment_evidence_isolation_test.dart",
@@ -49315,11 +49322,18 @@
       "lines": 526,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full526. Real Drift Enforced assessment persists answer/session result and exact11decision cells while scheduler never invokes quest/streak/reward and practice metrics unchanged. Strong secondcase nonempty6projectiontables seeded viahistoricalreward rebuild+canonicalpractice; BEFORE INSERT/UPDATE/DELETE tripwires forbid anymutation and exactbytes preserved. Synthetic owner/context provider not persisted permit authority; no actual assessment instrument workflow or file reopen. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:19:34.540631+00:00",
+      "readRanges": [
+        [
+          1,
+          526
+        ]
+      ]
     },
     {
       "path": "test/features/learning/cloze_mode_adapter_test.dart",
@@ -49350,11 +49364,18 @@
       "lines": 876,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full876. Exact committed contentrevision/distractor/checksum failclosed, samefeedback cached once; realDriftmanifest checksumbytes and actual MeaningReview emits token only aftercanonicalanswer. Tampereddistractor replay rejects, resolver leaves fullanswer/eventrows unchanged. Synthetic4krune emoji parser budget; widget liveemergencyOff/reenablecache and delayedA cannot overwrite newB; expansion keepsscroll. Last4krune2x test stayscollapsed yet expects2scrollers, validatesretryreachability notfull expandedlongdetail. Memory manifests reviewedflags synthetic, noexternalcuration. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:19:34.540631+00:00",
+      "readRanges": [
+        [
+          1,
+          876
+        ]
+      ]
     },
     {
       "path": "test/features/learning/current_activity_evidence_test.dart",
@@ -49364,11 +49385,18 @@
       "lines": 1044,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1044. Generic inputmatrix excludesfourtypedcapturecontracts; hintdowngrade forcloze/Pair. Synchronous ID/time/response frozen beforeasyncpolicy; coalescedwriteexplicitretry keepsbasis/owner once, resolutionretry reusesfirstowner. Ghostnonlegacycompleteoverride only; missingmetadata/Legacyoverride deny. Deepimmutable freeze withoutwrite/strictshape, restoredhistoricalactor candidate butfirstwrite actorcurrentowner. Recordingfake alwaysreplaynull andsecondinserttrue so ownerbindingnotSQLauthority/committedreplay proof. Pinnedcontrastivecontext/provenance andtamper/assistance retained. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:19:34.540631+00:00",
+      "readRanges": [
+        [
+          1,
+          1044
+        ]
+      ]
     },
     {
       "path": "test/features/learning/data/drift_learning_projection_rebuilder_test.dart",
@@ -49378,11 +49406,18 @@
       "lines": 632,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full632. Direct historicalattempts andoptional canonicalv2envelope memoryfixture; SRS cap36500days/reps27/version2 replayexactrow/immutableattempts, XPcountidempotency andEnforcedassessment/guided/recreational exclusion. Historicalachievementidentity/version retained, outboxbackfill stable, negativesversion/conflictingoutbox rollsbacknewunlocks, concurrentrebuild convergence. Completedfixture initiallynoendedAt; onlymilestonecase setsend. No real fresh answeradmission orphysicalrestart; historicalcompatibility oracle. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:19:34.540631+00:00",
+      "readRanges": [
+        [
+          1,
+          632
+        ]
+      ]
     },
     {
       "path": "test/features/learning/definition_quiz_mode_adapter_test.dart",
@@ -49413,11 +49448,18 @@
       "lines": 267,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full267. Real memoryDrift association naturalkeyupsert/delete/read andmemoryupsert; AFTERINSERTmemorytrigger proves compoundrollback ofassociation thenexactretry oneeach. Existing7fieldmemory snapshot retained bycompoundcue save. Nofile restart/multipleowner/retirementrace; memory update unit tests usewallclock only fordistinctassociationIDs. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          267
+        ]
+      ]
     },
     {
       "path": "test/features/learning/drift_learning_event_store_test.dart",
@@ -49427,11 +49469,18 @@
       "lines": 1816,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1816. Real memoryDrift source/envelope whole-second contract, fractional envelope rejected despite answer ms. Coin exact terminalshape, quest v2source/occurrence requirements with authenticated v1bridge exception; missingbridge/receiptidentity/cursorcollision rollsbackboth. Decision tampering full23field matrix rejects, immutablepredecessor marker permits historicalactor; markers synthetic not actualmergehere. Declared/contextlesslegacy correlation exactshape/defaultLegacy cannot activateembeddedEnforced. Reopened legacy frontier means newstore sameDB; real outertransaction rollback preservesoldcursor, gaprecovery reusesreceipt, late earlier/equal-secondsource surviveslatercompletion. Nulloptionalreceipt/grant fields invalid. Several ensureDecisionSet tests pass sourceobject without persisting it, so repository real admission validation distinct. No file/processrestart, transport or research activation. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:20:12.726187+00:00",
+      "readRanges": [
+        [
+          1,
+          1816
+        ]
+      ]
     },
     {
       "path": "test/features/learning/drift_learning_repository_test.dart",
@@ -49441,11 +49490,18 @@
       "lines": 2166,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full2166. Real memoryDrift paged107eligible words bounded100 excludesforeign/deleted; read-only nulllegacychecksum synthesizesidentity while wronghash deniesbeforeadmission. Interceptorfreezes mutablepinlist before read/start. Checkpoint exactretry/activeconflict; deliberately generic peer and inactiveowner checkpointsession allowed, so scopeofactiveowner guarantee needs callerfence anddoesnot itselfcloseREV02-03. Exactrecovery rejects wrongactivity/owner/corruptenvelope/same-countwrongkeys. Realcanonicaltypedvariant hash composition, missing/tampered/staleartifact stripsvariants; replay authenticatesactor/context andall25evidencefields. FrozenV13eventless factory exactcompatibility only, doesnotmint sourceevent; canonicalevent correlation strict. TransactionidempotencySRS/XP/achievements/outbox, avatarquarantine cannotrollbacklearning, historicalversion0/7unlock preservation/live-rebuildparity; out-of-order SRS keepsoriginalunlock. Sessionabandonexacttime/peerpreservation andreadingmonotonic+outbox. Nofile reopen, no terminal-before-start regression. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:21:08.075795+00:00",
+      "readRanges": [
+        [
+          1,
+          2166
+        ]
+      ]
     },
     {
       "path": "test/features/learning/evidence_context_test.dart",
@@ -49455,11 +49511,18 @@
       "lines": 519,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full519. Exact immutable25key ordered schema excludes transient Adventure keys, current/retainedcontractpins, missing/unknown/wrongtype/version/enums/hash/canonicalidentifier negatives. Complete shadow/enforced metadata andcontrolledassessment response; frozenlegacyidentity strict. Knownassistance downgradespreservingmetadata, unknown→guided2/unavailable→independent0; central three recallinput classification. Pure synthetic context no research authority validation. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          519
+        ]
+      ]
     },
     {
       "path": "test/features/learning/evidence_eligibility_policy_test.dart",
@@ -49469,11 +49532,18 @@
       "lines": 601,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full601. Independent literal exhaustive7x11 matrix pluslegacy11, immutabletable; Enforced/Shadow resolver cells withnative/SRS/recreational safetyfloors, no researchcandidateLegacy, protocolcontrolledrequiresengagementboolean. Matchingrecognition never SRS/assessment, recreational noeffort buthistory. Purepolicy efficacyeligible flag not scientific evidence/permit authority; repository decision receipts remain separate. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          601
+        ]
+      ]
     },
     {
       "path": "test/features/learning/first_answer_accuracy_test.dart",
@@ -49546,11 +49616,18 @@
       "lines": 1150,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full1150. Canonical reading strictpassage/pins/no scorecache; partialrecall authenticatedsource cannot advance, terminalmilliseconds/capturedretry withtriggeratomicrollback. Missing/downgradedcheckpoint/reservedgenericadmission deny, content/owner drift andabandon. Realownerupgrades preservecompletededited/deletedhistory andactivecollisionpins/categoryrenameincludingdeletedname, exports/erase; noforeignbaselinehere. Actualfile twiceclose/reopen: AFTERINSERTanswerfailure full7tablerowsunchanged thencommittedlostACK retry singularevent/decision/SRS/XP/outbox/2achievements. Memoryrealownermerge prewriteactornew vscommittedactorold; noOSprocesskill. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:19:34.540631+00:00",
+      "readRanges": [
+        [
+          1,
+          1150
+        ]
+      ]
     },
     {
       "path": "test/features/learning/learning_side_effect_reconciler_test.dart",
@@ -53545,11 +53622,18 @@
       "lines": 101,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full101. Relative unaided versus cued stability/cue dependency and incorrect recall lapse/error behavior. Same deterministic time; no retention calibration or empirical learning validation. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          101
+        ]
+      ]
     },
     {
       "path": "test/learning/associative_scheduler_validation_test.dart",
@@ -53559,11 +53643,18 @@
       "lines": 56,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full56. Rejects invalid identity/state NaN/Infinity/ranges, local computation time and invalid recall latency/confidence. Exactv1 stability3.2/due3days with unchanged prior JSON; no broader numeric extremes or empirical efficacy. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          56
+        ]
+      ]
     },
     {
       "path": "test/learning/learning_domain_foundation_test.dart",
@@ -53573,11 +53664,18 @@
       "lines": 158,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full158. Selectedfield association/recall/memory/reading serialization, empty/501cue andnegative latency reject. LocalLearningRepository CRUD uses process-local repository, despite persists title no disk/recreation. No owner lifecycle boundary. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          158
+        ]
+      ]
     },
     {
       "path": "test/learning/learning_event_test.dart",
@@ -53587,11 +53685,18 @@
       "lines": 226,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full226. Legacy event exact15key schema/enum wire values, UTC conversion, null dimensions/latency, bounds andblank200IDs. toString constant, forbidden terms tested only suppliedsafeexample; sentinel never supplied check vacuous, not adversarial content scrubbing proof. No canonicalv2 persistence. Full source read; no B18 runtime execution or zone acceptance.",
+      "sourceReadDate": "2026-09-14T04:18:05.674862+00:00",
+      "readRanges": [
+        [
+          1,
+          226
+        ]
+      ]
     },
     {
       "path": "test/learning/vocabulary_mixer_test.dart",
