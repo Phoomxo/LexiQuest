@@ -18,6 +18,8 @@ abstract interface class ResearchConsentRepository {
     required int version,
   });
 
+  /// Commits only while [ownerId] is the unique active learner. A stale
+  /// decision must fail without changing consent or its secondary records.
   Future<void> decide({
     required String ownerId,
     required int version,

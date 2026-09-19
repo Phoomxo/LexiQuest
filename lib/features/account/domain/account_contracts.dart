@@ -26,12 +26,17 @@ final class AccountSession {
     required this.email,
     required this.isAnonymous,
     required this.emailVerified,
+    this.verificationEmailPending = false,
   });
 
   final String uid;
   final String? email;
   final bool isAnonymous;
   final bool emailVerified;
+
+  /// Registration committed, but sending verification must be retried.
+  /// This does not imply verified email or undo the created account.
+  final bool verificationEmailPending;
 }
 
 enum EmailActionMode { verifyEmail, resetPassword, unknown }

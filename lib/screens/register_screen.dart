@@ -24,6 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
   AccountSession? _registeredSession;
+  bool _verificationPending = false;
   bool? _researchDecision;
   String? _completionError;
   bool _consent = false;
@@ -55,11 +56,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _completionError = null;
     });
     try {
+      final continuing = _registeredSession != null;
       final session = _registeredSession ??= await account.register(
         email: _email.text,
         password: _password.text,
       );
       if (!mounted) return;
+      if (!continuing) _verificationPending = session.verificationEmailPending;
+      if (_verificationPending) {
+        if (!continuing) {
+          _markCompletionPending();
+          return;
+        }
+        await account.resendVerification();
+        _verificationPending = false;
+        if (!mounted) return;
+      }
       final researchConsent = _researchConsent;
       if (researchConsent != null) {
         final accepted = _researchDecision ??=
@@ -100,9 +112,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _markCompletionPending() {
     setState(
-      () => _completionError =
-          'สร้างบัญชีแล้ว แต่ยังยืนยันการบันทึกความยินยอมไม่ได้ '
-          'กรุณาลองดำเนินการต่อ โดยไม่ต้องสมัครบัญชีใหม่',
+      () => _completionError = _verificationPending
+          ? 'สร้างบัญชีแล้ว แต่ส่งอีเมลยืนยันไม่สำเร็จ '
+                'กดดำเนินการต่อเพื่อส่งอีเมลอีกครั้ง โดยไม่ต้องสมัครบัญชีใหม่'
+          : 'สร้างบัญชีแล้ว แต่ยังยืนยันการบันทึกความยินยอมไม่ได้ '
+                'กรุณาลองดำเนินการต่อ โดยไม่ต้องสมัครบัญชีใหม่',
     );
   }
 

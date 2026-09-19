@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:vocab_learning_app/features/consent/domain/research_consent.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -108,6 +111,42 @@ void main() {
     },
   );
 
+  for (final accepted in [false, true]) {
+    test('F05 stale consent owner is rejected accepted=$accepted', () async {
+      final owner = await consent.owners.getOrCreateActiveOwner();
+      final now = DateTime.utc(2026, 7, 30, 12);
+      await consent.accept();
+      await database.into(database.localOwners).insert(
+        LocalOwnersCompanion.insert(id: 'other', isActive: const Value(false),
+          createdAtUtcMs: now.millisecondsSinceEpoch));
+      final deferred = _DeferredConsentRepository(consent.repository);
+      var notified = false;
+      final pendingConsent = ResearchConsentUseCases(
+        owners: consent.owners, repository: deferred,
+        nowUtc: () => now.add(const Duration(seconds: 1)),
+        onLocalMutation: (_) async { notified = true; },
+      );
+      final pending = accepted ? pendingConsent.accept() : pendingConsent.withdraw();
+      final rejected = expectLater(pending, throwsStateError);
+      await deferred.entered.future;
+      await database.transaction(() async {
+        await database.customUpdate('UPDATE local_owners SET is_active = 0');
+        await database.customUpdate("UPDATE local_owners SET is_active = 1 WHERE id = 'other'");
+      });
+      final before = await _consentSnapshot(database);
+      deferred.release.complete();
+      await rejected;
+      expect(await _consentSnapshot(database), before);
+      expect(notified, isFalse);
+      expect((await consent.repository.load(ownerId: owner.id, version: 1)).accepted, isTrue);
+      expect((await consent.repository.load(ownerId: 'other', version: 1)).decidedAtUtc, isNull);
+      // A new explicit action resolves the new owner and remains available.
+      await consent.withdraw();
+      expect((await consent.repository.load(ownerId: 'other', version: 1)).accepted, isFalse);
+      expect((await consent.repository.load(ownerId: owner.id, version: 1)).accepted, isTrue);
+    });
+  }
+
   test('withdrawal evidence fails closed for an accepted state', () async {
     await consent.accept();
     await database.customUpdate(
@@ -123,4 +162,29 @@ void main() {
       DateTime.fromMillisecondsSinceEpoch(200, isUtc: true),
     );
   });
+}
+
+Future<Map<String, Object?>> _consentSnapshot(AppDatabase database) async => {
+  for (final table in ['local_owners', 'research_consents', 'outbox_operations',
+      'research_participation_permits', 'motivation_measurement_runs',
+      'measurement_opportunities'])
+    table: [for (final row in await database.customSelect('SELECT * FROM $table').get()) row.data],
+};
+
+final class _DeferredConsentRepository implements ResearchConsentRepository {
+  _DeferredConsentRepository(this.delegate);
+  final ResearchConsentRepository delegate;
+  final entered = Completer<void>();
+  final release = Completer<void>();
+  @override
+  Future<ResearchConsentStatus> load({required String ownerId, required int version}) =>
+      delegate.load(ownerId: ownerId, version: version);
+  @override
+  Future<void> decide({required String ownerId, required int version,
+      required bool accepted, required DateTime decidedAtUtc}) async {
+    entered.complete();
+    await release.future;
+    await delegate.decide(ownerId: ownerId, version: version,
+        accepted: accepted, decidedAtUtc: decidedAtUtc);
+  }
 }

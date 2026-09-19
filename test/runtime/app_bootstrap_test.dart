@@ -2130,6 +2130,62 @@ void main() {
       },
     );
 
+    for (final preview in [false, true]) {
+      for (final custom in [false, true]) {
+        test('F05 archive feature state preview=$preview custom=$custom', () async {
+          final now = DateTime.utc(2026, 9, 20);
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            learningPreviewEnabled: preview,
+            buildFeatureRegistry: custom
+                ? const _ReadingOffFeatureRegistry()
+                : const BuildFeatureRegistry.fieldDefaults(),
+            aiNowUtc: () => now,
+          ).initialize();
+          addTearDown(dependencies.dispose);
+          final database = dependencies.database!;
+          for (final feature in [Feature.dailyContinuity, Feature.reading, Feature.aiTutor]) {
+            await database.into(database.runtimeFlags).insert(
+              RuntimeFlagsCompanion.insert(
+                key: 'feature_emergency_off:${feature.name}',
+                boolValue: feature != Feature.reading,
+                source: const Value('local'),
+                updatedAtUtcMs: now.subtract(const Duration(days: 2)).millisecondsSinceEpoch,
+                expiresAtUtcMs: Value(feature == Feature.dailyContinuity
+                    ? now.subtract(const Duration(days: 1)).millisecondsSinceEpoch : null),
+              ),
+            );
+          }
+          await dependencies.featureControls!.reload();
+          final artifact = await dependencies.exports!.prepare(
+            format: ExportFormat.ownerArchiveJson,
+            selection: const ExportSelection(includeVocabulary: false,
+                includeAttempts: false, includeReading: false),
+            cancellation: ExportCancellation(),
+          );
+          final envelope = jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+          final tables = (envelope['content']['tables'] as List).cast<Map<String, dynamic>>();
+          final records = (tables.singleWhere((e) => e['alias'] ==
+              'runtimeControlsAndMetadata')['records'] as List).cast<Map<String, dynamic>>();
+          for (final feature in [Feature.dailyContinuity, Feature.reading, Feature.aiTutor]) {
+            final row = records.singleWhere((e) => e['feature'] == feature.name);
+            expect(row['effectiveState'], dependencies.features.stateOf(feature).name);
+            expect(row['active'], feature == Feature.aiTutor);
+          }
+          expect(dependencies.features.stateOf(Feature.aiTutor), FeatureState.emergencyOff);
+          expect(dependencies.features.stateOf(Feature.dailyContinuity),
+              preview ? FeatureState.enabled : FeatureState.hidden);
+          expect(dependencies.features.stateOf(Feature.reading),
+              custom ? FeatureState.disabled : FeatureState.enabled);
+        });
+      }
+    }
+
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
       final ai = _BootstrapAiTutorController();

@@ -1549,6 +1549,7 @@ final class AppBootstrap {
       lifecycleArchive: OwnerLifecycleArchiveExporter(
         database: database,
         nowUtc: aiNowUtc,
+        buildFeatureRegistry: buildFeatureRegistry,
       ),
     );
     final modelRepository = DriftModelDownloadRepository(database);

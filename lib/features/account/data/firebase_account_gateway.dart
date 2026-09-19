@@ -34,7 +34,19 @@ final class FirebaseAccountGateway implements AccountGateway {
       if (session == null) {
         throw const AccountException(AccountFailureCode.unknown);
       }
-      await result.user!.sendEmailVerification(_actionSettings());
+      try {
+        await result.user!.sendEmailVerification(_actionSettings());
+      } on Object {
+        // Account creation/linking has committed. Return that identity so the
+        // application can bind it and retry delivery without creating again.
+        return AccountSession(
+          uid: session.uid,
+          email: session.email,
+          isAnonymous: session.isAnonymous,
+          emailVerified: session.emailVerified,
+          verificationEmailPending: true,
+        );
+      }
       return session;
     } on AccountException {
       rethrow;

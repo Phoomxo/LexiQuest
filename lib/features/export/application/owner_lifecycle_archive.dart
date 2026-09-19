@@ -41,8 +41,12 @@ final class OwnerLifecycleArchiveExporter {
   const OwnerLifecycleArchiveExporter({
     required this.database,
     required this.nowUtc,
+    this.buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
   });
 
+  // The configured base only: persisted overrides are read in the archive
+  // transaction, rather than sampled from a potentially stale runtime cache.
+  final FeatureRegistry buildFeatureRegistry;
   final AppDatabase database;
   final DateTime Function() nowUtc;
 
@@ -985,7 +989,6 @@ final class OwnerLifecycleArchiveExporter {
           readsFrom: {database.runtimeFlags},
         )
         .get();
-    const defaults = BuildFeatureRegistry.fieldDefaults();
     for (final row in featureRows) {
       final name = row.read<String>('key').substring(featurePrefix.length);
       final feature = Feature.values
@@ -1000,7 +1003,7 @@ final class OwnerLifecycleArchiveExporter {
         'feature': feature.name,
         'effectiveState': active
             ? FeatureState.emergencyOff.name
-            : defaults.stateOf(feature).name,
+            : buildFeatureRegistry.stateOf(feature).name,
         'active': active,
       };
       validateRuntimeFlagDiagnosticFields(

@@ -43,6 +43,20 @@ final class DriftResearchConsentRepository
   }) {
     final epoch = decidedAtUtc.millisecondsSinceEpoch;
     return database.transaction(() async {
+      // Admit the intended learner while acquiring the SQLite write lock.
+      // Owner transitions cannot commit between this check and the decision.
+      final changed = await database.customUpdate(
+        'UPDATE local_owners SET is_active = is_active '
+        'WHERE id = ? AND is_active = 1',
+        variables: [Variable<String>(ownerId)],
+        updates: {database.localOwners},
+      );
+      final active = await (database.select(database.localOwners)
+            ..where((row) => row.isActive.equals(true)))
+          .get();
+      if (changed != 1 || active.length != 1 || active.single.id != ownerId) {
+        throw StateError('consent decision owner must be the active owner');
+      }
       final previous =
           await (database.select(database.researchConsents)..where(
                 (row) =>
