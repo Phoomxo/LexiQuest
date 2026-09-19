@@ -50,6 +50,7 @@ class _SettingScreenState extends State<SettingScreen> {
   Listenable? _featureChanges;
   bool _busy = false;
   bool _displayBusy = false;
+  bool _erasureConfirming = false;
 
   @override
   void didChangeDependencies() {
@@ -259,37 +260,53 @@ class _SettingScreenState extends State<SettingScreen> {
   Future<void> _eraseLocalData() async {
     final eraser = _localDataEraser;
     final owners = _localOwners;
-    if (eraser == null || owners == null || _busy) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('ลบข้อมูลในเครื่องทั้งหมดหรือไม่?'),
-        content: const Text(
-          'ข้อมูลการเรียน คำศัพท์ ความยินยอม ประวัติการใช้ AI และกุญแจ API '
-          'ที่บันทึกไว้ในเครื่องของผู้เรียนปัจจุบันจะถูกลบถาวร',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            key: const ValueKey<String>('confirm-local-erasure'),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('ลบข้อมูลในเครื่อง'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _busy = true);
+    if (!mounted ||
+        eraser == null ||
+        owners == null ||
+        _busy ||
+        _erasureConfirming) {
+      return;
+    }
+    _erasureConfirming = true;
     try {
+      // Bind the confirmation to the owner presented, before opening the dialog.
       final owner = await owners.getOrCreateActiveOwner();
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ลบข้อมูลในเครื่องทั้งหมดหรือไม่?'),
+          content: const Text(
+            'ข้อมูลการเรียน คำศัพท์ ความยินยอม ประวัติการใช้ AI และกุญแจ API '
+            'ที่บันทึกไว้ในเครื่องของผู้เรียนปัจจุบันจะถูกลบถาวร',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              key: const ValueKey<String>('confirm-local-erasure'),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('ลบข้อมูลในเครื่อง'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      setState(() => _busy = true);
+      final currentOwner = await owners.getOrCreateActiveOwner();
+      if (!mounted) return;
+      if (currentOwner.id != owner.id) {
+        _show('ผู้เรียนเปลี่ยนแล้ว กรุณาเปิดการยืนยันลบข้อมูลอีกครั้ง');
+        return;
+      }
       await eraser.eraseAll(ownerId: owner.id);
       if (mounted) _show('ลบข้อมูลในเครื่องแล้ว');
     } on Object {
       if (mounted) _show('ลบข้อมูลในเครื่องได้ไม่ครบ กรุณาลองอีกครั้ง');
     } finally {
+      _erasureConfirming = false;
       if (mounted) {
         final consent = _researchConsent;
         if (consent != null) _reloadConsent(consent);

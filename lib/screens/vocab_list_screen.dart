@@ -5,6 +5,8 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/packaged_starter_identity.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
 import '../navigation/app_routes.dart';
@@ -13,6 +15,7 @@ import '../widgets/cefr_practice_example.dart';
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
     super.key,
+    this.featureRegistry,
     required this.categoryId,
     required this.categoryName,
     this.vocabulary,
@@ -23,6 +26,8 @@ class VocabListScreen extends StatefulWidget {
   final String categoryName;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? importer;
+
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<VocabListScreen> createState() => _VocabListScreenState();
@@ -38,8 +43,20 @@ class _VocabListScreenState extends State<VocabListScreen> {
     super.dispose();
   }
 
+  FeatureRegistry? get _features =>
+      widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features;
+
+  bool get _admitted =>
+      mounted && _features?.isEnabled(Feature.vocabulary) == true;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ProductionFeatureGate(
+    feature: Feature.vocabulary,
+    registry: _features,
+    builder: _buildContent,
+  );
+
+  Widget _buildContent(BuildContext context) {
     final useCases =
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     final importer =
@@ -154,11 +171,15 @@ class _VocabListScreenState extends State<VocabListScreen> {
                     heroTag: 'words-import',
                     tooltip: 'นำเข้าคำศัพท์',
                     onPressed: () {
+                      if (!_admitted) return;
+                      final features = _features;
                       AppNavigator.pushPage<void>(
                         context,
                         AppPage<void>(
                           name: 'vocabulary/import',
                           builder: (_) => AddMultipleWordsScreen(
+                            featureRegistry: features,
+                            importer: widget.importer,
                             categoryId: widget.categoryId,
                             categoryName: widget.categoryName,
                           ),
@@ -181,48 +202,60 @@ class _VocabListScreenState extends State<VocabListScreen> {
   }
 
   void _openWordEditor(BuildContext context, {VocabularyWord? word}) {
+    if (!_admitted) return;
+    final features = _features;
     AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
-        builder: (_) =>
-            AddWordScreen(categoryId: widget.categoryId, word: word),
+        builder: (_) => AddWordScreen(
+          categoryId: widget.categoryId,
+          word: word,
+          featureRegistry: features,
+          vocabulary: widget.vocabulary,
+        ),
       ),
     );
   }
 
   void _openExamples(BuildContext context, VocabularyWord word) {
+    if (!_admitted) return;
+    final features = _features;
     AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: 'vocabulary/examples',
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text('ตัวอย่างการใช้คำ')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  word.spelling,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  word.meaning,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text('${word.partOfSpeech} · ${word.cefrLevel}'),
-                CefrPracticeExample(
-                  spelling: word.spelling,
-                  meaning: word.meaning,
-                  partOfSpeech: word.partOfSpeech,
-                  cefrLevel: word.cefrLevel,
-                  revealed: true,
-                  showUnavailable: true,
-                ),
-              ],
+        builder: (_) => ProductionFeatureGate(
+          feature: Feature.vocabulary,
+          registry: features,
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('ตัวอย่างการใช้คำ')),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    word.spelling,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    word.meaning,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text('${word.partOfSpeech} · ${word.cefrLevel}'),
+                  CefrPracticeExample(
+                    spelling: word.spelling,
+                    meaning: word.meaning,
+                    partOfSpeech: word.partOfSpeech,
+                    cefrLevel: word.cefrLevel,
+                    revealed: true,
+                    showUnavailable: true,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -235,6 +268,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
     VocabularyUseCases useCases,
     VocabularyWord word,
   ) async {
+    if (!_admitted) return;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -252,7 +286,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
         ],
       ),
     );
-    if (accepted != true) return;
+    if (accepted != true || !_admitted) return;
     try {
       await useCases.deleteWord(word.id);
     } catch (_) {

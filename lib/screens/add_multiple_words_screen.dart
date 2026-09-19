@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/domain/vocabulary_import.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 
 class AddMultipleWordsScreen extends StatefulWidget {
   const AddMultipleWordsScreen({
     super.key,
+    this.featureRegistry,
     required this.categoryId,
     required this.categoryName,
     this.importer,
@@ -15,6 +18,8 @@ class AddMultipleWordsScreen extends StatefulWidget {
   final String categoryId;
   final String categoryName;
   final ImportVocabulary? importer;
+
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<AddMultipleWordsScreen> createState() => _AddMultipleWordsScreenState();
@@ -32,8 +37,20 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
     super.dispose();
   }
 
+  FeatureRegistry? get _features =>
+      widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features;
+
+  bool get _admitted =>
+      mounted && _features?.isEnabled(Feature.vocabulary) == true;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ProductionFeatureGate(
+    feature: Feature.vocabulary,
+    registry: _features,
+    builder: _buildContent,
+  );
+
+  Widget _buildContent(BuildContext context) {
     final importer =
         widget.importer ??
         AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
@@ -74,6 +91,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   }
 
   Future<void> _import(ImportVocabulary importer) async {
+    if (!_admitted || _saving) return;
     setState(() {
       _saving = true;
       _cancelled = false;

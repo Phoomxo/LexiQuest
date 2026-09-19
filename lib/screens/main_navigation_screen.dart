@@ -170,7 +170,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       id: 'vocabulary',
       productionEntryId: 'home/vocabulary',
       visibilityFeatures: const [Feature.vocabulary],
-      screen: _gate('vocabulary', Feature.vocabulary, (_) => CategoriesPage()),
+      screen: _gate(
+        'vocabulary',
+        Feature.vocabulary,
+        (_) => CategoriesPage(featureRegistry: _features(context)),
+      ),
       glossary: NavigationGlossary.require('home/vocabulary'),
     ),
     _NavigationEntry(

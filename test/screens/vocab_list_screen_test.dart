@@ -1,4 +1,12 @@
 import 'dart:async';
+import 'package:drift/native.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart' show AppDatabase;
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +24,37 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 
 void main() {
+  late AppDatabase gateDatabase;
+  late AppDependencies gateDependencies;
+  setUp(() {
+    gateDatabase = AppDatabase(NativeDatabase.memory());
+    final research = InertResearchDependencies(gateDatabase);
+    gateDependencies = AppDependencies(
+      initialRoute: AppRoute.home,
+      runtimeStatus: const AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
+        firebase: RuntimeAvailability.unavailable,
+        supabase: RuntimeAvailability.unavailable,
+        backends: RuntimeAvailability.unavailable,
+      ),
+      config: null,
+      guestSessionService: _GuestSessionService(),
+      quest: testQuestUseCases(),
+      experiments: research.experiments,
+      consents: research.consents,
+      experimentAssignments: research.experimentAssignments,
+      assignedLearningEventContext: research.assignedLearningEventContext,
+      evidencePolicyRolloutModeProvider:
+          research.evidencePolicyRolloutModeProvider,
+      vocabulary: _vocabulary(_VocabularyRepository(const [])),
+    );
+  });
+  tearDown(() => gateDatabase.close());
+  Widget app({required Widget home}) => AppDependenciesScope(
+    dependencies: gateDependencies,
+    child: MaterialApp(home: home),
+  );
+
   testWidgets(
     'category retry replaces failed streams and ignores retired data',
     (tester) async {
@@ -25,7 +64,7 @@ void main() {
         _VocabularyRepository(const [], categoryStream: streams.watch),
       );
       await tester.pumpWidget(
-        MaterialApp(home: CategoriesPage(vocabulary: vocabulary)),
+        app(home: CategoriesPage(vocabulary: vocabulary)),
       );
       await tester.pump();
       expect(streams.controllers, hasLength(1));
@@ -69,7 +108,7 @@ void main() {
         );
         final vocabulary = _vocabulary(repository, owners: owners);
         await tester.pumpWidget(
-          MaterialApp(home: CategoriesPage(vocabulary: vocabulary)),
+          app(home: CategoriesPage(vocabulary: vocabulary)),
         );
         await tester.pump();
         streams.controllers.single.add([_category(readOnly: false)]);
@@ -81,7 +120,7 @@ void main() {
         );
         if (replaceDependency) {
           await tester.pumpWidget(
-            MaterialApp(
+            app(
               home: CategoriesPage(
                 vocabulary: _vocabulary(repository, owners: owners),
               ),
@@ -133,7 +172,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(home: CategoriesPage(vocabulary: _vocabulary(repository))),
+        app(home: CategoriesPage(vocabulary: _vocabulary(repository))),
       );
       await tester.pumpAndSettle();
 
@@ -152,7 +191,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: CategoriesPage(vocabulary: _vocabulary(repository))),
+      app(home: CategoriesPage(vocabulary: _vocabulary(repository))),
     );
     await tester.pumpAndSettle();
 
@@ -172,7 +211,7 @@ void main() {
       ]);
 
       await tester.pumpWidget(
-        MaterialApp(
+        app(
           home: VocabListScreen(
             categoryId: PackagedStarterIdentity.categoryId,
             categoryName: 'Everyday English',
@@ -205,7 +244,7 @@ void main() {
     ]);
 
     await tester.pumpWidget(
-      MaterialApp(
+      app(
         home: VocabListScreen(
           categoryId: 'category:personal',
           categoryName: 'My words',
@@ -236,7 +275,7 @@ void main() {
       );
       final repository = _VocabularyRepository([word]);
       await tester.pumpWidget(
-        MaterialApp(
+        app(
           home: VocabListScreen(
             categoryId: 'category:personal',
             categoryName: 'My words',
@@ -424,4 +463,10 @@ final class _ImportRepository implements VocabularyImportRepository {
     PreparedVocabularyImport import, {
     required bool Function() isCancelled,
   }) => throw UnimplementedError();
+}
+
+final class _GuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'vocab-gate-fixture');
 }

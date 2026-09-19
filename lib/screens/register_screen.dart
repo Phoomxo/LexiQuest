@@ -23,6 +23,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   AccountUseCases? _account;
   ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
+  AccountSession? _registeredSession;
+  bool? _researchDecision;
+  String? _completionError;
   bool _consent = false;
   bool _researchAcceptedFromDetails = false;
   bool _obscure = true;
@@ -37,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (!mounted || _busy) return;
     final account = _account;
     if (!_consent) {
       _show('กรุณายอมรับประกาศความเป็นส่วนตัวก่อน');
@@ -46,16 +50,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _show('ระบบบัญชีออนไลน์ไม่พร้อม');
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _completionError = null;
+    });
     try {
-      final session = await account.register(
+      final session = _registeredSession ??= await account.register(
         email: _email.text,
         password: _password.text,
       );
       if (!mounted) return;
       final researchConsent = _researchConsent;
       if (researchConsent != null) {
-        final accepted =
+        final accepted = _researchDecision ??=
             _researchAcceptedFromDetails ||
             await showResearchConsentDialog(context);
         if (accepted) {
@@ -71,10 +78,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
         arguments: EmailVerificationArgs(session.email ?? _email.text),
       );
     } on AccountException catch (error) {
-      if (mounted) _show(_failure(error.code));
+      if (mounted) {
+        if (_registeredSession == null) {
+          _show(_failure(error.code));
+        } else {
+          _markCompletionPending();
+        }
+      }
+    } on Object {
+      if (mounted) {
+        if (_registeredSession == null) {
+          _show('สมัครบัญชีไม่สำเร็จ กรุณาลองใหม่');
+        } else {
+          _markCompletionPending();
+        }
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _markCompletionPending() {
+    setState(
+      () => _completionError =
+          'สร้างบัญชีแล้ว แต่ยังยืนยันการบันทึกความยินยอมไม่ได้ '
+          'กรุณาลองดำเนินการต่อ โดยไม่ต้องสมัครบัญชีใหม่',
+    );
   }
 
   void _show(String message) {
@@ -105,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 20),
             TextField(
               controller: _email,
-              enabled: !_busy,
+              enabled: !_busy && _registeredSession == null,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(labelText: 'อีเมล'),
@@ -113,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _password,
-              enabled: !_busy,
+              enabled: !_busy && _registeredSession == null,
               obscureText: _obscure,
               autofillHints: const [AutofillHints.newPassword],
               decoration: InputDecoration(
@@ -130,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             CheckboxListTile(
               value: _consent,
               contentPadding: EdgeInsets.zero,
-              onChanged: _busy
+              onChanged: _busy || _registeredSession != null
                   ? null
                   : (value) => setState(() {
                       _consent = value ?? false;
@@ -141,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             TextButton(
-              onPressed: _busy
+              onPressed: _busy || _registeredSession != null
                   ? null
                   : () async {
                       final accepted = await showResearchConsentDialog(context);
@@ -154,12 +183,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
               child: const Text('อ่านรายละเอียดการเข้าร่วมและการใช้ข้อมูล'),
             ),
+            if (_completionError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  _completionError!,
+                  key: const ValueKey('registration-completion-error'),
+                ),
+              ),
             const SizedBox(height: 12),
             SizedBox(
               height: 48,
               child: FilledButton(
+                key: const ValueKey('registration-continue'),
                 onPressed: _busy ? null : _register,
-                child: const Text('สมัครและส่งอีเมลยืนยัน'),
+                child: Text(
+                  _registeredSession == null
+                      ? 'สมัครและส่งอีเมลยืนยัน'
+                      : 'ดำเนินการต่อ',
+                ),
               ),
             ),
             if (_busy)

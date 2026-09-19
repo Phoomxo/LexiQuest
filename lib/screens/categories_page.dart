@@ -4,13 +4,17 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
 import 'vocab_list_screen.dart';
 
 class CategoriesPage extends StatefulWidget {
-  const CategoriesPage({super.key, this.vocabulary});
+  const CategoriesPage({super.key, this.vocabulary, this.featureRegistry});
 
   final VocabularyUseCases? vocabulary;
+
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<CategoriesPage> createState() => _CategoriesPageState();
@@ -41,6 +45,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   void _retry() {
+    if (!_admitted) return;
     setState(() {
       // A new subscription resolves the active owner again, even when the
       // injected use-case object has not changed.
@@ -48,8 +53,20 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
+  FeatureRegistry? get _features =>
+      widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features;
+
+  bool get _admitted =>
+      mounted && _features?.isEnabled(Feature.vocabulary) == true;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ProductionFeatureGate(
+    feature: Feature.vocabulary,
+    registry: _features,
+    builder: _buildContent,
+  );
+
+  Widget _buildContent(BuildContext context) {
     final useCases = _vocabulary;
     return Scaffold(
       appBar: AppBar(title: const Text('คลังคำศัพท์')),
@@ -94,11 +111,15 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     _confirmDelete(context, useCases, category),
                               ),
                         onTap: () {
+                          if (!_admitted) return;
+                          final features = _features;
                           AppNavigator.pushPage<void>(
                             context,
                             AppPage<void>(
                               name: 'vocabulary/category',
                               builder: (_) => VocabListScreen(
+                                featureRegistry: features,
+                                vocabulary: widget.vocabulary,
                                 categoryId: category.id,
                                 categoryName: category.name,
                               ),
@@ -127,6 +148,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     BuildContext context,
     VocabularyUseCases useCases,
   ) async {
+    if (!_admitted) return;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => _AddCategoryDialog(
@@ -140,6 +162,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     VocabularyUseCases useCases,
     String name,
   ) async {
+    if (!_admitted) return;
     try {
       await useCases.createCategory(name);
       if (context.mounted) Navigator.pop(context);
@@ -163,6 +186,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     VocabularyUseCases useCases,
     VocabularyCategory category,
   ) async {
+    if (!_admitted) return;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -180,7 +204,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         ],
       ),
     );
-    if (accepted != true) return;
+    if (accepted != true || !_admitted) return;
     try {
       await useCases.deleteCategory(category.id);
     } catch (_) {

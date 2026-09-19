@@ -4,10 +4,13 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 
 class AddWordScreen extends StatefulWidget {
   const AddWordScreen({
     super.key,
+    this.featureRegistry,
     required this.categoryId,
     this.vocabulary,
     this.word,
@@ -16,6 +19,8 @@ class AddWordScreen extends StatefulWidget {
   final String categoryId;
   final VocabularyUseCases? vocabulary;
   final VocabularyWord? word;
+
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<AddWordScreen> createState() => _AddWordScreenState();
@@ -49,8 +54,20 @@ class _AddWordScreenState extends State<AddWordScreen> {
     super.dispose();
   }
 
+  FeatureRegistry? get _features =>
+      widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features;
+
+  bool get _admitted =>
+      mounted && _features?.isEnabled(Feature.vocabulary) == true;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ProductionFeatureGate(
+    feature: Feature.vocabulary,
+    registry: _features,
+    builder: _buildContent,
+  );
+
+  Widget _buildContent(BuildContext context) {
     final useCases =
         widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     return Scaffold(
@@ -126,6 +143,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   }
 
   Future<void> _save(VocabularyUseCases useCases) async {
+    if (!_admitted || _saving) return;
     setState(() => _saving = true);
     try {
       if (widget.word == null) {
