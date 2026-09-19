@@ -1,0 +1,1240 @@
+{
+  "zone": "REV-09",
+  "sliceId": "B18-G82-REV-09",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "3f221791bba8e78f3bd2d2e4dd3f2678049b191b",
+  "reviewCompletedAtUtc": "2026-09-19T12:15:16.537046+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV09-X01",
+      "key": "account",
+      "title": "Account provider and owner transitions",
+      "evidence": [
+        "lib/features/account/application/account_use_cases.dart",
+        "lib/features/account/data/firebase_account_gateway.dart",
+        "lib/features/account/domain/account_contracts.dart"
+      ],
+      "disposition": "Account contracts parse action codes while route admission owns host/path. Bind failure signs out/refreshes actual remaining owner; fake upgrade tests do not prove merge durability. Actual post-create verification failure is REV09-04. Short existing credential compatibility has no demonstrated project account; no speculative policy change. REV03-04 owns synchronous reset UI recovery, REV03-11 owns post-registration consent persistence. Production gateway/live provider NOT RUN."
+    },
+    {
+      "id": "REV09-X02",
+      "key": "consent",
+      "title": "Consent and owner erasure",
+      "evidence": [
+        "lib/features/account/application/local_data_deletion.dart",
+        "lib/features/consent/application/research_consent_use_cases.dart",
+        "lib/features/consent/data/drift_research_consent_repository.dart",
+        "lib/features/consent/domain/research_consent.dart"
+      ],
+      "disposition": "Consent transaction retains monotonic decision, scoped immutable withdrawal intent and terminal history; all-denied remote authority does not prevent local withdrawal. Missing current-owner admission now REV09-06; arbitrary injected hung callback is not proven composed liveness failure (production enqueue uses bounded receipt authorizer and detached trigger). Manifest child-first deletes and file-backed foreign/global snapshots establish oracle scope, not native secret erasure. SettingScreen259-288 reads owner after confirmation: existing REV03-08, not duplicate. REV06-02 owns native reminder/lease cleanup gap; irreversible secret-before-SQL behavior remains explicitly nonrollback."
+    },
+    {
+      "id": "REV09-X03",
+      "key": "export",
+      "title": "Export snapshot, formatting and native boundary",
+      "evidence": [
+        "lib/features/export/application/export_use_cases.dart",
+        "lib/features/export/application/owner_lifecycle_archive.dart",
+        "lib/features/export/data/drift_export_reader.dart",
+        "lib/features/export/data/file_selector_export_store.dart",
+        "lib/features/export/data/research_lifecycle_export_reader.dart",
+        "lib/features/export/domain/export_contracts.dart"
+      ],
+      "disposition": "Active-owner/consent/data are read in one transaction; personal archive intentionally keeps withdrawn history through explicit projections and ordinal aliases. Exact manifest/table/field equality and file-backed foreign/global snapshots are strong local oracles; generic legacy retained JSON is provenance-bound, not recursively redacted free text. Anki production screen forces vocabulary only, so mixed selection count concern is not reachable there. UTF8 CSV escaping, deterministic digests and null-versus-zero cost preserved; PDF tests only signature, no rendered Thai glyph/layout acceptance. Archive effectiveState baseline mismatch now REV09-05. Store absolute-string destination lock does not normalize Windows aliases; current screen serializes saves, no demonstrated competing alias caller. Dart cancellation is checked before Android finish; native finish34-44 removes unsettled URI as commit boundary, later cancellation cannot retroactively retract committed save. REV10 owns activity loss/SAF lifecycle and actual close/flush semantics. No file export/native runtime performed."
+    },
+    {
+      "id": "REV09-X04",
+      "key": "authority",
+      "title": "Research authority and signed boundaries",
+      "evidence": [
+        "lib/features/research/application/research_participation_permit_validator.dart",
+        "lib/features/research/data/drift_research_participation_repository.dart",
+        "lib/features/research/data/drift_research_sync_authorizer.dart",
+        "lib/features/research/data/firestore_research_receipt_authority.dart",
+        "lib/features/research/data/research_p256_signature_verifier.dart",
+        "lib/features/research/domain/research_participation_permit.dart",
+        "lib/features/research/domain/research_permit_document.dart",
+        "lib/features/sync/domain/research_sync.dart"
+      ],
+      "disposition": "P256 immutable issuer allowlist and canonical scalar/signature checks have fixed RFC6979 and independently-labelled UTF8 vectors; configured synthetic keys are not issuer approval. Permit codec checks bounded exact document before authenticity; signed canonical payload excludes hash/signature. Participation refreshes local context and fresh expiry after async receipts; authorizer compares dependency snapshots and fresh end time, resolving adapter reused-now suspicion in real composition. Firestore receipt read requires Source.server/committed metadata, exact path/UID/local consent before/after, bounded5s default and late-result denial. Research gateway transaction-fence oracles exercise staged retry/late auth denial, not actual deployed Firestore. Source/delivery hashes prove consistency, never activation. Schema27 stale oracle remains REV12-01, not suppressed."
+    },
+    {
+      "id": "REV09-X05",
+      "key": "assignment",
+      "title": "Assignment, measurement and UI",
+      "evidence": [
+        "lib/features/research/application/adventure_research_runtime.dart",
+        "lib/features/research/application/assigned_learning_event_context_provider.dart",
+        "lib/features/research/application/experiment_assignment_use_cases.dart",
+        "lib/features/research/application/motivation_measurement_use_cases.dart",
+        "lib/features/research/data/drift_experiment_assignment_repository.dart",
+        "lib/features/research/data/drift_measurement_opportunity_repository.dart",
+        "lib/features/research/data/drift_motivation_measurement_repository.dart",
+        "lib/features/research/domain/experiment_assignment.dart",
+        "lib/features/research/domain/measurement_opportunity.dart",
+        "lib/features/research/domain/motivation_instrument.dart",
+        "lib/features/research/domain/motivation_measurement.dart",
+        "lib/features/research/domain/motivation_measurement_repository.dart",
+        "lib/features/research/domain/motivation_study_protocol.dart",
+        "lib/features/research/domain/research_event_identity.dart",
+        "lib/features/research/domain/research_protocol_mode_catalog.dart",
+        "lib/features/research/presentation/motivation_measurement_form.dart",
+        "lib/features/research/presentation/research_participation_panel.dart",
+        "lib/features/research/presentation/research_participation_screen.dart"
+      ],
+      "disposition": "Immutable assignment ID/outbox replay and owner lineage preserved. Search finds no lib caller invoking experimentAssignments assignment use case; explicit configured/test fixture is not enrollment. Ancestor-set convergence is not general cycle detection, but production upgrade admits directed merges and no accepted cyclic mutation path established. Default protocol catalog is const empty; configurable mutable injected list is caller constraint, not shown production drift. Final learning/participation admission checks current context, so sequential advisory event-context reads are not sole authority. Measurement duplicate score keys are prevented by persisted unique run/item and catalog constraints. Backward close suspicion resolved: research_tables.dart123 CHECK requires closed>=started; SQL aborts, no corrupt terminal accepted (typed error/retry remains UI behavior). Baseline/post windows and bounded opportunities are eligibility, not statistical validity. Forms retain exact failed response/retry identity, generation fencing, accessible synthetic layouts; hung injected persistence/native accessibility remain unproven. Panel hides withdrawal when authority unavailable but settings local consent remains fallback."
+    },
+    {
+      "id": "REV09-X06",
+      "key": "proof",
+      "title": "Proof identity and bounded progress",
+      "evidence": [
+        "lib/features/research/data/drift_research_session_proof_repository.dart",
+        "lib/features/research/domain/research_session_proof.dart",
+        "lib/features/sync/data/drift_research_sync_adapter.dart"
+      ],
+      "disposition": "Proof validates canonical Pair/history/start-core, compact lineage and immutable signed revision; source reader joins exact consent/session/event aggregate/time identity. Renewal deliberately cannot splice new start-core into old sibling. REV09-02 remains candidate: proof cursor only advances admitted frontier; adapter122/180 likewise LIMIT before allowed and can repeatedly inspect denied leading rows. Existing50-ACK and finite-wrap tests are admitted-prefix positives, not denied-prefix progress. Preserve all-denied no-write, owner fence, exact ACK metadata and ordinary learning immutability. Actual gateway immutable lost-ACK proof replay cannot close mutable category/SRS REV09-01. No synthetic authorizer result promoted to real authority."
+    },
+    {
+      "id": "REV09-X07",
+      "key": "sync-store",
+      "title": "Outbox, mutable mirrors and receipts",
+      "evidence": [
+        "lib/features/sync/data/drift_sync_store.dart",
+        "lib/features/sync/data/firestore_sync_gateway.dart",
+        "lib/features/sync/domain/sync_entity.dart",
+        "lib/features/sync/domain/sync_store.dart"
+      ],
+      "disposition": "Exact operation identity, lease reservations, write fences and cursor/page atomicity retained. REV09-01 remains static: reconstructed current mutable revision disagrees with original receipt through actual decodeAcknowledgement1044-1055; fake ACK shortcuts in store/engine/owner-upgrade/scheduler/file-reopen tests do not close it. Preference offline edits use cloud-base+1 and supersede older pending intent; concurrent whole-row save remains REV06-04. SRS source/rules mutable-vs-create-only mismatch is new REV09-03; _requireMutableSrsEntity6405-6411 rejects mismatched wordId before writes, so no local corruption claimed. SRS incoming numeric bounds rely on rules for client-written server data; admin/legacy malformed cache and unknown algorithm oracle absent, not asserted safe. Exact word/private/packaged ownership, immutable answer dominance, assignment-before-assessment pull barrier and no echo remain oracle-scoped. Placeholder payload roundtrips do not prove rules acceptance. Frozen unsupported legacy-v2 default path not configured by production ResearchRuntimeConfig; no live rollout inferred."
+    },
+    {
+      "id": "REV09-X08",
+      "key": "sync-engine",
+      "title": "Engine, cache, scheduling and contracts",
+      "evidence": [
+        "lib/features/sync/application/sync_backoff.dart",
+        "lib/features/sync/application/sync_engine.dart",
+        "lib/features/sync/application/sync_mutex.dart",
+        "lib/features/sync/application/sync_trigger.dart",
+        "lib/features/sync/data/drift_cloud_policy_cache.dart",
+        "lib/features/sync/data/drift_owner_operation_gate.dart",
+        "lib/features/sync/domain/cloud_sync_policy.dart",
+        "lib/features/sync/domain/owner_operation_gate.dart",
+        "lib/features/sync/domain/sync_failure.dart",
+        "lib/features/sync/domain/sync_gateway.dart",
+        "lib/features/sync/domain/sync_result.dart",
+        "lib/features/sync/platform/background_sync_scheduler.dart",
+        "lib/features/sync/platform/workmanager_sync_scheduler.dart"
+      ],
+      "disposition": "Engine mutex key is literal ownerOperationGate and default jitter is zero/SyncBackoff defaults; padded release/NaN injected concerns have no production caller. UUIDv4 lease generator before try has no established throw in production; no universal hang guarantee claimed. Lease heartbeat, five reservations, timeout and late completion fencing tested with fake gateway, not actual isolate/native service. Policy provider constructs expiry after fetch+15minutes; cache read failures propagate to guarded trigger, not enabled policy. Trigger coalesces and drains; provider timeout does not abort SDK future, gateway/store fences still necessary. Empty pull-page no-progress metadata and Workmanager completed-hasMore/init-failure gaps are bounded scheduler/API constraints, no immediate liveness SLA established; Android scheduled hourly registration/device execution NOT RUN. Unsupported collections/JSON bounds remain explicit; process-local provenance fingerprint is not a cryptographic receipt."
+    },
+    {
+      "id": "REV09-X09",
+      "key": "rules",
+      "title": "Rules and hosted/storage configuration",
+      "evidence": [
+        "firestore.rules",
+        "hosting/public/.well-known/assetlinks.json",
+        "hosting/public/field-support/index.html",
+        "storage.rules",
+        "supabase/config.toml",
+        "supabase/migrations/20260727000000_image_bucket_public_readonly.sql"
+      ],
+      "disposition": "Owner-scoped default deny, versioned envelopes and reciprocal getAfter operation/entity receipts preserved. SRS live mutable disagreement REV09-03; permissive raw identity is rejected by receiver but rule equality regression required with contract repair. Four contradictory P2.6 create paths are dormant: no SyncCollection wire/caller, so not fabricated live sync outage. Reward client mirror cannot independently certify earned entitlement. Legacy future cutoff1790812800000 remains pre-cutoff on task date; oracle will become stale, finalREV12 must reconcile time source. Storage rules deny all client storage; Supabase Image public read and restrictive all-bucket client writes are deployment source only. Assetlinks certificate and support contact text do not prove hosted/installed match or private channel availability. No provider/network/rules evaluation/deploy/research activity."
+    }
+  ],
+  "files": [
+    {
+      "path": "firestore.rules",
+      "sha256": "dffbeb1a7a7429a798e78b58109820c4531ee1992f192e379a436c2d7b2c1954",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-03"
+      ],
+      "crossCheck": "REV09-X09"
+    },
+    {
+      "path": "hosting/public/.well-known/assetlinks.json",
+      "sha256": "5d6fc5d75a2ece33481d85f7a64b0f76b04535f486f2a989881a0d24ca38b058",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X09"
+    },
+    {
+      "path": "hosting/public/field-support/index.html",
+      "sha256": "5a792980d9d413ce8965a60d4a81982ee174e197b5101f6efa9ffe33b87435a0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X09"
+    },
+    {
+      "path": "lib/features/account/application/account_use_cases.dart",
+      "sha256": "14daf9e1c98a80cdbd749efdf6bdeb6c2239a84b385fca0a21b9812745c0e8e7",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-04"
+      ],
+      "crossCheck": "REV09-X01"
+    },
+    {
+      "path": "lib/features/account/application/local_data_deletion.dart",
+      "sha256": "3a9062cc7b2d2d0543f7af003de9050e226c293efe2971a948ef2a0931e80a99",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X02"
+    },
+    {
+      "path": "lib/features/account/data/firebase_account_gateway.dart",
+      "sha256": "63f3faf873d6ff2f99c08e5435b273849802fe5e60ee085e14627329cff2b6e7",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-04"
+      ],
+      "crossCheck": "REV09-X01"
+    },
+    {
+      "path": "lib/features/account/domain/account_contracts.dart",
+      "sha256": "0f8256557af8d7f74488a697d58ad49077dc436aa62a301846b7e8d42e812ecb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X01"
+    },
+    {
+      "path": "lib/features/consent/application/research_consent_use_cases.dart",
+      "sha256": "68f932635f1bad5a24d09f9fb29b71df1fb666aa720090db55076a1a1bd82ff9",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-06"
+      ],
+      "crossCheck": "REV09-X02"
+    },
+    {
+      "path": "lib/features/consent/data/drift_research_consent_repository.dart",
+      "sha256": "81821872513c6daf662878b545bd408175ae205b1d87609857fc700361123559",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-06"
+      ],
+      "crossCheck": "REV09-X02"
+    },
+    {
+      "path": "lib/features/consent/domain/research_consent.dart",
+      "sha256": "43f6a6c3c48d6eb58fb7dae058cd38737ff93cbd5b98d0925a24e9820833ed29",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X02"
+    },
+    {
+      "path": "lib/features/export/application/export_use_cases.dart",
+      "sha256": "59d63718405edff246689a7df957e8ba77eb77f11d87bb01963318188eec567d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/export/application/owner_lifecycle_archive.dart",
+      "sha256": "a5091a2578c99348c70cb5f46983bfbc42e9435868bee09df517e51d3b6166e1",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-05"
+      ],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/export/data/drift_export_reader.dart",
+      "sha256": "fc0a53721e87f326536394cb1414c8535ec12b7814348184137553364ca242e3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/export/data/file_selector_export_store.dart",
+      "sha256": "325251f4378cae4c1b0bef76a23e000f4b923a255164a23f582fbaeac58bf862",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/export/data/research_lifecycle_export_reader.dart",
+      "sha256": "3288ec9610e94cb0e55ec3bde3b8e0aecb41fdf4c3e46b73468b3fb3a8b2c255",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/export/domain/export_contracts.dart",
+      "sha256": "2769f053e8dfdb5300b464bef0572db3ffe56946388bbf9eb76652a72ae96b10",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X03"
+    },
+    {
+      "path": "lib/features/research/application/adventure_research_runtime.dart",
+      "sha256": "49b19ba28a52e8950ea62931d31e47296baa77bc9af9d0758916b5a58294fe31",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/application/assigned_learning_event_context_provider.dart",
+      "sha256": "66ca9855934118be218eebaa68b74077e45102aa75cae482d6431554c8901c8a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/application/experiment_assignment_use_cases.dart",
+      "sha256": "ff8682310bbd2fd409b819a9a0cca0bd476680db6d9f03503bc26ba35eae62f2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/application/motivation_measurement_use_cases.dart",
+      "sha256": "49fc9b5b9ed0ab6b6228f2ce5ae2591f6f306a10705efeff13d9fa9f7043be74",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/application/research_participation_permit_validator.dart",
+      "sha256": "2a7168799a184ac8067cb13f3ac76b5dce455b2f355e21802990dc470cb74667",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/data/drift_experiment_assignment_repository.dart",
+      "sha256": "69322a6f16448df23e32e13c8dd013609252e0bfa44f1ed8de9366e34e83ae7b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/data/drift_measurement_opportunity_repository.dart",
+      "sha256": "1e4fdfdc8bc2357141a69d306e8ccc421cfb8f31ed2021fb4eedbb6f556d43bb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/data/drift_motivation_measurement_repository.dart",
+      "sha256": "588c2202a3d0d36685c4fb5d01a653acc5b0312b794afdef7cda37bed514ff84",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/data/drift_research_participation_repository.dart",
+      "sha256": "2706249e48298c5bab3fe241a5d4f950625348303d1cd07e7a291822d36ab3c7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "sha256": "0d369b06aaac4eb889a96b55187c2afa69197d503a5d9f73a6c957899a143970",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-02"
+      ],
+      "crossCheck": "REV09-X06"
+    },
+    {
+      "path": "lib/features/research/data/drift_research_sync_authorizer.dart",
+      "sha256": "d94c95609210c748e8ff1c8268438a67acaa6c58fd39b1bbbc028ff309d9aa85",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/data/firestore_research_receipt_authority.dart",
+      "sha256": "2a210d39be1ab4be1decee9ce12a4f25d6d2dd524cf1ab598564d13ca3a3c5ed",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/data/research_p256_signature_verifier.dart",
+      "sha256": "0aac54f46cb71ec62dc5226844d0653394c445cb1a374c7251c0dc6f282e7e23",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/domain/experiment_assignment.dart",
+      "sha256": "66c772f698c869c9853e1b8977bc28dd371b3d20c1c329e97e031ed189af6658",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/measurement_opportunity.dart",
+      "sha256": "ce21094c7d4a89a22ec64227dc3ab04adf3ca116cd02c20d34929e99d5d6743b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/motivation_instrument.dart",
+      "sha256": "687a49be3bd1581cfcb524892d137cc7b569e64b5fb4711c6cded0d209e7733d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/motivation_measurement.dart",
+      "sha256": "0ac804d5d2530794c6f7ffdb00d6014d75b793d498b0dfef1eed7ef584dcdd45",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/motivation_measurement_repository.dart",
+      "sha256": "9ad6dafe375299e9dfb0bf2425bffa0938bd16de4cd04d05b8558ba978554455",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/motivation_study_protocol.dart",
+      "sha256": "f73b1d5a30340787c59a67ee69187da926b87f7f1717971c384bfd23f8be5180",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/research_event_identity.dart",
+      "sha256": "0840d00e424e35db8bd780bb31cb52bff7233c001b3fd9190e355b042e69c7ef",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/research_participation_permit.dart",
+      "sha256": "2b977b307d5e7fbcd321e34270e5bb5e5d17a64b8eb37ba7415966dc8d2aceb2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/domain/research_permit_document.dart",
+      "sha256": "7e63b0631d7a7ee1b157e9735cebe4f6046a5927b27ff9347f2558a69c23f8ee",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/research/domain/research_protocol_mode_catalog.dart",
+      "sha256": "1a071c3f542c22eafae3ef8304472f01a450451cbf2c7fa2615c72735055903c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/domain/research_session_proof.dart",
+      "sha256": "87f3de8b5a4122ab41498d67ab91af0271d02413bb5430da48e68adba8a2fe73",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X06"
+    },
+    {
+      "path": "lib/features/research/presentation/motivation_measurement_form.dart",
+      "sha256": "3372f005d6499cd0d5d18c70a0fcb1b23664d6d90e33eb05e4289794183eb188",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/presentation/research_participation_panel.dart",
+      "sha256": "c41148750444180be7ed7f8f5e3c493599f8df73dcbaee26b3decdfd3f01e239",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/research/presentation/research_participation_screen.dart",
+      "sha256": "daaa41990604246d75e9e7907e87a5b9277f508983a3e7dd650f644fb04669f0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X05"
+    },
+    {
+      "path": "lib/features/sync/application/sync_backoff.dart",
+      "sha256": "c16a6c47be0b1bea49cc91530edd74b8bde3dccdd157b7bfbc4e899c749fb128",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/application/sync_engine.dart",
+      "sha256": "67039966d273216fdbabbec50bbc23ad59df97d592cc26e48385b85f3bf47cc2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/application/sync_mutex.dart",
+      "sha256": "bb53fd5fcb511d3b428434988ceac44e649554566869a1b56bea3111707b93a2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/application/sync_trigger.dart",
+      "sha256": "8ea45e5552a58e49d450b21a7f89e4bd3fec2e622b6d9a301d62629ad2d72f5d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/data/drift_cloud_policy_cache.dart",
+      "sha256": "6235e2d5d327186c651904c3ddea68095ce5f3536a62ed86fe66d62200052202",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/data/drift_owner_operation_gate.dart",
+      "sha256": "e8321ec0ac60a38dcbe4a4affc9e486ff081282a21ead3ce935a47dbaa6152f8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "sha256": "69e87f2e9f0d6ed97425dc1115e7513db8079d28152884828377cc6ff5a51ca0",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-02"
+      ],
+      "crossCheck": "REV09-X06"
+    },
+    {
+      "path": "lib/features/sync/data/drift_sync_store.dart",
+      "sha256": "3f79848008f17b48ddfc979533ed6cd6fc7188106dd314cb6a11a80721570700",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-01",
+        "B18-REV09-03"
+      ],
+      "crossCheck": "REV09-X07"
+    },
+    {
+      "path": "lib/features/sync/data/firestore_sync_gateway.dart",
+      "sha256": "a11b2fd30a31fb0330b3f7282232aeb164d5dbe754847c92367b9b4dc96f2946",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV09-01"
+      ],
+      "crossCheck": "REV09-X07"
+    },
+    {
+      "path": "lib/features/sync/domain/cloud_sync_policy.dart",
+      "sha256": "d4b69acbaaf9f3395b8888a76d6ab0ca81b39d5e8854954713b074b96c5b44ac",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/domain/owner_operation_gate.dart",
+      "sha256": "4a4b2f085298e8bb3b8c33595cce6b4bcdc30550131e894bcad64212b839e6df",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/domain/research_sync.dart",
+      "sha256": "da26998af51774c88e789be734bce427162ebc621228a5b1b3aa1935b7ae86d6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X04"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_entity.dart",
+      "sha256": "0cf09121903bf97690cd135f5e30b64abe0d2ddf16ae1d80e1412a9793692b46",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X07"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_failure.dart",
+      "sha256": "188606fd68bdbe4a3350d3fb4324e0df9b095fd88316c7dfe2835475ca727bc8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_gateway.dart",
+      "sha256": "d3b4675a39396405256b582d1fb10da54c9571c6b3f48bef3cd1745fdd6b3cce",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_result.dart",
+      "sha256": "c926cd97fe3be5bc688a99f3024b38265edc4e24b774c140232e4073d30152c9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/domain/sync_store.dart",
+      "sha256": "30aeda5d6e806fc80e6b4c22b399e8681b64d91055aac16968eee47a8bc3738a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X07"
+    },
+    {
+      "path": "lib/features/sync/platform/background_sync_scheduler.dart",
+      "sha256": "8f52b594ef85730282bd17ce22eeaa64cba3bd0816ff9af6f42bc573af76e082",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "lib/features/sync/platform/workmanager_sync_scheduler.dart",
+      "sha256": "f61ab84a950e52f90193bdc7bcf2d77e9ea37db40e2629394054ae13b251abc8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X08"
+    },
+    {
+      "path": "storage.rules",
+      "sha256": "4e59efa416ee58d04c3968c0c6be825473fb656b2e12c5bb992190706af79782",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X09"
+    },
+    {
+      "path": "supabase/config.toml",
+      "sha256": "95a3e8ac1e2b621208067e480a319231f3ae82681cd040e2e7b6c78083e8c9f8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X09"
+    },
+    {
+      "path": "supabase/migrations/20260727000000_image_bucket_public_readonly.sql",
+      "sha256": "f6b2c239051295a4373f7098374a00f491ac4ca1dca16ce8c207acbd80c01739",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV09-X09"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "test/features/account/account_use_cases_test.dart",
+      "sha256": "bb8f7b88d90202982f061b951c42cd8bf1a8ca349566df15681ee86cf4b7edb6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Fake provider/upgrade/entry repositories verify ordering, register normalization, signout on local bind/entry failure, rollback and refresh display to actual remaining owner even when rollback fails. Fake upgrade does not prove durable merge preservation despite test title. Validation only registration short/email; parser positive code and missing code; email-action application methods empty fakes with no reset correction/network test. No Firebase gateway test or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-04"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/account/local_data_deletion_test.dart",
+      "sha256": "d97efa6d37edf30ec83f57415bb7ea902c964e3335c70cae99b230b36dbe4eec",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real in-memory Drift seeded12rows per owner, indirect children and global quest definition retention, late SQL trigger rollback versus irreversible mock-secret erasure, secret failure zero DB deletes. Actual gate/coordinator and reminder use cases plus fake scheduler show serialization through secrets/SQL, replacement lease fences all deletes and committed result survives later lease loss. Seed covers subset not every manifest table; inventory equality structural, counts not unchanged full payloads. No UI confirmation-owner race, native secret erasure or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/consent/research_consent_use_cases_test.dart",
+      "sha256": "1973569a61bd138adab354113e31a8647df15ff63f05d197b9cdb51ab241ea55",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full126 lines read. Real memory owner/consent flow validates explicit later-time reaccept, no permit no withdrawal outbox, configured version callback failure after commit and corrupt accepted-with-withdrawal reads denied. No owner-switch-between-await or hung notification oracle. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-06"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/export/export_use_cases_test.dart",
+      "sha256": "79adbccb3bd6161990f70cf0f22aaf253409062aa8417285092163f9e87a5c37",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1282lines read. Real memory Drift explicit selected output/metadata/provenance exclusions, packaged exact-word acceptance and tamper/foreign rejection, tombstones/preferences after withdrawal, canonical timezone redaction, assessment typed personal audit and exact field set. Real file WAL two-connection owner-upgrade interleave ensures snapshot consent/data same source, accepts SQLite serialization then retries upgrade; post-upgrade withdrawal blocks save. File readback byte equality all formats; PDF signature only, not rendered layout/Thai glyph QA; small fixture formula first-character coverage only. Anki test selects vocabulary only, no mixed-selection count oracle; generic no-data-named test lacks empty dataset case. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/export/file_selector_export_store_test.dart",
+      "sha256": "1211e6b612c0cee362d024e5fe2ebd757770d073d38c45e8a11f2d27fc684990",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real temp files prove cancel restores existing/deletes new, successful staging cleanup and failed restore backup preservation, same exact path competing save rejection. Android injected saver and mocked channel assert discard/typed errors; no actual SAF/native commit. No Windows case/alias concurrency or cancellation during final finish ACK tested. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/export/research_lifecycle_export_test.dart",
+      "sha256": "376e244336ca4e0828e67b3f973c07ddc711396013551a4169b6377e1b7311b6",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full538lines read. Real memory Drift50-entry exact manifest/deletion order, owner-isolated ordinal aliases/typed response exact fields, forbidden private identifiers, deterministic read-only hashes, revoked/tombstoned personal access, null-versus0 and malformed metadata rejection. Multiple parents preserve exact linkage, physical erase idempotent/foreign/global rows preserved, late SQL trigger failure rolls graph back. Seeded synthetic research shape not signed authority and no live research execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/export/research_session_proof_lifecycle_test.dart",
+      "sha256": "93fd7979b2b99a667681e628f903ded89e69a9460ccf37150692dd10906e17f1",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full572lines read. Real Drift strict proof codec/Pair serializer fixture exports reverse-inserted phases linked via aliases without canonical history, malformed Pair start denial and revoked/tombstone access. Source erase child order/late-trigger atomicrollback and foreign-owner preservation. Pending/retry/inFlight proof uploads superseded on local withdrawal with lease clear but attempt history, ACK/denial/ordinarylearning/foreign operations unchanged. Research-owner rebind conflict before secrets and same-bind replay preserve snapshots. In-memory and synthetic authority, no live research execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/identity/research_owner_upgrade_test.dart",
+      "sha256": "152f4ad4f46dde0dba7bf7c0e1ef3c20ad30a2fc1748e3b410e5c709577ff568",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full129lines read. Real Drift rejects source permit/run/full/tombstone history before merge/new-bind owner or secret mutation and repeated attempts unchanged; research-free positive merge/newbind, target research preservation and already-bound replay. Synthetic marker signatures, snapshots limited to helper graph, no process reopen or actual Firebase service. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/adventure_research_runtime_test.dart",
+      "sha256": "cb246a2ef8c9e731c346049111569712b45c1f18252c94b5cf058f726c150571",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full221 lines read. Off composition null, exact DB deferred receipt factory, configured real P256 rejects synthetic signature, microsecond clock normalized, committed mutation callback failure cannot undo capture/withdrawal. Exact owner document retry/import and preserved response/signature withdrawal. Synthetic receipts not real issuer. No hung callback or native deployment proof; no execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/drift_experiment_assignment_repository_test.dart",
+      "sha256": "7c95a0a21b98e0f6989d2503edc6914dbfb107fab4c9d6578b1ce2f7ac1a412f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full510 lines read. Real memory immutable assignment replay/conflict/owner-version isolation and invalid input no mutations; one actual file reopen with nullable DB finally cleanup verifies all assignment fields. Feature registry toggles tested separately from assignment repository so no implicit enrollment dependency shown. Outbox/consent race and migrated lineage covered separately. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/drift_motivation_measurement_repository_test.dart",
+      "sha256": "cfe2cf7587fb43e70c8944c3703c4c35ef26e0835b13204329aed19b40edb78f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full245 lines read. Real memory Drift synthetic authority checks no-participant zero rows, deterministic start/same-response original timestamp, malformed/opposite owner, no post before completion, terminal skip no resurrection, null incomplete scores, expiry/signature/receipt denial, async withdrawal no response and independent minor refs. Broad anything matcher for malformed inputs; durable wording is memory reload not disk reopen. No backwards terminal-clock oracle here. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/firestore_research_receipt_authority_test.dart",
+      "sha256": "07c5ca1e95c9f731d0134c830f6a0da779c74849528146dfa0e5fa7b5a94a2bf",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full486 lines read. Real memory local consent/owner plus SDK-only fakes assert exact server path/Source.server and reject cache/pending/malformed fields, local/auth pre/post mutation and time rollback/expiry.20ms timeout plus late result cannot resurrect;1s outer bound. Fake factory getter is not live Firestore; no actual network proof or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/measurement_opportunity_repository_test.dart",
+      "sha256": "29e5ffd57d492d91aa5ec1379bfe3f1873dc59fcf8accebc71a4244c13ca0791",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full541 lines read. Real memory Drift/synthetic authority, seeded canonical sessions; replay purpose denied, denominator before exposure retained after skip/event-trigger failure, retry exact event, both presentations, concurrent same-revision switch ordinal suppression, receipt denial. First accepted index cannot be replaced by later completion, exact30-minute post allowed/+1ms denied,999ms exposure and expired baseline eligibility. Reload is repository reconstruction not file-backed. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/motivation_instrument_test.dart",
+      "sha256": "d5152412b370de558604f79d12b9d6f0a4515830586f85cb1d92f56a0d274eeb",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full877 lines read. Deep input/output immutability; globally unique item IDs across timepoints, UTF8-rune boundaries, strict keys/types/ordinal ordering, normalized unequal ranges/reverse/null missing vs true zero. Fixed independently labelled checksum, reordered maps invariant/list order significant, each pin changes checksum and malformed expected digest denied. Synthetic formula correctness not questionnaire validity. No statistics or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/motivation_measurement_form_test.dart",
+      "sha256": "cb2593b46e8b8fee6bc96777172693b285b9e8f5ef5940307a944c6e10df48b9",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full641 lines read. Synthetic UI immediate single answer/serial pending actions, immutable resumed answers, exact failed-answer retry preserved parent rebuild, skip/withdraw/complete retry and stale/disposed completion. Failed Skip retains pending answer lock;32items th/en320px2x scrolling and keyboard semantics. Independent completion retry oracle strong, but no real persistence/receipt integration or hung callback bound. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/motivation_measurement_use_cases_test.dart",
+      "sha256": "2dac8707ff97d57f073a7a5d8e416848d7cf65365b71d948a8e8775742595819",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full247 lines read. Real memory Drift seeded sessions validates replay exclusion, same standard/adventure linkage, repeat reconcile idempotency/no answer or reward writes, pre-exposure exclusion, denied authority leaves canonical session unchanged. Observer no-loop uses20ms real delay. Restart only reconstructs use case, no file reopen. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_p256_signature_verifier_test.dart",
+      "sha256": "e7f58de6487845726900d3c858a62e4dd184b9a3d55de2c70e195180d5aa3479",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full382 lines read. Fixed RFC6979 vectors and separately generated .NET-labelled UTF8 fixture, independent scalar/key malformed matrices with positive companion, immutable allowlist, bit flips and canonical base64/UTF16-surrogate aliases. Strong verifier oracles; comments about independent verification not rerun in B18. No current test execution or production issuer approval. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_participation_lifecycle_test.dart",
+      "sha256": "252720d0b220bf45406b209ed1e1d1b81ec1acaeb8b474797abce8464a520980",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full955 lines read. Real P256 verifier with deliberately synthetic private scalar1 signs renewal/revocation changes; fake receipts capture old state then callback to check second-round protection. Immutable pins/revisions, expiry/withdrawal/owner during await deny. Real consent suppression preserves signed/response/denominator evidence, exact research-only intents/leases, atomic trigger rollback, personal export after withdrawal and no permit resurrection after reaccept. Memory DB, not disk durability or real issuer. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_participation_panel_test.dart",
+      "sha256": "9b0a4453564c1d99ebc8fafc825d4a0a7f8e3c304706503ff826dab2557a029c",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full600 lines read. Synthetic invalid permit deliberately UI-only, bilingual/minor statuses, opaque exact16KiB and multibyte rejection, visible/semantic masking independent of controller, serial imports/withdrawal and exact retry, disposal scrubbing, stale permit suppression,320px2x reachability and keyboard semantics. Parent owns trust. No production receipt or offline withdrawal proof. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_participation_permit_validator_test.dart",
+      "sha256": "f8b5dc362e6ffa74bdf51e2f3d42f11c4343f8f4ddd16051944611f8f6b6cdbd",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full281 lines read. Synthetic signature/receipt doubles exercise exact denial reason for owner/assignment/protocol/revision/expiry/revocation and independent minor refs; positive active projection. Receipt-kind set cannot establish two-round call multiplicity; lifecycle tests separately exercise stale first receipt. No cryptographic execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_participation_screen_test.dart",
+      "sha256": "17e10cace70077bd1f604417ceb6cb28320130e35c122bb11c8517dc5b54e8ce",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full629 lines read. Actual screen/panel/runtime/SQLite with synthetic issuer and clipboard covers import/withdraw navigation, owner database/prop and runtime replacement, stale closures, expiry timer/resume, unavailable authority and disposal. Harness pumps bounded fake-zone/real-IO futures and releases gates before DB teardown. Counts omit withdrawal outbox despite being named research counts; no source assertion changed. Does not test withdrawing from unverified/offline panel. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_permit_document_test.dart",
+      "sha256": "9b2ec6d83a347606dbc31efe254ce3b7e205b407c35490ab0a34ffddaa262751",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full67 lines read. Exact signed canonical payload roundtrip, invalid object/type/schema/keys/UTC and bounded document, sanitized parser errors. Synthetic signature unchanged is transport not authority; multibyte boundary additionally tested UI. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_runtime_sync_integration_test.dart",
+      "sha256": "4e0241911acdd4428c06817f4df2d5841856df2459f4082609da85963c84c18f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1455lines read. Actual configured runtime/P256 synthetic key and Drift authorizer/store capture baseline/opportunities, seeded canonical Standard/Adventure completion and proof phases, withdrawal while claims held and receipt-free denial recovery, renewal invalidates old wrappers while immutable facts survive, submillisecond normalization, historical pull and parent-first separate-memory-device recovery with no upload echo. Server provenance mismatch in revision/time/UID fails without checkpoint/ACK; forged signature cannot capture. Delivery helper uses preflight plus sentinel transaction callback and codec encode, not actual gateway transaction or ACK decoding; lost-ACK historical event fixture therefore does not exercise REV09-01 current-revision replay mismatch. Device fixture already seeds consent/assignment; reopened adapter shares memory database, not process persistence. No B18 execution or research activation. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_session_proof_repository_test.dart",
+      "sha256": "06a764bd254ec9e6ded59a0ebf6aa1c808f76e2543755a01b0095a02410c044a",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full549 lines read. Real Drift learning start/finish plus composed adapter/authorizer with explicitly synthetic signature/receipts; zero-answer phase1/2, no ordinary-learning mutation, off/null/nonparticipant no calls/writes, denied no provisional rows, trigger rollback and exact ACK metadata preservation. Owner/time expiry and latest-version withdrawal during await deny. No actual cloud or file reopen and no B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_session_proof_source_integrity_test.dart",
+      "sha256": "373cecc1b561620cf60e0d77b949d855a8f53946240d37bf0bcddb9d13bff896",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1040 lines read. Actual Pair start and canonical completion before neutral completion event, restored-positive corruption controls, postapproval linked/config/quarantine changes deny, renewed permit preserves original sibling/ACK.50 acknowledged prefix and limit1 finite cursor wrap/lower inserted key/repository reconstruction covered, malformed cursor mutates only with approval, cursor insert trigger atomically rolls back. Does not cover all-denied leading page followed by valid candidate; restart reconstructs repository on same memory DB. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-02"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_session_proof_test.dart",
+      "sha256": "ddf7a83bbd236fde604b3ca0d4a04d0604416402593a876b9d273daccf96b975",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full970lines read. Pure actual Pair engine/start/checkpoint/configuration serializers validate full measured/reservation/ACK/terminal prefix before compact proof; v1/v2, completed-first siblings, abandoned started-only, replay exclusion, merged original actor/current custodian projected config and compact lineage. Strict phase/null-key/type/time/digest/UTF8 bounds and nested defensive-copy mutation negatives with independent identity-array digest. Full prefix synthetic evidence has actual decoder-compatible data, no DB admission/canonical persistence/signature authority. Does not close migrated live feedback timer defect because controller absent. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/research/research_sync_authorizer_test.dart",
+      "sha256": "78edc341135772d59292206665ed239ad9ca759e9a72937b8f84141f983d9b8e",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV12-01"
+      ],
+      "disposition": "Full1707 lines read. Real P256 with explicitly synthetic scalar1 issuer, seeded canonical facts and fake receipts. Pull-only exact server provenance or exact local prior wrapper allows historical refs after renewal; never grants new upload authority. Owner/gate/consent/assignment/permit read-set races, cutoff narrowing, current pins, typed response/neutral event/Pair purpose and zero total_changes checked. Schema matrix line867 stale:27 expected failure although actual transport allows27, recorded B18-REV12-01; correction must retain unsupported28/noninteger negatives and current-run historical pin refusal. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/achievement_unlock_sync_test.dart",
+      "sha256": "bde83d83f1bd36f8ae2901add3140474114a11e1b59168d9d7383acb06f81b30",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory and reopened file Drift cover owner-local canonical IDs, legacy definition0 retained through projection rebuild and canonical outbound IDs, negative version deny, two definition audit rows projecting one achievement, two owner-files distinct immutable evidence operation keys converging on explicitly injected cloud winner, preserved loser conflict evidence and subsequent corrupt replay quarantine. Already acknowledged legacy unlock cannot be rewritten. Cloud winner and ACK are constructed directly; no actual gateway, race or deployed rules verification. Duplicate same cursor primarily proves cursor idempotence. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/assessment_run_sync_test.dart",
+      "sha256": "a54d5ca517fbf2b019d4682b510b94d6a8e0829290e6f62821a24d3f88d6c77f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read; synthetic fixtures only. Real memory/file Drift start and terminal exact two operation identities, collision rollback, off/rule/catalog/withdrawal unleased, completed-offline reopen creates active snapshot1 before terminal2, cold active pull then local terminal only2, cold terminal reconstruction and noecho, immutable pins/revision/conflict quarantine, canonical assessment AnswerAttempts and engine assignment-run-attempt dependency order. Range15..27 positive checks use cloud expectedOwnerId; unsupported schema cases pass local expectedOwnerId against cloud payload, so may reject owner mismatch regardless of unsupported version. Terminal-reopen case starts from active local and malformed revision2 active envelope rather than an accepted terminal then reopening. Cold terminal fixture deliberately expects learning session active: do not infer session terminal synchronization. Direct ACK/fake gateway lacks production codec/remote retry evidence. No live research work or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/background_sync_scheduler_test.dart",
+      "sha256": "041ad3b2b6383f5ccb7f7ab73763dff6d8dad84a67e235bf6971cd7a49d6569e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Fake Workmanager client verifies one initialization, owner-specific update name and hourly connected exponential registration; platform/build-off avoids initialization. Pure result mapper covers completed and retryable/nonretryable partial failures; throwing scheduler safe startup. No completed-with-hasMore case, real callback owner switch, initialization failure retry or Android device execution. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/cloud_sync_policy_test.dart",
+      "sha256": "59d384d875460739df2df71fce15e61f6b34a197080879225c89302e17b62b94",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Actual memory Drift cache plus fake gateway covers build-off zero fetches, fresh cached off, expired cache refresh/persistence and remote exception fail-closed. Completer trigger checks shared future and bounded follow-up. No corrupt cache or hung policy fetch oracle. Production Firestore constructs expiry at successful fetch plus15minutes, resolving speculative already-expired remote value under its clock. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/drift_sync_store_test.dart",
+      "sha256": "2e6986a451271d25f7f578f9ceac6374096856784291caccb310980aeee72b79",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory/file-backed Drift covers owner-specific restored saved IDs, preserved old ID on unsave ACK, coalescing, concurrent claims, global cross-handle gate/renewal/reopen expiry, fifth reservation crash terminal unknown, duplicate ACK no regression, stale token denial for all transitions, pull transactional cursor rules and starter/foreign owner collision rollback. Fixtures often direct rows and unbound/inactive owner; source adapters are not exercised. Lost-ACK reopen test uses _IdempotentFakeCloud saved ACK directly, bypassing actual Firestore codec; revision1 receipt accepted by store despite reconstructed revision2 mutation, exposing B18-REV09-01. Orphan-word failure fixture has incomplete v1 shape, so throwsAnything does not prove orphan reference branch. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-01"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/experiment_assignment_sync_test.dart",
+      "sha256": "977d5759e5c8229ca3c65451604d3f09a74336128f17111a1b8f32c6d3cd9413",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read; synthetic fixtures only. Real Drift use case deterministic immutable assignment/outbox, rollout exact-rule/catalog consent mapping, malformed/global-consent bypass deny, local-to-UID canonical codec operation identity, per-owner pull mapping/noecho and conflict quarantine,401 blocked assignments before ordinary category, release/reopen same operation, nine malformed/conflicting immutable cases and withdrawn/declined/unknown consent retained audit. Intervention-block helper constructs provider without matching protocol catalog, so throwsStateError may be unrelated to target consent/conflict; no positive counterpart in helper. Second pull helper default UID is harmless because supplied payload and already-cloud assignment.id preserve exact original identity. No live study assignment, synchronization activation or B18 test execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/firestore_sync_gateway_test.dart",
+      "sha256": "c07711b3fd6f0474679af52b27126071c772461b0d688425200a834c729a394b",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Codec/preflight unit oracles cover exact newer envelopes, legacy dual-read compatibility, canonical achievement IDs, immutable time/report and versioned assessment graph, every ACK field and same-revision preference payload identity, singleton cursor and zero transaction on preflight deny. Ordinary collection roundtrip uses placeholder payloads for categories/reading/reward/SRS, not backend validity. Real memory Drift tests cover word v1/v2 content revision/hash preservation, migrated null hash v1, saved exact attempted intent/delete replay and numeric same-time9/10 order, natural-key restoration/rebase and320-local/256-wire ID separation; report consent before claim and before begin attempt; time overlap quarantine/cursor advance and goal mutable replay. Test named restart-idempotent never closes/reopens DB. No real Firestore transaction retry or auth/consent change during reads, nor mutable word/goal lost-ACK edit scenario. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/learner_preferences_sync_test.dart",
+      "sha256": "944b2a3ac15bd5d3d5a407f11647d034d1dea01007cdb97b9c88b30290ec0221",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory Drift and repository save cover off/stale rules pending, singleton canonical payload-hash identity distinct across devices, latest-only offline edits, lost ACK followed by newer semantic edit superseding old identity then explicit cloud-conflict rebase, pull rebase retains retry delay, new edit retires terminal barrier and fifth-attempt conflict creates fresh reservation. Pull replay retains local display and rejects extra fields with cursor rollback; v2 queued upgrade and v1 pull preserve home, v1 push conflicts requeue preserved/full v2 intent. New store instance is not file restart; no actual codec transaction or simultaneous repository writes. This directly resolves preference revision-gap suspicion through cloud-base+1 semantics. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/learning_event_sync_test.dart",
+      "sha256": "b89223190f3923a224513013229de82cbf3921028ddb2072092677c64cfa3640",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real Drift legacy ingress/claim and actual file reopen tests establish SRS enqueue after recordAnswer, distinct acknowledged revisions and duplicate answer idempotence, closing missing enqueue oracle in srs_state_sync_test. Synthetic v2 declared assignment fixtures check row-specific v1/v2, refuse downgrade, UID cloud/local assignment translation with event original assignment time and export, dependency pull order, consent-blocked row does not starve category, malformed/foreign owner/word/context rollback and immutable conflict quarantine. Starter assets exercised; local SRS/reading projection repaired via later-server replay, deleted word history retained. Lost SRS ACK test explicitly expects replay localRevision2 for original operation1 then accepts saved receipt1 through _SrsIdempotentFakeCloud, bypassing actual Firestore codec: same B18-REV09-01 applies to SRS. Multi-device uses separate files but sequential fake cloud calls; legacy gap normalizes once after gate and reopen. Fixture cleanup/runtime warning restoration only in late finally can leak on earlier failure. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-01",
+        "B18-REV09-03"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_assessment_rollout_test.dart",
+      "sha256": "048ca6d56d1276f1f65a8abb0b7a471972daeb27bcd457cfc99c4a377d8a7c57",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full694 lines read. Combined exact rules catalog required for assignment-before-assessment claims; off/standalone/wrong rules retain pending0attempt/no lease, direct ACK unlocks dependent claim. Real engine pagination with fake gateway defers assessment until assignment hasMore false and avoids echo. Store default pull behavior intentionally separate from upload rollout. Synthetic source/ACK, no live research or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_gateway_transaction_fence_test.dart",
+      "sha256": "8447b3304eba6b9f6a44097a2c6475a964ca7d39cf6993be71bf5a12d462d3a8",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full367 lines read. Actual FirestoreSyncGateway executes SDK-shaped transaction with staged vs committed writes, final authority/auth checks after reads and on retry; loss commits zero, retry first staged batch discarded. Pull/conflict provenance requires same UID committed server metadata; ordinary codec cannot mint provenance. Callback is boolean synthetic authority and query fake ignores ordering/limit, so validates gateway branches not database policy or live server. Resolves earlier concern that final research authority omitted from transaction retry. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_measurement_sync_test.dart",
+      "sha256": "4af5e7ab0f57ec7a108ba5f501c78dd349b7140f9bc8213cc3a60efd4739b644",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1958lines read. Real memory Drift plus boolean synthetic authority covers separate rollout/default-off, exact signed payload/revision preservation, gate tokens, no-attempt withdrawal/pin-race denial, immutable event wrapper renewal with new operation only for undelivered and ACK no-requeue. Permit revocation/tombstone updates authenticate without enrolling unknowns/resurrection. Atomic deny-only intent survives reaccept/repeatedwithdraw, retry metadata/identity, malformed denial rejection and owner/fence/UID expiry denial; temporary trigger fails whole consent/run transaction. New permit case explicitly first proves real API reenrollment cutoff then trusted SQL isolates transport exact-ID denial. Two-memory-device actual gateway plus modeled server denial verifies create-once lost-ACK marker and blocks subsequent receiver writes, does not execute rules. Restart means new store object; separate file-reopen oracle already read. No denied-prefix page progress test. No B18 execution or activation. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_session_proof_transport_test.dart",
+      "sha256": "bf069c4151ff22bbc942bfa9ad081aaca3565c4993db30a950fd0eefd035eff1",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1767lines read. Actual Drift source/receiver, repository atomic Pair start, authorizer/store/gateway with SDK-shaped atomic staging and timestamp/id cursor fake. Started before answers and completed-first phases restore only research mirrors, zero canonical/economy changes; syncedEvidence placeholder retained versus contradictory real session denial; multiparent page rolls back first insert until proof dependency arrives. Same-ID renewed pin conflict, exact tombstone ignored without resurrection, standalone unmarked decode denied before positive genuine gateway provenance. Actual gateway lost-ACK decode succeeds only exact immutable mutation replay; no changed category/SRS revision, so REV09-01 remains open. Receipt-await injected same-transaction mutations rollback and positive replay follows; tests do not simulate independently committed concurrent withdrawal. Mirrored admission cannot authorize new outbound even with existing ACK; exact historical local ACK supports lost-checkpoint unmarked recovery only. Fake source server/atomicity is not Firebase rules/network, all databases memory. No execution or activation. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_sync_contract_test.dart",
+      "sha256": "7df7829a75b9bb5368dcee58ee49d6fa48f863eece4ffadfe5346d4197b6a1d5",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Pure codec/preflight synthetic fixture covers explicit loopback emulator hosts versus lookalikes, exact signed canonical permit hash/pins and revision preservation, no wire gate token, signed tombstone outer binding and upload denial, immutable withdrawal receipt replay, malformed payload despite positive authorizer with zero transactions, bounded frozen event envelope keys and UUID occurrence binding. Synthetic signature accepted structurally is not issuer verification; no live remote research operation or actual transaction. Stale RED comments are history, not current failure evidence. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/research_withdrawal_reopen_test.dart",
+      "sha256": "5b16484e05efd12ad190862bae8a9088802c8ea6f873a607e1cb0ff669725aca",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full238 lines read. Actual consent denial before enqueue, later reaccept, VACUUM INTO bound path and two real file reopens preserve exact permit/withdrawal intent/ACK metadata. No positive authorizer needed for denial claim;2attempt backoff then direct synthetic ACK, restart creates no new work. Nullable DB cleanup checks resolved temp path. Not actual remote acknowledgement or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/reward_transaction_sync_test.dart",
+      "sha256": "4df14c6615a47e4f08bad87ce4abf8e5786d9f1d0ac79dfdbd2ecc3e30072285",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory Drift reward purchase/claim and synthetic cloud entities cover exact catalog payload/time/key shape, canonical earning source dedup without altering Points, immutable replay/conflict, projection balance/ownership/equip, duplicate purchase single debit and later funds activating pending purchase. Avatar legacy cutoff, exact carry and v2 XP hash, tampered/late raw quarantine with unrelated coin/category progress, rules-first selective permission retry preserving attempts/exhaustion, deferred v1 replay after marker repair and durable echo promotion before marker opening covered. Two trusted echoes and concurrent purchases are sequential page applications, not server/device concurrency; all authority hashes are synthetic self-contained contract fixtures, not remote attestation. Deferred repair deletes synthetic mismatched row directly, not production repair UX. No file reopen, provider transaction or B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/srs_state_sync_test.dart",
+      "sha256": "7ed68af293432f68ac2e32f438482ab908454c2aaca9e7e9ff2fcd92efdc0188",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory Drift plus actual starter assets tests v1 cloud cache restoration, owner-specific SRS identities for shared starter, corrupt starter/foreign-private rejection with cursor rollback, mutable revision2 and preserved old physical ID, and immutable local failed first answer rebuilding algorithm2 over cloud cache. Test titled outbox enqueued after recordAnswer only asserts initial empty outbox and never records an answer; it provides no enqueue coverage. Numeric malformed range and unknown algorithm cache cases not covered here. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/study_reminder_sync_test.dart",
+      "sha256": "3c6ea2737b411e28ff758b0b9d54d024588df25da45c53b589df923a8481305e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Actual memory Drift reminder repository creates platform desired-state outbox and direct cloud claim returns none without changing pending state. Owner is localGuest yet direct store receives arbitrary firebase UID; this checks outbox separation, not authenticated engine flow or platform scheduling. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/sync_contract_test.dart",
+      "sha256": "e9d98c9215baab21fd06c29e5be3ff20710a4593cd3a3e117acc4781f2397020",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Exhaustive21 collection supported/write versions and exact rollout pins; canonical goals/preferences/words/saved/report/time payload mutation tests, private v2 word hashes, preference envelope mismatch, unknown JSON objects and version denial. Cursor UTC/microseconds, strict tuple order, unique IDs and exact final tuple; immutable time explicitly accepts backwards wall clock with positive active duration. Report secret-pattern examples and bounded comment; stable error strings and expiry exact boundary. Constructor-only safe placeholder payloads are not end-to-end codec/rules acceptance. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/sync_engine_test.dart",
+      "sha256": "c7795782694abae4cd0b169679ce8a2b0720e934eaa7e4a64fc173e88df0ae6f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Real memory Drift plus fake owner/gateway verifies release exception does not strand mutex after durable expiry, post-gate UID reread, kill switch/unbound no claim, retry and terminal failure behavior, consent rollback, exact cloud/local ACK translation, timeout, heartbeat renewal/loss and late completion fence, five durable reservations, exhausted same-entity barrier with unrelated progress, release unstarted rows and pull hasMore/optional collection order. Separate-isolates test uses two mutex objects with same database in one isolate; not actual isolate/device evidence. Fake gateway bypasses codec and records handler results directly, so does not close B18-REV09-01. Lost-ACK exhaustion uses set bookkeeping, not remote transaction. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/sync_server_read_provenance_test.dart",
+      "sha256": "ce096a2e55da3bf0a8df22ce7fa559c123727cc0e3966ef39af40f1b241649b5",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Pure synthetic envelope tests confirm explicit receipt creation, owner/collection/ID/revision/payload transplant rejection, stable nested map ordering and fingerprint invalidation after aliased nested mutation. Process-local authorizer clock precision normalized without changing payload. Does not prove real server metadata or cryptographic issuer authority. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/sync/sync_trigger_test.dart",
+      "sha256": "cb865b9b2f2db43be9aa96b76cc66f15beb2b869572b7f798cc4c2e1f3b623cd",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Completer-based fake-engine tests cover gate contention/release, coalescing, request during successful run and teardown, dispose interrupting waits and draining provider, queued cancellation and bounded retry. No real Drift/provider integration, coalesced callers with different cancellations, or hanging provider deadline oracle. Tests read, not run. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/scenarios/complete_owner_export_delete_test.dart",
+      "sha256": "32ca06edfd814d78aa7796248614c7e0c296fdecc4a928e47eb7423702b99b45",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full2241 lines read contiguous1-410/411-1030/1031-1650/1651-2241. Actual file SQLite close/reopen after coordinated fenced credential+owner deletion,42 seeded personal rows per owner with full foreign-owner snapshots and global runtime/model/quest snapshots preserved; fake secure store only. Current50-table exact manifest and classification/field allowlist, deterministic archive bytes, Unicode256 configuration roundtrip, canonical evidence rejection, token/cost unknown versus measuredzero and pending/foreign exclusions with unchanged usage rows. Synthetic research fixture issuance only. Fixture wall-ended-before-start learning time is intentional monotonic contract, not invalid runtime duration. No reminder erasure wrapper/native scheduler, lease takeover midcleanup, actual device keystore or process restart. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [
+        "B18-REV09-05"
+      ],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/scenarios/file_backed_sync_recovery_test.dart",
+      "sha256": "3ecc501629c83f2af67492c9c8e9612eda779a835fe5170ebfdfa936640539f8",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Actual file closes/reopens, real owner repository/store/engine with direct seeded category/word/attempt/SRS and in-memory _RestartCloud tests offline retry, committed first category ACK loss, exact-once bookkeeping, cursor/snapshot persistence and no pushes after final reopen. Does not edit source during lost ACK and fake returns saved receipt without production codec, so no coverage of B18-REV09-01. Database handle is scoped inside try and outer finally only deletes directory; an intermediate assertion failure can leave SQLite open and obscure original failure on Windows. No B18 execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/export_center_screen_test.dart",
+      "sha256": "de58fc62ca3026a586053c8b3fe1996d047bfbea226db10cc270069da10c7c0d",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full57lines read. Archive hides selection without losing prior CSV choice;360px/2x text scaler injected inside MaterialApp builder verifies no framework exception. Dependency-free layout only, no native export or broad accessibility assertions. No execution. Focused REV09 oracle disposition complete: retained exact real/fake/file-reopen boundary and regression gaps; no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-09",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV09-03",
+    "B18-REV09-04",
+    "B18-REV09-05",
+    "B18-REV09-06"
+  ],
+  "supplementalOracleReferences": [
+    "test/security/firestore-rules.test.cjs"
+  ],
+  "supplementalCallers": [
+    "lib/runtime/app_bootstrap.dart",
+    "lib/screens/setting_screen.dart",
+    "lib/screens/register_screen.dart",
+    "lib/screens/export_center_screen.dart",
+    "lib/data/local/tables/research_tables.dart",
+    "lib/data/local/tables/learning_tables.dart",
+    "lib/runtime/learning_preview_feature_registry.dart",
+    "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt"
+  ],
+  "limitations": [
+    "Static semantic disposition only; no G8.2 acceptance or finding closure.",
+    "52 focused oracles retain historical REV12 zone identity; rules oracle supplemental only, no count increment.",
+    "Actual cloud/provider/native SAF/device/PDF rendering/installed flags/research/deployment NOT RUN."
+  ]
+}
