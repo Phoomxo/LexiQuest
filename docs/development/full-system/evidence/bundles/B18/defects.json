@@ -1050,7 +1050,7 @@
     {
       "id": "B18-REV08-04",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/voice/vox_cpm_standard_provider.dart",
       "relatedFiles": [
         "lib/voice/omni_voice_provider.dart",
@@ -1066,8 +1066,14 @@
         "vox_cpm_standard_provider.dart:120-168",
         "omni_voice_provider.dart:168-183"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-04",
+        "redRun": "stream-red;stream-boundary",
+        "greenRun": "stream-final",
+        "outcome": "Shared operation bounds WAV8MiB/error64KiB and uses one deadline across token/auth retry/body. Abortable request retirement and subscription cancellation stop accumulation; late tokens cannot send, late responses discarded. Exact byte boundary, oversize declared/actual, stalled/late and existing401/quota/breaker/provenance/factory regression passed. Custom client abort support and noncancellable auth futures explicitly limited."
+      }
     },
     {
       "id": "B18-REV08-05",
@@ -1145,7 +1151,7 @@
     {
       "id": "B18-REV08-08",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "backend/lexiquest_lm/train/tokenise_dataset.py",
       "relatedFiles": [
         "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
@@ -1159,13 +1165,19 @@
       "evidenceLocations": [
         "tokenise_dataset.py:46-65,148-165"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-08",
+        "redRun": "tokenise-red",
+        "greenRun": "lm-final",
+        "outcome": "One EOS; full prompt/header preserved; response-only right truncation reserves EOS. Invalid budget/no answer room rejected. Separate token segments define exact mask boundary; synthetic merge/mask/short/long fixtures and serving-template regressions passed. No real tokenizer/model run."
+      }
     },
     {
       "id": "B18-REV08-09",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "backend/lexiquest_lm/train/lora_finetune.py",
       "relatedFiles": [
         "backend/lexiquest_lm/train/tokenise_dataset.py",
@@ -1179,13 +1191,19 @@
       "evidenceLocations": [
         "lora_finetune.py:129-135"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-09",
+        "redRun": "dormant-red",
+        "greenRun": "lm-final",
+        "outcome": "Actual synthetic dry-loop returns features from corresponding unmasked token positions for two varying suffixes. All-masked and zero-epoch checks fail without success marker. No real dataset/model/GPU execution."
+      }
     },
     {
       "id": "B18-REV08-10",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
       "relatedFiles": [],
       "trigger": "Maintainer invokes --dry-run with existing adapter and no --username.",
@@ -1196,8 +1214,14 @@
       "evidenceLocations": [
         "upload_to_huggingface.py:145-147,170-190"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "retest": {
+        "receipt": "G8.3-F04-C03-checkpoint.json",
+        "findingId": "B18-REV08-10",
+        "redRun": "dormant-red",
+        "greenRun": "lm-final",
+        "outcome": "Dry-run branches before hub import/network. Missing username fails offline with explicit instruction; supplied username plans without hub dependency and writes no model card or upload."
+      }
     },
     {
       "id": "B18-REV08-11",

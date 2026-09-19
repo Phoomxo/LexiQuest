@@ -94,16 +94,12 @@
         "B18-REV08-11"
       ],
       "status": "in-progress-partial-checkpoint",
-      "closedCount": 6,
+      "closedCount": 10,
       "pendingFindingIDs": [
-        "B18-REV08-04",
         "B18-REV08-05",
-        "B18-REV08-06",
-        "B18-REV08-08",
-        "B18-REV08-09",
-        "B18-REV08-10"
+        "B18-REV08-06"
       ],
-      "receipt": "G8.3-F04-C02-checkpoint.json"
+      "receipt": "G8.3-F04-C03-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F05",
@@ -685,7 +681,9 @@
       "dependencies": [],
       "regression": "Controlled streamed client boundary/over-bound/stalled/late chunks and cancellation counter; retain 401 retry/circuit/quota and no live requests. Mirror/legacy analogous risks dormant.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-05",
@@ -727,7 +725,9 @@
       "dependencies": [],
       "regression": "Pure synthetic tokenizer fixtures exact EOS count, short/long prompt and long completion, mask alignment and nonpositive length rejection; no training/model/network. Resolve intended truncation policy before fix.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-09",
@@ -737,7 +737,9 @@
       "dependencies": [],
       "regression": "Extract or intercept pure feature conversion with varying unmasked suffix after masked prefix, all-masked and zero-epoch cases; no GPU, dataset generation or research execution.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-10",
@@ -747,7 +749,9 @@
       "dependencies": [],
       "regression": "Fake huggingface_hub whose network functions fail if called, synthetic temp adapter; dry-run no username must plan offline or require explicit username without network. Never upload.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-11",
