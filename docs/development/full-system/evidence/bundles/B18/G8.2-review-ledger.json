@@ -32975,11 +32975,18 @@
       "lines": 68355,
       "category": "generated",
       "rationale": "Review generator, dependencies and reproducibility in REV-12",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Generated68355lines reviewed through generator/source manifest and complete structured schema extraction, not manual line-by-line reading or regeneration. app_database.dart DriftDatabase50class inventory exactly matches generated50tables;571column source declarations include inherited ResearchOwnedRecord. Every column name/type/nullability/available withDefault/primary key and29unique-key inventories match; mapping and companion serialization paths present. All reference/cascade/customconstraint definitions inspected from paired extracted records, including nullable goal FK cascade, five inherited research transport classes, monotonic duration independent of wall endpoints and homeExperience default. Database allSchemaEntities50 and cascade stream update propagation inspected; manager/reference code is generated convenience and no live lib .managers callers found (architecture tests contain source strings). Representative localowner validation/DataClass/companion and terminal preference mappings read. Schema guards and partial quest uniqueness remain handwritten migration responsibilities, not generated validators; physical SQLite inventory oracle already reviewed separately. Generator pins pubspec drift_dev2.34.5/build_runner2.15.1, runtime drift2.34.3 from complete lock review. Exact frozen SHA retained; this structural review does not establish a fresh deterministic regeneration or native compatibility. Auditor initial direct-Table assumption failed on inherited ResearchOwnedRecord, corrected to traverse parent; unique-key comparison initially counted source comment, corrected comment stripping with keys retained. Structured evidence generated-drift-structural-review.json explicitly lists limitations. No dependency resolution, generated source write, runtime gate or zone acceptance.",
+      "sourceReadDate": "2026-09-19T10:48:55.014930+00:00",
+      "readRanges": [
+        [
+          1,
+          68355
+        ]
+      ]
     },
     {
       "path": "lib/data/local/app_database_native_path.dart",
@@ -35673,11 +35680,11 @@
       "lines": 4569,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "in-progress",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-01",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null,
+      "reviewNotes": "Read full gate/upgrade/logout rollback, Pair/reading preflight, category/word/SRS/streak/day/quest/consent/assessment/event/preference merges and outbox rehome. Pair historical IDs protected; untransferable research rows fail closed; legacy custody moves through owner manifest without rewriting legacy payload. Canonical transition cleanup preserves primary result. Cross-check source-authorized receipt transformations and physical uniqueness in REV-02/12. Cross-check now includes full6726-line owner upgrade oracle and3240-line real-file guest restart oracle, full Pair owner/auth/atomic tests, export/delete full-row preservation and current50table571column generated source manifest. Original guest actor and evidence bytes remain historical; canonical owner/alias/outbox rehome behavior distinct. Broad count-only inventory cases do not establish all-row preservation; targeted full-row/foreign/period fixtures provide scoped evidence. No blanket active-owner ban on historical continuation. No newly established actionable defect in this file from these cross-checks; no runtime execution.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "readRanges": [
         [
@@ -35740,11 +35747,11 @@
       "lines": 897,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "in-progress",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-01",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null,
+      "reviewNotes": "Read complete namespace/table descriptors and deletion ordering. Direct-owner set includes legacy_learning_records while originals remain outside current database. Compare with physical schema and export/delete consumers in REV-02/09/12. Cross-checked actual sqlite_master owner-column inventory test rather than metadata-only expectations; complete export/delete and owner upgrade/restart fixtures cover direct-owner, child, global and device-local classes. Five pinned research tables intentionally refuse transfer and are zero in ordinary inventory fixture; they are not silently omitted. Deletion checks preserve foreign/global rows. No newly established actionable defect; native scheduler confirmation remains platform-dependent.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "readRanges": [
         [
@@ -41356,11 +41363,11 @@
       "lines": 654,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "in-progress",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-01",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null,
+      "reviewNotes": "Read full Thai stable-ID map including reread of truncated settings/profile region. Explicit missing-ID failure; labels do not change stored identities. Assertion fixtures still need REV-12 complete review. Full glossary test and production navigation1678-line oracle now reviewed, stable route/key identity and explicit missing-key negative preserved;44catalog count is coverage identity not feature acceptance. Child vocabulary gate defect is in live route composition rather than label metadata. No actionable glossary defect established.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "readRanges": [
         [
@@ -41609,13 +41616,13 @@
       "lines": 2093,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "in-progress",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-01",
       "reviewerPassDate": null,
       "findingIDs": [
         "B18-REV01-01"
       ],
-      "reviewNotes": null,
+      "reviewNotes": "Full composition/control flow read in bounded chunks; cleanup registration finding requires reproduction. Imports and provider initialization inspected; no runtime claim. Full7727-line bootstrap oracle and guest binding/restart, real app navigation, disposal stack and feature override oracles now reviewed. Bound erasure actual SQL lease/currentowner plus reminder coordinator checked640..815; two-connection fake-native convergence is scoped. Reconcile success-only fixture does not cover throwing pre-registration offline manager: REV01-01 retained. Late Firebase timeout cannot activate gateways. Factory provider/feature composition remains distinct from device/live/research activation; all current pending claims retain limits.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "readRanges": [
         [
@@ -49525,11 +49532,18 @@
       "lines": 6726,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full6726lines read. Actual SQLite owner-column inventory, memory plus explicitly file-backed two-connection/reopen variants. Lifecycle token wraps before/secrets/after outside write transaction; heartbeat/release failure preserves committed result, pre-lifecycle failure preserves secrets, later rollback/stale lease intentionally leaves deleted secrets. Quest exact JSON/child snapshots and stable winner across owner direction; period occupancy, unknown legacy periods, overlap chain and milestones preserve histories/reward once. Learner learning/display clocks independent, target cloud revision rebases next local/outbox revision; saved tombstone collision, local-only reports, session config hash rebind and lexical provenance. File-backed reward quarantine four cutover/reopen/claim/trusted-repair variants preserve raw evidence and reject postcutoff entitlements; repair is direct trusted-pull API, not network. Retry exhaustion/permission-denied revival bounded. Assignment bind/merge preserves cloud canonical IDs and original declared assignment context; consent withdrawal wins exact ties and foreign snapshots unchanged. File-backed SRS/unlock requeue supersedes stale IDs, projection frontier gaps retained, mixed producers rejected, streak trigger crash/retry and concurrent reconciliation exactly once. Scheduler drains guest before new owner. Ordinary inventory uses counts for many tables and five research tables deliberately zero; foreign rows compared fully. Logout/cutover rollback fixtures and anonymous seven-entity namespace requeue/reset covered. Equivalent assessment active/terminal runs coalesce canonical outbox revisions1/2; claim test manually marks assignment acknowledged then claims revision1 only, no lostACK receipt codec. Eleven assessment conflicts compare full run inventory but assignment outbox snapshot only nine fields; owner identities remain exact. Assignment conflict checks assignment counts/category owner/outbox subset. Fixtures use current schema/contract pins and direct legacy SQL; canonical streak helper uses real event append while legacy cursor fixtures direct insert. AI usage identical collision only, no conflicting payload. No B18 execution, remote Rules/ACK or OS-crash proof.",
+      "sourceReadDate": "2026-09-19T10:43:02.414331+00:00",
+      "readRanges": [
+        [
+          1,
+          6726
+        ]
+      ]
     },
     {
       "path": "test/features/identity/identity_mapping_test.dart",
@@ -50022,11 +50036,18 @@
       "lines": 4807,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full4807lines read. Legacy Matching recognition/guided only, ambiguity removes all duplicate labels/IDs and one-pair board; actual memory SQLite canonical checksum fallback read-only and corrupt checksum pre-session rejection. Duplicate taps freeze502ms, nine projection fullJSON snapshots unchanged (mostly empty), support no SRS/rewards. Reconstructed board pins deleted/edited content; deleted-word authorization requires exact latest pending schema5 and ID/time/attempt/selection/correctness/context, future6 denied. Real owner upgrade collision abandons board, preserves guest actor/raw event payload and historical tombstone/outbox; aliases fold only typed recall across two merges including no direct intermediate attempt, edited targets continue and deleted target fences only its historical projection. Prewrite guest pending retains checkpoint actor but actual new event actor currentaccount; postwrite replay preservesguest. Checkpoint pre/postwrite and clear-revision3 failures retain exact evidence/nextanswer; contrastive schema4 eight mutations even recomputed provenance denied prewrite, exact reviewed distractor restored. Pending class/actor/provider/consent collisions denied; frozen rollout/research contexts reused without new provider calls. Orphan cleanup/loadrace and post-start reload keep original owner, restored completion retry and lostACK terminal/summary receipts exact; explicit64checkpoint maximum+1 RangeError and attempt/checkpoint overflow message. Immutable nested state, six envelope mutations, UTF8 bounds, canonicalUTC offset rejection (test titled timezone-less actually uses+07 offset), absolute deadline preserved/clock-beforestart rejected/untimed30days no deadline/v1conversion. All restarts reconstruct objects on same NativeDatabase.memory, no OS/file reopen. Older lostACK wrapper implements only LearningRepository thus2commands; later recovery wrapper retains real replay interface. No PairExperienceHost feedback timer exercised and no mixed-review UI terminal retry, REV03-02/03 remain. No B18 execution.",
+      "sourceReadDate": "2026-09-19T10:37:59.194707+00:00",
+      "readRanges": [
+        [
+          1,
+          4807
+        ]
+      ]
     },
     {
       "path": "test/features/learning/native_mode_adapters_test.dart",
@@ -51737,11 +51758,18 @@
       "lines": 6280,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full6280lines read. Actual NativeDatabase.memory with counting delegate retains replay/configuration/lifecycle interfaces; all restart/process-replacement cases here reuse same memory DB, not file reopen. Configuration exact identities/revalidation/item boundary/hint budget, timed clamping/idle exclusion/durable1500ms carry, delayed effort timer generation and terminal cutoff/accepted recovery lease races. Explicit inactive original-owner close/retry and configured evidence/effort are intentional pinned-session semantics, foreign active session remains unchanged; does not prove generic new-session final owner fence. Monotonic12s+8s despite wall rollback, exact5s prewrite/lostACK retry freezes wait time, terminal completion fenced versus submit/pause/abandon; time repository is memory fake with actual identity dedup. Completed configuration recovery preserves500ms durable effort but appends synthetic2s active-time segment by explicit oracle. Companion events only after acknowledged canonical commit, exact replay suppressed, failed write/dispose silent. Actual shell lifecycle queued pause/resume/replacement, scratchpad clearing,0/24px insets, 320/390/840 x1/2 light/dark long feedback keyboard/hit targets, rendered dictation semantic order; no native screen-reader proof. Production Dictation host/loader blocks precommit feedback, context failure preserves ID, retry and frozen input; foreign LearningUseCases rejected before provider. Mixed occurrence adapter/recovery lease forwarding exercised but not recovered mixed-review terminal failure UI. Bookmark checks SRS count only; report compares full content/attempt/SRS rows and single outbox. Hint ownership overrides caller claims, assisted-to-independent reset and lostACK snapshot; generic registry loop uses legacy submissions except typed adapter, not each native interaction. Focus start/resume races serialize append max1, exact frozen retries, gate/background/content/IME supersession excludes idle hour with exact segment sequences, using fake time repo. No B18 execution; REV02-02/03 and REV03-03 remain awaiting reproduction.",
+      "sourceReadDate": "2026-09-19T10:37:59.194707+00:00",
+      "readRanges": [
+        [
+          1,
+          6280
+        ]
+      ]
     },
     {
       "path": "test/features/learning_packs/content_quality_policy_test.dart",
@@ -54126,11 +54154,18 @@
       "lines": 7727,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full7727lines read; truncated middle recovered bounded. Real memory SQLite and explicit file-backed reopen/two-connection cases with synthetic platform/auth/network adapters.44 activation catalog and all feature emergency-off composition recorded to build/B16 but explicitly not installed flags; preview-only real CEFR and four-pair Pair UI completes same owner, no merged timer oracle. Scratchpad four flag combinations. Daily quest bootstrap under held gate remains available but session denied; actual guard disposal prevents post-await reads, Thai app resume/calendar nextday expiry/no XP and token-deletion trigger denies session after quest write. Research configuration fails before database; delivery rollout cannot enroll; exact same persisted authority shared through store/events/capture, file reopen assignment once/withdrawal returns legacy. No actual research activation. Offline reconciliation success/dispose once only; no throwing reconcile cleanup test, REV01-01 remains. Canonical symlink storage roots conditional platform skip, voice catalog authority no network, slow packaged byte stream cancelled before disposal drain. Preferences local-mutation sync once, live reading recommendation gates and display account merge/logout/erase reset. Reminder composition no permission request; optional initialization/support/permission/list failures degrade, cancellation failure preserves intent while continuing other IDs. Real file2connection9transition phases upgrade/logout/rollback plus erase before/after sweep/stale lease/feature off+clear/blockedcancel repair/corrupt flag recovery; shared Map scheduler simulates native side effects, no actual Workmanager/OS. Coordinated erasure helper reconstructs production-like coordinator and LocalDataDeletion, direct app eraser pre-secret failure separately tested. Cleanup memoized voice then AI then database with failure drain; startup cutover failure broadthrows only, later gateway composition failure asserts database closed. Optional Firebase timeout remains unavailable despite late success, durable offline learning still works. AI retention active owner terminal+expiredpending removed, foreign rows survive. Quest projection intentionally continues when UI emergency-off and gives exact55coins/50XP; concurrent bootstrap cutovers same memory DB. Avatar corrupt raw/receipt closes shop but preservesXP and logout clean guest recovers. Actual quiz lifecycle7+2seconds/abandon two segments, no SRS/points; wall rollback accepted monotonic7seconds. Signedout and erase replacement file reopen streak exactlyone marker/receipt. Binding cancellation before DBclose; blocked sync retains DB until fake revision ACK, default gateway push UnimplementedError and empty pulls. Today canonical11table snapshot and no-active-owner all-generated-table snapshots no writes; one History reader check is regex only. Dormant15assessment fixture inserted into current schema not schema15migration; no enrollment, injected assessment remains hidden. Starter12real asset lexical words/cloze24answers across2owners/file reopen/SRS24/exportisolation/erase retains shared catalog; missing/corrupt single rich artifact keeps core12, rich11. Unicode two4000rune rationales under artifact bytecap actualloader via messenger. AppCheck provider type only not actual Integrity. No native/provider/Rules/OS-crash acceptance or B18 test execution.",
+      "sourceReadDate": "2026-09-19T10:44:45.925747+00:00",
+      "readRanges": [
+        [
+          1,
+          7727
+        ]
+      ]
     },
     {
       "path": "test/runtime/app_build_info_test.dart",
@@ -54581,11 +54616,18 @@
       "lines": 3240,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "pending-review",
+      "status": "source-read-awaiting-cross-check",
       "zone": "REV-12",
       "reviewerPassDate": null,
       "findingIDs": [],
-      "reviewNotes": null
+      "reviewNotes": "Full3240 lines read. Real file-backed SQLite2/3reopens and two concurrent connections; durable owner gate waits old namespace sync, holds new trigger through injected secret deletion then new namespace only. Committed learning replay after merge retains guest actor/current owner and exact event/audit JSON, changedtime/context and forged actor rejected without provider. Anonymous bind retains ordinary nonempty inventory (five pinned research tables deliberatelyzero), exact addedcutover/outbox IDs/default-offpending/foreignfullrows/once sync acrossreopens; target-absent historicalassessment withdrawal preserves fourfullrows/FK and cloudassignmentID. Overlapmerge preserves legacyquest twohistories/objective exact rows, resolves natural keys/streaklatest5freezes/firstday/association/memory, collision suffixes andconsentwithdrawn denies researchexport. Snapshothelpers use typed string rowfingerprints, selectedidentity/counts forsome guestcases, fullforeign/mergedrow snapshots elsewhere. Cloud fakes directly construct ACK with mutation revision and empty pulls, so not realFirestore receipt codec/Rules/remote/cancellation/OSkill proof. Fixture seeds legacy position/reportreason/assessment timeline directly, not real production admission. No B18 execution.",
+      "sourceReadDate": "2026-09-19T10:37:59.194707+00:00",
+      "readRanges": [
+        [
+          1,
+          3240
+        ]
+      ]
     },
     {
       "path": "test/scenarios/production_feature_navigation_test.dart",
