@@ -1282,7 +1282,7 @@
     {
       "id": "B18-REV09-04",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/account/data/firebase_account_gateway.dart",
       "relatedFiles": [
         "lib/features/account/application/account_use_cases.dart",
@@ -1294,13 +1294,19 @@
       "actual": "Gateway17-45 awaits verification after successful create/link and translates failure without returning session or compensating auth. AccountUseCases43-52 only binds after gateway returns, so its bind-failure signout is bypassed. RegisterScreen39-76 reports failure and remains on registration; repeated create may encounter existing account while provider already has a session and local owner remains old. Bootstrap reconcile827 runs at next composition, not this catch. Existing fakes never exercise Firebase post-create verification failure. Distinct from REV03-11, which starts after account.register returns successfully.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Inject SDK-shaped create/link success then verification-send failure through actual FirebaseAccountGateway+AccountUseCases/UI. Assert provider and local identity consistency, explicit verification recovery and repeat attempt behavior for anonymous link and fresh create. No live Firebase calls or deleting created user as an assumed compensation.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-04",
+        "redRun": "rev09-04-red-corrected",
+        "greenRun": "final-affected",
+        "outcome": "Actual Firebase gateway returns committed registration identity with verificationEmailPending when delivery fails. AccountUseCases binds the real local owner; UI explicitly retries only verification, then consent/navigation. Real Drift owner upgrade and SDK-shaped create/link tests cover repeated delivery failure then success and normal controls. Prior consent recovery and bind-failure compensation retained; no provider signout/deletion used as assumed email compensation."
+      }
     },
     {
       "id": "B18-REV09-05",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/export/application/owner_lifecycle_archive.dart",
       "relatedFiles": [
         "lib/runtime/app_bootstrap.dart",
@@ -1312,13 +1318,19 @@
       "actual": "Archive969-1004 instantiates const BuildFeatureRegistry.fieldDefaults and emits defaults.stateOf whenever override is not active. Bootstrap454-456 wraps build registry in LearningPreviewFeatureRegistry and638 composes RuntimeFeatureRegistry from it; preview dailyContinuity hidden becomes enabled (learning_preview_feature_registry.dart11-15). Archive exporter receives database/time but no effective registry. Existing archive exact-field tests do not compare exported state against preview/custom runtime. No installed release flag claim.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Compose preview/custom registry with expired and false override rows, export via production-composed exporter and compare diagnostic state to runtime registry; include active emergencyOff and normal-field positive controls. Retain deterministic snapshot, owner/global-data privacy and archive schema compatibility.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-05",
+        "redRun": "rev09-05-red",
+        "greenRun": "final-affected",
+        "outcome": "Exporter receives bootstrap configured base registry including learning preview, and evaluates persisted runtime override/expiry in its existing Drift transaction. Preview/custom/field combinations cover expired/false overrides and active emergencyOff; archive schema, hashes and privacy contract unchanged."
+      }
     },
     {
       "id": "B18-REV09-06",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/consent/application/research_consent_use_cases.dart",
       "relatedFiles": [
         "lib/features/consent/data/drift_research_consent_repository.dart",
@@ -1329,8 +1341,14 @@
       "actual": "Use case34-46 samples time then resolves current owner and awaits repository.decide without generation/gate admission. Repository decide uses explicit owner/version transaction but no active-owner fence; it can change old owner consent and withdrawal intents after transition. Strong participation/sync authorizers recheck active owner later, so this is a local decision-attribution candidate, not a claim that unauthorized remote research was activated. Existing consent tests cover time/version/callback, not switch-before-commit. Separate from REV03-08 destructive confirmation race.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Real Drift two-owner fixture with deferred repository boundary: invoke consent accept/withdraw for A, switch active owner to B, release old call; verify intended owner admission semantics, unchanged unrelated consent/withdrawal/outbox and positive same-owner controls. Keep deny withdrawal independent of remote receipt availability; no research activation.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "retest": {
+        "receipt": "G8.3-F05-C01-checkpoint.json",
+        "findingId": "B18-REV09-06",
+        "redRun": "rev09-06-red",
+        "greenRun": "final-affected",
+        "outcome": "Consent mutation acquires SQLite write lock with a no-op active-owner update and validates unique active intended owner before consent/withdrawal writes. Deferred accept and withdraw after owner A to B switch fail atomically with unchanged owner/consent/secondary snapshots; fresh B action and same-owner lifecycle controls pass. No remote research activity."
+      }
     },
     {
       "id": "B18-REV10-01",

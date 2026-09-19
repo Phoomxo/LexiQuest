@@ -110,7 +110,14 @@
         "B18-REV09-05",
         "B18-REV09-06"
       ],
-      "status": "planned"
+      "status": "in-progress-partial-checkpoint",
+      "closedCount": 3,
+      "pendingFindingIDs": [
+        "B18-REV09-01",
+        "B18-REV09-02",
+        "B18-REV09-03"
+      ],
+      "receipt": "G8.3-F05-C01-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F06",
@@ -786,7 +793,9 @@
       "dependencies": [],
       "regression": "Inject SDK-shaped create/link success then verification-send failure through actual FirebaseAccountGateway+AccountUseCases/UI. Assert provider and local identity consistency, explicit verification recovery and repeat attempt behavior for anonymous link and fresh create. No live Firebase calls or deleting created user as an assumed compensation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "receipt": "G8.3-F05-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV09-05",
@@ -796,7 +805,9 @@
       "dependencies": [],
       "regression": "Compose preview/custom registry with expired and false override rows, export via production-composed exporter and compare diagnostic state to runtime registry; include active emergencyOff and normal-field positive controls. Retain deterministic snapshot, owner/global-data privacy and archive schema compatibility.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "receipt": "G8.3-F05-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV09-06",
@@ -806,7 +817,9 @@
       "dependencies": [],
       "regression": "Real Drift two-owner fixture with deferred repository boundary: invoke consent accept/withdraw for A, switch active owner to B, release old call; verify intended owner admission semantics, unchanged unrelated consent/withdrawal/outbox and positive same-owner controls. Keep deny withdrawal independent of remote receipt availability; no research activation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "27890bc04c0e69f3df8888d141959510d186042b",
+      "receipt": "G8.3-F05-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV10-01",
