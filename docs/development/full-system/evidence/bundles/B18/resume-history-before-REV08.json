@@ -1,8 +1,8 @@
 {
   "bundleId": "B18",
-  "threadId": "01a0b983-8594-7772-886f-893fae5d9cca",
-  "worktree": "C:/Users/Phet/.codex/worktrees/0bc1/LexiQuest",
-  "branch": "lexiquest/b18-g82-rev08",
+  "threadId": "01a0b97b-59b3-7832-bfa9-ca341f9bbd37",
+  "worktree": "C:/Users/Phet/.codex/worktrees/54aa/LexiQuest",
+  "branch": "lexiquest/b18-g82-rev07",
   "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
   "currentPackageId": "G8.2",
@@ -12,9 +12,9 @@
   "G83Started": false,
   "B19Dispatched": false,
   "nextWork": [
-    "REV08 static118zone+53oracles complete;736dispositions/pending693. Next REV09 sync/backend/auth/export/delete from existing notes and exact nextSliceTests.",
-    "52open findings17static/35candidate;9new REV08-03..11 need G8.3 reproduction, including dormant LM tooling. No finding closed.",
-    "Commit/verify/release then exactly one fresh REV09 successor. G8.3 waits G8.2 acceptance; B19 waits G8.1-3."
+    "REV07 static13production+15oracles complete;565dispositions/pending864. NextREV08 AI/voice/keys/cost/cancellation using existing notes and exact nextSliceTests.",
+    "43open findings17static/26candidates;REV07-01 cached cancellation,02 cleanup failure,03 benchmark disposal need G8.3 reproduction. No finding closed.",
+    "Commit/verify/release then exactly one fresh REV08 successor. G8.3 requires G8.2 acceptance; B19 waits G8.1-3."
   ],
   "evidence": [
     "G8.1-acceptance.json",
@@ -46,17 +46,13 @@
     "REV-07-zone-review.json",
     "REV-07-integrity.json",
     "review-progress-before-REV07.json",
-    "resume-history-before-REV07.json",
-    "REV-08-zone-review.json",
-    "REV-08-integrity.json",
-    "review-progress-before-REV08.json",
-    "resume-history-before-REV08.json"
+    "resume-history-before-REV07.json"
   ],
   "toolingCaution": "freeze_inventory.py and record_review.py write reports; do not blindly rerun and overwrite incremental observations. checkpoint_audit.py validates current source without modifying old bundles. Initial245EOL restoration path list was overwritten by a subsequent inventory classification run; count and final all-file equality are retained, no per-path restoration history invented.",
   "authorization": "Continuous through B20/G8.9; no repeat approval needed. One writer, no subagents/background implementation, no prohibited workflow, no deployment/spending/live/research activation. Policies remain inherited in G8.1-acceptance.json and latest external schema2 controls.",
   "runtimeEvidence": "No B18 runtime tests yet. Device/human/live/installedflags/fullrelease NOT RUN. Existing gate evidence has its original scoped interpretation only.",
-  "recoverySincePreviousCheckpoint": "2036EOL-only checkout raw blobs restored;3610inventory/23handoff/3policy hashes verified, index clean. One guessed brief path corrected through discovery; no historical regeneration.",
+  "recoverySincePreviousCheckpoint": "245EOL-only checkout files restored from exact raw blob;3610inventory/19handoff/3policy hashes verified, clean index. No historical regeneration.",
   "continuationPolicy": "Latest 2026-09-19 instruction authorizes each released successor to dispatch exactly the next slice; overrides master-only dispatch wording without modifying frozen policy bytes.",
-  "historyPath": "resume-history-before-REV08.json",
-  "sliceId": "B18-G82-REV-08"
+  "historyPath": "resume-history-before-REV07.json",
+  "sliceId": "B18-G82-REV-07"
 }

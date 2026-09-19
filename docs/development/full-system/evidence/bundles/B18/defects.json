@@ -774,6 +774,197 @@
       ],
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV08-03",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/voice/vox_cpm_standard_provider.dart",
+      "relatedFiles": [
+        "lib/voice/omni_voice_provider.dart",
+        "lib/voice/synthesized_voice_route_handler.dart",
+        "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
+        "test/voice/vox_cpm_standard_provider_test.dart",
+        "test/voice/omni_voice_provider_test.dart",
+        "test/voice/voice_service_factory_test.dart"
+      ],
+      "trigger": "A WAV response reports a different nonblank engine from selected descriptor.",
+      "expected": "Actual provenance must match allowed route or fail closed before caching/playback/telemetry.",
+      "actual": "Header engine is checked only nonempty then replaced by hardcoded enum; actual backend emits omnivoice, factory default is VoxCPM. Matching enum validation downstream is bypassed. Deployment configuration not executed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Synthetic wrong-engine responses through both clients and actual synthesized handler/factory; assert no falsely attributed playback/cache, correct matching endpoints retain behavior. No server call.",
+      "evidenceLocations": [
+        "vox_cpm_standard_provider.dart:204-228",
+        "omni_voice_provider.dart:229-254"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-04",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/voice/vox_cpm_standard_provider.dart",
+      "relatedFiles": [
+        "lib/voice/omni_voice_provider.dart",
+        "test/voice/vox_cpm_standard_provider_test.dart",
+        "test/voice/omni_voice_provider_test.dart"
+      ],
+      "trigger": "Configured remote returns oversized or continuing WAV/error stream, or response arrives after public timeout.",
+      "expected": "Finite response byte budget and terminated stream/request work; timeout must not leave unbounded accumulating work.",
+      "actual": "Response.fromStream materializes entire body; Future.timeout does not cancel original future. Dynamic slot is released when public wrapper ends, not proof raw work ended.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled streamed client boundary/over-bound/stalled/late chunks and cancellation counter; retain 401 retry/circuit/quota and no live requests. Mirror/legacy analogous risks dormant.",
+      "evidenceLocations": [
+        "vox_cpm_standard_provider.dart:120-168",
+        "omni_voice_provider.dart:168-183"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-05",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/voice/voice_audio_player.dart",
+      "relatedFiles": [
+        "lib/voice/synthesized_voice_route_handler.dart",
+        "lib/voice/voice_orchestrator.dart",
+        "lib/features/voice/application/voice_use_cases.dart",
+        "test/voice/voice_audio_player_test.dart",
+        "test/voice/voice_orchestrator_test.dart"
+      ],
+      "trigger": "Player starts underlying audio then its start acknowledgment fails; standard route falls back to native.",
+      "expected": "Stop/drain failed player before next route or report cleanupIncomplete and fail closed.",
+      "actual": "Adapter only retires completion on start error; handler propagates and orchestrator allows playback failure fallback without stop. Start-only facade may clear stop obligation. Physical partial failure not reproduced.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "SDK-shaped player sets active then throws; compose handler/orchestrator/facade, verify fallback waits stop, stop error blocks fallback; preserve completion-owned cleanup.",
+      "evidenceLocations": [
+        "voice_audio_player.dart:99-108",
+        "voice_orchestrator.dart:103-112",
+        "voice_use_cases.dart:192-208"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-06",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/voice/voice_audio_player.dart",
+      "relatedFiles": [
+        "test/voice/voice_audio_player_test.dart",
+        "lib/features/voice/application/voice_use_cases.dart"
+      ],
+      "trigger": "Old untagged global onPlayerComplete event arrives after interrupted playback and new subscription.",
+      "expected": "Do not accept old event as natural completion of new content.",
+      "actual": "take(1) new subscription accepts first global completion without utterance identity; generation only fences retired closures, unlike conservative native TTS policy.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled SDK stream: startA stopA startB emit lateA then actualB; prove B completion not prematurely trusted. Document platform event contract/device pending; no acoustic claim.",
+      "evidenceLocations": [
+        "voice_audio_player.dart:71-104"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-07",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/voice/voice_orchestrator.dart",
+      "relatedFiles": [
+        "lib/features/voice/application/voice_use_cases.dart",
+        "test/voice/voice_orchestrator_cancellation_test.dart",
+        "test/features/voice/voice_use_cases_test.dart"
+      ],
+      "trigger": "Old speak holds first handler stop; explicit stop/new speak completes through other stop invocations; old stop resumes.",
+      "expected": "Retired control chain must not stop newer audible generation.",
+      "actual": "Stop-all retains cancellation as first error but continues subsequent stops. Facade controlTail serializes explicit stop, not raw speak pre-stop sequence; original provider future need not drain before newer speak.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use actual VoiceUseCases+VoiceOrchestrator with per-call deferred stop handlerA and recording handlerB; prove old chain cannot stop B after replacement playback; retain best-effort all-handler cleanup on genuine explicit stop failure.",
+      "evidenceLocations": [
+        "voice_orchestrator.dart:192-213",
+        "voice_use_cases.dart:115-139,300-311"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-08",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "relatedFiles": [
+        "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+        "backend/lexiquest_lm/deploy/hf_space/app.py"
+      ],
+      "trigger": "Formatting completion or truncating a sequence above max_length.",
+      "expected": "One terminal marker and explicit valid assistant boundary/masking under chosen truncation contract.",
+      "actual": "Completion template and EOS each contain im_end; overflow removes prompt tail including assistant header while retaining completion. Current stub tests assert contains marker/length, not exact template/boundary.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Pure synthetic tokenizer fixtures exact EOS count, short/long prompt and long completion, mask alignment and nonpositive length rejection; no training/model/network. Resolve intended truncation policy before fix.",
+      "evidenceLocations": [
+        "tokenise_dataset.py:46-65,148-165"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-09",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "backend/lexiquest_lm/train/lora_finetune.py",
+      "relatedFiles": [
+        "backend/lexiquest_lm/train/tokenise_dataset.py",
+        "backend/lexiquest_lm/tests/test_tokenise_dataset.py"
+      ],
+      "trigger": "Dry training example begins with masked prompt tokens.",
+      "expected": "Use unmasked completion positions as features; dry check must exercise actual masking behavior.",
+      "actual": "Label index is len(feats); first masked position keeps length zero so all subsequent tokens skipped and fallback[0] returned. No loop execution this slice.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Extract or intercept pure feature conversion with varying unmasked suffix after masked prefix, all-masked and zero-epoch cases; no GPU, dataset generation or research execution.",
+      "evidenceLocations": [
+        "lora_finetune.py:129-135"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-10",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "relatedFiles": [],
+      "trigger": "Maintainer invokes --dry-run with existing adapter and no --username.",
+      "expected": "No network as promised by CLI help.",
+      "actual": "whoami invoked before dry-run branch; network/error possible despite documented no-network mode. Dormant tool, not production runtime.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake huggingface_hub whose network functions fail if called, synthetic temp adapter; dry-run no username must plan offline or require explicit username without network. Never upload.",
+      "evidenceLocations": [
+        "upload_to_huggingface.py:145-147,170-190"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV08-11",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/screens/object_scanner_screen.dart",
+      "relatedFiles": [
+        "lib/features/voice/presentation/route_voice_session_mixin.dart",
+        "test/screens/object_scanner_screen_test.dart"
+      ],
+      "trigger": "Scanner speech cancelled by cover/background/replacement or older speak fails after newer state.",
+      "expected": "Cancelled/stale request must not overwrite current scanner error state with voice unavailable.",
+      "actual": "Catch at393-410 checks only mounted, no captured session/request generation or cancellation filter. Route mixin correctly invalidates session but public cancellation can still enter catch. Existing REV07 supplemental issue now assigned here.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Widget fake deferred voice through actual route session: cover/resume or speak replacement, settle old failure/cancel; current UI remains unchanged, genuine current failure visible.",
+      "evidenceLocations": [
+        "object_scanner_screen.dart:393-410"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -840,6 +1031,13 @@
       "receiptGenerationRecovery": "First next-oracle selection included excluded binary fixture and count assertion rejected it before ledger writes. Restricted selection to test source; retained exact15/allREV12/pending assertions.",
       "integrityRecovery": "First validator counted only candidate-prefixed statuses and missed5historical open-candidate statuses. Inspected full status histogram, counted candidate classification anywhere in status, retained exact23candidate/17static totals and unchanged prior31 finding assertion.",
       "stagingRecovery": "First git diff --cached --check detected CRLF as trailing whitespace in newly written evidence/report; PowerShell/Python default newline translation caused it. Normalize only this slice nine staged output files to LF, preserve prior historical files, and explicitly capture check exit code before commit."
+    },
+    {
+      "id": "B18-ENV-REV08",
+      "status": "method-corrected",
+      "actual": "Native checkout altered2036 raw EOL hashes; one guessed brief directory failed; some broad multi-file output truncated.",
+      "action": "Restored only EOL-equivalent checkpoint raw blobs, checked3610 inventory/23handoff/3policy hashes and empty index; discovered actual brief with rg --files and bounded omitted ranges. UTF8/LF evidence outputs. No historical regeneration or runtime execution.",
+      "externalPreflight": "REV08-preflight.json"
     }
   ]
 }

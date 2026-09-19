@@ -1,0 +1,19 @@
+{
+  "zone": "REV-08",
+  "zoneAccepted": false,
+  "completedZones": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04",
+    "REV-05",
+    "REV-06",
+    "REV-07"
+  ],
+  "completedProductionZoneFiles": 492,
+  "focusedRev12OracleDispositions": 73,
+  "totalStaticDispositions": 565,
+  "sourceReadAwaitingCrossCheck": 864,
+  "historyPath": "review-progress-before-REV07.json",
+  "notes": "43open findings17static/26candidate; all1429observations retained. REV12 reconciles historical/shared/orphan notes. G8.2 not accepted; runtime NOT RUN."
+}

@@ -1,0 +1,1982 @@
+{
+  "zone": "REV-08",
+  "sliceId": "B18-G82-REV-08",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "48dee06919c1c33172c26ed129fd21997467657b",
+  "reviewCompletedAtUtc": "2026-09-19T12:02:30.427017+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV08-X01",
+      "key": "AI-controller",
+      "evidence": [
+        "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+        "lib/features/ai_tutor/application/owner_operation_coordinator.dart",
+        "lib/features/ai_tutor/data/ai_credential_version_index.dart",
+        "lib/features/ai_tutor/data/ai_tutor_settings_store.dart"
+      ],
+      "disposition": "Live bootstrap uses AiTutorUseCases with synchronous transition reservation for ordinary operations and global owner leases. Owner profile versions, pending journal, exact terminal replay and paid-result preservation remain coherent in existing controlled oracles. Revoke/remove snapshots drain BEFORE reserving mutation: existing REV08-01 remains candidate. Dispose closes admission first but storage/lease drains can remain pending; no unsafe force-release proposed. Shared external cancellation tokens and injected stalls remain API constraints. Dormant createForStore and legacy setters have no external lib callers; do not promote mixed-profile or ignored legacy setter risk to a live failure. REV06-07 owns settings stale generation; no duplicate."
+    },
+    {
+      "id": "REV08-X02",
+      "key": "AI-transport-cost",
+      "evidence": [
+        "lib/features/ai_tutor/data/abortable_ai_http.dart",
+        "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+        "lib/features/ai_tutor/data/anthropic_gateway.dart",
+        "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+        "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+        "lib/features/ai_tutor/data/openai_responses_gateway.dart",
+        "lib/features/ai_tutor/domain/ai_tutor_contracts.dart"
+      ],
+      "disposition": "Adapters retain dedicated instruction/user/context roles, bounded abortable 256KiB transport, explicit models and no automatic paid fallback except documented Gemini retry max3 within budget. One logical journal row is not one HTTP request or one billed request. Missing cost/tokens remain unknown; cost overflow REV08-02 remains candidate. Anthropic derives total=input+output while cached counter is separate; incompatible counters are discarded by sanitization, not certified accurate billing. Provider contract fixtures would be needed before changing accounting semantics. No live pricing/provider contract assertion. Configurable HTTPS BYOK endpoints are operator-controlled; no arbitrary learner URL ingestion or current SSRF reproduction established."
+    },
+    {
+      "id": "REV08-X03",
+      "key": "AI-legacy",
+      "evidence": [
+        "lib/ai/ai_models.dart",
+        "lib/ai/ai_service_factory.dart",
+        "lib/ai/content_provider.dart",
+        "lib/ai/generated_reading_content_source.dart",
+        "lib/ai/local_content_fallback.dart"
+      ],
+      "disposition": "HttpContentProvider is reached only by legacy SentenceService whose lib search finds declarations only; AiTutor uses separate gateways. Buffered body/unchecked scalar casts and disposal during token await remain dormant API robustness limits. Local fallback is authored content, not generated intelligence, persistence or quality evidence. Scalar request enum/normalization tests do not establish non-BMP server parity. Empty compatibility files have no executable behavior."
+    },
+    {
+      "id": "REV08-X04",
+      "key": "speech",
+      "evidence": [
+        "lib/data/local/tables/speech_evidence_tables.dart",
+        "lib/features/media_practice/application/speech_practice_use_cases.dart",
+        "lib/features/media_practice/data/drift_speech_evidence_repository.dart",
+        "lib/features/media_practice/data/plugin_speech_recognition_gateway.dart",
+        "lib/features/media_practice/domain/speech_evidence_contract.dart",
+        "lib/features/media_practice/domain/speech_evidence_use_cases.dart",
+        "lib/utils/pronunciation_evaluator.dart"
+      ],
+      "disposition": "FORM10 actual policy is final nonempty normalized transcript rune edit distance: round(clamp(100*(1-distance/max(lengths)),0,100)); absent/partial/empty returns null, never zero. Permission/init/listen/session epochs and serialized native cleanup preserve accepted stopping-final callback once; queued start returning false after stop is intentional stale-admission signaling, not itself a defect. Platform may use online STT; no local-only promise. SpeechEvidenceUseCases and direct speech_evidence repository have no constructor caller in lib, so their unfenced mutation concern is dormant; live speaking uses canonical learning evidence reviewed in REV03/B14. No acoustic/native/CEFR certification from B14 transcript fixtures."
+    },
+    {
+      "id": "REV08-X05",
+      "key": "voice-control",
+      "evidence": [
+        "lib/features/voice/application/voice_use_cases.dart",
+        "lib/features/voice/presentation/route_voice_session_mixin.dart",
+        "lib/voice/native_tts_provider.dart",
+        "lib/voice/native_voice_route_handler.dart",
+        "lib/voice/voice_orchestrator.dart"
+      ],
+      "disposition": "Facade serializes explicit control operations, but provider.speak future is tracked separately from control tail. Therefore an old orchestrator pre-speak stop-all may remain pending while newer explicit stop completes and new speech starts: REV08-07 requires composed deferred-handler reproduction. Completion waits fail closed on missing proof/cleanup timeout; ordinary failures can clear mayNeedStop. Fallback after partial player start lacks stop confirmation: REV08-05. Route mixin correctly releases captured sessions and reacquires on resume; consumer mounted-only scanner error is separate REV08-11, not failure of mixin authority. Native untagged terminal events intentionally withhold completion trust after interruption; ignored speak ACK and physical plugin semantics remain device oracle limitations."
+    },
+    {
+      "id": "REV08-X06",
+      "key": "voice-remote",
+      "evidence": [
+        "lib/voice/omni_voice_provider.dart",
+        "lib/voice/voice_auth_token_provider.dart",
+        "lib/voice/vox_cpm_standard_provider.dart"
+      ],
+      "disposition": "Configured factory prefers VoxCPM standard unless explicit Omni rollback. Existing backend voice app returns actual Omni engine; both clients only require nonblank engine header then overwrite enum, hiding mismatch from handler/cache/telemetry: REV08-03. Body buffering and Future.timeout lack byte ceiling and cancellation drain: REV08-04. Dynamic quota reserves before await, failures charged, default1 concurrent; not a server or all-capability rate limit. Token refresh once, failures sanitized and circuit fallback retained. No server deployed or remote endpoint equivalence assumed."
+    },
+    {
+      "id": "REV08-X07",
+      "key": "voice-player-cache",
+      "evidence": [
+        "lib/voice/synthesized_voice_route_handler.dart",
+        "lib/voice/voice_audio_cache.dart",
+        "lib/voice/voice_audio_player.dart"
+      ],
+      "disposition": "Standard cache keys include text/language/voice/speed/actual enum/model and immutable bytes with entry/byte bounds; mirror is excluded. Handler checks enum but cannot detect remote header overwritten upstream (REV08-03). Player subscription generation protects old closure/late ACK, not old untagged event delivered on NEW global stream subscription (REV08-06). Player start exceptions retire bookkeeping without confirmed stop before fallback (REV08-05). Cache hit model metadata is a request-key contract, not acoustic evidence."
+    },
+    {
+      "id": "REV08-X08",
+      "key": "voice-pack",
+      "evidence": [
+        "lib/features/offline_content/data/voice_pack_download_adapter.dart",
+        "lib/voice/bundled_voice_asset_provider.dart",
+        "lib/voice/file_standard_voice_pack_store.dart",
+        "lib/voice/http_standard_voice_pack_source.dart",
+        "lib/voice/installed_voice_pack_provider.dart",
+        "lib/voice/platform_filesystem_capacity.dart",
+        "lib/voice/standard_voice_pack_download_manager.dart",
+        "lib/voice/standard_voice_pack_manifest.dart"
+      ],
+      "disposition": "Current bootstrap never passes installedVoicePack and download adapter uses packaged verified synthetic tone with fixed1.0 minimum, not vocabulary/acoustic quality. Thus no-config Noop playback is dormant composition risk, not live silent pack success. Generic manager validates PCM/size/SHA and bounded body with per-pack serial operations; bad-status stream disposal, activation marker crash gap, minimum-version admission and postcommit cancellation are extension/repair constraints. Current source is packaged and commit boundary is not retroactively undone. Installed provider text hash prevents wrong content but language/voice/speed matching is not a claim of current delivered pack playback. Retain constraints without claiming arbitrary imported packs safe."
+    },
+    {
+      "id": "REV08-X09",
+      "key": "voice-mirror",
+      "evidence": [
+        "lib/voice/voice_mirror_gateway.dart",
+        "lib/voice/voice_mirror_recorder.dart",
+        "lib/voice/voice_mirror_session_controller.dart",
+        "lib/voice/vox_cpm_mirror_provider.dart"
+      ],
+      "disposition": "No production enrollment/recorder/lifecycle host caller found. Factory creates inaccessible unconsented controller; policy denies mirror before generation. Recorder permission/start cancellation, late enroll/renew resurrecting state, concurrent quota, background elapsed cleanup and full-file buffering are dormant limitations requiring fixtures before activation. Do not activate mirror/research to test these. Lease order accepted by fake is not server validation. No microphone/audio retained or sent by review."
+    },
+    {
+      "id": "REV08-X10",
+      "key": "voice-misc",
+      "evidence": [
+        "lib/screens/smart_audio_playlist_screen.dart",
+        "lib/services/ai_reading_content_adapter.dart",
+        "lib/services/background_audio_player_service.dart",
+        "lib/services/voice_reading_adapter.dart",
+        "lib/voice/firestore_voice_telemetry.dart",
+        "lib/voice/reading_voice_enrichment.dart",
+        "lib/voice/voice_capability.dart",
+        "lib/voice/voice_models.dart",
+        "lib/voice/voice_policy.dart",
+        "lib/voice/voice_provider.dart",
+        "lib/voice/voice_provider_descriptor.dart",
+        "lib/voice/voice_provider_registry.dart",
+        "lib/voice/voice_request_quota.dart",
+        "lib/voice/voice_route_handler.dart",
+        "lib/voice/voice_service_factory.dart",
+        "lib/voice/voice_synthesis_provider.dart",
+        "lib/voice/voice_telemetry.dart",
+        "lib/widgets/live_audio_waveform_widget.dart"
+      ],
+      "disposition": "Factory defaults Noop telemetry; Firestore sink has no live lib constructor caller, no research delivery authorized. Closed key schema excludes text/audio but retained arbitrary IDs/provenance are not general secret sanitization. Voice request capability/privacy constraints and immutable registry/descriptor boundaries match current policy oracles. Dormant reading stub reports ACK without playback; dormant playlist/waveform cannot establish background listening or signal measurement. No current callback/layout defect promoted without reachable contract."
+    },
+    {
+      "id": "REV08-X11",
+      "key": "backend-ai",
+      "evidence": [
+        "backend/ai_api/.env.example",
+        "backend/ai_api/src/lexiquest_ai/__init__.py",
+        "backend/ai_api/src/lexiquest_ai/app.py",
+        "backend/ai_api/src/lexiquest_ai/auth.py",
+        "backend/ai_api/src/lexiquest_ai/config.py",
+        "backend/ai_api/src/lexiquest_ai/errors.py",
+        "backend/ai_api/src/lexiquest_ai/main.py",
+        "backend/ai_api/src/lexiquest_ai/models.py",
+        "backend/ai_api/src/lexiquest_ai/services/__init__.py",
+        "backend/ai_api/src/lexiquest_ai/services/base.py",
+        "backend/ai_api/src/lexiquest_ai/services/cache.py",
+        "backend/ai_api/src/lexiquest_ai/services/llm_content_service.py",
+        "backend/ai_api/src/lexiquest_ai/services/rate_limiter.py"
+      ],
+      "disposition": "Authenticated actual-body100000 ceiling precedes parsing/provider; sync service readiness is configuration only. Returned UID not retained in shared content cache. Cache is process-local bounded-entry LRU/TTL, not singleflight or exactly-once billing; normalization/casefold semantic policy lacks current caller contract establishing defect. Local429 branch still enters fallback despite comment, but fallback chain is configured and unavailable local generation may legitimately continue; no automatic defect without deployment/cost contract. Operator key list and per-URL rate limit do not establish daily/multiprocess quotas or chain deadline. Real urllib bounded1MiB response/close oracles narrower than live service. Blank fallback URL comment conflicts validator; empty model is supported disable path. Correct interpretation retained rather than execution."
+    },
+    {
+      "id": "REV08-X12",
+      "key": "backend-voice",
+      "evidence": [
+        "backend/voice_api/.env.example",
+        "backend/voice_api/research/golden_texts.json",
+        "backend/voice_api/research/run_golden_set.py",
+        "backend/voice_api/src/lexiquest_voice/__init__.py",
+        "backend/voice_api/src/lexiquest_voice/app.py",
+        "backend/voice_api/src/lexiquest_voice/auth.py",
+        "backend/voice_api/src/lexiquest_voice/config.py",
+        "backend/voice_api/src/lexiquest_voice/engines/__init__.py",
+        "backend/voice_api/src/lexiquest_voice/engines/base.py",
+        "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
+        "backend/voice_api/src/lexiquest_voice/errors.py",
+        "backend/voice_api/src/lexiquest_voice/main.py",
+        "backend/voice_api/src/lexiquest_voice/models.py",
+        "backend/voice_api/src/lexiquest_voice/runtime_compat.py"
+      ],
+      "disposition": "App body/auth/error/readiness contract aligns with synthetic ASGI tests. Engine serial lock limits simultaneous generation, not bounded waiting or server quota; deployment capacity unproven. Actual engine metadata identifies Omni, consumed incorrectly by standard client (REV08-03); backend itself not relabeled. Model revision/configured sample rate and metadata-only runtime guard do not prove GPU/model byte/runtime quality. Research runner and opt-in integration remain unexecuted. Existing optional GPU exception expiry preserved, no prohibited workflow invoked."
+    },
+    {
+      "id": "REV08-X13",
+      "key": "LM-data",
+      "evidence": [
+        "backend/lexiquest_lm/dataset/collect_cefr_words.py",
+        "backend/lexiquest_lm/dataset/enrich_dictionary.py",
+        "backend/lexiquest_lm/dataset/expand_wordlist.py",
+        "backend/lexiquest_lm/dataset/fetch_huggingface.py",
+        "backend/lexiquest_lm/dataset/generate_synthetic.py",
+        "backend/lexiquest_lm/dataset/merge_and_format.py",
+        "backend/lexiquest_lm/src/lexiquest_lm/__init__.py",
+        "backend/lexiquest_lm/src/lexiquest_lm/dataset/__init__.py",
+        "backend/lexiquest_lm/src/lexiquest_lm/dataset/io.py"
+      ],
+      "disposition": "Dormant offline collection/training pipeline is not accepted B11A camera training or live app curriculum. Legacy literal extraction is partial parser; source license/CEFR labels and alternating bands are unverified editorial claims. Seed-first union preserves curated fields, but first-sense enrichment/provenance and generic templates cannot certify quality. Deterministic same-input split is not word/template held-out independence; writes are non-atomic and JSONL memory/scan resources not globally bounded. No acquisition, generated dataset, research assignment/statistical report or training performed."
+    },
+    {
+      "id": "REV08-X14",
+      "key": "LM-training",
+      "evidence": [
+        "backend/lexiquest_lm/train/__init__.py",
+        "backend/lexiquest_lm/train/evaluate.py",
+        "backend/lexiquest_lm/train/lora_finetune.py",
+        "backend/lexiquest_lm/train/tokenise_dataset.py"
+      ],
+      "disposition": "Source-only train/serve template comparison finds duplicate end marker and prompt-tail removal that may lose assistant header: REV08-08. Stub hash IDs vary by process, so same-instance test is not cross-process reproducibility. Dry loop masked-prefix index never advances before first feature (REV08-09); dry accuracy does not validate actual masked content. Evaluation uses unshifted label weights against shifted causal loss and can serialize nonfinite perplexity; remains dormant measurement limitation, no report accepted. Actual model/tokenizer revisions and torch runtime not validated. Backend/LM test ledger remains historical REV12 with supplemental review references only."
+    },
+    {
+      "id": "REV08-X15",
+      "key": "LM-deploy",
+      "evidence": [
+        "backend/lexiquest_lm/deploy/hf_space/Dockerfile",
+        "backend/lexiquest_lm/deploy/hf_space/app.py",
+        "backend/lexiquest_lm/deploy/hf_space/auth.py",
+        "backend/lexiquest_lm/deploy/upload_adapter.py",
+        "backend/lexiquest_lm/scripts/upload_to_huggingface.py"
+      ],
+      "disposition": "Deployment scripts are dormant explicit maintainer tools; Space authenticates before generation but parses body/tokenizes before generation lock and has no queue/deadline/body middleware parity with production APIs. No live URL/current deploy asserted. Upload helper dry-run calls whoami before dry branch contrary no-network help: REV08-10, to reproduce with intercepted API only. Public upload defaults/README static metrics require explicit future publication authorization and actual provenance; none executed."
+    },
+    {
+      "id": "REV08-X16",
+      "key": "dependency",
+      "evidence": [
+        "backend/ai_api/pyproject.toml",
+        "backend/ai_api/uv.lock",
+        "backend/lexiquest_lm/deploy/hf_space/requirements.txt",
+        "backend/lexiquest_lm/pyproject.toml",
+        "backend/lexiquest_lm/uv.lock",
+        "backend/voice_api/.python-version",
+        "backend/voice_api/osv-scanner.toml",
+        "backend/voice_api/pyproject.toml",
+        "backend/voice_api/uv.lock"
+      ],
+      "disposition": "Structured lock observations retained: AI63packages/319hashed artifacts; voice139/620hashed with4sizes absent; LM85/425 with3PyTorch hashes/sizes absent and422hashed. Ordinary references/pins were reviewed; buildbackend/transitive Space requirements not fully pinned. Metadata format is not downloaded-byte, compatibility, current availability or safety proof. Three missing LM hashes remain reproducibility limitation before future training environment acceptance. No installs, GPU checks or prohibited tooling."
+    }
+  ],
+  "files": [
+    {
+      "path": "backend/ai_api/.env.example",
+      "sha256": "9f717a86ad9ee31cfb5f23799860c5d3b4aec39a41615926746056e6af95ec7b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/pyproject.toml",
+      "sha256": "89e8331df1ff9bb40302274885207b17a5033710e657568dba33435bee1e1e7b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/__init__.py",
+      "sha256": "edf433268d70f8e55d20c343d278f339a030eaab45c126bc9a5c2ffcc3f2533c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/app.py",
+      "sha256": "872751e6805f5414106f4a41b785e59bcb2d0bc1a348ccbf5914edaced2def70",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/auth.py",
+      "sha256": "bdcd97156ab5ef679a719f3485c08dfc9e19b450359c134ed894e7a27ff271f3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/config.py",
+      "sha256": "775d7cfcbb9b2d2e393189775787c32be3b87e55285e7f1f3f319592dd8ec554",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/errors.py",
+      "sha256": "e6684b20384ec6e5506efa905d9363da5b1ebe1b854581d0f27afcde3982f36c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/main.py",
+      "sha256": "524a608407f9a130a4dffac7a2a1fe213136b0faa051c77208f30756381dd26e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/models.py",
+      "sha256": "23ad5f070be8a8998bbf4e0155d1fb171dd2c32537f7a2a9bcc459fb82a8acba",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/services/__init__.py",
+      "sha256": "7b5b5676f1ce6e3d56d8a02b2ff951f18a249f6c9bc8a20680a4d94af3e79a3e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/services/base.py",
+      "sha256": "a03f3f4078aaf88669a86d64f74743dacefe19e27eabbbf750c84eb15b8e0d79",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/services/cache.py",
+      "sha256": "0e5144c18928c80a291d4b1607f6a6d05cc713ad836b745d766cd9fd5ccbbdd8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/services/llm_content_service.py",
+      "sha256": "f89825953f03ecd411134bbfac531061479910896203d74beda1bf857890be87",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/src/lexiquest_ai/services/rate_limiter.py",
+      "sha256": "6026ac633833fa4caa3bf7e2944904348dffd09769a7a7b75a8fb679c9d175c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X11"
+    },
+    {
+      "path": "backend/ai_api/uv.lock",
+      "sha256": "28b5273d6c2c5c14f52511923014a00c54c275a37f16b9d644b1a4fd941f2f7c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/collect_cefr_words.py",
+      "sha256": "ef14d557b2715f52dc235e9365bca4d2537538ed9494e1b34c6e199bf85a3870",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/enrich_dictionary.py",
+      "sha256": "24d6562de354b6e6a68cb429dfa56702e4c9ca20b3e1ee2de320b4d0ad43e189",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/expand_wordlist.py",
+      "sha256": "33d1f0a735d8cd7bd30a738463ff2b12084e2d28aaffc36b5ca6b0dbabaa6176",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/fetch_huggingface.py",
+      "sha256": "ff020a9d9e5af8760cc121cfb5f5c910dea280e3d9975f0e39a77a4614ff41da",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/generate_synthetic.py",
+      "sha256": "5e201aafebc4a8cffd219dadb6a034d9839886e9512ce4c374949aa6c8d8c627",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/dataset/merge_and_format.py",
+      "sha256": "e621adf5c2401244ed8a56f1770048e280b46e78479a7adbcb814a81be1bd5a8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/deploy/hf_space/Dockerfile",
+      "sha256": "ed4e25ebdf8526f2de844fa58277e82da2c08be8c86a2291bdad715ab2e5bef4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X15"
+    },
+    {
+      "path": "backend/lexiquest_lm/deploy/hf_space/app.py",
+      "sha256": "3c202298dd04d4f5face2ded4396aacecf8f09448830403e6adb7928132973c1",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-08"
+      ],
+      "crossCheck": "REV08-X15"
+    },
+    {
+      "path": "backend/lexiquest_lm/deploy/hf_space/auth.py",
+      "sha256": "08d0abf3b569db8df876ec793bc0bdd1ebe089759f64f239fe7ccf60c6d93d51",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X15"
+    },
+    {
+      "path": "backend/lexiquest_lm/deploy/hf_space/requirements.txt",
+      "sha256": "a478e705532968f7e66886bea16f75e1745a4bd62d9ed6cb6a64b578ac7211ef",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/lexiquest_lm/deploy/upload_adapter.py",
+      "sha256": "f6e190e9af8a82bedcacaa3c0365af385153ff93caad26c5fab955996afb5219",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X15"
+    },
+    {
+      "path": "backend/lexiquest_lm/pyproject.toml",
+      "sha256": "efeb7f6bd44b26718363d8538865854de3b8ac0e01fdc7c1b4cbf0c1d44dbf8c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "sha256": "d2cf4c07f8a8f443d22feb4fbda83e96a93f2b31a6fe2092077703c4784e29ee",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-10"
+      ],
+      "crossCheck": "REV08-X15"
+    },
+    {
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/__init__.py",
+      "sha256": "efebd44d6073f9991780a2e4a0db23eac704815e6000702e99552ec7bab5b084",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/__init__.py",
+      "sha256": "5afa2ce8ea86a603c1d28636dbff16343370ff01708d11f16ff60f92a2d07b59",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/src/lexiquest_lm/dataset/io.py",
+      "sha256": "803637763eabbe9a7b46e352dd37c5dca12bb20d5db39aa58429f8e6e5e21aa7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X13"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/__init__.py",
+      "sha256": "276115d7e15f7153a9a85ea9c6c11601c1481a1d35776a910f62319500bddd82",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X14"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/evaluate.py",
+      "sha256": "866b9c55bf48157cfe2da739546d11d10c9a7871a9d8a05925e461a59af66186",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X14"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/lora_finetune.py",
+      "sha256": "8f27eba539adab648105cbaeccc3acac8eeca2905af125ee9d74d9d9426ca272",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-09"
+      ],
+      "crossCheck": "REV08-X14"
+    },
+    {
+      "path": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "sha256": "3a1fdbd59655b4aa732f72c1e3286d9c5ce84c91337692492d5d2d71f621d6c3",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-08",
+        "B18-REV08-09"
+      ],
+      "crossCheck": "REV08-X14"
+    },
+    {
+      "path": "backend/lexiquest_lm/uv.lock",
+      "sha256": "ac7fdf16bf219e1446eb6c6eae79a296f6c0307359ce56c50980cdb1effa1079",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/voice_api/.env.example",
+      "sha256": "def82a5b317d80e130980f60bedd0b9bb8b78d836f340d8a7d37ee9a8037d425",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/.python-version",
+      "sha256": "49a506dd32096b010d75205acf3430c9ae6c40351888129499e5a5e487126c93",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/voice_api/osv-scanner.toml",
+      "sha256": "248982bbe7721246a8d260f95f6de00aa0d642904d15f02e655a2601452527c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/voice_api/pyproject.toml",
+      "sha256": "a043edf7854d7140c8f186e8c02771fae54456c08ad253bbdf032db2cbda1286",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "backend/voice_api/research/golden_texts.json",
+      "sha256": "7ec5079f0543bc5a154e2b10a6fc778e4460706e8c94d4cd3616a3a99c1d847b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/research/run_golden_set.py",
+      "sha256": "97e7df4eccae48ef35c6f5617d4c4adebe638e60ae4d5d2229f21f68b4b07d6b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/__init__.py",
+      "sha256": "1f1cbd80614f8094440418ecfc4462b17bce3457f0eb1cf440395aff09a5cf6f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/app.py",
+      "sha256": "cca46efce2bbe88b11eed74f2cb3436618793d0671ee7bd3e7b94b3e2bd00ee7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/auth.py",
+      "sha256": "9ce140c9c46e8e72069cba7073b6092c06934f6dd6e37e5a6cf62836326384bb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/config.py",
+      "sha256": "810345ffc30a7b77b2a15ec5ed22c683a385624d0b33e1f6aa2983d6fac38f5b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/engines/__init__.py",
+      "sha256": "e7ca0f495869943244ccdcf4bc597ae636bc0ca8d58c9937eca6c402cafbbb39",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/engines/base.py",
+      "sha256": "dfe87d64af1f67d77b03f88bfe92eda7d0f3e299318ce5d65566f9117c053841",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py",
+      "sha256": "3c29231126f095ce1be6aa08859ee69d0c723742b46c0603854a5e56b20f1a77",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03"
+      ],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/errors.py",
+      "sha256": "e8c5447be7c50d81c500f4b3915759daae2f8d361d46e252de3b2d8836167aa4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/main.py",
+      "sha256": "fb9f1c5eb930b8dcf0fea99dfea925904126a4a25809e6d39745ceae79db70b0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/models.py",
+      "sha256": "eb0bb29e44a505b7f31384546538b79417873d8cfe73ad9c98c711c71ec08cb3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/src/lexiquest_voice/runtime_compat.py",
+      "sha256": "020d553de29af76993fe6b21c0da86894fbce939d6de548b322817cddd66b50c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X12"
+    },
+    {
+      "path": "backend/voice_api/uv.lock",
+      "sha256": "f9ae0b1a716f53f82c15ed91e29bda306ae1f315ce247021e4ddff79d67b9a10",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X16"
+    },
+    {
+      "path": "lib/ai/ai_models.dart",
+      "sha256": "19547a4e19a07b4cd621dc9a3c2e891e535357747c2af594526ac3acf06c3f85",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X03"
+    },
+    {
+      "path": "lib/ai/ai_service_factory.dart",
+      "sha256": "5b316117d3810aa7d2b46d5bc8d39a06f76acd0e8a6f0317b9e53413175c3cde",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X03"
+    },
+    {
+      "path": "lib/ai/content_provider.dart",
+      "sha256": "400f8ad47615c86a85c40a84fd3434630ec83d71a5e24a5d86140ddd8559b200",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X03"
+    },
+    {
+      "path": "lib/ai/generated_reading_content_source.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X03"
+    },
+    {
+      "path": "lib/ai/local_content_fallback.dart",
+      "sha256": "619685f1da6b04b4228e52e4acf37cc379f2f2a345f5949ce968801c03c9bc0b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X03"
+    },
+    {
+      "path": "lib/data/local/tables/speech_evidence_tables.dart",
+      "sha256": "4036fef6f9886a80c745fe2637df055b7a397f6390b11f357eec98095e5a6cf1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "sha256": "00858724eed8be8da737412b5a3df840557c54cdfec88e9d1623100bd0dc3785",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-01",
+        "B18-REV08-02"
+      ],
+      "crossCheck": "REV08-X01"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/owner_operation_coordinator.dart",
+      "sha256": "7b8cb6be8a41eedff395d8a6c2392254f128d0d31c91f1dd1409ea5c273b3b8e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X01"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/abortable_ai_http.dart",
+      "sha256": "9dec39081de1e6b67c5981324dafa15a54807e7244bef3bf3647c0204ffc9f03",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/ai_credential_version_index.dart",
+      "sha256": "3f030032416ce7ff5b3d4e4aaf79b95512f0e7c74de8d4324b6295046b3633ee",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X01"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+      "sha256": "b52d7bac58088cc93e42ef13246eb04535cea8dc270caf64d15ba5f6e3500359",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/ai_tutor_settings_store.dart",
+      "sha256": "23141c85b7b13fe8d6b983f50f88d904b3f74458dc2405f3add08a2da7a9d4d4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X01"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/anthropic_gateway.dart",
+      "sha256": "162c8697ac9a50ef40c2e8a1bf3427066f80a6cc04540e61d1df9d7b08a283ed",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/drift_ai_usage_repository.dart",
+      "sha256": "e403f06e7f2c5ec67c3951d4ba5aef9361d2f200caa4dd9b9bcb8abadbbaf36f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+      "sha256": "f8764bd1bde29d38ce644d21c29b645775012ab23c6d04d1bc46cf2dfa655bbe",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-02"
+      ],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/openai_responses_gateway.dart",
+      "sha256": "43a9cd80cb07014209fac63026d6da7dfd8bb23601b84bbb69862d15dc963b4d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/ai_tutor/domain/ai_tutor_contracts.dart",
+      "sha256": "5a83add3829487b09a0943011e736a1805925d49f3ea5b7ff74e201e5f9d1648",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X02"
+    },
+    {
+      "path": "lib/features/media_practice/application/speech_practice_use_cases.dart",
+      "sha256": "5bbde9f0de183e5de09ae66874dfa7ba9f5901c486c41c023e8046aa081b5b78",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/media_practice/data/drift_speech_evidence_repository.dart",
+      "sha256": "6b767bfef436874344643362e0656e0f0eade66f39b600f5b77428a904e23410",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/media_practice/data/plugin_speech_recognition_gateway.dart",
+      "sha256": "a9ed66ebaf4a0b0c0a1be2a2ec9eeac4a371582b5e93039277c622d702b48bb0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/media_practice/domain/speech_evidence_contract.dart",
+      "sha256": "a3b1705277216d78124793ee100e7c0b393415446d1ba3326d2e978b6bfc2990",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/media_practice/domain/speech_evidence_use_cases.dart",
+      "sha256": "e04482b295a3e809f203199f177bf7aae4db16515a1ec5e7197ce6e3def1094c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/features/offline_content/data/voice_pack_download_adapter.dart",
+      "sha256": "e3b21d5398064ea8226ece28790fa3d7627be7d83ca0dc1c67a795a98711197e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/features/voice/application/voice_use_cases.dart",
+      "sha256": "d76ecccad60bb5c61fe1773ad0cff2414f9b383000aaa707ca87299b3f133c1c",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-05",
+        "B18-REV08-06",
+        "B18-REV08-07"
+      ],
+      "crossCheck": "REV08-X05"
+    },
+    {
+      "path": "lib/features/voice/presentation/route_voice_session_mixin.dart",
+      "sha256": "04bd0c080063cac42695b4f1407ea71ed031b8bdb45aeda4ce63ad6d318804df",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-11"
+      ],
+      "crossCheck": "REV08-X05"
+    },
+    {
+      "path": "lib/screens/smart_audio_playlist_screen.dart",
+      "sha256": "e1f7dfb552360b72c17bb465a026e7a5138c778ef8ad149e7f72afdb0fea9319",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/services/ai_reading_content_adapter.dart",
+      "sha256": "d6ce055edf1f43344238f7f402379966b9d912a20c9ceb6d705f8e7c98bda2e3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/services/background_audio_player_service.dart",
+      "sha256": "14b13912debce6c9f45685e58c779d14ba76b1cc8043c72842d9a71a3c4032d7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/services/voice_reading_adapter.dart",
+      "sha256": "2518869c656356e6752b8f2ba592abed22fbfc3b4dd0d229796fb2783ccf6209",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/utils/pronunciation_evaluator.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X04"
+    },
+    {
+      "path": "lib/voice/bundled_voice_asset_provider.dart",
+      "sha256": "571ce7118e24c393df81d8a62692a8a71590e198533a01c17a4732e18b2c568f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/file_standard_voice_pack_store.dart",
+      "sha256": "bcd0ee8fceff80d462eada70944df932364c0b58d1719e9fd6c61efbe516822f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/firestore_voice_telemetry.dart",
+      "sha256": "afa7b79b1c1bf6cae2ccbbfa013a7eaf29c8519a4544cf19dca20e7ba81fe8aa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/http_standard_voice_pack_source.dart",
+      "sha256": "aa161021f580743929f0f792ce0a61405790e8c82afcd00f3c2798cdb15b145e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/installed_voice_pack_provider.dart",
+      "sha256": "0292570f1c86d1f75ee826b878f8fe6469ce6dba4faf401caa8484153a8fb6c1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/native_tts_provider.dart",
+      "sha256": "e0efede3e03edcf62537c74bc4b079eef7eb3658dccf6dafcb190e9f12553f71",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X05"
+    },
+    {
+      "path": "lib/voice/native_voice_route_handler.dart",
+      "sha256": "cc4afa7c2b6d0a37a8bcc4e498981cfb6f2abc11c0b483b7d0bb8d77c4b45bc5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X05"
+    },
+    {
+      "path": "lib/voice/omni_voice_provider.dart",
+      "sha256": "315e1ed351c4a3c54fc07a9950cefdd467bd6ab5861b4041472e50a89bc73f11",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "crossCheck": "REV08-X06"
+    },
+    {
+      "path": "lib/voice/platform_filesystem_capacity.dart",
+      "sha256": "fd9ff830e4d4da7fd71610360e33003df30afd3e5e556cac99d52a515ac73762",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/reading_voice_enrichment.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/standard_voice_pack_download_manager.dart",
+      "sha256": "e714618c211b8ef593d02709fc0b3916aef940db9d6247094d22de2ac9f1d9cc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/standard_voice_pack_manifest.dart",
+      "sha256": "dba107708f00511b22e086ca3cd3827767266198473e52f7d744583ac1ff52af",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X08"
+    },
+    {
+      "path": "lib/voice/synthesized_voice_route_handler.dart",
+      "sha256": "0c1ff29a2d210127100ed058b6a41d6a392d3f6fc3864e055457b219e3dab7ec",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-05"
+      ],
+      "crossCheck": "REV08-X07"
+    },
+    {
+      "path": "lib/voice/voice_audio_cache.dart",
+      "sha256": "a8a12255431a6bfb62eebe2c42e52283be859416dc6fbb8afd7dd2e2191adef2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X07"
+    },
+    {
+      "path": "lib/voice/voice_audio_player.dart",
+      "sha256": "497abf8eee1fdf288d4f484cf51553c20af6853664f5c7ec9ed5a827af4713ce",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-05",
+        "B18-REV08-06"
+      ],
+      "crossCheck": "REV08-X07"
+    },
+    {
+      "path": "lib/voice/voice_auth_token_provider.dart",
+      "sha256": "a3373088dfd206a657388769bd5a2084a2ee49a67b89253cc87c6cff47a0ba99",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X06"
+    },
+    {
+      "path": "lib/voice/voice_capability.dart",
+      "sha256": "ad20f75399e70e467b6c1f87d76932e50a0e11f0538eed34a0bf1eaeab49d81b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_mirror_gateway.dart",
+      "sha256": "e3799e2a20f51b32f3a093b6f9c72213072cae0a359ca325d53cab89a11f3eab",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X09"
+    },
+    {
+      "path": "lib/voice/voice_mirror_recorder.dart",
+      "sha256": "7c2d3b1885e2ae29f72416c7d49eeb2cb68ce376c0e99e8a851dd60db630a401",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X09"
+    },
+    {
+      "path": "lib/voice/voice_mirror_session_controller.dart",
+      "sha256": "abbb212a4cebe6c1159a0e1cf23a957d56eaafc15a07afe5f24bfd19480d22da",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X09"
+    },
+    {
+      "path": "lib/voice/voice_models.dart",
+      "sha256": "304ec1161dbb589b6cc12b3d582afe8165c1d3580429c735d071140c76c1997e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_orchestrator.dart",
+      "sha256": "71198efff2654c86609e859c9d7fe8bc0d1c6c198081c7956ffc2f1cd7f9044f",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-05",
+        "B18-REV08-07"
+      ],
+      "crossCheck": "REV08-X05"
+    },
+    {
+      "path": "lib/voice/voice_policy.dart",
+      "sha256": "40dca28d4eb0b57b603268f0e2e1faa384408e2ac54cd743b9437611b145b430",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_provider.dart",
+      "sha256": "37745472a13b75ffcf76fe6dec35ce11292532c24f761a499fe919a344190d11",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_provider_descriptor.dart",
+      "sha256": "09197f25cad2b1faae1236ffb2925bdb5a4506455d8ac5315d006f9efa804a25",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_provider_registry.dart",
+      "sha256": "dcd0f6c345c923068c45ee8d431775beb6054c8c826b2e04090afadc4eec338c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_request_quota.dart",
+      "sha256": "4ad2ad1b2036e0bdb0634148b9448e4789ce75a82c56fa9389c7dded69199494",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_route_handler.dart",
+      "sha256": "e7e4452d4ae823b1ded08484ccc425a56c4dcee9d6947f68a4eb3f750727dfbe",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_service_factory.dart",
+      "sha256": "7c1623aae1fdf513f546cf96cf87d038823742619fdbb18fff02c56933453285",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_synthesis_provider.dart",
+      "sha256": "9fc9d91ff3e50943169f1ddd80eca5e97eee6e9805520a629664421ce68eb2e5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/voice_telemetry.dart",
+      "sha256": "33f940efceacd9313817dc851ff4326e249af544523f24ff2bb60a8bdf5c931e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    },
+    {
+      "path": "lib/voice/vox_cpm_mirror_provider.dart",
+      "sha256": "1e5b9893b66f9c16bdb10556428d2605685fc308e7eb65d664e63643404976a4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X09"
+    },
+    {
+      "path": "lib/voice/vox_cpm_standard_provider.dart",
+      "sha256": "f580efcfb29eb8ea89f521df4d45ff40a114167066f3b9fd2b8655d048705337",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "crossCheck": "REV08-X06"
+    },
+    {
+      "path": "lib/widgets/live_audio_waveform_widget.dart",
+      "sha256": "56e450370139afdd677e39ac2bfc418bbb3db9c9c80d2df2e4bc7809ca46b44a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV08-X10"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "test/ai/ai_models_test.dart",
+      "sha256": "a825a158684ee2da067ebbe9d039044bf622673d8b0bb36ef12727a68c8a2770",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Pure enum parse and request whitespace500ASCIIboundary/language validation; failure test checks category/nonempty name rather than arbitrary sensitive message. No nonBMP scalar/backend parity. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+      "sha256": "8273498b0750f31bab8ac77d315a79b5eaf816b4568159abd34954c927e07096",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-02"
+      ],
+      "disposition": "Full598 lines read after cp874stdoutUnicodefailure correctedwithsys.stdout.reconfigureUTF8, nofileschanged. All3adapterscaps/codepoints/context/roles,URLsheadersusagehappy,typedstatus,keyvalidation,pre/active/lateabort/stalledbody,completebodywinscancel/refusalchecks. Syntheticclientmodelsabortcontract; no hugeexponentcost orcachedtokens>input+output oracle. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-02"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+      "sha256": "615c5f4e30b4ca78788f7c4ec993a3313f3924151ca6e5bedbe5535391b607c9",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full271 lines read. ActualHTTPserver/client sockets syntheticresponses cover3adapters×reply/auth/quota/rate/server/malformed/timeout/cancel,UTF8context/authheaders/basepaths/caps andexactonePOST;Gemini503chainthreeoronecancelbackoff. Realtransportwithoutlivequality/costassertion. Timeout400ms andsocketcleanup finallyteardown; nocachedtoken/hugecost/bodyoversizefixture. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+      "sha256": "cb1bc26d755fb34edf7f3a2a25ceb1ed414392e354501697aa5e3e6b7b2f0d49",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-01"
+      ],
+      "disposition": "Full959 lines read. Actualusecases+securestoreVolatileindex withfakegateway/gate/journal verifiespreHTTPpending/duplicateID/repositoryerrors/contextownerprovider/scenario/sessionfences,consentedaggregateprovenance andnoevidencenull,paidresultretainedduringfinalize/leasefailure,typedfailurepriority. Callerownerchangesduringprovider intentionallykeepsaccountingownerA. Gatealwaysacquire/noexpiry andfakesfixedreusedleasetoken so notproductionconfigurationmultioperationprobe/recoverytest. No configure/removeKey/disposeconcurrentrevocationorbadnumericrawHTTPcountercases. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-01"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/authored_quality_transport_test.dart",
+      "sha256": "4ea41ef7d1565802ea0a186a1c4e6533570e81fc9cb4a31aa3049340a21e488d",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full89 lines read. Parses12authoredMarkdownprompts, assertsallIDs, MockClient preservesliteralUnicodeanswers andseparatesinstruction/user/session/key;320cap andunknownusagenull. Honesttransportpolicyonly notproviderteachingquality; no B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
+      "sha256": "f6288545003c71a21421ad572ef8be5a78e5a3efbaad2f82975e5a9a0dbc7c2c",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full518 lines read. ActualDriftmemory+file-reopen andtwohandles exercisependingCAS/exactreplay/contradictoryterminal,ownerisolatedunknownvsreportedzero mixedoutcomescosts,indeterminate recovery andpendingretention. Explicitoracle missingtotalnotinferredfrominput+output; Anthropicadapter currentlydoesinfer sum, cross-layermeaningconcern remains. Productionlease staleobservation retestedwithactualconditionalwrite, no livebilling. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/owner_operation_coordinator_test.dart",
+      "sha256": "6fb4e63889a38818c511b244f4ca9bd2e91c135d17aea29e805b9e8e290e560f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full209 lines read. Fakegate verifiesacquire→recover→owner→body, delayedbodycancel/heartbeatlossdrainbeforeexactrelease andpaidresultsurviveslatelease loss. Fakegatealwaysacquires and ignoresactualexpiry/token; notSQLitecrossprocess. No stalledlease/storageboundedness. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart",
+      "sha256": "b37a6ad1ac32674f7a74c9d917dd4c76fc3c275eec5b90caa6abc4287e6284b9",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full682 lines read. Fakeplatformstore+actualDrift index/gate testownernamespace/wildcardcaseexacterase,unknownlegacydiscard,unownednoerase,pausedstaleversionwriterlease-losscleanup,committedsupersededcleanupchain,retryfailedphysicaldeletebeforerecoverytombstone andfile-reopenorphan. Strictownererase titlementionscandidatebutfixtureonlyactiveversion; noactualplatformkeychain orlatewriteraftercompletedownererase. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/gemini/ai_tutor_gateway_factory_test.dart",
+      "sha256": "c75f9432293bc89afd0079764506fc8d7672ee78f08577d8e5c4deb7a366621c",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full142 lines read. FactoryactualGeminiadapter/retry MockClient verifiescontextrole/cap/no-session-key,503twofailthenoneanswer andsharedbreakeracrossdifferentmodels. Usesrealdefaultbackoffseconds synthetictransport; doesnotcoverotherproviderfactoryorprofilemutation. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/gemini/gemini_rest_gateway_test.dart",
+      "sha256": "5d617dc87c10f8667b2dfa8d622fa8609adadaf002d49f8ae3f44f3bcfac7995",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full267 lines read. HeaderkeynotURI, syntheticSTOPcontentpolicy,403/429/503/malformed/offline/404types andprelateabort/timeout/fullydrainedcancelwinning. No contentpresentSAFETY ormodeldiscoverypagination/oversizefixture; title realcandidate meansschemanotliveprovider. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/gemini/gemini_tutor_use_cases_test.dart",
+      "sha256": "60977b22a72c99258c9031bb97025e62a5492dc079976841c02f0777849a6afc",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-01"
+      ],
+      "disposition": "Full323 lines read. Dormantlegacycontrollerfakes provevalidationbeforekeyreplacement,consentedsummary,noprogresswithoutconsent,cancelanddrainremoval andcrucially removalorderedbefore newlystartedreplyduringrevocation. This finaloraclecontrasts liveAiTutorUseCases whichqueuesremovalafterawaitingdrain; scope-relevantrevocationcross-check needed. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-01"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/gemini/retry_gemini_gateway_test.dart",
+      "sha256": "64e1bc7a5b2a7a93293bb3c4a4d367e239a6a2e585ba18d88ed4880d315d8c46",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full317 lines read. Fakeprovider exercises breakeropen/probe,credentialnotcounted,threeattempts,cancelbackoff/firstcausetimeout,noncooperativepublicbudget andhalfopenrelease withlatecompletion. Delayedbodyfuturealwayssettledexcept50mslatethrowobservedbywrapper. Noactualnetwork/generationquality. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/gemini/secure_gemini_settings_store_test.dart",
+      "sha256": "d3c752bdc3a6579a3ca91b6aec8b9bae3d236426f7a63901d4234c9e8d666cca",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full80 lines read. Optionsmap assertsAndroidnamespace/cipher/disabledresetmigration, fakekey/consentCRUD andtypedplatformfailure. No actualKeystore orbiometric/devicevalidation. Legacyglobalsettingsfixture notliveownerprofile. No B18 run. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+      "sha256": "9742e3c06a660a3e9fcb5b0fedf7d3793f6c7f54bcbc55523690a73744397e0d",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full55 lines read. Fake SpeechToText initialize maps timeout/no-match to noMatch and unavailable recognizer to typed failure. No actual listen parameters/native engine/permission/result confidence validation or acoustic evidence. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "sha256": "cbe29a917dbead2c8055567586efa587f40505e78ec8c6785de71995562ff7ca",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full614 lines read. Controlled fake gateway verifies permission ordering, start failure retires callbacks, serialized session takeover, stale consumer cannot cancel current, dispose waits pending start, queued stop survives release, synchronous and post-ack final accepted once, late noMatch/cancel/duplicate fenced while cleanup retained. Missing/partial/blank target transcript yields null not zero; provenance preserved. No hung native start deadline or real platform callback identity evidence. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/voice/route_voice_session_mixin_test.dart",
+      "sha256": "338dce8832787773ab1562915e6639c6c345bf80c63af1bb08d8b0d1503f8894",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full344 lines read. Actual mixin/facade with recording provider; held cover cleanup cannot release replacement session, inherited-facade rebind consumes old stop failure, app inactive releases playback and denies acquisition, resume after cover/pop reacquires. Harness invokes RouteAware callbacks directly and provider returns acknowledgment; no real observer navigation or physical silence proof. Bounded cleanup timeout and lifecycle reset prevent shared test state leak. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/voice/voice_use_cases_test.dart",
+      "sha256": "12460de066282e3e6f811a9f17241595fb42499d729445cadff2cbca034af489",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-07"
+      ],
+      "disposition": "Full710lines contiguous1-355/356-end. Controlled provider futures verify start versus natural end, failure/missingproof/timeout/cancel waits confirmedstop, owner takeover and same-owner repeat serial stop, stale release harmless, eager stop failure reports once then second speak retries and succeeds (resolves earlier permanent barrier concern). Public cleanup deadline returns uncertainty while raw stop blocks new provider start; dispose exactonce and bounds stalled controls/providercalls. Completion-owned ordinary provider failure explicitly stops, ordinary start-only error cleanup remains provider obligation. No actual native or combined delayed orchestrator stop-all scenario, no B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-07"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/scenarios/ai_voice_fallback_journey_test.dart",
+      "sha256": "7a4a4289171045480faeaab6bf7f54cda87c17ddc43ad0c2cd3a9f9016a820a2",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full444. ActualbootstraplocalquizsurvivesAI/voicecompositionfailure; missingconfig fakeBYOKcontroller/nativeVoiceACK remainready. RealDriftactiveownerlease+oneusageevent7tokens withfakecredential/gateway andinactivepeer. Realgatewayfactory MockClientdisabled0HTTP/503thenopen1HTTP/stalledtimeout1HTTP. Noactualnativeaudio/liveprovider/cost/revocationoverlap/stalecircuitcompletion orfile reboot. Full source read; no B18 runtime execution or zone acceptance. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/ai_tutor_screen_test.dart",
+      "sha256": "b0b2101b4f10160bd859a073f59b0ac8c97284379146d50482ad50a58fbe9a23",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1233. FakeAI scriptedwronganswer intentionallyvisible notqualitypass, missingkey/failureexplicit; Thai3901x/3202xdark optionalPNGcapturesnotgoldens. Completedpairs onlycontext, newchat/scenario/level/intent reset; noncooperativecancel/latescopechange dropsoldreply/draft. Voice explicitplay/stop notauto, background/settings cancelgeneration andmic; deferredpermission resetpreventsstart, staleSTTstatus/failure/textignored, cancelerror preservesdraft/voicecleanupcontinues, facade replacement releasesold. Fakecancel setsisListeningfalse BEFOREthrow so failurecase doesnot prove nativeuncertainstop; no physicalaudio/realprovider/paidusage or actualownerDB. Settings opensmissingRegistry only, no actualrevokequeueoverlap test. Full source read; no B18 runtime execution or zone acceptance. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/ai_tutor_settings_screen_test.dart",
+      "sha256": "966b4b494b7990ca50e527ff1e7becb74695a9e9704679eb42a6195755ff18ff",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full427 lines read. Fakecontroller partial/unknown/measured0 tokencopy independentcost, consent committedthenfailed readbacksuccess/failure, knownconsent despiteusagefailure, providerchangeblocks storedkey, explicitunsavedleave dialog, heldwithdraw truthfuloutcome,360px2x errorlayout and clearusage typederror. Configure/newmodel/removeKey unimplementedfake and no replacement pendingload/owner race. No paid request or persistence/native proof; no B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/gemini_settings_screen_test.dart",
+      "sha256": "018c6caf73b6f6f857dbdc9037c423ac579992d756d348930c8b9d7c38718bbf",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full172 lines read. Fakecontroller validates onlyafterconsent, clearsdisplay sentinel on success/removal, invalidkeyvsquota, disposewhileheldconfigure no UIerror. Fake ignores cancellation and stillmutatesafterdispose, so oracle onlywidgetlifecycle notproviderabort/credentialfence. Dormant screen, no B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/speak_to_text_screen_voice_test.dart",
+      "sha256": "a1a1f3a9a4e1914199098d5caaa6df3865128da8fde21c3e9790eed1ceeafa49",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1756 lines read. Fake voice and controlled actual SpeechPracticeUseCases gateways exercise route replacement/cover-pop, pending start disposal and takeover ordering, background raw clearing even injected cancel error, absent dependency, ID guards, exact evidence retry and system-back lock. First final before start return/throw wins; failure then late final denied until fresh attempt, empty final no0score, manual stop delayed final accepted once, unrelated playback error retained. Transcript similarity may display while persistence fails by explicit oracle/caveat. Counting repository alwaysinserted/finish Unimplemented, no actualDrift or owned shell close test; successful callback counts are not durable database verification. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/services/ai_voice_reading_adapters_test.dart",
+      "sha256": "9916ae7ea1e6f1e00d97045dcf2b90d54e3d8f504026a20b3f836311edcf4a77",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full49 lines. Actual local reading B2 coverage/revision assertions; voice legacy adapter reports success/engine from stub implementation, no audio or provider request oracle. Read-only oracle review; no execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/bundled_voice_asset_provider_test.dart",
+      "sha256": "ddcbd9eb89a98a5d6b0406c3b13b6c3f3b59322900a047526222e6bedef91015",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Canonical simple filename, synthetic byte load/provenance, descriptor and missing asset taxonomy. No collisions/text identity/checksum/WAV proof. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/file_standard_voice_pack_store_test.dart",
+      "sha256": "71aae8bb9755d6e925c964637db64d2f483e7a97e0ca54df02cf3532b0e07e66",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Actual nested temp file/manifest/marker happy load then corrupt bytes causes marker removal. No malformed metadata/path/symlink/concurrent activation matrix; synthetic RIFF-pack not valid PCM. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/firestore_voice_telemetry_test.dart",
+      "sha256": "8e380749d249a1a33f6973f41f5691d13a72690fbd86c1a0449575b535556425",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Injected writer fixed schema and no text fields, swallowed write failure. No live Firestore/rules/consent behavior. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/http_standard_voice_pack_source_test.dart",
+      "sha256": "0217fef1666e9786ced8eeeafe99b239fae47ffacd36dba542a4153078c7f721",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. MockClient exact Range/206start, HTTPS rejection and pre-cancel zero sends. No in-flight cancellation, header timeout, redirect or rejected response stream drain oracle. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/installed_voice_pack_provider_test.dart",
+      "sha256": "f9416500685adf667edc69b5537ef89b446bd8c94a74928f878fbaf822511589",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Actual temp file content/hash/missing ID/text mismatch/corruption. Fake RIFF-pack is not valid WAV, no voice/language/speed mismatch cases; bypasses manager PCM verification deliberately. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/native_tts_provider_test.dart",
+      "sha256": "e51d6a8e702b819cdb666a93dfa178b6aa3c80a7f8522773a8d0a9d5a23a4b0a",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full666lines contiguous1-340/341-end. Actual adapter with FlutterTts subclass plus VoiceUseCases verifies stop acknowledgment before cancellation settles, untagged interrupted completion withheld for adapter lifetime and old closure ignored. Native config order/language/speed mapping; installed/nonnetwork proof and selection denied before text; typed sanitized failure matrix. Plugin mocked speak returns1 only, so zero/failure ACK not tested; no real installed voice or physical sound. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/native_voice_route_handler_test.dart",
+      "sha256": "e5965def2a0b3f80f53e2df974393d451c4301c394d0e5f07bb94916c45f8e9f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Delegation/descriptor/stop and already-cancelled token zero provider calls; no deferred post-start cancellation or native silence. Historical RED comment not current failure. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/omni_voice_provider_test.dart",
+      "sha256": "7dc829e0aa8f6a2faa06d78335bf70ab9be6a9ab29547871e1ddae655650bf02",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "disposition": "Full file read. Full699lines contiguous1-350/351-end. Exact HTTP fields/no content metadata, single401refresh/secondfail, fixed taxonomy/redacted details, header/mime/nonempty/numeric-rate negatives, defensive audio copies, hanging response timeout, circuit and dynamic quota. Engine normalization explicitly trusts any nonempty string; no wrong-engine or actual body byte/cancel tests. Tiny1ms timeout fakes never complete, not latency evidence. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/platform_filesystem_capacity_test.dart",
+      "sha256": "a7c1fc404522c4571c749520d25ceed58179c9e163d4fb5270f05bee8b61aeae",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. MethodChannel mock exact root path and negative capacity failure. No native filesystem result or null/error scenario. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/standard_voice_pack_download_manager_test.dart",
+      "sha256": "4b40d250757c94b8507070a8c7a6a6b63799f58d743f0b5de236bf9a3bdf8b45",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full632lines contiguous1-325/326-end. Actual temp PCM and production packagedWAV: partial range resume/hash/activation, corrupt/truncated rejection, canonical mapping tamper, receipt/manifest/marker/reserve capacity, identical coalescing/revisions serial/conflict preserved. Controlled body stalls/trickle confirm cancel callback and deadlines, dispose drains actual stream and forbids later install. Atomic title asserts final marker only, no crash between delete/rename or failed activation restoration. No bad-status stream release, linked parent creation or minimum app mismatch cases. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/standard_voice_pack_manifest_test.dart",
+      "sha256": "d22ccecb5c035f83adfacf3b5ba45c449f51d198e0c24cf27cdce4c34167fb23",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Immutable list, raw traversal/absolute/drive/case-duplicate rejection, byte sum/hash/HTTPS/maxfiles, normalized text hash. No encoded-path/schema numeric-type/minimum-app enforcement cases. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/synthesized_voice_route_handler_test.dart",
+      "sha256": "2df4f18f0d00bcafee26fd0807aaf54763721f4da24d84f6080039f9ecdffe94",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Contiguous full read1-280/281-end. Exact fresh/cache-hit natural completion future, engine/model cache identity, mirror zero cache calls, provider enum mismatch blocks cache/play, pre/post-synthesis cancellation and stop delegation. Fake providers/player/cache; no actual remote-header provenance, delayed player-start cleanup/fallback failure or cache put cancellation race. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_audio_cache_test.dart",
+      "sha256": "bcd52b338d1b27c3567f74107910a38914473003a82fd3dbe0e6ccef5eeacb24",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full cache identity matrix ignores content IDs/mode by design, includes text/language/voice/speed/engine/model, transient reject; defensive copies, exact LRU/byte accounting, oversize same-key removal, positive limits and empty rejection. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_audio_player_test.dart",
+      "sha256": "3923e5c11d3691777cc753a627d2c75eb1c5d696d702d5d578f13a2a263e1534",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-05",
+        "B18-REV08-06"
+      ],
+      "disposition": "Full file read. Contiguous full read1-250/251-end. Actual AudioplayersAdapter with SDK-shaped controlled fake stream tests natural event distinct from start, close/error, stop/dispose failure settles prior future, replacement/late failure/late stop/dispose ACK cannot retire new proof. Defensive bytes and sanitized failure matrix. One global completion stream carries no utterance ID; late old natural event after new start not tested, unlike native TTS trust policy. No physical playback or native plugin sequencing proof. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-05",
+        "B18-REV08-06"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_auth_token_provider_test.dart",
+      "sha256": "1923ef854a5f33544c8549c0ae1cc0551a50a4385bf06d55453156d08772b644",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Exact forceRefresh forwarding, trim, null/empty/blank and exception uniform sanitized failure including synthetic bearer sentinels. Readerfake only, no real account switching. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_mirror_gateway_test.dart",
+      "sha256": "3769d5176a5354e2dfda970b6795e290984e2eeef14bf3009dbab7a8b4222c71",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full463lines contiguous1-240/241-end. MockClient enroll bytes/consent header, heartbeat route/timestamps (explicitly accepts lease3 above absolute2), speech fields/provenance, fixed errors/204404delete/single401refresh/privacy. Overlong/oversize test uses ordinary small request with server errorfake, does not prove client bound. No delayed auth/body/cancel/leaseidentity/nonemptywrongengine test. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_mirror_recorder_test.dart",
+      "sha256": "430fe191b7d324e367d67e34ab15b9fa62e80d5029b5023db6e9b6744f1dbf71",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full280lines contiguous1-275/276-end. Actual temp files with immediate fake recorder/permission; stop/cancel/dispose removes ordinary files, empty/oversize rejection, explicit purge. No pending-start lifecycle/concurrency/delete-denied/autostop delivery tests. One dispose test omits temp cleanup and helper removes child only leaving parent temp directory; low-impact test residue. Fake16byte WAV not valid PCM. No actual mic. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_mirror_session_controller_test.dart",
+      "sha256": "45cf32f29cfbcf8c45a7233ce7cd5199367f8b8931e32fc2a402466d52099894",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full446 lines read. Immediate async gatewayfake tests serial consent/start/end/account/activity, absolute expiry, heartbeat call, successful sequential quotas, disposal and failed-delete local clear. Background test manually injects repeated paused callbacks rather than actual transition after elapsed time; no in-flight enroll/renew/synthesis retirement or concurrent quota, no gateway transport/server tests. Fake WAV arbitrary bytes intentionally. No runtime execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_models_test.dart",
+      "sha256": "dd805aca28de5749c99cfda6bb65f6d5705fa23238274fb45c343a028eaeb448",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full488lines. Exact enum/capability matrix, localOnly mirror/research rejection, UTF16 500/501 after whitespace normalization, en/th normalization, finite speed limits, blank identifiers/research engine. Result optional metadata unconstrained by design. Failure test uses already-safe strings and cannot establish sanitization of arbitrary message. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_orchestrator_cancellation_test.dart",
+      "sha256": "c3dc55cd344464637a49ad068b60cf1beb6271556602df9051f149ec187b7144",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-07"
+      ],
+      "disposition": "Full file read. Controlled handler start completers prevent pre-start races; explicit stop/replacement late success or network failure suppressed, strict research cancels without fallback. All handler stops immediate and nonthrowing, so delayed old stop-all affecting newer playback remains untested. No actual HTTP abort proof. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-07"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_orchestrator_telemetry_test.dart",
+      "sha256": "dc60058c781fe8ca082bc3246f334bfccd9b0ab9d87c7a35f746aa41b1ce30ee",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full507lines contiguous1-255/256-end. Controlled handlers exact one terminal success/fallback/failure/cancel event; cancellation event only after old handler resolves. Throwing/hanging sinks cannot alter or delay acknowledgment. Fixed source-sentinel/key checks, no native playback or sink backlog bound; helper uses event-loop ticks rather than actual microtask-only flush. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_orchestrator_test.dart",
+      "sha256": "df580b9b3369b9699c722f75ff2c47f5e6d896fe1c0b9f28ff50e0290c6dcebd",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-05"
+      ],
+      "disposition": "Full file read. Full735lines contiguous1-220/221-490/491-end. Natural completion identity through localOnly, stop/pre-speak exhaust every handler preserving first failure, local route/no remote, strict research/no fallback, mirror denial and fallback rewrite, exhaustive operational versus failclosed categories including cleanupIncomplete. Failed playback fake only throws without starting sound, cannot prove cleanup before fallback. Stops immediate so superseded stop-all race not covered. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-05"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_policy_test.dart",
+      "sha256": "3db2b2bb5bef9183b1eff9a2d55fa72bfae542d0f14254953a9923b21d455d45",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full328lines contiguous1-260/261-end. Offline/online standard route order, localOnly excludes allremote/dynamicpack, strict assigned research, mirror consent/active/enabled guards and standard fallback rewrite, registered filtering. Static source test only; no live MirrorAware transition while awaiting playback. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_provider_descriptor_test.dart",
+      "sha256": "d24d7db8b62b71006189ddf42aa625b8b7192ec08e5a9dc5cb20e14a2606a7b3",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Defensive capability copy and immutable view, empty capability and transient cache prohibition. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_provider_registry_test.dart",
+      "sha256": "3c5847623eb8db1deb40d9f60325177a9b6ca118c06ae51d8f50ffcd31d95106",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Immutable engines, resolution/missing engine, duplicate/empty rejection. Pure registry oracle. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_request_quota_test.dart",
+      "sha256": "b6ba8e0da317feb0f2bdfe10ddd169a4d61accab2c1f8acabf647395fd6e388b",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Sequential count/character limit reset and held concurrent slot/release after failure. No reset-during-active or release-mode invalid constructor coverage. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_service_factory_test.dart",
+      "sha256": "0d498398a5e9066d6d5ec39b27538724b8d2bc8a2d00c405fd72151651f75046",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03"
+      ],
+      "disposition": "Full file read via contiguous1-230/231-570/571-end. SDK-independent HTTP/native/player fakes with real pipeline/VoiceUseCases, actual temp pack bytes and SHA corruption. LocalOnly proves zero HTTP/token reads plus installed/nonnetwork selection; same service positive remote control, malformed local proof fails. Quota fallback, timeout, exact-once disposal and bounded blocked native stop, consent denial. Every installed pack test injects player AND remote config, so no default no-config pack coverage. Bootstrap2068 supplies only config/client and currently no installed pack, narrowing silent-player concern to unused composition. No test execution or native sound proof. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-03"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/voice_telemetry_test.dart",
+      "sha256": "e29124a694c04c2da71e83c17f77865d1b5bef36f50b4419513ee65162681896",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Full568lines contiguous1-290/291-end. Exact18key allowlist/UTC/millisecond/fallback consistency, failure nullprovenance/cancel, negative latency, fresh-map mutation protection; synthetic secret sentinels in excluded text/error/voiceId. Does not inject secrets into retained IDs/model metadata; no arbitrary-value sanitization proof. Pure tests no event delivery. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/vox_cpm_mirror_provider_test.dart",
+      "sha256": "dabbcb61fcbce4b46988f89a459f722f4064ac4cc3ad4d9096ff0b83ade0f059",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Descriptor mirror/transient/noncache, exact target forwarding, rejects standard before controller, preserves typed session-expired failure. Immediate controller fake only. No B18 test execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/voice/vox_cpm_standard_provider_test.dart",
+      "sha256": "19761070b4c44c91b519d21d3289786a4fc12f4b17b8d1968aad6c649e1e96a5",
+      "zone": "REV-12",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "disposition": "Full file read. Full250lines. MockClient request/token/48kmetadata/single401refresh, fixed kill-switch failure/privacy, mirror denial zeroHTTP, dynamic quota and circuit threshold1. Does not cover wrong-engine nonemptyheader, response byte ceiling, body abort or delayed-auth timeout. No B18 execution. Focused REV08 oracle disposition complete; recorded fake/real boundary and regression gaps retained, no execution.",
+      "regressionGaps": [
+        "B18-REV08-03",
+        "B18-REV08-04"
+      ],
+      "reviewOwner": "B18-G82-REV-08",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV08-03",
+    "B18-REV08-04",
+    "B18-REV08-05",
+    "B18-REV08-06",
+    "B18-REV08-07",
+    "B18-REV08-08",
+    "B18-REV08-09",
+    "B18-REV08-10",
+    "B18-REV08-11"
+  ],
+  "supplementalOracleReferences": [
+    {
+      "path": "backend/ai_api/tests/conftest.py",
+      "sha256": "6ac29c85a6bf4cf814be83b7ed45ab6864b2010baa46374b2405253707168e9b",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full135 lines read. Fakeauth/generator recordsynthetictext; failsecret/type/providermaps. Settingsdefault reads possible operatorenv in mostfixtures, notfullyisolated. TestClientnofinalcontext and no realprovider/Firebase. Testsourceonly."
+    },
+    {
+      "path": "backend/ai_api/tests/test_app.py",
+      "sha256": "802db95f0340df0219ac452694089dcd4c5b33cc15aec0dc14170c1bc27b0d3a",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full345 lines read. ActualASGI99,999/100,000vs100,001 withdeclared/missing/lying/chunkedheaders,authboth,emptychunk,invalidJSON,disconnect andnodrainoracle. Fakeprovider HTTPresponse/errorcorrelation/no-secret/readiness/configlength; no realcache/providerchain or concurrency. No B18 testexecution."
+    },
+    {
+      "path": "backend/ai_api/tests/test_auth.py",
+      "sha256": "e60342ccfa400c1b706a80f09476cfdbe0574a48a06ad9d5b6a8635b93253d5a",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full153 lines read. Injecteddecoder withrealFirebaseexceptionclasses testscredential401 versuscertificate503 withsecret/logcanaries andUIDmissing; no production token/revocationnetwork. Extraheaderpartsnotexplicitcase but parserrejects. No B18 execution."
+    },
+    {
+      "path": "backend/ai_api/tests/test_dependency_pins.py",
+      "sha256": "ef65859f0b983917b8d4763f9e672f96c37ae3f017047a851c2b460625332419",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full34 lines read. Actualpyprojectparse pinsFastapionce andexcludesgroupduplicate. Doesnotverifyallruntime/dev/lock availability. Read only."
+    },
+    {
+      "path": "backend/ai_api/tests/test_llm_content_service.py",
+      "sha256": "a0f5a59fe1ced516b300908d1c183a1bd4dddf3e65e5b32b8c59296eebd6af81",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full84 lines read. Realurllib adapter with monkeypatchedurlopen andactualHTTPError/addinfourl validatesheadercase/retryafter3600/missing/invalid andclosedheadersnapshot. Oneexternalfakeendpointfallbackdisabled, no local429/fallback/cache/rateburstcontract. No B18 execution."
+    },
+    {
+      "path": "backend/ai_api/tests/test_models.py",
+      "sha256": "17f75f8538f9d1ee907b09b85dffac79b0b16332e987f2eb7eabab44a299abae",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full231 lines read. Closedrequestschema, CEFR/kind/modelrejection, normalization, configHTTPloopback/HTTPS/internalacceptance plusmetadata/obfuscatedIP/credential/controlcharnegative andshort+longsecreterrors. MostSettingsfixtureenvnotisolated; no blankfallback disable test or currentprovideravailability. Read only."
+    },
+    {
+      "path": "backend/ai_api/tests/test_response_budget.py",
+      "sha256": "ca2d5433b1ae1af39dec2804c5569bbbba1211c10d365775f9a32ba5fb05cc3b",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full35 lines read. RecordingBytesIO provesrealurllib boundedread1048577 andclose on200/429/503 oversizedsyntheticbody. No wallclock/trickling/redirectchain assurance; no network or B18 run."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/conftest.py",
+      "sha256": "670ecc3a7e37039b1b9614d98774bbb50dcca83c9a0d769cc3f72d7521d248b5",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full37 lines read. Testsys.path injections fordataset/train/src and tempJSONLhelper; no heavyimports/network, helpersnewlinehostdependent."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_collect_cefr_words.py",
+      "sha256": "7a38621b79e347acac922f28083c915bf527eaa600c54d454accdd4e8d4c2fc7",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full104 lines read. SyntheticDartstrings exactfields/multiple/dynamic skip/balancedparen/zeroerror. Notactualcanonicalcatalog, escapedquote/comment/unbalancedstringparen orpartialparse detection. Sourceonly."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_dependency_pins.py",
+      "sha256": "a8ab38baed3267ddc47fc5106a7972c3329bd8aa35006c2313fd5f8dd3b21403",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full54 lines read. RealTOML exacttqdm andCUDAindex/trainversion partition assertions; no hash/download/runtimecompatibility validation."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_enrich_dictionary.py",
+      "sha256": "644a0fe50c79ebd312a63f293c6238505eca49bbfadc0b2404df4834bf249649",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full128 lines read. ActualtempJSONL/main withfakeHTTP/zero-delay provesseed-only/expanded-only/casefoldunion andcuratednonemptypriority/deterministiclimit. No realAPI/shapeerrors/timeout/partialdiskfailure or lexicalsensevalidity."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_evaluate.py",
+      "sha256": "e1f16f3ae14c953f47549be053417ba36e04fa889ff4ad84582d691f1f3ac858",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full264 lines read. ActualCLI withmonkeypatchedtorch/transformers/peft andconstantperplexity12.5 verifies requestedadaptermissing/disappearing/failure nofallback/nooutput, baseversusadapterreportedidentity. samplecount0 deliberatelyskipsgeneration. Pureexactmatch/report/stubtests do notverifycausalshiftweighting/nonfinite or scientificvalidity. Noexecution."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_expand_wordlist.py",
+      "sha256": "f80616cecef8fe63635a2280251fe966fa0b8886b560d97b3a57e110a16aa838",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full55 lines read. Five pure tests uniqueness/count>100/source tags, A1/A2 source band levels and casefold seed exclusion. No B2/C1 alternating-level authenticity, lexical/license provenance or promised3000 coverage oracle. No execution."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_generate_synthetic.py",
+      "sha256": "9d5f622e5e7fd652aa0792c864e0e89a4fe34624f67a836d80aa11082a81b56a",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full215 lines read. PurePOSmapping/pronoun exactuniversal strings/levelfallback/kinds/seed andsubstringverb/prepositionguards; testabout avoidsnounprefix butdoesnotestgrammaticalcorrectness ofprepositionslots. Explaineronlychecksmetadata inclusion, notsynonym validity. Geminionlymissingkeydisabled, no HTTP/error/throttle/prompttargetpreservation coverage. Noexecution."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_hf_space_auth.py",
+      "sha256": "4871ff8e239eb727008ca3ed4ea319549c0e83bf996f1f417fffa162b1da151b",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full202 lines read. Fake decoder/Bearer negatives, no-projectno-call, exceptiontextredaction andUIDfallback; fakeSDK cache/initrace verified. Signatureaudience/revocation SDKargs accepted butcheck_revoked notassertedbyfake, no realHTTPendpoint boundary."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_hf_space_deployment.py",
+      "sha256": "210fc675b00e0a5ddf8043f0d1a7e38c062eaad4461dc52b91649a98e35e8b4d",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full194 lines read. ASTextractexecpureprompt confirms trainingtemplatebyteparity, staticDockerpin/nonroot/health and tokenizer/max/min shape; does not instantiateFastAPI, loadmodel, validateactuallimits/errors/auth or runimage. Positivefloor alone notenvironmentupperbound."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_merge_and_format.py",
+      "sha256": "11dca5c7e11c0599f67227a63e4bd6288ad0b364d924d9f157dff51f9d6868c8",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full129 lines read. TempJSONL shape trim/skip, exactpairdedup and300-rowkindsplit30/30/240 plussameinputseed fixture. Doesnotestinputorder independence, smallkindempty, word/templateleakage or output4fileatomicity; sourceonlyno statisticalreport."
+    },
+    {
+      "path": "backend/lexiquest_lm/tests/test_tokenise_dataset.py",
+      "sha256": "31487a9744decf6d9f1b9b1056b27cbba64533751b8480f462c8a3b48e720a44",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full109 lines read. Stub tokenizer tests positive maskedprefix/unmaskedcount/lengthlimit andsameinstance determinism; EOSassertcontainsmarker missesduplicate, truncationdoesnotassertroleboundary/exactmask, no realBPE tokenizationorprocesshashproof. Readonly."
+    },
+    {
+      "path": "backend/voice_api/tests/conftest.py",
+      "sha256": "37113be6c5b7c6c2c390caf62a72df3d3fee3c7fce2e509d56fba0cc643e4ee7",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Fake token asserts exact validtoken, ready/unavailable/failing engines return synthetic RIFF bytes; actual FastAPI TestClient fixture uses Settings env defaults (not fully env-isolated). NoGPU. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/integration/test_firebase_omnivoice_e2e.py",
+      "sha256": "125098556f30d47d79d0b6c4da06cf2b7a3f7a206c33020d013e5ef6bf12c0f7",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Optin environment+token guard before realFirebase/GPU create, oneEnglishrequest validates mono24k RIFF viawave positive<30sduration. No Thai/latency/acousticassessment; skipped without external enable is notlivePASS. Notenabled/run. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_app.py",
+      "sha256": "c9a407bf4ef2f0f54660db91bae29c30799a606c5468a6be7d5f255b1c34e6cc",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Full371lines. Raw ASGI exchange tests true100000byte boundary/missing/lying/chunkeddeclared headers, auth/non-auth oversize rejection withoutdrain/provider, replay exactlyonce anddisconnect. Real FastAPI validation and fixederror/correlatedrequestID with caplog privacy; fakeengine. No bounded synth queue/time or server realdeployment. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_auth.py",
+      "sha256": "0504adb3c451059474832ed0f34818fcb3f989d17fcb21196146ff5567629e93",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Injected decoder exercises missingheader/scheme/missingUID, Firebase invalid/expired/revoked/disabled taxonomy, certificatefetch503 and caplog suppresses token/message. No actual revocationservice. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_config.py",
+      "sha256": "1e2913539c52a2974022a7421646dbc936126df850f14b16e7737018303a6432",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Independent project-root calculation and actual tempdotenv from unrelatedcwd, clears sample-rateenv for precedence. Does not cover production config matrix. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_dependency_pins.py",
+      "sha256": "636f4ac7300b1e20e00b09eeaf9aedd2acdf6684d0434f29765cb567caf5d848",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Parsesactualpyproject exactGPUlist/singleFastAPIexplicitindex and torchsource/nooldcu132. Does not inspect actual installed runtime or model snapshot integrity. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_golden_texts.py",
+      "sha256": "9a17fd5a9942cf3a4de71a8a7737df1cd1e372fe5d824e1a5848b123624647e0",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Fixtureexists/list>=4, unique IDs/nonblank text/en-th/category; no synthesis or statistical quality claim. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_models.py",
+      "sha256": "ae7b2d522add372899c2bffc8d0fc01ed3cc7bb73a413d70d2a5ddcdec67a10c",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Exact defaultpins/ASRoff/generation settings, invalidvoiceinstruction, whitespace, boundaryspeed and clientmodel extra rejected. Research-safe testtitle does not certify model/research. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_omnivoice_engine.py",
+      "sha256": "b27d1e7fbb52cc2b999ed7904f46c12639dcabe2dc6899bb8685e9f064d0eb28",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Fake loader/writer fixedconfiguration forwarding and once-load/readiness, emptygeneration, actual two-thread serialization maxactive1, guardbeforeloader. No physicalGPU, realWAV or upstream modeloutput. No B18 execution."
+    },
+    {
+      "path": "backend/voice_api/tests/test_runtime_compat.py",
+      "sha256": "5cb0da9e1395407b33640a604b28d3a6e4944a09ccff6a794670a74467c05b5a",
+      "historicalZone": "REV-12",
+      "status": "notes-cross-checked; final REV12 disposition pending",
+      "disposition": "Full file read. Metadata fixture exact supportedpins and missing/mismatchedCPU/CUDA/Omni variants. Pure evaluator/guard only, noactual runtime orGPUimport. No B18 execution."
+    }
+  ],
+  "supplementalCallers": [
+    {
+      "path": "lib/screens/object_scanner_screen.dart",
+      "findingID": "B18-REV08-11",
+      "historicalReceiptUnchanged": true
+    },
+    {
+      "path": "lib/screens/ai_tutor_settings_screen.dart",
+      "existingFindingID": "B18-REV06-07",
+      "duplicateFindingCreated": false
+    },
+    {
+      "path": "lib/runtime/central_cost_policy.dart",
+      "disposition": "Reuse REV01 central-cost unknown/required sum policy; no live billing"
+    },
+    {
+      "path": "test/runtime/central_cost_policy_test.dart",
+      "disposition": "Source observations reused; REV12 final retains77line oracle, required unknown/101THB only; not new runtime evidence"
+    }
+  ],
+  "formulas": [
+    {
+      "formulaId": "FORM-10",
+      "disposition": "FORM10 actual policy is final nonempty normalized transcript rune edit distance: round(clamp(100*(1-distance/max(lengths)),0,100)); absent/partial/empty returns null, never zero. Permission/init/listen/session epochs and serialized native cleanup preserve accepted stopping-final callback once; queued start returning false after stop is intentional stale-admission signaling, not itself a defect. Platform may use online STT; no local-only promise. SpeechEvidenceUseCases and direct speech_evidence repository have no constructor caller in lib, so their unfenced mutation concern is dormant; live speaking uses canonical learning evidence reviewed in REV03/B14. No acoustic/native/CEFR certification from B14 transcript fixtures.",
+      "historicalRegistryUnchanged": true,
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "formulaId": "FORM-12",
+      "disposition": "Pending terminal exact CAS; all-known totals/cost vs partial knownTokens; explicit0 separate unknown. Gemini logical operation may3HTTP attempts; no one-bill guarantee. Required central cost sum<=100THB only when all known, no participant BYOK inference. REV08-02 malformed advisory cost remains candidate; cached semantics not certified.",
+      "historicalRegistryUnchanged": true,
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "limitations": "118zone+53focusedREV12 static dispositions only;9new candidates require reproduce/disposition in G8.3. Backend/LM/shared supplemental tests not silently counted. No application changes/runtime/GPU/provider/network/training/research/deployment/acceptance."
+}
