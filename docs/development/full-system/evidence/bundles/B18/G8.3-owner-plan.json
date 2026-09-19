@@ -40,7 +40,14 @@
         "B18-REV10-01",
         "B18-REV10-02"
       ],
-      "status": "planned"
+      "status": "in-progress-continuation",
+      "closedCount": 8,
+      "pendingFindingIDs": [
+        "B18-REV10-01",
+        "B18-REV10-02"
+      ],
+      "receipt": "G8.3-F02-C01-checkpoint.json",
+      "nextContinuation": "B18-G83-F02-C02"
     },
     {
       "sliceId": "B18-G83-F03",
@@ -207,7 +214,9 @@
       "dependencies": [],
       "regression": "Synthetic read-only WAL fixture over declared budget; ensure rejection without mutating source/destination and bound preflight reads",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV02-02",
@@ -217,7 +226,9 @@
       "dependencies": [],
       "regression": "Controlled clock generic session close before start, then read history; verify atomic rejection or explicitly defined clock policy without hiding invalid timestamps",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV02-03",
@@ -227,7 +238,9 @@
       "dependencies": [],
       "regression": "Deferred start boundary with real Drift owner switch; inspect lifecycle initializeSession before asserting user-visible effect. Also confirm collision replay behavior of insertOrIgnore",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-04",
@@ -469,7 +482,9 @@
       "dependencies": [],
       "regression": "Real Drift two active-owner transitions plus controlled await before purchase/equip transaction; compare complete A/B reward/outbox/coin snapshots. Test owner switch after preflight and dependency replacement while ACK/readback held. Positive same-owner purchase, exact replay, failed-before-commit and lost-ACK remain distinct.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-02",
@@ -479,7 +494,9 @@
       "dependencies": [],
       "regression": "Use actual bootstrap erasure binding or equivalent exact composition with Drift owner gate and controllable native fake. Hold enumeration/cancel, replace token and reactivate a fresh reminder, then release. Assert stale actor issues no subsequent cancel, authoritative result preserved, cleanup does not unfence new token. Keep positive same-lease deletion and failure recovery.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-03",
@@ -489,7 +506,9 @@
       "dependencies": [],
       "regression": "Using actual locked timezone package, cover both folds around 2026-11-01, overnight/daytime quiet windows and end boundary. Assert effective>=requested, outside quiet interval, and optIn keeps future native schedule; include ordinary/spring cases and saved requested instant unchanged.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-04",
@@ -499,7 +518,9 @@
       "dependencies": [],
       "regression": "Actual Drift, hold home read before semantic quiz save commits, release home write; repeat reverse order. Assert both independent edits, monotonic timestamps and single correct superseding cloud intent; preserve display revision and assignment payload. Positive conflicting same-field policy must be explicit.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-05",
@@ -551,7 +572,9 @@
       "dependencies": [],
       "regression": "Find and pin a real hash collision using valid IDs accepted by domain and actual generator-compatible shape. Actual Drift + native fake keyed by integer: create both, reconcile/restart/cancel one; assert other retained and statuses truthful. Keep exactID orphan cleanup, owner-change gates and ordinary idempotency.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "receipt": "G8.3-F02-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV07-01",

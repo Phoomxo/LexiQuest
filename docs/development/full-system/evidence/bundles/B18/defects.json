@@ -109,41 +109,59 @@
     {
       "id": "B18-REV02-01",
       "severity": "P2",
-      "status": "candidate-resource-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/data/local/legacy_learning_import.dart",
       "trigger": "Legacy source has a small main file but large live WAL rows, or one oversized row",
       "expected": "Enforce bounded snapshot allocation before loading payload rows while preserving read-only WAL semantics",
       "actual": "Main-file size checked, then source.select materializes up to100001 rows before encoded maxBytes check",
       "ownerPackage": "G7.2",
       "proposedRegression": "Synthetic read-only WAL fixture over declared budget; ensure rejection without mutating source/destination and bound preflight reads",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-01",
+        "redRun": "budget-fold-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-resource-reproduction-pending"
     },
     {
       "id": "B18-REV02-02",
       "severity": "P2",
-      "status": "candidate-clock-regression-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/learning/data/drift_learning_repository.dart",
       "trigger": "Wall clock moves backward during a generic quiz; captured finish or abandon time precedes stored session start",
       "expected": "Canonical terminal mutation preserves a valid temporal interval; history remains readable and original captured intent is handled explicitly",
       "actual": "finishSession and abandonSession validate UTC but do not compare terminal with startedAtUtcMs; history entry constructor rejects endedAtUtc before startedAtUtc",
       "ownerPackage": "G1.4/G2.1",
       "proposedRegression": "Controlled clock generic session close before start, then read history; verify atomic rejection or explicitly defined clock policy without hiding invalid timestamps",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-02",
+        "redRun": "session-red-corrected",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-clock-regression-reproduction-pending"
     },
     {
       "id": "B18-REV02-03",
       "severity": "P2",
-      "status": "candidate-admission-race-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/learning/data/drift_learning_repository.dart",
       "trigger": "Active owner changes between generic startQuiz owner lookup/scheduling and startSession insertion",
       "expected": "Generic session start either admits the still-active owner atomically or reports owner drift",
       "actual": "Generic _insertLearningSession performs insertOrIgnore with an owner FK but no active-owner transaction check; exact pinned/Pair starts have a stronger check. QuizScreen uses generic startQuiz in its ordinary path",
       "ownerPackage": "G1.4/G2.1",
       "proposedRegression": "Deferred start boundary with real Drift owner switch; inspect lifecycle initializeSession before asserting user-visible effect. Also confirm collision replay behavior of insertOrIgnore",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV02-03",
+        "redRun": "session-red-corrected",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-admission-race-reproduction-pending"
     },
     {
       "id": "B18-REV03-04",
@@ -540,7 +558,7 @@
     {
       "id": "B18-REV06-01",
       "severity": "P1",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/rewards/application/reward_use_cases.dart",
       "relatedFiles": [
         "lib/features/rewards/data/drift_reward_repository.dart",
@@ -558,13 +576,19 @@
         "avatar_equipment_screen.dart:29-50,104-190",
         "app_bootstrap.dart:1149-1164"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-01",
+        "redRun": "reward-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-02",
       "severity": "P1",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/reminders/application/study_reminder_use_cases.dart",
       "relatedFiles": [
         "lib/runtime/app_bootstrap.dart"
@@ -578,13 +602,19 @@
         "study_reminder_use_cases.dart:423-524,606-647,1231-1289",
         "app_bootstrap.dart:725-777"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-02",
+        "redRun": "prefs-erasure-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-03",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/reminders/domain/study_reminder.dart",
       "relatedFiles": [
         "lib/features/reminders/application/study_reminder_use_cases.dart",
@@ -598,13 +628,19 @@
       "evidenceLocations": [
         "study_reminder.dart:83-101,182-184"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-03",
+        "redRun": "budget-fold-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-04",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/preferences/application/learner_preferences_use_cases.dart",
       "relatedFiles": [
         "lib/features/preferences/data/drift_learner_preferences_repository.dart",
@@ -620,8 +656,14 @@
         "drift_learner_preferences_repository.dart:34-145",
         "adventure_presentation_preferences.dart:30-58"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-04",
+        "redRun": "prefs-erasure-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-05",
@@ -715,7 +757,7 @@
     {
       "id": "B18-REV06-09",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/reminders/domain/reminder_scheduler.dart",
       "relatedFiles": [
         "lib/features/reminders/application/study_reminder_use_cases.dart",
@@ -731,8 +773,14 @@
         "study_reminder_use_cases.dart:1062-1084,1164-1184,1231-1260,1409-1428",
         "platform_reminder_scheduler.dart:101-129"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "5043ee24f33c981bd31d1fec7cd7fcdab9cef457",
+      "retest": {
+        "receipt": "G8.3-F02-C01-checkpoint.json",
+        "findingId": "B18-REV06-09",
+        "redRun": "collision-red",
+        "greenRun": "final3"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV07-01",
