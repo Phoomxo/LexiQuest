@@ -279,7 +279,7 @@
     {
       "id": "B18-REV08-01",
       "severity": "P2",
-      "status": "open-candidate-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
       "relatedFiles": [
         "lib/screens/ai_tutor_settings_screen.dart",
@@ -292,13 +292,19 @@
       "actual": "Live AiTutorUseCases queues the mutation only after awaited drain, allowing the new reply to reserve _transitionGate first and escape the cancellation snapshot. Legacy Gemini controller already has explicit regression for this sequence and reserves transition before draining. Production bootstrap instantiates AiTutorUseCases; settings calls its revoke/remove methods. Current settings page has local saving guard but shared controller boundary is still callable. Runtime confirmation pending.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Deferred cancellation-aware provider, actual AiTutorUseCases with unique operation/event IDs and actual secure/Drift fenced composition where practical: start replyA; request remove/revoke; synchronously submit replyB during drain; releaseA; assert only one provider generation and replyB blocked, credential revoked, pending/terminal records truthful. Repeat for both operations; preserve paid-completed-result and lease-loss oracles.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV08-01",
+        "redRun": "ai-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Revocation snapshots cancellation and reserves its serial transition before yielding. Replies submitted during drain fail missing-key/consent without a second provider call. Actual Drift owner gate, usage repository and credential-version index verify one terminal attempt for both remove/revoke and paid-success/cancelled provider outcomes; paid results retained."
+      }
     },
     {
       "id": "B18-REV08-02",
       "severity": "P2",
-      "status": "open-candidate-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
       "relatedFiles": [
         "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
@@ -309,8 +315,14 @@
       "actual": "Gateway calls (value*1000000).round() inside _parseUsage before returning AiGatewayReply; only FormatException is caught by _parseReply. Later use-case _sanitizedUsage protects invalid AiTokenUsage values but cannot recover a gateway parse exception before reply exists. Current rawHTTP fixtures cover normalcost12micros only. Runtime JSON/nonfinite behavior reproduction pending.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV08-02",
+        "redRun": "ai-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Real raw JSON overflow1e308 and saturating1e30 costs preserve paid reply with unknown cost. Finite positive/zero costs retained; negative/type-invalid ignored. Scaled microUSD is limited to exact cross-platform integer range. Real gateway plus AiTutorUseCases and fenced Drift records one success with totalTokens5 and unknown cost."
+      }
     },
     {
       "id": "B18-REV12-02",
@@ -844,7 +856,7 @@
     {
       "id": "B18-REV06-07",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/ai_tutor_settings_screen.dart",
       "relatedFiles": [
         "lib/runtime/app_dependencies.dart"
@@ -857,8 +869,14 @@
       "evidenceLocations": [
         "ai_tutor_settings_screen.dart:96-149,403-435,459-492"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "retest": {
+        "receipt": "G8.3-F04-C01-checkpoint.json",
+        "findingId": "B18-REV06-07",
+        "redRun": "settings-red",
+        "greenRun": "tutor-final;settings-final",
+        "outcome": "Controller binding generation fences injected/inherited replacement across settings,usage,model/mutation/readback/finally and confirmation/leave dialogs. Reset clears old known flags, secret draft and saved provider/model/usage; initial null visibly unavailable. Deferred old results cannot restore retired state; failed replacement shows unknown. Old remove/clear confirmation performs zero mutations; stale consent failure does not read back old controller."
+      }
     },
     {
       "id": "B18-REV06-08",

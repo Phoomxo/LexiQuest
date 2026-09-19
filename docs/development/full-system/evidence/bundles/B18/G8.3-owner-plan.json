@@ -93,7 +93,20 @@
         "B18-REV08-10",
         "B18-REV08-11"
       ],
-      "status": "planned"
+      "status": "in-progress-partial-checkpoint",
+      "closedCount": 3,
+      "pendingFindingIDs": [
+        "B18-REV08-03",
+        "B18-REV08-04",
+        "B18-REV08-05",
+        "B18-REV08-06",
+        "B18-REV08-07",
+        "B18-REV08-08",
+        "B18-REV08-09",
+        "B18-REV08-10",
+        "B18-REV08-11"
+      ],
+      "receipt": "G8.3-F04-C01-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F05",
@@ -313,7 +326,9 @@
       "dependencies": [],
       "regression": "Deferred cancellation-aware provider, actual AiTutorUseCases with unique operation/event IDs and actual secure/Drift fenced composition where practical: start replyA; request remove/revoke; synchronously submit replyB during drain; releaseA; assert only one provider generation and replyB blocked, credential revoked, pending/terminal records truthful. Repeat for both operations; preserve paid-completed-result and lease-loss oracles.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-02",
@@ -323,7 +338,9 @@
       "dependencies": [],
       "regression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV12-02",
@@ -587,7 +604,9 @@
       "dependencies": [],
       "regression": "Deferred fake A/B settings and usage loads through actual widget: replace dependency/property, complete B then A, assert B-only consent/key/model/usage with unknown values on failure. Cover null initial tutor unavailable instead of endless loading, and confirmation returning after replacement before mutation. No live provider.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-08",
