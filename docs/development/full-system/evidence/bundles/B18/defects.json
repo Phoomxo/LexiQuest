@@ -443,7 +443,7 @@
     {
       "id": "B18-REV03-09",
       "severity": "P2",
-      "status": "open-candidate-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/ghost_shadow_duel_screen.dart",
       "relatedFiles": [
         "lib/screens/main_navigation_screen.dart",
@@ -455,8 +455,15 @@
       "actual": "Live drawer route builds Ghost screen directly. Its dispose always calls _closeSession/finish for any nonempty session, irrespective of _finished; then onError handles load failure only, not exceptions thrown inside async success callback. Stopwatch has no lifecycle/route pause. Existing disposed callback test checks no answers and no error with successful fake close, but not abandoned status/failed close; completed close retry test does not exercise unfinished retirement. Recreational evidence classification means this is not a recall-SRS bug.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Use bounded real repository or faithful lifecycle fake with delayed startup and failed cleanup. Verify unfinished retirement does not invent completed play, accepted evidence remains, no unhandled future, and completed games still close once. Add controllable monotonic clock/lifecycle background case if timing contract confirms active response duration; never replace historical recreational classification or manufacture progress.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "retest": {
+        "receipt": "G8.3-F03-C04-checkpoint.json",
+        "findingId": "B18-REV03-09",
+        "redRun": "ghost-red; ghost-timing-red",
+        "greenRun": "final2",
+        "outcome": "Unfinished Ghost retirement abandons the pinned session after pending evidence settles; completed turns close once, failed terminal persistence stays unresolved without implicit retry, cleanup exceptions are contained and accepted evidence is preserved. Response clock pauses across app/background and route coverage; retained inactive callbacks cannot submit. Deterministic clock proves 200+300ms active response excludes60000ms background."
+      },
+      "reviewStatusAtG82": "open-candidate-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-10",
@@ -782,7 +789,7 @@
     {
       "id": "B18-REV06-06",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/profile_settings_screen.dart",
       "relatedFiles": [
         "lib/screens/main_navigation_screen.dart"
@@ -796,8 +803,15 @@
         "profile_settings_screen.dart:22-62",
         "main_navigation_screen.dart:199-210"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "retest": {
+        "receipt": "G8.3-F03-C04-checkpoint.json",
+        "findingId": "B18-REV06-06",
+        "redRun": "profile-red; owner-red3; profile-offline-red; final",
+        "greenRun": "final2",
+        "outcome": "Profile invalidates loader/dependency replacement and committed owner transition. Header and axes share a load snapshot; stale completions cannot restore retired values. Active-only canonical owner observation uses table notifications subscribed before the initial read, revision-fences obsolete owner reads, and cancels without retained query-stream timers. Real Drift logout preserves old SRS and displays new local owner. Unavailable account services allow local data; a different signed-in account fails closed. Synchronous failures remain visible and superseded asynchronous failures are observed."
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-07",

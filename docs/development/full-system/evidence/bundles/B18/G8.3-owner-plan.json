@@ -71,16 +71,14 @@
         "B18-REV06-08"
       ],
       "status": "partial-continuation-checkpoint",
-      "closedCount": 13,
+      "closedCount": 15,
       "pendingFindingIDs": [
-        "B18-REV03-09",
         "B18-REV05-01",
         "B18-REV05-02",
         "B18-REV05-03",
-        "B18-REV05-04",
-        "B18-REV06-06"
+        "B18-REV05-04"
       ],
-      "receipt": "G8.3-F03-C03-checkpoint.json"
+      "receipt": "G8.3-F03-C04-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F04",
@@ -412,7 +410,9 @@
       "dependencies": [],
       "regression": "Use bounded real repository or faithful lifecycle fake with delayed startup and failed cleanup. Verify unfinished retirement does not invent completed play, accepted evidence remains, no unhandled future, and completed games still close once. Add controllable monotonic clock/lifecycle background case if timing contract confirms active response duration; never replace historical recreational classification or manufacture progress.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "receipt": "G8.3-F03-C04-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-10",
@@ -572,7 +572,9 @@
       "dependencies": [],
       "regression": "Widget with distinct A/B profile evidence and current account headers: hold A loader, replace dependencies while TickerMode remains active, release A after B; then repeat already-loaded case and actual owner transition shell. Assert no A axes under B and same-owner tab reactivation still loads.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "48bbdb4675e714df39ea535bee27eb6286e7e742",
+      "receipt": "G8.3-F03-C04-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-07",
