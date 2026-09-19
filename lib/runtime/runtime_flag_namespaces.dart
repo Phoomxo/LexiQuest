@@ -5,6 +5,7 @@
 /// the operational key format.
 abstract final class RuntimeFlagNamespaces {
   static const ownerOperationGate = 'ownerOperationGate';
+  static const ownerGeneration = 'ownerGeneration:v1';
   static const ownerOperationFencePrefix = 'ownerOperationFence:';
   static const cloudSyncEnabled = 'cloudSyncEnabled';
   static const featureEmergencyOffPrefix = 'feature_emergency_off:';

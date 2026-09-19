@@ -4,12 +4,17 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
+import 'package:vocab_learning_app/features/identity/application/owner_generation.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_generation.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/personal_sets_use_cases.dart';
 import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_personal_set_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/packaged_sense_crosswalk.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/personal_sets.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/personal_set_archive.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -102,6 +107,326 @@ void main() {
     await database.close();
     await directory.delete(recursive: true);
   });
+
+  PersonalSetsUseCases application({OwnerGateDelay? delay}) {
+    Future<String> activeOwner() async => (await (database.select(
+      database.localOwners,
+    )..where((r) => r.isActive.equals(true))).getSingle()).id;
+    var serial = 0;
+    return PersonalSetsUseCases(
+      repository: repository,
+      ownerGeneration: OwnerGeneration(
+        activeOwnerId: activeOwner,
+        readDurableStamp: DriftOwnerGeneration(database).read,
+      ),
+      ownerOperations: OwnerOperationCoordinator(
+        gate: DriftOwnerOperationGate(database),
+        activeOwnerId: activeOwner,
+        nowUtc: () => now,
+        generateToken: () => 'application:${serial++}',
+        delay: delay,
+      ),
+    );
+  }
+
+  test(
+    'application archive and historical reads stay owner and generation bound',
+    () async {
+      await DriftOwnerOperationGate(database).release(token: 'lease');
+      final app = application();
+      final owner = await app.begin();
+      await app.save(owner, value());
+      final archive = await app.exportArchive(owner);
+      await database.customStatement(
+        "DELETE FROM personal_set_revisions WHERE owner_id = 'a'",
+      );
+      available = false;
+      await app.restoreArchive(owner, archive.toJson());
+      expect((await app.list(owner)).single.payloadHash, value().payloadHash);
+      expect(
+        (await app.read(owner, setId: 'set', revision: 1))!.payloadHash,
+        value().payloadHash,
+      );
+      await app.ownerGeneration.duringTransition(() async {});
+      await expectLater(app.list(owner), throwsStateError);
+      await expectLater(
+        app.read(owner, setId: 'set', revision: 1),
+        throwsStateError,
+      );
+      await expectLater(app.exportArchive(owner), throwsStateError);
+      await expectLater(
+        app.restoreArchive(owner, archive.toJson()),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
+    'application saves captured draft with canonical lease and immutable retry',
+    () async {
+      await DriftOwnerOperationGate(database).release(token: 'lease');
+      final app = application();
+      final owner = await app.begin();
+      expect((await app.save(owner, value())).payloadHash, value().payloadHash);
+      expect((await app.save(owner, value())).payloadHash, value().payloadHash);
+      expect(
+        await database.select(database.personalSetRevisions).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'another repository logout rollback invalidates draft across database reopen',
+    () async {
+      await DriftOwnerOperationGate(database).release(token: 'lease');
+      final app = application();
+      final owner = await app.begin();
+      var serial = 0;
+      final upgrade = DriftOwnerUpgradeRepository(
+        database,
+        nowUtc: () => now,
+        generateConflictId: () => 'conflict',
+        generateOwnerId: () => 'guest',
+        generateOwnerOperationToken: () => 'transition:${serial++}',
+        deleteOwnerSecrets: (_) async {},
+      );
+      final guest = await upgrade.createLocalGuestAfterLogout();
+      await upgrade.rollbackLocalGuestLogout(
+        previousOwnerId: 'a',
+        guestOwnerId: guest.targetOwnerId,
+      );
+      final reopened = AppDatabase(NativeDatabase(file));
+      try {
+        expect(await DriftOwnerGeneration(reopened).read(), isNot('initial'));
+        await expectLater(app.save(owner, value()), throwsStateError);
+        expect(
+          await database.select(database.personalSetRevisions).get(),
+          isEmpty,
+        );
+      } finally {
+        await reopened.close();
+      }
+    },
+  );
+
+  test('application rejects A B A draft before acquiring a lease', () async {
+    final app = application();
+    final owner = await app.begin();
+    await app.ownerGeneration.duringTransition(() async {
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = CASE WHEN id = 'b' THEN 1 ELSE 0 END",
+      );
+    });
+    await app.ownerGeneration.duringTransition(() async {
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = CASE WHEN id = 'a' THEN 1 ELSE 0 END",
+      );
+    });
+    await expectLater(app.save(owner, value()), throwsStateError);
+    expect(await database.select(database.personalSetRevisions).get(), isEmpty);
+    expect(
+      await DriftOwnerOperationGate(
+        database,
+      ).isOwned(token: 'lease', nowUtc: now),
+      isTrue,
+    );
+  });
+
+  test(
+    'application rejects draft invalidated while waiting for canonical lease',
+    () async {
+      late PersonalSetsUseCases app;
+      var waited = false;
+      app = application(
+        delay: (_, cancellation) async {
+          waited = true;
+          await app.ownerGeneration.duringTransition(() async {});
+          await DriftOwnerOperationGate(database).release(token: 'lease');
+        },
+      );
+      final owner = await app.begin();
+      await expectLater(app.save(owner, value()), throwsStateError);
+      expect(waited, isTrue);
+      expect(
+        await database.select(database.personalSetRevisions).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'application checks generation after asynchronous content loading',
+    () async {
+      await DriftOwnerOperationGate(database).release(token: 'lease');
+      final app = application();
+      final owner = await app.begin();
+      beforeLoad = () => app.ownerGeneration.duringTransition(() async {});
+      await expectLater(app.save(owner, value()), throwsStateError);
+      expect(
+        await database.select(database.personalSetRevisions).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'backup restores full history offline and retry writes nothing after restart',
+    () async {
+      await save(value());
+      await save(value(operation: 'op2', prior: 1, archived: true));
+      final archive = await repository.exportArchive(
+        ownerId: 'a',
+        leaseToken: 'lease',
+      );
+      await database.customStatement(
+        "DELETE FROM personal_set_revisions WHERE owner_id = 'a'",
+      );
+      available = false;
+      await repository.restoreArchive(
+        ownerId: 'a',
+        leaseToken: 'lease',
+        envelope: archive.toJson(),
+      );
+      await database.close();
+      database = AppDatabase(NativeDatabase(file));
+      wire();
+      await repository.restoreArchive(
+        ownerId: 'a',
+        leaseToken: 'lease',
+        envelope: archive.toJson(),
+      );
+      expect((await read(1))!.toJson(), value().toJson());
+      expect((await read(2))!.archived, isTrue);
+      expect(
+        await database.select(database.personalSetRevisions).get(),
+        hasLength(2),
+      );
+      expect(
+        await database.select(database.personalSetMembers).get(),
+        hasLength(4),
+      );
+      await expectLater(
+        repository.crosswalks.requirePinned(pin),
+        throwsA(isA<Exception>()),
+      );
+    },
+  );
+
+  test(
+    'restore rejects owner mismatch and stale lease before any writes',
+    () async {
+      final archive = PersonalSetArchive.create(
+        ownerId: 'b',
+        revisions: [value()],
+      );
+      await expectLater(
+        repository.restoreArchive(
+          ownerId: 'a',
+          leaseToken: 'lease',
+          envelope: archive.toJson(),
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        repository.restoreArchive(
+          ownerId: 'b',
+          leaseToken: 'lease',
+          envelope: archive.toJson(),
+        ),
+        throwsStateError,
+      );
+      final own = PersonalSetArchive.create(ownerId: 'a', revisions: [value()]);
+      await expectLater(
+        repository.restoreArchive(
+          ownerId: 'a',
+          leaseToken: 'stale',
+          envelope: own.toJson(),
+        ),
+        throwsStateError,
+      );
+      expect(
+        await database.select(database.personalSetRevisions).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'restore rolls back earlier inserts on a later operation collision',
+    () async {
+      await save(value(set: 'z', operation: 'existing'));
+      final archive = PersonalSetArchive.create(
+        ownerId: 'a',
+        revisions: [
+          value(set: 'a', operation: 'new'),
+          value(set: 'z', operation: 'different'),
+        ],
+      );
+      await expectLater(
+        repository.restoreArchive(
+          ownerId: 'a',
+          leaseToken: 'lease',
+          envelope: archive.toJson(),
+        ),
+        throwsStateError,
+      );
+      expect(
+        await repository.readExact(ownerId: 'a', setId: 'a', revision: 1),
+        isNull,
+      );
+      expect(
+        (await repository.readExact(
+          ownerId: 'a',
+          setId: 'z',
+          revision: 1,
+        ))!.operationId,
+        'existing',
+      );
+    },
+  );
+
+  test('restore rolls back revisions when member insertion fails', () async {
+    await database.customStatement(
+      "CREATE TRIGGER reject_restore_member BEFORE INSERT ON personal_set_members WHEN NEW.position = 1 BEGIN SELECT RAISE(ABORT, 'injected member failure'); END",
+    );
+    final archive = PersonalSetArchive.create(
+      ownerId: 'a',
+      revisions: [value()],
+    );
+    await expectLater(
+      repository.restoreArchive(
+        ownerId: 'a',
+        leaseToken: 'lease',
+        envelope: archive.toJson(),
+      ),
+      throwsA(isA<Exception>()),
+    );
+    expect(await database.select(database.personalSetRevisions).get(), isEmpty);
+    expect(await database.select(database.personalSetMembers).get(), isEmpty);
+  });
+
+  test(
+    'restore rejects damaged or newer envelope without touching existing history',
+    () async {
+      await save(value());
+      final archive = PersonalSetArchive.create(
+        ownerId: 'a',
+        revisions: [value()],
+      ).toJson();
+      final content = Map<String, Object?>.from(archive['content'] as Map)
+        ..['schemaVersion'] = 999;
+      await expectLater(
+        repository.restoreArchive(
+          ownerId: 'a',
+          leaseToken: 'lease',
+          envelope: {...archive, 'content': content},
+        ),
+        throwsFormatException,
+      );
+      expect((await read(1))!.payloadHash, value().payloadHash);
+    },
+  );
 
   test(
     'owner archive exports exact history and erasure preserves other owner',

@@ -14,6 +14,7 @@ import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.
 import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'package:vocab_learning_app/features/gemini/data/secure_gemini_settings_store.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_generation.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -372,6 +373,7 @@ void main() {
       expect(
         runtimeFlagLifecycleNamespaces.map((entry) => entry.name).toSet(),
         const {
+          'ownerGeneration',
           'ownerOperationGate',
           'ownerOperationFences',
           'cloudSyncEnabled',
@@ -1336,6 +1338,7 @@ void main() {
 
       final ownerBBefore = await _ownerSnapshot(database, 'owner-b');
       final globalsBefore = await _preservedGlobalSnapshot(database);
+      final generationBefore = await DriftOwnerGeneration(database).read();
       final ownerBToken = _ownerToken('owner-b');
       final ownerAMetadataBefore = await _credentialMetadataSnapshot(
         database,
@@ -1437,6 +1440,8 @@ void main() {
       expect(await _assessmentRunOwnerCount(database, 'owner-b'), 1);
       expect(await _ownerSnapshot(database, 'owner-b'), ownerBBefore);
       expect(await _preservedGlobalSnapshot(database), globalsBefore);
+      expect(await DriftOwnerGeneration(database).read(), isNot(generationBefore),
+        reason: 'Erasure atomically invalidates old drafts; other global rows remain exact.');
       expect(
         await _credentialMetadataSnapshot(database, _ownerToken('owner-a')),
         isEmpty,
@@ -2082,10 +2087,11 @@ Future<Map<String, List<String>>> _preservedGlobalSnapshot(
   snapshot['runtime_flags'] =
       (await database
               .customSelect(
-                'SELECT * FROM runtime_flags WHERE "key" <> ? '
+                'SELECT * FROM runtime_flags WHERE "key" <> ? AND "key" <> ? '
                 'AND instr("key", ?) <> 1 AND instr("key", ?) <> 1 ORDER BY "key"',
                 variables: const [
                   Variable<String>('ownerOperationGate'),
+                  Variable<String>('ownerGeneration:v1'),
                   Variable<String>('aiCredentialPointer:'),
                   Variable<String>('aiCredentialIntent:'),
                 ],

@@ -56,6 +56,14 @@ final class RuntimeFlagLifecycleNamespaceDescriptor {
 const runtimeFlagLifecycleNamespaces =
     <RuntimeFlagLifecycleNamespaceDescriptor>[
       RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'ownerGeneration',
+        match: RuntimeFlagNamespaceMatch.exact,
+        keyPattern: RuntimeFlagNamespaces.ownerGeneration,
+        exportDisposition: RuntimeFlagExportDisposition.omitInternal,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
         name: 'ownerOperationGate',
         match: RuntimeFlagNamespaceMatch.exact,
         keyPattern: RuntimeFlagNamespaces.ownerOperationGate,

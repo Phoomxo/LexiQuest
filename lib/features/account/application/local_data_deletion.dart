@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../identity/domain/owner_lifecycle_manifest.dart';
+import '../../identity/data/drift_owner_generation.dart';
 import '../../vocabulary/data/packaged_starter_access.dart';
 
 typedef DeleteOwnerSecrets = Future<void> Function(String ownerId);
@@ -118,6 +119,7 @@ class LocalDataDeletion implements LocalDataEraser {
   }
 
   Future<int> _eraseAllInTransaction({required String ownerId}) async {
+    await DriftOwnerGeneration(_database).advance();
     var total = 0;
     for (final tableName in localDataDeletionInventory) {
       total += await _deleteManifestAction(
@@ -135,8 +137,8 @@ class LocalDataDeletion implements LocalDataEraser {
     switch (tableName) {
       case 'runtime_flags':
         // The fenced secure-store eraser owns the target participant's
-        // credential pointer and intent namespaces. Every other runtime flag
-        // is global state and must remain byte-identical.
+        // credential pointer and intent namespaces. Global flags are retained;
+        // only the owner generation was advanced by the enclosing transaction.
         return Future<int>.value(0);
       case 'vocabulary_import_rows':
         return _database.customUpdate(

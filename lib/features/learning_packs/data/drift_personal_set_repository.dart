@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../domain/personal_sets.dart';
+import '../domain/personal_set_archive.dart';
 import '../domain/sense_crosswalk_repository.dart';
 
 final class DriftPersonalSetRepository {
@@ -16,12 +17,92 @@ final class DriftPersonalSetRepository {
   final SenseCrosswalkRepository crosswalks;
   final DateTime Function() nowUtc;
 
+  Future<PersonalSetArchive> exportArchive({
+    required String ownerId,
+    required String leaseToken,
+  }) => database.transaction(() async {
+    await _requireOwner(ownerId, leaseToken);
+    final rows =
+        await (database.select(database.personalSetRevisions)
+              ..where((r) => r.ownerId.equals(ownerId))
+              ..orderBy([
+                (r) => OrderingTerm.asc(r.setId),
+                (r) => OrderingTerm.asc(r.revision),
+              ]))
+            .get();
+    final revisions = <PersonalSetRevision>[];
+    for (final row in rows) {
+      revisions.add(
+        (await readExact(
+          ownerId: ownerId,
+          setId: row.setId,
+          revision: row.revision,
+        ))!,
+      );
+    }
+    final archive = PersonalSetArchive.create(
+      ownerId: ownerId,
+      revisions: revisions,
+    );
+    await _requireOwner(ownerId, leaseToken);
+    return archive;
+  });
+
+  /// Import history without granting current content/activity admission. Every
+  /// member retains its original pin even when that artifact is unavailable.
+  /// Existing immutable rows are reconciled, never replaced or downgraded.
+  Future<void> restoreArchive({
+    required String ownerId,
+    required String leaseToken,
+    required Map<String, Object?> envelope,
+    Future<void> Function()? requireCurrentGeneration,
+  }) async {
+    final archive = PersonalSetArchive.fromJson(envelope);
+    if (archive.ownerId != ownerId) {
+      throw StateError('Personal set archive owner mismatch');
+    }
+    await database.transaction(() async {
+      await _requireOwner(ownerId, leaseToken);
+      await requireCurrentGeneration?.call();
+      for (final revision in archive.revisions) {
+        final byOperation =
+            await (database.select(database.personalSetRevisions)..where(
+                  (r) =>
+                      r.ownerId.equals(ownerId) &
+                      r.operationId.equals(revision.operationId),
+                ))
+                .getSingleOrNull();
+        if (byOperation != null &&
+            (byOperation.setId != revision.setId ||
+                byOperation.revision != revision.revision ||
+                byOperation.payloadHash != revision.payloadHash)) {
+          throw StateError('Personal set restore operation collision');
+        }
+        final existing = await readExact(
+          ownerId: ownerId,
+          setId: revision.setId,
+          revision: revision.revision,
+        );
+        if (existing != null) {
+          if (existing.payloadHash != revision.payloadHash) {
+            throw StateError('Personal set restore revision collision');
+          }
+          continue;
+        }
+        await _insertRevision(ownerId, revision);
+      }
+      await _requireOwner(ownerId, leaseToken);
+      await requireCurrentGeneration?.call();
+    });
+  }
+
   /// Callers hold the canonical owner-operation lease through content loading
   /// and commit. Replay precedes content availability checks, never authority.
   Future<PersonalSetRevision> save({
     required String ownerId,
     required String leaseToken,
     required PersonalSetRevision revision,
+    Future<void> Function()? requireCurrentGeneration,
   }) async {
     Future<PersonalSetRevision?> replay() async {
       final row =
@@ -45,6 +126,7 @@ final class DriftPersonalSetRepository {
 
     final existing = await database.transaction(() async {
       await _requireOwner(ownerId, leaseToken);
+      await requireCurrentGeneration?.call();
       return replay();
     });
     if (existing != null) return existing;
@@ -58,6 +140,7 @@ final class DriftPersonalSetRepository {
     }
     return database.transaction(() async {
       await _requireOwner(ownerId, leaseToken);
+      await requireCurrentGeneration?.call();
       final existing = await replay();
       if (existing != null) return existing;
       final rows =
@@ -91,37 +174,45 @@ final class DriftPersonalSetRepository {
           throw StateError('Archive must retain the prior set contents');
         }
       }
+      await _insertRevision(ownerId, revision);
+      await _requireOwner(ownerId, leaseToken);
+      await requireCurrentGeneration?.call();
+      return revision;
+    });
+  }
+
+  Future<void> _insertRevision(
+    String ownerId,
+    PersonalSetRevision revision,
+  ) async {
+    await database
+        .into(database.personalSetRevisions)
+        .insert(
+          PersonalSetRevisionsCompanion.insert(
+            ownerId: ownerId,
+            setId: revision.setId,
+            revision: revision.revision,
+            operationId: revision.operationId,
+            payloadHash: revision.payloadHash,
+            payloadJson: jsonEncode(revision.toJson()),
+            archived: revision.archived,
+          ),
+        );
+    for (var i = 0; i < revision.members.length; i++) {
+      final json = jsonEncode(revision.members[i].toJson());
       await database
-          .into(database.personalSetRevisions)
+          .into(database.personalSetMembers)
           .insert(
-            PersonalSetRevisionsCompanion.insert(
+            PersonalSetMembersCompanion.insert(
               ownerId: ownerId,
               setId: revision.setId,
               revision: revision.revision,
-              operationId: revision.operationId,
-              payloadHash: revision.payloadHash,
-              payloadJson: jsonEncode(revision.toJson()),
-              archived: revision.archived,
+              position: i,
+              senseRefHash: sha256.convert(utf8.encode(json)).toString(),
+              senseRefJson: json,
             ),
           );
-      for (var i = 0; i < revision.members.length; i++) {
-        final json = jsonEncode(revision.members[i].toJson());
-        await database
-            .into(database.personalSetMembers)
-            .insert(
-              PersonalSetMembersCompanion.insert(
-                ownerId: ownerId,
-                setId: revision.setId,
-                revision: revision.revision,
-                position: i,
-                senseRefHash: sha256.convert(utf8.encode(json)).toString(),
-                senseRefJson: json,
-              ),
-            );
-      }
-      await _requireOwner(ownerId, leaseToken);
-      return revision;
-    });
+    }
   }
 
   Future<void> _requireOwner(String ownerId, String leaseToken) async {

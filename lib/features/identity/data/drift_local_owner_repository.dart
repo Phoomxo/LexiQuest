@@ -9,6 +9,7 @@ import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
 import '../domain/local_owner.dart';
 import '../domain/local_owner_repository.dart';
+import 'drift_owner_generation.dart';
 
 typedef LocalOwnerIdGenerator = String Function();
 typedef UtcNow = DateTime Function();
@@ -96,6 +97,7 @@ final class DriftLocalOwnerRepository implements LocalOwnerRepository {
           if (!await _fenceOwnerTransition(operationToken)) {
             throw StateError('owner-operation gate was lost');
           }
+          await DriftOwnerGeneration(_database).advance();
           final row =
               await (_database.select(_database.localOwners)..where(
                     (candidate) => candidate.id.equals(canonicalOwnerId),

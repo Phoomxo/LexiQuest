@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
+import 'drift_owner_generation.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../assessment/data/drift_assessment_repository.dart';
@@ -149,6 +150,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             if (!await _fenceOwnerTransition(operationToken)) {
               throw StateError('owner-operation gate was lost');
             }
+            await DriftOwnerGeneration(_database).advance();
             final source = await _ownerById(sourceId);
             if (source == null || !source.isActive) {
               throw StateError('active local owner was not found');
@@ -446,6 +448,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             if (!await _fenceOwnerTransition(operationToken)) {
               throw StateError('owner-operation gate was lost');
             }
+            await DriftOwnerGeneration(_database).advance();
             final ownerId =
                 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
             final createdAtUtc = _requireUtc(nowUtc());
@@ -506,6 +509,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             if (!await _fenceOwnerTransition(operationToken)) {
               throw StateError('owner-operation gate was lost');
             }
+            await DriftOwnerGeneration(_database).advance();
             final guestRow = await _ownerById(guest);
             final previousRow = await _ownerById(previous);
             if (guestRow == null ||

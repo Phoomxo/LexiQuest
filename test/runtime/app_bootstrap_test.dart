@@ -540,6 +540,27 @@ void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
 
+    test('personal sets reject drafts after actual logout rollback and erasure', () async {
+      _installNoOpSecureStorage();
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {}, initializeSupabase: () async {},
+        loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      expect(dependencies.personalSets, isNotNull);
+      final sets = dependencies.personalSets!;
+      final before = await sets.begin();
+      final guest = await dependencies.upgradeGuestOwner!.createLocalGuestAfterLogout(sourceOwnerId: before.ownerId);
+      await dependencies.upgradeGuestOwner!.rollbackLocalGuestLogout(previousOwnerId: before.ownerId, guestOwnerId: guest.targetOwnerId);
+      expect((await sets.begin()).ownerId, before.ownerId);
+      expect(() => sets.ownerGeneration.requireCurrent(before), throwsStateError);
+      final beforeErasure = await sets.begin();
+      await dependencies.localDataEraser!.eraseAll(ownerId: beforeErasure.ownerId);
+      expect(() => sets.ownerGeneration.requireCurrent(beforeErasure), throwsStateError);
+    });
+
     test('G7.5 compiled edition records all catalog activation boundaries', () async {
       const preview = bool.fromEnvironment('LEXIQUEST_LEARNING_PREVIEW');
       const cloud = bool.fromEnvironment('LEXIQUEST_CLOUD_SYNC_ENABLED', defaultValue: true);

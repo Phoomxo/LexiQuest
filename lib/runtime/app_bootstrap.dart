@@ -74,6 +74,11 @@ import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/identity/domain/owner_upgrade.dart';
+import '../features/identity/application/owner_generation.dart';
+import '../features/identity/data/drift_owner_generation.dart';
+import '../features/learning_packs/application/personal_sets_use_cases.dart';
+import '../features/learning_packs/data/drift_personal_set_repository.dart';
+import '../features/learning_packs/domain/sense_crosswalk_repository.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/contrastive_feedback_use_cases.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -733,6 +738,14 @@ final class AppBootstrap {
       }
     }
 
+    final personalSetOwnerGeneration = OwnerGeneration(
+      activeOwnerId: activeOwnerId,
+      readDurableStamp: DriftOwnerGeneration(database).read,
+      delegate: _ReminderOwnerTransitionLifecycle(
+        studyReminders,
+        () => reminderFeatureEnabled,
+      ),
+    );
     final localErasureCoordinator = OwnerOperationCoordinator(
       gate: ownerOperationGate,
       activeOwnerId: activeOwnerId,
@@ -762,7 +775,9 @@ final class AppBootstrap {
           if (operationToken == null) {
             throw StateError('Local erasure requires the owner lease.');
           }
-          final deleted = await operation(operationToken);
+          final deleted = await personalSetOwnerGeneration.duringTransition(
+            () => operation(operationToken),
+          );
           localErasureCoordinator.markCurrentOperationResultCommitted();
           return deleted;
         });
@@ -790,10 +805,7 @@ final class AppBootstrap {
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
       deleteOwnerSecretsFenced: eraseOwnerCredentialsWithLease,
       ownerOperationGate: ownerOperationGate,
-      transitionLifecycle: _ReminderOwnerTransitionLifecycle(
-        studyReminders,
-        () => reminderFeatureEnabled,
-      ),
+      transitionLifecycle: personalSetOwnerGeneration,
       evidencePolicy: evidencePolicy,
       rolloutModeProvider: evidenceRolloutModeProvider,
     );
@@ -1123,6 +1135,15 @@ final class AppBootstrap {
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
       learningTimezoneId: resolvedLearningTimezoneId,
+    );
+    final personalSets = PersonalSetsUseCases(
+      repository: DriftPersonalSetRepository(
+        database,
+        SenseCrosswalkRepository(contentManifests),
+        nowUtc: () => DateTime.now().toUtc(),
+      ),
+      ownerOperations: localErasureCoordinator,
+      ownerGeneration: personalSetOwnerGeneration,
     );
     final studyPlanning = StudyPlanningUseCases(
       packs: DriftLearningPackRepository(
@@ -1894,6 +1915,7 @@ final class AppBootstrap {
       learningHistory: learningHistory,
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
+      personalSets: personalSets,
       learningGoals: learningGoals,
       learnerPreferences: learnerPreferences,
       displayPreferences: displayPreferences,
