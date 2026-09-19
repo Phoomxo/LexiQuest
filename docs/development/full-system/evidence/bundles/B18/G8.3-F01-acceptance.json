@@ -1,0 +1,628 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F01",
+  "status": "accepted-slice",
+  "acceptedAtUtc": "2026-09-19T13:31:47.720230+00:00",
+  "threadId": "01a0b9c2-2b95-7a73-b8fb-6104d7ca8aa2",
+  "inputCheckpointSha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "findings": [
+    {
+      "findingId": "B18-REV01-01",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Reconcile threw before the manager was registered with ResourceDisposerStack.",
+      "change": "Register offlineContent.dispose before awaiting reconcile. Reverse-order cleanup still cancels adapter work before the offline queue drains.",
+      "proof": "Two controlled bootstrap failures produced disposeCalls=0 in RED; GREEN disposes once, preserves the identical original error even if cleanup throws, and closes the database.",
+      "redRun": "bootstrap-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/runtime/resource_disposer_stack.dart",
+          "sha256": "f12a823073f48b89ce01725c778160a4ab7e61b775249cbfc2f0aa1a6b640749"
+        },
+        {
+          "path": "lib/runtime/app_dependencies.dart",
+          "sha256": "e2cbc181c5f4bc9368bf8dbf65d8c5b996b606f1e1f39af0d79ec708f88691b8"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV01-02",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Consent await preceded busy admission and its repository errors escaped the guest event handler.",
+      "change": "Acquire busy before consent; contain failure and release busy in finally while preserving mounted checks and local guest behavior.",
+      "proof": "Deferred real use-case consent repository admitted two loads on rapid taps; failing consent escaped and gave no SnackBar. GREEN admits once and retries after contained consent failure. Provider normally returns typed failures; no provider retry policy changed.",
+      "redRun": "entry-red-fixture-corrected",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/services/guest_session_service.dart",
+          "sha256": "169f47302ddee719356c4c2afc44a68fd491ceb672baada041477c3860f92fb7"
+        },
+        {
+          "path": "lib/features/consent/application/research_consent_use_cases.dart",
+          "sha256": "68f932635f1bad5a24d09f9fb29b71df1fb666aa720090db55076a1a1bd82ff9"
+        },
+        {
+          "path": "lib/widgets/research_consent_dialog.dart",
+          "sha256": "991dbf72679912752376058a8a2aa307ab6366a211af09e25c1646b0dc9e7c14"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV01-03",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Requests admitted in an earlier breaker generation changed a newer probe state/lease.",
+      "change": "Capture generation at admission; ignore stale completion for state only, preserve caller result/error, invalidate on reset/open/probe completion and release a failed probe for the next cooldown.",
+      "proof": "RED late success closed a live probe, late failure reopened it, and old probe completion released newer admission. Additional circuit-probe-red caught and corrected the initial fix retention bug. GREEN keeps one current probe, permits later cooldown and preserves cancellation/failure predicates.",
+      "redRun": "entry-circuit-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/features/ai_tutor/data/ai_tutor_gateway_factory.dart",
+          "sha256": "b52d7bac58088cc93e42ef13246eb04535cea8dc270caf64d15ba5f6e3500359"
+        },
+        {
+          "path": "lib/features/gemini/data/retry_gemini_gateway.dart",
+          "sha256": "20d2ca036472d45a7861da3aa2d8774f8843b023e2e69e79fdde6378ba89438b"
+        },
+        {
+          "path": "lib/voice/omni_voice_provider.dart",
+          "sha256": "315e1ed351c4a3c54fc07a9950cefdd467bd6ab5861b4041472e50a89bc73f11"
+        },
+        {
+          "path": "lib/voice/vox_cpm_standard_provider.dart",
+          "sha256": "f580efcfb29eb8ea89f521df4d45ff40a114167066f3b9fd2b8655d048705337"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV06-05",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Queued work outlived ChangeNotifier disposal; persistence was not guarded and bootstrap did not drain the queue.",
+      "change": "Retire synchronously; skip queued work, deny new admission, guard uncommitted writes, suppress stale presentation, and drain via disposeAndDrain before DB cleanup.",
+      "proof": "RED real Drift-backed held reads/writes raised notify-after-dispose and precommit write was not cancelled. GREEN suppresses stale state, skips queued read/write, drains the held read, rejects fresh admission, denies precommit mutation, retains the postcommit durable dark preference and leaves cloud outbox empty.",
+      "redRun": "preferences-camera-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+          "sha256": "9a3ebabfef2078888d1b6c13a977c318d0822a80d7dd547e218e998a80cc8c69"
+        },
+        {
+          "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+          "sha256": "4c4827b6f427dd102a543eb830e9d22f3607be635354c6794b3e2463099fcc67"
+        },
+        {
+          "path": "lib/screens/setting_screen.dart",
+          "sha256": "7ed66cd5d8d96fbcfd6b9cda5feabc22d827b39c0cfb021bd23047e53ac5c588"
+        },
+        {
+          "path": "lib/main.dart",
+          "sha256": "927ada935b7e60666c30e9bd528a583245d7ac380db7027b2904c3e8df492949"
+        },
+        {
+          "path": "lib/runtime/app_bootstrap.dart",
+          "sha256": "41a0c0b922788ff249dc0e61f788b812ffe2a3c83578ba6188308479b4cb1649"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV07-01",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Cached/recovered final-file verification could finish after cancel/dispose and publish activation/diagnostics.",
+      "change": "Check cancellation after cached validation before activation or quarantine; leave prior committed rows/files unchanged.",
+      "proof": "Four RED cases (ready/missing row x cancel/dispose) returned active instead of cancelled. GREEN has zero activation/completion, original row/file preserved, no network source calls, then successful uncancelled recovery. Existing fresh partial commit and historical cached counter tests pass.",
+      "redRun": "preferences-camera-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/features/offline_content/data/model_download_adapter.dart",
+          "sha256": "eeadbb9fd626ea947b550156fdec2ddad98c00507ec9527f9cfbb5dc8ce6cb9b"
+        },
+        {
+          "path": "lib/features/device_model/data/drift_model_download_repository.dart",
+          "sha256": "58e24cf39b6c7d9b9f39aa846b3850405e837fb6ee7a096fdb4167e1aa4f01e9"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV07-02",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "runtime.close failure skipped camera.dispose and the memoized failed shutdown could not retry it.",
+      "change": "Use ResourceDisposerStack to attempt both resources exactly once, preserving the first failure.",
+      "proof": "RED injected ImageClassifierRuntime.close through actual scanner had camera.disposeCalls=0. GREEN camera attempted once, original error retained across repeated dispose, existing late initialization/lease tests pass; plugin camera shutdown tests also pass.",
+      "redRun": "preferences-camera-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/runtime/resource_disposer_stack.dart",
+          "sha256": "f12a823073f48b89ce01725c778160a4ab7e61b775249cbfc2f0aa1a6b640749"
+        },
+        {
+          "path": "lib/features/media_practice/data/plugin_camera_gateway.dart",
+          "sha256": "d9b2c7f6875e026f2cca006437c7a2de283de2d1c57af4ce80057c37a5d69958"
+        },
+        {
+          "path": "lib/features/device_model/data/litert_image_classifier.dart",
+          "sha256": "e8e024b9921eb5cdfbe83da8ef3765a86cf691347a5d587f5230ae59824ef273"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV07-03",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "DeviceModelUseCases disposed only its download manager; separate benchmark/open handles had no admission or drain ownership.",
+      "change": "Track admitted futures, synchronously cancel further admission, drain current work, close late-open handles and cancel benchmark between native runs; successful open still transfers ownership to scanner.",
+      "proof": "Three controlled RED waits (repository, runtime open, inference) returned a benchmark after shutdown. GREEN waits for settlement, rejects postdispose open/benchmark, closes acquired handles and stops additional runs. CPU/XNNPACK positives and background/resume stale-success/error widget checks pass.",
+      "redRun": "device-drain-red",
+      "greenRuns": [
+        "final-dart"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "lib/features/device_model/application/model_benchmark.dart",
+          "sha256": "42cd24bd3ae291f5431e99efe0b63b0616da5155c202d7db3843216ef3d431a8"
+        },
+        {
+          "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+          "sha256": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5"
+        },
+        {
+          "path": "lib/screens/object_scanner_screen.dart",
+          "sha256": "8ac4c297077f0f6ffa8dd2fb2bab29cea9c1f99179dd64e7d402b6409f7a71ec"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV10-03",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Zero WideCharToMultiByte query result was decremented into unsigned UINT_MAX before allocation.",
+      "change": "Check signed query result before removing the NUL terminator.",
+      "proof": "Actual invalid-surrogate command line reaches GetCommandLineArguments, real Win32 query returns zero, allocation interceptor catches 4294967335-byte request without allocating it. Forced query-zero also fails RED. GREEN returns empty with bounded allocation; null/empty/ASCII/Thai/supplementary Unicode positives pass.",
+      "redRun": "native-red-compiler-env-corrected",
+      "greenRuns": [
+        "final-native"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "windows/runner/main.cpp",
+          "sha256": "c8dbd99d2995adae157094d4effa3bc6c41ad94eaa9f3d2b2e3b2789d11d4f09"
+        },
+        {
+          "path": "windows/runner/utils.h",
+          "sha256": "95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03"
+        }
+      ]
+    },
+    {
+      "findingId": "B18-REV10-04",
+      "status": "closed-regression-verified",
+      "candidateOutcome": "controlled-reproduction-confirmed-and-fixed",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "rootCause": "Actual WndProc routes WM_FONTCHANGE while the HWND exists outside Flutter controller lifetime.",
+      "change": "Guard controller and engine before font reload.",
+      "proof": "Native hidden HWND harness sends WM_FONTCHANGE before Flutter OnCreate and after controller release before HWND destruction. Actual runner source dispatch exits with access violation in RED test processes; both safe in GREEN and live controller reloads exactly once.",
+      "redRun": "native-red-compiler-env-corrected",
+      "greenRuns": [
+        "final-native"
+      ],
+      "reviewedCallers": [
+        {
+          "path": "windows/runner/win32_window.cpp",
+          "sha256": "9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36"
+        },
+        {
+          "path": "windows/runner/flutter_window.h",
+          "sha256": "38e0fcd3a0b83895852ec295cb70d90179c0dcd40d58f065eb5232a4ecd84898"
+        }
+      ]
+    }
+  ],
+  "closedCount": 9,
+  "remainingOpenFindings": 60,
+  "applicationSourceChanged": true,
+  "dartTestsPassed": 295,
+  "nativeHarnessCasesPassed": 7,
+  "analysis": {
+    "exitCode": 1,
+    "infos": [
+      {
+        "path": "lib/runtime/app_bootstrap.dart",
+        "currentLine": 1169,
+        "checkpointLine": 1169,
+        "code": "curly_braces_in_flow_control_structures",
+        "lineText": "        throw StateError('Quest runtime has been disposed.');",
+        "unchanged": true
+      },
+      {
+        "path": "lib/runtime/app_bootstrap.dart",
+        "currentLine": 1207,
+        "checkpointLine": 1207,
+        "code": "curly_braces_in_flow_control_structures",
+        "lineText": "          throw StateError('Quest entry owner transition is active.');",
+        "unchanged": true
+      },
+      {
+        "path": "test/features/device_model/model_download_manager_test.dart",
+        "currentLine": 1096,
+        "checkpointLine": 1011,
+        "code": "curly_braces_in_flow_control_structures",
+        "lineText": "      throw const ModelLifecycleException(ModelFailureCode.interpreterRejected);",
+        "unchanged": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "currentLine": 4651,
+        "checkpointLine": 4628,
+        "code": "unnecessary_underscores",
+        "lineText": "              onError: (Object _, StackTrace __) {},",
+        "unchanged": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "currentLine": 4712,
+        "checkpointLine": 4689,
+        "code": "unnecessary_underscores",
+        "lineText": "              onError: (Object _, StackTrace __) {",
+        "unchanged": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "currentLine": 4793,
+        "checkpointLine": 4770,
+        "code": "use_null_aware_elements",
+        "lineText": "                if (workerDrain != null) workerDrain,",
+        "unchanged": true
+      },
+      {
+        "path": "test/runtime/app_bootstrap_test.dart",
+        "currentLine": 4794,
+        "checkpointLine": 4771,
+        "code": "use_null_aware_elements",
+        "lineText": "                if (transitionDrain != null) transitionDrain,",
+        "unchanged": true
+      }
+    ],
+    "newDiagnostics": 0,
+    "disposition": "Seven informational diagnostics map exactly to unchanged checkpoint lines; no errors/warnings. Not a globally clean analyze PASS."
+  },
+  "evidenceRoot": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/B18-G83-F01",
+  "evidenceManifestSha256": "279b127e9aa712187606e792580fb5c93c369f3e72a57945b427ba188cdac5fa",
+  "verificationRuns": [
+    {
+      "label": "bootstrap-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/app_bootstrap_test.dart') -TestName 'F01 bootstrap'",
+      "started": "2026-09-19T13:05:26.678200+00:00",
+      "finished": "2026-09-19T13:06:09.019257+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "bootstrap-green",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/app_bootstrap_test.dart')",
+      "started": "2026-09-19T13:06:31.685527+00:00",
+      "finished": "2026-09-19T13:07:14.690639+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "entry-circuit-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/circuit_breaker_test.dart','test/screens/login_guest_mode_test.dart') -TestName 'F01'",
+      "started": "2026-09-19T13:08:11.455039+00:00",
+      "finished": "2026-09-19T13:08:25.355061+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "entry-red-fixture-corrected",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/screens/login_guest_mode_test.dart') -TestName 'F01'",
+      "started": "2026-09-19T13:08:51.196633+00:00",
+      "finished": "2026-09-19T13:09:07.127286+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "entry-circuit-green",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/circuit_breaker_test.dart','test/screens/login_guest_mode_test.dart','test/features/gemini/ai_tutor_gateway_factory_test.dart','test/features/gemini/retry_gemini_gateway_test.dart','test/voice/vox_cpm_standard_provider_test.dart','test/voice/omni_voice_provider_test.dart')",
+      "started": "2026-09-19T13:10:01.340743+00:00",
+      "finished": "2026-09-19T13:10:21.226997+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "circuit-probe-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/circuit_breaker_test.dart') -TestName 'F01 a failed probe'",
+      "started": "2026-09-19T13:11:13.848889+00:00",
+      "finished": "2026-09-19T13:11:26.895166+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "entry-circuit-green-final",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/circuit_breaker_test.dart','test/screens/login_guest_mode_test.dart','test/features/gemini/ai_tutor_gateway_factory_test.dart','test/features/gemini/retry_gemini_gateway_test.dart','test/voice/vox_cpm_standard_provider_test.dart','test/voice/omni_voice_provider_test.dart')",
+      "started": "2026-09-19T13:11:52.030303+00:00",
+      "finished": "2026-09-19T13:12:15.375629+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "preferences-camera-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/preferences/display_preferences_controller_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/features/device_model/model_download_manager_test.dart') -TestName 'F01'",
+      "started": "2026-09-19T13:13:26.598200+00:00",
+      "finished": "2026-09-19T13:13:41.653499+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "preferences-camera-green",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/preferences/display_preferences_controller_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/features/device_model/model_download_manager_test.dart','test/screens/object_scanner_screen_test.dart','test/runtime/app_bootstrap_test.dart')",
+      "started": "2026-09-19T13:14:36.541952+00:00",
+      "finished": "2026-09-19T13:15:24.723016+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "device-drain-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/device_model/device_model_use_cases_test.dart') -TestName 'F01'",
+      "started": "2026-09-19T13:16:00.304229+00:00",
+      "finished": "2026-09-19T13:16:14.107951+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "device-drain-green",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/features/device_model/device_model_use_cases_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/screens/object_scanner_screen_test.dart','test/runtime/app_bootstrap_test.dart')",
+      "started": "2026-09-19T13:17:06.362511+00:00",
+      "finished": "2026-09-19T13:17:54.675452+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "native-red",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('windows-runner-lifecycle.tests.ps1')",
+      "started": "2026-09-19T13:20:13.797079+00:00",
+      "finished": "2026-09-19T13:20:20.941718+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "native-red-compiler-env-corrected",
+      "exitCode": 1,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('windows-runner-lifecycle.tests.ps1')",
+      "started": "2026-09-19T13:21:00.785146+00:00",
+      "finished": "2026-09-19T13:21:16.008590+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "native-green",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('windows-runner-lifecycle.tests.ps1')",
+      "started": "2026-09-19T13:21:51.025828+00:00",
+      "finished": "2026-09-19T13:22:04.878569+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "final-dart",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -TestTargets @('test/runtime/app_bootstrap_test.dart','test/runtime/circuit_breaker_test.dart','test/runtime/resource_disposer_stack_test.dart','test/screens/login_guest_mode_test.dart','test/features/preferences/display_preferences_controller_test.dart','test/screens/setting_screen_test.dart','test/features/device_model/model_download_manager_test.dart','test/features/device_model/device_model_use_cases_test.dart','test/features/device_model/model_benchmark_test.dart','test/features/media_practice/object_scanner_use_cases_test.dart','test/features/media_practice/plugin_camera_gateway_test.dart','test/screens/object_scanner_screen_test.dart','test/features/gemini/ai_tutor_gateway_factory_test.dart','test/features/gemini/retry_gemini_gateway_test.dart','test/voice/vox_cpm_standard_provider_test.dart','test/voice/omni_voice_provider_test.dart')",
+      "started": "2026-09-19T13:24:29.536155+00:00",
+      "finished": "2026-09-19T13:25:21.461839+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "final-native",
+      "exitCode": 0,
+      "command": "& './tool/cli/verify-scope.ps1' -Level Targeted -Area Runtime -CliTestTargets @('windows-runner-lifecycle.tests.ps1')",
+      "started": "2026-09-19T13:25:35.083370+00:00",
+      "finished": "2026-09-19T13:25:49.554103+00:00",
+      "inputDrift": []
+    },
+    {
+      "label": "final-analyze",
+      "exitCode": 1,
+      "command": "& flutter analyze --no-pub 'lib/runtime/app_bootstrap.dart' 'lib/runtime/circuit_breaker.dart' 'lib/screens/login_screen.dart' 'lib/features/preferences/application/display_preferences_controller.dart' 'lib/features/device_model/application/model_download_manager.dart' 'lib/features/device_model/application/model_benchmark.dart' 'lib/features/device_model/application/device_model_use_cases.dart' 'lib/features/media_practice/application/object_scanner_use_cases.dart' 'test/runtime/app_bootstrap_test.dart' 'test/runtime/circuit_breaker_test.dart' 'test/screens/login_guest_mode_test.dart' 'test/features/preferences/display_preferences_controller_test.dart' 'test/features/device_model/model_download_manager_test.dart' 'test/features/device_model/device_model_use_cases_test.dart' 'test/features/media_practice/object_scanner_use_cases_test.dart' 'test/screens/object_scanner_screen_test.dart'",
+      "started": "2026-09-19T13:26:14.655494+00:00",
+      "finished": "2026-09-19T13:26:30.359872+00:00",
+      "inputDrift": []
+    }
+  ],
+  "changedSource": [
+    {
+      "path": "lib/features/device_model/application/device_model_use_cases.dart",
+      "sha256": "066f970617a68d5085fbfc7698ff496516ddef24055b94f95d605afa27f3ce9c"
+    },
+    {
+      "path": "lib/features/device_model/application/model_benchmark.dart",
+      "sha256": "42cd24bd3ae291f5431e99efe0b63b0616da5155c202d7db3843216ef3d431a8"
+    },
+    {
+      "path": "lib/features/device_model/application/model_download_manager.dart",
+      "sha256": "38d047f9fd3d810c2a2df7d0d3e85e173abe829992ed750f8a5e83b1b40f1874"
+    },
+    {
+      "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "sha256": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5"
+    },
+    {
+      "path": "lib/features/preferences/application/display_preferences_controller.dart",
+      "sha256": "2f8c3878010ff17d2ecb220417f4e8cde08ac7fc2f005fb6ab7bcee0a0b1fb0f"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "41a0c0b922788ff249dc0e61f788b812ffe2a3c83578ba6188308479b4cb1649"
+    },
+    {
+      "path": "lib/runtime/circuit_breaker.dart",
+      "sha256": "4d8d457bd4c5bf2e6df194d3df37beafae91100ca57cbf5c653084b873cbaa6b"
+    },
+    {
+      "path": "lib/screens/login_screen.dart",
+      "sha256": "7bca4bf30723016c0e2fa4778db6e48aed475d8216a018ea76f9d87f233d20c2"
+    },
+    {
+      "path": "test/features/device_model/device_model_use_cases_test.dart",
+      "sha256": "c3c192ebd475c0720295c84c5ba1c5397071c8f5bd92b6e2ee21a548fd95ef33"
+    },
+    {
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "sha256": "214ee2c9cefe124492008839ca901c55af4629be5e5b6ae77026d0f3a6b746e3"
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "sha256": "a3760833f4b3e4f6e35efc3eed612ac6ab54a823c0c333fcffe9fab86099f2bb"
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "sha256": "f7caf36b47a2087386fc416dc9d2de62068965d5e6ac5eea2195997e7e7dcddf"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "sha256": "b5eb2531f3efba61f141c9a25d8dccd6a5aeadba0a43508f7d8d67e64cf66859"
+    },
+    {
+      "path": "test/runtime/circuit_breaker_test.dart",
+      "sha256": "f4b263b6cf233c5584d037e27e1f7a1848f3b0d9fcd02373f9dec1cac2a7a61d"
+    },
+    {
+      "path": "test/screens/login_guest_mode_test.dart",
+      "sha256": "ca8f82157898c0847babfad868297b49b9644c81cbba4905a71c932b76e15325"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "sha256": "ead5ec4c3aeae5319d01221b811a6afb85d88ad9c5ae2aef743d89f6f872d603"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/dart_project.h",
+      "sha256": "780d344fc1597944904a8e2ac3fd68e94fa18f21cf220672b013ca4d0e7ec948"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/flutter_view_controller.h",
+      "sha256": "3e43556462ab937b400b03e50ff7353b56f980eb6be62be044042bc58565aa85"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/plugin_registry.h",
+      "sha256": "36e8278c5efe1dedcccf30891c9ca5e42992afe885af96bf27a760cfbf3b2b1f"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter_windows.h",
+      "sha256": "9134b1365d53767eef02f477463467248295c22ce356d4c1598526f4b8a4ac31"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/query_failure.cpp",
+      "sha256": "b4114e64b87794215d7919fe64907ea74adccd9d662b0cae54072f4a37cfdd4d"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/runner_test.cpp",
+      "sha256": "46c5437e4fce1cadc4527cf56eb60f75afacd6f5a98b3c81ff309c43cf3d250e"
+    },
+    {
+      "path": "tool/cli/tests/windows-runner-lifecycle.tests.ps1",
+      "sha256": "48900dee84e09eec63519baa763517f2ba904a1779057157de3934205d3e9d13"
+    },
+    {
+      "path": "tool/cli/tests/windows_runner_lifecycle.py",
+      "sha256": "859a6c09a931076f4ea267fd3718d1381575e78893d946078662ac90addf9205"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "sha256": "e31c2933e5170bf7ca5834a80ba7d873dff5e189d0aebf3fd52d50de7393a157"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "sha256": "13c923ab06cbe06b00da198e69f5abe124a17e968f69743d8ee99d51cd7e95df"
+    }
+  ],
+  "nativeWrapperDisposition": {
+    "findingId": "B18-REV07-02",
+    "status": "scanner-failure-controlled; secondary-native-wrapper-not-injectable",
+    "contract": "LiteRtImageClassifier has a private constructor/private exclusively owned handles and synchronous close guarded by _closed. flutter_litert 3.7.0 explicit close/delete StateErrors guard repeated deletion; external callers cannot access handles for prior deletion. Native void FFI deletion has no recoverable status channel. No physical native leak/deletion-throw, memory safety or DLL failure claim.",
+    "pins": [
+      {
+        "path": "C:/Users/Phet/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_litert-3.7.0/lib/src/native/interpreter.dart",
+        "sha256": "d68a5714a0add7a6c75a8f77fd102eea6e6270e1ce2d933b8cabcddc98a9396b"
+      },
+      {
+        "path": "C:/Users/Phet/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_litert-3.7.0/lib/src/native/interpreter_options.dart",
+        "sha256": "f70e6ecb8eeb67211829bcee9c34d65ee17cbe13d769a1314e0c862ca9eaae0e"
+      },
+      {
+        "path": "C:/Users/Phet/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_litert-3.7.0/lib/src/delegates/xnnpack_delegate_native.dart",
+        "sha256": "6216af794bbb717f7b6d58b16004b7369c796ce8660f3b6192d7a8a48ac83a0d"
+      }
+    ]
+  },
+  "review": "Single-writer self-review of changed source and listed callers under explicit no-subagents policy. No changed authority/storage schema/history/cost/retry semantics; concrete lifecycle contracts checked. F07 remains cross-system review gate.",
+  "toolingCaution": "Existing F06 cache-closure/postrun/stderr defects were not changed. All runs fresh/no Resume, independent all-tracked input snapshots before/after with zero drift; stdout/stderr and run receipts archived.",
+  "recovery": [
+    "2060 checkout EOL-only differences restored from exact Git blobs; 3610 inventory,47handoff,3amendments passed before claim188.",
+    "Guest test initially omitted required generateId; compilation failure retained, corrected fixture then observed real behavioral RED.",
+    "Busy spinner invalidated old pumpAndSettle fixture assumption; replaced by bounded dialog pumps with unchanged consent/outcome assertions.",
+    "First breaker fix retained failed-probe lease; added behavioral RED and cleared lease when opening, then reran affected callers.",
+    "MSVC environment command was incorrectly list-escaped for cmd; corrected explicit cmd quoting, compiler succeeded without installation/network.",
+    "Formatter changed unrelated bootstrap-test layout; removed unrelated churn. First restoration failed to insert F01 cases due CRLF matching; diff caught it, reinserted both tests before final295-test run. Changed-line LF normalization preserved unchanged raw lines; staged diff check passed.",
+    "Two guessed reader paths were absent; switched to rg discovery and literal existing paths. No blind retries or acceptance skips.",
+    "Analyzer exit1 is seven checkpoint-identical informational diagnostics; exact line mappings recorded, no new diagnostics and no clean-analyze PASS claim."
+  ],
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "notRun": [
+    "installed app/release",
+    "physical camera/device",
+    "native assistive technology",
+    "provider/live",
+    "full release",
+    "training/B11A",
+    "research activation",
+    "cloud/deployment"
+  ],
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "recorder": {
+    "path": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/B18-G83-F01-recorder.py",
+    "sha256": "62db7330ecf43f33f2f9a60ac8727fe9958cd908ac35623c991fc9ef89142620",
+    "purpose": "historical one-shot writer; do not rerun"
+  }
+}

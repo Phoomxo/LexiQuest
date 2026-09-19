@@ -20,7 +20,9 @@
         "B18-REV10-03",
         "B18-REV10-04"
       ],
-      "status": "planned"
+      "status": "accepted-slice",
+      "receipt": "G8.3-F01-acceptance.json",
+      "closedCount": 9
     },
     {
       "sliceId": "B18-G83-F02",
@@ -169,7 +171,9 @@
       "dependencies": [],
       "regression": "Injected OfflineContentManager whose reconcile throws; assert dispose exactly once and original error preserved, including throwing cleanup",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV01-02",
@@ -179,7 +183,9 @@
       "dependencies": [],
       "regression": "Deferred consent/guest fake, rapid taps and throwing result; inspect canonical provider error contract before changing",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV01-03",
@@ -189,7 +195,9 @@
       "dependencies": [],
       "regression": "Controlled overlapping futures and provider caller analysis",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV02-01",
@@ -501,7 +509,9 @@
       "dependencies": [],
       "regression": "Hold actual preference read/write, dispose runtime/controller, release and await all futures; assert no notify-after-dispose/unhandled asynchronous error and no stale presentation. Compare before-commit and after-commit paths without discarding durable acknowledged preference.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV06-06",
@@ -551,7 +561,9 @@
       "dependencies": [],
       "regression": "Real temporary valid final bytes and ready/missing row with deferred verifier: cancel/dispose then release; assert no new activation or completion event, truthful cancellation, subsequent uncancelled recovery succeeds. Retain fresh commit-boundary and diagnostics exactly-once tests.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV07-02",
@@ -561,7 +573,9 @@
       "dependencies": [],
       "regression": "Inject throwing runtime.close and count camera.dispose through actual ObjectScannerUseCases; assert camera attempted once and error retained. Exercise repeated disposal/late initialization and native resource wrapper failure where injectable; no physical leak claim from fake.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV07-03",
@@ -571,7 +585,9 @@
       "dependencies": [],
       "regression": "Deferred repository/openRuntime and fake runtime through actual DeviceModelUseCases: start benchmark, dispose, complete open; assert bounded drain/cancellation and all handles closed, postdispose admission denied. Also cover route background stale display and ordinary CPU/XNN results.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV08-03",
@@ -733,7 +749,9 @@
       "dependencies": [],
       "regression": "Native invalid-surrogate and mocked size-query failure tests with allocation bound, plus null/empty/ASCII/Thai/supplementary Unicode positives. Preserve error result without accepting malformed encoding.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV10-04",
@@ -743,7 +761,9 @@
       "dependencies": [],
       "regression": "Native lifecycle harness delivers font-change before controller initialization and during teardown; confirm actual dispatch eligibility, then keep normal font reload behavior.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "outcomeReceipt": "G8.3-F01-acceptance.json"
     },
     {
       "findingId": "B18-REV10-05",
@@ -855,5 +875,5 @@
     }
   ],
   "executionPolicy": "Single writer, serial slices; bounded verify-scope actual supported flags. No full heavy suites together; reuse unchanged valid gates; no prohibited scan, provider/network/research/cloud/deploy/spending.",
-  "runtimeTestsRun": false
+  "runtimeTestsRun": true
 }

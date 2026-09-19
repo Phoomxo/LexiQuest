@@ -52,41 +52,59 @@
     {
       "id": "B18-REV01-01",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/runtime/app_bootstrap.dart",
       "trigger": "offlineContent.reconcile throws during composition",
       "expected": "Every already-composed manager is disposed before database closes, preserving original initialization failure",
       "actual": "offlineContent.dispose is registered only after reconcile, catalog recovery and device-model construction; failed reconcile skips ownership registration",
       "ownerPackage": "G1.7/G7.7",
       "proposedRegression": "Injected OfflineContentManager whose reconcile throws; assert dispose exactly once and original error preserved, including throwing cleanup",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-01",
+        "redRun": "bootstrap-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV01-02",
       "severity": "P2",
-      "status": "candidate-needs-caller-and-runtime-confirmation",
+      "status": "closed-regression-verified",
       "file": "lib/screens/login_screen.dart",
       "trigger": "Guest entry consent await permits duplicate taps; guest.start or consent persistence throws",
       "expected": "Single admitted entry operation with recoverable visible failure and busy cleared",
       "actual": "busy starts after first await; guest path lacks catch/finally",
       "ownerPackage": "G1.1",
       "proposedRegression": "Deferred consent/guest fake, rapid taps and throwing result; inspect canonical provider error contract before changing",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-02",
+        "redRun": "entry-red-fixture-corrected",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-needs-caller-and-runtime-confirmation"
     },
     {
       "id": "B18-REV01-03",
       "severity": "P2",
-      "status": "candidate-needs-concurrency-contract-confirmation",
+      "status": "closed-regression-verified",
       "file": "lib/runtime/circuit_breaker.dart",
       "trigger": "Closed-state request remains in flight while newer failures open circuit; old request then succeeds",
       "expected": "Confirm intended generation semantics before treating stale completion as fresh half-open health probe",
       "actual": "Every success calls _onSuccess without generation/state ownership",
       "ownerPackage": "G6.1/G7.6",
       "proposedRegression": "Controlled overlapping futures and provider caller analysis",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV01-03",
+        "redRun": "entry-circuit-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-needs-concurrency-contract-confirmation"
     },
     {
       "id": "B18-REV02-01",
@@ -608,7 +626,7 @@
     {
       "id": "B18-REV06-05",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/preferences/application/display_preferences_controller.dart",
       "relatedFiles": [
         "lib/runtime/app_bootstrap.dart",
@@ -626,8 +644,14 @@
         "main.dart:97-108",
         "resource_disposer_stack.dart:28-41"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV06-05",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-06",
@@ -713,7 +737,7 @@
     {
       "id": "B18-REV07-01",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/device_model/application/model_download_manager.dart",
       "relatedFiles": [
         "test/features/device_model/model_download_manager_test.dart",
@@ -727,13 +751,19 @@
       "evidenceLocations": [
         "model_download_manager.dart:295-332,441-458,520-533"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-01",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV07-02",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/media_practice/application/object_scanner_use_cases.dart",
       "relatedFiles": [
         "lib/features/device_model/data/litert_image_classifier.dart",
@@ -748,13 +778,19 @@
         "object_scanner_use_cases.dart:474-483",
         "litert_image_classifier.dart:201-207"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-02",
+        "redRun": "preferences-camera-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV07-03",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/device_model/application/device_model_use_cases.dart",
       "relatedFiles": [
         "lib/features/device_model/application/model_benchmark.dart",
@@ -772,8 +808,14 @@
         "object_scanner_use_cases.dart:284-293,474-483",
         "object_scanner_screen.dart:307-344"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV07-03",
+        "redRun": "device-drain-red",
+        "greenRun": "final-dart"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV08-03",
@@ -1084,7 +1126,7 @@
     {
       "id": "B18-REV10-03",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "windows/runner/utils.cpp",
       "relatedFiles": [
         "windows/runner/utils.h",
@@ -1100,13 +1142,19 @@
         "utils.h:12-19",
         "main.cpp:22-26"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV10-03",
+        "redRun": "native-red-compiler-env-corrected",
+        "greenRun": "final-native"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV10-04",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "windows/runner/flutter_window.cpp",
       "relatedFiles": [
         "windows/runner/win32_window.cpp"
@@ -1120,8 +1168,14 @@
         "flutter_window.cpp:41-69",
         "win32_window.cpp:136-158,164-172,218-228"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "4ebf58a8598e51282033b6f2430c0361f82b7063",
+      "retest": {
+        "receipt": "G8.3-F01-acceptance.json",
+        "findingId": "B18-REV10-04",
+        "redRun": "native-red-compiler-env-corrected",
+        "greenRun": "final-native"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV10-05",
