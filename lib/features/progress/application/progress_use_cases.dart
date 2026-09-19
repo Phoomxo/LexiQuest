@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:drift/drift.dart' show TableUpdateQuery;
+
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../data/drift_personal_learning_profile_reader.dart';
@@ -41,6 +45,38 @@ final class ProgressUseCases {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
     return queries.load(ownerId: ownerId, nowUtc: now);
+  }
+
+  /// Observes committed owner changes through the same owner authority as loads.
+  Stream<({String ownerId, String? firebaseUid})?> watchProfileOwner() {
+    final database = queries.database;
+    return Stream<({String ownerId, String? firebaseUid})?>.multi((sink) {
+      var cancelled = false;
+      var revision = 0;
+      Future<void> refresh() async {
+        final request = ++revision;
+        try {
+          final owner = await owners.getOrCreateActiveOwner();
+          if (!cancelled && request == revision) {
+            sink.add((ownerId: owner.id, firebaseUid: owner.firebaseUid));
+          }
+        } catch (error, stack) {
+          if (!cancelled && request == revision) sink.addError(error, stack);
+        }
+      }
+
+      // Subscribe before the first read so a concurrent transition cannot fall
+      // between the initial snapshot and the change listener. Superseded reads
+      // are discarded; no retained query stream is created for this signal.
+      final updates = database
+          .tableUpdates(TableUpdateQuery.onTable(database.localOwners))
+          .listen((_) => unawaited(refresh()), onError: sink.addError);
+      sink.onCancel = () {
+        cancelled = true;
+        return updates.cancel();
+      };
+      unawaited(refresh());
+    }).distinct();
   }
 
   Future<PersonalLearningProfile> loadPersonalLearningProfile() async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,59 @@ import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
+  testWidgets('replacement clears loaded axes and ignores pending old loader', (tester) async {
+    final first = Completer<PersonalLearningProfile>();
+    final second = Completer<PersonalLearningProfile>();
+    final third = Completer<PersonalLearningProfile>();
+    final loader = ValueNotifier<ProfileSettingsProfileLoader>(() => first.future);
+    addTearDown(loader.dispose);
+    await tester.pumpWidget(MaterialApp(home: ValueListenableBuilder<ProfileSettingsProfileLoader>(
+      valueListenable: loader,
+      builder: (context, current, _) => ProfileSettingsScreen(loader: current),
+    )));
+    first.complete(_profile);
+    await tester.pumpAndSettle();
+    expect(find.text('2 คำที่ชำนาญ'), findsOneWidget);
+    loader.value = () => second.future;
+    await tester.pump();
+    expect(find.text('2 คำที่ชำนาญ'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    loader.value = () => third.future;
+    await tester.pump();
+    third.complete(_empty);
+    await tester.pumpAndSettle();
+    second.complete(_profile);
+    await tester.pumpAndSettle();
+    expect(find.text('2 คำที่ชำนาญ'), findsNothing);
+    expect(find.text('ยังไม่มีหลักฐานการเรียนสำหรับโปรไฟล์นี้'), findsOneWidget);
+  });
+
+  testWidgets('same loader reloads on tab reactivation and contains synchronous failure', (tester) async {
+    var calls = 0;
+    final active = ValueNotifier<bool>(true);
+    addTearDown(active.dispose);
+    Future<PersonalLearningProfile> loader() {
+      calls++;
+      if (calls == 2) throw StateError('synthetic read failure');
+      return Future.value(_profile);
+    }
+    await tester.pumpWidget(MaterialApp(home: ValueListenableBuilder<bool>(
+      valueListenable: active,
+      builder: (context, enabled, _) => TickerMode(enabled: enabled,
+        child: ProfileSettingsScreen(loader: loader)),
+    )));
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+    active.value = false;
+    await tester.pump();
+    expect(calls, 1);
+    active.value = true;
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(tester.takeException(), isNull);
+    expect(find.text('ไม่สามารถอ่านข้อมูลในเครื่องได้'), findsOneWidget);
+  });
+
   testWidgets('profile stays compact and delegates its full overview', (
     tester,
   ) async {

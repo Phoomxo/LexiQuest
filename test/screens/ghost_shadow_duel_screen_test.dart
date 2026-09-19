@@ -11,9 +11,152 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/screens/ghost_shadow_duel_screen.dart';
 
 void main() {
+  testWidgets('retiring completed Ghost keeps failed close recoverable without implicit retry', (tester) async {
+    final repository = _RetryLearningRepository(failFirstAnswer: false, failFirstFinish: true);
+    var id = 0;
+    final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+      generateId: () => 'close-failure-${id++}', nowUtc: () => DateTime.utc(2026, 9, 19),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+    await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+      progressLoader: () async => _duelProgress, learning: learning,
+      evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+    await tester.pumpAndSettle();
+    final field = tester.widget<TextField>(find.byType(TextField));
+    field.controller!.text = 'durable';
+    field.onSubmitted!('durable');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('ghost-session-close-retry')), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    expect(repository.finishOwnerIds, ['owner-1']);
+    expect(repository.successfulFinishes, 0);
+    expect(repository.abandonOwnerIds, isEmpty);
+    expect(repository.commands, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final overlay in [false, true]) {
+    testWidgets('Ghost response excludes inactive time overlay=$overlay', (tester) async {
+      addTearDown(() => _resumeApp(tester));
+      final clock = _ManualStopwatch();
+      final repository = _RetryLearningRepository(failFirstAnswer: false);
+      var id = 0;
+      final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+        generateId: () => 'clock-${id++}', nowUtc: () => DateTime.utc(2026, 9, 19),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+      await tester.pumpWidget(MaterialApp(navigatorObservers: [appRouteObserver],
+        home: GhostShadowDuelScreen(responseClock: clock,
+          progressLoader: () async => _duelProgress, learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+      await tester.pumpAndSettle();
+      clock.nowMs += 200;
+      final field = tester.widget<TextField>(find.byType(TextField));
+      field.controller!.text = 'durable';
+      final navigator = tester.state<NavigatorState>(find.byType(Navigator));
+      if (overlay) {
+        unawaited(navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('cover')))));
+        await tester.pumpAndSettle();
+      } else {
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+      }
+      clock.nowMs += 60000;
+      field.onSubmitted!('durable');
+      await tester.pump();
+      expect(repository.commands, isEmpty);
+      if (overlay) {
+        navigator.pop();
+        await tester.pumpAndSettle();
+      } else {
+        _resumeApp(tester);
+        await tester.pump();
+      }
+      clock.nowMs += 300;
+      field.onSubmitted!('durable');
+      await tester.pumpAndSettle();
+      expect(repository.commands.single.responseTimeMs, 500);
+      expect(repository.successfulFinishes, 1);
+      expect(clock.isRunning, isFalse);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      _resumeApp(tester);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final count in [1, 2]) {
+    testWidgets('retirement waits for accepted answer count=$count', (tester) async {
+      final release = Completer<void>();
+      final repository = _RetryLearningRepository(firstAnswerRelease: release,
+        failFirstAnswer: false, wordCount: count);
+      var id = 0;
+      final learning = LearningUseCases(owners: _OwnerRepository(), repository: repository,
+        generateId: () => 'pending-${id++}', nowUtc: () => DateTime.utc(2026, 9, 19),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+      await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+        progressLoader: () async => _duelProgress, learning: learning,
+        evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+      await tester.pumpAndSettle();
+      final field = tester.widget<TextField>(find.byType(TextField));
+      field.controller!.text = 'durable';
+      field.onSubmitted!('durable');
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(repository.finishOwnerIds, isEmpty);
+      expect(repository.abandonOwnerIds, isEmpty);
+      release.complete();
+      await tester.pumpAndSettle();
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishOwnerIds, count == 1 ? ['owner-1'] : isEmpty);
+      expect(repository.abandonOwnerIds, count == 2 ? ['owner-1'] : isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+
+  for (final delayedStart in [false, true]) {
+    for (final failure in [false, true]) {
+      testWidgets('unfinished Ghost retirement abandons pinned owner delayed=$delayedStart fail=$failure', (tester) async {
+        final release = Completer<void>();
+        final repository = _RetryLearningRepository(failFirstAnswer: false,
+          startRelease: delayedStart ? release : null, failAbandon: failure,
+          wordCount: 2);
+        final owners = _OwnerRepository();
+        var id = 0;
+        final learning = LearningUseCases(owners: owners, repository: repository,
+          generateId: () => 'retire-${id++}', nowUtc: () => DateTime.utc(2026, 9, 19),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'));
+        await tester.pumpWidget(MaterialApp(home: GhostShadowDuelScreen(
+          progressLoader: () async => _duelProgress, learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning))));
+        await tester.pump();
+        if (!delayedStart) {
+          await tester.pumpAndSettle();
+          await tester.enterText(find.byType(TextField), 'durable');
+          tester.widget<TextField>(find.byType(TextField)).onSubmitted!('durable');
+          await tester.pumpAndSettle();
+          expect(repository.commands, hasLength(1));
+        }
+        expect(repository.startedSessions, 1);
+        owners.activeOwnerId = 'owner-2';
+        await tester.pumpWidget(const SizedBox.shrink());
+        if (delayedStart) release.complete();
+        await tester.pumpAndSettle();
+        expect(repository.finishOwnerIds, isEmpty);
+        expect(repository.abandonOwnerIds, ['owner-1']);
+        expect(repository.commands, hasLength(delayedStart ? 0 : 1));
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+
   for (final missing in ['time', 'date']) {
     testWidgets('B06 Ghost missing $missing cannot fabricate history or start session', (tester) async {
       final repository = _RetryLearningRepository(failFirstAnswer: false);
@@ -346,14 +489,21 @@ final class _OwnerRepository implements LocalOwnerRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final class _RetryLearningRepository implements LearningRepository {
+final class _RetryLearningRepository implements LearningRepository, LearningSessionLifecycleRepository {
   _RetryLearningRepository({
     this.firstAnswerRelease,
     this.failFirstAnswer = true,
     this.failFirstFinish = false,
+    this.startRelease,
+    this.failAbandon = false,
+    this.wordCount = 1,
   });
 
   final Completer<void>? firstAnswerRelease;
+  final Completer<void>? startRelease;
+  final bool failAbandon;
+  final int wordCount;
+  final List<String> abandonOwnerIds = [];
   final bool failFirstAnswer;
   final bool failFirstFinish;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
@@ -368,7 +518,7 @@ final class _RetryLearningRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     required int limit,
-  }) async => const <QuizWord>[
+  }) async => List.generate(wordCount, (index) =>
     QuizWord(
       id: 'word-1',
       categoryId: 'category-1',
@@ -376,14 +526,15 @@ final class _RetryLearningRepository implements LearningRepository {
       meaning: 'lasting',
       partOfSpeech: 'adjective',
     ),
-  ];
+  );
 
   @override
-  Future<void> startSession(LearningSessionDraft session) async { startedSessions += 1; }
+  Future<void> startSession(LearningSessionDraft session) async { startedSessions += 1; await startRelease?.future; }
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
+    await firstAnswerRelease?.future;
     if (failFirstAnswer && !_answerFailed) {
       _answerFailed = true;
       await firstAnswerRelease?.future;
@@ -394,6 +545,17 @@ final class _RetryLearningRepository implements LearningRepository {
       isCorrect: command.isCorrect,
       srs: null,
     );
+  }
+
+  @override
+  Future<LearningSessionSummary> abandonSession({required String ownerId,
+    required String sessionId, required DateTime abandonedAtUtc}) async {
+    abandonOwnerIds.add(ownerId);
+    if (failAbandon) throw StateError('synthetic abandon failure');
+    return LearningSessionSummary(id: sessionId, ownerId: ownerId,
+      activityType: 'ghostDuel', state: 'abandoned', startedAtUtc: abandonedAtUtc,
+      endedAtUtc: abandonedAtUtc, correctCount: commands.where((c) => c.isCorrect).length,
+      wrongCount: commands.where((c) => !c.isCorrect).length, score: 0);
   }
 
   @override
@@ -470,3 +632,25 @@ final _duelProgress = ProgressSnapshot(
   averageResponseTimeMs: 1000,
   latestEvidenceAtUtc: DateTime.utc(2026, 8, 14),
 );
+
+final class _ManualStopwatch implements Stopwatch {
+  int nowMs = 0;
+  int _elapsed = 0;
+  int? _started;
+  @override bool get isRunning => _started != null;
+  @override int get elapsedMilliseconds => _elapsed + (_started == null ? 0 : nowMs - _started!);
+  @override void start() { _started ??= nowMs; }
+  @override void stop() { _elapsed = elapsedMilliseconds; _started = null; }
+  @override void reset() { _elapsed = 0; if (isRunning) _started = nowMs; }
+  @override dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+void _resumeApp(WidgetTester tester) {
+  if (tester.binding.lifecycleState == AppLifecycleState.paused) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+  }
+  if (tester.binding.lifecycleState == AppLifecycleState.hidden) {
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+  }
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+}

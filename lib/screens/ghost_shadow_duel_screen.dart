@@ -7,6 +7,7 @@ import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../navigation/app_routes.dart';
 import '../services/ghost_shadow_duel_service.dart';
 
 typedef GhostProgressLoader = Future<ProgressSnapshot> Function();
@@ -17,21 +18,76 @@ class GhostShadowDuelScreen extends StatefulWidget {
     this.progressLoader,
     this.learning,
     this.evidenceAdapter,
+    this.responseClock,
   });
 
   final GhostProgressLoader? progressLoader;
   final LearningUseCases? learning;
+  final Stopwatch? responseClock;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<GhostShadowDuelScreen> createState() => _GhostShadowDuelScreenState();
 }
 
-class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
+class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen>
+    with WidgetsBindingObserver, RouteAware {
   LearningUseCases? _learning;
   Future<_DuelData>? _load;
   final _answer = TextEditingController();
-  final _stopwatch = Stopwatch();
+  late final _stopwatch = widget.responseClock ?? Stopwatch();
+  Future<void>? _saveInFlight;
+  PageRoute<dynamic>? _route;
+  bool _routeVisible = true;
+  bool _tickerEnabled = true;
+  bool _lifecycleActive = true;
+  bool _responseReady = false;
+  bool _retired = false;
+
+  bool get _canRespond =>
+      mounted &&
+      !_retired &&
+      _responseReady &&
+      _routeVisible &&
+      _tickerEnabled &&
+      _lifecycleActive &&
+      !_finished;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _lifecycleActive =
+        WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+  }
+
+  void _syncResponseClock() {
+    if (_canRespond && !_saving && _pendingEvidence == null) {
+      _stopwatch.start();
+    } else {
+      _stopwatch.stop();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleActive = state == AppLifecycleState.resumed;
+    _syncResponseClock();
+  }
+
+  @override
+  void didPushNext() {
+    _routeVisible = false;
+    _syncResponseClock();
+  }
+
+  @override
+  void didPopNext() {
+    _routeVisible = true;
+    _syncResponseClock();
+  }
+
   int _index = 0;
   int _playerHp = 100;
   int _ghostHp = 0;
@@ -46,6 +102,16 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final modalRoute = ModalRoute.of(context);
+    final route = modalRoute is PageRoute<dynamic> ? modalRoute : null;
+    if (!identical(route, _route)) {
+      if (_route != null) appRouteObserver.unsubscribe(this);
+      _route = route;
+      if (route != null) appRouteObserver.subscribe(this, route);
+    }
+    _routeVisible = modalRoute?.isCurrent ?? true;
+    _tickerEnabled = TickerMode.valuesOf(context).enabled;
+    _syncResponseClock();
     if (_load != null) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _learning ??= widget.learning ?? dependencies?.learning;
@@ -75,7 +141,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     LearningUseCases? learning,
   ) async {
     final progress = await loadProgress();
-    if (progress.sampleSize == 0 || progress.weaknesses.isEmpty) {
+    if (!mounted || progress.sampleSize == 0 || progress.weaknesses.isEmpty) {
       return _DuelData.empty(progress);
     }
     if (learning == null) {
@@ -83,7 +149,9 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     }
     final averageMs = progress.averageResponseTimeMs;
     final recordedAt = progress.latestEvidenceAtUtc;
-    if (averageMs == null || !averageMs.isFinite || averageMs <= 0 ||
+    if (averageMs == null ||
+        !averageMs.isFinite ||
+        averageMs <= 0 ||
         recordedAt == null) {
       throw StateError('observed ghost timing history unavailable');
     }
@@ -103,7 +171,8 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
       ghostSnapshot,
     );
     _ghostHp = opponent.maxHp;
-    _stopwatch.start();
+    _responseReady = true;
+    _syncResponseClock();
     return _DuelData(
       progress: progress,
       session: session,
@@ -113,12 +182,14 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   }
 
   Future<void> _submit(_DuelData data) async {
-    if (!mounted || _saving || _finished || _pendingEvidence != null) return;
-    if (_answer.value.composing.isValid &&
-        !_answer.value.composing.isCollapsed) return;
+    if (!_canRespond || _saving || _pendingEvidence != null) return;
+    if (_answer.value.composing.isValid && !_answer.value.composing.isCollapsed) {
+      return;
+    }
     final input = _answer.text.trim().toLowerCase();
     if (input.isEmpty) return;
     final question = data.session.questions[_index];
+    _stopwatch.stop();
     final responseMs = _stopwatch.elapsedMilliseconds;
     final correct = input == question.word.spelling.trim().toLowerCase();
     final pending = _evidenceAdapter!.capture(
@@ -133,15 +204,19 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     );
     _pendingEvidence = pending;
     setState(() => _saving = true);
-    await _commitPending(data, question, pending, retry: false);
+    _saveInFlight = _commitPending(data, question, pending, retry: false);
+    await _saveInFlight;
   }
 
   Future<void> _retryEvidence(_DuelData data) async {
     final pending = _pendingEvidence;
-    if (!mounted || pending == null || !pending.requiresRetry || _saving) return;
+    if (!_canRespond || pending == null || !pending.requiresRetry || _saving) {
+      return;
+    }
     final question = data.session.questions[_index];
     setState(() => _saving = true);
-    await _commitPending(data, question, pending, retry: true);
+    _saveInFlight = _commitPending(data, question, pending, retry: true);
+    await _saveInFlight;
   }
 
   Future<void> _commitPending(
@@ -161,6 +236,11 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
         isCorrect: pending.isCorrect,
         snapshot: data.snapshot,
       );
+      // Retirement must classify the accepted response even if the UI is gone.
+      _finished =
+          (turn.playerHitGhost && _ghostHp - turn.damageDealt <= 0) ||
+          (!turn.playerHitGhost && _playerHp - 15 <= 0) ||
+          _index + 1 >= data.session.questions.length;
       if (!mounted) return;
       setState(() {
         _answer.clear();
@@ -186,9 +266,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
             _ghostHp == 0 ||
             _playerHp == 0 ||
             _index >= data.session.questions.length;
-        _stopwatch
-          ..reset()
-          ..start();
+        _stopwatch.reset();
       });
       if (_finished) await _closeSession(data.session);
     } catch (_) {
@@ -199,6 +277,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+      _syncResponseClock();
     }
   }
 
@@ -220,7 +299,9 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   }
 
   Future<void> _retrySessionClose(_DuelData data) async {
-    if (!mounted || _saving || _pendingSessionClose?.requiresRetry != true) return;
+    if (!mounted || _saving || _pendingSessionClose?.requiresRetry != true) {
+      return;
+    }
     setState(() => _saving = true);
     try {
       await _closeSession(data.session);
@@ -232,21 +313,41 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+      _syncResponseClock();
+    }
+  }
+
+  Future<void> _retire(Future<_DuelData> load) async {
+    try {
+      final data = await load;
+      await _saveInFlight;
+      if (data.session.isEmpty || _sessionClosed) return;
+      if (_finished) {
+        // A failed close retains its explicit retry/recovery status.
+        if (_pendingSessionClose?.requiresRetry != true) {
+          await _closeSession(data.session);
+        }
+      } else {
+        await _learning!.abandonSession(
+          ownerId: data.session.ownerId,
+          sessionId: data.session.id,
+          abandonedAtUtc: _learning!.nowUtc(),
+        );
+        _sessionClosed = true;
+      }
+    } catch (_) {
+      // Retirement cannot report to a disposed route. The durable unfinished
+      // session remains recoverable; never replace a failed abandon with finish.
     }
   }
 
   @override
   void dispose() {
+    _retired = true;
+    WidgetsBinding.instance.removeObserver(this);
+    if (_route != null) appRouteObserver.unsubscribe(this);
     final load = _load;
-    if (load != null) {
-      unawaited(
-        load.then<void>((data) async {
-          if (!data.session.isEmpty) await _closeSession(data.session);
-        }, onError: (Object _, StackTrace __) {
-          // An unavailable load owns no session to close.
-        }),
-      );
-    }
+    if (load != null) unawaited(_retire(load));
     _stopwatch.stop();
     _answer.dispose();
     super.dispose();
