@@ -10,11 +10,11 @@
       "lines": 38,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full38 lines read. ExactLF contentJSON and B07-B16JSON, binarylogs; B17JSON/logsbinary. No generalB18rule so explicitUTF8LF writers and core.autocrlf=false required inreview; actualfreeze bytesverifiedseparately.",
+      "reviewNotes": "Full38 lines read. ExactLF contentJSON and B07-B16JSON, binarylogs; B17JSON/logsbinary. No generalB18rule so explicitUTF8LF writers and core.autocrlf=false required inreview; actualfreeze bytesverifiedseparately. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -31,11 +31,11 @@
       "lines": 64,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full64 lines read. Publicissue privacywarning and required pseudonymousstudycode/build/device/network/steps/result/checkbox. Freeform notautomaticallyredacted; studycode itselflinkable, no publicationorassignmentperformed.",
+      "reviewNotes": "Full64 lines read. Publicissue privacywarning and required pseudonymousstudycode/build/device/network/steps/result/checkbox. Freeform notautomaticallyredacted; studycode itselflinkable, no publicationorassignmentperformed. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -52,11 +52,14 @@
       "lines": 110,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full110 lines read. Nine ecosystemlocations weeklyMondayBangkok/PRlimit5 and grouped version-update:semver-minor/patch strings. Group schema validity requires matching CLIoracle/docs before promotion; configuration intent not actualdependabotrun.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-06"
+      ],
+      "reviewNotes": "Full110 lines read. Nine ecosystemlocations weeklyMondayBangkok/PRlimit5 and grouped version-update:semver-minor/patch strings. Group schema validity requires matching CLIoracle/docs before promotion; configuration intent not actualdependabotrun. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -73,11 +76,13 @@
       "lines": 133,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full133 lines read. Readonlypermissions pinnedactions,45minUbuntu serialCLI/Firestore/Supabase/Flutter/backendCPU/debugAPK stages, cancellationperref. No fullreleaseverifier or auth emulator command; Flutterpubgetunfrozen, versiondefine1.0.0+1 vsmanifest+14 and emulator URLsdebugonly. CLIstep invokesseveralPowerShellscripts without explicitLASTEXITCODE perline; oracleexit semantics pending. Configreview only no workflow invocation.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-07"
+      ],
+      "reviewNotes": "Full133 lines read. Readonlypermissions pinnedactions,45minUbuntu serialCLI/Firestore/Supabase/Flutter/backendCPU/debugAPK stages, cancellationperref. No fullreleaseverifier or auth emulator command; Flutterpubgetunfrozen, versiondefine1.0.0+1 vsmanifest+14 and emulator URLsdebugonly. CLIstep invokesseveralPowerShellscripts without explicitLASTEXITCODE perline; oracleexit semantics pending. Configreview only no workflow invocation. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -94,11 +99,11 @@
       "lines": 35,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full35 lines read. Existingpinned readonlymainpush/PR/merge workflow fullhistory10min, checkoutcredentialsfalse and commentsdisabled. Sourceinspection only; no scan/workflow invoked or recommended.",
+      "reviewNotes": "Full35 lines read. Existingpinned readonlymainpush/PR/merge workflow fullhistory10min, checkoutcredentialsfalse and commentsdisabled. Sourceinspection only; no scan/workflow invoked or recommended. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -115,11 +120,11 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full16 lines read. Existingpinned reusablePR/mergeworkflow withreadcontents/actions andsecurityeventswrite; no directsteps/concurrency/timeout locally, reusableauthorityexternal notexecuted.",
+      "reviewNotes": "Full16 lines read. Existingpinned reusablePR/mergeworkflow withreadcontents/actions andsecurityeventswrite; no directsteps/concurrency/timeout locally, reusableauthorityexternal notexecuted. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -136,11 +141,11 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full16 lines read. Existingpinned reusablemainpush/weeklyUTC21Sunday workflow; no workflow/schedulecreatedorinvoked. External reusableimplementation not read here.",
+      "reviewNotes": "Full16 lines read. Existingpinned reusablemainpush/weeklyUTC21Sunday workflow; no workflow/schedulecreatedorinvoked. External reusableimplementation not read here. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -157,11 +162,11 @@
       "lines": 92,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full92 lines read. Generated/runtime/localbackend data/checkpoints/field evidence/node_modules and model/audio artifacts ignored; duplicatesbenign. Does not generallyignore every possible.env, no secretsearchoruntrackedsource inference. Existingcheckpoint checks verify ignoredinventory.",
+      "reviewNotes": "Full92 lines read. Generated/runtime/localbackend data/checkpoints/field evidence/node_modules and model/audio artifacts ignored; duplicatesbenign. Does not generallyignore every possible.env, no secretsearchoruntrackedsource inference. Existingcheckpoint checks verify ignoredinventory. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -178,11 +183,11 @@
       "lines": 93,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full93 lines read. Defaultsrulesextended plus scoped pathANDfixedsentinel/publicclient-key regex allowlists, mostlysecret/match target; lastPaircases specificgenericrule. Sourceonly, not assurance of parserversion semantics/noactive scan.",
+      "reviewNotes": "Full93 lines read. Defaultsrulesextended plus scoped pathANDfixedsentinel/publicclient-key regex allowlists, mostlysecret/match target; lastPaircases specificgenericrule. Sourceonly, not assurance of parserversion semantics/noactive scan. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -199,11 +204,11 @@
       "lines": 40,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full40 lines read. Fixedhistorical commit:path:rule:line suppressions forremovedpublicclientJWT/dummykeys/leaseidentities; no wildcard currenttree suppression. Comments notproof priorcredentialrotation, no scan.",
+      "reviewNotes": "Full40 lines read. Fixedhistorical commit:path:rule:line suppressions forremovedpublicclientJWT/dummykeys/leaseidentities; no wildcard currenttree suppression. Comments notproof priorcredentialrotation, no scan. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -220,11 +225,11 @@
       "lines": 45,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full45 lines read. Flutter creation/migration revision2663184 stable across7platforms, unmanagedmain/iOSproject. This trackscreation notactualSDK revision84fc5cbb usedinpreviouscrosscheck.",
+      "reviewNotes": "Full45 lines read. Flutter creation/migration revision2663184 stable across7platforms, unmanagedmain/iOSproject. This trackscreation notactualSDK revision84fc5cbb usedinpreviouscrosscheck. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -346,11 +351,11 @@
       "lines": 28,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Includes flutter_lints recommended defaults; rules block comments only, no source exclusions or global disabled checks.",
+      "reviewNotes": "Full file read. Includes flutter_lints recommended defaults; rules block comments only, no source exclusions or global disabled checks. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -5645,11 +5650,11 @@
       "lines": 222,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full222. Historical pinned48main/382R15 nonmerge semantic dispositions plus10merges; full changedpath raw binary patchSHA, endpoint blob/size comparisons. Ordered regex ownership defaults residualP0.5, explicit main decisions/cumulative R15 source adoption not percommit tested. Writes old census/ledger; never rerun against current checkout. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full222. Historical pinned48main/382R15 nonmerge semantic dispositions plus10merges; full changedpath raw binary patchSHA, endpoint blob/size comparisons. Ordered regex ownership defaults residualP0.5, explicit main decisions/cumulative R15 source adoption not percommit tested. Writes old census/ledger; never rerun against current checkout. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -5694,11 +5699,11 @@
       "lines": 136,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full136. Historical exactcommonGitdir/HEAD/branch constraints; independent log compares430commit/pathsets and4886rows1603paths, perpath endpoint blobs and permitted disposition/owner. PatchSHA syntax only not recomputation. Preserve old ledger via normalization and docs-only diff/untracked, links and sourcepins; assert-based inspection evidence output not runtime acceptance. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full136. Historical exactcommonGitdir/HEAD/branch constraints; independent log compares430commit/pathsets and4886rows1603paths, perpath endpoint blobs and permitted disposition/owner. PatchSHA syntax only not recomputation. Preserve old ledger via normalization and docs-only diff/untracked, links and sourcepins; assert-based inspection evidence output not runtime acceptance. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -5841,11 +5846,11 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full24. Prior1325input closure hashes/sourceblob/logs/two resumedcommand duration/status and20entry10negative registry evidence plusP0.4 accepted. Trusts retainedmanifest and recordedcommands, does not independently execute/replay. Historical count assertions not current gates. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full24. Prior1325input closure hashes/sourceblob/logs/two resumedcommand duration/status and20entry10negative registry evidence plusP0.4 accepted. Trusts retainedmanifest and recordedcommands, does not independently execute/replay. Historical count assertions not current gates. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -5862,11 +5867,11 @@
       "lines": 57,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full57. Static registry command path extraction, Economy/Integration missingtargets explicitly unavailable. Ten child verifier rejections and Release PlanOnly no frozenvalidSHA, checks native exit/status. Writes historical registryverification; expected rejection anynonzero not specific reason/dispatch observer. No execution here. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full57. Static registry command path extraction, Economy/Integration missingtargets explicitly unavailable. Ten child verifier rejections and Release PlanOnly no frozenvalidSHA, checks native exit/status. Writes historical registryverification; expected rejection anynonzero not specific reason/dispatch observer. No execution here. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -5883,11 +5888,11 @@
       "lines": 164,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full164. Documentation-only regex catalog/default/delivery extraction, explicit17routefree boundaries/14mode mapping/74overlapping records, contentprofiles. Pins working bytes to historical SOURCE Git with EOL-only normalization; preserves observed runtime-not-run but mutates oldledgerP0.5 accepted as generator step. Historic schema26 intentional, must not regenerate current. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full164. Documentation-only regex catalog/default/delivery extraction, explicit17routefree boundaries/14mode mapping/74overlapping records, contentprofiles. Pins working bytes to historical SOURCE Git with EOL-only normalization; preserves observed runtime-not-run but mutates oldledgerP0.5 accepted as generator step. Historic schema26 intentional, must not regenerate current. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -5932,11 +5937,11 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full129. Exact74identities44/14/2/14 eightdomains, pins/sourceblobs/EOL/authority/readiness/testpaths/routes and unchangedstatuses. Literal declaration checks notruntime; application dirs diffunchanged; selected exception ledger preservation and links. Writes historical accepted inspection explicitruntimefalse, asserts normal Python only. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full129. Exact74identities44/14/2/14 eightdomains, pins/sourceblobs/EOL/authority/readiness/testpaths/routes and unchangedstatuses. Literal declaration checks notruntime; application dirs diffunchanged; selected exception ledger preservation and links. Writes historical accepted inspection explicitruntimefalse, asserts normal Python only. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6037,11 +6042,11 @@
       "lines": 129,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full129. Historic BASE/revision18orchestration guard;64uniqueordered requirement bodies unchanged,5history+59remaining20bundles,dependencies precede packages,74coverage preserved andactualhandoffancestry. Currentwriter no future dispatch, relative links/stale workflow markers/docs-only changes. Writes report/index/manifest acyclic; inspection not runtime and obsolete controlrevision means never rerun. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full129. Historic BASE/revision18orchestration guard;64uniqueordered requirement bodies unchanged,5history+59remaining20bundles,dependencies precede packages,74coverage preserved andactualhandoffancestry. Currentwriter no future dispatch, relative links/stale workflow markers/docs-only changes. Writes report/index/manifest acyclic; inspection not runtime and obsolete controlrevision means never rerun. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6156,11 +6161,11 @@
       "lines": 77,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full77. Baseline Git census docs active/support/historical classification retain-in-place;76failurePNGs literal refs/textunder2MB plusgoldenstem and restoreblob SHA. No deletes/moves; missingliteralref explicitly notunusedproof, dynamicrefs limitation. Writes historical registry only. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full77. Baseline Git census docs active/support/historical classification retain-in-place;76failurePNGs literal refs/textunder2MB plusgoldenstem and restoreblob SHA. No deletes/moves; missingliteralref explicitly notunusedproof, dynamicrefs limitation. Writes historical registry only. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6177,11 +6182,11 @@
       "lines": 104,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full104. Local preview specification true/cloudfalse, Android target historical not observed, fourdeliverydecisions incl f12pending/f28hidden;74activationrows carry runtimeNOTRUN, featurestate insufficient. AdoptsD01-D12body hashes/oldunavailableobligations, sixexternalgates/no spending/research. Schema26 and oldf12sourceintent historic notcurrent compiledflags. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full104. Local preview specification true/cloudfalse, Android target historical not observed, fourdeliverydecisions incl f12pending/f28hidden;74activationrows carry runtimeNOTRUN, featurestate insufficient. AdoptsD01-D12body hashes/oldunavailableobligations, sixexternalgates/no spending/research. Schema26 and oldf12sourceintent historic notcurrent compiledflags. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6198,11 +6203,11 @@
       "lines": 215,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full215. Twelve explicit source-symbol/hash/HEADblob authority registries and60 downstream fixtures; writers/readers/tests existence only, separates existing firstansweraggregate and emptytranscript defects from desired behavior. Null denominators/XPvscoin/monotonic/UTC/recreational/textsimilarity/costunknown preserved; fixture specifications not executed or language/model/statistical science. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full215. Twelve explicit source-symbol/hash/HEADblob authority registries and60 downstream fixtures; writers/readers/tests existence only, separates existing firstansweraggregate and emptytranscript defects from desired behavior. Null denominators/XPvscoin/monotonic/UTC/recreational/textsimilarity/costunknown preserved; fixture specifications not executed or language/model/statistical science. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6247,11 +6252,11 @@
       "lines": 51,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full51. Reuse3passed inspectiongates fingerprint/source/verifier checks, docs-only allowlist/no deletions, exact2open-owned formula defects andlinks. Structuredselfreview explicit no subagents/runtime; no semantic proof beyond manualreport/hash. Never rerun oldbundle to claimcurrent acceptance. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full51. Reuse3passed inspectiongates fingerprint/source/verifier checks, docs-only allowlist/no deletions, exact2open-owned formula defects andlinks. Structuredselfreview explicit no subagents/runtime; no semantic proof beyond manualreport/hash. Never rerun oldbundle to claimcurrent acceptance. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6268,11 +6273,11 @@
       "lines": 70,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full70. Exactbaseline docset76failure records hashes/blob recovery, retain/no deletion, priorworkflow pins checked byacceptedGitEOLvariants andlinks. Historicaldocs-onlydiff; untracked scope not checked here (bundle verifier does). Writes inspection receipt not runtime. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full70. Exactbaseline docset76failure records hashes/blob recovery, retain/no deletion, priorworkflow pins checked byacceptedGitEOLvariants andlinks. Historicaldocs-onlydiff; untracked scope not checked here (bundle verifier does). Writes inspection receipt not runtime. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6289,11 +6294,11 @@
       "lines": 125,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full125. Exact74rows/fourdecisions/default profile/noinstalledbuild, literalcurrent-at-B01 declarations/handwriting omission;169oldGitpins andpreviousgates checks, exactoldwriter/G0.8/ancestor receipts. Development readiness only; actual binaryflags/native/remote absent. Obsoleteoldsource checks are historical not new defects. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full125. Exact74rows/fourdecisions/default profile/noinstalledbuild, literalcurrent-at-B01 declarations/handwriting omission;169oldGitpins andpreviousgates checks, exactoldwriter/G0.8/ancestor receipts. Development readiness only; actual binaryflags/native/remote absent. Obsoleteoldsource checks are historical not new defects. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -6310,11 +6315,11 @@
       "lines": 81,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full81. NormalPython asserts12registry closure/symbolline/hashes/testpaths; selected independentFraction/integer/date/Wilson arithmetic values (notall60 runtime fixtures). Preserves2downstreamdefects/docs-only. Explicit noDartbehavior/run; no report execution here. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full81. NormalPython asserts12registry closure/symbolline/hashes/testpaths; selected independentFraction/integer/date/Wilson arithmetic values (notall60 runtime fixtures). Preserves2downstreamdefects/docs-only. Explicit noDartbehavior/run; no report execution here. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -22459,11 +22464,11 @@
       "lines": 62,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full62. Hardcodedlocalexternal trainedSHA/12871389bytes/exportparity and realLiteRt CPU16class runtime;fourdevelopmentvalidation rawRGB pins scores within.001, class0book andtop10ordering. Probe depends localexternalartifacts, no camera/device/quality generalization; no run here. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full62. Hardcodedlocalexternal trainedSHA/12871389bytes/exportparity and realLiteRt CPU16class runtime;fourdevelopmentvalidation rawRGB pins scores within.001, class0book andtop10ordering. Probe depends localexternalartifacts, no camera/device/quality generalization; no run here. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -23082,11 +23087,11 @@
       "lines": 82,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full82. Three prior closures exact/EOL or explicitattribute exception and relocatedcandidate test; oldF3/F4 Gitbyte preservation and source delta pinnedB11A. Recomputes config/freeze/metrics but no model inference. Attribute delta checks additions only, historical scoped trust not blanket fingerprint. Exclusiveoutput, not executed/reporting outside package. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full82. Three prior closures exact/EOL or explicitattribute exception and relocatedcandidate test; oldF3/F4 Gitbyte preservation and source delta pinnedB11A. Recomputes config/freeze/metrics but no model inference. Attribute delta checks additions only, historical scoped trust not blanket fingerprint. Exclusiveoutput, not executed/reporting outside package. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -23117,11 +23122,11 @@
       "lines": 86,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full86. Top-levelCPU TensorFlow WindowsRSS ctypes, pinnedexport probes,4threadbuiltins nodelegates. Coldload+first,5warm50invoke andoptional30GCcycles; includesmetadataget+set/get timing, PythonGCnotnativeleak proof. Exactshape/finite/sum checks andexclusiveoutput; no baseline/nativecamera, never run review. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full86. Top-levelCPU TensorFlow WindowsRSS ctypes, pinnedexport probes,4threadbuiltins nodelegates. Coldload+first,5warm50invoke andoptional30GCcycles; includesmetadataget+set/get timing, PythonGCnotnativeleak proof. Exactshape/finite/sum checks andexclusiveoutput; no baseline/nativecamera, never run review. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -23740,11 +23745,11 @@
       "lines": 60,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full60. Retainedlogs exacthash, gateclosure deltas allowed seven specificpaths/manual dispositions, red hash differences recorded; Passed commands exits0 but not exactnewfingerprint. Sourcechange bounded and baseline/EOL unchanged; no physical/live. Allowlist alone not byteproof of matching supplementarytestversion; preserve scoped inherited claim. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full60. Retainedlogs exacthash, gateclosure deltas allowed seven specificpaths/manual dispositions, red hash differences recorded; Passed commands exits0 but not exactnewfingerprint. Sourcechange bounded and baseline/EOL unchanged; no physical/live. Allowlist alone not byteproof of matching supplementarytestversion; preserve scoped inherited claim. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -24055,11 +24060,11 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full43. Copies allcurrent buildverification targeted receipts/logs intoB14 overwriting destinations, normalizesreceiptEOL retainsrawlogs; current input mismatches recorded, optional loghash assertion. Collection/audit notacceptance and canemptyglob; do not rerun historical copier. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full43. Copies allcurrent buildverification targeted receipts/logs intoB14 overwriting destinations, normalizesreceiptEOL retainsrawlogs; current input mismatches recorded, optional loghash assertion. Collection/audit notacceptance and canemptyglob; do not rerun historical copier. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -24104,11 +24109,11 @@
       "lines": 54,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full54. B13committedartifactsha/bytes+workingEOLcheck, B14gate logs hashes/deltas reported not rejected; only forbidai_tutor productiondelta while scopedUI/speech reverified externally. No aggregatepass/fingerprint equality; writesaudit. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full54. B13committedartifactsha/bytes+workingEOLcheck, B14gate logs hashes/deltas reported not rejected; only forbidai_tutor productiondelta while scopedUI/speech reverified externally. No aggregatepass/fingerprint equality; writesaudit. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -25651,11 +25656,11 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full52. ExactinheritedB14Gitblobs BASEandHEAD,3recorded commands passed/lograwhash. FinalFlutterCLI allclosure exact/EOL; rules gate requires5rules/test/config/lockpins unchanged whileotherdelta explicitlyscoped. AcceptedmixedEOL explained notraw equality; no currentruntimeclaim. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full52. ExactinheritedB14Gitblobs BASEandHEAD,3recorded commands passed/lograwhash. FinalFlutterCLI allclosure exact/EOL; rules gate requires5rules/test/config/lockpins unchanged whileotherdelta explicitlyscoped. AcceptedmixedEOL explained notraw equality; no currentruntimeclaim. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -25686,11 +25691,11 @@
       "lines": 14,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full14. Toolresolution diagnostic then parses verify-scope AST and InvokeExpression eachfunction declaration before GetEnvironmentFingerprint. No fullgate, but definition import/fingerprint probes host not pureparse; parseerrorsunchecked and dependscurrentroot. Not executed. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full14. Toolresolution diagnostic then parses verify-scope AST and InvokeExpression eachfunction declaration before GetEnvironmentFingerprint. No fullgate, but definition import/fingerprint probes host not pureparse; parseerrorsunchecked and dependscurrentroot. Not executed. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -27807,11 +27812,11 @@
       "lines": 85,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full85. Regexownpackage import/export/part transitiveclosure withpubspec for6receipts, supplementalarchitecturepins; missing/changed lists reported noassert until optionalcommittedartifactcheck. Unknown/nonfile paths silentlyskip, non-Dartdynamicassets outside closure. Writesaudit/index; receipt import hash evidence scopednot fullenvironment. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full85. Regexownpackage import/export/part transitiveclosure withpubspec for6receipts, supplementalarchitecturepins; missing/changed lists reported noassert until optionalcommittedartifactcheck. Unknown/nonfile paths silentlyskip, non-Dartdynamicassets outside closure. Writesaudit/index; receipt import hash evidence scopednot fullenvironment. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -27828,11 +27833,11 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full28. Rawselectedreceipt copy and recursiveexisting.log string copies basenameprefixed. Missinglogs silentlyskip/possiblebasenamecollision, nohashvalidation here, laterauditrequired; arbitraryoperator paths not trustedremote input. Overwrites destination; do not rerun. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full28. Rawselectedreceipt copy and recursiveexisting.log string copies basenameprefixed. Missinglogs silentlyskip/possiblebasenamecollision, nohashvalidation here, laterauditrequired; arbitraryoperator paths not trustedremote input. Overwrites destination; do not rerun. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -28969,11 +28974,11 @@
       "lines": 65,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full65. TwoexactDartclosure+pubspec assertions andsixscopedbackend/lib receipts, CLI conservative deltas only recorded; ignoresmissingCLI inputs inthatloop. InheritedB15B16artifacthash and actualbundleZIPSHA; createsindex plusoptionalGitbatchbyteassert. Fullverifierenvironment equality expresslyexcluded, no newruntime. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full65. TwoexactDartclosure+pubspec assertions andsixscopedbackend/lib receipts, CLI conservative deltas only recorded; ignoresmissingCLI inputs inthatloop. InheritedB15B16artifacthash and actualbundleZIPSHA; createsindex plusoptionalGitbatchbyteassert. Fullverifierenvironment equality expresslyexcluded, no newruntime. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -28990,11 +28995,11 @@
       "lines": 64,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full64. Fourrequestedtargets matching previousB13/14/16 receipt selection, Passed/Reused commands, rejectsnamefiltered runs. Ownpackage regeximports/pubspec hashes+explicitEOLvariants, returnslastmatching traversal notchronological; externalassets/plugins/environment omitted scoped limitation. No newexecution, no blanketfingerprint. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full64. Fourrequestedtargets matching previousB13/14/16 receipt selection, Passed/Reused commands, rejectsnamefiltered runs. Ownpackage regeximports/pubspec hashes+explicitEOLvariants, returnslastmatching traversal notchronological; externalassets/plugins/environment omitted scoped limitation. No newexecution, no blanketfingerprint. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -29011,11 +29016,11 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full28. Same rawreceipt/recursiveexistinglog capture asB16, staleB16docstring only. Missinglogsilentlyskipped/basenamecollision possible andnohashvalidation; finalaudit mustvalidate. Operatorhelper writesB17, noexecutionhere. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full28. Same rawreceipt/recursiveexistinglog capture asB16, staleB16docstring only. Missinglogsilentlyskipped/basenamecollision possible andnohashvalidation; finalaudit mustvalidate. Operatorhelper writesB17, noexecutionhere. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -29088,11 +29093,11 @@
       "lines": 35,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full35. Actualflutter_assets everyfilehash, literalpubspecasset files bytecompare/nonemptykernel/no candidate filename, capturedZIP exclusiveprecheck. Regexdirectoryassets wouldnotwork butactualprofile files selected; check-to-makearchive race notglobalexclusive. Claims unsigneddebugbundle notAPK/no independentlydecodedflags; preservesexternalpath. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full35. Actualflutter_assets everyfilehash, literalpubspecasset files bytecompare/nonemptykernel/no candidate filename, capturedZIP exclusiveprecheck. Regexdirectoryassets wouldnotwork butactualprofile files selected; check-to-makearchive race notglobalexclusive. Claims unsigneddebugbundle notAPK/no independentlydecodedflags; preservesexternalpath. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -29109,11 +29114,11 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full31. Gitbatch allHEADblob reads, onlyNUL-free/EOL-normalizedequal files rewritten toexactGitbytes; nonEOLerrorraises afterpreviouspartialrestores (noatomicwholecheckout). Diagnosticreceipt explicitlyremainingrestoration, notcompleteearlierhistory; not safe to rerun after intentionalEOLedits and notexecuted. Full source read; no B18 runtime gate or zone acceptance.",
+      "reviewNotes": "Full31. Gitbatch allHEADblob reads, onlyNUL-free/EOL-normalizedequal files rewritten toexactGitbytes; nonEOLerrorraises afterpreviouspartialrestores (noatomicwholecheckout). Diagnosticreceipt explicitlyremainingrestoration, notcompleteearlierhistory; not safe to rerun after intentionalEOLedits and notexecuted. Full source read; no B18 runtime gate or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -31818,11 +31823,11 @@
       "lines": 42,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Firestore/storage rulepaths, dedicated auth hosting publicdirectory and assetlinks contenttype/300scache, emulator auth9099/firestore8080 loopback. No deploy or emulator invocation.",
+      "reviewNotes": "Full file read. Firestore/storage rulepaths, dedicated auth hosting publicdirectory and assetlinks contenttype/300scache, emulator auth9099/firestore8080 loopback. No deploy or emulator invocation. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46415,11 +46420,13 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full10 lines read. Oneadvisoryexception through2026-10-26 tiedtooptionalstorage uuid9transitivefirebase-admin14.2; scope rationale stated, current dependency reachability/lock inspection separate. No networkadvisorycheck or scan.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02"
+      ],
+      "reviewNotes": "Full10 lines read. Oneadvisoryexception through2026-10-26 tiedtooptionalstorage uuid9transitivefirebase-admin14.2; scope rationale stated, current dependency reachability/lock inspection separate. No networkadvisorycheck or scan. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -46436,11 +46443,11 @@
       "lines": 3350,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Complete structured JSON review of3350lines/263resolved packages; all HTTPS registry.npmjs.org with decodable integritySHA512/SHA1 and dependency names resolve through node_modules ancestry. Root firebase-admin14.2.0/rules-unit-testing5.0.1/firebase12.16.0 and Node>=22 match manifest; brace-expansion2.1.4 override resolved. No links/local source. Install hooks flagged @firebase/util and protobufjs; deprecation metadata glob10.5.0/node-domexception1.0.0/uuid9.0.1 is package metadata only, not independently established vulnerability. Firebase CLI used by scripts is not locked here. Reviewed version inventory/structural metadata, not downloaded artifact hashes or semver/platform resolution execution. No npm install/audit/seed/emulator/network run.",
+      "reviewNotes": "Complete structured JSON review of3350lines/263resolved packages; all HTTPS registry.npmjs.org with decodable integritySHA512/SHA1 and dependency names resolve through node_modules ancestry. Root firebase-admin14.2.0/rules-unit-testing5.0.1/firebase12.16.0 and Node>=22 match manifest; brace-expansion2.1.4 override resolved. No links/local source. Install hooks flagged @firebase/util and protobufjs; deprecation metadata glob10.5.0/node-domexception1.0.0/uuid9.0.1 is package metadata only, not independently established vulnerability. Firebase CLI used by scripts is not locked here. Reviewed version inventory/structural metadata, not downloaded artifact hashes or semver/platform resolution execution. No npm install/audit/seed/emulator/network run. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:30:32.778692+00:00",
       "readRanges": [
         [
@@ -46457,11 +46464,13 @@
       "lines": 23,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full file read. Private Node>=22 maintainer seed and two explicit demo-project emulator test commands. firebase-admin14/Firebase12/rules-testing5 and scoped brace-expansion override; firebase CLI expectedexternal, no install or seed.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02"
+      ],
+      "reviewNotes": "Full file read. Private Node>=22 maintainer seed and two explicit demo-project emulator test commands. firebase-admin14/Firebase12/rules-testing5 and scoped brace-expansion override; firebase CLI expectedexternal, no install or seed. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46478,11 +46487,11 @@
       "lines": 1774,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Complete structured224package record review of1774lines: every name/version/dependency/source plus hosted URL and64hex SHA shape;216hosted pub.dev and8FlutterSDK records, no path/git source. SDK Dart>=3.12<4/Flutter>=3.44. drift2.34.3/drift_dev2.34.5/build_runner2.15.1, sqlite3.5 and eolcompat libs, flutter_litert3.7.0 and nativeplatform plugin versions inventoried. Lock declares package pins not FlutterSDK commit/nativeCocoaPods/binary content or actual install compatibility; those are separate toolchain/native gates. Text-record structural extraction explicitly not YAML semantic parser or downloaded SHA verification. No dependency resolution/build/runtime execution.",
+      "reviewNotes": "Complete structured224package record review of1774lines: every name/version/dependency/source plus hosted URL and64hex SHA shape;216hosted pub.dev and8FlutterSDK records, no path/git source. SDK Dart>=3.12<4/Flutter>=3.44. drift2.34.3/drift_dev2.34.5/build_runner2.15.1, sqlite3.5 and eolcompat libs, flutter_litert3.7.0 and nativeplatform plugin versions inventoried. Lock declares package pins not FlutterSDK commit/nativeCocoaPods/binary content or actual install compatibility; those are separate toolchain/native gates. Text-record structural extraction explicitly not YAML semantic parser or downloaded SHA verification. No dependency resolution/build/runtime execution. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:30:32.778692+00:00",
       "readRanges": [
         [
@@ -46499,11 +46508,11 @@
       "lines": 99,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Dart>=3.12<4 version1.0.0+14; deliberate exact native camera/model/notification/audio/security pins plus ranged coredeps.32 explicitcontent/font assetentries with Thai font family; no bundled remote model or claim absent required Adventure assets without adapter cross-check. Lock/generated provenance separate.",
+      "reviewNotes": "Full file read. Dart>=3.12<4 version1.0.0+14; deliberate exact native camera/model/notification/audio/security pins plus ranged coredeps.32 explicitcontent/font assetentries with Thai font family; no bundled remote model or claim absent required Adventure assets without adapter cross-check. Lock/generated provenance separate. Semantic disposition: REV-11-zone-review.json REV11-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -58330,11 +58339,13 @@
       "lines": 579,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full579 lines read. Exactly one authorized ADB device; user/secure/nondebug and emulator markers, local APK digest before install-r/monkey launch, pulls installed base and compares actual hash. RSA3072+ pinned certificate signs collector/source artifacts; pseudonym release+serial, tier/network operator labels. Prior dumpsys no version treated absent even on failure, so clean-install inference can overclaim; no independent package certificate verifier here, final gate separate. Auto-signs clean OR lower-version upgrade and GPU-notApplicable, others pending; no benchmark/journey execution. Device output second-resolution ID can overwrite same-tier collection; ADB no explicit timeout. No physical collection invoked.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-01"
+      ],
+      "reviewNotes": "Full579 lines read. Exactly one authorized ADB device; user/secure/nondebug and emulator markers, local APK digest before install-r/monkey launch, pulls installed base and compares actual hash. RSA3072+ pinned certificate signs collector/source artifacts; pseudonym release+serial, tier/network operator labels. Prior dumpsys no version treated absent even on failure, so clean-install inference can overclaim; no independent package certificate verifier here, final gate separate. Auto-signs clean OR lower-version upgrade and GPU-notApplicable, others pending; no benchmark/journey execution. Device output second-resolution ID can overwrite same-tier collection; ADB no explicit timeout. No physical collection invoked. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58351,11 +58362,11 @@
       "lines": 122,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full122. Top-level privilegedFirebaseCLI privateglobalmodules/defaultaccount; hardcodedproductionproject/app patchesPlayIntegrity offPlay unrecognizedallowed/deviceintegrity/1htoken/unlicensed, normalizedresponse verifiesfields thenwritescloud evidence. Missingresponse TTL normalizeddefault maymask absentfield, evidence NOT_ENABLED is literalnotqueriedactualenforcement. No physicalacceptanceguard inside script; deploymentoperator boundary, notinvoked/imported. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full122. Top-level privilegedFirebaseCLI privateglobalmodules/defaultaccount; hardcodedproductionproject/app patchesPlayIntegrity offPlay unrecognizedallowed/deviceintegrity/1htoken/unlicensed, normalizedresponse verifiesfields thenwritescloud evidence. Missingresponse TTL normalizeddefault maymask absentfield, evidence NOT_ENABLED is literalnotqueriedactualenforcement. No physicalacceptanceguard inside script; deploymentoperator boundary, notinvoked/imported. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58372,11 +58383,13 @@
       "lines": 182,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full182. DefaultCLIaccount actualbillingread; ifdisabled writesnotapplicable snapshot. Otherwise firstbudgetpage displayName match patchesetagorcreates100THB50/80/100actualthresholds defaultIAM recipients; no pagination/dedup orprojectfilter/amount/readback validation beyondthresholds. Budget explicitlyalerthardcapfalse; writes evidenceafterremote mutation, no request here. Full source read; no B18 runtime or zone acceptance.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-05"
+      ],
+      "reviewNotes": "Full182. DefaultCLIaccount actualbillingread; ifdisabled writesnotapplicable snapshot. Otherwise firstbudgetpage displayName match patchesetagorcreates100THB50/80/100actualthresholds defaultIAM recipients; no pagination/dedup orprojectfilter/amount/readback validation beyondthresholds. Budget explicitlyalerthardcapfalse; writes evidenceafterremote mutation, no request here. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58393,11 +58406,11 @@
       "lines": 107,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full107. Localmanifest format64hex certificate only then privilegedglobalCLI hardcodedapp list/create SHA_256, reusednormalizedcolonhash. No APK/certcryptographic binding validation here, reliespackageverifier/operator; evidence usesrequestedhash andreturnedtype/name withoutfullreadback. No remote action/import. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full107. Localmanifest format64hex certificate only then privilegedglobalCLI hardcodedapp list/create SHA_256, reusednormalizedcolonhash. No APK/certcryptographic binding validation here, reliespackageverifier/operator; evidence usesrequestedhash andreturnedtype/name withoutfullreadback. No remote action/import. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58414,11 +58427,11 @@
       "lines": 163,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full163 lines read. Read-only repository/tools/process/GPU inspection; unavailable CIM explicitly prevents training-start readiness, no raw command lines exposed. Exit0 reflects repository and tool presence, not GPU or backend readiness. No backend start/import and no execution. CIM/nvidia query has no explicit timeout.",
+      "reviewNotes": "Full163 lines read. Read-only repository/tools/process/GPU inspection; unavailable CIM explicitly prevents training-start readiness, no raw command lines exposed. Exit0 reflects repository and tool presence, not GPU or backend readiness. No backend start/import and no execution. CIM/nvidia query has no explicit timeout. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58435,11 +58448,11 @@
       "lines": 77,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full77. Explicitownercreation switch andnoexistingpublickey, WindowsnonexportableRSA3072cert3years, minimumsize/publicXML no privatefields, repo onlypublic. Precheckthenwrite notexclusiveatomic andcertificateorphanonwritefailure; currentpublickeyalreadyexistssoinitializerno rotation. Not invoked; no keycreation authority inferred. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full77. Explicitownercreation switch andnoexistingpublickey, WindowsnonexportableRSA3072cert3years, minimumsize/publicXML no privatefields, repo onlypublic. Precheckthenwrite notexclusiveatomic andcertificateorphanonwritefailure; currentpublickeyalreadyexistssoinitializerno rotation. Not invoked; no keycreation authority inferred. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58456,11 +58469,11 @@
       "lines": 163,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full163. Noexistingkeystore/properties, crypto32bytepassword RSA4096PKCS12 keytool thenplaintextignoredproperties+DPAPIbackup/certsha metadata, ACLrestrictions appliedlast towholeexisting signingdirectory children. Password passednativeargv andkeytooloutputmaycontainerrors, notprintednormal; partialfailure leavesartifacts/no recovery retry. Operatorprovisioning only, no keys/secrets read/generated here. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full163. Noexistingkeystore/properties, crypto32bytepassword RSA4096PKCS12 keytool thenplaintextignoredproperties+DPAPIbackup/certsha metadata, ACLrestrictions appliedlast towholeexisting signingdirectory children. Password passednativeargv andkeytooloutputmaycontainerrors, notprintednormal; partialfailure leavesartifacts/no recovery retry. Operatorprovisioning only, no keys/secrets read/generated here. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58477,11 +58490,11 @@
       "lines": 554,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full554 lines read. Bounds-checked little-endian ELF32/64 ET_DYN ABI parsing requires exactly one nonoverlapping 36-byte GNU note with20-byte descriptor; only descriptor zeroed on clone. Vendor hashes raw, three exact custom ABI paths canonical by mode; ordinal dictionaries reject missing/extra/case-mutated/duplicate exact ZIP entries. ZIP reader filters runtime names before set validation and copies unbounded entries to memory; this is pinned local APK integrity, not arbitrary ZIP acceptance or general ELF loader validation. Program-header ranges not parsed but all non-descriptor bytes remain pinned. Caller verify-apk-model-runtime and synthetic tests cross-checked; no execution.",
+      "reviewNotes": "Full554 lines read. Bounds-checked little-endian ELF32/64 ET_DYN ABI parsing requires exactly one nonoverlapping 36-byte GNU note with20-byte descriptor; only descriptor zeroed on clone. Vendor hashes raw, three exact custom ABI paths canonical by mode; ordinal dictionaries reject missing/extra/case-mutated/duplicate exact ZIP entries. ZIP reader filters runtime names before set validation and copies unbounded entries to memory; this is pinned local APK integrity, not arbitrary ZIP acceptance or general ELF loader validation. Program-header ranges not parsed but all non-descriptor bytes remain pinned. Caller verify-apk-model-runtime and synthetic tests cross-checked; no execution. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58498,11 +58511,13 @@
       "lines": 1836,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full1836. JSON timestamp preservation/strictUTC parse, actualpublicRSA>=3072 and PKCS1SHA256 receipt verifies normalizedordered signedfields inclpayload/sourceexport digest. Reference strictUUIDv4/kind/contenthash->localblob, exactpayload serializedcomparison, optionalactualsourceexport hash/origin/capture/hostFakefalse, freshness24h or30d. Finalrelease bindsAPK/cert/source/model/manifesttime, fivecloudcontrols/signedexports/cost0..10000satang month/time/budgetorbillingdisabled; confined sixactualdocumenthashes/channelrefs. Exactlythree unique low/mid/high physical devices, collectorscript/productionbuild/emulatormarkers/signedattestation,14journeys eachsignedsource; CPU>=10finitepositive latency/GPUallowlistorNA,30minzeroCRASH/ANR signedmetrics. Beta positivecounts/allrequests knowncost successful, samewindowcontext signedpermetric, rollbackdistinctlower target samecert/shareddrill/kill-switch, signedownerapproval orderedafterbeta/rollback. Assertions authenticate operator-supplied observations not hardwaretruth bythemselves; some schema/count/bool comparisons coerce values, enduranceothermetrics onlyfinite notrange, JSONpayload order significant. Collector signer/payloadtestoracle pending. No execution/activation/statistical report or release acceptance.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-01"
+      ],
+      "reviewNotes": "Full1836. JSON timestamp preservation/strictUTC parse, actualpublicRSA>=3072 and PKCS1SHA256 receipt verifies normalizedordered signedfields inclpayload/sourceexport digest. Reference strictUUIDv4/kind/contenthash->localblob, exactpayload serializedcomparison, optionalactualsourceexport hash/origin/capture/hostFakefalse, freshness24h or30d. Finalrelease bindsAPK/cert/source/model/manifesttime, fivecloudcontrols/signedexports/cost0..10000satang month/time/budgetorbillingdisabled; confined sixactualdocumenthashes/channelrefs. Exactlythree unique low/mid/high physical devices, collectorscript/productionbuild/emulatormarkers/signedattestation,14journeys eachsignedsource; CPU>=10finitepositive latency/GPUallowlistorNA,30minzeroCRASH/ANR signedmetrics. Beta positivecounts/allrequests knowncost successful, samewindowcontext signedpermetric, rollbackdistinctlower target samecert/shareddrill/kill-switch, signedownerapproval orderedafterbeta/rollback. Assertions authenticate operator-supplied observations not hardwaretruth bythemselves; some schema/count/bool comparisons coerce values, enduranceothermetrics onlyfinite notrange, JSONpayload order significant. Collector signer/payloadtestoracle pending. No execution/activation/statistical report or release acceptance. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58519,11 +58534,11 @@
       "lines": 28,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full28. StreamSHA256 only finallydispose; canonicalpreviewJSONexact2strings true/false noextras strictcase, rawfilehash; defaultfieldcloudtrue explicitflag. OptionalProfilePathvalidate/hashbutreturnedcompilerargumentalwayscanonicalrepo path, test-onlycustompath intended invalidfixtures; callersneedcheck. Missinghashcreateexception beforetry theoreticalstreamleak notpromoted. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full28. StreamSHA256 only finallydispose; canonicalpreviewJSONexact2strings true/false noextras strictcase, rawfilehash; defaultfieldcloudtrue explicitflag. OptionalProfilePathvalidate/hashbutreturnedcompilerargumentalwayscanonicalrepo path, test-onlycustompath intended invalidfixtures; callersneedcheck. Missinghashcreateexception beforetry theoreticalstreamleak notpromoted. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58540,11 +58555,11 @@
       "lines": 173,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full173 lines read. Injected pure process-name and standalone --train detector, first nonblank GPU CSV row only with invariant integer parsing. Guard needs available GPU and no named training process, not free-memory/utilization thresholds; cannot identify other trainers or unreadable processes. Numeric ranges and multi-GPU selection unchecked. Informational consumers do not start inference. No execution.",
+      "reviewNotes": "Full173 lines read. Injected pure process-name and standalone --train detector, first nonblank GPU CSV row only with invariant integer parsing. Guard needs available GPU and no named training process, not free-memory/utilization thresholds; cannot identify other trainers or unreadable processes. Numeric ranges and multi-GPU selection unchecked. Informational consumers do not start inference. No execution. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58561,11 +58576,11 @@
       "lines": 226,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full226 lines read. Exact kind-origin/capture method and hostFake boolean, current manifest source/APK, strict timestamp, confined ignored source path. Content-addressed source copy then valid pinned RSA3072+ current-user certificate PKCS1SHA256 signs typed receipt. Origin remains operator-supplied envelope, not remote provenance attestation; no payload/freshness validation at signing beyond downstream verifier. Private output path unrestricted, source-copy before key validation and hash/read TOCTOU; no invocation or key access.",
+      "reviewNotes": "Full226 lines read. Exact kind-origin/capture method and hostFake boolean, current manifest source/APK, strict timestamp, confined ignored source path. Content-addressed source copy then valid pinned RSA3072+ current-user certificate PKCS1SHA256 signs typed receipt. Origin remains operator-supplied envelope, not remote provenance attestation; no payload/freshness validation at signing beyond downstream verifier. Private output path unrestricted, source-copy before key validation and hash/read TOCTOU; no invocation or key access. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58582,11 +58597,11 @@
       "lines": 280,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full280 lines read. Assembles all sorted device JSON and optional records against manifest, defaults explicitly pending/false/null with current release identity and rollback UUID, no fabricated pass. Adds central cost onto cloud record, overwrites output nonatomically and performs no acceptance validation. Assembly is draft only; downstream package/evidence verifier required. No execution.",
+      "reviewNotes": "Full280 lines read. Assembles all sorted device JSON and optional records against manifest, defaults explicitly pending/false/null with current release identity and rollback UUID, no fabricated pass. Adds central cost onto cloud record, overwrites output nonatomically and performs no acceptance validation. Assembly is draft only; downstream package/evidence verifier required. No execution. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58603,11 +58618,11 @@
       "lines": 422,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full422. Canonicaloutputroot exact/noexisting; signedmetadataPKCS12/path/alias/keypropertiesunique nonplaceholder, actualmodeloneSHA regex. CleanHEAD beforeandafter freshreleasebuild/deleteoldAPK, canonicalprofileargs+version/nativeSHAmetadata, stagingcopy realcertificate/package/version/3metadatachecks; independentpackagechild thenlastcleancheck andMoveItempublish. Localartifact only,installedflagsfalse. Defaultversion+1 andoldfield-clouddefault explicit optinpreview; stagingcleanup removesfailedstage, checkthenmove existingdestination race notatomicexclusive (singlewriterassumed). No build/sign/publish executed. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full422. Canonicaloutputroot exact/noexisting; signedmetadataPKCS12/path/alias/keypropertiesunique nonplaceholder, actualmodeloneSHA regex. CleanHEAD beforeandafter freshreleasebuild/deleteoldAPK, canonicalprofileargs+version/nativeSHAmetadata, stagingcopy realcertificate/package/version/3metadatachecks; independentpackagechild thenlastcleancheck andMoveItempublish. Localartifact only,installedflagsfalse. Defaultversion+1 andoldfield-clouddefault explicit optinpreview; stagingcleanup removesfailedstage, checkthenmove existingdestination race notatomicexclusive (singlewriterassumed). No build/sign/publish executed. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58624,11 +58639,11 @@
       "lines": 36,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full36. Baseline4,287,874byteD394modelnottrainedcamera candidate; validexistinghashreuse, stale.downloadremove, HTTPSfullInvokeWebRequest thenexactlength/hash andsamefoldermove. Noboundedstream/timeout/downloadcleanupfinally; mismatchkeeps.download, nextcallremoves. Source-only review nofetch. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full36. Baseline4,287,874byteD394modelnottrainedcamera candidate; validexistinghashreuse, stale.downloadremove, HTTPSfullInvokeWebRequest thenexactlength/hash andsamefoldermove. Noboundedstream/timeout/downloadcleanupfinally; mismatchkeeps.download, nextcallremoves. Source-only review nofetch. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -58645,11 +58660,11 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full4 lines read. Canonical localpreview explicitlylearningtrue/cloudfalse stringdefines; no research flag or installedstateproof.",
+      "reviewNotes": "Full4 lines read. Canonical localpreview explicitlylearningtrue/cloudfalse stringdefines; no research flag or installedstateproof. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -58666,11 +58681,11 @@
       "lines": 1165,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1165 lines read. Explicit Android device selection; normalized output root containment; pre/post committed-source clean and sameHEAD checks. Device emulator flag yields rehearsal/physical/unclassified and certification remains not_certified. Profile schema validates strict finite/numeric/bool types, exact budgets/counts, viewport consistency, active-effort clock evidence and recomputed pass flags, distinguishing invalid/budget/test/source failures. Restores driver output env and working directory in finally; sanitized generated output supports driver path trust. Flutter output held in memory and test has Timeout.none, outer operational no-progress guard still required; no bounded-command run here. Evidence proves preparation/frame fixture scope only, not installed production flags. No B18 execution.",
+      "reviewNotes": "Full1165 lines read. Explicit Android device selection; normalized output root containment; pre/post committed-source clean and sameHEAD checks. Device emulator flag yields rehearsal/physical/unclassified and certification remains not_certified. Profile schema validates strict finite/numeric/bool types, exact budgets/counts, viewport consistency, active-effort clock evidence and recomputed pass flags, distinguishing invalid/budget/test/source failures. Restores driver output env and working directory in finally; sanitized generated output supports driver path trust. Flutter output held in memory and test has Timeout.none, outer operational no-progress guard still required; no bounded-command run here. Evidence proves preparation/frame fixture scope only, not installed production flags. No B18 execution. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-13T23:09:17.344032+00:00",
       "readRanges": [
         [
@@ -58687,11 +58702,11 @@
       "lines": 62,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full62 lines read. Requires configured device, successful parseable Flutter device inventory and matching Android platform; distinct fail codes propagate, then scoped integration field journey test. Does not reject emulator, so Android smoke cannot certify physical device. No execution.",
+      "reviewNotes": "Full62 lines read. Requires configured device, successful parseable Flutter device inventory and matching Android platform; distinct fail codes propagate, then scoped integration field journey test. Does not reject emulator, so Android smoke cannot certify physical device. No execution. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58708,11 +58723,11 @@
       "lines": 172,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full172 lines read. Dot-source-safe argument builder requires device/version/build and canonical private/loopback IPv4 with bounded ports; validation trims host but interpolation retains original. Actual Flutter invocation uses argument array, display quoting is not eval. Process/GPU guard informational, never starts backend. Caller working directory used without repository PushLocation. Hardcoded version plus1 and private HTTP require caller configuration. No execution.",
+      "reviewNotes": "Full172 lines read. Dot-source-safe argument builder requires device/version/build and canonical private/loopback IPv4 with bounded ports; validation trims host but interpolation retains original. Actual Flutter invocation uses argument array, display quoting is not eval. Process/GPU guard informational, never starts backend. Caller working directory used without repository PushLocation. Hardcoded version plus1 and private HTTP require caller configuration. No execution. Semantic disposition: REV-11-zone-review.json REV11-X09; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58729,11 +58744,11 @@
       "lines": 119,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full119. Defaultstatus read, explicitenable/disable privilegedpatchFirestoreenforcement responseexactexpected, timestamped evidence. No manifest/physicalacceptanceguard inoperatorutility, unspecstatusacceptedread only. UsesunpinnedglobalprivateFirebaseAPI/defaultaccount; notcalled. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full119. Defaultstatus read, explicitenable/disable privilegedpatchFirestoreenforcement responseexactexpected, timestamped evidence. No manifest/physicalacceptanceguard inoperatorutility, unspecstatusacceptedread only. UsesunpinnedglobalprivateFirebaseAPI/defaultaccount; notcalled. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58750,11 +58765,11 @@
       "lines": 117,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full117. Defaultstatus GET, enable/disable privilegedFirestorepatchdocument schema1+bool withnoupdateMask/precondition so replacesfields; rawdecode absent/wrongbool→false (disablecanacceptmissingfield). Timestampedevidence afterresponseversion/selectedmode check. Currenttwofieldcontract/operatoronly, callerreviewpending no cloudcall. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full117. Defaultstatus GET, enable/disable privilegedFirestorepatchdocument schema1+bool withnoupdateMask/precondition so replacesfields; rawdecode absent/wrongbool→false (disablecanacceptmissingfield). Timestampedevidence afterresponseversion/selectedmode check. Currenttwofieldcontract/operatoronly, callerreviewpending no cloudcall. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58771,11 +58786,11 @@
       "lines": 384,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full384 lines read. Validates signed source-backed collector against release and exact device identity, confined instrumented input, declared hostFake false/origin, strict timestamp, exact ordered payload; CPU10/positive finite, endurance30min/zero counters/finite metrics, GPU broad status deferred to downstream. Pinned valid RSA3072+ signer authenticates source digest; source/receipt then device overwrite nontransactional. Counts coerce via int, endurance ranges weak, operator envelope is not hardware attestation. No invocation.",
+      "reviewNotes": "Full384 lines read. Validates signed source-backed collector against release and exact device identity, confined instrumented input, declared hostFake false/origin, strict timestamp, exact ordered payload; CPU10/positive finite, endurance30min/zero counters/finite metrics, GPU broad status deferred to downstream. Pinned valid RSA3072+ signer authenticates source digest; source/receipt then device overwrite nontransactional. Counts coerce via int, endurance ranges weak, operator envelope is not hardware attestation. No invocation. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -58855,11 +58870,14 @@
       "lines": 285,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-12",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full file read with focused remainder200-end to recover outputtruncation. Regex/source presence enforces actions/toolversions/triggers/CPUgroups and no secretpatterns; global frozen count not percommand and permissioncontainsread not exclusivity. Does not runworkflow, check eachPowerShell exit propagation or parseYAML/schema. No execution.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-07"
+      ],
+      "reviewNotes": "Full file read with focused remainder200-end to recover outputtruncation. Regex/source presence enforces actions/toolversions/triggers/CPUgroups and no secretpatterns; global frozen count not percommand and permissioncontainsread not exclusivity. Does not runworkflow, check eachPowerShell exit propagation or parseYAML/schema. No execution. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:49.835699+00:00",
       "readRanges": [
         [
@@ -59023,11 +59041,11 @@
       "lines": 540,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full540 lines read in bounded follow-up after combined output truncation; no missing-range claim. Disposable committed Git fixture invokes copied real packager/package verifier with PATH fake Flutter/apksigner/analyzer/runtime verifier and four-byte fake keystore. Checks metadata/dirty/path/existing-output preflight, preserved sentinel, fresh APK requirement, exact Gradle/profile argv and actual output-byte hash, runtime failure23 cleanup/no publication, source drift/no publication and installedFlagsVerifiedfalse. No actual signing/build/native validation; no source drift specifically during independent final verifier. Env restored finally, temporary fixtures removed. No B18 execution.",
+      "reviewNotes": "Full540 lines read in bounded follow-up after combined output truncation; no missing-range claim. Disposable committed Git fixture invokes copied real packager/package verifier with PATH fake Flutter/apksigner/analyzer/runtime verifier and four-byte fake keystore. Checks metadata/dirty/path/existing-output preflight, preserved sentinel, fresh APK requirement, exact Gradle/profile argv and actual output-byte hash, runtime failure23 cleanup/no publication, source drift/no publication and installedFlagsVerifiedfalse. No actual signing/build/native validation; no source drift specifically during independent final verifier. Env restored finally, temporary fixtures removed. No B18 execution. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59086,11 +59104,11 @@
       "lines": 20,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full20. Actualcanonicalprofileoneexactargument/name/bools/hashsyntax, legacyexplicitdefault. RealtempabcSHAknownvector and3invalidcloud/type/extraendpoint fails; assumesbuilddirexists, cleansliteralfile. No compiler actualflags/tamperbetweenreadandbuild oracle. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full20. Actualcanonicalprofileoneexactargument/name/bools/hashsyntax, legacyexplicitdefault. RealtempabcSHAknownvector and3invalidcloud/type/extraendpoint fails; assumesbuilddirexists, cleansliteralfile. No compiler actualflags/tamperbetweenreadandbuild oracle. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59361,11 +59379,15 @@
       "lines": 134,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-12",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full134. ASTextractactualfunctions; standardabcSHA, previewbundle/exactCLI/rules/native/previewselector conflict checks andbackenddevfrozenclosure. RealdisposableGit copiedrunner+dummyscripts:PlanOnly0/noPASSreceipt,initial2,resume2,sourcechange4,missinglog5,forgedexit6,envchange8. ActualentrypointwithoutFlutter/backend/release. No timeout/invalidchildstart/postruninputmutation/logtampercontents/nativeflagsdecoder; fixture retained. Full source read; no zone acceptance.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-03",
+        "B18-REV11-08"
+      ],
+      "reviewNotes": "Full134. ASTextractactualfunctions; standardabcSHA, previewbundle/exactCLI/rules/native/previewselector conflict checks andbackenddevfrozenclosure. RealdisposableGit copiedrunner+dummyscripts:PlanOnly0/noPASSreceipt,initial2,resume2,sourcechange4,missinglog5,forgedexit6,envchange8. ActualentrypointwithoutFlutter/backend/release. No timeout/invalidchildstart/postruninputmutation/logtampercontents/nativeflagsdecoder; fixture retained. Full source read; no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X10; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59382,11 +59404,11 @@
       "lines": 0,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full583bytes singlelinewithoutnewline (inventorylines0 doesnotmeanempty). ParsedpublicRSAKeyValue onlyModulus/Exponent, actual3072bit modulus exponent65537; no privatecomponents. Publicpinusedbyfield-evidenceverification; no privatekeyownership/certvalidity/signatureacceptance inferred fromparsing. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full583bytes singlelinewithoutnewline (inventorylines0 doesnotmeanempty). ParsedpublicRSAKeyValue onlyModulus/Exponent, actual3072bit modulus exponent65537; no privatecomponents. Publicpinusedbyfield-evidenceverification; no privatekeyownership/certvalidity/signatureacceptance inferred fromparsing. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59403,11 +59425,11 @@
       "lines": 126,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full126. ResolveAPK/AAR paths, immutableAARsha and9vendorrawlibrarypins; 3ABIcustomops canonicalhashperDebug/Release onlyGNUbuildIDnormalization delegatedexistingELFpolicy. Autochoosesmodefilename(debugsubstring), explicitmode available; exactruntimeSetchecks/GPUacceleratorreject/archivefinally. No APKsignature/installedmodel/deviceexecution or independentAARentrycomparison (pinnedbytesauthority). Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full126. ResolveAPK/AAR paths, immutableAARsha and9vendorrawlibrarypins; 3ABIcustomops canonicalhashperDebug/Release onlyGNUbuildIDnormalization delegatedexistingELFpolicy. Autochoosesmodefilename(debugsubstring), explicitmode available; exactruntimeSetchecks/GPUacceleratorreject/archivefinally. No APKsignature/installedmodel/deviceexecution or independentAARentrycomparison (pinnedbytesauthority). Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59424,11 +59446,11 @@
       "lines": 91,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full91. LegacyP5 sequentialCLI/modelprepare/format/fullanalyze/scopedmediaandbootstraptests/debugAPK/runtimehash/diff, nonzeroexitthrows. Fixturepreparecanfetch, debugbuildnotnativecertification, nofingerprintcache. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full91. LegacyP5 sequentialCLI/modelprepare/format/fullanalyze/scopedmediaandbootstraptests/debugAPK/runtimehash/diff, nonzeroexitthrows. Fixturepreparecanfetch, debugbuildnotnativecertification, nofingerprintcache. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59445,11 +59467,11 @@
       "lines": 94,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full94. LegacyP4 contracts thenpinnedfixturedownload, format/fullanalyze/modelDBbootstraptests/debugAPK+runtimehash/diff; checksLASTEXITCODE. NoGPUinference/deviceinstallation/provenancecertificate orscopefingerprintreuse. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full94. LegacyP4 contracts thenpinnedfixturedownload, format/fullanalyze/modelDBbootstraptests/debugAPK+runtimehash/diff; checksLASTEXITCODE. NoGPUinference/deviceinstallation/provenancecertificate orscopefingerprintreuse. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59466,11 +59488,11 @@
       "lines": 252,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full252. Manifestidentity/source12buildID, exactpinnedcertificate, confinedversionedbasename andactualAPKhash; realapksignersuccesssinglecertificate exact, actualapkanalyzer package/version/unique3embeddedprovenance, mandatoryRelease nativeELFintegritychild. RuntimeVerifierPath override intendedtest/operator trust. DoesnotdecodeDartflags/validateprofile/release debuggable directly or prove sourcebinarybuild beyondembeddedmetadata; later physicalgate separate. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full252. Manifestidentity/source12buildID, exactpinnedcertificate, confinedversionedbasename andactualAPKhash; realapksignersuccesssinglecertificate exact, actualapkanalyzer package/version/unique3embeddedprovenance, mandatoryRelease nativeELFintegritychild. RuntimeVerifierPath override intendedtest/operator trust. DoesnotdecodeDartflags/validateprofile/release debuggable directly or prove sourcebinarybuild beyondembeddedmetadata; later physicalgate separate. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59487,11 +59509,11 @@
       "lines": 173,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full173. Finalpackage sourcefullSHA/evidencegeneratedtime/artifact8fields agree; actualHEAD sameorancestor onlymetadataallowlist andclean checkout. Independentchildpackageverifier beforeactualAPKhash/evidencevalidator withpinnedpublickey/collectorscripthash; thenlegacyP7wide gate. Doesnotauthorizecurrentrelease independentlyofverify-scope freeze policy; no physicalresults invented andnotexecuted. Full source read; no B18 runtime or zone acceptance.",
+      "reviewNotes": "Full173. Finalpackage sourcefullSHA/evidencegeneratedtime/artifact8fields agree; actualHEAD sameorancestor onlymetadataallowlist andclean checkout. Independentchildpackageverifier beforeactualAPKhash/evidencevalidator withpinnedpublickey/collectorscripthash; thenlegacyP7wide gate. Doesnotauthorizecurrentrelease independentlyofverify-scope freeze policy; no physicalresults invented andnotexecuted. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59508,11 +59530,11 @@
       "lines": 153,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full153. ResolvesPATHbeforeFVM/env/localFlutter,DartindependentlyPATHfirst; Unauthorizedmetadata fallbacktrustspathuntilinvoke. ResolveToolsOnly noexecution; normalCLI→format/fullanalyze/scopedAI+bootstrap/navtests/debugAPK+runtimehash/diff. Legacyversion+1, nofingerprintreuse. Calls stale-schema CLI oracle directly beforework (REV12-04). Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full153. ResolvesPATHbeforeFVM/env/localFlutter,DartindependentlyPATHfirst; Unauthorizedmetadata fallbacktrustspathuntilinvoke. ResolveToolsOnly noexecution; normalCLI→format/fullanalyze/scopedAI+bootstrap/navtests/debugAPK+runtimehash/diff. Legacyversion+1, nofingerprintreuse. Calls stale-schema CLI oracle directly beforework (REV12-04). Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59529,11 +59551,13 @@
       "lines": 84,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full84. Certificateformatfromlocalmanifest, HTTPS2fixeddomains30stimeout HTTP200 thenfirstAndroidtargetmatchingpackage/hash; logscontentType butdoesnotrequireJSONmime or relation delegate_permission/common.handle_all_urls, redirect behaviornotchecked. Evidence apkhashcopiednotactualartifacthashverification. Caller/oraclereviewpending; no hostedfetch. Full source read; no B18 runtime or zone acceptance.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-04"
+      ],
+      "reviewNotes": "Full84. Certificateformatfromlocalmanifest, HTTPS2fixeddomains30stimeout HTTP200 thenfirstAndroidtargetmatchingpackage/hash; logscontentType butdoesnotrequireJSONmime or relation delegate_permission/common.handle_all_urls, redirect behaviornotchecked. Evidence apkhashcopiednotactualartifacthashverification. Caller/oraclereviewpending; no hostedfetch. Full source read; no B18 runtime or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59550,11 +59574,11 @@
       "lines": 127,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full127. LegacyP3 sequential CLIformat/fullanalyze/explicitFluttertargets/emulator/debugAPK/diffcheck, capturesLASTEXITCODE eachgate. Hardcodedversion1.0.0+1 andemulatorendpoints, nofingerprintreuse/frozenSHA; existingboundedverify-scope authoritative notthislegacywideentry. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full127. LegacyP3 sequential CLIformat/fullanalyze/explicitFluttertargets/emulator/debugAPK/diffcheck, capturesLASTEXITCODE eachgate. Hardcodedversion1.0.0+1 andemulatorendpoints, nofingerprintreuse/frozenSHA; existingboundedverify-scope authoritative notthislegacywideentry. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59571,11 +59595,11 @@
       "lines": 137,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full137. LegacyP0P1 scopedformat/analyze/testdirectories thenrgfourvocabularyscreens correct0/1/errorhandling, Androiddebug+1/diffcheck; exceptionfailfastfinallylocationrestore. No cachedsourcefingerprints, requiresnewboundedselectorworkflow. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full137. LegacyP0P1 scopedformat/analyze/testdirectories thenrgfourvocabularyscreens correct0/1/errorhandling, Androiddebug+1/diffcheck; exceptionfailfastfinallylocationrestore. No cachedsourcefingerprints, requiresnewboundedselectorworkflow. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59592,11 +59616,11 @@
       "lines": 52,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full52 lines read. Serial external scanner commands over six explicit literal inventories/configs, input existence checks/nonzero throws, location restored. No scanner version/output retention/timeout/reuse policy in wrapper; not called during review and no prohibited scan activated.",
+      "reviewNotes": "Full52 lines read. Serial external scanner commands over six explicit literal inventories/configs, input existence checks/nonzero throws, location restored. No scanner version/output retention/timeout/reuse policy in wrapper; not called during review and no prohibited scan activated. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59613,11 +59637,11 @@
       "lines": 186,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full186. Legacy P7 serial CLI/packaging contracts, wide format/analyze, generator --check, selected product Flutter and three host fake integration tests break on failure. Auth/rules emulators then cloudsync debug1+1 APK/runtime integrity/diff. Host fakes explicitly distinct from physical certification; no fingerprint or frozen SHA enforcement. Do not regenerate historical final plan or execute wide gate during G8.2. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full186. Legacy P7 serial CLI/packaging contracts, wide format/analyze, generator --check, selected product Flutter and three host fake integration tests break on failure. Auth/rules emulators then cloudsync debug1+1 APK/runtime integrity/diff. Host fakes explicitly distinct from physical certification; no fingerprint or frozen SHA enforcement. Do not regenerate historical final plan or execute wide gate during G8.2. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59634,11 +59658,15 @@
       "lines": 819,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-11",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full819. Canonical serialbounded selectors explicitCLI TargetedRuntime, previewbundle TargetedIntegration, Flutterexplicit test/name/profile conflicts and missingpaths rejected beforedispatch; Release onlyAll fullHEAD+clean unlessPlanOnly. Commandkeyliteral NUL-vector, allenvdigest/toollauncher/SDKmetadata/localconfighash, conservativearea actualtracked/untrackedbytes, percommand fingerprint plusstatus/exit/rawloghash forResume. No namefilter wholefile inference. Backenduvfrozen dev excludesheavygroup butsyncmaychangevenv; fingerprints takenbefore notpostrun. Inputclosure separatelyassembled can differaftermutatingpriorcommand; reportnocas/atomicwrite, no10minprogress watchdog forSubsystem/Release hardtimeouts20/45min. Processwait beforewrapperstderrread potentialbufferfill, childtimeouttree taskkill; wrapperexitpreserved. Defaulttargets historicalpartial viaExistingTargets, area notwholeproduct; priorstrictselectors oracles cover boundeduse. No execution. Full source read; no zone acceptance.",
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
+      "findingIDs": [
+        "B18-REV11-02",
+        "B18-REV11-03",
+        "B18-REV11-08"
+      ],
+      "reviewNotes": "Full819. Canonical serialbounded selectors explicitCLI TargetedRuntime, previewbundle TargetedIntegration, Flutterexplicit test/name/profile conflicts and missingpaths rejected beforedispatch; Release onlyAll fullHEAD+clean unlessPlanOnly. Commandkeyliteral NUL-vector, allenvdigest/toollauncher/SDKmetadata/localconfighash, conservativearea actualtracked/untrackedbytes, percommand fingerprint plusstatus/exit/rawloghash forResume. No namefilter wholefile inference. Backenduvfrozen dev excludesheavygroup butsyncmaychangevenv; fingerprints takenbefore notpostrun. Inputclosure separatelyassembled can differaftermutatingpriorcommand; reportnocas/atomicwrite, no10minprogress watchdog forSubsystem/Release hardtimeouts20/45min. Processwait beforewrapperstderrread potentialbufferfill, childtimeouttree taskkill; wrapperexitpreserved. Defaulttargets historicalpartial viaExistingTargets, area notwholeproduct; priorstrictselectors oracles cover boundeduse. No execution. Full source read; no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59655,11 +59683,11 @@
       "lines": 143,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full143. LegacyP2 serialscopedformat/analyze/tests withruntime+owner suites, rawrgfourUIboundaries, emulatorrules/debugAPK cloudsyncenabledtrue/version+1. Checks everyexternalexit andrestoreslocation. No proofinstalledflags/runtimecloud or fingerprintcache; do notinvokeasB18targetedgate. Full source read; no B18 runtime execution or zone acceptance.",
+      "reviewNotes": "Full143. LegacyP2 serialscopedformat/analyze/tests withruntime+owner suites, rawrgfourUIboundaries, emulatorrules/debugAPK cloudsyncenabledtrue/version+1. Checks everyexternalexit andrestoreslocation. No proofinstalledflags/runtimecloud or fingerprintcache; do notinvokeasB18targetedgate. Full source read; no B18 runtime execution or zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:34:23.275952+00:00",
       "readRanges": [
         [
@@ -59676,11 +59704,11 @@
       "lines": 224,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full224. Legacy serial foundation gate resets LASTEXITCODE, preserves LexiQuestExitCode and fail-fast phase receipt. CI child contracts each checked; Flutter pubget, tracked Dart format including .g.dart, full analyze/full Flutter then frozen no-sync CPU backend suites and debug APK version1+1/loopback. Runtime doctor probes last. No source-fingerprint reuse/frozen-SHA enforcement; current verify-scope controls supersede. Not executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full224. Legacy serial foundation gate resets LASTEXITCODE, preserves LexiQuestExitCode and fail-fast phase receipt. CI child contracts each checked; Flutter pubget, tracked Dart format including .g.dart, full analyze/full Flutter then frozen no-sync CPU backend suites and debug APK version1+1/loopback. Runtime doctor probes last. No source-fingerprint reuse/frozen-SHA enforcement; current verify-scope controls supersede. Not executed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59697,11 +59725,11 @@
       "lines": 387,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read in1-290/remainder. DeterministicJSON/Markdown sorts setfields and IDs, checklineendingnormalizeCRLF/CRonly, writesUTF8flush. Same-revision hashdrift or malformed prioridentity blocks both outputs; differentversion arbitrarystringhash permits write and twofiles written sequentially without rollback. Currenttrustedcatalog no untrustedMarkdownpath; no regeneration performed.",
+      "reviewNotes": "Full file read in1-290/remainder. DeterministicJSON/Markdown sorts setfields and IDs, checklineendingnormalizeCRLF/CRonly, writesUTF8flush. Same-revision hashdrift or malformed prioridentity blocks both outputs; differentversion arbitrarystringhash permits write and twofiles written sequentially without rollback. Currenttrustedcatalog no untrustedMarkdownpath; no regeneration performed. Semantic disposition: REV-11-zone-review.json REV11-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -59718,11 +59746,11 @@
       "lines": 1186,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1186 lines read. Deterministic plan hashes sorted base+gate source refs and directory bytes, reads schema/table50/runtime via source regex plus historical ledger markers, derives44catalog identity, labels forward transitions from dedicated filenames or matrix sourceVersion tokens with26special fixture. Exact categories/nonoverlap/single-file integrations validated; plain-name inequality assumed disjoint although substring selection can overlap. Write checks HEAD equality only, not clean checkout; writes historical fixed output paths sequentially without atomic pair. Check normalizes EOL and allows explicit nonHEAD source; no gate execution. Source fingerprint excludes some transitive build/npm/environment inputs and planned suites omit new Adventure/AI/LMbackend areas, so cannot serve B19 complete current-system plan unchanged. This source utility reviewed only; historical artifacts not regenerated, B19 requires new version and current inventory closure.",
+      "reviewNotes": "Full1186 lines read. Deterministic plan hashes sorted base+gate source refs and directory bytes, reads schema/table50/runtime via source regex plus historical ledger markers, derives44catalog identity, labels forward transitions from dedicated filenames or matrix sourceVersion tokens with26special fixture. Exact categories/nonoverlap/single-file integrations validated; plain-name inequality assumed disjoint although substring selection can overlap. Write checks HEAD equality only, not clean checkout; writes historical fixed output paths sequentially without atomic pair. Check normalizes EOL and allows explicit nonHEAD source; no gate execution. Source fingerprint excludes some transitive build/npm/environment inputs and planned suites omit new Adventure/AI/LMbackend areas, so cannot serve B19 complete current-system plan unchanged. This source utility reviewed only; historical artifacts not regenerated, B19 requires new version and current inventory closure. Semantic disposition: REV-11-zone-review.json REV11-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-19T10:17:42.642165+00:00",
       "readRanges": [
         [
@@ -59739,11 +59767,11 @@
       "lines": 114,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full114. Offline pinned CEFRJ/LEXiTRON exact-spelling/POS join; lowercase dedup lowest source level/first equal wins, first supported slash spelling, integer source-ID sorted senses. Thai/control/500char checks; A1/A2 then spread B1/B2 exactly3000 unique, non-frequency disclosure. Source SHA uses assert (disabled under python -O); fixed normal CLI caller, no optimization claim. Writes catalog then separate license files nonatomically; source-joined not reviewed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full114. Offline pinned CEFRJ/LEXiTRON exact-spelling/POS join; lowercase dedup lowest source level/first equal wins, first supported slash spelling, integer source-ID sorted senses. Thai/control/500char checks; A1/A2 then spread B1/B2 exactly3000 unique, non-frequency disclosure. Source SHA uses assert (disabled under python -O); fixed normal CLI caller, no optimization claim. Writes catalog then separate license files nonatomically; source-joined not reviewed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59760,11 +59788,11 @@
       "lines": 86,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full86. Explicit SHA mismatch exceptions for original/core/advanced/dictionary. Preserve original rows; deterministic lexical spread new B1/B2/C1 plus C2 supplement with shared casefold seen; insufficient pool rejects no padding/relabel. Advanced profile and independent Thai assets separate, original source retained, hashes logged. Multiasset writes nonatomic; license declarations source metadata not independent legal verification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full86. Explicit SHA mismatch exceptions for original/core/advanced/dictionary. Preserve original rows; deterministic lexical spread new B1/B2/C1 plus C2 supplement with shared casefold seen; insufficient pool rejects no padding/relabel. Advanced profile and independent Thai assets separate, original source retained, hashes logged. Multiasset writes nonatomic; license declarations source metadata not independent legal verification. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59781,11 +59809,11 @@
       "lines": 305,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full305. Metadata-only fresh/natural/fullframe group/hash uniqueness and 30known/200unknown per validation/test; source/license URLs declarations not image verification. Four-softmax max confidence>=.25 finite strict bool/explicit mapped baseline acceptance. Freeze pins retained predictions and recomputes entire metrics; evaluate exact fresh ID sets, descriptive thresholds retain baseline regardless quality. CLI exclusive output and .test-opened receipt before reading predictions stays on failure; path-local receipt not global anti-copy authority. No execution/statistical report. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full305. Metadata-only fresh/natural/fullframe group/hash uniqueness and 30known/200unknown per validation/test; source/license URLs declarations not image verification. Four-softmax max confidence>=.25 finite strict bool/explicit mapped baseline acceptance. Freeze pins retained predictions and recomputes entire metrics; evaluate exact fresh ID sets, descriptive thresholds retain baseline regardless quality. CLI exclusive output and .test-opened receipt before reading predictions stays on failure; path-local receipt not global anti-copy authority. No execution/statistical report. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59802,11 +59830,11 @@
       "lines": 271,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full271. Separate web-only no-fresh authority, strict full finite normalized score vectors/argmax/truth/exact IDs and group/hash/author split boundaries. Freeze full recomputation; absent unknown yields null metrics/gate, not0. load_inputs actual artifact SHA/bytes/export/tensor declared metadata/ZIP labels and accepted dataset counts; model not parsed/interpreted, CLI synthetic ZIP oracle demonstrates limitation. Acceptance hash trusted prior curation not independent image audit; retain baseline/no URL. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full271. Separate web-only no-fresh authority, strict full finite normalized score vectors/argmax/truth/exact IDs and group/hash/author split boundaries. Freeze full recomputation; absent unknown yields null metrics/gate, not0. load_inputs actual artifact SHA/bytes/export/tensor declared metadata/ZIP labels and accepted dataset counts; model not parsed/interpreted, CLI synthetic ZIP oracle demonstrates limitation. Acceptance hash trusted prior curation not independent image audit; retain baseline/no URL. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59823,11 +59851,11 @@
       "lines": 343,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full343. Bounded20s reads2MBrights/8MBimages; photo-specific ImageObject license/path/photoid and stable author, explicit full-image visual dispositions, EXIF pHash/crop hashes. Union group links before excluding bridge rows, deterministic separate split hash, near/exact dedup; validate safe paths/checksums/image decode/taxonomy/min8train3val and crossauthor/product no fresh data. Curate reads raw paths before safe-path validate; trusted acquired inputs, no remote activation. Acquire resumable request log, partial errors preserved, final acquired blocks rerun even shortages; no downloads performed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full343. Bounded20s reads2MBrights/8MBimages; photo-specific ImageObject license/path/photoid and stable author, explicit full-image visual dispositions, EXIF pHash/crop hashes. Union group links before excluding bridge rows, deterministic separate split hash, near/exact dedup; validate safe paths/checksums/image decode/taxonomy/min8train3val and crossauthor/product no fresh data. Curate reads raw paths before safe-path validate; trusted acquired inputs, no remote activation. Acquire resumable request log, partial errors preserved, final acquired blocks rerun even shortages; no downloads performed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59844,11 +59872,11 @@
       "lines": 76,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full76. Historical actual Keras-to-TFLite rawuint8 rescale/float4, embedded labels and validation-only crop parity top1 all/max.001, exclusive candidate file; assert tensor/image checks can disable under -O. Writes report before failed parity, production disabled, no broad baseline replacement. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full76. Historical actual Keras-to-TFLite rawuint8 rescale/float4, embedded labels and validation-only crop parity top1 all/max.001, exclusive candidate file; assert tensor/image checks can disable under -O. Writes report before failed parity, production disabled, no broad baseline replacement. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59865,11 +59893,11 @@
       "lines": 116,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full116. Pinned trained checkpoint/manifest; CPU real conversion exclusive candidate, exact1input/output dtype/shape/ZIP orderedlabels/no background. All developmentvalidation image bytes/pixels parity finite output/top1all/max.001, first4samevalidation rawRGB probes; writes failed evidence then throws. distributionUri null/releaseEnabled false/rollback baseline, no native or fresh-data claim. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full116. Pinned trained checkpoint/manifest; CPU real conversion exclusive candidate, exact1input/output dtype/shape/ZIP orderedlabels/no background. All developmentvalidation image bytes/pixels parity finite output/top1all/max.001, first4samevalidation rawRGB probes; writes failed evidence then throws. distributionUri null/releaseEnabled false/rollback baseline, no native or fresh-data claim. No export executed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59886,11 +59914,11 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full29. Top-level TensorFlow conversion writes exclusive test fixture: uint8[1,1,1,3] to float four fixed base scores plus tiny pixel offset; ZIP label timestamp fixed. Synthetic scores can sum>1 intentionally adapter fixture not calibrated learned probabilities, hash printed; import has side effects so never imported/run in review. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full29. Top-level TensorFlow conversion writes exclusive test fixture: uint8[1,1,1,3] to float four fixed base scores plus tiny pixel offset; ZIP label timestamp fixed. Synthetic scores can sum>1 intentionally adapter fixture not calibrated learned probabilities, hash printed; import has side effects so never imported/run in review. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59907,11 +59935,11 @@
       "lines": 93,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full93. Legacy bounded downloads cap+1 timeout45/exclusive destination but preexisting files reused without upstream pins. Known four classes ordered box selection one ID per split, metadata CC URL only; official validation train/val and official test heldout small counts, no author/perceptual independence. Superseded fresh protocol will reject missing fresh/natural/unknown; no acquisition run. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full93. Legacy bounded downloads cap+1 timeout45/exclusive destination but preexisting files reused without upstream pins. Known four classes ordered box selection one ID per split, metadata CC URL only; official validation train/val and official test heldout small counts, no author/perceptual independence. Superseded fresh protocol will reject missing fresh/natural/unknown; no acquisition run. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59928,11 +59956,11 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full142. Historical manual JSONL analyzer never queries reward_transactions despite header: parity is wouldSucceed true divided by eligible count, false called already-granted; errors may overlap eligible causing negative notEligible. Empty log exits0; no minimum7days/sample/real production comparison. Descriptive legacy tool not cutover authority; do not activate shadow mode or run reporting. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full142. Historical manual JSONL analyzer never queries reward_transactions despite header: parity is wouldSucceed true divided by eligible count, false called already-granted; errors may overlap eligible causing negative notEligible. Empty log exits0; no minimum7days/sample/real production comparison. Descriptive legacy tool not cutover authority; do not activate shadow mode or run reporting. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59949,11 +59977,11 @@
       "lines": 44,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full44. Synthetic May exact-case/POS/lowest-level provenance and invalid Thai/control/no-placeholder negatives; deterministic exact5 unique spread/not prefix and shortage. No actual pinned source main/optimized-Python or output atomicity oracle. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full44. Synthetic May exact-case/POS/lowest-level provenance and invalid Thai/control/no-placeholder negatives; deterministic exact5 unique spread/not prefix and shortage. No actual pinned source main/optimized-Python or output atomicity oracle. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59970,11 +59998,11 @@
       "lines": 20,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full20. Synthetic original preservation/shared uppercase duplicate exclusion, main4+supplement1 deterministic, shortage reject. No live source/license/hash/output roundtrip. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full20. Synthetic original preservation/shared uppercase duplicate exclusion, main4+supplement1 deterministic, shortage reject. No live source/license/hash/output roundtrip. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -59991,11 +60019,11 @@
       "lines": 312,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full312. Synthetic640 metadata rows/predictions exercise coverage/nonfresh/crops/duplicates/crosssplit, frozen tamper11ways/nonfinite/exact IDs and explicit mapped acceptance. CLI subprocess temp files exclusive reports, second opening denied, damagedfreeze no report; legacy trainer insufficient preflight no output. No image inference/physical data, Wilson shape only not statistical certification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full312. Synthetic640 metadata rows/predictions exercise coverage/nonfresh/crops/duplicates/crosssplit, frozen tamper11ways/nonfinite/exact IDs and explicit mapped acceptance. CLI subprocess temp files exclusive reports, second opening denied, damagedfreeze no report; legacy trainer insufficient preflight no output. No image inference/physical data, Wilson shape only not statistical certification. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60012,11 +60040,11 @@
       "lines": 180,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full180. Synthetic exact IDs/vector/argmax/config/provenance/tamperedfreeze; actual file SHA and exclusive CLI output using ZIP-only fake .tflite labels, proves metadata binding not real tensor inference. Null unknown/empty metrics and Wilson numeric fixture, explicit paired baseline accepted bool/mapping/coverage gate. No real model quality evaluation. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full180. Synthetic exact IDs/vector/argmax/config/provenance/tamperedfreeze; actual file SHA and exclusive CLI output using ZIP-only fake .tflite labels, proves metadata binding not real tensor inference. Null unknown/empty metrics and Wilson numeric fixture, explicit paired baseline accepted bool/mapping/coverage gate. No real model quality evaluation. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60033,11 +60061,11 @@
       "lines": 155,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full155. Synthetic photo-specific graph/license/alias/product/transitive grouping and order-independent deterministic split; path escapes. Real temp synthetic PNG/HTML checks changed rights/image/crossowner, coverage=False for small fixture; taxonomy/near crop duplicate negatives. No actual acquisition/remote rights/curator review or full coverage oracle. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full155. Synthetic photo-specific graph/license/alias/product/transitive grouping and order-independent deterministic split; path escapes. Real temp synthetic PNG/HTML checks changed rights/image/crossowner, coverage=False for small fixture; taxonomy/near crop duplicate negatives. No actual acquisition/remote rights/curator review or full coverage oracle. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60054,11 +60082,11 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full43. Synthetic training_rows excludes wrongschema/freshtest/empty; real temp exclusive directory preserves checkpoint and SHA mismatch rejects. No TensorFlow optimization, numerical convergence, real learned quality or config full negatives. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full43. Synthetic training_rows excludes wrongschema/freshtest/empty; real temp exclusive directory preserves checkpoint and SHA mismatch rejects. No TensorFlow optimization, numerical convergence, real learned quality or config full negatives. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60075,11 +60103,11 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full33. Synthetic valid structure explicitly not language certification; missing/duplicate/inflected target/out-ofbounds/status rejects. C2 and complete two-sense partition negatives duplicate/missing/control rationale. No actual editorial quality certification. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full33. Synthetic valid structure explicitly not language certification; missing/duplicate/inflected target/out-ofbounds/status rejects. C2 and complete two-sense partition negatives duplicate/missing/control rationale. No actual editorial quality certification. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60096,11 +60124,11 @@
       "lines": 142,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full142. Legacy trainer deliberately unreachable under current R15 preflight: coverage requires unknown while next check rejects all unknown; guard before TensorFlow imports/output. Historical code fixed-seed MobileNet head/fine-tune best val then test, pinned baseline SHA, four-crop limitation. No training/GPU/network executed. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full142. Legacy trainer deliberately unreachable under current R15 preflight: coverage requires unknown while next check rejects all unknown; guard before TensorFlow imports/output. Historical code fixed-seed MobileNet head/fine-tune best val then test, pinned baseline SHA, four-crop limitation. No training/GPU/network executed. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60117,11 +60145,11 @@
       "lines": 174,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full174. Actual accepted manifest/receipt/backbone SHA checked, train/validation only, bounded epochs/batch/seed, exclusive run directory, CPU deterministic env then image SHA/safe-path EXIF crop. Frozen backbone cached features, seeded shuffled head batches best val loss, raw epoch log and initial-selected finite weight delta, checkpoint hashes. Reuses curation receipt rather than repeat gate; hardcoded16way prose relies accepted16labels. No fresh camera/unknown/rollout, no training run. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full174. Actual accepted manifest/receipt/backbone SHA checked, train/validation only, bounded epochs/batch/seed, exclusive run directory, CPU deterministic env then image SHA/safe-path EXIF crop. Frozen backbone cached features, seeded shuffled head batches best val loss, raw epoch log and initial-selected finite weight delta, checkpoint hashes. Reuses curation receipt rather than repeat gate; hardcoded16way prose relies accepted16labels. No fresh camera/unknown/rollout, no training run. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60138,11 +60166,11 @@
       "lines": 139,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-11",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:41:17.046487+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full139. Pinned original four assets joined by IDs; exact editorial coverage, fields, strict int sense bounds (bool denied), target-form/Thai/control/text limits, source ID60; sentence length/punctuation only warnings. Full source-sense partition including exclusions/reasons and no duplicate indices. Explicit no language certification; --write-manifest rewrites Dart pins from current batch bytes, not independent editorial truth. Report then manifest nonatomic; no regeneration here. Full source read; G8.2 cross-check pending, no zone acceptance.",
+      "reviewNotes": "Full139. Pinned original four assets joined by IDs; exact editorial coverage, fields, strict int sense bounds (bool denied), target-form/Thai/control/text limits, source ID60; sentence length/punctuation only warnings. Full source-sense partition including exclusions/reasons and no duplicate indices. Explicit no language certification; --write-manifest rewrites Dart pins from current batch bytes, not independent editorial truth. Report then manifest nonatomic; no regeneration here. Full source read; G8.2 cross-check pending, no zone acceptance. Semantic disposition: REV-11-zone-review.json REV11-X08; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T04:44:48.432830+00:00",
       "readRanges": [
         [
@@ -60644,7 +60672,7 @@
     }
   ],
   "reviewProgress": {
-    "zone": "REV-11",
+    "zone": "REV-12",
     "zoneAccepted": false,
     "completedZones": [
       "REV-01",
@@ -60656,13 +60684,14 @@
       "REV-07",
       "REV-08",
       "REV-09",
-      "REV-10"
+      "REV-10",
+      "REV-11"
     ],
-    "completedProductionZoneFiles": 759,
-    "focusedRev12OracleDispositions": 183,
-    "totalStaticDispositions": 942,
-    "sourceReadAwaitingCrossCheck": 487,
-    "historyPath": "review-progress-before-REV10.json",
-    "notes": "61open findings19static/42candidate;1429observations retained. G8.2 not accepted. No runtime. REV11 owns106zone+4exactnextoracles; finalREV12 retains shared/orphan/supplemental ownership."
+    "completedProductionZoneFiles": 865,
+    "focusedRev12OracleDispositions": 187,
+    "totalStaticDispositions": 1052,
+    "sourceReadAwaitingCrossCheck": 377,
+    "historyPath": "review-progress-before-REV11.json",
+    "notes": "69open findings22static/47candidate;1429observations retained. REV11 static106zone+4exactoracles complete. FinalREV12 reconciles564zone paths, remaining377 and supplemental attribution. No runtime/G8.2 acceptance."
   }
 }

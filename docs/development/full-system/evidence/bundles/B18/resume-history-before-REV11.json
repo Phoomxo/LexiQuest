@@ -1,8 +1,8 @@
 {
   "bundleId": "B18",
-  "threadId": "01a0b9a4-1ed2-74e2-ad32-b0e337d37d60",
-  "worktree": "C:/Users/Phet/.codex/worktrees/f21c/LexiQuest",
-  "branch": "lexiquest/b18-g82-rev11",
+  "threadId": "01a0b99a-8721-7ed3-8dd8-2b54433ce453",
+  "worktree": "C:/Users/Phet/.codex/worktrees/1528/LexiQuest",
+  "branch": "lexiquest/b18-g82-rev10",
   "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
   "currentPackageId": "G8.2",
@@ -12,9 +12,9 @@
   "G83Started": false,
   "B19Dispatched": false,
   "nextWork": [
-    "REV11 static106zone+4oracles complete;1052dispositions/pending377. FinalREV12 reconciles564zonepaths using existing notes and supplemental attribution before G8.2 gate.",
-    "69open findings22static/47candidate;REV11 adds collector/CLIinputclosure/hostedrelation static and5candidates. No finding closed. No runtime or production source changes.",
-    "Commit/verify/release then exactly one fresh REV12; G8.3 only after G8.2accepted, B19 only after G8.1-3."
+    "REV10 static84zone+5oracles complete;942dispositions/pending487. Next REV11 CLI/CI/generators/dependencies/recovery106zone+4exactnextoracles from existing notes/unresolved callers.",
+    "61open findings19static/42candidate;new REV10-01SAFlifecycle/02SAFresource/03UTF16allocation/04fontlifetime candidates;05build-version fallback/oracle static mismatch. No finding closed. Apple/native support prerequisites retained; no runtime claim.",
+    "Commit/verify/release then exactly one fresh REV11. G8.3 waits G8.2 acceptance; B19 waits G8.1-3."
   ],
   "evidence": [
     "G8.1-acceptance.json",
@@ -58,17 +58,13 @@
     "REV-10-zone-review.json",
     "REV-10-integrity.json",
     "review-progress-before-REV10.json",
-    "resume-history-before-REV10.json",
-    "REV-11-zone-review.json",
-    "REV-11-integrity.json",
-    "review-progress-before-REV11.json",
-    "resume-history-before-REV11.json"
+    "resume-history-before-REV10.json"
   ],
   "toolingCaution": "freeze_inventory.py and record_review.py write reports; do not blindly rerun and overwrite incremental observations. checkpoint_audit.py validates current source without modifying old bundles. Initial245EOL restoration path list was overwritten by a subsequent inventory classification run; count and final all-file equality are retained, no per-path restoration history invented.",
   "authorization": "Continuous through B20/G8.9; no repeat approval needed. One writer, no subagents/background implementation, no prohibited workflow, no deployment/spending/live/research activation. Policies remain inherited in G8.1-acceptance.json and latest external schema2 controls.",
   "runtimeEvidence": "No B18 runtime tests yet. Device/human/live/installedflags/fullrelease NOT RUN. Existing gate evidence has its original scoped interpretation only.",
-  "recoverySincePreviousCheckpoint": "2048EOL-only raw restores;3610inventory/35handoff/3policy verified, indexempty. Corrected absent path searches via discovery;UTF8/LF outputs.",
+  "recoverySincePreviousCheckpoint": "2061 EOL-only raw restorations;3610inventory/31handoff/3policy hashes verified and index clean. UTF8 decoding and discovered literal paths corrected local inspection errors; no historical regeneration.",
   "continuationPolicy": "Latest 2026-09-19 instruction authorizes each released successor to dispatch exactly the next slice; overrides master-only dispatch wording without modifying frozen policy bytes.",
-  "historyPath": "resume-history-before-REV11.json",
-  "sliceId": "B18-G82-REV-11"
+  "historyPath": "resume-history-before-REV10.json",
+  "sliceId": "B18-G82-REV-10"
 }

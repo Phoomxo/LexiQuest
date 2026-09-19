@@ -1146,6 +1146,179 @@
       ],
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV11-01",
+      "severity": "P1",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "tool/cli/collect-android-field-evidence.ps1",
+      "relatedFiles": [
+        "tool/cli/lib/field-release-evidence.ps1",
+        "tool/cli/tests/verify-field-release.tests.ps1"
+      ],
+      "trigger": "Prior dumpsys fails or produces no version, then install -r, launch and pulled APK checks succeed.",
+      "expected": "Unknown prior state must not establish package absence or a clean-install pass.",
+      "actual": "Get-InstalledVersionCode ignores native exit and returns null on any unmatched output. Null selects a signed cleanInstall pass with absence prose. Downstream verifies signed journey/source payload but has no prior-state proof. This can falsely satisfy this individual journey; all other release requirements still apply. No device or full gate execution occurred.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake ADB success-absent, present, nonzero, malformed and transient-error cases; unknown must abort or stay pending, never sign pass. Keep real lower-version upgrade and installed-byte checks.",
+      "evidenceLocations": [
+        "collect-android-field-evidence.ps1:145-161",
+        "collect-android-field-evidence.ps1:298-308",
+        "collect-android-field-evidence.ps1:416-450",
+        "field-release-evidence.ps1:1142-1172",
+        "verify-field-release.tests.ps1:1934-1943"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-02",
+      "severity": "P1",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/ci-workflow.tests.ps1",
+        "tool/cli/tests/verify-scope.tests.ps1",
+        "package.json",
+        ".github/dependabot.yml",
+        "osv-scanner.toml"
+      ],
+      "trigger": "Resume a passed targeted CLI oracle after editing a root input it reads while HEAD and tool/environment remain unchanged.",
+      "expected": "Every selected command input must invalidate its cached result when changed.",
+      "actual": "Runtime pattern includes lib/test/assets/tool/android/workflows and selected Flutter configs, but excludes package.json/package-lock.json, .github/dependabot.yml, root OSV files and docs read by CLI oracles. ci-workflow explicitly reads package.json. Reuse compares only this incomplete fingerprint plus retained log hashes. Source-level omission is confirmed; stale PASS demonstration remains pending.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Disposable runner fixture with real selected-oracle input dependency: change package.json and another non-tool config/doc, require rerun; unchanged control must reuse. Do not broaden actual execution scope to full suite.",
+      "evidenceLocations": [
+        "verify-scope.ps1:94-129",
+        "verify-scope.ps1:134-164",
+        "verify-scope.ps1:198-209",
+        "ci-workflow.tests.ps1:229-237",
+        "verify-scope.tests.ps1:112-132"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-03",
+      "severity": "P1",
+      "status": "candidate-runtime-reproduction-required",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "trigger": "A command or concurrent editor changes covered source/environment after the pre-command fingerprint is captured.",
+      "expected": "Passed evidence must bind the inputs actually verified and must not silently certify pre-run bytes after mutation.",
+      "actual": "Fingerprint and inputClosure are captured before dispatch; result records Passed on exit0 without a post-command comparison. Backend uv run may materialize environment after the initial hash. No actual mutation/reuse failure has been executed; source restoration to the original prehash and mixed-command closure need a controlled reproduction.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Child changes a covered input during execution: require explicit drift rejection/invalidation; unchanged run still reuses. Separate legitimate environment setup from the verified phase and test it without installing real dependencies.",
+      "evidenceLocations": [
+        "verify-scope.ps1:257-278",
+        "verify-scope.ps1:731-749",
+        "verify-scope.ps1:757-812"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-04",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "tool/cli/verify-hosted-asset-links.ps1",
+      "relatedFiles": [
+        "hosting/public/.well-known/assetlinks.json",
+        "tool/cli/tests/android-manifest-security.tests.ps1"
+      ],
+      "trigger": "HTTP200 JSON has the expected package/certificate but omits or changes the URL-handling relation.",
+      "expected": "Hosted association verification must require the relation used by the repository Android app-link contract.",
+      "actual": "Verifier matches target identity/certificate only; relation is never inspected before writing evidence and printing verified. Local assetlinks declares delegate_permission/common.handle_all_urls. A matching target with no relation therefore satisfies this verifier logic. No hosted response or device association was tested; final release is not claimed passed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Inject HTTP fixtures with missing/wrong relation and correct relation; test multiple statements and content-type/redirect contract as appropriate. No live hosting or deployment.",
+      "evidenceLocations": [
+        "verify-hosted-asset-links.ps1:37-69",
+        "hosting/public/.well-known/assetlinks.json:3-5"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-05",
+      "severity": "P2",
+      "status": "candidate-runtime-reproduction-required",
+      "file": "tool/cli/configure-firebase-budget.cjs",
+      "relatedFiles": [
+        "tool/cli/tests/verify-field-release.tests.ps1"
+      ],
+      "trigger": "Billing account has same displayName for another project, or intended budget exists beyond first response page.",
+      "expected": "Identify the intended project budget uniquely and reconcile complete listing before create/update.",
+      "actual": "Single list response is searched by displayName only; nextPageToken is not followed. Match gets wildcard patch replacing filter/amount; no match creates. Could modify an unrelated same-name budget or create duplicates. No cloud state or API behavior has been observed. Budget alerts are not a spending cap.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Injected client only: paginated target, same-name foreign project, duplicates and response mismatch; ensure no unintended mutation and validate project/currency/amount, not thresholds alone.",
+      "evidenceLocations": [
+        "configure-firebase-budget.cjs:84-91",
+        "configure-firebase-budget.cjs:94-141"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-06",
+      "severity": "P2",
+      "status": "candidate-runtime-reproduction-required",
+      "file": ".github/dependabot.yml",
+      "relatedFiles": [
+        "tool/cli/tests/dependabot-config.tests.ps1"
+      ],
+      "trigger": "Dependency updater parses nine groups containing version-update:semver-minor/patch values.",
+      "expected": "Grouping values must conform to the groups update-types schema.",
+      "actual": "All nine group blocks use version-update:semver-* strings; local regex oracle checks ecosystem/path presence but no group schema. Potential confusion with ignore.update-types remains an unverified schema candidate; no external schema/service request was made in this source-only slice.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use authoritative pinned schema or supported local parser fixture to confirm group enum, reject invalid values and preserve nine ecosystem scopes; no dependency update service invocation.",
+      "evidenceLocations": [
+        ".github/dependabot.yml:10-13",
+        "tool/cli/tests/dependabot-config.tests.ps1:30-38"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-07",
+      "severity": "P1",
+      "status": "candidate-runtime-reproduction-required",
+      "file": ".github/workflows/ci.yml",
+      "relatedFiles": [
+        "tool/cli/tests/ci-workflow.tests.ps1"
+      ],
+      "trigger": "An early CLI script returns exit1 without terminating the invoking pwsh step and a later script succeeds.",
+      "expected": "Any failed CLI contract must fail the CI step.",
+      "actual": "Ten scripts are invoked sequentially with no explicit per-call LASTEXITCODE assertion. Local CI oracle only inspects text. Exact GitHub pwsh wrapper/exit behavior is not exercised; possible masking remains candidate, not an observed green CI failure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled same-shell early exit1 followed by success using the CI invocation contract; assert nonzero step result for first/middle/last failure without running hosted workflow.",
+      "evidenceLocations": [
+        ".github/workflows/ci.yml:40-52",
+        "tool/cli/tests/ci-workflow.tests.ps1:227-250"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV11-08",
+      "severity": "P2",
+      "status": "candidate-runtime-reproduction-required",
+      "file": "tool/cli/verify-scope.ps1",
+      "relatedFiles": [
+        "tool/cli/tests/verify-scope.tests.ps1"
+      ],
+      "trigger": "Wrapper-level stderr fills its redirected pipe before the parent reads it.",
+      "expected": "Drain redirected wrapper streams during execution and retain bounded timeout/failure evidence.",
+      "actual": "Parent waits for process exit before StandardError.ReadToEnd. Ordinary child output is redirected to log files, so it does not itself prove pipe blockage. A large wrapper error could block until timeout; no deadlock or timeout was observed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Bounded fake child/wrapper failure producing enough wrapper stderr; concurrently drain and verify complete evidence/exit plus timeout-tree cleanup. Preserve ordinary child log behavior.",
+      "evidenceLocations": [
+        "verify-scope.ps1:599-615",
+        "verify-scope.ps1:627-650"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -1226,6 +1399,13 @@
       "actual": "Checkout produced2061 EOL-only raw differences. Python default cp874 decode failed once. Guessed brief/dart_test/release-profile paths caused missing-path diagnostics.",
       "action": "Compared raw Git blobs and restored only EOL-equivalent bytes;3610inventory/31handoff/3policy equality plus empty stage. Explicit UTF8 decoding/LF writing. Stopped guessed-path search, used rg --files discovery and existing literal paths. No historical regeneration; all application/runtime checks NOT RUN.",
       "externalPreflight": "B18-REV10-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV11",
+      "status": "method-corrected",
+      "actual": "2048 checkout EOL-only differences; broad note output truncation and two guessed absent search paths (.github/workflows/production-release.yml, firebase directory).",
+      "action": "Restored only exact raw checkpoint blobs after EOL-equivalence and clean-index checks;3610inventory/35handoff/3policy equality. Stopped guessed-path method, discovered hosting/public/.well-known/assetlinks.json and actual workflow inventory via rg --files; bounded recovered relevant notes/source. UTF8/LF outputs; no runtime or historical regeneration.",
+      "externalPreflight": "B18-REV11-preflight.json"
     }
   ]
 }

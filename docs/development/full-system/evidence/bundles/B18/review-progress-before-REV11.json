@@ -1,0 +1,22 @@
+{
+  "zone": "REV-11",
+  "zoneAccepted": false,
+  "completedZones": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04",
+    "REV-05",
+    "REV-06",
+    "REV-07",
+    "REV-08",
+    "REV-09",
+    "REV-10"
+  ],
+  "completedProductionZoneFiles": 759,
+  "focusedRev12OracleDispositions": 183,
+  "totalStaticDispositions": 942,
+  "sourceReadAwaitingCrossCheck": 487,
+  "historyPath": "review-progress-before-REV10.json",
+  "notes": "61open findings19static/42candidate;1429observations retained. G8.2 not accepted. No runtime. REV11 owns106zone+4exactnextoracles; finalREV12 retains shared/orphan/supplemental ownership."
+}
