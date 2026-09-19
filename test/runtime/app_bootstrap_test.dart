@@ -56,6 +56,7 @@ import 'package:vocab_learning_app/features/learning/domain/lesson_session_state
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/packaged_sense_crosswalk.dart';
 import 'package:vocab_learning_app/features/offline_content/application/offline_content_manager.dart';
 import 'package:vocab_learning_app/features/offline_content/data/model_download_adapter.dart';
 import 'package:vocab_learning_app/features/offline_content/data/voice_pack_download_adapter.dart';
@@ -1505,11 +1506,15 @@ void main() {
 
         expect(adapter.supports(manifest), isTrue);
         expect(
-          await (database.select(database.contentManifests)..where(
+          (await (database.select(database.contentManifests)..where(
                 (row) => row.contentType.equals('lexicalMetadata').not(),
               ))
-              .get(),
-          hasLength(2),
+              .get()).map((row) => row.contentId),
+          unorderedEquals([
+            identity.id,
+            'lexiquest.adventure.world-v1',
+            PackagedSenseCrosswalk.identity.id,
+          ]),
         );
         expect(
           await (database.select(
@@ -6412,6 +6417,14 @@ void main() {
           dependencies = await bootstrap.initialize();
           final vocabulary = dependencies.vocabulary!;
           final words = await vocabulary.getGameWords(limit: 100);
+          final crosswalkArtifact = await DriftContentManifestRepository(
+            database,
+            loadArtifactBytes: bootstrap.loadContentArtifactBytes,
+          ).requireVerified(PackagedSenseCrosswalk.identity);
+          expect(
+            PackagedSenseCrosswalk.decode(crosswalkArtifact.bytes).entries,
+            hasLength(12),
+          );
           expect(
             words,
             hasLength(12),

@@ -12,10 +12,18 @@ Verification: **37 tests passed across four bounded targets**, including 13 new 
 
 ## Remaining E2.1 work
 
-1. Wire a real, versioned crosswalk source and reviewed subset through existing content authority. The test fixture is synthetic, not production approval. Preserve original corpus pins; editorial AI-review does not confer scored admission. Bind saved revisions to the exact crosswalk artifact as well as sense refs; retain old crosswalk readers and reject changed mappings under an existing immutable identity.
+1. Bind saved revisions to the exact crosswalk pin and sense refs using the C02 authority below. Retain old crosswalk readers and reject changed mappings under an existing immutable identity. Editorial AI-review does not confer scored admission.
 2. Add owner-scoped immutable personal set revisions/members, expected-revision save, durable operation identity/payload collision checks, archive and exact revision reads. Recheck schema 28 before assigning the next migration.
 3. Integrate owner lifecycle manifest/export/delete, transactional guest upgrade, coherent restore/idempotency and the complete migration matrix. Discover actual restore capabilities rather than assuming the export archive is restorable.
 4. Connect real accessible list/edit/preview/activity UI through `lib/screens/learning_pack_catalog_screen.dart` and `lib/screens/study_planning_hub_screen.dart`. Existing planning presentation is under `lib/screens`, not a feature-local presentation directory.
 5. Launch an admitted subset through canonical learning/session authority with pinned revisions and no direct SRS/reward/history mutations. Check owner changes at durable/async boundaries. Run fixture, lifecycle, restart, navigation and accessibility regressions and review before accepting E2.1.
 
 Continue **E2.1**, not E2.2. All E6 integration and E7 G8.4–G8.9 obligations remain. Application implementation and one-at-a-time continuation are authorized by the external `post-g83-v3-implementation-authorization.json`, superseding historical analysis-only statements in E0/E1.
+
+## Checkpoint C02 — packaged content authority (2026-09-20)
+
+เพิ่ม crosswalk จริงสำหรับ 12 ความหมายคำนามของ starter เดิม โดยตรึง word revision/checksum และ lexical artifact ทุกตัว. Bootstrap ลงทะเบียนผ่าน `ContentQualityPolicy`/manifest authority เดิม; `SenseCrosswalkPin` และ reader อ่านเฉพาะ corpus/revision/hash ที่ขอ. การจับคู่ตรวจจากเนื้อหา starter ที่ approved อยู่แล้ว เป็น local agent review ไม่ใช่ human/independent review. [ขอบเขตและ corpus pins](post-g83-e21/starter-crosswalk-admission.json) แยกจาก editorial 5,500 รายการซึ่งยังไม่ได้รับ scored admission; hash เดิมทั้ง 9 ไฟล์ตรงครบ.
+
+**164 tests ผ่านใน 5 bounded targets**, รวม 8 tests ใหม่และ bootstrap จริง. ครอบคลุม exact pins, corrupted/retired/missing artifacts, เปิดฐานข้อมูลใหม่, replay และ immutable manifest collision. ไฟล์ใหม่ Dart analysis ไม่มีปัญหา; ตรวจรวม runtime พบ info เดิม 6 จุดที่พิสูจน์ว่า source ไม่เปลี่ยน. [C02 receipt](post-g83-e21/content-authority-checkpoint.json) เก็บ fingerprint ก่อน/หลังที่ตรงกันและ RED/ข้อแก้ไข fixture. รีวิวเองเท่านั้น; ไม่รัน full suite, device, live provider หรือ release gate.
+
+**E2.1 ยังไม่ accepted.** Content authority เชื่อม bootstrap แล้ว แต่ยังไม่มี personal set persistence/UI/launch. Schema ยัง 28. ต่อ C03 ด้วย immutable owner revisions และ lifecycle/restore ก่อน UI; ไม่ส่ง E2.2 จากผลตรวจ checkpoint นี้.

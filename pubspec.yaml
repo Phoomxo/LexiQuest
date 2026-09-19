@@ -81,6 +81,7 @@ flutter:
     - assets/content/cefr_starter/LICENSE-th.txt
     - assets/fonts/NotoSansThai-Variable.ttf
     - assets/content/lexical_metadata/starter-book/r1.json
+    - assets/content/sense_crosswalk/starter-r1.json
     - assets/content/lexical_metadata/starter-pencil/r1.json
     - assets/content/lexical_metadata/starter-chair/r1.json
     - assets/content/lexical_metadata/starter-door/r1.json

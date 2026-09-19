@@ -171,6 +171,7 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
 import '../features/vocabulary/data/packaged_starter_catalog.dart';
+import '../features/learning_packs/data/packaged_sense_crosswalk.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -242,6 +243,17 @@ final RegExp _bundledLexicalWordId = RegExp(r'^word:[a-z0-9][a-z0-9_-]{0,95}$');
 Future<Uint8List?> _productionContentArtifactBytes(
   ContentIdentity identity,
 ) async {
+  if (identity == PackagedSenseCrosswalk.identity) {
+    try {
+      final bytes = await rootBundle.load(PackagedSenseCrosswalk.assetPath);
+      if (bytes.lengthInBytes != PackagedSenseCrosswalk.manifest.byteLength) {
+        return null;
+      }
+      return bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+    } on Object {
+      return null;
+    }
+  }
   if (identity.type == ContentType.offlineArtifact) {
     final catalog = OfflineVoicePackManifestCatalog.production;
     if (catalog.resolve(identity) == null) return null;
@@ -1063,6 +1075,14 @@ final class AppBootstrap {
         contentManifests,
         loadContentArtifactBytes,
       );
+      final crosswalkBytes = await loadContentArtifactBytes(
+        PackagedSenseCrosswalk.identity,
+      );
+      if (crosswalkBytes != null) {
+        await contentManifests.provisionPackagedArtifact(
+          PackagedSenseCrosswalk.verify(crosswalkBytes),
+        );
+      }
     } on ContentQualityFailure catch (failure) {
       // Rich starter artifacts remain unavailable. Previously verified core
       // words may still support basic games; Cloze/Definition must reload and

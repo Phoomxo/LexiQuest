@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "slice": "E2.1",
+  "checkpoint": "C02",
+  "status": "partial-not-accepted",
+  "baseSha": "73445e70cda0782c51be06398a08c287863205f6",
+  "threadId": "01a0bb9c-4c76-7ab1-bb4c-c68ac009ac72",
+  "sourcePins": [
+    {
+      "path": "assets/content/sense_crosswalk/starter-r1.json",
+      "sha256": "a3a639e9487aa69e7e294f7cd9fc70b222c6ee325bae23844afbfa3e3aa1b115"
+    },
+    {
+      "path": "lib/features/learning_packs/data/packaged_sense_crosswalk.dart",
+      "sha256": "d7e94c78542c9a5f58845df66c7ef159c8cbba68232c63837dca51c0551e2614"
+    },
+    {
+      "path": "lib/features/learning_packs/domain/sense_crosswalk_repository.dart",
+      "sha256": "aa50e1ad7f52381a91d4cab8adab134dda656ee267a120b3d44b0ba8a4ed1cfb"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "6112ab3302c8bf12e685b3db2f253a4555ffa68ae93a7ec2dc998a8f8f2b6611"
+    },
+    {
+      "path": "pubspec.yaml",
+      "sha256": "129dd40a68e19db2751ec10f3e8fa1f8d5f82d83248efd0caf7840035e1f37b0"
+    },
+    {
+      "path": "test/features/learning_packs/packaged_sense_crosswalk_test.dart",
+      "sha256": "a1c4a33769ce4d901dc1bc02a5c517c4878d1d036c65ea28ed6fc53e3d0b43d9"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "sha256": "354da6bba6c40bda4ee370dcc8a26c556074af54f10d527d45ff9a6c21eabe50"
+    }
+  ],
+  "verification": {
+    "status": "Passed",
+    "tests": 164,
+    "newTests": 8,
+    "targets": [
+      "test/features/learning_packs/packaged_sense_crosswalk_test.dart",
+      "test/features/learning_packs/sense_crosswalk_test.dart",
+      "test/features/vocabulary/packaged_starter_catalog_test.dart",
+      "test/features/vocabulary/cefr_editorial_catalog_test.dart",
+      "test/runtime/app_bootstrap_test.dart"
+    ],
+    "fingerprint": "36863ba8fdc7d3b802473833bebd6c163b293502104666b520fc11b975203667",
+    "postFingerprint": "36863ba8fdc7d3b802473833bebd6c163b293502104666b520fc11b975203667",
+    "manifest": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/c02-final/73445e70cda0782c51be06398a08c287863205f6/targeted-learning-aa764c97c20a74580b8e003d09f21f5b92c07ce3691c9b28f5050525bd3541b4.json",
+    "finalInputDrift": [],
+    "newDartAnalysis": "No issues found",
+    "broaderAnalysis": "0 errors; 6 unchanged baseline info findings with line-equality proof",
+    "device": "NOT RUN",
+    "release": "NOT RUN"
+  },
+  "redGreen": {
+    "source": "2 UnimplementedError failures, then 2 pass",
+    "pin": "2 new failures with 2 prior passes, then 4 pass",
+    "runtime": "missingReference at real bootstrap, then pass",
+    "final": "164 pass"
+  },
+  "review": {
+    "kind": "local self-review",
+    "independent": false,
+    "checks": [
+      "all twelve existing word/lexical pins and definitions inspected",
+      "strict serialized pin; no latest lookup",
+      "forged verification wrapper bytes and retired lifecycle rejected",
+      "disk restart and immutable manifest collision",
+      "offline manager filters unsupported artifacts; crosswalk not treated as voice download",
+      "no SRS/reward/research/owner schema mutations"
+    ]
+  },
+  "recovery": [
+    "test getter syncOutbox corrected to existing outboxOperations before valid RED",
+    "retire fixture hit actual SQL immutability trigger; now asserts trigger rejection and tests retired wrapper separately",
+    "bootstrap inventory strengthened from count two to exact voice/adventure/crosswalk identities",
+    "formatter churn removed; baseline mixed EOL preserved; CR-at-EOL diff check passed",
+    "one path discovery corrected; no blind retry"
+  ],
+  "remaining": [
+    "personal set immutable revisions/members and saved crosswalk pin integration",
+    "expected prior revision, durable operation replay/collision, archive and exact reopen",
+    "schema/lifecycle/export/delete/guest remap/coherent restore migration matrix",
+    "accessible list/edit/preview/activity UI and owner-generation pinned canonical launch",
+    "complete E2.1 meaningful integration and acceptance review"
+  ],
+  "schemaVersionUnchanged": 28,
+  "E21Accepted": false,
+  "eolProof": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/c02-generated-eol.json"
+}
