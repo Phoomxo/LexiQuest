@@ -796,7 +796,7 @@ class _QuizScreenState extends State<QuizScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('ออกจาก Quiz?'),
-        content: const Text('ความคืบหน้าในเซสชันนี้จะไม่ถูกบันทึก'),
+        content: const Text('คำตอบที่บันทึกแล้วจะยังอยู่ การออกจะจบเซสชันที่ยังไม่เสร็จ'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),

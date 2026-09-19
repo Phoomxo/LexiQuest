@@ -119,7 +119,7 @@ final class ReviewQueueItem {
     }
     _requireCanonicalText(identity.id, 'identity.id');
     _requireCanonicalText(spelling, 'spelling');
-    _requireCanonicalText(meaning, 'meaning');
+    _requireCanonicalText(meaning, 'meaning', maxLength: 500);
   }
 
   final ReviewedLexicalContentSnapshot snapshot;
@@ -231,10 +231,10 @@ int _compareProvenance(
   return left.sourceId.compareTo(right.sourceId);
 }
 
-void _requireCanonicalText(String value, String name) {
+void _requireCanonicalText(String value, String name, {int maxLength = 256}) {
   if (value.isEmpty ||
       value != value.trim() ||
-      value.runes.length > 256 ||
+      value.runes.length > maxLength ||
       _controlText.hasMatch(value)) {
     throw ArgumentError.value(value, name, 'must be canonical nonblank text');
   }

@@ -935,43 +935,70 @@ void main() {
     }),
   );
 
-  testWidgets('B05 typed recall waits for IME composition before evidence', (tester) async {
+  testWidgets('B05 typed recall waits for IME composition before evidence', (
+    tester,
+  ) async {
     await tester.runAsync(() async {
-      await _insertWord(database,
+      await _insertWord(
+        database,
         ownerId: (await owners.getOrCreateActiveOwner()).id,
-        id: 'word-2', spelling: 'airport', meaning: 'สนามบิน');
+        id: 'word-2',
+        spelling: 'airport',
+        meaning: 'สนามบิน',
+      );
     });
-    await tester.pumpWidget(MaterialApp(home: QuizScreen.typedRecall(
-      categoryId: 'category-1', learning: learning,
-      evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-      modeAdapter: const TypedRecallModeAdapter(),
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen.typedRecall(
+          categoryId: 'category-1',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const TypedRecallModeAdapter(),
+        ),
+      ),
+    );
     await _pumpUntilFound(tester, find.text('station'));
-    tester.widget<FilledButton>(find.byKey(
-      const ValueKey('meaning-quiz-option-word-1-สถานี'))).onPressed!();
+    tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey('meaning-quiz-option-word-1-สถานี')),
+        )
+        .onPressed!();
     await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: สถานี'));
-    tester.widget<FilledButton>(find.byKey(
-      const ValueKey('meaning-quiz-next'))).onPressed!();
+    tester
+        .widget<FilledButton>(find.byKey(const ValueKey('meaning-quiz-next')))
+        .onPressed!();
     final input = find.byKey(const ValueKey('typed-recall-input'));
     final submit = find.byKey(const ValueKey('typed-recall-submit'));
     await _pumpUntilFound(tester, input);
     await tester.showKeyboard(input);
-    tester.testTextInput.updateEditingValue(const TextEditingValue(
-      text: 'airport', selection: TextSelection.collapsed(offset: 7),
-      composing: TextRange(start: 0, end: 7),
-    ));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'airport',
+        selection: TextSelection.collapsed(offset: 7),
+        composing: TextRange(start: 0, end: 7),
+      ),
+    );
     await tester.pump();
-    expect(tester.widget<FilledButton>(submit).onPressed, isNull,
-      reason: 'an unfinished IME candidate is not a submitted answer');
+    expect(
+      tester.widget<FilledButton>(submit).onPressed,
+      isNull,
+      reason: 'an unfinished IME candidate is not a submitted answer',
+    );
     tester.widget<TextField>(input).onSubmitted!('airport');
     await tester.pump();
     expect(await database.select(database.answerAttempts).get(), hasLength(1));
-    tester.testTextInput.updateEditingValue(const TextEditingValue(
-      text: 'airport', selection: TextSelection.collapsed(offset: 7),
-    ));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'airport',
+        selection: TextSelection.collapsed(offset: 7),
+      ),
+    );
     await tester.pump();
-    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull,
-      reason: 'composition-only completion must refresh submit availability');
+    expect(
+      tester.widget<FilledButton>(submit).onPressed,
+      isNotNull,
+      reason: 'composition-only completion must refresh submit availability',
+    );
     tester.widget<FilledButton>(submit).onPressed!();
     await _pumpUntilFound(tester, find.text('คำตอบที่ถูก: airport'));
     final attempts = await database.select(database.answerAttempts).get();
@@ -1376,6 +1403,61 @@ void main() {
         hasLength(1),
       );
       expect(find.text('คำตอบที่ถูก: สถานี'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'F03 exit retains committed answers and explains unfinished session',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => QuizScreen(
+                      categoryId: 'category-1',
+                      learning: learning,
+                      evidenceAdapter: CurrentActivityEvidenceAdapter(
+                        learning: learning,
+                      ),
+                    ),
+                  ),
+                ),
+                child: const Text('Open quiz'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open quiz'));
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('สถานี'));
+      await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+      final attempts = await database.select(database.answerAttempts).get();
+      final events = await database.select(database.eventsV2).get();
+      expect(attempts, hasLength(1));
+      expect(events, isNotEmpty);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(
+        find.text('คำตอบที่บันทึกแล้วจะยังอยู่ การออกจะจบเซสชันที่ยังไม่เสร็จ'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('ออก'));
+      await _pumpUntilFound(tester, find.text('Open quiz'));
+      final session = await database
+          .select(database.learningSessions)
+          .getSingle();
+      expect(session.state, 'abandoned');
+      expect(await database.select(database.answerAttempts).get(), attempts);
+      expect(
+        await database.select(database.eventsV2).get(),
+        containsAll(events),
+      );
+      expect(tester.takeException(), isNull);
     },
   );
 

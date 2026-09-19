@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/review/data/drift_review_center_reader.dart';
+import 'package:vocab_learning_app/features/review/domain/review_queue_item.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -761,7 +763,18 @@ void main() {
       );
       await controller.initialize();
 
+      final review = DriftReviewCenterReader(database);
+      final filter = ReviewQueueFilter(
+        ownerId: ownerId,
+        evaluatedAtUtc: DateTime.utc(2026, 9, 5),
+        timezoneId: 'UTC',
+      );
+      expect(await review.compose(filter), isEmpty);
       await controller.skip();
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(await database.select(database.srsStates).get(), isEmpty);
+      expect(await database.select(database.savedLearningItems).get(), isEmpty);
+      expect(await review.compose(filter), isEmpty);
       await controller.next();
 
       expect(controller.phase, AdventureMixedReviewPhase.completed);

@@ -170,8 +170,8 @@ final class ContentQualityPolicy {
         !_canonicalText(categoryId) ||
         !_canonicalText(spelling) ||
         !_canonicalText(normalizedSpelling) ||
-        !_canonicalText(meaning) ||
-        !_canonicalText(normalizedMeaning) ||
+        !_canonicalText(meaning, maxLength: 500) ||
+        !_canonicalText(normalizedMeaning, maxLength: 500) ||
         !_canonicalText(partOfSpeech) ||
         !_canonicalText(source) ||
         contentRevision <= 0) {

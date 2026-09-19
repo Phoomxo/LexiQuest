@@ -14,6 +14,51 @@ void main() {
     variantSeed: 0,
   )!;
 
+  for (final language in AdventureReactionLanguage.values) {
+    testWidgets('F03 original skip copy is truthful ${language.name}', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final skipped = selector.select(
+          catalogVersion: AdventureReactionCatalog.v1Version,
+          trigger: AdventureReactionTrigger.skipped,
+          variantSeed: 0,
+        )!;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AdventureCompanionPanel(
+                reaction: skipped,
+                rewardOwnership: _rewardAccount(const <String, String>{}),
+                language: language,
+              ),
+            ),
+          ),
+        );
+        final thai = language == AdventureReactionLanguage.th;
+        expect(
+          find.text(
+            thai
+                ? 'ข้ามข้อนี้แล้ว ไปต่อเมื่อพร้อมนะ'
+                : 'This item was skipped. Continue when you are ready.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            thai
+                ? 'เพื่อนร่วมทางยืนยันว่าข้ามข้อนี้แล้ว และไปต่อได้เมื่อพร้อม'
+                : 'Companion confirms that this item was skipped; continue when ready.',
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
+
   testWidgets(
     'renders Thai supportive copy semantic equivalent and equipped cosmetic',
     (tester) async {

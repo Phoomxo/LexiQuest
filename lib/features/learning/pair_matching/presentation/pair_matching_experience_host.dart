@@ -853,7 +853,8 @@ final class _PairSessionPaneState extends State<_PairSessionPane>
       _feedbackEpisodes[episode.wordId] = episode;
       bool current() =>
           mounted &&
-          _liveOwner == after.plan.ownerId &&
+          !_ownerInvalidated &&
+          _liveOwner == widget.runtimeOwnerId &&
           _feedbackEpisodes[episode.wordId]?.identity == episode.identity;
       _feedbackTimers.add(
         Timer(M3Theme.pairFeedbackHold, () {

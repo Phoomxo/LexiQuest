@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:drift/drift.dart' show BooleanExpressionOperators, Variable;
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:drift/drift.dart'
+    show BooleanExpressionOperators, Variable, Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -441,13 +444,46 @@ void main() {
       },
     );
   }
-  for (final reduced in [false, true]) {
+  for (final (reduced, migrated) in [
+    (false, false),
+    (true, false),
+    (false, true),
+  ]) {
     testWidgets(
-      'R15 final pair is durable before presentation reduced=$reduced',
+      'R15 final pair is durable before presentation reduced=$reduced migrated=$migrated',
       (tester) async {
         final h = PairHarness();
         addTearDown(h.db.close);
         await h.initialize();
+        final originalPlan = h.operation.stableSerialization;
+        final originalEvent =
+            (await h.db.customSelect('SELECT * FROM events_v2').get())
+                .single
+                .data;
+        final runtimeOwner = migrated ? 'synthetic-account' : h.owner;
+        if (migrated) {
+          await h.db
+              .into(h.db.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: runtimeOwner,
+                  firebaseUid: const Value('synthetic-uid'),
+                  accountState: const Value('firebaseBound'),
+                  createdAtUtcMs: 1,
+                  isActive: const Value(false),
+                ),
+              );
+          await DriftOwnerUpgradeRepository(
+            h.db,
+            nowUtc: () => DateTime.utc(2026, 9, 5, 0, 2),
+            generateConflictId: () => 'conflict-${++h.nextId}',
+            generateOwnerId: () => 'owner-${++h.nextId}',
+            generateOwnerOperationToken: () => 'gate-${++h.nextId}',
+            deleteOwnerSecrets: (_) async {},
+          ).upgrade(activeOwnerId: h.owner, firebaseUid: 'synthetic-uid');
+          // Retire the completed upgrade's sleeping lease heartbeat before UI timing.
+          await tester.pump(const Duration(minutes: 3));
+        }
         final runtime = _runtime(h);
         Widget app() => MaterialApp(
           builder: (context, child) => MediaQuery(
@@ -469,6 +505,7 @@ void main() {
           }
           fail('Pair input did not become available within the bounded wait');
         }
+
         for (var i = 0; i < 4; i++) {
           final prompt = find.byKey(ValueKey('pair-tile:prompt:synthetic-$i'));
           await waitForInput(prompt);
@@ -482,7 +519,7 @@ void main() {
             for (var tick = 0; tick < 40; tick++) {
               await tester.pump(const Duration(milliseconds: 1));
               final saved = await h.real.read(
-                ownerId: h.owner,
+                ownerId: runtimeOwner,
                 sessionId: h.operation.plan.learningSessionId,
               );
               if (saved.snapshot?.terminal?.acknowledged == true) break;
@@ -490,9 +527,19 @@ void main() {
           }
         }
         final durable = await h.real.read(
-          ownerId: h.owner,
+          ownerId: runtimeOwner,
           sessionId: h.operation.plan.learningSessionId,
         );
+        expect(durable.snapshot!.startOperation, originalPlan);
+        final preserved =
+            (await h.db.customSelect('SELECT * FROM events_v2').get())
+                .singleWhere(
+                  (row) => row.data['event_id'] == originalEvent['event_id'],
+                )
+                .data;
+        expect(preserved['payload_json'], originalEvent['payload_json']);
+        expect(preserved['actor_identity'], h.owner);
+        expect(preserved['owner_id'], runtimeOwner);
         expect(durable.snapshot!.terminal!.acknowledged, true);
         expect(durable.snapshot!.evidenceIds, hasLength(4));
         await tester.pump(const Duration(milliseconds: 1));

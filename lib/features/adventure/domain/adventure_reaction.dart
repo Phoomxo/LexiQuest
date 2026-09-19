@@ -167,12 +167,12 @@ final class AdventureReactionCatalog {
       trigger: AdventureReactionTrigger.skipped,
       variant: 0,
       copy: AdventureLocalizedReactionText(
-        th: 'ข้ามข้อนี้ได้ เราจะเก็บไว้ให้กลับมาทบทวน',
-        en: 'It is okay to skip this one. We will keep it for review.',
+        th: 'ข้ามข้อนี้แล้ว ไปต่อเมื่อพร้อมนะ',
+        en: 'This item was skipped. Continue when you are ready.',
       ),
       accessibilityText: AdventureLocalizedReactionText(
-        th: 'เพื่อนร่วมทางยืนยันว่าข้ามได้ และข้อนี้จะอยู่ในรายการทบทวน',
-        en: 'Companion confirms that skipping is okay and this item will remain for review.',
+        th: 'เพื่อนร่วมทางยืนยันว่าข้ามข้อนี้แล้ว และไปต่อได้เมื่อพร้อม',
+        en: 'Companion confirms that this item was skipped; continue when ready.',
       ),
       visualPoseId: 'support',
       motion: AdventureReactionMotion.none,
