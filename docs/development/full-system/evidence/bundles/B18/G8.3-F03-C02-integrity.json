@@ -1,0 +1,405 @@
+{
+  "status": "passed",
+  "inputCheckpointSha": "07c324affac0d4280686c354eeb1af92062424ce",
+  "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+  "frozenInventory": 3610,
+  "policyAmendments": {
+    "docs/development/full-system-active-index.md": "7986d13f32a4e4d58b126068b5604c15cd81314c6b9889b5cf5f7e4801a562db",
+    "docs/development/full-system-package-workflow.md": "6051601803a652fdd1aaaa90369ec559b9c6caaefb230eed4a3aebf368669ce3",
+    "docs/development/2026-09-13-rule-supersession-register.md": "521bcb926cc05e43253f4a2f704d1a12851a334c0b00e3bd5945621ef9e739ea"
+  },
+  "authorizedSourceDelta": [
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "sha256": "c4edda8a274e68a6d4e7f0cc1f877e1d492ecfc974eb726bbcb9c960da926a97"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/NativeExportSession.kt",
+      "sha256": "b8149d1c481f5dfd27ab0d6ca3ca8fa9ddd944c2d66fceb2f68f1ea94f857cf3"
+    },
+    {
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "sha256": "f10021f17010ddaf631ea3f6c36c4471a46cd3332e4a014d24a17fc03b6f019b"
+    },
+    {
+      "path": "lib/features/achievements/data/file_selector_share_card_store.dart",
+      "sha256": "f78602773895634bf1f6c58c39c53c9dee31518e52a097305a2c85497abb2ed0"
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "sha256": "33a1c474dc043aa0d6f9e995d8fce93f5c93328fca87a5bf36643cf7b7146359"
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_reaction.dart",
+      "sha256": "42bd319174f27b656969b801eeeafc639ddddf6ffebcab4c95bdd4c02f2d5404"
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "sha256": "c5832d577181429f72a579539efcf83200546a2acc4ce52952678333453ca67d"
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "sha256": "26f915957d71d5a7e431ae94b8bc7f70569dd99150a7739ae1a2c2132dc88c28"
+    },
+    {
+      "path": "lib/features/device_model/application/device_model_use_cases.dart",
+      "sha256": "066f970617a68d5085fbfc7698ff496516ddef24055b94f95d605afa27f3ce9c"
+    },
+    {
+      "path": "lib/features/device_model/application/model_benchmark.dart",
+      "sha256": "42cd24bd3ae291f5431e99efe0b63b0616da5155c202d7db3843216ef3d431a8"
+    },
+    {
+      "path": "lib/features/device_model/application/model_download_manager.dart",
+      "sha256": "38d047f9fd3d810c2a2df7d0d3e85e173abe829992ed750f8a5e83b1b40f1874"
+    },
+    {
+      "path": "lib/features/export/data/file_selector_export_store.dart",
+      "sha256": "aca4b5db47469c54bddadd0497b85b63fdf6e3ae4cbda62f509b0b5ac84fc2b5"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "sha256": "97c5b9277855e8fce00f3b20c2abb0b18054d39f26376e727bc4f4f2f886fb4f"
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "sha256": "d5b658173b109893e7b2a3ed90901b9e6d74fafeb2f1f2babcf846d584009a53"
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "sha256": "a62b76626b3b8e94ded638dce6f6a5a1deb260299c3a9714fba09143ce00858b"
+    },
+    {
+      "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "sha256": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5"
+    },
+    {
+      "path": "lib/features/preferences/application/display_preferences_controller.dart",
+      "sha256": "2f8c3878010ff17d2ecb220417f4e8cde08ac7fc2f005fb6ab7bcee0a0b1fb0f"
+    },
+    {
+      "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "sha256": "33daaaf7ca644c3e6495575cb4f1d94cbcbc8074221ac8bd2b67b34053740036"
+    },
+    {
+      "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+      "sha256": "5f046e6efbd36cb871af702b4500b7859d0dcf697206a700defb0ced8a65434e"
+    },
+    {
+      "path": "lib/features/preferences/domain/learner_preferences_repository.dart",
+      "sha256": "11529aa8d7901f06fd26645f4d386c8c0a3ac37d316950dbf6e17abfc66c2dd5"
+    },
+    {
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "sha256": "8eee16ab535a2d82195b140a04909fe733b66febf63eb58a488bd70a7ea69104"
+    },
+    {
+      "path": "lib/features/reminders/data/drift_study_reminder_repository.dart",
+      "sha256": "b33348d3b2d21a1df6e7994816bb86b1d48f80171da22e46a2e7e03c684566f4"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder.dart",
+      "sha256": "950a6021b346441952aae0222862345d55e3dc9820b9eab61df82cc3370b3ca7"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder_repository.dart",
+      "sha256": "c70e2c1d2f8d0be639c4239d21b8c73443a48981b9baf38173d2196b392b2ccc"
+    },
+    {
+      "path": "lib/features/review/domain/review_queue_item.dart",
+      "sha256": "873b48a5f05fce00f189a4fe13994655a0c6c6465ddb4271d4f3a03a07372844"
+    },
+    {
+      "path": "lib/features/rewards/application/reward_use_cases.dart",
+      "sha256": "4e3263ec1e53912aa039c4a723ec3112abdfda311bca53d0be171736307ac6ac"
+    },
+    {
+      "path": "lib/features/rewards/data/drift_reward_repository.dart",
+      "sha256": "1edb2039eaa8b56eaf457d5a734bf1dd2f7cbfcaf26ec531fb4081dd31a1926b"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "41a0c0b922788ff249dc0e61f788b812ffe2a3c83578ba6188308479b4cb1649"
+    },
+    {
+      "path": "lib/runtime/circuit_breaker.dart",
+      "sha256": "4d8d457bd4c5bf2e6df194d3df37beafae91100ca57cbf5c653084b873cbaa6b"
+    },
+    {
+      "path": "lib/screens/avatar_equipment_screen.dart",
+      "sha256": "306326f51337d6ca5e768a1358a5cf3ea59ba6c69b292f0dfd2331b596a60652"
+    },
+    {
+      "path": "lib/screens/definition_quiz_screen.dart",
+      "sha256": "27d69acf777b2ccf82be0bb5a9d33c3088663e219bad0ab6a1a678d777c4c3e8"
+    },
+    {
+      "path": "lib/screens/email_action_screen.dart",
+      "sha256": "d15ba4ded4a8aa58aa52fa1ce63b7cbb51d77a5162d462ff749d94a03606b187"
+    },
+    {
+      "path": "lib/screens/fill_in_the_blanks_screen.dart",
+      "sha256": "0ce7dd1cf72886d424a6cb9a39f95fb4513a1184c644676c9ff0a7df7323a953"
+    },
+    {
+      "path": "lib/screens/learning_goals_screen.dart",
+      "sha256": "bcc6a99f92b72e516a4e4d4a2a46d4e6f0cf5b16057c3f4fbe05102bbabb3b30"
+    },
+    {
+      "path": "lib/screens/login_screen.dart",
+      "sha256": "7bca4bf30723016c0e2fa4778db6e48aed475d8216a018ea76f9d87f233d20c2"
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "13069687f5ea24b08678136971abeac66937e62c9d39522fa9a0c02ddf3043c6"
+    },
+    {
+      "path": "test/data/local/f02_legacy_budget_test.dart",
+      "sha256": "809bb03c7dc527823600c6c9ff5a6e903290de2b297809210f0b8cf0a6ad1e51"
+    },
+    {
+      "path": "test/features/account/account_use_cases_test.dart",
+      "sha256": "25ee4b330a323d81b70db5f13d6e23c56b29ebd39ff0f02f1e3cff5b69eb8c15"
+    },
+    {
+      "path": "test/features/achievements/achievement_share_card_use_cases_test.dart",
+      "sha256": "9e5c3a2721dfaeb0053ffbbdc83e11bad9250f90e0bdf73f10f586d09e909d48"
+    },
+    {
+      "path": "test/features/adventure/application/adventure_mixed_review_controller_test.dart",
+      "sha256": "5ebdd11b627bdc6c006af00069bfec1de3936d00687d8a16a14e529faf68926a"
+    },
+    {
+      "path": "test/features/adventure/application/adventure_presentation_preferences_test.dart",
+      "sha256": "5094925f292ada7ceb2f2bc1a71b031c51982a3f9cf6ade563a3732e20b369a3"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_companion_panel_test.dart",
+      "sha256": "e61c06be09f00753f39c9ca21fbbf2483ac58630e173ff789c4fdd3e755144e4"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+      "sha256": "71f949846e6b33ad4ebdfe870c090f606d777d5027ae875435ab6e390464371c"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_today_entry_card_test.dart",
+      "sha256": "01e1fd9c434bc196cf5d12b10c8f21da5806b7275a4183dbfd9f1a4851fcf7b0"
+    },
+    {
+      "path": "test/features/device_model/device_model_use_cases_test.dart",
+      "sha256": "c3c192ebd475c0720295c84c5ba1c5397071c8f5bd92b6e2ee21a548fd95ef33"
+    },
+    {
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "sha256": "214ee2c9cefe124492008839ca901c55af4629be5e5b6ae77026d0f3a6b746e3"
+    },
+    {
+      "path": "test/features/export/file_selector_export_store_test.dart",
+      "sha256": "fb6918efd701dfe024e2ab6f9d21607ffaad979fc66ac8357698e8c703a28f97"
+    },
+    {
+      "path": "test/features/learning/drift_learning_repository_test.dart",
+      "sha256": "36c9852d0f8dd197b44290e8924d9bb2436798c50b0de3984dee3d5ec529fdc3"
+    },
+    {
+      "path": "test/features/learning/f02_session_admission_test.dart",
+      "sha256": "835906d5c08f742232a87625430f0301ccd30f5b39a136e1b62c102056b06749"
+    },
+    {
+      "path": "test/features/learning/pair_matching/pair_matching_experience_host_test.dart",
+      "sha256": "db1cc086fa07ae59073e32339091f440e4846bb76909d73abf2cafc9f163df8b"
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "sha256": "a3760833f4b3e4f6e35efc3eed612ac6ab54a823c0c333fcffe9fab86099f2bb"
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "sha256": "67c5ecabca2f38e730e577e57011b9ea2fb7041d345d1d00ee3fa7ec15f49ff8"
+    },
+    {
+      "path": "test/features/preferences/f02_preference_merge_test.dart",
+      "sha256": "84bf58595525043918f083c9ccf504a180c2e49074ba0a8cb77c59df5b54030c"
+    },
+    {
+      "path": "test/features/reminders/f02_quiet_hours_test.dart",
+      "sha256": "add7aec99b0da9b4911397e79d9e60976d3b6c7a9522e8b8c7bb86b9716978a6"
+    },
+    {
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "sha256": "0976ee71e8eef82b10531ea852cbf2940e37595d5ae74ca6e65db0c3eb0e7946"
+    },
+    {
+      "path": "test/features/rewards/reward_use_cases_test.dart",
+      "sha256": "c464d38ca875030107c09b40fabe9839fe402d2ec87951d954bebae0323646c1"
+    },
+    {
+      "path": "test/features/vocabulary/vocabulary_meaning_boundary_test.dart",
+      "sha256": "33fcf4782b748d21d2e635389614035cccbb020572a5b199ccb8c40567be12e1"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "sha256": "b5eb2531f3efba61f141c9a25d8dccd6a5aeadba0a43508f7d8d67e64cf66859"
+    },
+    {
+      "path": "test/runtime/app_build_info_test.dart",
+      "sha256": "b03524e75474be66eb58950b53fec9b7132d9520fc2c3e29c71e3bd9a23f3afd"
+    },
+    {
+      "path": "test/runtime/circuit_breaker_test.dart",
+      "sha256": "f4b263b6cf233c5584d037e27e1f7a1848f3b0d9fcd02373f9dec1cac2a7a61d"
+    },
+    {
+      "path": "test/screens/avatar_equipment_screen_test.dart",
+      "sha256": "2975d3656944b3d692afead5ebcfe440a254d7e6560ebea2808836f82b901432"
+    },
+    {
+      "path": "test/screens/definition_quiz_screen_test.dart",
+      "sha256": "210f9e6a5b82eb0c310fe0165b55eceb6d9b27534c4f1cf9fff8f5c9247d3497"
+    },
+    {
+      "path": "test/screens/fill_in_the_blanks_screen_test.dart",
+      "sha256": "4248226831459ac46a60718d449a909c710cde41befb1239b5536b46ab178773"
+    },
+    {
+      "path": "test/screens/learning_goals_screen_test.dart",
+      "sha256": "fe2097fb53298816c39e5764bdf7be323756f076192bf2fac02460e803574914"
+    },
+    {
+      "path": "test/screens/learning_preference_quiz_screen_test.dart",
+      "sha256": "2c87e8f512752eecbb501bdba383a2810ef1aa2abdda46fdf146d1fc0fd2aefb"
+    },
+    {
+      "path": "test/screens/login_guest_mode_test.dart",
+      "sha256": "ca8f82157898c0847babfad868297b49b9644c81cbba4905a71c932b76e15325"
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "sha256": "77a394dc4373f68e969b39e95fc4eec7e14209adebdce8f938c83fe04a9effea"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "sha256": "ead5ec4c3aeae5319d01221b811a6afb85d88ad9c5ae2aef743d89f6f872d603"
+    },
+    {
+      "path": "test/screens/quiz_screen_test.dart",
+      "sha256": "d0f222898946aeed5211b5ba92d2e7e79626091334930ebfd805317c8e57eb61"
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "sha256": "21e9f7de70facb6e0c162c359311d655ade4516ea41aa7b49e2b77b9f173f93b"
+    },
+    {
+      "path": "test/support/fail_once_session_close_repository.dart",
+      "sha256": "aaacfe3b55a3718c2f59936b29fbb1032d057cb343a779d8d456c1be5bc3cb26"
+    },
+    {
+      "path": "tool/cli/tests/android-export-lifecycle.tests.ps1",
+      "sha256": "070ace8e2d8d271b7ceb0767b2a5c78887068e8c49d783a1cecba879b969c99c"
+    },
+    {
+      "path": "tool/cli/tests/android_export_lifecycle.py",
+      "sha256": "0073888d47b51fd959890cdd3e8e4c8f3184a3e984d7924c91c9e179dea10d4f"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Android.kt",
+      "sha256": "7f2f01f02570782971955a5d2f9094786b49c6dde656e626f4f29ccca85c06a4"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Channel.kt",
+      "sha256": "8bc9f0209105ab71b17ea3665dc67582f07101c986e403b222139c9990027f6d"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Content.kt",
+      "sha256": "998b60f68ec366469714b67590ada9187944045e883028857e21ddea1b864ab8"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Documents.kt",
+      "sha256": "6ea366f914e799fe7b9cd592733f274badb358f3071875cb3388eae350244a13"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/ExportHarness.kt",
+      "sha256": "188bf47508e0a4dcbfcaf17a428e19a0b1a2a71238748163d6d32f1ebe4e19ce"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/FlutterActivity.kt",
+      "sha256": "eb3fd2151a6c9c4f608691ae5520c5abe8e690e2065e6848fccc9caf8946273c"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/FlutterEngine.kt",
+      "sha256": "631ecf6b45a3691a67f39fcc56dca87fba7006cdd48dbbd1539568ab4fd11951"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Os.kt",
+      "sha256": "3451c6e0e31aa7bd0d87575192654e7c2c2e970c74139f4767b24122c4d6f3c7"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/System.kt",
+      "sha256": "f3a8c90213ecfe273814814b8b0d59e403334b1566e6d0fee6b84e2f5fdada3e"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/android-export/Uri.kt",
+      "sha256": "c76e35cee6486e8c832d9ca9c823ee7e2d9356a3b620eaabf8f0ed9dee93ba2a"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/dart_project.h",
+      "sha256": "780d344fc1597944904a8e2ac3fd68e94fa18f21cf220672b013ca4d0e7ec948"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/flutter_view_controller.h",
+      "sha256": "3e43556462ab937b400b03e50ff7353b56f980eb6be62be044042bc58565aa85"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter/plugin_registry.h",
+      "sha256": "36e8278c5efe1dedcccf30891c9ca5e42992afe885af96bf27a760cfbf3b2b1f"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/flutter_windows.h",
+      "sha256": "9134b1365d53767eef02f477463467248295c22ce356d4c1598526f4b8a4ac31"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/query_failure.cpp",
+      "sha256": "b4114e64b87794215d7919fe64907ea74adccd9d662b0cae54072f4a37cfdd4d"
+    },
+    {
+      "path": "tool/cli/tests/fixtures/windows-runner/runner_test.cpp",
+      "sha256": "46c5437e4fce1cadc4527cf56eb60f75afacd6f5a98b3c81ff309c43cf3d250e"
+    },
+    {
+      "path": "tool/cli/tests/windows-runner-lifecycle.tests.ps1",
+      "sha256": "48900dee84e09eec63519baa763517f2ba904a1779057157de3934205d3e9d13"
+    },
+    {
+      "path": "tool/cli/tests/windows_runner_lifecycle.py",
+      "sha256": "859a6c09a931076f4ea267fd3718d1381575e78893d946078662ac90addf9205"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "sha256": "e31c2933e5170bf7ca5834a80ba7d873dff5e189d0aebf3fd52d50de7393a157"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "sha256": "13c923ab06cbe06b00da198e69f5abe124a17e968f69743d8ee99d51cd7e95df"
+    }
+  ],
+  "authorizedFrozenDeltaCount": 65,
+  "newSourceCount": 28,
+  "allFindingIDs": 69,
+  "unchangedOtherFindings": 65,
+  "closedF01": 9,
+  "closedF02": 10,
+  "closedF03": 10,
+  "remainingF03": 9,
+  "remainingOpen": 40,
+  "dispositions": 1429,
+  "exclusions": 2181,
+  "REV12Paths": 564,
+  "historicalTestPlanSha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534",
+  "historicalEvidencePreserved": true,
+  "externalEvidenceManifest": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03\\C02\\manifest.json",
+  "externalEvidenceManifestSha256": "d26ea0bb7618391e7ce582c7d4b35d34e8de57bf25a4c59f372d935d3b21dc0a",
+  "receiptSha256": "717de9d093745fe25531301aefb322c755dd1dcad63efc80bd7576f22dbff0d7",
+  "F03Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false
+}

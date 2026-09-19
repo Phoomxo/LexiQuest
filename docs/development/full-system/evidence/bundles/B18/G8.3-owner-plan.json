@@ -71,23 +71,19 @@
         "B18-REV06-08"
       ],
       "status": "partial-continuation-checkpoint",
-      "closedCount": 6,
+      "closedCount": 10,
       "pendingFindingIDs": [
-        "B18-REV03-02",
         "B18-REV03-05",
-        "B18-REV03-06",
-        "B18-REV03-07",
         "B18-REV03-08",
         "B18-REV03-09",
         "B18-REV03-11",
-        "B18-REV04-01",
         "B18-REV05-01",
         "B18-REV05-02",
         "B18-REV05-03",
         "B18-REV05-04",
         "B18-REV06-06"
       ],
-      "receipt": "G8.3-F03-C01-checkpoint.json"
+      "receipt": "G8.3-F03-C02-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F04",
@@ -173,7 +169,9 @@
       "dependencies": [],
       "regression": "Real migrated-owner Pair recovery with retained original plan: finish final match, advance feedback hold/fade, assert result visible and original plan/evidence actor history unchanged; owner replacement still cancels stale feedback",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-01",
@@ -379,7 +377,9 @@
       "dependencies": [],
       "regression": "Exercise original skip with empty prior review authorities, assert no fabricated answer/SRS/bookmark, and render truthful Thai/English/semantics copy. Preserve existing incorrect-source repair deferral.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-07",
@@ -389,7 +389,9 @@
       "dependencies": [],
       "regression": "Meaningful widget/real repository journey commits an answer, opens exit confirmation, verifies truthful retention copy, abandons and verifies same evidence remains with abandoned session. Do not change canonical retention to match the false copy.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-08",
@@ -455,7 +457,9 @@
       "dependencies": [],
       "regression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "receipt": "G8.3-F03-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV05-01",

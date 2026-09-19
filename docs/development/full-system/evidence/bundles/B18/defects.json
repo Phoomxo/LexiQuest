@@ -28,15 +28,22 @@
     {
       "id": "B18-REV03-02",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
       "trigger": "Recover an authenticated unfinished Pair session after owner merge; plan retains original owner while runtimeOwnerId is current custodian; acknowledge a correct match with animations enabled",
       "expected": "Transient feedback expires for the same live runtime owner/session so completed result becomes visible without changing historical plan identity",
       "actual": "_presentAccepted adds feedback episodes, but timer current() compares _liveOwner to after.plan.ownerId. Those differ for valid migrated recovery, so neither fade nor removal executes. Result UI waits for _feedbackEpisodes.isEmpty, leaving completed board displayed",
       "ownerPackage": "G1.2/G2.1",
       "proposedRegression": "Real migrated-owner Pair recovery with retained original plan: finish final match, advance feedback hold/fade, assert result visible and original plan/evidence actor history unchanged; owner replacement still cancels stale feedback",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-02",
+        "redRun": "c02-pair-red",
+        "greenRun": "c02-final",
+        "outcome": "Migrated owner Pair recovery expires feedback under runtime custodian, exposes result, preserves historical plan/start event actor and payload; owner/dispose stale callback tests pass."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-01",
@@ -354,7 +361,7 @@
     {
       "id": "B18-REV03-06",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/adventure/domain/adventure_reaction.dart",
       "relatedFiles": [
         "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
@@ -367,13 +374,20 @@
       "actual": "Skipped reaction promises in Thai/English and accessibility text that the item is kept for review. Actual original skip only stores recovery checkpoint and increments presentation skippedItemCount; Review authorities are SRS/incorrect attempts/reports/saved intent and none is created by this path. Repair skips can already have an incorrect-source item, but the unconditional original-skip claim is false.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Exercise original skip with empty prior review authorities, assert no fabricated answer/SRS/bookmark, and render truthful Thai/English/semantics copy. Preserve existing incorrect-source repair deferral.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-06",
+        "redRun": "c02-skip-copy-red",
+        "greenRun": "c02-final",
+        "outcome": "Thai/English visible and semantics skip copy no longer promises saved review. Real Drift original skip leaves answers/SRS/saved/review empty; repair/retry cases preserved."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-07",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/quiz_screen.dart",
       "relatedFiles": [
         "lib/features/learning/application/unified_lesson_controller.dart",
@@ -385,8 +399,15 @@
       "actual": "Confirmation line799 states session progress will not be saved, while abandon preserves canonical answer/events/projections and only marks session abandoned. This contradicts durable behavior and can mislead users about retained learning data.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Meaningful widget/real repository journey commits an answer, opens exit confirmation, verifies truthful retention copy, abandons and verifies same evidence remains with abandoned session. Do not change canonical retention to match the false copy.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV03-07",
+        "redRun": "c02-quiz-red",
+        "greenRun": "c02-final",
+        "outcome": "Real Drift committed answer and existing event rows survive abandon; exit dialog truthfully explains retention and unfinished session termination."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-08",
@@ -489,7 +510,7 @@
     {
       "id": "B18-REV04-01",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/learning_packs/domain/content_quality_policy.dart",
       "relatedFiles": [
         "lib/features/vocabulary/application/vocabulary_use_cases.dart",
@@ -502,8 +523,15 @@
       "actual": "Vocabulary maxMeaningLength is500; ContentQualityPolicy.isAvailableVocabulary applies default256 rune bound to meaning and normalizedMeaning, silently excluding it. ReviewQueueItem independently imposes256 even if upstream availability is corrected, while ReviewedLexicalContentSnapshot allows1024. Therefore reader does not currently throw: it excludes the valid word before constructing the item.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "64351f1cc12d92e7bc32fa2ded7a7e8c1c9f46c2",
+      "retest": {
+        "receipt": "G8.3-F03-C02-checkpoint.json",
+        "findingId": "B18-REV04-01",
+        "redRun": "c02-meaning-red",
+        "greenRun": "c02-final",
+        "outcome": "Canonical create/import at256,257,500 ASCII and500 Thai/UTF16 supplementary boundaries remain available to saved review and learning with exact meanings/identity/checksum.501 ASCII/502 UTF16 rejected by authoring. Only meaning bounds expanded downstream; identity validation unchanged."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV05-01",
