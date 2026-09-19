@@ -110,14 +110,11 @@
         "B18-REV09-05",
         "B18-REV09-06"
       ],
-      "status": "in-progress-partial-checkpoint",
-      "closedCount": 3,
-      "pendingFindingIDs": [
-        "B18-REV09-01",
-        "B18-REV09-02",
-        "B18-REV09-03"
-      ],
-      "receipt": "G8.3-F05-C01-checkpoint.json"
+      "status": "accepted",
+      "closedCount": 6,
+      "pendingFindingIDs": [],
+      "receipt": "G8.3-F05-acceptance.json",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88"
     },
     {
       "sliceId": "B18-G83-F06",
@@ -289,7 +286,9 @@
       "dependencies": [],
       "regression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks. Include SRS via actual recordAnswer plus reopen, using the same real codec boundary and preserving immutable answer evidence/projection authority.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "receipt": "G8.3-F05-acceptance.json"
     },
     {
       "findingId": "B18-REV12-01",
@@ -313,7 +312,9 @@
       ],
       "regression": "Synthetic local real-Drift fixture with limit1 denied leading opportunity and separately valid later opportunity, repeat bounded preparation and recreate repository; later valid proof/outbox must appear, denied evidence/ACK/consent must remain unchanged. Preserve all-denied no-cursor-write, rollout-off, owner-fence, finite scan and late-withdrawal invariants; no live research activity. Confirm intended no-write authority constraints before selecting local scheduling design; do not simply persist denial as authorization.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "receipt": "G8.3-F05-acceptance.json"
     },
     {
       "findingId": "B18-REV08-01",
@@ -783,7 +784,9 @@
       ],
       "regression": "G8.3 bounded local emulator rules+actual recordAnswer/store/gateway-codec regression: revision1 create then revision2 update with linked receipts succeeds, replay exact-once, stale/gap/cross-owner/tombstone/extra-field and payload-wordId/entityId mismatch denied. Preserve immutable answers and local projection dominance. Do not deploy rules or weaken receipt validation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "receipt": "G8.3-F05-acceptance.json"
     },
     {
       "findingId": "B18-REV09-04",

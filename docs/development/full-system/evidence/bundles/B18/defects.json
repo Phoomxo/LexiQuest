@@ -227,7 +227,7 @@
     {
       "id": "B18-REV09-01",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/sync/data/drift_sync_store.dart",
       "relatedFiles": [
         "lib/features/sync/data/firestore_sync_gateway.dart",
@@ -239,8 +239,20 @@
       "actual": "claimPending preserves attempted operation1 ID but _reconstructMutation uses current category.localRevision2. FirestoreSyncCodec.decodeAcknowledgement requires receipt resultingRevision equal expectedMutation.localRevision, so real revision1 receipt throws InvalidSyncPayloadFailure. Existing file-backed regression bypasses codec: _IdempotentFakeCloud returns saved PushAcknowledged directly and store accepts it. Thus regression does not cover production gateway rejection; later pull may resolve newer local edit as cloudWins. Cross-check learning_event_sync_test lost-SRS-ACK fixture explicitly expects replay localRevision2 and saved ACK1 through _SrsIdempotentFakeCloud, confirming the same mismatch for real recordAnswer-produced SRS work.",
       "ownerPackage": "G8.3",
       "proposedRegression": "File-backed lost-ACK first category commit using actual FirestoreSyncCodec.encodeOperation/decodeAcknowledgement in gateway fixture, edit through actual repository then reopen/replay through SyncEngine; original receipt accepted with no second first operation write and later edit delivered. Preserve exact receipt identity validation and add first-send-never-committed positive case; do not weaken mismatch checks. Include SRS via actual recordAnswer plus reopen, using the same real codec boundary and preserving immutable answer evidence/projection authority.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-01",
+        "redRuns": [
+          "rev09-01-red",
+          "rev09-01-legacy-both-red"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Schema28 persists exact first-send mutable category/word/SRS snapshot atomically with attempt reservation. Lost ACK category uses actual repository edit, file reopen and real SyncEngine; actual recordAnswer SRS reopens and sends original then second revision through real Firestore codec. Legacy nullable snapshots retain operation-encoded original revision; unavailable historical payload is not fabricated. Strict receipt mismatch validation is unchanged. Never-committed first-send control uses actual codec. Migration preserves old unresolved attempt metadata."
+      }
     },
     {
       "id": "B18-REV12-01",
@@ -262,7 +274,7 @@
     {
       "id": "B18-REV09-02",
       "severity": "P2",
-      "status": "open-candidate-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/research/data/drift_research_session_proof_repository.dart",
       "relatedFiles": [
         "lib/features/sync/data/drift_research_sync_adapter.dart",
@@ -273,8 +285,19 @@
       "actual": "Candidate SQL sorts opportunity ID/phase and limits before authority validation. Every denied candidate continues without setting frontier; scheduling cursor writes only after admitted frontier. Repeated calls can reread the same entirely denied page forever. Existing 50-ACK progress test uses admitted rows and does not cover denied-prefix starvation. Other research collection enqueue queries likewise bound before allowed checks, so related scope needs RED confirmation.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Synthetic local real-Drift fixture with limit1 denied leading opportunity and separately valid later opportunity, repeat bounded preparation and recreate repository; later valid proof/outbox must appear, denied evidence/ACK/consent must remain unchanged. Preserve all-denied no-cursor-write, rollout-off, owner-fence, finite scan and late-withdrawal invariants; no live research activity. Confirm intended no-write authority constraints before selecting local scheduling design; do not simply persist denial as authorization.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-02",
+        "redRuns": [
+          "rev09-02-red-schema28"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Bounded finite keyset scan hints are weakly AppDatabase-scoped and owner/UID/collection-separated, surviving repository/adapter recreation without persisting denial. Later independently authorized proof and opportunity reach outbox beyond denied prefix. All-denied finite wrap writes no proof/outbox/cursor and leaves consent/evidence unchanged. Current authorization, owner/rollout fences and late-withdrawal persistent-cursor checks remain. Database reopen discards volatile hints; persisted admitted frontier retains prior semantics."
+      }
     },
     {
       "id": "B18-REV08-01",
@@ -1264,7 +1287,7 @@
     {
       "id": "B18-REV09-03",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "firestore.rules",
       "relatedFiles": [
         "lib/features/sync/data/drift_sync_store.dart",
@@ -1276,8 +1299,19 @@
       "actual": "Client reconstructs SRS entityId=wordId and increasing localRevision (drift_sync_store.dart2262-2287); actual recordAnswer/reopen oracle expects base1/result2 at learning_event_sync_test.dart1893-1913. Rules fieldSrsStatePayloadOk pins revision1 (728-760), fieldOperationMatchesSrsState requires absent entity/base0/result1 (1532-1545), and match denies all updates (1810-1816). Thus revision2 is rejected by source rules independently of lost-ACK codec finding REV09-01. Rules tests2423-2549 intentionally test create-only behavior; fake client ACKs mask this cross-layer disagreement. Source mismatch confirmed, emulator/runtime NOT RUN. Rules also omit payload.wordId==entityId; client _requireMutableSrsEntity6405-6411 fails closed before applying mismatched identity, so no local identity corruption claimed.",
       "ownerPackage": "G8.3",
       "proposedRegression": "G8.3 bounded local emulator rules+actual recordAnswer/store/gateway-codec regression: revision1 create then revision2 update with linked receipts succeeds, replay exact-once, stale/gap/cross-owner/tombstone/extra-field and payload-wordId/entityId mismatch denied. Preserve immutable answers and local projection dominance. Do not deploy rules or weaken receipt validation.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d0031897e26558b6d666cd3e03417114e002a88",
+      "retest": {
+        "receipt": "G8.3-F05-acceptance.json",
+        "findingId": "B18-REV09-03",
+        "redRuns": [
+          "rev09-03-red-ready"
+        ],
+        "greenRuns": [
+          "final-affected",
+          "final-rules"
+        ],
+        "outcome": "Local emulator verifies mutable SRS mirror with reciprocal fresh immutable receipt/current base and increasing resulting revision, matching payload word/entity identity, owner isolation and exact fields. Revision1 create/revision2 and3 updates pass; stale/gap bases, nonadvance, replay writes, missing receipts, cross-owner, tombstone, extra fields and identity mismatch fail. Coalesced result revision jumps remain compatible with client monotonic revision semantics; no rules deployment."
+      }
     },
     {
       "id": "B18-REV09-04",
