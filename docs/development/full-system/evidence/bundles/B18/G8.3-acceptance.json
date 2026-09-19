@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F07",
+  "status": "accepted",
+  "acceptanceKind": "review-remediation and bounded cross-system regression; not release/device acceptance",
+  "recordedAtUtc": "2026-09-19T20:27:51.486232+00:00",
+  "threadId": "01a0bb4f-d376-7522-8a68-3fea05bcfbd1",
+  "inputCheckpointSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+  "reviewedApplicationSourceSha": "47507d93df06a68353ab38f61c6514aa57bda013",
+  "applicationSourceChanged": false,
+  "knownFindings": 69,
+  "closedFindings": 69,
+  "unresolvedKnownInScopeFunctionalDefects": [],
+  "unresolvedCriticalHigh": [],
+  "findingOutcomeAudit": "G8.3-finding-outcome-audit.json",
+  "findingOutcomeAuditSha256": "2503c38fc09fb69c24654b914508e429d949ea343976ae08cb5a89637458ef97",
+  "criteria": [
+    {
+      "criterion": "Triage, reproduction/root cause, owner remediation and regression",
+      "result": "accepted",
+      "evidence": "All69 exact owner/receipt/fix-ancestry/RED/GREEN/outcome joins; historical source reviews and raw artifacts retained."
+    },
+    {
+      "criterion": "Changed source and affected callers re-reviewed",
+      "result": "accepted-local-review",
+      "evidence": "All202 approved paths map to accepted owner review receipts; F07 current composition review checks21 shared production paths. No independent reviewer claimed."
+    },
+    {
+      "criterion": "Affected cross-system regression",
+      "result": "passed",
+      "evidence": "480 tests/21targets in2 bounded verify-scope runs, independent3780input pre/post equality each."
+    },
+    {
+      "criterion": "Final source freeze and coverage",
+      "result": "accepted",
+      "evidence": "3657 frozen paths =3610original+47new,155modified frozen plus3policy amendments; no F07 application changes. Historical test-plan hash preserved; no new executable System Test Plan issued."
+    },
+    {
+      "criterion": "No known in-scope functional critical/high defect remains",
+      "result": "accepted",
+      "evidence": "69closed,0known unresolved. External/platform limitations explicitly retained; no zero-defect guarantee."
+    },
+    {
+      "criterion": "Review closes before formal SystemTestPlan",
+      "result": "accepted",
+      "evidence": "Post-G8.3 E0/E1 reconciliation comes next; G8.4–G8.9 retained, no direct B19."
+    }
+  ],
+  "verification": {
+    "runs": [
+      {
+        "run": "cross-system",
+        "tests": 366,
+        "targets": 12,
+        "result": "cross-system\\3692901cd7da.json",
+        "resultSha256": "459e8fb8eda8a7b4a997c33381909abab6ddde11ef93c5086b6e4e6963c37290",
+        "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+        "independentInputs": 3780,
+        "prePostEqual": true
+      },
+      {
+        "run": "cross-ui-voice",
+        "tests": 114,
+        "targets": 9,
+        "result": "cross-ui-voice\\442d46688d7e.json",
+        "resultSha256": "31be7440d72e29b8450d8f473036e3b2daafb945cd9f4dbdd1844b3dabcb95bf",
+        "fingerprint": "d2f711c035aa661dbb339a15fa9f2c0e2bbc96e1af2e631e765c0bf5bbc571fd",
+        "independentInputs": 3780,
+        "prePostEqual": true
+      }
+    ],
+    "tests": 480,
+    "targets": 21,
+    "fullReleaseRun": false,
+    "inheritedEvidence": "15 manifests/3695 artifacts independently hash verified. F01-F06 isolated RED/GREEN, native, Rules and backend results retained with their original limits. No wholesale old fingerprint re-certification; final affected composition runs use current source and fresh tool/environment/config closure.",
+    "applicationSourceChanged": false
+  },
+  "priorEvidenceAudit": {
+    "manifests": 15,
+    "artifacts": 3695,
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\inherited-evidence-audit.json"
+  },
+  "review": {
+    "kind": "local current-task review plus accepted owner reviews",
+    "independentReviewer": false,
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07\\local-review.json",
+    "sha256": "0234028b04a2eaee6bd579db3a3e81b84b70e43875de70ad0ec0bc069588e9cb"
+  },
+  "sourceFreeze": {
+    "path": "G8.3-final-source-freeze.json",
+    "sha256": "6308e327a1bf9d795ff9f5b9241d145abf1c5ed56499d58791e8fa1695894afb",
+    "paths": 3657
+  },
+  "platformDisposition": {
+    "path": "G8.3-platform-disposition.json",
+    "sha256": "e6cf94facc3a52b4243498eccb8bb25b7f3ebf3ddbd401d6e10bebec357853ed"
+  },
+  "historicalTestPlanSha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534",
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F07",
+  "evidenceManifestSha256": "0b43f32417fce7a9dca65a80427b4d4b69fbf85ebc9f5628d04548ad95f9d32f",
+  "G83Accepted": true,
+  "B18Accepted": true,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "limitations": [
+    "No independent reviewer.",
+    "No installed/physical/native-assistive/acoustic/provider-live/hostedCI/cloud/deployment/full-release proof from this acceptance.",
+    "Apple/Linux/web are not supported-release or offline PASS; platform prerequisites and Gradle provenance gate remain explicit.",
+    "No research activation/remote research synchronization/study assignment/statistics, seed execution, training/B11A/GPU or security workflow.",
+    "Historical generated structural review is not fresh regeneration; old test-plan schema identity retained.",
+    "Inherited F02 SAF cleanup/timeouts and F04 untagged completion limitations remain in their receipts."
+  ],
+  "policies": {
+    "singleWriter": true,
+    "subagents": false,
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTier": "Standard/default only; effective tier unverified"
+  }
+}

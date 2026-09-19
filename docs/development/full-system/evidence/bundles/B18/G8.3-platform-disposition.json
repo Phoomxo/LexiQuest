@@ -1,0 +1,63 @@
+{
+  "status": "explicit-support-and-provenance-disposition",
+  "sourceCommit": "47507d93df06a68353ab38f61c6514aa57bda013",
+  "platforms": [
+    {
+      "platform": "Android",
+      "disposition": "Local JVM boundary and installed SDK compile evidence inherited from F02, plus source manifest checks from F06. Installed APK, SAF provider scheduling/process death, signing and physical device acceptance NOT RUN."
+    },
+    {
+      "platform": "Windows",
+      "disposition": "F01 actual Win32 source/harness evidence retained for argument conversion and font-message lifecycle. Full installed app, release signing and offline cold start NOT RUN; Firebase Windows selecting Android options is not service support proof."
+    },
+    {
+      "platform": "iOS/macOS",
+      "disposition": "Scaffold only; no supported release/delivery claim. iOS notification delegate/CocoaPods prerequisites and macOS network/media/user-selected-file entitlement/privacy integration require native work and tests before support can be claimed."
+    },
+    {
+      "platform": "Linux",
+      "disposition": "Scaffold unbuilt/uninstalled; Firebase explicitly unsupported, native database multi-process behavior unproven. No supported release or offline acceptance."
+    },
+    {
+      "platform": "Web",
+      "disposition": "HTML/bootstrap/PWA manifest is not an offline cache. Production database setup supplies no web options and native/plugin compatibility is unverified. No browser/offline/release support claim."
+    }
+  ],
+  "gradle": {
+    "path": "android/gradle/wrapper/gradle-wrapper.properties",
+    "sha256": "d5af567ad117ba311cc4cf12639407dda372f4eb7fd06e3d1772eff65894e9eb",
+    "observation": "Gradle9.1.0 HTTPS distribution URL and validateDistributionUrl=true, no distributionSha256Sum.",
+    "disposition": "Known provenance gap retained as a release/artifact gate: verify distribution/artifact provenance and pin an independently verified checksum before claiming verified distribution provenance. Not observed tampering or evidence of a reproduced application functional defect. No wrapper download/build run."
+  },
+  "requiredBeforeClaims": [
+    "Platform-native integration/build/install and offline-cold-start tests on each claimed platform.",
+    "Real SAF/provider/device/acoustic/accessibility results for corresponding claims.",
+    "Hosted CI/service and signed release provenance checks before hosted/release PASS."
+  ],
+  "evidence": [
+    {
+      "path": "ios/Runner/AppDelegate.swift",
+      "sha256": "9418c676adebac7e3f04daa80a7db62066e77f9766c804fd3e5e264124a31f80"
+    },
+    {
+      "path": "macos/Runner/DebugProfile.entitlements",
+      "sha256": "ebaab2b9992173de422c33e1fbab7f6e31acaa2213956097ac8cefd894a91ac8"
+    },
+    {
+      "path": "macos/Runner/Release.entitlements",
+      "sha256": "b746c74b201e6af4e0864fbd1f4f629f96156a7ec4b7208bc995d0a5089bb592"
+    },
+    {
+      "path": "web/index.html",
+      "sha256": "2961281de7ebb2250c80db154d27b4df1a85f21d419ebf0dce752c6ccbc79993"
+    },
+    {
+      "path": "lib/firebase_options.dart",
+      "sha256": "00c1b31b413fa439ba84b13773192f264ce600f9148fd0e7be6f48a991944301"
+    },
+    {
+      "path": "lib/data/local/app_database_stub_path.dart",
+      "sha256": "b69bb0fefd7bc56baf299b1592acd7982fedb3879e986b4dedabe82d0ec8207f"
+    }
+  ]
+}

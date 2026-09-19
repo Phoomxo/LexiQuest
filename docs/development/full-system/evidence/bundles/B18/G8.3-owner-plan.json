@@ -144,7 +144,10 @@
       "scope": "cross-system regression/review/freeze/G8.3 acceptance",
       "dependencies": "All F01-F06 findings resolved or proven external with acceptance disposition",
       "findingIDs": [],
-      "status": "planned"
+      "status": "accepted",
+      "receipt": "G8.3-acceptance.json",
+      "testsPassed": 480,
+      "testTargets": 21
     }
   ],
   "findings": [
