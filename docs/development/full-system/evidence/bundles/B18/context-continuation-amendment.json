@@ -1,8 +1,8 @@
 {
-  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
-  "trackedRawBytesVerified": 3610,
-  "frozenRawBytesUnchanged": 3607,
-  "authorizedPolicyAmendments": [
+  "authorization": "User-approved B18 fresh-task continuation relayed by master01a09888-61dd-7680-9b19-c33035043d59 on2026-09-19; writer must release after exact committed checkpoint",
+  "authorityPlan": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/B18-context-handoff-plan.md",
+  "applicationSourceChanged": false,
+  "files": [
     {
       "path": "docs/development/full-system-active-index.md",
       "frozenSha256": "9b64f14382d148358336d0cbce280097c08e01b9e9cacbda7d2263846449e308",
@@ -21,18 +21,5 @@
       "checkpointSha256": "521bcb926cc05e43253f4a2f704d1a12851a334c0b00e3bd5945621ef9e739ea",
       "purpose": "Authorized B18 context handoff policy only; no application source change"
     }
-  ],
-  "sourceAndConfigStatus": {
-    "source-read-awaiting-cross-check": 1062,
-    "reviewed-with-findings": 19,
-    "reviewed-no-actionable-finding": 348
-  },
-  "ignoredFiles": [],
-  "newReviewTooling": [],
-  "semanticReviewComplete": false,
-  "G82Accepted": false,
-  "G83Started": false,
-  "B19Dispatched": false,
-  "runtimeTestsRun": false,
-  "validation": "Integrity only; source-read observations and candidate findings are not full semantic acceptance"
+  ]
 }

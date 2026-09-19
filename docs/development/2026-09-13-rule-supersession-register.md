@@ -56,3 +56,9 @@ Latest user resume (2026-09-13): complete all authorized bundles through B20; pr
 ## Camera training scope amendment — 2026-09-14
 
 67requirements =64original IDs+G5.3a/G5.3b/G5.3c; 21bundles =B01–B20+B11A. Source rights/acquisition/group split/actual training/exportเป็นrequiredก่อนB12; originalcoverage/catalog44ยังเก็บidentityเดิมและextendCOV-f13/COV-f41. ใช้ภาพอินเทอร์เน็ตสำหรับ train/development validation ตอนนี้ ไม่รอภาพจากผู้ใช้. เก็บภาพกล้องจริงตอน device testing ภายหลัง; ผลกล้องจริง pending จนทดสอบจริง ห้ามใช้คะแนนเว็บอ้างแทน. Fresh test ห้ามปรับ threshold/เทรน; หากนำภาพกล้องที่ดูแล้วมาแก้/ฝึกให้จัดเป็น development และใช้ชุดกล้อง held-out ใหม่ตรวจรับ. เก็บ unknown-object evaluation แยกชัดเจน. B18whole-app review/B19SystemTest/B20ledgerรวมผลใหม่. No runtime/training PASSจากการแก้แผนนี้.
+
+## B18 context continuation amendment — 2026-09-19
+
+ผู้ใช้อนุมัติ fresh tasks สำหรับ execution slices ภายใน B18 ตาม external `full-system-orchestration/B18-context-handoff-plan.md` ซึ่ง master ส่งคำสั่งให้ writer ยืนยันแล้ว. Amendment นี้ supersede ข้อห้าม dispatch กลาง bundle/compaction-only **เฉพาะ context handoff ภายใน B18**; ไม่เพิ่ม requirement IDs หรือเปลี่ยน 67packages/21bundles.
+
+Writer บันทึก observations/partial/ledger/findings/resume และ commit exact checkpoint ก่อนส่งต่อ; checkpointSha แยกจาก acceptedSourceSha และไม่ถือว่า G8.2/G8.3/B18 ผ่าน. ปล่อย writer ด้วย exclusive lock/revision CAS หลัง durable continuation handoff พร้อม. Master เท่านั้นสร้าง successor fresh task ทีละหนึ่ง ไม่ fork full history; task เดิมหยุดเขียนหลังปล่อยสิทธิ์. Successor ตรวจ source lineage/dirty state/evidence แล้ว claim writer ภายใต้ CAS ก่อนเขียน. คง Astra/medium Standard/default ห้าม Fast, single writer/no subagents, recovery policy และ acceptance เดิม. ไม่ส่ง B19 จน B18 ผ่านครบจริง.

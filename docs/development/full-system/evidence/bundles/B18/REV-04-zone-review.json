@@ -1,0 +1,576 @@
+{
+  "zone": "REV-04",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "reviewCompletedAtUtc": "2026-09-19T11:09:57.826751+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "area": "authored vocabulary and import",
+      "evidence": [
+        "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+        "lib/features/vocabulary/application/import_vocabulary.dart",
+        "lib/features/vocabulary/data/drift_vocabulary_import_repository.dart",
+        "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
+        "test/features/vocabulary/import_vocabulary_test.dart"
+      ],
+      "disposition": "REV04-01 confirms supported500-character meaning silently excluded by256-bound availability; ReviewQueueItem also needs aligned bound. CEFR omitted from import natural duplicate identity does not by itself prove wrong content mutation: imports deliberately reuse existing natural keys rather than update. Public prepared import DTO weak validation is behind canonical usecase construction, not untrusted live ingress. Cancellation before/per-row is cooperative; no promised postcommit rollback. Ordinary owner-qualified CRUD intentionally differs from create-or-reuse expected-owner fences; live child-route gate is REV03-05. Category tombstone hides children through category availability on peers even though raw child tombstone rows differ; no current restore caller proves revival bug."
+    },
+    {
+      "area": "content manifests, pack launch and starter authority",
+      "evidence": [
+        "lib/features/learning_packs/data/drift_content_manifest_repository.dart",
+        "lib/features/learning_packs/data/drift_learning_pack_repository.dart",
+        "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+        "lib/features/vocabulary/data/packaged_starter_access.dart",
+        "lib/features/vocabulary/data/packaged_starter_catalog.dart",
+        "lib/features/learning/domain/lexical_prompt_artifact_identity.dart"
+      ],
+      "disposition": "Provision hashes/immutable identity and exact starter12fields prevent global flag alone granting foreign vocabulary. Multiread pack verification relies immutable published content; no live manifest overwrite path found. Pack detail mode readiness is presentation only; launch revalidates configuration/content/owner. Raw verified bytes/public DTO constructors are trusted internal values, canonical repos and artifact parse establish authority. Prompt artifact hash intentionally combines core and rich pins; not same as rich file SHA. Generator/editorial source observations retained without new regeneration or quality claim."
+    },
+    {
+      "area": "CEFR and rich presentation",
+      "evidence": [
+        "lib/features/vocabulary/data/cefr_vocabulary_catalog.dart",
+        "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
+        "lib/features/vocabulary/data/cefr_sense_review.dart",
+        "lib/features/vocabulary/application/cefr_catalog_import.dart",
+        "lib/widgets/rich_lexical_card.dart",
+        "test/features/vocabulary/cefr_editorial_import_test.dart"
+      ],
+      "disposition": "Hash-first packaged editorial/sense joins and exact accepted/excluded coverage distinguish corpus labels from learner proficiency. Recognition-only items denied productive import. Live catalog import captures/rechecks owner and uses canonical owner/category repository; selected detail is read-only. Rich card trusts canonical resolved word, does not independently certify bytes. Optional example failed Future caches unavailability with honest display; no scoring effect. Manual CEFR free text preserved authored metadata, not automatic assessment."
+    },
+    {
+      "area": "review queue and learner intent",
+      "evidence": [
+        "lib/features/review/data/drift_review_center_reader.dart",
+        "lib/features/review/data/drift_learner_intent_repository.dart",
+        "lib/features/review/data/drift_content_quality_report_repository.dart",
+        "lib/features/review/application/review_center_use_cases.dart",
+        "lib/features/review/application/pair_review_deferral.dart"
+      ],
+      "disposition": "Precise current lexical revision, authenticated wrong-source evidence, saved/report identity and SRS due source compose reasons without duplicate learning writes. Reports local by default; upload requires separate pinned policy/consent and remains inactive. Current-owner transaction resolves intent; caller guards pin presented content. No live mutation callback replacement demonstrated for bookmark button. All-history/N+1 and no transaction snapshot remain resource/consistency observations without measured failure; cannot silently truncate history or invent snapshot guarantee. REV04-01 records bound mismatch instead of misclaiming current queue crash."
+    },
+    {
+      "area": "offline storage and cancellation",
+      "evidence": [
+        "lib/features/offline_content/application/offline_content_manager.dart",
+        "lib/features/offline_content/data/drift_offline_content_repository.dart",
+        "lib/features/offline_content/data/model_download_adapter.dart",
+        "test/features/offline_content/offline_content_manager_test.dart"
+      ],
+      "disposition": "Per-artifact queue, hash-before-publish, canonical leaf/link checks, model-file then SQL pin lease, real installed-byte accounting and startup reconcile tested through already-read fixtures. Cached-valid fast path does not observe prepublication cancel, but cancelDownload returns false rather than falsely reporting success and does not stage new bytes; no new defect promoted. Reconcile verification timestamp is current verification, not guaranteed original LRU. Fake interpreter/short generated audio fixtures are integrity/lifecycle oracles only. Stable app dependency composition does not demonstrate widget manager replacement race; malformed active config removal blocks intentionally fail closed."
+    },
+    {
+      "area": "routes and dormant compatibility",
+      "evidence": [
+        "lib/screens/cefr_article_reader_screen.dart",
+        "lib/screens/local_reading_library_screen.dart",
+        "lib/screens/vocab_list_screen.dart",
+        "lib/services/word_service.dart",
+        "lib/learning/vocabulary_mixer.dart"
+      ],
+      "disposition": "Bare vocabulary child-route write gate remains REV03-05. Bare CEFR local article retains reading visibility after parent disabled, but is explicitly unowned read-only learning content; no durable progress/provider permission bypass established, native configured route has shell gates. Legacy diagnostic/wordbook/mixer/Firestore WordService/enrichment/sentence/collocation helpers have no current production construction/callers and are not certified/runtime exercised. Shared static DTOs and placeholder export files are not current persistence authority; all82 per-file notes retained."
+    }
+  ],
+  "files": [
+    {
+      "path": "lib/data/local/tables/content_download_tables.dart",
+      "sha256": "e5c09e98e6505f578048b897fee77aa4794ae6a428e39112973a59b5fe27c91c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/content_tables.dart",
+      "sha256": "969f72f299b4a5a1cb432c26bdaede36a367b64ec537d66d8369c4c35f414b4c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/data/local/tables/vocabulary_tables.dart",
+      "sha256": "40dec56216ee2e4801ba0a284d8717e6689cc6f933f4e5593c1d8fde3f46e813",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/domain/lexical_prompt_artifact_identity.dart",
+      "sha256": "099fae51d7f99192eb7f8bb0a078ce9952e5e7d9c801c2a0a89c7f4948cedbe3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/application/learning_pack_detail_use_cases.dart",
+      "sha256": "ba4c576fbf5e3e06e035c4d79fd9f2a2d2f3aab2ce75c94c978f4c80c0da4f88",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/application/learning_pack_use_cases.dart",
+      "sha256": "ec8437ec3cd935643ca8986de383804b4c3f1b42ef4125074ceaaf148e7dbd7d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/data/drift_content_manifest_repository.dart",
+      "sha256": "a35e14d0a823964e221dcf64946313a01699ea848b181a9eba1123264f67354f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/data/drift_learning_pack_repository.dart",
+      "sha256": "1d7df7988775dc2a444ce71d57a299e2d38e9a81df3053ec881ea7770a417276",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_manifest.dart",
+      "sha256": "e98b507b0990bc4ccfc4ce593c5835efb71e0f5c4a3cc9f5812be117903946fd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "sha256": "e291855949fdecd130d3704edc39d2f43edf6acbcba026573df85ac6f5a692f3",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV04-01"
+      ]
+    },
+    {
+      "path": "lib/features/learning_packs/domain/learning_pack.dart",
+      "sha256": "8f10ce091ffe845d13d415a20b56f0ebf1c960a843f72e8e0d3d7b777879ab8e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/domain/learning_pack_detail.dart",
+      "sha256": "ee8e8fcc6f74d56a14112d9b69dfaebc738b16ce7477c826570080ee3fb7acb2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning_packs/domain/learning_pack_repository.dart",
+      "sha256": "afde9f11a3d670578454beaf7ad850a9f8f05207f04be9856db63a073fa0580f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/application/offline_content_manager.dart",
+      "sha256": "fca8453412292992a6aa4f0ad1965e33f1b186cb20c6de94ff634e058421399b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/data/drift_offline_content_repository.dart",
+      "sha256": "5e25006cee89928e692082dd2698444c1ed3ee8b9993c9a6dfaf32fc5ef7a480",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/data/learning_pack_download_adapter.dart",
+      "sha256": "c9eba745ed8d93939b1298666820ba8ffbe83c812f61307ec9e821afccbd21c6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/data/model_download_adapter.dart",
+      "sha256": "eeadbb9fd626ea947b550156fdec2ddad98c00507ec9527f9cfbb5dc8ce6cb9b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/domain/offline_content_repository.dart",
+      "sha256": "3bcaf5b75ddd474c39f3229149f3d98aa15a53ba67c9498e5b6b4c33a2e3069d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/offline_content/domain/offline_content_state.dart",
+      "sha256": "e703619c8a57f8fdc35a79d0a9b14f6c1ad4ff614b40093a8f26def2817aa970",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/application/content_report_use_cases.dart",
+      "sha256": "71839d29e10e41a34c1292df29549c3c53e43499ebca83ca171bcf153b8f442a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/application/learner_intent_use_cases.dart",
+      "sha256": "da3e65ed59f3ae87711ef72c572fcc830f367735a5e9beecc2e049393f5c5050",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/application/pair_review_deferral.dart",
+      "sha256": "3b7b58e88f655745f210c7dfbbb2054b9bf4cc95130e36998ae5a01e89a83128",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/application/review_center_use_cases.dart",
+      "sha256": "fc422a5acf8db0ed5a7f42d5097163d2aaae3393d7f59c1c8f3cd6667aed4efb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/data/drift_content_quality_report_repository.dart",
+      "sha256": "ef6a0816dec9e74dd6522c445a0905841d28c3f1a42b4c9fa1fdf764b14ce778",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/data/drift_learner_intent_repository.dart",
+      "sha256": "8be8021d93c10b51888c504bde049d8b75c065b5924bfb7a7beb36ffc64f8b60",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/data/drift_review_center_reader.dart",
+      "sha256": "15b6edcf4c0fe44653d9bd9bb2d43a219fecc0808329c5f8680c277bafbbe240",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/domain/content_quality_report.dart",
+      "sha256": "6c84436e7a0b53f1caa352c38b8a892f0de80f70d7c4f2f95012d3d8a5baa210",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/domain/content_quality_report_repository.dart",
+      "sha256": "2bca0fd2d6161306a106e2bc145a1ada27cc98ccb46470065694299851beea3d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/domain/learner_intent.dart",
+      "sha256": "ec671e2905513a008e61bd19ac09170f410fffc0b0ce001c6505a182bb1bd60a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/domain/learner_intent_repository.dart",
+      "sha256": "7c2bd133a36ae4efdbe83cd20a998a91764de4f405a4b8ea76e1d45fdb35314c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/domain/review_queue_item.dart",
+      "sha256": "e1179d4a61b11ee247bd63424e1ff090a9fb1b517f858e93ffb6f199995674ed",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/presentation/bookmark_learning_item_button.dart",
+      "sha256": "a17b028286ce623609d89c2da99d316fce586c89c81b0e6d09d3de582d6a8da9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/review/presentation/content_report_sheet.dart",
+      "sha256": "4c96d44d7812c740a84c083bde328d44bcc09f190a0c3902d8610d1826d86099",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/application/cefr_catalog_import.dart",
+      "sha256": "91d91f272d72d8197db40dae20612aa7b08aa4c75fd7e1ef337d9a0df556fb18",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/application/cefr_practice_examples.dart",
+      "sha256": "d02d9c15a09ef8189588478514cb481b9caae68be9057fdb436b06989aa1e031",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/application/import_vocabulary.dart",
+      "sha256": "ce92087d0d5508b3a620f99bc40f241e41c696bf216176e98d25436a5a4b1775",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+      "sha256": "2ffbb88fe3be21c41db48ee94245b379ea75d172d77a0728566cf7ba41ac5513",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/cefr_editorial_catalog.dart",
+      "sha256": "90fa341747bb8a73193a821ced0ef35bec0b683a2d034ac9537fe060ab633d80",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/cefr_editorial_manifest.dart",
+      "sha256": "54472620eb6c6907792ebc07c147d6d4ba5c57581e8ad5598f38947fb04213bb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/cefr_sense_review.dart",
+      "sha256": "e59ec1cb1a9aa9b0a85b28c59ec3efc9efdfc7da571d7a97c5e4afaccef0f5b4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/cefr_vocabulary_catalog.dart",
+      "sha256": "4f460f5cfc164f70315840192a65aea0465571123850204ddf125514db76fcaa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/drift_vocabulary_import_repository.dart",
+      "sha256": "a602381dd251ffab74716078764ecd4728e157a2b0c5bff3b2cabfbb2daca1a5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/drift_vocabulary_repository.dart",
+      "sha256": "f31b21c0cb3b914b843569879845658f0a52ef9223c6398c9004aa5e0b5a8ccf",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/packaged_starter_access.dart",
+      "sha256": "5acbb7cea42f1287fb6bdf84a9f751af50db9dd4914d640f81337be9a2487e83",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/data/packaged_starter_catalog.dart",
+      "sha256": "032cbf7d718ba974f215e855885d9777cf6068c11324fdc2179924b463e2b0c7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/packaged_starter_identity.dart",
+      "sha256": "486a4372644af2f151935dac16362d1d48d7d560843385a17e22a5fdd247d9eb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_category.dart",
+      "sha256": "6997d0f7171e4c64246d1bea7c57ed8b8cb17fb719926732c63ca104e8467e5f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_failure.dart",
+      "sha256": "3ff87e9fcc71eead84af331c52baa99beab8ecf977ab86e196918a6ee8cb8dc1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_import.dart",
+      "sha256": "8143aa358c089b81c9d8fab0438f218c12048e1d8529a1eca3f667fbeaa996e0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_import_repository.dart",
+      "sha256": "182a2295fb0ec36a648dea7ba2e5513c5b45d155a4d38024492510edd5f6a71f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_repository.dart",
+      "sha256": "9a9d9b7bf479109922e4e92ec010f30cfc67559639924c8cdec1c36c4513340a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/vocabulary/domain/vocabulary_word.dart",
+      "sha256": "bfed7b1da50e579d39025df791703031b9a7da0bca338d648a713aca0e8e9632",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/learning/vocabulary_mixer.dart",
+      "sha256": "56ab110f7c83407197e68039df882bf66e036cf60790e6c974d26b15fb542e56",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/category_model.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/cefr_word.dart",
+      "sha256": "0c6e8085acd86609e40ab5cc8e03d2610c323d53459d5f1ccbf3fa197c45b964",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/phrasal_verb.dart",
+      "sha256": "490d882cef4932e5e4668c535ecd5ca2769feb4baee86476cfcfcdbda240d4b8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/vocab_model.dart",
+      "sha256": "a47b57bb40c17c3b26a05a85da9eb01fb296069a119f3768ae90caaf6defe7dd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/word_model.dart",
+      "sha256": "355204cd8d84978f49512e7efc4421f06f80e5aedba703c38f3516ade74b166d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/add_multiple_words_screen.dart",
+      "sha256": "214eed8b52842558b0b1d3c96ea815973a6c4f16bc594615a89636f4b633229d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/add_vocab_screen.dart",
+      "sha256": "7bea81d3e7652e5fe5493ba85e065ed5165989182e5abde8fe27c73ef06a8650",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/cefr_article_reader_screen.dart",
+      "sha256": "0baa0467599ce5fa375e28fcabb43fcb599730dd9ac7f55c99b189fc75c43063",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/cefr_diagnostic_test_screen.dart",
+      "sha256": "a44dbc2e20c60bf927d62fb0b6f070825333c4a7aa43df5f3a6c1a75fb3cda07",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/cefr_selection_screen.dart",
+      "sha256": "71f5c536a52020a710a1f176c34d6ade6f6248da6b73b86195842ab930518996",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/cefr_vocabulary_catalog_screen.dart",
+      "sha256": "29ad7803c9a76ca6708c8587d8e4b94d8e033dafb9f88126fd1e8b827744b62c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/cefr_vocabulary_detail_screen.dart",
+      "sha256": "78f509f8f5be5b39972dfa15b35dc8e8b81223bb7cd50fafc0f14f6e0d50cc16",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/offline_content_manager_screen.dart",
+      "sha256": "2a77174ed26ad3cb3b7b8955b00572ea96cc11eddbdc2f11afd53b7289cae139",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/select_category_for_quiz.dart",
+      "sha256": "0a2e7861bf4da78ea7e45dae517d06acceda36890846509ae0974e2c548a6df6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/vocab_list_screen.dart",
+      "sha256": "d4c9e523189e2822b20e7fee2c2ad981fb3ecf9f1a11ee7095997de3fa84ae48",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-05"
+      ]
+    },
+    {
+      "path": "lib/screens/word_scramble_screen.dart",
+      "sha256": "8e67854749af7423a3a6c6384d53a3c81a534696e1f160a820063120eeb5bcfb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/wordbook_import_screen.dart",
+      "sha256": "a290688fd2f64e141f0bb6a06f755bc694174a888e887ed0f221853074bc3bd3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/anki_dictionary_exporter_service.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/cefr_service.dart",
+      "sha256": "fd3141ffc92f5717c7894e2fbd1aba334a03feaf9e727f0cab7a3e21002bb416",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/collocation_service.dart",
+      "sha256": "9eeca4d084d55f39d95919b44732da2ba12b1363ae3addeaf575ea8e040343cc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/custom_wordbook_importer.dart",
+      "sha256": "53ba54669a725d0ccd194db0e0586d9c1e5142dddefa46b2c071221ab6f55965",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/lexical_diversity_evaluator_service.dart",
+      "sha256": "4f48561ff78173639964938a7f1801ed5f3ba8bacb37b92be43460a1cc6a755a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/pdf_glossary_exporter_service.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/phrasal_verb_service.dart",
+      "sha256": "fc098a824833aac3c2d45d8c716c6348dbd42bf2074eccfe9d6fe643e4928c45",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/sentence_service.dart",
+      "sha256": "a3b4901bd5c1c4172d49110feca2f080f6294e81803565ac7da89f41da6cca39",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/word_service.dart",
+      "sha256": "bed344b505ca0ff1515630d4d7d8e67fc5b2448e6ceb2807a5b5c0108fe9a990",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/cefr_collocation_tree_widget.dart",
+      "sha256": "f89dff3a1e9b545899597c213e32994e7ebe57ca68215c52346e12af16b39bb6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/cefr_practice_example.dart",
+      "sha256": "7065de9b9a1e0fbe33877b35afa414bd5b13f08448ae5542716e5727c289a685",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/rich_lexical_card.dart",
+      "sha256": "eba14601e81b48177168bb348450d58392c7935fdc2bd1d355cedc8683eca259",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    }
+  ],
+  "limitations": "Static source/caller/oracle review; no runtime, quality, native, research or deployment acceptance. Existing scoped evidence reused, no claim that no unknown defects exist."
+}

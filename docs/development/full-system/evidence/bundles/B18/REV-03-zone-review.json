@@ -1,0 +1,1211 @@
+{
+  "zone": "REV-03",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "reviewCompletedAtUtc": "2026-09-19T11:07:30.790914+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "area": "lesson state, hints and retry",
+      "evidence": [
+        "lib/features/learning/application/unified_lesson_controller.dart",
+        "lib/screens/quiz_screen.dart",
+        "lib/screens/choose_mode_screen.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "disposition": "Native commits reflect progress without duplicate persistence; terminal capture/retry remains frozen. REV03-01 final skip close UI and REV03-07 false exit copy retained. Hint carryover after skip exists at controller API level, but no live lib caller passes allowSkip:true to QuizScreen; current mixed-review has its own controller. No production hint contamination finding inferred. Config limits and inactive time use monotonic contracts; legacy compatibility APIs do not establish current runtime authority."
+    },
+    {
+      "area": "Pair matching and owner transition",
+      "evidence": [
+        "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+        "lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart"
+      ],
+      "disposition": "All Pair source and configured/recovery/atomic/owner/measurement oracles read. REV03-02 owner alias during delayed final feedback remains: merged host tests cover one pair or already completed state, not final timer. Pair Review deferral exposes existing wrong-source records and does not promise an invented bookmark. Existing checkpoint/provenance/canonical purpose/history bounds preserved. Fake research signatures/permits and synthetic fixtures are not activation or statistics."
+    },
+    {
+      "area": "Adventure mixed recovery, presentation and evidence",
+      "evidence": [
+        "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+        "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+        "lib/features/adventure/domain/adventure_reaction.dart",
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "disposition": "REV03-03 terminal recovery overwritten by generic failure, REV03-06 false skip retention, and REV03-10 invalid answered flashcard reveal retained. Source composer preserves occurrence/owner/evidence identity; wrong-source repair differs from original skip. Result wrong count is a review recommendation, not claimed actual due queue. Reaction revision positivity and catalog collection mutability have only pinned package1 production callers and no mutation caller found; not promoted. Entry primary lookup error is REV03-12. Today action owner rechecks remain; stale loader snapshot alone not proven reachable across production stack-clearing account navigation."
+    },
+    {
+      "area": "account, settings and navigation",
+      "evidence": [
+        "lib/screens/register_screen.dart",
+        "lib/screens/setting_screen.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "test/screens/registration_flow_test.dart"
+      ],
+      "disposition": "REV03-04 reset-password validation/status, REV03-05 child CRUD live gate and REV03-08 erase confirmation owner race retained. REV03-11 primary consent error escapes registration; detached sync error is already contained and must not repeat consent write. Current production consent version1 agrees with dialog; configured study versions remain dormant/outside activation. Guest onOwnerBound calls requestDetached, containing async sync errors. MyApp dependency identity stable per runtime; no speculative graph replacement bug. Bare Ghost drawer route lifecycle candidate REV03-09 retained."
+    },
+    {
+      "area": "accessibility and platform-facing UI",
+      "evidence": [
+        "lib/features/accessibility/domain/accessibility_policy.dart",
+        "lib/features/accessibility/presentation/accessibility_scope.dart",
+        "lib/features/learning/presentation/unified_lesson_shell.dart",
+        "test/screens/accessibility_smoke_test.dart"
+      ],
+      "disposition": "Local SDK MediaQuery inheritance issue resolved in earlier cross-check receipt. Fourteen rendered surfaces default scale and explicit2x cases do not prove native assistive technology. Immediate label replacement inspected; entry card InkWell owns action outside excluded decorative subtree, no demonstrated lost action. Native media plugin behavior, camera quality and backend paid-result claims stay in their respective zones; wrappers do not establish those claims."
+    },
+    {
+      "area": "remaining shared/legacy surfaces and services",
+      "evidence": [
+        "lib/features/gemini/application/gemini_tutor_use_cases.dart",
+        "lib/product/feature_contract/feature_contract_models.dart",
+        "lib/services/guest_session_service.dart",
+        "lib/add_default_categories.js"
+      ],
+      "disposition": "All186 per-file observations retained. Event envelope/current canonical motivation path is transactional; legacy analytical/research/export helper APIs have no production learning authority and were not executed. Dormant Boss/world/phonetic/association paths are distinguished from actual drawer Ghost. Gemini legacy revocation ordering corroborates current AI candidate but legacy controller has no production construction. Product44 metadata is coverage identity, not behavior acceptance. Seed JS syntax finding REV12-02 belongs to this zone primary file; use node --check later, never execute Firebase seed. Export/assessment/review/content screen boundaries cross-checked with their canonical repositories and read oracles; domain disposition remains with REV04-09."
+    }
+  ],
+  "files": [
+    {
+      "path": "lib/add_default_categories.js",
+      "sha256": "c86afa9aa36cbcf4cce17e65addba5f2b9baeb57ff18bf89c32bd74afe4de883",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV12-02"
+      ]
+    },
+    {
+      "path": "lib/config/adventure_research_runtime_config.dart",
+      "sha256": "0d54e6376b733dc008aa87b51d13cccb058483a60298010d7554560d2d975ba7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/config/app_config.dart",
+      "sha256": "acdb6ff34b80a0254ced4e73102c8935121681c94720355eb20d6201bd3921dd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/config/learning_feedback_theme.dart",
+      "sha256": "cfe7cad32e6605a74145c95bcfdc159022b3cf31fec087cc48611f2f47eea7b9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/config/m3_theme.dart",
+      "sha256": "eac31be42b86bb833343c0d3a9128fbbdc9eefa85ec66e50c1b61a5bc07c25a6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/config/remote_economy_policy.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/config/research_runtime_config.dart",
+      "sha256": "84aabf90ecc43aea154c8149b1f9b98bdd2321ce141f52e4168d3c3a4276ae17",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/accessibility/domain/accessibility_policy.dart",
+      "sha256": "1fd3a9c3e1240a62fdbf2514b8cb60752836c986e9cfb3f4210bd08ef1e2fce1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/accessibility/presentation/accessibility_scope.dart",
+      "sha256": "612a7349d97004010de4daf2642bafa13118792c7c54b55c7d8b23744973a6c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_diagnostics.dart",
+      "sha256": "bf87283c8f915e8c2bf87a076a3fa627c6a7095ce5166b091a4f3c0a6b307197",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_entry_use_cases.dart",
+      "sha256": "b53e752ab80c1c551d4d1bd9f474870d69101d73b18a7f356dc643b928b92563",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_journey_fact_readers.dart",
+      "sha256": "b2583f8155ea2cb0d118830a10870a05cc926e92722ed42421d93807cabade3e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_journey_reader.dart",
+      "sha256": "f023b8c1873c8a3bed4bbfdcb965143062aa4bbac65f837a9c5f461aba87c68e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_learning_bridge.dart",
+      "sha256": "530629ff2528b070a1f41946ea734be170f5347da1f6a091f5427fdaa1721ea0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "sha256": "112a2930df7dd1c363cf4f0c7cdc40e68c6d96bd35f9817a9b380c7762cf6ac4",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-03"
+      ]
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_mixed_review_prompt_catalog.dart",
+      "sha256": "d8280a6ae2af3f674ab77a54c36fb519ff284f664bcf04935691d675269dbe7a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_motivation_projection_reader.dart",
+      "sha256": "e71e124a89d9331b15a2a7e99d0b2d044b8220a79b7c686a2536e420f2807a8b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_presentation_preferences.dart",
+      "sha256": "7a6c38fd509fcadbcb4e13f849b5ea0307f36c550bb56387f504f614b838d4e8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_reaction_selector.dart",
+      "sha256": "e41b412943f428a2263abccbbc67c63332c737f19f77f000a6f99d922aadc1d0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_recovery_use_cases.dart",
+      "sha256": "44e53128a57640c336c96d4f4fb5c4d0d4808e9cd3d0163de3e939c92b36bbe3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_repair_policy.dart",
+      "sha256": "95a9345fec8ab054a78868acc78656d52aa783d7269d96d9fbd21b3a24e26fb0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_result_next_action_reader.dart",
+      "sha256": "8d02399997a9187a13a106f33feddd82a7ac6b6619141424d81803508c335f1b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_rollout_gate.dart",
+      "sha256": "55b1153b95b182e8246dd28e469affaa580c64b2fce6a1aa0611f639816d30af",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_session_composer.dart",
+      "sha256": "658427af57862a84607e92737aba1987fc774296b2a1c40e1380ac4ec3e8bbb5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/data/adventure_catalog_download_adapter.dart",
+      "sha256": "0162fe3430f7cc7f4e2da68008de8cdafce94b502206c11fd308a522324d6d43",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/data/adventure_world_catalog_validator.dart",
+      "sha256": "013b391c897482dd38d0801c4a5bbdfbea422ad754f386cec80a781ef62fc117",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/data/drift_adventure_achievement_receipt_reader.dart",
+      "sha256": "dd2d3a014cdeef34f094305f8caf024582f3dcf683fbfcae55201e8f2a8b0617",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/data/packaged_adventure_world_catalog.dart",
+      "sha256": "6c6c7c84fbde993e439731c9862f59a5dc4634cf2a15cbd2a680f2b9010d0cce",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_entry.dart",
+      "sha256": "d3e890c56e167608fc84ea7055c0cce1715e7f2fc750f86f72407806c5702f67",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_journey.dart",
+      "sha256": "be142fb1ea5685e033b1efe13fa6dd16a5daf33bcf18179b499f564c76f0f2b5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_reaction.dart",
+      "sha256": "77cc8765287ddbc22480689795a02567a4aedaaf0cf9a46bf536d6ee928f7a3e",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-06"
+      ]
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_result.dart",
+      "sha256": "552b2185626b89e0613e297560623f53917288886731d1eb47b767c62bb2231c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_session_plan.dart",
+      "sha256": "f4798e330e1ac481f8dc3d3d0d16975535d06a2c6422649b3c6b98d169654697",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/domain/adventure_world_catalog.dart",
+      "sha256": "432085d0f31aaf7dabdd5e978dadfc112f030a2c2f0e6758d1d81480e64ea6b6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_hub_screen.dart",
+      "sha256": "6df264b472fdaf77ff35316182359cd06c17d44a24bf9b24243fa3595794f06a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_mission_sheet.dart",
+      "sha256": "61b0e884ee72871acef9c763573604b7b9bc2c34dbc320314fb37227158e0bf5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "sha256": "f6c519829eede80dcf8f4e3d4f00d90b008e74457481f33a8dd506c02206912e",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-10"
+      ]
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_pair_experience.dart",
+      "sha256": "5a5b270a30b3593d21515c374159ac944023208dbfa56bf60b50d6f4aa7105ea",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_pair_renderer.dart",
+      "sha256": "4a89899648dc16f6f1d4991442f3477ae16744363ede119d41ec6cb1625759c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_result_lifecycle_screen.dart",
+      "sha256": "69f2dfaf68063d14f5f402b5655e7f6e892bbe13f09089b21639fdc85aea05d6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_result_screen.dart",
+      "sha256": "befe175aa9ad43b1cec18b88b232214571c41f3bf886987bd1d3e7304ed5c207",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "sha256": "6c4e596dbb8cf6d72ef8e468944375a095d5880fa16a6d78501b649c4e3f723c",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-12"
+      ]
+    },
+    {
+      "path": "lib/features/adventure/presentation/today_experience_host.dart",
+      "sha256": "a6683ee46b1a17299c9e78a9ecb1454b4bcfcf11d51b5a0c648b4ad6e48ed807",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
+      "sha256": "6d5e38ca4627f3c7fb9b70eef85af4f1a04412c8f26d71bcf3cf4dc8cf0ebdfd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/widgets/adventure_map.dart",
+      "sha256": "3c2c945c256966042a6c6db4e0fa86d9b7d30f960fe6cb690efbfc064f71479c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/widgets/adventure_map_list.dart",
+      "sha256": "d706a892ede8213fa006b8744730127562fd1ecaed5457f5ab226e6658ea28c5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/widgets/adventure_standard_switch.dart",
+      "sha256": "a4bc308e6bb0c3a2f8277bb66438dc78e93a76751a0fd96dce2484468a850f38",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/adventure/presentation/widgets/adventure_status_panel.dart",
+      "sha256": "6c0204a4f9b658283a1c19b5fc8808ac377236b49de0b08212711cb209c8e414",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/events/application/event_v1_to_v2_adapter.dart",
+      "sha256": "98dec5fd8616e12eb9f4dfd7cf6ea84d9287726401351de4481199e884f06958",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/events/domain/event_envelope_v2.dart",
+      "sha256": "3bbb632e7b660748d54833d5ba9e7e43ef4081bc0f56160893ca06433de3d023",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/events/domain/today_experience_event_payload_policy.dart",
+      "sha256": "1ab1bf2e7df1c36bdcbd79034639a662fd3723f4d40f6fedfdecd09bdd468757",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/gemini/application/gemini_tutor_use_cases.dart",
+      "sha256": "3188663972f90177fd4bfb2f7dac4b871ceffbef573269ab9dbb37eddd4ed976",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/gemini/data/gemini_rest_gateway.dart",
+      "sha256": "0233d5c6e5284bc8111f31da097b12c7a3baffa1fbc131a482d04eb7cc737ecc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/gemini/data/retry_gemini_gateway.dart",
+      "sha256": "20d2ca036472d45a7861da3aa2d8774f8843b023e2e69e79fdde6378ba89438b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/gemini/domain/gemini_contracts.dart",
+      "sha256": "a960878a15fde07844c6557ccebfa19eaeefd9458e8a00f3eed40feeabd32709",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/cloze_mode_adapter.dart",
+      "sha256": "e4f24ba27842a69f17e67e44d3d056153f6fac33d88abe6c81248fe52140c7fd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/contrastive_feedback_use_cases.dart",
+      "sha256": "f66a246c20011a40d3eaad33ab202697986347bcfd0c961735a723ec226611dd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/definition_quiz_mode_adapter.dart",
+      "sha256": "b59b62d6c7ca07340e476f9d70aa6dea6ce7e32f7631e9187d94cb8ae5d5b228",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/flashcard_mode_adapter.dart",
+      "sha256": "688a50f031f781329cff5d012b8481828e63f4c2a09ea197e2fdf60dc00de781",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/hint_use_cases.dart",
+      "sha256": "ec0b6a0d170178200986d6bff6a8f8082bf3319eda540019344df625b7030fc9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/legacy_lesson_mode_adapters.dart",
+      "sha256": "f09b5024395fb7af4476202d416bf05b8a6f6a8f6821577aad192ff60202cdd6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/lesson_mode_registry.dart",
+      "sha256": "03e9947a98b3231bbba8afe6cc7187f79f12b82fefa4e805d941089e29bc8f61",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/matching_mode_adapter.dart",
+      "sha256": "bbae06eb8619fb2b786bfa77e926e2e3930a6905d6e69cef143557f61f152990",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/meaning_quiz_mode_adapter.dart",
+      "sha256": "2e27ef25a9f2653ab6cadc06992b3aca3e4ea8f297ff830b0a890b6cccc2b91d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/native_mode_adapters.dart",
+      "sha256": "4f5add33ae8680682398c4fb8f3785f083202454b956004ca778737ca18b64eb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/session_configuration_policy.dart",
+      "sha256": "4253b005554a72e839c49911097ea232c5ade331ea2718d343ca2f363406e51c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/typed_recall_mode_adapter.dart",
+      "sha256": "0679241d82c8e3eebc448ba2f80547d0f7af357efaac94cc51c9394524d2d854",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/application/unified_lesson_controller.dart",
+      "sha256": "18a9f8754954f98ee749ba1c9830f0dd0b031d9ded539ca21bd4cb1fb804e5b3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/application/pair_matching_atomic_start.dart",
+      "sha256": "561abd301a948562437fbf496daf2b7c97c11ca82e57c341cfa341c97710b4eb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/application/pair_matching_session_coordinator.dart",
+      "sha256": "2c855416c6f3694212d28ed57e603fe6b7ba52b8d42ec724b6741e958bd6b64e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/application/pair_matching_source_composer.dart",
+      "sha256": "00d22320e796f0fd962b2fb08b7eebe338413c8e6acd7d809da1f34e6c73d494",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/application/pair_matching_unavailable_session.dart",
+      "sha256": "25f3a5d44102feecf791d550f38b0dbbeb764ed0e6fba6ae9456c7e02919d313",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/application/pair_practice_replay.dart",
+      "sha256": "b5994d2a93349f1c84192b87f52abb09afa2afc86cc0fbd82110becd8fc5cf6c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/data/drift_pair_matching_session_purpose_reader.dart",
+      "sha256": "a2d231b27c474250ccff69ab225a2285fc2ad77a2c3b0b334dfecb01e00a45cf",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/data/pair_matching_checkpoint_codec.dart",
+      "sha256": "9f0cef206f69b58f24e703d6e001be980d5bcfbdaa0a08f6f0371071e82feac5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_active_clock.dart",
+      "sha256": "3a08dad061470f5e08bd249162ff40b6cb6c6fcd0d34f0a78846af322422a2be",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_checkpoint_budget.dart",
+      "sha256": "457ea1eeaf352e74da8112fc06c85e878b15e0f17cf09ea4f7c0a4130ebd2657",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_engine.dart",
+      "sha256": "864381428b49dd7e5c44c5c0a0557a067afbc65dcca56282955e39031f905e91",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_history_projection.dart",
+      "sha256": "deeda3f7cf137081c351eb064cb84025c3b161306cfc9bb31113ccd9ad4b3f31",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_launch.dart",
+      "sha256": "2b605de283c7b4276ba92fcb4a5a36662bedd0f1c69815b4b0f951eaea653fd5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_plan.dart",
+      "sha256": "8a020bc5e6304afe4862c27df0d865106c75f8ab75c0a89e4a40dcdd63ab9686",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_matching_session_purpose.dart",
+      "sha256": "9d723edefe165935edaa38ddf5b9f9a59d262e58d1e0d648ff6d02b04979fa96",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_repair_policy.dart",
+      "sha256": "3b548b64ce15a44fe3eeee192e9db05b36c218bf9b23bed3c2f0cf0aa793ec1b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_star_policy.dart",
+      "sha256": "bc6da5d0a0c52be0a8592a2958bd50b035e87a42bda4c58f50b70bba0acd721c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/domain/pair_support_policy.dart",
+      "sha256": "0f19287db255548aed404c4ffdf01ed2f4b529092e49124bf27271050cc1a43f",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_board_view.dart",
+      "sha256": "371bf5a80ce931de07644bf67a29c9f0f55e7e618e0d08a3fda4982f504090a6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_feedback_episode.dart",
+      "sha256": "e78e91059b9aea6260c3448ccab0be43786dbb7772c37ac20232f3bec29ddf3b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_matching_copy.dart",
+      "sha256": "c325b5733cc6eed7d095a4bdb877580a4e96b6baa24df1d5fda5e668b9f6d38a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_matching_experience_host.dart",
+      "sha256": "e39ddf0f745b2d5efe0c952ca919fe8689a0ae3042793fd49d5c2bd0725e5449",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-02"
+      ]
+    },
+    {
+      "path": "lib/features/learning/pair_matching/presentation/pair_matching_result_view.dart",
+      "sha256": "b039d11781b6de6a6cbf877de4f0606f321c1ac19d7edf3f1a2d41457c6bf2cb",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/answer_feedback_panel.dart",
+      "sha256": "48800b09f453fd7378d858a035b3fbdf4fca04ab2e9e7ebc580f1bd8751087e2",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/contrastive_feedback_panel.dart",
+      "sha256": "bca35a0afb40ead6a9784e43a178208d3a8224a58a5754319f1c2446b4671a42",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/handwriting_scratchpad.dart",
+      "sha256": "993aad8a7e9200495ced09e1cf0e0a06ff52f251846918d8be835543a8b5dad0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+      "sha256": "a3b323b514b071e4cded3638ed919bd15994621a7f99a0d1a453621af9bf216a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/hint_panel.dart",
+      "sha256": "1cd4bf486b4d6b11cc1ab738fcf778ac5f55239acc4b8876ab55cf96632e8ca0",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/legacy_matching_mode_screen.dart",
+      "sha256": "5862700f1b7455f05422b1bc492fdaf20e38ffad8d538698451659142e12719a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/sentence_practice_panel.dart",
+      "sha256": "29bcaa1025ead807f317e7ad08d8efa0babc9a44b65c34d2dc2b4e97f8a0d364",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/session_configuration_sheet.dart",
+      "sha256": "7c7f13fff2beb45d0662126bffb9f662e51ae09fadb860fb376ccd1ecb548a33",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/learning/presentation/unified_lesson_shell.dart",
+      "sha256": "ccad889f5cb2360198789ba56b0b03cd4afd35eeef9c6d0293b0214ec80732dd",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/media_practice/data/plugin_camera_gateway.dart",
+      "sha256": "d9b2c7f6875e026f2cca006437c7a2de283de2d1c57af4ce80057c37a5d69958",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/features/media_practice/domain/media_practice_contracts.dart",
+      "sha256": "98eee96508c21f1a1f79001859c019c0db8039c1daa417b384ece302894fee5e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/firebase_options.dart",
+      "sha256": "00c1b31b413fa439ba84b13773192f264ce600f9148fd0e7be6f48a991944301",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/achievement_badge.dart",
+      "sha256": "208194cfc41e28eda7027615ff3148ef04d535ff9a7b3dfc5e2e0040865b26f8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/card_theme.dart",
+      "sha256": "4232ea1a622bbe5e2def7427f35fd64f0322c19eecd8ed73e5bd315d235b6255",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/sentence_model.dart",
+      "sha256": "37d468278634bca13803269f4b02b27335a6095160d36ce65dd10bc1b3e30fe9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/suggestion_model.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/user_model.dart",
+      "sha256": "47cea7c31c682e38cd712a752b67ab20d0b7e2f8f4b1cc9731a262b166c004d5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/models/user_rank.dart",
+      "sha256": "02e04ce91c76230d3e3084d47943fdc881fc9edb5556dbe6ad42611d46b7f933",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/product/feature_contract/alltcas_idea_integration_catalog.dart",
+      "sha256": "626e4f123d531d4fbfcc7dba86e9b8420fdca242d67a3dc2e77cff7109492820",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/product/feature_contract/compatibility_profiles.dart",
+      "sha256": "46b6f11312e351fae8964f6af5d4f8d582bd028091604d657b3269a2e77613a8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/product/feature_contract/feature_contract_digest.dart",
+      "sha256": "7fa27e1dc22902d442252e2825c1f5179c045539227398f22cd0431da0beaa3d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/product/feature_contract/feature_contract_models.dart",
+      "sha256": "a7670473c0733bd0e498fcfa60fcba9ee11d7bc82f18777a11c0781f98295304",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/achievements_screen.dart",
+      "sha256": "389ae04e3e5c863e0bce72cec15df7c6d9c69627d43547de584c80d1c31b12e6",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/ai_tutor_screen.dart",
+      "sha256": "b815e52b77836cf36ecdeb35bad4d360b2d9779fd14ea8ba9247c0ff5903456a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/associative_reading_launcher_screen.dart",
+      "sha256": "cb9bb323a37795525030c1bd1889450dc8196a4772243226aec4608ad3a21030",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "sha256": "4db3ae6f121d379e39d7213890023a98678c9d4d982bc13ca38b7c803e6d436a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/boss_battle_screen.dart",
+      "sha256": "2f8cff14fe06504c3cfd513d4007e10a8c398d20d744210a09a7acb58827ff20",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/categories_page.dart",
+      "sha256": "4d5f47f20b4946376c718719fef0edae2538d413de29ddde69ddc0c3a65b9f5d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/choose_mode_screen.dart",
+      "sha256": "db9d9bb6b276f1b8fdc30d61a6a69c2674ff685bc7ea0236df5f755e364eb026",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/definition_quiz_screen.dart",
+      "sha256": "b4a91819dad0ab8d0478b9a76fd730b786c966809bd3b0b7683e21ac651c0c98",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-01"
+      ]
+    },
+    {
+      "path": "lib/screens/dictation_quiz_screen.dart",
+      "sha256": "75c9218d48cfad8843c5f75a2c7634b372cdd8b9e9a8a8284aee9d09eac26d90",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/email_action_screen.dart",
+      "sha256": "a8a6a333d38c6e07c9d0be4fc60d5d4ac4f904962e581ccf5d142c405e5940a9",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-04"
+      ]
+    },
+    {
+      "path": "lib/screens/export_center_screen.dart",
+      "sha256": "e3aefdf4e990ced604da9ec13f98d1a6d35f6eaee8150022adf36b7e236a02ab",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/fill_in_the_blanks_screen.dart",
+      "sha256": "26f0befe6c013afbe90b10e8c389561ac493bf5af6da338330ca3e58989cbc7c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/game_launcher_screen.dart",
+      "sha256": "1dc921c79520f9ff465bf483764ba62c3a9d8be440637c45bd24e2c499cceffc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/ghost_shadow_duel_screen.dart",
+      "sha256": "3301f6a4625677aae7f3493174e3264fe8406bedd22382d689444eee67f6d0c1",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-09"
+      ]
+    },
+    {
+      "path": "lib/screens/learning_goals_screen.dart",
+      "sha256": "7db1a7c95ceb8a3204a63ea49d34d2b21cc43d5447f6571eae9e298d5fa06f0e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/learning_history_screen.dart",
+      "sha256": "40e52c5d319a1dc765cd30d8310f29e241f9ac706dc281835ffeb3447a2c3b00",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/learning_pack_catalog_screen.dart",
+      "sha256": "261eb403c5c62cf22687cdc32fd22ddc9dfd28d77f2bf3d8d112c85fcf506d83",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/learning_pack_detail_screen.dart",
+      "sha256": "74ae55cb9b9b4e227e9a217160fc1c6112aa56feab37f6528183c68de06df17a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/learning_preference_quiz_screen.dart",
+      "sha256": "9d34a4852833a95ceb9895951df303e814e3593c82d9c0f2a29d90838a804144",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/learning_world_map_screen.dart",
+      "sha256": "147b488554167a3289763cff973831787af1c3f211a9e8dfee1dcd36b2463c08",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/local_reading_library_screen.dart",
+      "sha256": "20c1d1c6a57e36509def1aff0870736a1dfb771a5623f432d33d5391c542f145",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "4ff26cbf0ac2f6565a954cd52c1a678c71388abec306628310b4e8012c460057",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/matching_mode_screen.dart",
+      "sha256": "71ff418cbffac4152cf4a0c8b7c599b07935abada3498330af85be7a42191b6d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/media_dependency_unavailable.dart",
+      "sha256": "f20a9d3cd2dc216fc912a797910d1abd51f498635d45a9248be364de52ce12aa",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/otp_screen.dart",
+      "sha256": "5030690acaed6d94a85ab9766c4b645ba78b9b7510975ac6c693945fc3b1d1dc",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/pair_matching_learn_screen.dart",
+      "sha256": "67ff27baf895ade4ad7484960f5f0954f92f2a53fcf00ec5ae510941f0d7ad8c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/phonetic_explorer_screen.dart",
+      "sha256": "5782f271c1271adb66bd0080e6c0102769480cc082442a2f1b9186168577574e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/pre_post_assessment_screen.dart",
+      "sha256": "df7e050b193350d76496cd52762a330ba3cba3df5cf1587ec40efec22e1d546c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/quest_status_screen.dart",
+      "sha256": "0c39ac888b7d00774519b3ce105f4e9c16b7060b9f5dc10aefe5af24904b2709",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/quiz_screen.dart",
+      "sha256": "e096a6ca34092686223683b75983bef2f261ad4793acff38b71069d59acde91b",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-07"
+      ]
+    },
+    {
+      "path": "lib/screens/register_screen.dart",
+      "sha256": "1b8435515a36a6319e0221bb90714d3763d968612639cdea56c18f7ee00ac9ff",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-11"
+      ]
+    },
+    {
+      "path": "lib/screens/result_screen.dart",
+      "sha256": "3f2cdd02947b5f26c05c127a15576995fb7573778ad29aa5cf2ca91e8d271c4a",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/review_center_screen.dart",
+      "sha256": "66aa40c6cd3aa764470edecdcc904d1c28f4e0bfffefd387da811ed029147e87",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/score_screen.dart",
+      "sha256": "eaf993bcc3e05696dc62d44d9fed334de5fa3f57784470aae4d21aad6491013c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/select_wallpaper_screen.dart",
+      "sha256": "c8269534ff1a92371304abc17396769e06f6f408929dbeae7e59c67091bcc219",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/sentence_scramble_screen.dart",
+      "sha256": "980b7fc2744833f4437dba1b3c12d8bdbe4e9c5677564cdc4d69bcd68ed4673c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "sha256": "7ed66cd5d8d96fbcfd6b9cda5feabc22d827b39c0cfb021bd23047e53ac5c588",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV03-08"
+      ]
+    },
+    {
+      "path": "lib/screens/shadowing_challenge_screen.dart",
+      "sha256": "723701af796bbe9090fddc8822cfe84bfa1840439e1d3da7f103028c1f373897",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/speak_to_text_screen.dart",
+      "sha256": "b039b6f3ebf835a90fa70f0bf753f26ccbfab992be6c40af7afbade74d95d867",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/study_planning_hub_screen.dart",
+      "sha256": "e3da84a2c39d216ee2b5ccf9ed9c3cdbba191c067957f0fe22c6275392300377",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/thesis_chart_screen.dart",
+      "sha256": "f4b04cff576ed15fa8f6008e5c839d2d22cbff4ad4542af4b3d23dbef45f2e26",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/today_hub_screen.dart",
+      "sha256": "7535db737d0a77df1016c2aef32805df898a5f3cc55983e6658bee0536c1e5a4",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/screens/today_hub_view.dart",
+      "sha256": "76003b4c8c505710a016833f9e06c463ab16a8157722c530b834c0067628c95d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/apriori_error_miner_service.dart",
+      "sha256": "20be8b7c489dd3f9336bf500edb90d3cd7ed962975d58ea9bc305fcb7df16761",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/associative_memory_service.dart",
+      "sha256": "ce5fa67bdc8a32612f37341b4d820b52fa89b88e94967dc735439ad3250e6b73",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/brahmawong_research_analytics_service.dart",
+      "sha256": "05e6636257752b8220baa79433f965e85b416d72bb6cb607acbf5f2ef4c8d0c1",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/cognitive_attention_analyzer_service.dart",
+      "sha256": "30a3a3a113f6ba56250da4643c58d5ebd99838abdb79e487463e3611fb7a3329",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/cosine_similarity_evaluator_service.dart",
+      "sha256": "24493d2b2c3b16eef431b8f2dbc3d50b4f581429a7746e7b01430b46be697a32",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/crisp_dm_analytics_service.dart",
+      "sha256": "6c371a8c83b36f0f53ce9815bcee7b3ac9b6116c9bb7513bd7de0c780a1e9b35",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/dynamic_story_contextualizer_service.dart",
+      "sha256": "3482eee2b9dabb42f7f7fc96bf809a1a006be4db2e8cfab1bbc3a9cf6ae6abd3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/ghost_model_trainer_service.dart",
+      "sha256": "7856380f5fd332618bde3a515468cea9ac0c3e261cb8251d06c2e495058aceea",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/ghost_shadow_duel_service.dart",
+      "sha256": "1a09b3cfa823ef510c134c380a69cbf0be7fb1f7a413f976b37867a40ec1e260",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/guest_session_service.dart",
+      "sha256": "169f47302ddee719356c4c2afc44a68fd491ceb672baada041477c3860f92fb7",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/kmeans_learner_profiler_service.dart",
+      "sha256": "2e4bf194a290f1302283923506a8f7c290388a48384067267b3db6c6223d58ac",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/local_reading_catalog.dart",
+      "sha256": "a009d26b236baaa65d6cfa09c67eff8dd5333af61c86ca2c343b1ad4882a984c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/local_user_progress_store.dart",
+      "sha256": "8f6c69eff2106156cd44eba654fcc4ee17c79e65cbf8649bd5b49822f47e3a9e",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/rank_service.dart",
+      "sha256": "4d9d98d4eb62be57a3def851b833f5cca5be6f576d7fee30b01d8db01e690e48",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/rapid_naming_speed_service.dart",
+      "sha256": "240a217d7ac3d6e63b7a27c0e6b159936f637bd8312b0c34ef24308cb7f4a072",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/research_data_exporter_service.dart",
+      "sha256": "3435415f433bc953a52f70c9478020b6fc2b2bf65c56feba2b388a29e0054326",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/research_experiment_service.dart",
+      "sha256": "aa94d3d3e238738408f7442075e04feee3a769ca1cbc4b39b0801468dce73286",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/research_export_errors.dart",
+      "sha256": "83d5217603f58205e566d81d9cfa9ae059ea3c60f6f9c1f89ba09c2da09a531c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/research_report_pdf_exporter_service.dart",
+      "sha256": "004fb056ba6c7fd0ef3c9daaff652af6c4f876fa9c7aca5003c395036d9b04d8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/spaced_review_reminder_service.dart",
+      "sha256": "552fcdfcccc01323f89ad67ac0f6eeffd86aa063396c3d50daf668bfb976006c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/suggestion_service.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/services/thesis_appendix_exporter_service.dart",
+      "sha256": "e446652deeb2d7bab3d4201aa74b02b52fc5f38203d4b72299bc1172d8075b65",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/utils/index.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/utils/local_study_datetime.dart",
+      "sha256": "3bf23b2bcb2cc69e2a2c796b95acf8a2c71174dba175edfe227bb58c8d260ff8",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/accent_selector_widget.dart",
+      "sha256": "3a9f9c18d0e8f84420dc678ae677d1657eae3db8c0aa8efb75b7693ff6a80e22",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/association_dialog_widget.dart",
+      "sha256": "c30fdc2d89d83a8cab36dfb159263c1208d78c5d59b93aff829fc74385c89e53",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/index.dart",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/local_study_datetime_field.dart",
+      "sha256": "bc831c674068978b455e3c760bb117a69b35ba97683411802b7bd5a7f103613c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/permission_error_widget.dart",
+      "sha256": "7a56252a33758858bd92e96da507cf743ca970ecb18626078f2201aa4ebffed5",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/recommendation_panel.dart",
+      "sha256": "7b19551407896bb131e3f9a9fae01e5d00650f9f98735cf82fad293f6f740767",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    },
+    {
+      "path": "lib/widgets/research_consent_dialog.dart",
+      "sha256": "991dbf72679912752376058a8a2aa307ab6366a211af09e25c1646b0dc9e7c14",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": []
+    }
+  ],
+  "limitations": "Per-file source observations plus live caller/oracle cross-check. No runtime, physical-device, model quality, research or deployment acceptance. Findings remain open; no claim of absence of unknown defects."
+}

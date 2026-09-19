@@ -347,6 +347,92 @@
       "proposedRegression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV03-09",
+      "severity": "P2",
+      "status": "open-candidate-runtime-reproduction-pending",
+      "file": "lib/screens/ghost_shadow_duel_screen.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart",
+        "lib/features/learning/application/learning_use_cases.dart",
+        "test/screens/ghost_shadow_duel_screen_test.dart"
+      ],
+      "trigger": "Retire an unfinished production Ghost route, especially while session creation is delayed or terminal persistence fails; background/resume before a response.",
+      "expected": "Unfinished route retirement must preserve accepted evidence and truthful terminal status, contain cleanup failures, and response timing must exclude inactive background time if used for speed comparison.",
+      "actual": "Live drawer route builds Ghost screen directly. Its dispose always calls _closeSession/finish for any nonempty session, irrespective of _finished; then onError handles load failure only, not exceptions thrown inside async success callback. Stopwatch has no lifecycle/route pause. Existing disposed callback test checks no answers and no error with successful fake close, but not abandoned status/failed close; completed close retry test does not exercise unfinished retirement. Recreational evidence classification means this is not a recall-SRS bug.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Use bounded real repository or faithful lifecycle fake with delayed startup and failed cleanup. Verify unfinished retirement does not invent completed play, accepted evidence remains, no unhandled future, and completed games still close once. Add controllable monotonic clock/lifecycle background case if timing contract confirms active response duration; never replace historical recreational classification or manufacture progress.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-10",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "relatedFiles": [
+        "lib/features/adventure/application/adventure_mixed_review_controller.dart"
+      ],
+      "trigger": "Reveal and continue a flashcard occurrence in mixed review, then press the response-area reveal button while answered and before Next.",
+      "expected": "Answered flashcard keeps a stable answered/revealed presentation and only valid next actions are enabled.",
+      "actual": "Response area renders for every nonnull prompt. revealed is true only in flashcardRevealed phase. continueAfterFlashcard transitions to answered, making revealed false while isBusy is false, so Show translation becomes enabled again and invokes revealFlashcard directly; controller throws StateError outside its only allowed awaitingFlashcardReveal phase. Existing Next is also visible.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Render actual flashcard occurrence through reveal/continue, assert answered view has no enabled invalid reveal action and tapping retained callback cannot create unhandled error or duplicate evidence; Next still advances and accepted content stays visible as appropriate. Include retry phases.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-11",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/screens/register_screen.dart",
+      "relatedFiles": [
+        "lib/features/consent/application/research_consent_use_cases.dart",
+        "test/screens/registration_flow_test.dart"
+      ],
+      "trigger": "Account registration succeeds, then primary local research-consent decision persistence or owner lookup throws.",
+      "expected": "Contain the local failure, preserve truthful account-created and consent-uncommitted state, and allow recovery without registering the account again.",
+      "actual": "Only AccountException is caught. ResearchConsentUseCases deliberately propagates primary repository/owner errors, unlike detached sync errors. The registration handler finally clears busy but escapes before verification navigation; subsequent submit repeats registration. Existing two widget tests only cover absent privacy agreement/provider.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fake successful account and failing local consent repository; assert no unhandled exception, no false consent success, and recoverable verification/consent state without a second account registration. No real account creation or research activation.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-12",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "Tap Adventure Today while requireSingleActiveOwnerId fails or the entry becomes unavailable.",
+      "expected": "Contain failed entry, show a truthful retryable unavailable state, and restore button availability.",
+      "actual": "Entry card awaits onOpen inside try/finally without catch; live _openTodayExperience throws on unavailable dependency/gate and propagates owner lookup errors. Finally restores _opening but the void UI callback future escapes with no user-facing failure. Later TodayExperienceHost loading guards cannot catch failures before navigation.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Fail onOpen with a bounded fake, verify no unhandled error and visible accessible retry state, then succeed once after retry; retain double-tap lock and disposed handling.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV04-01",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/learning_packs/domain/content_quality_policy.dart",
+      "relatedFiles": [
+        "lib/features/vocabulary/application/vocabulary_use_cases.dart",
+        "lib/features/vocabulary/application/import_vocabulary.dart",
+        "lib/features/review/domain/review_queue_item.dart",
+        "lib/features/review/data/drift_review_center_reader.dart"
+      ],
+      "trigger": "Create/import a valid authored word with a canonical meaning of257-500 ASCII characters, then load available learning/review content.",
+      "expected": "Accepted supported content remains usable in downstream learning/review without truncation or identity/hash changes.",
+      "actual": "Vocabulary maxMeaningLength is500; ContentQualityPolicy.isAvailableVocabulary applies default256 rune bound to meaning and normalizedMeaning, silently excluding it. ReviewQueueItem independently imposes256 even if upstream availability is corrected, while ReviewedLexicalContentSnapshot allows1024. Therefore reader does not currently throw: it excludes the valid word before constructing the item.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -390,6 +476,12 @@
       "status": "method-corrected",
       "actual": "Initial checkpoint read guessed nonexistent resume.md; actual resume.json discovered immediately. Some multi-file source outputs truncated.",
       "action": "No repeated absent-path read. Used rg --files and exact bounded recovery of omitted source ranges before recording full-source observations. No application changes or tests."
+    },
+    {
+      "id": "B18-READ-06",
+      "status": "method-corrected",
+      "actual": "Resume cross-check guessed presentation controller/resume-state/register-test paths; one rg Windows path contained *.dart. Combined output also truncated.",
+      "action": "Discovered application controller, resume.json and registration_flow_test.dart using rg --files/symbol search; corrected glob to directory plus -g. No absent-path retry or source change; bounded relevant reads recovered."
     }
   ]
 }

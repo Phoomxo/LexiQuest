@@ -1,0 +1,83 @@
+{
+  "purpose": "Unresolved cross-zone handoff context only; source notes/oracles already recorded, no new review acceptance",
+  "completedZones": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04"
+  ],
+  "pending": {
+    "REV-05": [
+      "Next slice55files, already full-read. Finish live caller/oracle and FORM-01..12 cross-check against B01/G0.7-formula-registry.json; do not use line counts as acceptance.",
+      "Assessment6lib+4tests961/797/2955/905 read. Direct zero completion is intentional; one-option catalog versus two-option UI not demonstrated failure. Pin owner across awaits, terminal lostACK UI disposal and actual launch IDs require final disposition.",
+      "Active-learning/focus clocks use monotonic duration and deliberate5minute idle cutoff. Today reader/UI observations are fully recorded; owner-before/after reads are not transaction snapshots and no arbitrary history cap is justified.",
+      "SRS compatibility819 and1300-line fake-backed oracle do not establish audio pronunciation accuracy. Legacy recommendation300/67 has no libcaller; learner profile recomputation is descriptive, not mastery. Shared learning event/evidence policies already cross-checked REV02; source remains unchanged."
+    ],
+    "REV-06": [
+      "Quest7lib10tests/rewards11lib10tests read. Active catalog upgrade reject intentional; historical projection-rebuild-v2 fixture has empty XP/coins despite broad name. Shop ACK retry oracle lacks owner-switch case.",
+      "Reminder production native calls gate every operation; actual erasure binding vs reconstructed coordinator distinguished in bootstrap notes. File2connections with fake native, not OS delivery. Goals/display preference independent revisions, event/motivation canonical TX, legacy streak no callers."
+    ],
+    "REV-07": [
+      "Training already accepted B11A actual compute, no rerun. Retained baseline/candidate pins in notes. Web development90.83 vs82.5, lightbulb0/3@.6, unknownN0/null not physical camera evidence. Candidate disabled URLnull.",
+      "Media/device/library oracles fully read; fake interpreter/static validation not native quality, rollback/model identity and source-rights scope remain important. No acquisition/training/device operation authorized by review."
+    ],
+    "REV-08": [
+      "OpenREV08-01 AI revocation cancellation-drain before enqueue andREV08-02 cost1e308 overflow need runtime later; legacy Gemini enqueue-first actual contrast. Paid usage3HTTPlogical not one-billed-request; no invented estimated costs.",
+      "Allvoice33lib30tests/facade710, backendvoice28+lock139/620, AI22+lock63/319, LMsource/lock85/425/422 read. B14text similarity is not acoustic/native playback acceptance.",
+      "Pending final dispositions: mirror/recorder dormant APIs/defaultNoop/unbounded body/provenance/untagged completion; actual queued stop may intentionally returnfalse. AI fallback429/cachecasefold/concurrentcachemiss not automatically defects. LM doubleim_end/tail/hashrandom/allmasked dryrun/whoami not executed; torch3wheels lack hash/size."
+    ],
+    "REV-09": [
+      "REV09-01 actualFirestoreACKrevision codec mismatch after lostACK/edit is static; mocks bypass codec including owner upgrade/scheduler. REV09-02 denied proof prefix can starve eligible later rows; all-denied no-write invariant retained.",
+      "Rules2266+tests4134 fully read. Four contradictory P2.6 createpaths are dormant/noSyncCollection livecaller, do not fabricate current cloud bug. SRS payloadwordID versusentitykey rule check stillneeds finaldisposition.",
+      "Research authorizer proof/signature/receipt/measurement/runtime read; configured source fixtures are not activation, actual remote sync, assignment or statistical result. Export owner-isolation full-table/file snapshots read. Legacy rules future cutoff1790812800000 oracle stops being future later, currentdate pre-cutoff."
+    ],
+    "REV-10": [
+      "Android SAF in-memory pending URI/activity restore/bounded sync write/closeflush ACK/deleteENOSPC require Dart contract disposition. Windows WM_FONTCHANGE/GetMessage-1/COM earlyreturn/UTF8zero and hugefiles potential, no proven runtime failure yet.",
+      "mac10.14 defaultpermissions/no networkclient/media/filegrants and iOS missing release notification config need supportedtarget/release contract cross-check. Empty Apple tests no physical PASS. Preview APKunsigneddebug32assets/hash/flags is not installed release."
+    ],
+    "REV-11": [
+      "Release collector579/2098 regex oracle: failed dumpsys yields null indistinguishable clean install; determine operational gate consequence. ELF verifier actual parser vs synthetic6259tests, no APK/device execution.",
+      "Historical finalplan1186 excludes transitive inputs/package-lock/newAI/Adventure/LM; B19 must create new version, never overwrite pinned historical schema26/49 artifactSHA666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534.",
+      "verify-scope source819 read: prehash/noafter, backendvenvinstall, stderr/read wait possible. Existing fixtures not actual workloads. CI PSexitbehavior/expiredSep14 OSVexception are observations; no security scan/workflow invocation. Cloud helpers fixedproject/budgetpagination read-only review only."
+    ],
+    "REV-12": [
+      "All564 source/generated files fully read or structured-reviewed; final zone needs semantic cross-check attribution and leftover shared/orphan tests, no reread all. Four open static test/tool findingsREV12-01..04 have regressions in defects.json.",
+      "Drift structured50table571column pairing succeeded including inherited ResearchOwnedRecord; generated managers have no live lib callers. No fresh regeneration/analyzer/versioncompat proof; locks drift2.34.3/dev2.34.5/buildrunner2.15.1.",
+      "New owned review scripts require disposition too: checkpoint_audit now accepts exactly3 user-authorized policy files using frozen+new hashes, not application changes; all other frozen bytes exact. AST/integrity is not semantic/runtime acceptance. Do not blindly rerun freeze_inventory/record_review/merge_review_observations after completed zone notes."
+    ]
+  },
+  "oracleOwnership": {
+    "nextSlice": "REV-05",
+    "nextSliceTests": [
+      "test/features/assessment/assessment_comparison_test.dart",
+      "test/features/assessment/assessment_isolation_test.dart",
+      "test/features/assessment/assessment_use_cases_test.dart",
+      "test/features/assessment/drift_assessment_repository_test.dart",
+      "test/features/learning/srs_policy_test.dart",
+      "test/features/progress/achievement_policy_test.dart",
+      "test/features/progress/learning_calendar_reader_test.dart",
+      "test/features/progress/personal_learning_profile_test.dart",
+      "test/features/progress/progress_projector_test.dart",
+      "test/features/recommendation/active_recall_ladder_test.dart",
+      "test/features/recommendation/recommendation_policy_test.dart",
+      "test/features/recommendation/recommendation_use_cases_test.dart",
+      "test/features/time_tracking/active_learning_time_controller_test.dart",
+      "test/features/time_tracking/focus_timer_controller_test.dart",
+      "test/features/time_tracking/focus_timer_widget_test.dart",
+      "test/features/time_tracking/learning_time_repository_test.dart",
+      "test/features/today_hub/today_hub_reader_test.dart",
+      "test/progress/local_progress_repository_test.dart",
+      "test/screens/learning_calendar_screen_test.dart",
+      "test/screens/mastery_dashboard_screen_test.dart",
+      "test/screens/srs_flashcards_screen_test.dart",
+      "test/screens/today_hub_screen_test.dart",
+      "test/screens/weakness_clinic_screen_test.dart"
+    ],
+    "remainingSharedAndOrphanOwner": "REV-12 + gate; Master continuation manifest can assign domain oracles to later zones without changing historical zone IDs",
+    "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2."
+  },
+  "newToolingReview": {
+    "checkpoint_audit": "Manually reviewed exact3path authorization allowlist, frozen hash comparison before replacement hash, unchanged1429 source hash assertions, unchanged AST/untracked/ignored checks. Only approved policy docs differ; no broad exception or application test PASS.",
+    "zoneReceipts": "Validate file counts, exactSHA/path/status/finding IDs against ledger before commit; generated from explicit already-read cross-check conclusions, not automatic inference."
+  }
+}

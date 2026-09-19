@@ -14,9 +14,21 @@ ledger=read(OUT/'G8.2-review-ledger.json')
 assert len(ledger['files'])==inventory['trackedCount']
 assert len({r['path'] for r in ledger['files']})==len(ledger['files'])
 expected={r['path']:r for r in inventory['files']}
+amendment=read(OUT/'context-continuation-amendment.json')
+authorized={r['path']:r for r in amendment['files']}
+assert set(authorized)=={
+    'docs/development/full-system-active-index.md',
+    'docs/development/full-system-package-workflow.md',
+    'docs/development/2026-09-13-rule-supersession-register.md',
+}
+assert amendment['applicationSourceChanged'] is False
 for row in ledger['files']:
     assert row['sha256']==expected[row['path']]['sha256']
-    assert hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest()==row['sha256'],row['path']
+    change=authorized.get(row['path'])
+    if change:
+        assert change['frozenSha256']==row['sha256'],row['path']
+    actual_expected=change['checkpointSha256'] if change else row['sha256']
+    assert hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest()==actual_expected,row['path']
     if row['category'] in {'handwritten-source','configuration','generated'}:
         assert row['zone'] in {f'REV-{i:02}' for i in range(1,13)},row['path']
     if row['status'] in {'reviewed-no-actionable-finding','reviewed-with-findings'}:
@@ -28,6 +40,8 @@ ignored=subprocess.check_output(['git','ls-files','--others','--ignored','--excl
 assert not [p for p in untracked if p and not p.startswith('docs/development/full-system/evidence/bundles/B18/')],untracked
 status=collections.Counter(r['status'] for r in ledger['files'] if r['zone'])
 report=dict(sourceSha=inventory['sourceSha'],trackedRawBytesVerified=len(ledger['files']),
+    frozenRawBytesUnchanged=len(ledger['files'])-len(authorized),
+    authorizedPolicyAmendments=list(authorized.values()),
     sourceAndConfigStatus=dict(status),ignoredFiles=[p for p in ignored if p],
     newReviewTooling=[p for p in untracked if p],
     semanticReviewComplete=False,G82Accepted=False,G83Started=False,B19Dispatched=False,
