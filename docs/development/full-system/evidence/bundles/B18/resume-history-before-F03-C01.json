@@ -1,0 +1,49 @@
+{
+  "bundleId": "B18",
+  "currentPackageId": "G8.3",
+  "sliceId": "B18-G83-F02",
+  "threadId": "01a0ba0a-9774-70a2-9702-a227f9751032",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\d46f\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f02-c02",
+  "inputCheckpointSha": "f9a85751d8299a5fc89ed38f71c4cfe1ba7024fe",
+  "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "G82Accepted": true,
+  "G83Started": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "writerReleased": false,
+  "completedSlice": "F02",
+  "findingsClosed": 19,
+  "remainingOpenFindings": 50,
+  "nextSlice": "B18-G83-F03",
+  "historyPath": "resume-history-before-F02-C02.json",
+  "evidence": [
+    "G8.3-F02-acceptance.json",
+    "G8.3-F02-integrity.json",
+    "G8.3-owner-plan.json",
+    "defects.json"
+  ],
+  "nextWork": [
+    "Claim exact final F02 checkpoint and exclusive writer using external continuation handoff. Preserve cumulative71 source paths plus3 policy amendments.",
+    "Execute only F03 lesson/UI/accessibility/vocabulary/assessment owner-plan group,19 finding IDs. Read selected findings, callers and regression contracts only.",
+    "Preserve69 findings,1429 dispositions,564 REV12 paths; G8.3/B18 still in progress and B19 prohibited until accepted."
+  ],
+  "verification": "F02 ten outcomes complete. New21 bounded native JVM scenarios with real production dispatch and separate realAPI compile;43 affected Dart tests pass; four-file analyzer0. C01 reused537 tests at unchanged53 pins, prior analyzer1/24 unchanged sites remains historical. Installed-app/device/provider/full-release NOT RUN.",
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "continuationId": "B18-G83-F02-C02",
+  "remainingF02": [],
+  "F02Accepted": true
+}

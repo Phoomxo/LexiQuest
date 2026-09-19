@@ -70,7 +70,24 @@
         "B18-REV06-06",
         "B18-REV06-08"
       ],
-      "status": "planned"
+      "status": "partial-continuation-checkpoint",
+      "closedCount": 6,
+      "pendingFindingIDs": [
+        "B18-REV03-02",
+        "B18-REV03-05",
+        "B18-REV03-06",
+        "B18-REV03-07",
+        "B18-REV03-08",
+        "B18-REV03-09",
+        "B18-REV03-11",
+        "B18-REV04-01",
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03",
+        "B18-REV05-04",
+        "B18-REV06-06"
+      ],
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F04",
@@ -144,7 +161,9 @@
       "dependencies": [],
       "regression": "Real checkpointed recovered closing session with one transient finish or acknowledgement failure: visible retry succeeds using same terminal identity, one canonical completion, and no new answer evidence; test controller phase and widget with null prompt",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-02",
@@ -164,7 +183,9 @@
       "dependencies": [],
       "regression": "Widget tests for definition and cloze with last skipped item and finish failing once: exact retry visible and succeeds, no answer evidence inserted, stable captured terminal intent and no duplicate completion",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV01-01",
@@ -246,7 +267,9 @@
       "dependencies": [],
       "regression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-05",
@@ -396,7 +419,9 @@
       "dependencies": [],
       "regression": "Render actual flashcard occurrence through reveal/continue, assert answered view has no enabled invalid reveal action and tapping retained callback cannot create unhandled error or duplicate evidence; Next still advances and accepted content stays visible as appropriate. Include retry phases.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-11",
@@ -418,7 +443,9 @@
       "dependencies": [],
       "regression": "Fail onOpen with a bounded fake, verify no unhandled error and visible accessible retry state, then succeed once after retry; retain double-tap lock and disposed handling.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV04-01",
@@ -558,7 +585,9 @@
       "dependencies": [],
       "regression": "Hold actual screen owner lookup, tap Add twice then release; assert one dialog/one prepared command. Inject lookup failure then retry successfully. Repeat edit and owner switch during opening; retain existing save retry/owner denial tests.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "receipt": "G8.3-F03-C01-checkpoint.json"
     },
     {
       "findingId": "B18-REV06-09",

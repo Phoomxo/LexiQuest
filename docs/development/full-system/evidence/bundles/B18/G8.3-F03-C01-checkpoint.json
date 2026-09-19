@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "continuationId": "B18-G83-F03-C01",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T15:13:51.654068+00:00",
+  "threadId": "01a0ba25-06ad-7d70-94c9-679a04b99e71",
+  "inputCheckpointSha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "findings": [
+    {
+      "findingId": "B18-REV03-03",
+      "status": "closed-regression-verified",
+      "redRun": "adventure-red",
+      "greenRun": "final;skip-final",
+      "outcome": "Exact durable closing checkpoint rehydration retains completionRetryRequired with null prompt; visible retry uses the same terminal time, one canonical session, zero answer attempts."
+    },
+    {
+      "findingId": "B18-REV03-10",
+      "status": "closed-regression-verified",
+      "redRun": "adventure-red;flashcard-review-red",
+      "greenRun": "final;skip-final",
+      "outcome": "Flashcard reveal state persists through answered/close phases; stale reveal callback is fenced, Next advances, skipped flashcards remain unrevealed and no duplicate evidence is created. Existing checkpoint-retry controller cases retained."
+    },
+    {
+      "findingId": "B18-REV03-04",
+      "status": "closed-regression-verified",
+      "redRun": "entry-red",
+      "greenRun": "final;skip-final",
+      "outcome": "Real AccountUseCases plus recording gateway: weak password causes zero gateway calls, recoverable network error retains editable form, same original code succeeds on correction/retry; terminal invalid/expired/success state is distinct."
+    },
+    {
+      "findingId": "B18-REV03-12",
+      "status": "closed-regression-verified",
+      "redRun": "entry-red",
+      "greenRun": "final;skip-final",
+      "outcome": "Today entry contains failed owner/open callbacks, shows accessible retry copy, prevents concurrent openings, retries once successfully and contains late failure after disposal."
+    },
+    {
+      "findingId": "B18-REV06-08",
+      "status": "closed-regression-verified",
+      "redRun": "goals-red",
+      "greenRun": "final;skip-final",
+      "outcome": "Add and edit each fence concurrent owner lookup/dialog opening; lookup failure and owner mismatch show retryable error; no stacked dialogs, retained repository mutation guards and save tests pass."
+    },
+    {
+      "findingId": "B18-REV03-01",
+      "status": "closed-regression-verified",
+      "redRun": "skip-red;definition-red2",
+      "greenRun": "final;skip-final",
+      "outcome": "Real Drift Definition/Cloze last skipped items expose completion retry outside null-question branch; precommit fault then exact terminal retry produces one completed session and zero answer attempts."
+    }
+  ],
+  "closedInThisCheckpoint": 6,
+  "remainingF03": [
+    "B18-REV03-02",
+    "B18-REV03-05",
+    "B18-REV03-06",
+    "B18-REV03-07",
+    "B18-REV03-08",
+    "B18-REV03-09",
+    "B18-REV03-11",
+    "B18-REV04-01",
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04",
+    "B18-REV06-06"
+  ],
+  "totalClosed": 25,
+  "remainingOpenFindings": 44,
+  "dartTestsPassed": 71,
+  "testTargetCount": 7,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 14,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+      "sha256": "33a1c474dc043aa0d6f9e995d8fce93f5c93328fca87a5bf36643cf7b7146359"
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
+      "sha256": "c5832d577181429f72a579539efcf83200546a2acc4ce52952678333453ca67d"
+    },
+    {
+      "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "sha256": "26f915957d71d5a7e431ae94b8bc7f70569dd99150a7739ae1a2c2132dc88c28"
+    },
+    {
+      "path": "lib/screens/definition_quiz_screen.dart",
+      "sha256": "27d69acf777b2ccf82be0bb5a9d33c3088663e219bad0ab6a1a678d777c4c3e8"
+    },
+    {
+      "path": "lib/screens/email_action_screen.dart",
+      "sha256": "d15ba4ded4a8aa58aa52fa1ce63b7cbb51d77a5162d462ff749d94a03606b187"
+    },
+    {
+      "path": "lib/screens/fill_in_the_blanks_screen.dart",
+      "sha256": "0ce7dd1cf72886d424a6cb9a39f95fb4513a1184c644676c9ff0a7df7323a953"
+    },
+    {
+      "path": "lib/screens/learning_goals_screen.dart",
+      "sha256": "bcc6a99f92b72e516a4e4d4a2a46d4e6f0cf5b16057c3f4fbe05102bbabb3b30"
+    },
+    {
+      "path": "test/features/account/account_use_cases_test.dart",
+      "sha256": "25ee4b330a323d81b70db5f13d6e23c56b29ebd39ff0f02f1e3cff5b69eb8c15"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_mixed_review_screen_test.dart",
+      "sha256": "71f949846e6b33ad4ebdfe870c090f606d777d5027ae875435ab6e390464371c"
+    },
+    {
+      "path": "test/features/adventure/presentation/adventure_today_entry_card_test.dart",
+      "sha256": "01e1fd9c434bc196cf5d12b10c8f21da5806b7275a4183dbfd9f1a4851fcf7b0"
+    },
+    {
+      "path": "test/screens/definition_quiz_screen_test.dart",
+      "sha256": "210f9e6a5b82eb0c310fe0165b55eceb6d9b27534c4f1cf9fff8f5c9247d3497"
+    },
+    {
+      "path": "test/screens/fill_in_the_blanks_screen_test.dart",
+      "sha256": "4248226831459ac46a60718d449a909c710cde41befb1239b5536b46ab178773"
+    },
+    {
+      "path": "test/screens/learning_goals_screen_test.dart",
+      "sha256": "fe2097fb53298816c39e5764bdf7be323756f076192bf2fac02460e803574914"
+    },
+    {
+      "path": "test/support/fail_once_session_close_repository.dart",
+      "sha256": "aaacfe3b55a3718c2f59936b29fbb1032d057cb343a779d8d456c1be5bc3cb26"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03",
+  "evidenceManifestSha256": "c2847e5a0032d3dc9fa953f4039ca051f5f0a38de202b73e9eb030e40d68bc5f",
+  "review": "review.json; local review only, no independent reviewer",
+  "limitations": [
+    "Only6/19 F03 outcomes completed;13 remain and F04 blocked",
+    "Native/device/assistive technology/provider/live/full release not run",
+    "Prior F02 analyzer24 historical sites remain unchanged; changed14-file analyzer0 is not whole-app clean"
+  ],
+  "F03Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

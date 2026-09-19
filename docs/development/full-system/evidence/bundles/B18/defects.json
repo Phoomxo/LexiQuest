@@ -5,7 +5,7 @@
     {
       "id": "B18-REV03-03",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/adventure/application/adventure_mixed_review_controller.dart",
       "relatedFiles": [
         "lib/features/adventure/presentation/adventure_mixed_review_screen.dart"
@@ -15,8 +15,15 @@
       "actual": "_complete sets completionRetryRequired and rethrows, then initialize catch overwrites phase with failed. UI displays a fixed failure message without retry. Merely preserving the retry phase is insufficient because _retryControls is nested inside the nonnull prompt branch and recovered closing run has no prompt",
       "ownerPackage": "G2.1/G2.2",
       "proposedRegression": "Real checkpointed recovered closing session with one transient finish or acknowledgement failure: visible retry succeeds using same terminal identity, one canonical completion, and no new answer evidence; test controller phase and widget with null prompt",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-03",
+        "redRun": "adventure-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Exact durable closing checkpoint rehydration retains completionRetryRequired with null prompt; visible retry uses the same terminal time, one canonical session, zero answer attempts."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-02",
@@ -34,7 +41,7 @@
     {
       "id": "B18-REV03-01",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/definition_quiz_screen.dart",
       "relatedFiles": [
         "lib/screens/fill_in_the_blanks_screen.dart",
@@ -46,8 +53,15 @@
       "actual": "Both screens render completionRetryRequired action only inside question != null branch. Skipped last item keeps question null; controller transitions to completionRetryRequired, disabling advance and locking PopScope without any visible retry action",
       "ownerPackage": "G2.1/G2.2",
       "proposedRegression": "Widget tests for definition and cloze with last skipped item and finish failing once: exact retry visible and succeeds, no answer evidence inserted, stable captured terminal intent and no duplicate completion",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-01",
+        "redRun": "skip-red;definition-red2",
+        "greenRun": "final;skip-final",
+        "outcome": "Real Drift Definition/Cloze last skipped items expose completion retry outside null-question branch; precommit fault then exact terminal retry produces one completed session and zero answer attempts."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV01-01",
@@ -166,15 +180,22 @@
     {
       "id": "B18-REV03-04",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/email_action_screen.dart",
       "trigger": "Open valid reset-password action route and submit a password shorter than8 characters",
       "expected": "Local password validation keeps the editable reset form and same action code so learner can correct input and retry",
       "actual": "AccountUseCases._password throws weakPassword before gateway request; EmailActionScreen catch writes nonnull _status, while reset form and submit are rendered only when _status is null. Only return-to-login remains. Network AccountException likewise hides retry and uses invalid-link copy.",
       "ownerPackage": "G1.1",
       "proposedRegression": "Widget with real AccountUseCases and recording fake gateway: submit short password then correct to valid length on same route, assert validation message plus editable form remain, zero gateway calls for invalid input then exact original code once for valid retry; separate transient network failure retry. No live email/provider needed.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-04",
+        "redRun": "entry-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Real AccountUseCases plus recording gateway: weak password causes zero gateway calls, recoverable network error retains editable form, same original code succeeds on correction/retry; terminal invalid/expired/success state is distinct."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-05",
@@ -405,7 +426,7 @@
     {
       "id": "B18-REV03-10",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/adventure/presentation/adventure_mixed_review_screen.dart",
       "relatedFiles": [
         "lib/features/adventure/application/adventure_mixed_review_controller.dart"
@@ -415,8 +436,15 @@
       "actual": "Response area renders for every nonnull prompt. revealed is true only in flashcardRevealed phase. continueAfterFlashcard transitions to answered, making revealed false while isBusy is false, so Show translation becomes enabled again and invokes revealFlashcard directly; controller throws StateError outside its only allowed awaitingFlashcardReveal phase. Existing Next is also visible.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Render actual flashcard occurrence through reveal/continue, assert answered view has no enabled invalid reveal action and tapping retained callback cannot create unhandled error or duplicate evidence; Next still advances and accepted content stays visible as appropriate. Include retry phases.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-10",
+        "redRun": "adventure-red;flashcard-review-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Flashcard reveal state persists through answered/close phases; stale reveal callback is fenced, Next advances, skipped flashcards remain unrevealed and no duplicate evidence is created. Existing checkpoint-retry controller cases retained."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-11",
@@ -438,7 +466,7 @@
     {
       "id": "B18-REV03-12",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
       "relatedFiles": [
         "lib/screens/main_navigation_screen.dart"
@@ -448,8 +476,15 @@
       "actual": "Entry card awaits onOpen inside try/finally without catch; live _openTodayExperience throws on unavailable dependency/gate and propagates owner lookup errors. Finally restores _opening but the void UI callback future escapes with no user-facing failure. Later TodayExperienceHost loading guards cannot catch failures before navigation.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Fail onOpen with a bounded fake, verify no unhandled error and visible accessible retry state, then succeed once after retry; retain double-tap lock and disposed handling.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV03-12",
+        "redRun": "entry-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Today entry contains failed owner/open callbacks, shows accessible retry copy, prevents concurrent openings, retries once successfully and contains late failure after disposal."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV04-01",
@@ -737,7 +772,7 @@
     {
       "id": "B18-REV06-08",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/learning_goals_screen.dart",
       "relatedFiles": [
         "lib/features/goals/application/learning_goal_use_cases.dart"
@@ -751,8 +786,15 @@
         "learning_goals_screen.dart:137-156",
         "test/screens/learning_goals_screen_test.dart"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "e19f8f7b8c24d7e7b710ca0cb4851ffe99a6d67f",
+      "retest": {
+        "receipt": "G8.3-F03-C01-checkpoint.json",
+        "findingId": "B18-REV06-08",
+        "redRun": "goals-red",
+        "greenRun": "final;skip-final",
+        "outcome": "Add and edit each fence concurrent owner lookup/dialog opening; lookup failure and owner mismatch show retryable error; no stacked dialogs, retained repository mutation guards and save tests pass."
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV06-09",
