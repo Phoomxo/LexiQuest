@@ -2,11 +2,11 @@
   "bundleId": "B18",
   "currentPackageId": "G8.3",
   "sliceId": "B18-G83-F04",
-  "threadId": "01a0baba-e5e9-7ca3-8b59-f4ac0163a660",
-  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\7230\\LexiQuest",
-  "branch": "lexiquest/b18-g83-f04-c02",
-  "inputCheckpointSha": "27c4e8af56974f4624b348250e7885e1ddafb5fe",
-  "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+  "threadId": "01a0baa8-03eb-7992-a80f-0358c16c0a2d",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\9a9b\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f04",
+  "inputCheckpointSha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
   "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
   "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
@@ -17,22 +17,22 @@
   "B19Dispatched": false,
   "writerReleased": false,
   "completedSlice": null,
-  "findingsClosed": 44,
-  "remainingOpenFindings": 25,
+  "findingsClosed": 41,
+  "remainingOpenFindings": 28,
   "nextSlice": "B18-G83-F04",
-  "historyPath": "resume-history-before-F04-C02.json",
+  "historyPath": "resume-history-before-F04-C01.json",
   "evidence": [
-    "G8.3-F04-C02-checkpoint.json",
-    "G8.3-F04-C02-integrity.json",
+    "G8.3-F04-C01-checkpoint.json",
+    "G8.3-F04-C01-integrity.json",
     "G8.3-owner-plan.json",
     "defects.json"
   ],
   "nextWork": [
-    "Remaining6 F04: REV08-04/05/06/08/09/10. Stream bounds/cancellation, partial playback cleanup, stale completion, dormant LM template/masking/features/offline upload.",
-    "Read exact finding contracts/callers/relevantREV12 and use controlled RED/fix/GREEN. No source edits or outcomes for these six in C02.",
-    "Preserve accepted F01/F02/F03,69IDs,1429dispositions,564REV12 and postG83Boundary. F05 only after all12F04 outcomes."
+    "Continue remaining9 F04 findings: REV08-03..11. Read exact contracts/callers and relevant REV12; controlled RED/fix/GREEN.",
+    "Three tutor/settings findings closed; no voice/scanner/LM source edits. No activated provider/training/research.",
+    "Preserve acceptedF01/F02/F03,69IDs,1429dispositions,564REV12 and postG83Boundary. F05 only after all12F04 outcomes complete."
   ],
-  "verification": "180test executions including factory rerun across7targets in3successful bounded runs (63+57+60). Analyzer0on9Dart files;8pre/post pairs equal1377inputs. Local changed-code review only.",
+  "verification": "84tests across4bounded targets in2successful verifier runs; analyzer0 on7Dart files;9pre/post pairs equal and1377inputs unchanged through source commit. Local review only.",
   "policies": {
     "model": "gpt-6-astra",
     "thinking": "medium",
@@ -43,20 +43,23 @@
     "branchPrefix": "lexiquest/",
     "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
   },
-  "continuationId": "B18-G83-F04-C02",
+  "continuationId": "B18-G83-F04-C01",
   "remainingF02": [],
   "F02Accepted": true,
-  "nextContinuation": "B18-G83-F04-C03",
+  "nextContinuation": "B18-G83-F04-C02",
   "remainingF03": [],
   "F03Accepted": true,
   "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
   "remainingF04": [
+    "B18-REV08-03",
     "B18-REV08-04",
     "B18-REV08-05",
     "B18-REV08-06",
+    "B18-REV08-07",
     "B18-REV08-08",
     "B18-REV08-09",
-    "B18-REV08-10"
+    "B18-REV08-10",
+    "B18-REV08-11"
   ],
   "F04Accepted": false
 }

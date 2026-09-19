@@ -94,19 +94,16 @@
         "B18-REV08-11"
       ],
       "status": "in-progress-partial-checkpoint",
-      "closedCount": 3,
+      "closedCount": 6,
       "pendingFindingIDs": [
-        "B18-REV08-03",
         "B18-REV08-04",
         "B18-REV08-05",
         "B18-REV08-06",
-        "B18-REV08-07",
         "B18-REV08-08",
         "B18-REV08-09",
-        "B18-REV08-10",
-        "B18-REV08-11"
+        "B18-REV08-10"
       ],
-      "receipt": "G8.3-F04-C01-checkpoint.json"
+      "receipt": "G8.3-F04-C02-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F05",
@@ -676,7 +673,9 @@
       "dependencies": [],
       "regression": "Synthetic wrong-engine responses through both clients and actual synthesized handler/factory; assert no falsely attributed playback/cache, correct matching endpoints retain behavior. No server call.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-04",
@@ -716,7 +715,9 @@
       "dependencies": [],
       "regression": "Use actual VoiceUseCases+VoiceOrchestrator with per-call deferred stop handlerA and recording handlerB; prove old chain cannot stop B after replacement playback; retain best-effort all-handler cleanup on genuine explicit stop failure.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV08-08",
@@ -756,7 +757,9 @@
       "dependencies": [],
       "regression": "Widget fake deferred voice through actual route session: cover/resume or speak replacement, settle old failure/cancel; current UI remains unchanged, genuine current failure visible.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
     },
     {
       "findingId": "B18-REV09-03",
