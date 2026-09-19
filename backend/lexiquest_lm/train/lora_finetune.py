@@ -105,6 +105,9 @@ def _run_dry_train(args: argparse.Namespace) -> int:
     from tokenise_dataset import StubTokenizer, build_example
     from lexiquest_lm.dataset.io import read_jsonl
 
+    if args.epochs <= 0:
+        raise ValueError("epochs must be positive for a dry-run loop check")
+
     tokenizer = StubTokenizer()
     rows = list(read_jsonl(PROCESSED_DIR / "train.jsonl"))[: args.dry_run_rows]
     if not rows:
@@ -128,11 +131,14 @@ def _run_dry_train(args: argparse.Namespace) -> int:
 
     def _featurise(ex: dict) -> list[int]:
         feats: list[int] = []
-        for tok in ex["input_ids"]:
-            if ex["labels"][min(len(feats), len(ex["labels"]) - 1)] == -100:
-                continue  # skip masked (prompt) positions
+        for tok, label in zip(ex["input_ids"], ex["labels"], strict=True):
+            if label == -100:
+                continue
             feats.append(tok % feature_dim)
-        return feats or [0]
+        if not feats:
+            raise ValueError("example has no unmasked completion positions")
+        return feats
+
 
     featurised = [_featurise(ex) for ex in examples]
     lengths = [len(ex["input_ids"]) for ex in examples]

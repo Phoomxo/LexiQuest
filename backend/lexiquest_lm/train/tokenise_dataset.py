@@ -48,7 +48,7 @@ _PROMPT_TEMPLATE = (
     "<|im_start|>user\n{user}<|im_end|>\n"
     "<|im_start|>assistant\n"
 )
-_COMPLETION_TEMPLATE = "{response}<|im_end|>"
+_COMPLETION_TEMPLATE = "{response}"
 # Qwen2.5 uses <|im_end|> + newline as the eos token boundary.
 _ASSISTANT_EOS = "<|im_end|>\n"
 
@@ -137,30 +137,23 @@ def build_example(
     full sequence with prompt positions set to -100 (ignored by the loss).
     """
 
-    prompt = format_prompt(str(row.get("prompt", "")))
-    completion = format_completion(str(row.get("response", "")))
-    full = prompt + completion
+    if max_length <= 0:
+        raise ValueError("max_length must be positive")
 
-    # Tokenise prompt and full separately so we know where the prompt ends.
-    prompt_ids = tokenizer.encode(prompt, add_special_tokens=False)
-    full_ids = tokenizer.encode(full, add_special_tokens=False)
-
-    # Truncate from the left of the completion so the prompt + as much of the
-    # completion as fits stay intact. For our short teaching examples this
-    # rarely triggers, but it keeps very long stories from blowing the budget.
-    if len(full_ids) > max_length:
-        overflow = len(full_ids) - max_length
-        full_ids = full_ids[: max(0, len(prompt_ids) - overflow)] + full_ids[
-            len(prompt_ids):
-        ]
-        full_ids = full_ids[:max_length]
-        prompt_len = max(0, len(prompt_ids) - overflow)
-    else:
-        prompt_len = len(prompt_ids)
-
-    labels = list(full_ids)
-    for i in range(min(prompt_len, len(labels))):
-        labels[i] = -100
+    # Preserve the entire instruction and assistant header. Encode segments
+    # separately so boundary merges cannot move the loss-mask boundary.
+    prompt_ids = tokenizer.encode(
+        format_prompt(str(row.get("prompt", ""))), add_special_tokens=False
+    )
+    response_ids = tokenizer.encode(str(row.get("response", "")), add_special_tokens=False)
+    eos_ids = tokenizer.encode(_ASSISTANT_EOS, add_special_tokens=False)
+    response_budget = max_length - len(prompt_ids) - len(eos_ids)
+    if response_budget < 1:
+        raise ValueError("prompt leaves no room for a response and terminal marker")
+    # Right-truncate only the response body; always retain one terminal marker.
+    completion_ids = response_ids[:response_budget] + eos_ids
+    full_ids = prompt_ids + completion_ids
+    labels = [-100] * len(prompt_ids) + completion_ids
 
     return {"input_ids": full_ids, "labels": labels}
 

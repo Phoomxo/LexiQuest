@@ -7,6 +7,7 @@ import '../runtime/circuit_breaker.dart';
 import 'voice_auth_token_provider.dart';
 import 'voice_capability.dart';
 import 'voice_models.dart';
+import 'voice_http_operation.dart';
 import 'voice_provider_descriptor.dart';
 import 'voice_request_quota.dart';
 import 'voice_synthesis_provider.dart';
@@ -121,7 +122,11 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     try {
       return await _circuitBreaker.call(() async {
         try {
-          return await _synthesizeRemote(request).timeout(_timeout);
+          final operation = VoiceHttpOperation();
+          return await operation.run(
+            _timeout,
+            () => _synthesizeRemote(request, operation),
+          );
         } on TimeoutException {
           throw _timeoutFailure;
         }
@@ -131,7 +136,10 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     }
   }
 
-  Future<VoiceAudio> _synthesizeRemote(VoiceRequest request) async {
+  Future<VoiceAudio> _synthesizeRemote(
+    VoiceRequest request,
+    VoiceHttpOperation operation,
+  ) async {
     final body = <String, Object>{
       'text': request.text,
       'language': request.language,
@@ -140,10 +148,11 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
       'format': 'wav',
     };
     final token = await _authTokenProvider.getIdToken(forceRefresh: false);
-    var response = await _post(token, body);
+    var response = await _post(token, body, operation);
     if (response.statusCode == 401) {
+      operation.checkActive();
       final refreshed = await _authTokenProvider.getIdToken(forceRefresh: true);
-      response = await _post(refreshed, body);
+      response = await _post(refreshed, body, operation);
       if (response.statusCode == 401) {
         throw _authenticationFailure;
       }
@@ -154,16 +163,16 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     return _audioFrom(response);
   }
 
-  Future<http.Response> _post(String token, Map<String, Object> body) async {
-    final request = http.Request('POST', _speechUri)
-      ..headers['authorization'] = 'Bearer $token'
-      ..headers['content-type'] = 'application/json'
-      ..body = jsonEncode(body);
+  Future<http.Response> _post(
+    String token,
+    Map<String, Object> body,
+    VoiceHttpOperation operation,
+  ) async {
     try {
-      final streamed = await _client.send(request).timeout(_timeout);
-      return await http.Response.fromStream(streamed).timeout(_timeout);
-    } on TimeoutException {
-      throw _timeoutFailure;
+      return await operation.post(_client, _speechUri, {
+        'authorization': 'Bearer $token',
+        'content-type': 'application/json',
+      }, jsonEncode(body));
     } on http.ClientException {
       throw _networkFailure;
     }

@@ -84,14 +84,16 @@ def test_build_example_keeps_completion_positions_unmasked() -> None:
 
 def test_build_example_truncates_to_max_length() -> None:
     tokenizer = StubTokenizer()
+    prompt = "a b c d e"
+    budget = len(tokenizer.encode(format_prompt(prompt))) + 3
     example = build_example(
-        {"prompt": "a b c d e", "response": "f g h"},
+        {"prompt": prompt, "response": "f g h i j"},
         tokenizer=tokenizer,
-        max_length=4,
+        max_length=budget,
     )
-
-    assert len(example["input_ids"]) == 4
-    assert len(example["labels"]) == 4
+    assert len(example["input_ids"]) == budget
+    assert len(example["labels"]) == budget
+    assert example["labels"][-3:] == tokenizer.encode("f g") + tokenizer.encode("<|im_end|>\n")
 
 
 def test_stub_tokenizer_is_deterministic() -> None:
@@ -107,3 +109,49 @@ def test_system_prompt_is_fixed_for_reproducibility() -> None:
     # frame. If this changes, all previous checkpoints silently change meaning.
     assert isinstance(SYSTEM_PROMPT, str)
     assert "vocabulary teacher" in SYSTEM_PROMPT.lower()
+
+
+class CharacterTokenizer:
+    def encode(self, text, add_special_tokens=False):
+        return list(map(ord, text))
+
+
+def test_completion_has_exactly_one_terminal_marker():
+    assert format_completion("Answer.") == "Answer.<|im_end|>\n"
+
+
+def test_long_completion_preserves_full_prompt_and_terminal_boundary():
+    tokenizer = CharacterTokenizer()
+    prompt = format_prompt("Question")
+    eos = "<|im_end|>\n"
+    example = build_example({"prompt": "Question", "response": "abcdef"},
+                            tokenizer=tokenizer, max_length=len(prompt) + 3 + len(eos))
+    assert example["input_ids"] == list(map(ord, prompt + "abc" + eos))
+    assert example["labels"] == [-100] * len(prompt) + list(map(ord, "abc" + eos))
+
+
+def test_prompt_that_leaves_no_response_budget_is_rejected():
+    import pytest
+    with pytest.raises(ValueError, match="prompt"):
+        build_example({"prompt": "long " * 100, "response": "answer"},
+                      tokenizer=CharacterTokenizer(), max_length=100)
+
+
+def test_nonpositive_sequence_budget_is_rejected():
+    import pytest
+    for budget in (0, -1):
+        with pytest.raises(ValueError, match="max_length"):
+            build_example({"prompt": "Q", "response": "A"},
+                          tokenizer=CharacterTokenizer(), max_length=budget)
+
+
+def test_tokenizer_boundary_merge_cannot_mask_first_answer_token():
+    class BoundaryTokenizer(CharacterTokenizer):
+        def encode(self, text, add_special_tokens=False):
+            if "assistant\nA" in text:
+                return [999]
+            return super().encode(text, add_special_tokens)
+    prompt = format_prompt("Q")
+    example = build_example({"prompt": "Q", "response": "A"},
+                            tokenizer=BoundaryTokenizer(), max_length=1024)
+    assert example["labels"] == [-100] * len(prompt) + list(map(ord, "A<|im_end|>\n"))

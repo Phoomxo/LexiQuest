@@ -156,6 +156,18 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    if args.dry_run:
+        if not args.username:
+            print("ERROR: --dry-run requires --username to plan offline.", file=sys.stderr)
+            return 2
+        print(f"Target repo: {args.username}/{args.repo}")
+        print(f"Adapter dir: {args.adapter_dir}")
+        print("Files to upload:")
+        for path in sorted(args.adapter_dir.iterdir()):
+            print(f"  {path.name} ({path.stat().st_size:,} bytes)")
+        print("\n[dry-run] No files uploaded. Re-run without --dry-run to upload.")
+        return 0
+
     try:
         from huggingface_hub import HfApi, whoami
     except ImportError:
@@ -185,10 +197,6 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Files to upload:")
     for path in sorted(args.adapter_dir.iterdir()):
         print(f"  {path.name} ({path.stat().st_size:,} bytes)")
-
-    if args.dry_run:
-        print("\n[dry-run] No files uploaded. Re-run without --dry-run to upload.")
-        return 0
 
     api = HfApi()
     api.create_repo(repo_id=repo_id, private=args.private, exist_ok=True)
