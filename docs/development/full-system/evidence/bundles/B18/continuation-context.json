@@ -4,15 +4,10 @@
     "REV-01",
     "REV-02",
     "REV-03",
-    "REV-04"
+    "REV-04",
+    "REV-05"
   ],
   "pending": {
-    "REV-05": [
-      "Next slice55files, already full-read. Finish live caller/oracle and FORM-01..12 cross-check against B01/G0.7-formula-registry.json; do not use line counts as acceptance.",
-      "Assessment6lib+4tests961/797/2955/905 read. Direct zero completion is intentional; one-option catalog versus two-option UI not demonstrated failure. Pin owner across awaits, terminal lostACK UI disposal and actual launch IDs require final disposition.",
-      "Active-learning/focus clocks use monotonic duration and deliberate5minute idle cutoff. Today reader/UI observations are fully recorded; owner-before/after reads are not transaction snapshots and no arbitrary history cap is justified.",
-      "SRS compatibility819 and1300-line fake-backed oracle do not establish audio pronunciation accuracy. Legacy recommendation300/67 has no libcaller; learner profile recomputation is descriptive, not mastery. Shared learning event/evidence policies already cross-checked REV02; source remains unchanged."
-    ],
     "REV-06": [
       "Quest7lib10tests/rewards11lib10tests read. Active catalog upgrade reject intentional; historical projection-rebuild-v2 fixture has empty XP/coins despite broad name. Shop ACK retry oracle lacks owner-switch case.",
       "Reminder production native calls gate every operation; actual erasure binding vs reconstructed coordinator distinguished in bootstrap notes. File2connections with fake native, not OS delivery. Goals/display preference independent revisions, event/motivation canonical TX, legacy streak no callers."
@@ -47,37 +42,84 @@
     ]
   },
   "oracleOwnership": {
-    "nextSlice": "REV-05",
+    "nextSlice": "REV-06",
     "nextSliceTests": [
-      "test/features/assessment/assessment_comparison_test.dart",
-      "test/features/assessment/assessment_isolation_test.dart",
-      "test/features/assessment/assessment_use_cases_test.dart",
-      "test/features/assessment/drift_assessment_repository_test.dart",
-      "test/features/learning/srs_policy_test.dart",
-      "test/features/progress/achievement_policy_test.dart",
-      "test/features/progress/learning_calendar_reader_test.dart",
-      "test/features/progress/personal_learning_profile_test.dart",
-      "test/features/progress/progress_projector_test.dart",
-      "test/features/recommendation/active_recall_ladder_test.dart",
-      "test/features/recommendation/recommendation_policy_test.dart",
-      "test/features/recommendation/recommendation_use_cases_test.dart",
-      "test/features/time_tracking/active_learning_time_controller_test.dart",
-      "test/features/time_tracking/focus_timer_controller_test.dart",
-      "test/features/time_tracking/focus_timer_widget_test.dart",
-      "test/features/time_tracking/learning_time_repository_test.dart",
-      "test/features/today_hub/today_hub_reader_test.dart",
-      "test/progress/local_progress_repository_test.dart",
-      "test/screens/learning_calendar_screen_test.dart",
-      "test/screens/mastery_dashboard_screen_test.dart",
-      "test/screens/srs_flashcards_screen_test.dart",
-      "test/screens/today_hub_screen_test.dart",
-      "test/screens/weakness_clinic_screen_test.dart"
+      "test/architecture/streak_authority_test.dart",
+      "test/features/goals/learning_goal_use_cases_test.dart",
+      "test/features/motivation/streak_learning_integration_test.dart",
+      "test/features/motivation/streak_use_cases_test.dart",
+      "test/features/motivation/timezone_policy_test.dart",
+      "test/features/preferences/display_preferences_controller_test.dart",
+      "test/features/preferences/learner_preferences_use_cases_test.dart",
+      "test/features/quest/drift_quest_repository_test.dart",
+      "test/features/quest/quest_catalog_provider_test.dart",
+      "test/features/quest/quest_definition_codec_test.dart",
+      "test/features/quest/quest_learning_integration_test.dart",
+      "test/features/quest/quest_models_test.dart",
+      "test/features/quest/quest_period_test.dart",
+      "test/features/quest/quest_use_cases_test.dart",
+      "test/features/reminders/drift_study_reminder_repository_test.dart",
+      "test/features/reminders/platform_reminder_scheduler_test.dart",
+      "test/features/reminders/study_reminder_use_cases_test.dart",
+      "test/features/rewards/avatar_progression_policy_test.dart",
+      "test/features/rewards/data/drift_economy_cutover_test.dart",
+      "test/features/rewards/data/drift_reward_projection_rebuilder_test.dart",
+      "test/features/rewards/economy_transaction_policy_test.dart",
+      "test/features/rewards/projection_rebuild_v2_test.dart",
+      "test/features/rewards/reward_eligibility_test.dart",
+      "test/features/rewards/reward_use_cases_test.dart",
+      "test/features/rewards/shadow_reward_orchestrator_test.dart",
+      "test/screens/learning_goals_screen_test.dart",
+      "test/screens/learning_preference_quiz_screen_test.dart",
+      "test/screens/quest_status_screen_test.dart",
+      "test/screens/study_reminder_settings_screen_test.dart",
+      "test/services/adaptive_daily_quest_service_test.dart",
+      "test/services/spaced_review_reminder_service_test.dart",
+      "test/services/streak_and_daily_quest_service_test.dart",
+      "test/support/test_quest_use_cases.dart",
+      "test/widgets/gentle_streak_card_test.dart",
+      "test/widgets/reward_avatar_preview_test.dart"
     ],
-    "remainingSharedAndOrphanOwner": "REV-12 + gate; Master continuation manifest can assign domain oracles to later zones without changing historical zone IDs",
-    "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2."
+    "remainingSharedAndOrphanOwner": "REV-12 + gate; reconcile 23 completed REV05 oracles and historical REV01-04 cross-check notes, assign all remaining shared/orphan tests explicitly. Sync-specific reward/preferences/reminder tests retain REV09 ownership; no orphan omission.",
+    "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2.",
+    "completedDomainOracles": {
+      "REV-05": {
+        "receipt": "REV-05-zone-review.json",
+        "count": 23,
+        "paths": [
+          "test/features/assessment/assessment_comparison_test.dart",
+          "test/features/assessment/assessment_isolation_test.dart",
+          "test/features/assessment/assessment_use_cases_test.dart",
+          "test/features/assessment/drift_assessment_repository_test.dart",
+          "test/features/learning/srs_policy_test.dart",
+          "test/features/progress/achievement_policy_test.dart",
+          "test/features/progress/learning_calendar_reader_test.dart",
+          "test/features/progress/personal_learning_profile_test.dart",
+          "test/features/progress/progress_projector_test.dart",
+          "test/features/recommendation/active_recall_ladder_test.dart",
+          "test/features/recommendation/recommendation_policy_test.dart",
+          "test/features/recommendation/recommendation_use_cases_test.dart",
+          "test/features/time_tracking/active_learning_time_controller_test.dart",
+          "test/features/time_tracking/focus_timer_controller_test.dart",
+          "test/features/time_tracking/focus_timer_widget_test.dart",
+          "test/features/time_tracking/learning_time_repository_test.dart",
+          "test/features/today_hub/today_hub_reader_test.dart",
+          "test/progress/local_progress_repository_test.dart",
+          "test/screens/learning_calendar_screen_test.dart",
+          "test/screens/mastery_dashboard_screen_test.dart",
+          "test/screens/srs_flashcards_screen_test.dart",
+          "test/screens/today_hub_screen_test.dart",
+          "test/screens/weakness_clinic_screen_test.dart"
+        ]
+      }
+    }
   },
   "newToolingReview": {
     "checkpoint_audit": "Manually reviewed exact3path authorization allowlist, frozen hash comparison before replacement hash, unchanged1429 source hash assertions, unchanged AST/untracked/ignored checks. Only approved policy docs differ; no broad exception or application test PASS.",
     "zoneReceipts": "Validate file counts, exactSHA/path/status/finding IDs against ledger before commit; generated from explicit already-read cross-check conclusions, not automatic inference."
-  }
+  },
+  "completedSliceReceipts": {
+    "REV-05": "REV-05-zone-review.json"
+  },
+  "formulaOwnership": "REV-05-zone-review.json/formulas maps all FORM01-12; REV06 completes FORM04/05 and goal part07, REV07 camera09 with REV11 tooling, REV08 speech10/usage12. No formula moved or silently accepted."
 }

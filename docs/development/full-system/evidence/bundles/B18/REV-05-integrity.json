@@ -1,0 +1,34 @@
+{
+  "kind": "static-receipt-integrity",
+  "productionDispositions": 55,
+  "focusedOracleDispositions": 23,
+  "totalStaticDispositions": 445,
+  "remaining": 984,
+  "uniqueFindings": 31,
+  "staticConfirmed": 17,
+  "candidates": 14,
+  "priorReceipts": "unchanged bytes; explicit cross-zone overlay validated",
+  "formulaIds": 12,
+  "nextOracleOwnershipPaths": 35,
+  "runtimeTestsRun": false,
+  "G82Accepted": false,
+  "applicationSourceChanged": false,
+  "evidenceHashes": [
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/REV-05-zone-review.json",
+      "sha256": "82e35fc26944b97a54452fb73afca67144fa8272b0af17fd8c0b7e3695447f58"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/G8.2-review-ledger.json",
+      "sha256": "351c4d700c0fb3329aa115a5e49c8861793cd9bd43add52818f0103bb0178e7e"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/defects.json",
+      "sha256": "ee203f60033a325a999423a4aded049d59b1f97405330a7c586273661b0bca91"
+    },
+    {
+      "path": "docs/development/full-system/evidence/bundles/B18/continuation-context.json",
+      "sha256": "1f8b48a5aff1b8e3663eefbec8b0d549b39bd64ad95b0e89ff71d89134364a96"
+    }
+  ]
+}

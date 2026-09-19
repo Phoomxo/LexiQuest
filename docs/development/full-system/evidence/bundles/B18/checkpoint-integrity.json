@@ -23,12 +23,16 @@
     }
   ],
   "sourceAndConfigStatus": {
-    "source-read-awaiting-cross-check": 1062,
-    "reviewed-with-findings": 19,
-    "reviewed-no-actionable-finding": 348
+    "source-read-awaiting-cross-check": 984,
+    "reviewed-with-findings": 27,
+    "reviewed-no-actionable-finding": 418
   },
   "ignoredFiles": [],
-  "newReviewTooling": [],
+  "newReviewTooling": [
+    "docs/development/full-system/evidence/bundles/B18/REV-05-zone-review.json",
+    "docs/development/full-system/evidence/bundles/B18/resume-history-before-REV05.json",
+    "docs/development/full-system/evidence/bundles/B18/review-progress-before-REV05.json"
+  ],
   "semanticReviewComplete": false,
   "G82Accepted": false,
   "G83Started": false,

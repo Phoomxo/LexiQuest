@@ -433,6 +433,91 @@
       "proposedRegression": "Create real owner/category/word through canonical usecase, save or make due and read real review/learning availability at256,257,500 and rejected501 boundaries, plus Unicode length semantics. Align downstream supported bounds without truncating meanings, weakening identity validation, or rewriting historical hashes.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV05-01",
+      "severity": "P1",
+      "status": "candidate-owner-transition-reproduction-pending",
+      "file": "lib/features/assessment/application/assessment_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/assessment/data/drift_assessment_repository.dart",
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "In an explicitly configured assessment path, change active owner after presentation authority is captured or while completion awaits authority, without revoking the old owner consent/assignment.",
+      "expected": "Old-owner presentation/terminal mutation must be fenced by the current owner generation, independently of historical consent.",
+      "actual": "beginPresentation existing branch 436-449 and _resolveAuthority 766-855 validate pinned owner grants, not current owner. _writeTerminal 427-440 predicates only run ID/state. Response and effort writers have active-owner checks, so a terminal exploit requires proving a race after their checks; default bootstrap has only assessmentOverride, not installed activation.",
+      "ownerPackage": "G1.1/G1.2/G7.3",
+      "proposedRegression": "Real Drift plus controlled await: owner A valid configured presentation, switch to B while authority/completion held; assert no A terminal/outbox mutation or content reuse under B, while exact same-owner retry still works. Cover existing-presentation foreground and post-finish completion separately; no research activation.",
+      "evidenceLocations": [
+        "assessment_use_cases.dart:436-449,766-855",
+        "drift_assessment_repository.dart:393-440",
+        "main_navigation_screen.dart:1116-1148"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV05-02",
+      "severity": "P2",
+      "status": "candidate-terminal-ack-reproduction-pending",
+      "file": "lib/features/assessment/application/assessment_use_cases.dart",
+      "relatedFiles": [
+        "lib/screens/pre_post_assessment_screen.dart",
+        "lib/features/assessment/domain/assessment_repository.dart"
+      ],
+      "trigger": "Configured assessment completes durably but repository adapter loses terminal acknowledgement with a non-AssessmentRunConflict exception.",
+      "expected": "Retry reconciles durable completion and displays result without recreating answers or requiring an active presentation.",
+      "actual": "_completeAt reconciles AssessmentRunConflict only; completePresentation catches other failures, settlement observes terminal and discards presentation, then rethrows. UI Retry invokes beginPresentation; start returns terminal then line459 rejects it. Actual Drift terminal has no postcommit notifier, so real transport/fault seam reachability still needs reproduction; no default installed failure asserted.",
+      "ownerPackage": "G1.2/G2.1",
+      "proposedRegression": "Wrap actual Drift complete to commit once then throw StateError; complete a fully answered configured form through real widget and retry. Expect durable completion/comparison visible, one terminal revision/outbox and no extra evidence. Also failed-before-commit retry and abandon conflict remain distinct.",
+      "evidenceLocations": [
+        "assessment_use_cases.dart:291-339,457-459,682-722,1189-1226",
+        "pre_post_assessment_screen.dart:85-112,150-175,207"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV05-03",
+      "severity": "P2",
+      "status": "candidate-background-response-clock-reproduction-pending",
+      "file": "lib/screens/pre_post_assessment_screen.dart",
+      "relatedFiles": [
+        "lib/features/assessment/application/assessment_use_cases.dart"
+      ],
+      "trigger": "Nonfinal assessment response save is pending when app becomes paused; acknowledgement returns while still paused.",
+      "expected": "Next item response stopwatch stays stopped until foreground resume; background wait must not inflate durable responseTimeMs.",
+      "actual": "didChangeAppLifecycleState stops the stopwatch on pause, but successful nonfinal _submit continuation 137-144 unconditionally resets and starts it. Foreground resume starts the already running stopwatch. Active-learning duration has separate authority and must not be conflated with this response latency.",
+      "ownerPackage": "G1.6/G2.1",
+      "proposedRegression": "Configured two-item widget, controlled first response persistence, pause app before ACK, release ACK, advance fake time while paused, resume and answer second. Assert second canonical response duration excludes paused interval and first receipt unchanged; compare monotonic effort separately.",
+      "evidenceLocations": [
+        "pre_post_assessment_screen.dart:58-82,115-144"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV05-04",
+      "severity": "P2",
+      "status": "candidate-compatibility-animation-reproduction-pending",
+      "file": "lib/screens/srs_flashcards_screen.dart",
+      "relatedFiles": [
+        "lib/screens/cefr_selection_screen.dart",
+        "lib/screens/wordbook_import_screen.dart"
+      ],
+      "trigger": "Authorized Legacy compatibility deck rating is tapped repeatedly while reverse flip is pending, or route is disposed during transition.",
+      "expected": "One admitted rating advances one card and disposed state is never updated; animations do not leave pending handlers or skip cards.",
+      "actual": "Compatibility _actionLocked excludes review lifecycle; _nextCompatibilityCard checks index before awaiting reverse and increments afterwards without busy flag or mounted check. Repeated AnimationController calls can cancel a previous TickerFuture, so exact skip/hang/dispose manifestation requires widget oracle. CEFR/import routes actually enter compatibility under Legacy, unlike dormant SrsService. This path is nonpersistent and does not grant SRS evidence.",
+      "ownerPackage": "G2.6/G3.1",
+      "proposedRegression": "Use real compatibility route with Legacy owner/feature gate, three cards, rapid ratings during flip under normal and reduced motion and pop mid-transition. Assert no skipped card, stale setState, uncaught error or permanently pending handler; canonical evidence remains empty.",
+      "evidenceLocations": [
+        "srs_flashcards_screen.dart:181-185,381-394,470-481",
+        "cefr_selection_screen.dart:174",
+        "wordbook_import_screen.dart:172"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -482,6 +567,13 @@
       "status": "method-corrected",
       "actual": "Resume cross-check guessed presentation controller/resume-state/register-test paths; one rg Windows path contained *.dart. Combined output also truncated.",
       "action": "Discovered application controller, resume.json and registration_flow_test.dart using rg --files/symbol search; corrected glob to directory plus -g. No absent-path retry or source change; bounded relevant reads recovered."
+    },
+    {
+      "id": "B18-ENV-REV05",
+      "status": "resolved-checkout-and-bounded-read-recovery",
+      "rootCause": "Native checkout autocrlf changed raw hashes; git archive also respected conversion. Status retained stale stat markers despite empty diff. One list_threads limit100 rejected; UTF8 implicit cp874 decode failed; guessed source paths not present.",
+      "action": "Used raw cat-file blob stream with EOL-equivalence guard and verified all13 handoff+3610 inventory hashes; index refresh via core.autocrlf=false add --update yielded empty stage/clean status. Resolved task through CODEX_THREAD_ID and read_thread, master creation receipt confirmed. Used rg --files discovery and explicit UTF8. No historical evidence regenerated, assertions weakened or runtime tests run.",
+      "externalPreflight": "B18-REV05-preflight.json"
     }
   ]
 }
