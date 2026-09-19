@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "slice": "E2.1",
+  "checkpoint": "C01",
+  "status": "partial-not-accepted",
+  "baseSha": "62c6a64634cc4245cf140c490c5e13bae7f99c01",
+  "threadId": "01a0bb91-018b-7372-ac0b-532b90180858",
+  "productionCorpusAdmission": "NOT DONE",
+  "productionIntegration": "NOT DONE",
+  "sourceFiles": [
+    "lib/features/learning_packs/domain/sense_crosswalk.dart",
+    "test/features/learning_packs/sense_crosswalk_test.dart"
+  ],
+  "verification": {
+    "analysis": "dart analyze two changed Dart files: No issues found",
+    "postFingerprint": "f5052b877222d812644ebc27d32ce080840f3e9c2287de99bd02319d820d8e5d",
+    "targets": [
+      "test/features/learning_packs/sense_crosswalk_test.dart",
+      "test/features/learning_packs/learning_pack_catalog_test.dart",
+      "test/features/learning_packs/learning_pack_detail_test.dart",
+      "test/features/vocabulary/cefr_editorial_catalog_test.dart"
+    ],
+    "manifest": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/crosswalk-final/targeted-learning-7fc4144e33da862444ced53439010fcdbc06eaa016dbd876053337056ab45a41.json",
+    "device": "NOT RUN",
+    "tests": 37,
+    "newCrosswalkTests": 13,
+    "fingerprint": "f5052b877222d812644ebc27d32ce080840f3e9c2287de99bd02319d820d8e5d",
+    "release": "NOT RUN",
+    "status": "Passed"
+  },
+  "redGreen": {
+    "final": "37 pass",
+    "reviewRedResult": "11 pass, 2 new behavior failures",
+    "bootstrap": "11 UnimplementedError failures; verifier InputDrift after initial pub setup; not accepted verification",
+    "reviewRed": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/crosswalk-review-red",
+    "stableRed": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/crosswalk-red-stable"
+  },
+  "review": {
+    "kind": "local self-review",
+    "closed": [
+      "ambiguous same-sense mapping with changed artifact hash",
+      "checksum-valid lexical artifact with invalid schema"
+    ],
+    "independent": false,
+    "remaining": "persistence, content authority, lifecycle and UI integration not reviewed because not implemented"
+  },
+  "recovery": [
+    "Corrected invalid rg Windows glob/path scope; use repository-root rg --files before LiteralPath reads",
+    "Fresh Flutter pub setup changed toolchain inputs; stabilized before RED",
+    "Generated platform files proved normalized-equal then restored exact accepted blob bytes; not staged"
+  ],
+  "eolProof": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E2.1/generated-eol-restoration.json",
+  "nextSlice": "E2.1 continuation",
+  "accepted": false
+}
