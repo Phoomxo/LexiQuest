@@ -32,6 +32,7 @@ import '../features/learning/domain/evidence_policy_rollout.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/application/personal_sets_use_cases.dart';
+import '../features/learning_packs/application/personal_set_activities.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -118,6 +119,7 @@ final class AppDependencies {
     this.activeOwnerIdentities,
     this.studyPlanning,
     this.personalSets,
+    this.personalSetActivities,
     this.learningGoals,
     this.learnerPreferences,
     this.displayPreferences,
@@ -196,6 +198,7 @@ final class AppDependencies {
   final ReviewOwnerIdentityReader? activeOwnerIdentities;
   final StudyPlanningUseCases? studyPlanning;
   final PersonalSetsUseCases? personalSets;
+  final PersonalSetActivities? personalSetActivities;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;
   final DisplayPreferencesController? displayPreferences;

@@ -31,6 +31,18 @@ import '../support/test_quest_use_cases.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets('personal sets entry remains reachable from an empty catalog', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(AppDependenciesScope(
+      dependencies: _dependencies(database, emptyCatalog: true),
+      child: const MaterialApp(home: LearningPackCatalogScreen()),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('ชุดคำส่วนตัว'));
+    await tester.pumpAndSettle();
+    expect(find.text('ชุดคำส่วนตัวยังไม่พร้อมใช้งาน'), findsOneWidget);
+  });
   testWidgets('B07 skill and goal filters combine and clear independently', (
     tester,
   ) async {

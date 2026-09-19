@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E2.1",
+  "feature": "F01",
+  "checkpoint": "C06",
+  "E21Accepted": true,
+  "baseSha": "ddf2d88e0013d0083a5cc445ddecb82bdc58dbc3",
+  "databaseSchemaVersion": 29,
+  "scope": "Accessible personal-set creation, search/selection, immutable edit/preview/archive, owner-bound backup/restore and canonical exact-revision meaning quiz",
+  "verification": [
+    {
+      "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-all-runs\\targeted-runtime-761812af5f04a3f8290455bbb7d313790da211b384ad5a70bac33360184bd418.json",
+      "tests": 298,
+      "status": "Passed",
+      "fingerprint": "c14e02d05b9f12a9ee3489275ed152b924dd4b2bf1eef441783e91eaa72ee438",
+      "postFingerprint": "c14e02d05b9f12a9ee3489275ed152b924dd4b2bf1eef441783e91eaa72ee438"
+    },
+    {
+      "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-all-runs\\targeted-runtime-a4ffe8174b40be44d4af8d114200fa217342e84bc0f842c0f6dd0debf91a1c0a.json",
+      "tests": 131,
+      "status": "Passed",
+      "fingerprint": "3fffc5e7022fb1e1c406cd8a232b72ea0e18120ba7fa0698740df5ac177c3b44",
+      "postFingerprint": "3fffc5e7022fb1e1c406cd8a232b72ea0e18120ba7fa0698740df5ac177c3b44"
+    },
+    {
+      "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-all-runs\\targeted-learning-d00ec3c2c0a4f76348f74406f0249056c4f90cd7e35881dcc55ff8ed4156e98d.json",
+      "tests": 7,
+      "status": "Passed",
+      "fingerprint": "e5aa1d6e28aefdc204ab39a695710d0f29435aa59a963675b917c580ba42c98d",
+      "postFingerprint": "e5aa1d6e28aefdc204ab39a695710d0f29435aa59a963675b917c580ba42c98d"
+    }
+  ],
+  "sourcePins": [
+    {
+      "path": "lib/features/learning_packs/application/personal_set_activities.dart",
+      "sha256": "f52d39e32c6fb8e3263150a865e443d4c34b76d140da985e5bb430e734a67026"
+    },
+    {
+      "path": "lib/features/learning_packs/application/personal_sets_use_cases.dart",
+      "sha256": "33962a6304fc2a945ac27952099ebc2004a4135082e2d1ce30e02707cb81bcf0"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "d1117167bdf7682224360fb50a8a7ecad1a77a0cbfe06ae1fb985b38b178c5eb"
+    },
+    {
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "f861ef1319647a6606c4d15d6a8115303fe23cd8c0e5f696806255698a05a218"
+    },
+    {
+      "path": "lib/screens/learning_pack_catalog_screen.dart",
+      "sha256": "5cd23e33dd598d43aa07c51a516be1b908fbadcf2834c773f1c5a1e7fbe97f4b"
+    },
+    {
+      "path": "lib/screens/personal_sets_screen.dart",
+      "sha256": "886ad4ae9bef326a5f910648cc24b72078fd6be826a7ffb9f22e186f9c3592d6"
+    },
+    {
+      "path": "lib/screens/study_planning_hub_screen.dart",
+      "sha256": "46b9b7f0e98d46683f4cf2caaab23ced772067bfa6f9517802c32b51132e8ebf"
+    },
+    {
+      "path": "test/features/learning_packs/personal_set_activities_test.dart",
+      "sha256": "9b75df16d03cf3a305935f0ba4005e941eae458e11093cf0cb1dfa5844fbc9b5"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "sha256": "54b5e45f65b6bd30f8c16d46b97989973aa191579f1580f5891ba0ebe28dbdf5"
+    },
+    {
+      "path": "test/screens/learning_pack_catalog_screen_test.dart",
+      "sha256": "7feefa474a4cf160dc7c0139f6073c364051fa6b61f3bed3aeae0ae09ed618d3"
+    },
+    {
+      "path": "test/screens/personal_sets_screen_test.dart",
+      "sha256": "cabcce1c2b414fbd6a6b8c438a1e4bb90b0e6c48fa1dc88942432f9f25b9cb73"
+    }
+  ],
+  "newTests": 19,
+  "verificationInterpretation": "298 distinct tests across 10 bounded targets; after removing a duplicate test import, bootstrap 131 passed; after strengthening SET-REV to add a third admitted sense, activity 7 passed. Counts overlap and must not be added. Subsequent receipt/report additions are documentation only; source pins identify final tested implementation.",
+  "analysis": {
+    "newCode": "No issues",
+    "integration": "No warnings/errors; six unchanged baseline infos",
+    "output": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-verification\\analysis.txt",
+    "proof": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-baseline-analysis-proof.json"
+  },
+  "fixtures": {
+    "SET-DUP": "C03 strict duplicate/unknown/corpus/member codec plus unchanged C04 repository no-write checks; reused original tests/evidence.",
+    "SET-REV": "Saved r1 launches canonical checkpoint; r2 adds third admitted starter sense; immutable r1 and persisted checkpoint remain unchanged after disk reopen. Editorial example advice remains unapproved and was not used for scoring.",
+    "RESTORE-OLDER": "C05 v1 empty extension/v2 complete history and unknown schema rejection; C06 real backup UI replays valid envelope and rejects correctly checksummed schema999 without writes.",
+    "RESEARCH-OFF": "Real AppBootstrap route, answer and canonical attempt; seven research tables, research events and research outbox remain empty.",
+    "LOST-ACK": "C04/C05 save/restore durable operation replay; C06 launchOperationId reuses untouched active session, no additional events; payload collision and terminal replay rejected."
+  },
+  "invariants": [
+    "Entry reachable from catalog and planning hub; production flags remain authoritative",
+    "Current exact crosswalk/word/category/lexical checks before and after canonical admission",
+    "Canonical owner lease and generation fences; outer transaction rolls back session and checkpoint on late failure",
+    "Quiz uses existing lesson shell/controller/adapter/evidence; no direct SRS/reward writes",
+    "Idle drafts clear on durable epoch change; active quiz retires on owner epoch, quiz flag, planning flag or destination disposal",
+    "Search retains selected refs and persists filter snapshot; pending save and launch identities survive retry"
+  ],
+  "reuse": {
+    "receipts": [
+      "crosswalk-checkpoint.json",
+      "content-authority-checkpoint.json",
+      "personal-set-codec-checkpoint.json",
+      "persistence-checkpoint.json",
+      "restore-generation-checkpoint.json"
+    ],
+    "reason": "No schema, migration, repository, codec, content artifacts, owner lifecycle or epoch implementation change in C06. Reuse their recorded passed gates; runtime and UI integration tested on current source.",
+    "proof": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-reused-foundation-proof.json"
+  },
+  "corpus": {
+    "crosswalkSha256": "a3a639e9487aa69e7e294f7cd9fc70b222c6ee325bae23844afbfa3e3aa1b115",
+    "approvedSenses": 12,
+    "editorial5500": "No new scored admission",
+    "originalPins": 9,
+    "proof": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-corpus-proof.json"
+  },
+  "visual": {
+    "theme": "LexiQuest M3 with bundled fonts",
+    "accessibility": "Widget labeled tap target and Android tap target guidelines; 400x800 at text scale2 validation/scroll oracle passed; not human TalkBack certification",
+    "viewport": "390x844",
+    "directory": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-visual",
+    "review": "Both images visually inspected: legible Thai, consistent spacing, no overflow"
+  },
+  "review": {
+    "subagents": false,
+    "independent": false,
+    "kind": "local self-review",
+    "findings": [
+      "Destination disposal orphaned active session: regression then lease-owning wrapper",
+      "Live feature availability needs listener and active destination gates: real bootstrap regressions passed",
+      "Lost launch acknowledgement needed durable operation identity: RED then same-session replay passed",
+      "Historical label requires exact sense key/revision/artifact/corpus match"
+    ]
+  },
+  "recovery": [
+    "UTC lease fixture corrected without relaxing ownership checks",
+    "Drift deferred watch disposal drained through one millisecond test pump, no timer assertion suppressed",
+    "Semantics handle disposed in finally, no accessibility oracle skipped",
+    "Incorrect checkpoint table assumption replaced with actual canonical events_v2",
+    "Nullable fixture access and duplicate import fixed; baseline analysis infos proved exact unchanged context",
+    "Generated platform EOLs proven normalized equal then restored exact Git blobs",
+    "Singular sense_crosswalk path discovered from source after failed plural lookup; continued automatically"
+  ],
+  "eolProof": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c06-eol-proof.json",
+  "limitations": [
+    "Scored content limited to original12 starter meanings; no human/independent review claim",
+    "Personal-set history backup only, not redacted owner export/full database restore",
+    "Lost launch replay only for untouched active session; answered or terminal session cannot masquerade as new evidence",
+    "No full suite/build/device/live provider/release gate; E6 review/freeze and all E7 G8.4-G8.9 retained",
+    "Research schema29 remote wire admission and research rollout remain outside scope"
+  ],
+  "remaining": [],
+  "nextSlice": "E2.2",
+  "model": "gpt-6-astra",
+  "thinking": "medium",
+  "serviceTier": "Standard/default requested; effective tier unverified",
+  "noSubagents": true
+}

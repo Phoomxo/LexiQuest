@@ -1,4 +1,16 @@
-# E2.1 / F01 — personal vocabulary sets
+#
+## Current acceptance — C06 (2026-09-20)
+
+**E2.1 / F01 accepted for its implementation scope.** รายการค้างใน C01–C05 ด้านล่างเป็นประวัติ ณ checkpoint นั้น; C06 ปิดรายการเหล่านั้นแล้ว. ส่งต่อ **E2.2 / F02** ตาม implementation authorization เดิม โดยคง E6 review/freeze และ E7 G8.4–G8.9 ทั้งหมด.
+
+เพิ่มหน้าชุดคำจริงจาก catalog และ planning: สร้าง/ค้นหา/เลือกความหมาย/preview/บันทึก/แก้ไขเป็นรุ่นใหม่/เก็บเข้าคลัง และสำรอง–กู้คืนประวัติชุดคำของบัญชี. เริ่ม meaning quiz ผ่าน canonical learning/controller/evidence เดิม ตรึง saved revision และ content pins; ปิด feature หรือเปลี่ยน owner ระหว่างเล่นจะ retire session. การ retry launch ที่ตอบรับหายคืน session เดิมโดยไม่เพิ่ม evidence ซ้ำ.
+
+**298 tests ผ่านใน 10 bounded targets**, ตามด้วย bootstrap **131** หลังลบ duplicate import และ activity **7** หลังเพิ่ม SET-REV oracle ให้ r2 เพิ่มคำจริง (จำนวนซ้ำกัน ไม่บวกยอด). ไม่มี warning/error จาก targeted analysis; 6 infos เดิมมี source proof. ตรวจภาพมือถือสองหน้าและ accessibility widget/ตัวอักษรใหญ่แล้ว. [C06 acceptance](post-g83-e21/ui-activity-acceptance.json) เก็บ source pins, test fingerprints, fixture mapping, recovery และ local review; reuse migration/lifecycle/restore/content gates ที่ source ไม่เปลี่ยน. ไม่มี independent review.
+
+หลักการ: revision เป็น snapshot ที่แก้ย้อนหลังไม่ได้—เพิ่มคำใน r2 จึงไม่เปลี่ยนกิจกรรม r1. Operation ID แทนเจตนาครั้งเดียว—retry ต้องหาผลเดิมก่อนสร้างใหม่. เกณฑ์ผ่านคือข้อมูล/คำตอบจริงในฐานข้อมูลและการปิด session ไม่ใช่เพียงกดปุ่มได้.
+
+Scored admission ยังจำกัด 12 starter meanings เดิม; editorial 5,500 ไม่มีสิทธิ์ใหม่และ corpus pins9ไม่เปลี่ยน. Backup นี้ไม่ใช่ full database restore. ยังไม่มี full suite/build/device/live/release verification; research rollout ไม่อยู่ในงานนี้. Schemaคง29. Standard/default requested แต่ effective tier ยังตรวจยืนยันไม่ได้.
+ E2.1 / F01 — personal vocabulary sets
 
 ## Checkpoint C01 — crosswalk foundation (2026-09-20)
 

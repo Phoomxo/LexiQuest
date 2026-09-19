@@ -8,6 +8,7 @@ import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature.dart';
 import 'learning_pack_detail_screen.dart';
+import 'personal_sets_screen.dart';
 
 /// Read-only catalog child of [StudyPlanningHubScreen].
 final class LearningPackCatalogScreen extends StatefulWidget {
@@ -49,6 +50,11 @@ final class _LearningPackCatalogScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: [IconButton(
+          tooltip: 'ชุดคำส่วนตัว',
+          onPressed: () => openPersonalSets(context),
+          icon: const Icon(Icons.collections_bookmark_outlined),
+        )],
         title: Text(
           NavigationGlossary.require('study-planning/catalog').fullThaiLabel,
         ),

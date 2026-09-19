@@ -4,6 +4,8 @@ import '../../identity/application/owner_generation.dart';
 import '../data/drift_personal_set_repository.dart';
 import '../domain/personal_sets.dart';
 import '../domain/personal_set_archive.dart';
+import '../domain/sense_crosswalk.dart';
+import '../domain/sense_crosswalk_repository.dart';
 
 final class PersonalSetsUseCases {
   PersonalSetsUseCases({
@@ -15,6 +17,29 @@ final class PersonalSetsUseCases {
   final OwnerOperationCoordinator ownerOperations;
   final OwnerGeneration ownerGeneration;
   Future<OwnerGenerationToken> begin() => ownerGeneration.capture();
+  Stream<bool> watchOwnerCurrent(OwnerGenerationToken owner) {
+    final database = repository.database;
+    return database
+        .customSelect(
+          'SELECT id FROM local_owners WHERE is_active = 1',
+          readsFrom: {database.localOwners, database.runtimeFlags},
+        )
+        .watch()
+        .asyncMap((rows) async {
+          try {
+            await ownerGeneration.requireCurrentAsync(owner);
+            return rows.length == 1 &&
+                rows.single.read<String>('id') == owner.ownerId;
+          } on Object {
+            return false;
+          }
+        });
+  }
+
+  Future<SenseCrosswalk> candidates(
+    OwnerGenerationToken owner,
+    SenseCrosswalkPin pin,
+  ) => _run(owner, (_) => repository.crosswalks.requirePinned(pin));
   Future<List<PersonalSetRevision>> list(
     OwnerGenerationToken owner, {
     bool includeArchived = false,

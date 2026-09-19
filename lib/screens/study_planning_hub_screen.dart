@@ -8,6 +8,7 @@ import '../runtime/registries/feature_registry.dart';
 import 'learning_pack_catalog_screen.dart';
 import 'learning_goals_screen.dart';
 import 'learning_preference_quiz_screen.dart';
+import 'personal_sets_screen.dart';
 
 /// The sole production study-planning parent. Future study-planning actions
 /// remain children of this hub and do not receive their own feature delivery.
@@ -76,6 +77,11 @@ final class StudyPlanningHubScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              OutlinedButton.icon(
+                onPressed: () => openPersonalSets(context),
+                icon: const Icon(Icons.collections_bookmark_outlined),
+                label: const Text('ชุดคำส่วนตัว'),
+              ),
               const Text(
                 'เลือกชุดเนื้อหาที่ตรวจสอบแล้วเพื่อวางแผนการฝึกครั้งถัดไป',
               ),

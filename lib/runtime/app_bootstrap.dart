@@ -77,6 +77,7 @@ import '../features/identity/domain/owner_upgrade.dart';
 import '../features/identity/application/owner_generation.dart';
 import '../features/identity/data/drift_owner_generation.dart';
 import '../features/learning_packs/application/personal_sets_use_cases.dart';
+import '../features/learning_packs/application/personal_set_activities.dart';
 import '../features/learning_packs/data/drift_personal_set_repository.dart';
 import '../features/learning_packs/domain/sense_crosswalk_repository.dart';
 import '../features/learning/application/current_activity_evidence.dart';
@@ -1916,6 +1917,13 @@ final class AppBootstrap {
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       personalSets: personalSets,
+      personalSetActivities: PersonalSetActivities(
+        sets: personalSets,
+        learning: learning,
+        isAvailable: () => runtimeFeatures.isEnabled(Feature.studyPlanning) &&
+            runtimeFeatures.isEnabled(Feature.quiz) &&
+            lessonModes.find(LessonMode.meaningQuiz)?.isDeliverable == true,
+      ),
       learningGoals: learningGoals,
       learnerPreferences: learnerPreferences,
       displayPreferences: displayPreferences,
