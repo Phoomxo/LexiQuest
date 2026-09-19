@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/consent/domain/research_consent.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -45,6 +46,84 @@ Widget _loginHarness({
 }
 
 void main() {
+  testWidgets('F01 consent read admits only one guest start', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = _HeldConsentRepository();
+    final service = _CompleterGuestSessionService();
+    await tester.pumpWidget(
+      _loginHarness(
+        guestSessionService: service,
+        researchConsent: ResearchConsentUseCases(
+          owners: DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'f01-owner',
+            nowUtc: () => DateTime.utc(2026),
+          ),
+          repository: repository,
+          nowUtc: () => DateTime.utc(2026),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final button = find.byKey(guestModeButtonKey);
+    await tester.tap(button);
+    await tester.pump();
+    await tester.tap(button, warnIfMissed: false);
+    await tester.pump();
+    repository.release.complete(
+      const ResearchConsentStatus(version: 1, accepted: true),
+    );
+    await tester.pump();
+    await tester.pump();
+    service.complete(const GuestSessionFailed(GuestSessionFailure.unknown));
+    await tester.pumpAndSettle();
+    expect(repository.loads, 1);
+    expect(service.startCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('F01 consent failure is contained and guest can retry', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final repository = _HeldConsentRepository();
+    final service = _CompleterGuestSessionService();
+    await tester.pumpWidget(
+      _loginHarness(
+        guestSessionService: service,
+        researchConsent: ResearchConsentUseCases(
+          owners: DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'f01-owner',
+            nowUtc: () => DateTime.utc(2026),
+          ),
+          repository: repository,
+          nowUtc: () => DateTime.utc(2026),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(guestModeButtonKey));
+    await tester.pump();
+    repository.release.completeError(StateError('private storage detail'));
+    await tester.pump();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(service.startCalls, 0);
+    expect(find.byType(SnackBar), findsOneWidget);
+    repository.release = Completer<ResearchConsentStatus>()
+      ..complete(const ResearchConsentStatus(version: 1, accepted: true));
+    await tester.tap(find.byKey(guestModeButtonKey));
+    await tester.pump();
+    await tester.pump();
+    service.complete(const GuestSessionStarted(uid: 'local-owner'));
+    await tester.pumpAndSettle();
+    expect(service.startCalls, 1);
+    expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+  });
+
   testWidgets('guest tap starts once and waits before navigating', (
     tester,
   ) async {
@@ -173,7 +252,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(guestModeButtonKey));
-      await tester.pumpAndSettle();
+      // Busy remains true while consent is pending; its spinner never settles.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('ยังไม่ยินยอม'), findsOneWidget);
 
       await tester.tap(find.text('ยังไม่ยินยอม'));
@@ -189,4 +270,25 @@ void main() {
       expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
     },
   );
+}
+
+class _HeldConsentRepository implements ResearchConsentRepository {
+  var release = Completer<ResearchConsentStatus>();
+  int loads = 0;
+  @override
+  Future<ResearchConsentStatus> load({
+    required String ownerId,
+    required int version,
+  }) {
+    loads++;
+    return release.future;
+  }
+
+  @override
+  Future<void> decide({
+    required String ownerId,
+    required int version,
+    required bool accepted,
+    required DateTime decidedAtUtc,
+  }) async {}
 }

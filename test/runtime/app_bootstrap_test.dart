@@ -1351,6 +1351,29 @@ void main() {
       lessonController.dispose();
     });
 
+    for (final cleanupThrows in [false, true]) {
+      test('F01 bootstrap owns offline content before failed reconcile ($cleanupThrows)', () async {
+        final failure = StateError('reconcile failed');
+        final manager = _ReconcilingOfflineContentManager()
+          ..reconcileFailure = failure
+          ..disposeFailure = cleanupThrows ? StateError('cleanup failed') : null;
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          offlineContentOverride: manager,
+        );
+        await expectLater(bootstrap.initialize(), throwsA(same(failure)));
+        expect(manager.reconcileCalls, 1);
+        expect(manager.disposeCalls, 1);
+        await expectLater(database.customSelect('SELECT 1').get(), throwsA(anything));
+      });
+    }
+
     test(
       'f44 review bootstrap reconciles offline artifacts before exposure',
       () async {
@@ -7690,6 +7713,8 @@ enum _BootstrapReminderFailure {
 final class _ReconcilingOfflineContentManager implements OfflineContentManager {
   int reconcileCalls = 0;
   int disposeCalls = 0;
+  Object? reconcileFailure;
+  Object? disposeFailure;
 
   @override
   Future<bool> canRemove(ContentIdentity identity) async => false;
@@ -7703,6 +7728,7 @@ final class _ReconcilingOfflineContentManager implements OfflineContentManager {
   @override
   Future<void> dispose() async {
     disposeCalls += 1;
+    if (disposeFailure != null) throw disposeFailure!;
   }
 
   @override
@@ -7712,6 +7738,7 @@ final class _ReconcilingOfflineContentManager implements OfflineContentManager {
   @override
   Future<void> reconcile() async {
     reconcileCalls += 1;
+    if (reconcileFailure != null) throw reconcileFailure!;
   }
 
   @override

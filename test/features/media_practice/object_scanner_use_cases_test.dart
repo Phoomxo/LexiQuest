@@ -35,6 +35,22 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_reposit
 
 void main() {
   test(
+    'F01 scanner attempts camera cleanup after runtime close failure once',
+    () async {
+      final h = await _scannerHarness();
+      final failure = StateError('runtime close failed');
+      h.runtime.closeFailure = failure;
+      try {
+        await expectLater(h.scanner.dispose(), throwsA(same(failure)));
+        await expectLater(h.scanner.dispose(), throwsA(same(failure)));
+        expect(h.runtime.closeCalls, 1);
+        expect(h.camera.disposeCalls, 1);
+      } finally {
+        await h.cleanupAfterDispose();
+      }
+    },
+  );
+  test(
     'B11 owner replacement during inference cannot publish old scan',
     () async {
       final h = await _scannerHarness();
@@ -889,6 +905,7 @@ VocabularyUseCases _throwingVocabulary() => VocabularyUseCases(
 );
 
 final class _FakeCamera implements CameraGateway {
+  int disposeCalls = 0;
   MediaPermissionState permission = MediaPermissionState.granted;
   Object? permissionFailure;
   Completer<void>? resumePending;
@@ -909,6 +926,7 @@ final class _FakeCamera implements CameraGateway {
 
   @override
   Future<void> dispose() async {
+    disposeCalls++;
     isInitialized = false;
   }
 
@@ -944,6 +962,7 @@ final class _FakePreprocessor implements ImagePreprocessor {
 }
 
 final class _FakeRuntime implements ImageClassifierRuntime {
+  Object? closeFailure;
   List<ModelClassification> classifications = const [
     ModelClassification(index: 1, label: 'Apple', confidence: 0.92),
     ModelClassification(index: 0, label: 'background', confidence: 0.05),
@@ -970,6 +989,7 @@ final class _FakeRuntime implements ImageClassifierRuntime {
   @override
   void close() {
     closeCalls += 1;
+    if (closeFailure != null) throw closeFailure!;
   }
 
   @override

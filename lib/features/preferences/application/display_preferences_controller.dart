@@ -13,6 +13,7 @@ final class DisplayPreferencesController extends ChangeNotifier {
   LearnerDisplayPreferences _display = LearnerDisplayPreferences.defaults();
   Future<void> _serial = Future<void>.value();
   bool _isInitialized = false;
+  bool _disposed = false;
   String? _ownerId;
 
   static ThemeMode get fallbackThemeMode => ThemeMode.system;
@@ -66,6 +67,7 @@ final class DisplayPreferencesController extends ChangeNotifier {
         expectedOwnerId: expectedOwnerId,
         themeMode: selected,
         motionMode: _display.motionMode,
+        mutationAllowed: () => !_disposed,
       );
       _replace(saved.display, ownerId: saved.ownerId, initialized: true);
     });
@@ -89,13 +91,19 @@ final class DisplayPreferencesController extends ChangeNotifier {
         expectedOwnerId: expectedOwnerId,
         themeMode: _display.themeMode,
         motionMode: selected,
+        mutationAllowed: () => !_disposed,
       );
       _replace(saved.display, ownerId: saved.ownerId, initialized: true);
     });
   }
 
   Future<void> _enqueue(Future<void> Function() operation) {
-    final result = _serial.then((_) => operation());
+    if (_disposed) {
+      return Future<void>.error(StateError('Display preferences disposed.'));
+    }
+    final result = _serial.then((_) async {
+      if (!_disposed) await operation();
+    });
     _serial = result.then<void>((_) {}, onError: (_, _) {});
     return result;
   }
@@ -105,6 +113,7 @@ final class DisplayPreferencesController extends ChangeNotifier {
     required String? ownerId,
     required bool initialized,
   }) {
+    if (_disposed) return;
     final changed =
         _display != display ||
         _ownerId != ownerId ||
@@ -113,5 +122,18 @@ final class DisplayPreferencesController extends ChangeNotifier {
     _ownerId = ownerId;
     _isInitialized = initialized;
     if (changed) notifyListeners();
+  }
+
+  /// Runtime shutdown must drain admitted storage work before closing the DB.
+  Future<void> disposeAndDrain() {
+    dispose();
+    return _serial;
+  }
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    super.dispose();
   }
 }

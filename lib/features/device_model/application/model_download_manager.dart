@@ -306,7 +306,13 @@ final class ModelDownloadManager {
     );
     var existing = await repository.find(manifest.recordId);
     if (await finalFile.exists()) {
-      if (await _isValidModelFile(finalFile, manifest)) {
+      final valid = await _isValidModelFile(finalFile, manifest);
+      // Verification can outlive cancellation, including cached/recovered files.
+      // Stop before publication or quarantine; previously committed rows survive.
+      if (cancellation.isCancelled || _disposed) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
+      if (valid) {
         if (_isPreviouslyVerifiedArtifact(existing, manifest, finalFile)) {
           if (existing!.state == ModelDownloadState.ready) {
             await repository.activate(existing);

@@ -25,6 +25,91 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  for (final cachedRow in [false, true]) {
+    for (final dispose in [false, true]) {
+      test(
+        'F01 cached verification cancellation blocks activation row=$cachedRow dispose=$dispose',
+        () async {
+          final bytes = utf8.encode('cached-model');
+          final manifest = _manifestFor(bytes);
+          final file = File('${directory.path}/${manifest.fileStem}.tflite');
+          await file.writeAsBytes(bytes);
+          if (cachedRow) {
+            repository.record = ModelDownloadRecord(
+              id: manifest.recordId,
+              modelVersion: manifest.version,
+              sourceUrl: manifest.sourceUri.toString(),
+              expectedChecksum: manifest.expectedSha256,
+              expectedBytes: bytes.length,
+              downloadedBytes: bytes.length,
+              retryCount: 0,
+              state: ModelDownloadState.ready,
+              updatedAtUtc: DateTime.utc(2026),
+              localPath: file.path,
+            );
+          }
+          final before = repository.record;
+          final verifier = _ControlledVerifier(block: true);
+          final source = _MemoryRangeSource(bytes);
+          var completions = 0;
+          final manager = ModelDownloadManager(
+            repository: repository,
+            source: source,
+            verifier: verifier,
+            modelDirectory: () async => directory,
+            nowUtc: () => DateTime.utc(2026),
+            onDownloadCompleted: (_) async {
+              completions++;
+            },
+            onCachedArtifactVerified:
+                ({required modelVersion, required completionId}) async {
+                  completions++;
+                },
+          );
+          addTearDown(manager.dispose);
+          final cancellation = ModelCancellation();
+          final operation = manager.downloadAndActivate(
+            manifest,
+            cancellation: cancellation,
+          );
+          final checked = expectLater(
+            operation,
+            throwsA(
+              isA<ModelLifecycleException>().having(
+                (e) => e.code,
+                'code',
+                ModelFailureCode.cancelled,
+              ),
+            ),
+          );
+          await verifier.started.future;
+          final drained = dispose ? manager.dispose() : Future<void>.value();
+          if (!dispose) cancellation.cancel();
+          verifier.release.complete();
+          await checked;
+          await drained;
+          expect(repository.activations, 0);
+          expect(repository.record, same(before));
+          expect(completions, 0);
+          expect(await file.readAsBytes(), bytes);
+          expect(source.requestedStarts, isEmpty);
+          final recovery = ModelDownloadManager(
+            repository: repository,
+            source: source,
+            verifier: _RecordingVerifier(),
+            modelDirectory: () async => directory,
+            nowUtc: () => DateTime.utc(2026),
+          );
+          addTearDown(recovery.dispose);
+          expect(
+            (await recovery.downloadAndActivate(manifest)).state,
+            ModelDownloadState.active,
+          );
+        },
+      );
+    }
+  }
+
   test('complete partial recovers before any EOF range request', () async {
     final bytes = utf8.encode('verified-complete-partial');
     final manifest = _manifestFor(bytes);

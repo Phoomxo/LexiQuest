@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -10,6 +11,116 @@ import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.
 import 'package:vocab_learning_app/features/device_model/domain/model_manifest.dart';
 
 void main() {
+  for (final stage in ['repository', 'open', 'run']) {
+    test(
+      'F01 disposal drains benchmark at $stage and rejects new opens',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-model-use-case-',
+        );
+        addTearDown(() => directory.delete(recursive: true));
+        final bytes = utf8.encode('model');
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}model.tflite',
+        );
+        await file.writeAsBytes(bytes);
+        final manifest = ModelManifest(
+          id: 'vision',
+          version: '1',
+          minimumAppVersion: '1.0.0+1',
+          sourceUri: Uri.https('models.example', '/model.tflite'),
+          license: 'Apache-2.0',
+          licenseUri: Uri.https('models.example', '/LICENSE'),
+          expectedSha256: sha256.convert(bytes).toString(),
+          expectedBytes: bytes.length,
+          inputShape: const [1, 1, 1, 1],
+          inputType: ModelTensorType.uint8,
+          outputShape: const [1, 1],
+          outputType: ModelTensorType.uint8,
+          inputEncoding: ModelInputEncoding.rawUint8Rgb,
+          labelAssetName: 'labels.txt',
+          supportedDelegates: const {ModelDelegate.cpu, ModelDelegate.xnnpack},
+        );
+        final repository = _UseCaseRepository(
+          ModelDownloadRecord(
+            id: manifest.recordId,
+            modelVersion: manifest.version,
+            sourceUrl: manifest.sourceUri.toString(),
+            expectedChecksum: manifest.expectedSha256,
+            expectedBytes: manifest.expectedBytes,
+            downloadedBytes: bytes.length,
+            retryCount: 0,
+            state: ModelDownloadState.active,
+            updatedAtUtc: DateTime.utc(2026, 7, 30),
+            localPath: file.path,
+          ),
+        );
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final runtime = _FakeImageRuntime();
+        if (stage == 'repository') {
+          repository.entered = entered;
+          repository.release = release;
+        }
+        if (stage == 'run') {
+          runtime.entered = entered;
+          runtime.release = release;
+        }
+        var opens = 0;
+        final useCases = DeviceModelUseCases(
+          manifest: manifest,
+          repository: repository,
+          downloadManager: _uncalledDownloadManager(),
+          openRuntime:
+              ({required path, required manifest, required delegate}) async {
+                opens++;
+                if (stage == 'open') {
+                  entered.complete();
+                  await release.future;
+                }
+                return runtime;
+              },
+        );
+        final benchmark = useCases.benchmarkActive(
+          deviceTier: 'test',
+          warmupRuns: 0,
+          measuredRuns: 2,
+        );
+        final checked = expectLater(
+          benchmark,
+          throwsA(
+            isA<ModelLifecycleException>().having(
+              (e) => e.code,
+              'code',
+              ModelFailureCode.cancelled,
+            ),
+          ),
+        );
+        await entered.future;
+        var drained = false;
+        final shutdown = useCases.dispose().then((_) => drained = true);
+        await Future<void>.delayed(Duration.zero);
+        final drainedEarly = drained;
+        release.complete();
+        await checked;
+        await shutdown;
+        expect(drainedEarly, isFalse);
+        expect(runtime.closed, stage != 'repository');
+        expect(runtime.runCalls, stage == 'run' ? 1 : 0);
+        final priorOpens = opens;
+        await expectLater(
+          useCases.openActive(),
+          throwsA(isA<ModelLifecycleException>()),
+        );
+        await expectLater(
+          useCases.benchmarkActive(deviceTier: 'test'),
+          throwsA(isA<ModelLifecycleException>()),
+        );
+        expect(opens, priorOpens);
+      },
+    );
+  }
+
   test('open verifies checksum again before creating a runtime', () async {
     final directory = await Directory.systemTemp.createTemp(
       'lexiquest-model-use-case-',
@@ -146,6 +257,8 @@ final class _UseCaseRepository implements ModelDownloadRepository {
   _UseCaseRepository(this.record);
 
   ModelDownloadRecord record;
+  Completer<void>? entered;
+  Completer<void>? release;
 
   @override
   Future<void> activate(ModelDownloadRecord next) async {
@@ -153,7 +266,15 @@ final class _UseCaseRepository implements ModelDownloadRepository {
   }
 
   @override
-  Future<ModelDownloadRecord?> find(String id) async => record;
+  Future<ModelDownloadRecord?> find(String id) async {
+    final gate = release;
+    if (gate != null) {
+      release = null;
+      entered!.complete();
+      await gate.future;
+    }
+    return record;
+  }
 
   @override
   Future<void> save(ModelDownloadRecord next) async {
@@ -205,6 +326,8 @@ final class _FakeImageRuntime implements ImageClassifierRuntime {
   final ModelDelegate delegate;
   int runCalls = 0;
   bool closed = false;
+  Completer<void>? entered;
+  Completer<void>? release;
 
   @override
   Future<List<ModelClassification>> classify(
@@ -220,5 +343,11 @@ final class _FakeImageRuntime implements ImageClassifierRuntime {
   @override
   Future<void> run(Uint8List input) async {
     runCalls += 1;
+    final gate = release;
+    if (gate != null) {
+      release = null;
+      entered!.complete();
+      await gate.future;
+    }
   }
 }

@@ -18,6 +18,30 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  for (final fails in [false, true]) {
+    testWidgets('F01 background benchmark cannot publish after resume fails=$fails', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final pending = Completer<void>();
+      final scanner = _FakeScanner()..benchmarkPending = pending;
+      await tester.pumpWidget(MaterialApp(home: ObjectScannerScreen(
+        scanner: scanner,
+        voice: VoiceUseCases(provider: _FakeVoice(), disposeProvider: () async {}),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('object-scanner-benchmark-model')));
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      if (fails) { pending.completeError(StateError('old benchmark')); } else { pending.complete(); }
+      await tester.pumpAndSettle();
+      expect(find.textContaining('peakRSS='), findsNothing);
+      expect(find.text('การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets(
     'B11 save error retains preview and retry waits for durable acknowledgement',
     (tester) async {

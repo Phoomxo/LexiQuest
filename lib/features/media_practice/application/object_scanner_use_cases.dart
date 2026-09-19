@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import '../../../runtime/resource_disposer_stack.dart';
 
 import '../../device_model/application/device_model_use_cases.dart';
 import '../../device_model/application/model_benchmark.dart';
@@ -479,8 +480,9 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     await _leaseManager.close();
     final runtime = _runtime;
     _runtime = null;
-    runtime?.close();
-    await camera.dispose();
+    final resources = ResourceDisposerStack()..own(camera.dispose);
+    if (runtime != null) resources.own(runtime.close);
+    await resources.dispose();
   }
 
   void _checkNotDisposed() {

@@ -54,7 +54,15 @@ final class ModelBenchmark {
     required String deviceTier,
     int warmupRuns = 3,
     int measuredRuns = 20,
+    ModelCancellation? cancellation,
   }) async {
+    void checkActive() {
+      if (cancellation?.isCancelled ?? false) {
+        throw const ModelLifecycleException(ModelFailureCode.cancelled);
+      }
+    }
+
+    checkActive();
     if (warmupRuns < 0 || measuredRuns < 1 || measuredRuns > 100) {
       throw ArgumentError('Benchmark run counts are out of bounds.');
     }
@@ -66,12 +74,14 @@ final class ModelBenchmark {
     var peakWorkingSetBytes = workingSetBytes();
     for (var index = 0; index < warmupRuns; index += 1) {
       await runtime.run(input);
+      checkActive();
       peakWorkingSetBytes = math.max(peakWorkingSetBytes, workingSetBytes());
     }
     final samples = <int>[];
     for (var index = 0; index < measuredRuns; index += 1) {
       final started = monotonicMicros();
       await runtime.run(input);
+      checkActive();
       samples.add(monotonicMicros() - started);
       peakWorkingSetBytes = math.max(peakWorkingSetBytes, workingSetBytes());
     }

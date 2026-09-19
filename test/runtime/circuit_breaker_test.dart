@@ -4,6 +4,89 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/runtime/circuit_breaker.dart';
 
 void main() {
+  test(
+    'F01 a failed probe permits exactly one probe after the next cooldown',
+    () async {
+      var now = DateTime.utc(2026);
+      final breaker = CircuitBreaker(threshold: 1, now: () => now);
+      await expectLater(
+        breaker.call(() async => throw StateError('outage')),
+        throwsStateError,
+      );
+      now = now.add(const Duration(seconds: 30));
+      await expectLater(
+        breaker.call(() async => throw StateError('probe outage')),
+        throwsStateError,
+      );
+      now = now.add(const Duration(seconds: 30));
+      expect(await breaker.call(() async => 42), 42);
+    },
+  );
+  for (final lateFailure in [false, true]) {
+    test(
+      'F01 stale closed request cannot alter a new probe ($lateFailure)',
+      () async {
+        var now = DateTime.utc(2026);
+        final breaker = CircuitBreaker(threshold: 1, now: () => now);
+        final old = Completer<int>();
+        final pending = breaker.call(() => old.future);
+        final checked = lateFailure
+            ? expectLater(pending, throwsStateError)
+            : expectLater(pending, completion(7));
+        await expectLater(
+          breaker.call(() async => throw StateError('outage')),
+          throwsStateError,
+        );
+        now = now.add(const Duration(seconds: 30));
+        final release = Completer<int>();
+        final probe = breaker.call(() => release.future);
+        if (lateFailure) {
+          old.completeError(StateError('old outage'));
+        } else {
+          old.complete(7);
+        }
+        await checked;
+        expect(breaker.state, CircuitState.halfOpen);
+        await expectLater(
+          breaker.call(() async => 8),
+          throwsA(isA<CircuitBreakerOpenException>()),
+        );
+        release.complete(9);
+        expect(await probe, 9);
+        expect(breaker.state, CircuitState.closed);
+      },
+    );
+  }
+
+  test(
+    'F01 reset invalidates an old probe and its completion cannot release the new probe',
+    () async {
+      final breaker = CircuitBreaker(threshold: 1, resetDelay: Duration.zero);
+      await expectLater(
+        breaker.call(() async => throw StateError('outage')),
+        throwsStateError,
+      );
+      final old = Completer<void>();
+      final oldProbe = breaker.call(() => old.future);
+      breaker.reset();
+      await expectLater(
+        breaker.call(() async => throw StateError('new outage')),
+        throwsStateError,
+      );
+      final current = Completer<void>();
+      final newProbe = breaker.call(() => current.future);
+      old.complete();
+      await oldProbe;
+      await expectLater(
+        breaker.call(() async {}),
+        throwsA(isA<CircuitBreakerOpenException>()),
+      );
+      current.complete();
+      await newProbe;
+      expect(breaker.state, CircuitState.closed);
+    },
+  );
+
   test('opens at threshold and closes after a successful probe', () async {
     var now = DateTime.utc(2026, 8, 9, 12);
     var calls = 0;

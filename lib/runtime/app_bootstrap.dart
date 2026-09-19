@@ -1135,7 +1135,7 @@ final class AppBootstrap {
     );
     final displayPreferences = DisplayPreferencesController(learnerPreferences);
     activeDisplayPreferences = displayPreferences;
-    resources.own(displayPreferences.dispose);
+    resources.own(displayPreferences.disposeAndDrain);
     await displayPreferences.initialize();
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
@@ -1639,6 +1639,7 @@ final class AppBootstrap {
           },
           nowUtc: () => DateTime.now().toUtc(),
         );
+    resources.own(offlineContent.dispose);
     await offlineContent.reconcile();
     final adventureCatalogRecovery = AdventureCatalogRecoveryOperations(
       manager: offlineContent,
@@ -1672,7 +1673,6 @@ final class AppBootstrap {
           ),
     );
     resources.own(deviceModels.dispose);
-    resources.own(offlineContent.dispose);
     resources.own(adventureCatalogRecovery.dispose);
     // Reverse-order disposal must cancel the adapter authority before the
     // offline manager drains its operation queue.

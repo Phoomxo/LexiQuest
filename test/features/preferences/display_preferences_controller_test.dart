@@ -17,6 +17,84 @@ import 'package:vocab_learning_app/features/preferences/domain/learner_preferenc
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 
 void main() {
+  test(
+    'F01 disposed preference read cannot publish or execute queued work',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final base = _useCases(database);
+      final held = _HeldPreferences(base.repository)..holdRead = true;
+      final controller = DisplayPreferencesController(
+        LearnerPreferencesUseCases(
+          repository: held,
+          owners: base.owners,
+          nowUtc: base.nowUtc,
+        ),
+      );
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+      final read = controller.initialize();
+      await held.entered.future;
+      final queued = controller.initialize();
+      final queuedWrite = controller.selectThemeMode(ThemeMode.dark);
+      var drained = false;
+      final shutdown = controller.disposeAndDrain().then((_) => drained = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(drained, isFalse);
+      held.release.complete();
+      await read;
+      await queued;
+      await queuedWrite;
+      await shutdown;
+      await expectLater(controller.initialize(), throwsStateError);
+      expect(controller.isInitialized, isFalse);
+      expect(notifications, 0);
+      expect(held.reads, 1);
+      expect((await base.read()).display.themeMode, LearnerThemePreference.system);
+    },
+  );
+
+  for (final afterCommit in [false, true]) {
+    test(
+      'F01 disposed preference write preserves commit boundary ($afterCommit)',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
+        final base = _useCases(database);
+        final held = _HeldPreferences(base.repository);
+        final controller = DisplayPreferencesController(
+          LearnerPreferencesUseCases(
+            repository: held,
+            owners: base.owners,
+            nowUtc: base.nowUtc,
+          ),
+        );
+        await controller.initialize();
+        held.holdWrite = true;
+        held.afterCommit = afterCommit;
+        final write = controller.selectThemeMode(ThemeMode.dark);
+        final checked = afterCommit
+            ? expectLater(write, completes)
+            : expectLater(
+                write,
+                throwsA(isA<LearnerPreferencesMutationUnavailable>()),
+              );
+        await held.entered.future;
+        controller.dispose();
+        held.release.complete();
+        await checked;
+        expect(controller.themeMode, ThemeMode.system);
+        expect(
+          (await base.read()).display.themeMode,
+          afterCommit
+              ? LearnerThemePreference.dark
+              : LearnerThemePreference.system,
+        );
+        expect(await _outboxCount(database), 0);
+      },
+    );
+  }
+
   group('f39 display preference authority', () {
     test(
       'persists theme and reduced motion across restart without cloud intent',
@@ -205,6 +283,53 @@ void main() {
       },
     );
   });
+}
+
+final class _HeldPreferences implements LearnerPreferencesRepository {
+  _HeldPreferences(this.inner);
+  final LearnerPreferencesRepository inner;
+  final entered = Completer<void>();
+  final release = Completer<void>();
+  bool holdRead = false;
+  bool holdWrite = false;
+  bool afterCommit = false;
+  int reads = 0;
+  @override
+  Future<LearnerPreferences> read(String ownerId) async {
+    reads++;
+    if (holdRead) {
+      holdRead = false;
+      entered.complete();
+      await release.future;
+    }
+    return inner.read(ownerId);
+  }
+
+  @override
+  Future<void> save(
+    LearnerPreferences preferences, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) => inner.save(preferences, mutationAllowed: mutationAllowed);
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (holdWrite && !afterCommit) {
+      entered.complete();
+      await release.future;
+    }
+    await inner.saveDisplayPreferences(
+      ownerId,
+      display,
+      mutationAllowed: mutationAllowed,
+    );
+    if (holdWrite && afterCommit) {
+      entered.complete();
+      await release.future;
+    }
+  }
 }
 
 final class _ControllableOwners implements LocalOwnerRepository {

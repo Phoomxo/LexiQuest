@@ -77,16 +77,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _startGuest() async {
     final guest = _guest;
     if (guest == null || _busy) return;
-    await _ensureResearchConsentDecision();
-    if (!mounted) return;
     setState(() => _busy = true);
-    final result = await guest.start();
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (result is GuestSessionStarted) {
-      await AppNavigator.resetTo<void>(context, AppRoute.home);
-    } else {
-      _show('เริ่มโหมด Guest ไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+    try {
+      await _ensureResearchConsentDecision();
+      if (!mounted) return;
+      final result = await guest.start();
+      if (!mounted) return;
+      if (result is GuestSessionStarted) {
+        await AppNavigator.resetTo<void>(context, AppRoute.home);
+      } else {
+        _show('เริ่มโหมด Guest ไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+      }
+    } on Object {
+      if (mounted) {
+        _show('เริ่มโหมด Guest ไม่สำเร็จ กรุณาลองใหม่');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 

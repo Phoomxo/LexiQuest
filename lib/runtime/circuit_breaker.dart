@@ -36,6 +36,7 @@ final class CircuitBreaker {
   int _consecutiveFailures = 0;
   DateTime? _openedAt;
   bool _halfOpenProbeInFlight = false;
+  int _generation = 0;
 
   CircuitState get state {
     _refreshState();
@@ -56,13 +57,15 @@ final class CircuitBreaker {
     }
 
     final isProbe = _state == CircuitState.halfOpen;
+    final generation = _generation;
     if (isProbe) _halfOpenProbeInFlight = true;
 
     try {
       final result = await operation();
-      _onSuccess();
+      if (generation == _generation) _onSuccess();
       return result;
     } catch (error) {
+      if (generation != _generation) rethrow;
       if (_shouldCountFailure(error)) {
         _onFailure();
       } else if (isProbe && !_shouldKeepHalfOpen(error)) {
@@ -72,11 +75,16 @@ final class CircuitBreaker {
       }
       rethrow;
     } finally {
-      if (isProbe) _halfOpenProbeInFlight = false;
+      if (isProbe && generation == _generation) {
+        _halfOpenProbeInFlight = false;
+      }
     }
   }
 
-  void reset() => _onSuccess();
+  void reset() {
+    _generation++;
+    _onSuccess();
+  }
 
   void _refreshState() {
     if (_state != CircuitState.open || _openedAt == null) return;
@@ -86,6 +94,7 @@ final class CircuitBreaker {
   }
 
   void _onSuccess() {
+    if (_state != CircuitState.closed) _generation++;
     _state = CircuitState.closed;
     _consecutiveFailures = 0;
     _openedAt = null;
@@ -95,6 +104,8 @@ final class CircuitBreaker {
   void _onFailure() {
     if (_state == CircuitState.halfOpen ||
         ++_consecutiveFailures >= threshold) {
+      _generation++;
+      _halfOpenProbeInFlight = false;
       _state = CircuitState.open;
       _openedAt = _now();
     }
