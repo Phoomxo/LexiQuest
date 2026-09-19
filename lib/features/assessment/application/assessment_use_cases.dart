@@ -293,6 +293,7 @@ final class AssessmentUseCases {
     DateTime? completedAtUtc,
   ) async {
     final persisted = await repository.getRun(runId);
+    await _requireActiveOwner(persisted.ownerId);
     if (persisted.state == AssessmentRunState.completed) {
       return repository.complete(
         runId: runId,
@@ -330,9 +331,10 @@ final class AssessmentUseCases {
           atUtc: transitionAtUtc,
         ),
       );
-    } on AssessmentRunConflict {
+    } on Object {
       final durable = await repository.getRun(runId);
       if (durable.state != AssessmentRunState.completed) rethrow;
+      await _requireActiveOwner(durable.ownerId);
       return repository.complete(
         runId: runId,
         completedAtUtc: durable.completedAtUtc!,
@@ -488,6 +490,7 @@ final class AssessmentUseCases {
         sessionId: run.learningSessionId,
         occurredAtUtc: captureAtUtc,
       );
+      await _requireActiveOwner(run.ownerId);
       final wantsForeground = _presentationForeground[run.id] ?? true;
       if (!wantsForeground) {
         timeAuthority.dispose();
@@ -539,18 +542,15 @@ final class AssessmentUseCases {
         }
         return;
       }
-      _ResolvedAssessmentAuthority? authorityLease;
-      if (time.state == ActiveLearningTimeState.inactive ||
-          time.state == ActiveLearningTimeState.paused) {
-        try {
-          authorityLease = await _requireCurrentPresentationAuthority(
-            active,
-            occurredAtUtc,
-          );
-        } catch (_) {
-          await _fencePresentationAfterAuthorityFailure(active, observation);
-          rethrow;
-        }
+      late final _ResolvedAssessmentAuthority authorityLease;
+      try {
+        authorityLease = await _requireCurrentPresentationAuthority(
+          active,
+          occurredAtUtc,
+        );
+      } catch (_) {
+        await _fencePresentationAfterAuthorityFailure(active, observation);
+        rethrow;
       }
       switch (time.state) {
         case ActiveLearningTimeState.inactive:
@@ -571,7 +571,7 @@ final class AssessmentUseCases {
       }
       try {
         await _validateAuthorityLease(
-          lease: authorityLease!,
+          lease: authorityLease,
           run: active.run,
           definition: active.definition,
           atUtc: occurredAtUtc,
@@ -763,6 +763,13 @@ final class AssessmentUseCases {
         active.timeAuthority.dispose();
       });
 
+  Future<void> _requireActiveOwner(String ownerId) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != ownerId) {
+      throw StateError('Active owner changed during assessment authority.');
+    }
+  }
+
   Future<_ResolvedAssessmentAuthority> _resolveAuthority({
     required String ownerId,
     required AssessmentInstrumentDefinition definition,
@@ -848,6 +855,7 @@ final class AssessmentUseCases {
             run.consentDecidedAtUtc != decisionUtc)) {
       throw StateError('Persisted assessment authority differs from run pins.');
     }
+    await _requireActiveOwner(ownerId);
     return _ResolvedAssessmentAuthority(
       assignment: assignment,
       mapping: mapping,

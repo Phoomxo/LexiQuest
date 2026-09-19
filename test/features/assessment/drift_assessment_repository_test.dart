@@ -19,6 +19,10 @@ void main() {
     repository = DriftAssessmentRepository(database);
     await _seedOwner(database, _ownerId);
     await _seedOwner(database, _otherOwnerId);
+    await database.customStatement(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      [_ownerId],
+    );
     await _seedConsent(database, ownerId: _ownerId);
     await _seedConsent(database, ownerId: _otherOwnerId);
     await _seedSession(database, ownerId: _ownerId, sessionId: _sessionId);

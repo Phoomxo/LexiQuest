@@ -430,12 +430,17 @@ final class DriftAssessmentRepository implements AssessmentRepository {
       'completed_at_utc_ms = NULLIF(?, -1), '
       'abandoned_at_utc_ms = NULLIF(?, -1) '
       "WHERE id = ? AND state = 'active' "
-      'AND completed_at_utc_ms IS NULL AND abandoned_at_utc_ms IS NULL',
+      'AND completed_at_utc_ms IS NULL AND abandoned_at_utc_ms IS NULL '
+      "AND (? != 'completed' OR ("
+      'EXISTS (SELECT 1 FROM local_owners WHERE id = ? AND is_active = 1) '
+      'AND (SELECT COUNT(*) FROM local_owners WHERE is_active = 1) = 1))',
       variables: [
         Variable<String>(terminal.state.name),
         Variable<int>(terminal.completedAtUtc?.millisecondsSinceEpoch ?? -1),
         Variable<int>(terminal.abandonedAtUtc?.millisecondsSinceEpoch ?? -1),
         Variable<String>(terminal.id),
+        Variable<String>(terminal.state.name),
+        Variable<String>(terminal.ownerId),
       ],
     );
   }

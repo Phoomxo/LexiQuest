@@ -64,6 +64,68 @@ class FakeVoiceProvider implements VoiceProvider {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  for (final reduced in [false, true]) {
+    for (final disposeDuringReverse in [false, true]) {
+      testWidgets(
+        'B18 Legacy rating reduced=$reduced dispose=$disposeDuringReverse',
+        (tester) async {
+          final motion = ValueNotifier<bool>(reduced);
+          addTearDown(motion.dispose);
+          final voice = VoiceUseCases(
+            provider: FakeVoiceProvider(),
+            disposeProvider: () async {},
+          );
+          addTearDown(voice.dispose);
+          final database = await _pumpLegacyCompatibility(
+            tester,
+            wordList: const [
+              {'word': 'first', 'translation': 'one'},
+              {'word': 'second', 'translation': 'two'},
+              {'word': 'third', 'translation': 'three'},
+            ],
+            voice: voice,
+            disableAnimations: motion,
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('first'));
+          await tester.pumpAndSettle();
+          final rate = tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)'),
+              )
+              .onPressed!;
+          var settled = 0;
+          final first = (rate as dynamic)() as Future<void>;
+          unawaited(first.then((_) => settled++));
+          if (disposeDuringReverse) {
+            await tester.pumpWidget(const SizedBox.shrink());
+          } else {
+            final second = (rate as dynamic)() as Future<void>;
+            unawaited(second.then((_) => settled++));
+          }
+          await tester.pumpAndSettle();
+          expect(
+            settled,
+            disposeDuringReverse ? 1 : 2,
+            reason: 'no handler may hang after cancellation',
+          );
+          expect(tester.takeException(), isNull);
+          if (!disposeDuringReverse) {
+            expect(find.text('second'), findsOneWidget);
+            expect(find.text('third'), findsNothing);
+          }
+          expect(await database.select(database.answerAttempts).get(), isEmpty);
+          expect(
+            await database.select(database.learningSessions).get(),
+            isEmpty,
+          );
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
+        },
+      );
+    }
+  }
+
   setUp(() {
     // SharedPreferences mock removed — SrsService dependency eliminated (Phase 0 W14-15).
   });
@@ -1092,7 +1154,7 @@ void main() {
   );
 }
 
-Future<void> _pumpLegacyCompatibility(
+Future<AppDatabase> _pumpLegacyCompatibility(
   WidgetTester tester, {
   required List<Map<String, String>> wordList,
   required VoiceUseCases voice,
@@ -1172,6 +1234,7 @@ Future<void> _pumpLegacyCompatibility(
       ),
     ),
   );
+  return database;
 }
 
 final class _GuestSession implements GuestSessionService {

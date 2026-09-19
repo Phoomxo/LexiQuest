@@ -770,6 +770,10 @@ Future<void> _seedCore(AppDatabase database) async {
           updatedAtUtcMs: 1,
         ),
       );
+  await database.customStatement(
+    'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+    [_ownerId],
+  );
   final learning = DriftLearningRepository(database);
   await learning.startSession(
     LearningSessionDraft(
@@ -811,6 +815,10 @@ Future<void> _seedAlternateComparisonWord(AppDatabase database) => database
     );
 
 Future<void> _seedForeignCompletedPair(AppDatabase database) async {
+  await database.customStatement(
+    'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+    [_foreignOwnerId],
+  );
   // Foreign rows intentionally share the study-cycle string. The application
   // must select only the active owner's pair.
   await database.customInsert(
@@ -888,6 +896,10 @@ Future<void> _seedForeignCompletedPair(AppDatabase database) async {
     await repository.start(run);
     await repository.complete(runId: run.id, completedAtUtc: _preResponseAtUtc);
   }
+  await database.customStatement(
+    'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+    [_ownerId],
+  );
 }
 
 Future<Set<String>> _forbiddenScoreTables(AppDatabase database) => database

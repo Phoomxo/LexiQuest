@@ -11,10 +11,12 @@ final class PrePostAssessmentScreen extends StatefulWidget {
     super.key,
     required this.useCases,
     required this.command,
+    this.responseClock,
   });
 
   final AssessmentUseCases useCases;
   final AssessmentStartCommand command;
+  final Stopwatch? responseClock;
 
   @override
   State<PrePostAssessmentScreen> createState() =>
@@ -28,7 +30,7 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
   Object? _failure;
   var _itemIndex = 0;
   var _submitting = false;
-  final Stopwatch _responseTime = Stopwatch();
+  late final Stopwatch _responseTime = widget.responseClock ?? Stopwatch();
   AppLifecycleState _lifecycleState =
       WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
 
@@ -62,10 +64,12 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
     switch (state) {
       case AppLifecycleState.resumed:
         unawaited(
-          widget.useCases.setPresentationForeground(
-            runId: widget.command.runId,
-            isForeground: true,
-          ),
+          widget.useCases
+              .setPresentationForeground(
+                runId: widget.command.runId,
+                isForeground: true,
+              )
+              .catchError(_showFailure),
         );
         _responseTime.start();
       case AppLifecycleState.inactive ||
@@ -74,10 +78,12 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
           AppLifecycleState.detached:
         _responseTime.stop();
         unawaited(
-          widget.useCases.setPresentationForeground(
-            runId: widget.command.runId,
-            isForeground: false,
-          ),
+          widget.useCases
+              .setPresentationForeground(
+                runId: widget.command.runId,
+                isForeground: false,
+              )
+              .catchError(_showFailure),
         );
     }
   }
@@ -139,9 +145,10 @@ final class _PrePostAssessmentScreenState extends State<PrePostAssessmentScreen>
         _itemIndex = nextIndex;
         _submitting = false;
       });
-      _responseTime
-        ..reset()
-        ..start();
+      _responseTime.reset();
+      if (_lifecycleState == AppLifecycleState.resumed) {
+        _responseTime.start();
+      }
     } catch (error) {
       await _showFailure(error);
     }

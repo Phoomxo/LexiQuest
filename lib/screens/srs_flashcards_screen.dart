@@ -169,6 +169,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   FlashcardModeAdapter? _modeAdapter;
   UnifiedLessonSessionLifecycle? _lessonLifecycle;
   bool _compatibilityCompleted = false;
+  bool _compatibilityAdvancing = false;
   bool _loadSettled = false;
   bool _reducedMotionEnabled = false;
   double _flipTarget = 0;
@@ -179,6 +180,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _compatibilityCompleted || (_review?.isCompleted ?? false);
   bool get _saving => _abandoning || (_review?.isSaving ?? false);
   bool get _actionLocked =>
+      !mounted ||
+      _compatibilityAdvancing ||
       _abandoning ||
       (!_isCompatibilityDeck && _lessonLifecycle?.acceptsOperations == false) ||
       (!_isCompatibilityDeck && (_review?.actionLocked ?? true)) ||
@@ -468,20 +471,36 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _nextCompatibilityCard() async {
-    _lessonLifecycle?.recordInteraction();
-    if (_currentIndex < _session!.questions.length - 1) {
-      if (_isFlipped) await _transitionCardSide(flipped: false);
-      setState(() {
-        _isFlipped = false;
-        _currentIndex++;
-      });
-      _responseStopwatch
-        ..reset()
-        ..start();
-      await _playAudio();
-      return;
+    if (_actionLocked) return;
+    setState(() => _compatibilityAdvancing = true);
+    try {
+      _lessonLifecycle?.recordInteraction();
+      if (_currentIndex < _session!.questions.length - 1) {
+        if (_isFlipped) {
+          _flipTarget = 0;
+          if (_reducedMotion) {
+            _controller.value = 0;
+          } else {
+            await _controller.reverse().orCancel;
+          }
+        }
+        if (!mounted) return;
+        setState(() {
+          _isFlipped = false;
+          _currentIndex++;
+        });
+        _responseStopwatch
+          ..reset()
+          ..start();
+        await _playAudio();
+        return;
+      }
+      await _completeReview();
+    } on TickerCanceled {
+      // Disposing the route cancels the pending flip and settles the rating.
+    } finally {
+      if (mounted) setState(() => _compatibilityAdvancing = false);
     }
-    await _completeReview();
   }
 
   Future<void> _completeReview() async {

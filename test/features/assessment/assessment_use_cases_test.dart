@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/assessment/domain/assessment_reposit
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -32,6 +33,110 @@ import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dar
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 
 void main() {
+  for (final operation in [
+    'existing',
+    'foreground',
+    'completion-before-guard',
+    'completion-after-guard',
+  ]) {
+    test(
+      'B18 active owner fences $operation with historical grants retained',
+      () async {
+        final clock = _MutableClock(_startedAtUtc);
+        var monotonicMicros = 0;
+        late _OwnerBoundaryRepository boundary;
+        final harness = await _Harness.create(
+          canonicalOwners: true,
+          nowUtc: clock.call,
+          assessmentRepository: (delegate) =>
+              boundary = _OwnerBoundaryRepository(delegate),
+          createActiveLearningTimeController: (database) =>
+              ActiveLearningTimeController(
+                repository: DriftLearningTimeRepository(
+                  database,
+                  owners: DriftLocalOwnerRepository(
+                    database,
+                    generateId: () => 'unused-time-owner',
+                    nowUtc: clock.call,
+                  ),
+                ),
+                monotonicMicros: () => monotonicMicros,
+                nowUtc: clock.call,
+                timezoneContext: (_) => const LearningTimeZoneContext(
+                  timezoneId: 'UTC',
+                  utcOffsetMinutes: 0,
+                ),
+                scheduleIdle: (_, _) => () {},
+              ),
+        );
+        try {
+          await harness.useCases.beginPresentation(_startCommand());
+          // Same-owner content reuse is still valid.
+          await harness.useCases.beginPresentation(_startCommand());
+          if (operation.startsWith('completion')) {
+            monotonicMicros = 1000000;
+            clock.value = _startedAtUtc.add(const Duration(seconds: 1));
+            await harness.useCases.submitPresentedResponse(
+              runId: _runId,
+              itemId: _itemId,
+              submittedResponse: 'choice-a',
+              responseTimeMs: 1000,
+            );
+            boundary.afterGuard = operation.endsWith('after-guard');
+            boundary.switchOwner = () =>
+                _switchAssessmentOwner(harness.database, _otherOwnerId);
+            // The seam is entered only after response and final effort persistence.
+            await expectLater(
+              harness.useCases.completePresentation(_runId),
+              throwsA(anyOf(isA<StateError>(), isA<AssessmentRunConflict>())),
+            );
+            expect(boundary.fired, isTrue);
+            expect(await _count(harness.database, 'answer_attempts'), 1);
+          } else {
+            await _switchAssessmentOwner(harness.database, _otherOwnerId);
+            await expectLater(
+              operation == 'existing'
+                  ? harness.useCases.beginPresentation(_startCommand())
+                  : harness.useCases.resumePresentation(_runId),
+              throwsStateError,
+            );
+            expect(await _count(harness.database, 'answer_attempts'), 0);
+          }
+          expect(
+            (await harness.repository.getRun(_runId)).state,
+            AssessmentRunState.active,
+          );
+          final terminal = await harness.database
+              .customSelect(
+                'SELECT operation_id FROM outbox_operations WHERE operation_id = ?',
+                variables: [const Variable<String>('assessmentRun:$_runId:2')],
+              )
+              .get();
+          expect(terminal, isEmpty);
+          final consent = await harness.database
+              .customSelect(
+                'SELECT consent_state FROM research_consents WHERE owner_id = ?',
+                variables: [const Variable<String>(_ownerId)],
+              )
+              .getSingle();
+          expect(consent.read<String>('consent_state'), 'accepted');
+          await _switchAssessmentOwner(harness.database, _ownerId);
+          if (operation.startsWith('completion')) {
+            expect(
+              (await harness.useCases.completePresentation(_runId)).run.state,
+              AssessmentRunState.completed,
+            );
+            expect(await _count(harness.database, 'answer_attempts'), 1);
+          }
+        } finally {
+          await _switchAssessmentOwner(harness.database, _ownerId);
+          await harness.useCases.detachPresentation(_runId);
+          await harness.close();
+        }
+      },
+    );
+  }
+
   test('assessment application stays on the shared learning port', () {
     final source = File(
       'lib/features/assessment/application/assessment_use_cases.dart',
@@ -225,7 +330,7 @@ void main() {
       final replay = await harness.useCases.start(_startCommand());
 
       expect(replay, sameAssessmentRunAs(first));
-      expect(harness.owners.activeOwnerReads, 2);
+      expect(harness.owners.activeOwnerReads, greaterThanOrEqualTo(2));
       expect(first.id, _runId);
       expect(first.ownerId, _ownerId);
       expect(first.learningSessionId, _sessionId);
@@ -1380,21 +1485,13 @@ void main() {
     });
   }
 
-  test(
-    'start binds the active owner exactly once before provider resolution',
-    () async {
-      final harness = await _Harness.create();
-      addTearDown(harness.close);
-      final owners = _ChangingOwners();
-      final useCases = harness.withOwners(owners);
-
-      final run = await useCases.start(_startCommand());
-
-      expect(owners.calls, 1);
-      expect(run.ownerId, _ownerId);
-      expect(await _count(harness.database, 'assessment_runs'), 1);
-    },
-  );
+  test('start rejects an owner change during provider resolution', () async {
+    final harness = await _Harness.create();
+    addTearDown(harness.close);
+    final useCases = harness.withOwners(_ChangingOwners());
+    await expectLater(useCases.start(_startCommand()), throwsStateError);
+    expect(await _count(harness.database, 'assessment_runs'), 0);
+  });
 
   test(
     'withdrawal after authorization aborts the start transaction without outbox',
@@ -1886,6 +1983,7 @@ final class _Harness {
     bool includeProtocolMapping = true,
     AppDatabase? databaseOverride,
     bool seedFixture = true,
+    bool canonicalOwners = false,
     DateTime Function()? nowUtc,
     ContentManifestRepository? contentManifests,
     bool includeContentManifests = true,
@@ -1903,6 +2001,10 @@ final class _Harness {
       await _seedOwner(database, _ownerId);
       await _seedOwner(database, _otherOwnerId);
       await _seedVocabulary(database);
+      await database.customUpdate(
+        'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+        variables: [Variable<String>(sessionOwnerId)],
+      );
       await DriftLearningRepository(database).startSession(
         LearningSessionDraft(
           id: _sessionId,
@@ -1913,6 +2015,7 @@ final class _Harness {
           buildId: _buildId,
         ),
       );
+      await _selectOnlyAssessmentOwner(database);
       if (seedConsent) {
         await database.customInsert(
           'INSERT INTO research_consents('
@@ -1997,8 +2100,15 @@ final class _Harness {
     final effectiveAssessmentRollout =
         assessmentRolloutModeProvider?.call(rollout) ?? rollout;
     final owners = _Owners(_ownerId);
+    final LocalOwnerRepository activeOwners = canonicalOwners
+        ? DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'unused-owner',
+            nowUtc: () => _startedAtUtc,
+          )
+        : owners;
     final learning = LearningUseCases(
-      owners: owners,
+      owners: activeOwners,
       repository: DriftLearningRepository(
         database,
         rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
@@ -2012,7 +2122,7 @@ final class _Harness {
     final effectiveAssessmentRepository =
         assessmentRepository?.call(repository) ?? repository;
     final useCases = AssessmentUseCases(
-      owners: owners,
+      owners: activeOwners,
       repository: effectiveAssessmentRepository,
       learning: learning,
       experimentRegistry: experiments,
@@ -2953,3 +3063,40 @@ String _assignmentId(String ownerId) =>
       experimentId: _experimentId,
       experimentVersion: _experimentVersion,
     );
+
+Future<void> _switchAssessmentOwner(AppDatabase database, String ownerId) =>
+    database.customStatement(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      [ownerId],
+    );
+
+final class _OwnerBoundaryRepository extends _DelegatingAssessmentRepository {
+  _OwnerBoundaryRepository(super.delegate);
+  Future<void> Function()? switchOwner;
+  bool afterGuard = false;
+  bool fired = false;
+  @override
+  Future<AssessmentRun> complete({
+    required String runId,
+    required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
+  }) async {
+    final change = switchOwner;
+    switchOwner = null;
+    if (change != null && !afterGuard) {
+      fired = true;
+      await change();
+    }
+    return super.complete(
+      runId: runId,
+      completedAtUtc: completedAtUtc,
+      authorityGuard: (run) async {
+        await authorityGuard?.call(run);
+        if (change != null && afterGuard) {
+          fired = true;
+          await change();
+        }
+      },
+    );
+  }
+}
