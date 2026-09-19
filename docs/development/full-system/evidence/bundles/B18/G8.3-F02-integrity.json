@@ -1,0 +1,263 @@
+{
+  "status": "passed",
+  "inputCheckpointSha": "f9a85751d8299a5fc89ed38f71c4cfe1ba7024fe",
+  "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+  "frozenInventory": 3610,
+  "authorizedFrozenDeltas": [
+    {
+      "path": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "frozenSha256": "1e491361baa427361a3fc97fcef5bfd8b572abc1b6bdeea9eee86ee2dbe0b10e",
+      "currentSha256": "c4edda8a274e68a6d4e7f0cc1f877e1d492ecfc974eb726bbcb9c960da926a97"
+    },
+    {
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "frozenSha256": "078213d0961267da5de7168a1a682cfff44a6f25bb086fc7b6b81c3213a7fae6",
+      "currentSha256": "f10021f17010ddaf631ea3f6c36c4471a46cd3332e4a014d24a17fc03b6f019b"
+    },
+    {
+      "path": "lib/features/achievements/data/file_selector_share_card_store.dart",
+      "frozenSha256": "3ad6c460e4251756a82bcafd573a390b2f605728af408c8ddf3dcde36da32f3c",
+      "currentSha256": "f78602773895634bf1f6c58c39c53c9dee31518e52a097305a2c85497abb2ed0"
+    },
+    {
+      "path": "lib/features/device_model/application/device_model_use_cases.dart",
+      "frozenSha256": "075140a688f98f4118e5854d290ead5f44967b47289b192d572f8e51b435a95f",
+      "currentSha256": "066f970617a68d5085fbfc7698ff496516ddef24055b94f95d605afa27f3ce9c"
+    },
+    {
+      "path": "lib/features/device_model/application/model_benchmark.dart",
+      "frozenSha256": "fe47aa6d36fbf95c1b6cc4d5f4dac0fe1bad81fe12589e7297aabd54af5ad7e0",
+      "currentSha256": "42cd24bd3ae291f5431e99efe0b63b0616da5155c202d7db3843216ef3d431a8"
+    },
+    {
+      "path": "lib/features/device_model/application/model_download_manager.dart",
+      "frozenSha256": "e6e9fee9f64c8dcd599d8f9bbff7f6cc60e1049da773875a67982fd9c9eedea7",
+      "currentSha256": "38d047f9fd3d810c2a2df7d0d3e85e173abe829992ed750f8a5e83b1b40f1874"
+    },
+    {
+      "path": "lib/features/export/data/file_selector_export_store.dart",
+      "frozenSha256": "325251f4378cae4c1b0bef76a23e000f4b923a255164a23f582fbaeac58bf862",
+      "currentSha256": "aca4b5db47469c54bddadd0497b85b63fdf6e3ae4cbda62f509b0b5ac84fc2b5"
+    },
+    {
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "frozenSha256": "981dbe313f05a531a5a8ce6de1e2401accc9e555407973d612cd963216423562",
+      "currentSha256": "97c5b9277855e8fce00f3b20c2abb0b18054d39f26376e727bc4f4f2f886fb4f"
+    },
+    {
+      "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "frozenSha256": "6801ae47bccf70743013da469fbad6ddb22ce890f0a0ff1316806a2fd5814039",
+      "currentSha256": "c361c7509ee3e89be6ef62d7e7ff5f25f3f7122ce26a8f03288d4e29a065fdf5"
+    },
+    {
+      "path": "lib/features/preferences/application/display_preferences_controller.dart",
+      "frozenSha256": "78ef4236ff442c6b8aa7b85749e6eb4b82e95d7f9fb512899332f02bab02e626",
+      "currentSha256": "2f8c3878010ff17d2ecb220417f4e8cde08ac7fc2f005fb6ab7bcee0a0b1fb0f"
+    },
+    {
+      "path": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "frozenSha256": "9a3ebabfef2078888d1b6c13a977c318d0822a80d7dd547e218e998a80cc8c69",
+      "currentSha256": "33daaaf7ca644c3e6495575cb4f1d94cbcbc8074221ac8bd2b67b34053740036"
+    },
+    {
+      "path": "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+      "frozenSha256": "4c4827b6f427dd102a543eb830e9d22f3607be635354c6794b3e2463099fcc67",
+      "currentSha256": "5f046e6efbd36cb871af702b4500b7859d0dcf697206a700defb0ced8a65434e"
+    },
+    {
+      "path": "lib/features/preferences/domain/learner_preferences_repository.dart",
+      "frozenSha256": "335cae9f2a83d8345680282feaa9dad39530c80647afc7628c1ff03778ac2788",
+      "currentSha256": "11529aa8d7901f06fd26645f4d386c8c0a3ac37d316950dbf6e17abfc66c2dd5"
+    },
+    {
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "frozenSha256": "ced097bdd6534c2aa50ba765fb2999c7521d43ca47e6a71bc01a0b02a5f6ecf9",
+      "currentSha256": "8eee16ab535a2d82195b140a04909fe733b66febf63eb58a488bd70a7ea69104"
+    },
+    {
+      "path": "lib/features/reminders/data/drift_study_reminder_repository.dart",
+      "frozenSha256": "13eaf007d25ab58950c6b084c1cdcea6165dc3b605a8083b560004ab395e9b31",
+      "currentSha256": "b33348d3b2d21a1df6e7994816bb86b1d48f80171da22e46a2e7e03c684566f4"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder.dart",
+      "frozenSha256": "92744d2195e5107821cc73b35a0d471bd2972e093168f43b1259c4edcda0767a",
+      "currentSha256": "950a6021b346441952aae0222862345d55e3dc9820b9eab61df82cc3370b3ca7"
+    },
+    {
+      "path": "lib/features/reminders/domain/study_reminder_repository.dart",
+      "frozenSha256": "9ea018b105a59663e6c729b93c7f9eae23525b681b0942b98b3e1d606d97012e",
+      "currentSha256": "c70e2c1d2f8d0be639c4239d21b8c73443a48981b9baf38173d2196b392b2ccc"
+    },
+    {
+      "path": "lib/features/rewards/application/reward_use_cases.dart",
+      "frozenSha256": "78424182adcafad5be0fb80ce6fea5f63ce8caea9b081991ce03ddd3636fb8e2",
+      "currentSha256": "4e3263ec1e53912aa039c4a723ec3112abdfda311bca53d0be171736307ac6ac"
+    },
+    {
+      "path": "lib/features/rewards/data/drift_reward_repository.dart",
+      "frozenSha256": "e75e63b06fe6445f018e2d3f52280ca5e6c6f2ea6374bb5b8974f1871b13d963",
+      "currentSha256": "1edb2039eaa8b56eaf457d5a734bf1dd2f7cbfcaf26ec531fb4081dd31a1926b"
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "frozenSha256": "fd3595506142b6d79a1a67fe626974c44739917b8cbc6ad869cd9669f9d57740",
+      "currentSha256": "41a0c0b922788ff249dc0e61f788b812ffe2a3c83578ba6188308479b4cb1649"
+    },
+    {
+      "path": "lib/runtime/circuit_breaker.dart",
+      "frozenSha256": "ace72a2fab9b0aac974de621297a819e8dbfba19a31d15d7b1ba145d463cb254",
+      "currentSha256": "4d8d457bd4c5bf2e6df194d3df37beafae91100ca57cbf5c653084b873cbaa6b"
+    },
+    {
+      "path": "lib/screens/avatar_equipment_screen.dart",
+      "frozenSha256": "f097256d30ed8ae3f3323a5572276b03bfec752561d4c9d93945395d2336fb8e",
+      "currentSha256": "306326f51337d6ca5e768a1358a5cf3ea59ba6c69b292f0dfd2331b596a60652"
+    },
+    {
+      "path": "lib/screens/login_screen.dart",
+      "frozenSha256": "2e4a7af099c5a5accec01a21aaf41bc462f1c5c7ff790480e4ec506422fc8d26",
+      "currentSha256": "7bca4bf30723016c0e2fa4778db6e48aed475d8216a018ea76f9d87f233d20c2"
+    },
+    {
+      "path": "test/features/account/account_use_cases_test.dart",
+      "frozenSha256": "bb8f7b88d90202982f061b951c42cd8bf1a8ca349566df15681ee86cf4b7edb6",
+      "currentSha256": "5f0fae871bb5dd0c528a69acbb7ebed6ff6a7e6e1375f755977231f6679d51dc"
+    },
+    {
+      "path": "test/features/achievements/achievement_share_card_use_cases_test.dart",
+      "frozenSha256": "fe44fd159b42e55e0becb015f236acc2d61ffae42b24d2fe026b9e252c8add5c",
+      "currentSha256": "9e5c3a2721dfaeb0053ffbbdc83e11bad9250f90e0bdf73f10f586d09e909d48"
+    },
+    {
+      "path": "test/features/adventure/application/adventure_presentation_preferences_test.dart",
+      "frozenSha256": "1989e24d6772cd4550811cee0a71dd2337332746de657e02170911f347e3e83f",
+      "currentSha256": "5094925f292ada7ceb2f2bc1a71b031c51982a3f9cf6ade563a3732e20b369a3"
+    },
+    {
+      "path": "test/features/device_model/device_model_use_cases_test.dart",
+      "frozenSha256": "2e7b1233825e7d7bb57f45a9122ffc49a1a7860190776190f3ddb54dc96c637e",
+      "currentSha256": "c3c192ebd475c0720295c84c5ba1c5397071c8f5bd92b6e2ee21a548fd95ef33"
+    },
+    {
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "frozenSha256": "7e8156942b1920adac45b8f7281a17bcdad076adc1a6ee27417f93996649a5da",
+      "currentSha256": "214ee2c9cefe124492008839ca901c55af4629be5e5b6ae77026d0f3a6b746e3"
+    },
+    {
+      "path": "test/features/export/file_selector_export_store_test.dart",
+      "frozenSha256": "1211e6b612c0cee362d024e5fe2ebd757770d073d38c45e8a11f2d27fc684990",
+      "currentSha256": "fb6918efd701dfe024e2ab6f9d21607ffaad979fc66ac8357698e8c703a28f97"
+    },
+    {
+      "path": "test/features/learning/drift_learning_repository_test.dart",
+      "frozenSha256": "8ecfeafb4dbc86e227adbb93024e4436c195065aa691086ad49d3b5356a064d7",
+      "currentSha256": "36c9852d0f8dd197b44290e8924d9bb2436798c50b0de3984dee3d5ec529fdc3"
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "frozenSha256": "6994d7ed63e10cf67e0f5c6aa6a8a4faed1db63f96020f91f2326935fc6d9ccb",
+      "currentSha256": "a3760833f4b3e4f6e35efc3eed612ac6ab54a823c0c333fcffe9fab86099f2bb"
+    },
+    {
+      "path": "test/features/preferences/display_preferences_controller_test.dart",
+      "frozenSha256": "be3bf4179d8e04a91524fac5f6a933a91dbbfb379e18ddc965100de31a4429ad",
+      "currentSha256": "67c5ecabca2f38e730e577e57011b9ea2fb7041d345d1d00ee3fa7ec15f49ff8"
+    },
+    {
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "frozenSha256": "561d506d106b171c3b9990fadc3365877198df8f03087d0444a800bf8bd411be",
+      "currentSha256": "0976ee71e8eef82b10531ea852cbf2940e37595d5ae74ca6e65db0c3eb0e7946"
+    },
+    {
+      "path": "test/features/rewards/reward_use_cases_test.dart",
+      "frozenSha256": "3ba1b766b36aa5c1c7865d84884fa38d8fd12e17a4981d978e2aa0ddb5a0048d",
+      "currentSha256": "c464d38ca875030107c09b40fabe9839fe402d2ec87951d954bebae0323646c1"
+    },
+    {
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "frozenSha256": "6878e1745094330ac0bf9e98bf29c7e964a2b76151e76108b0f9fd88bdb66de3",
+      "currentSha256": "b5eb2531f3efba61f141c9a25d8dccd6a5aeadba0a43508f7d8d67e64cf66859"
+    },
+    {
+      "path": "test/runtime/app_build_info_test.dart",
+      "frozenSha256": "75bb3324257f2c70586f408c11eba22a46360879dd1f9dc94350c5faf253e52a",
+      "currentSha256": "b03524e75474be66eb58950b53fec9b7132d9520fc2c3e29c71e3bd9a23f3afd"
+    },
+    {
+      "path": "test/runtime/circuit_breaker_test.dart",
+      "frozenSha256": "15755af3b004ca5171124b3970d6c3598d38d8409ae887bf4280b86ba5e49f23",
+      "currentSha256": "f4b263b6cf233c5584d037e27e1f7a1848f3b0d9fcd02373f9dec1cac2a7a61d"
+    },
+    {
+      "path": "test/screens/avatar_equipment_screen_test.dart",
+      "frozenSha256": "ebb98928467999153cef57425acf307817af0809a5a3abcc7e59512eba91b1c1",
+      "currentSha256": "2975d3656944b3d692afead5ebcfe440a254d7e6560ebea2808836f82b901432"
+    },
+    {
+      "path": "test/screens/learning_goals_screen_test.dart",
+      "frozenSha256": "18e18e8f5a9141db43c5ea836a9094029dd462154381667c835bc7c2a95f7b1d",
+      "currentSha256": "5e8181abe0e8a2971fdcbceb266459c6003e46f94959302c7319cf90a8fc97be"
+    },
+    {
+      "path": "test/screens/learning_preference_quiz_screen_test.dart",
+      "frozenSha256": "fd7066c57878ad08a0f7ee79d49dd514a23d81eeb9d583f72bf524a008bb3112",
+      "currentSha256": "2c87e8f512752eecbb501bdba383a2810ef1aa2abdda46fdf146d1fc0fd2aefb"
+    },
+    {
+      "path": "test/screens/login_guest_mode_test.dart",
+      "frozenSha256": "c375301edb9acdf2cfb7214e641e798826e3def4d8d95e5ab28edd61cd90d499",
+      "currentSha256": "ca8f82157898c0847babfad868297b49b9644c81cbba4905a71c932b76e15325"
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "frozenSha256": "629ef8714ada4e2386daadddfdd8da2afb3df01f8d167a2a2901443efaf36bdc",
+      "currentSha256": "77a394dc4373f68e969b39e95fc4eec7e14209adebdce8f938c83fe04a9effea"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "frozenSha256": "02bbdd19a3178142f6486650338a5cfad08d0f7d3e792bee3e9e7945e95eb52c",
+      "currentSha256": "ead5ec4c3aeae5319d01221b811a6afb85d88ad9c5ae2aef743d89f6f872d603"
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "frozenSha256": "c4744b1ccfb5217332b1aecf98a4cb0bfa52e0a05d2f85a9955d10c9206ae697",
+      "currentSha256": "21e9f7de70facb6e0c162c359311d655ade4516ea41aa7b49e2b77b9f173f93b"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "frozenSha256": "dd185884c0b5301d400b58f12ebb36b1c8b326531597e531b40e44a6eeb0e943",
+      "currentSha256": "e31c2933e5170bf7ca5834a80ba7d873dff5e189d0aebf3fd52d50de7393a157"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "frozenSha256": "dc2ee94d43116f959a4abd42557f71d07acc631abbffe03b11489dbeed35bedb",
+      "currentSha256": "13c923ab06cbe06b00da198e69f5abe124a17e968f69743d8ee99d51cd7e95df"
+    }
+  ],
+  "cumulativeAuthorizedSourceDeltaCount": 71,
+  "policyAmendments": 3,
+  "unchangedHandoffEntries": 50,
+  "updatedCurrentStateOnly": [
+    "docs/development/full-system/bundles/B18.md",
+    "docs/development/full-system/evidence/bundles/B18/G8.3-owner-plan.json",
+    "docs/development/full-system/evidence/bundles/B18/defects.json",
+    "docs/development/full-system/evidence/bundles/B18/resume.json"
+  ],
+  "preservedOtherFindings": 67,
+  "allFindingIDs": 69,
+  "closedF01": 9,
+  "closedF02": 10,
+  "remainingOpen": 50,
+  "dispositions": 1429,
+  "REV12Paths": 564,
+  "historicalTestPlanSha256": "666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534",
+  "historicalEvidencePreserved": true,
+  "sourcePinsMatchFinalRuns": true,
+  "externalEvidenceManifest": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F02-C02\\manifest.json",
+  "externalEvidenceManifestSha256": "d2a8c65f7f563111d944349846de5c059066c7dc7b754831acdee862fea26070",
+  "receiptSha256": "99b193e72a4d9ba0034153545887ab83ddcd8c282236f673a9ad134fa3cc5413",
+  "F02Accepted": true,
+  "G83Accepted": false,
+  "B18Accepted": false
+}

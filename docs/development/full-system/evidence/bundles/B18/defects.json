@@ -1130,7 +1130,7 @@
     {
       "id": "B18-REV10-01",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
       "relatedFiles": [
         "lib/features/export/data/file_selector_export_store.dart",
@@ -1145,13 +1145,19 @@
         "MainActivity.kt:24-26,34-44,122-149",
         "lib/features/export/data/file_selector_export_store.dart:146-205"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "retest": {
+        "receipt": "G8.3-F02-acceptance.json",
+        "findingId": "B18-REV10-01",
+        "redRun": "native-red-invocation",
+        "greenRun": "native-normalized; dart-pinned"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV10-02",
       "severity": "P2",
-      "status": "candidate-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
       "relatedFiles": [
         "lib/features/export/data/file_selector_export_store.dart",
@@ -1168,8 +1174,14 @@
         "lib/features/export/data/file_selector_export_store.dart:197-205",
         "export_contracts.dart:43-72"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "retest": {
+        "receipt": "G8.3-F02-acceptance.json",
+        "findingId": "B18-REV10-02",
+        "redRun": "native-red-invocation",
+        "greenRun": "native-normalized; dart-pinned"
+      },
+      "reviewStatusAtG82": "candidate-reproduction-pending"
     },
     {
       "id": "B18-REV10-03",

@@ -40,14 +40,10 @@
         "B18-REV10-01",
         "B18-REV10-02"
       ],
-      "status": "in-progress-continuation",
-      "closedCount": 8,
-      "pendingFindingIDs": [
-        "B18-REV10-01",
-        "B18-REV10-02"
-      ],
-      "receipt": "G8.3-F02-C01-checkpoint.json",
-      "nextContinuation": "B18-G83-F02-C02"
+      "status": "accepted-slice",
+      "closedCount": 10,
+      "pendingFindingIDs": [],
+      "receipt": "G8.3-F02-acceptance.json"
     },
     {
       "sliceId": "B18-G83-F03",
@@ -752,7 +748,9 @@
       "dependencies": [],
       "regression": "Native recreation and retained-engine versus process-restart cases around picker/write/finish; assert truthful Dart settlement, no unauthorized artifact retention, and cleanup failure visibility. Keep positive finish and cancel cases.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "receipt": "G8.3-F02-acceptance.json"
     },
     {
       "findingId": "B18-REV10-02",
@@ -762,7 +760,9 @@
       "dependencies": [],
       "regression": "Controlled slow provider and large bounded fixtures measure callback responsiveness and cancellation at write/flush/close; verify no success on close failure and cleanupFailed on deletion failure. Do not introduce arbitrary truncation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "980f9bb66b3b8eb45425bfb2edefc6f4a6398f08",
+      "receipt": "G8.3-F02-acceptance.json"
     },
     {
       "findingId": "B18-REV10-03",
