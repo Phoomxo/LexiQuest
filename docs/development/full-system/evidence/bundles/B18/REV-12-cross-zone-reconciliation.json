@@ -1,0 +1,254 @@
+{
+  "inputCheckpointSha": "1cbda74cea099bafad9776e722accb8227e76715",
+  "rows": [
+    {
+      "path": "lib/main.dart",
+      "sha256": "927ada935b7e60666c30e9bd528a583245d7ac380db7027b2904c3e8df492949",
+      "historicalReceipt": "REV-01-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV06-05"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/main.dart",
+          "findingIDs": [
+            "B18-REV06-05"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "fd3595506142b6d79a1a67fe626974c44739917b8cbc6ad869cd9669f9d57740",
+      "historicalReceipt": "REV-01-zone-review.json",
+      "historicalStatus": "reviewed-with-findings",
+      "historicalFindingIDs": [
+        "B18-REV01-01"
+      ],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV01-01",
+        "B18-REV06-01",
+        "B18-REV06-02",
+        "B18-REV06-05"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/runtime/app_bootstrap.dart",
+          "findingIDs": [
+            "B18-REV06-01",
+            "B18-REV06-02",
+            "B18-REV06-05"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/runtime/app_dependencies.dart",
+      "sha256": "e2cbc181c5f4bc9368bf8dbf65d8c5b996b606f1e1f39af0d79ec708f88691b8",
+      "historicalReceipt": "REV-01-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV06-07"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/runtime/app_dependencies.dart",
+          "findingIDs": [
+            "B18-REV06-07"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/runtime/resource_disposer_stack.dart",
+      "sha256": "f12a823073f48b89ce01725c778160a4ab7e61b775249cbfc2f0aa1a6b640749",
+      "historicalReceipt": "REV-01-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV06-05"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/runtime/resource_disposer_stack.dart",
+          "findingIDs": [
+            "B18-REV06-05"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/features/adventure/application/adventure_presentation_preferences.dart",
+      "sha256": "7a6c38fd509fcadbcb4e13f849b5ea0307f36c550bb56387f504f614b838d4e8",
+      "historicalReceipt": "REV-03-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV06-04"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/features/adventure/application/adventure_presentation_preferences.dart",
+          "findingIDs": [
+            "B18-REV06-04"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/screens/learning_goals_screen.dart",
+      "sha256": "7db1a7c95ceb8a3204a63ea49d34d2b21cc43d5447f6571eae9e298d5fa06f0e",
+      "historicalReceipt": "REV-03-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV06-08"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/screens/learning_goals_screen.dart",
+          "findingIDs": [
+            "B18-REV06-08"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "4ff26cbf0ac2f6565a954cd52c1a678c71388abec306628310b4e8012c460057",
+      "historicalReceipt": "REV-03-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV05-01",
+        "B18-REV06-06"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-05-zone-review.json",
+          "path": "lib/screens/main_navigation_screen.dart",
+          "findingIDs": [
+            "B18-REV05-01"
+          ],
+          "priorReceiptPreserved": true
+        },
+        {
+          "receipt": "REV-06-zone-review.json",
+          "path": "lib/screens/main_navigation_screen.dart",
+          "findingIDs": [
+            "B18-REV06-06"
+          ],
+          "priorReceiptPreserved": true,
+          "pendingZoneDispositionNotImplied": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/screens/pre_post_assessment_screen.dart",
+      "sha256": "df7e050b193350d76496cd52762a330ba3cba3df5cf1587ec40efec22e1d546c",
+      "historicalReceipt": "REV-03-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV05-01",
+        "B18-REV05-02",
+        "B18-REV05-03"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-05-zone-review.json",
+          "path": "lib/screens/pre_post_assessment_screen.dart",
+          "findingIDs": [
+            "B18-REV05-01",
+            "B18-REV05-02",
+            "B18-REV05-03"
+          ],
+          "priorReceiptPreserved": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/screens/cefr_selection_screen.dart",
+      "sha256": "71f5c536a52020a710a1f176c34d6ade6f6248da6b73b86195842ab930518996",
+      "historicalReceipt": "REV-04-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV05-04"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-05-zone-review.json",
+          "path": "lib/screens/cefr_selection_screen.dart",
+          "findingIDs": [
+            "B18-REV05-04"
+          ],
+          "priorReceiptPreserved": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    },
+    {
+      "path": "lib/screens/wordbook_import_screen.dart",
+      "sha256": "a290688fd2f64e141f0bb6a06f755bc694174a888e887ed0f221853074bc3bd3",
+      "historicalReceipt": "REV-04-zone-review.json",
+      "historicalStatus": "reviewed-no-actionable-finding",
+      "historicalFindingIDs": [],
+      "finalStatus": "reviewed-with-findings",
+      "finalFindingIDs": [
+        "B18-REV05-04"
+      ],
+      "supplementalEvidence": [
+        {
+          "receipt": "REV-05-zone-review.json",
+          "path": "lib/screens/wordbook_import_screen.dart",
+          "findingIDs": [
+            "B18-REV05-04"
+          ],
+          "priorReceiptPreserved": true
+        }
+      ],
+      "disposition": "Documented prior REV05/06 additions; original receipts and current checkpoint ledger preserved. No finding removed or newly closed."
+    }
+  ],
+  "gateAuditRecovery": "Initial exact receipt-to-ledger status check failed for lib/main.dart. Diagnosis found10 already documented cross-zone additions; validator now proves exact union from hash-preserved REV05/06 crossZoneLedgerLinks rather than assuming historical receipt is latest status. No acceptance assertion weakened; unexpected differences still fail.",
+  "runtimeTestsRun": false
+}

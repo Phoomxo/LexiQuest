@@ -11,22 +11,14 @@
     "REV-08",
     "REV-09",
     "REV-10",
-    "REV-11"
+    "REV-11",
+    "REV-12"
   ],
-  "pending": {
-    "REV-12": [
-      "Reconcile all564 REV12 zone paths:187 focused domain dispositions plus earlier/shared/orphan/supplemental observations; remaining377 source-read entries. Use existing notes, no wholesale reread.",
-      "69open findings22static/47candidates; assign each to one G8.3 owner before fix dispatch. No finding closed by static review. Prior REV12-01..04 remain unchanged.",
-      "Reconcile REV10 app_build_info supplemental attribution and REV11 supplemental verify-field-release/ELF/dependabot/android-manifest/osv oracle observations. REV11 owns only4 exact oracles, not those supplemental files.",
-      "Generated Drift50tables571columns checks remain structured-only with no native/runtime regeneration claim. Review new B18 audit tools/receipts for preservation, counts and source hashes before G8.2 gate.",
-      "B19 new version only: preserve pinned historical finalplan schema26/49 SHA666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534. Current-system inputs/coverage must include transitive/npm/newAI/Adventure/LM.",
-      "REV11 notes correct voice exception expiry to2026-09-11; no scan/update authorization. Gradle missing distribution checksum is provenance/support disposition, not observed tampering. CI/dependabot schema, wrapper stderr and postrun mutation candidates require local controlled regressions in G8.3."
-    ]
-  },
+  "pending": {},
   "oracleOwnership": {
-    "nextSlice": "REV-12",
+    "nextSlice": "G8.3/F01 after acceptance",
     "nextSliceTests": [],
-    "remainingSharedAndOrphanOwner": "Final REV12 reconciles187 completed domain oracles plus earlier/shared/orphan/supplemental notes against all564zone paths;377pending. Do not duplicate findings or infer runtime PASS.",
+    "remainingSharedAndOrphanOwner": "All564 reconciled:187 historical focused+377 final. Exact path ownership in REV-12-zone-review.json.",
     "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2.",
     "completedDomainOracles": {
       "REV-05": {
@@ -272,7 +264,10 @@
     "REV-08": "REV-08-zone-review.json",
     "REV-09": "REV-09-zone-review.json",
     "REV-10": "REV-10-zone-review.json",
-    "REV-11": "REV-11-zone-review.json"
+    "REV-11": "REV-11-zone-review.json",
+    "REV-12": "REV-12-zone-review.json"
   },
-  "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain. REV07 domain FORM09 complete, REV11 retains CLI/formula delta final disposition; no registry rewrite. REV08 domain FORM10/FORM12 complete; actual billing/acoustic/runtime unproven; central-cost shared oracle final REV12."
+  "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain. REV07 domain FORM09 complete, REV11 retains CLI/formula delta final disposition; no registry rewrite. REV08 domain FORM10/FORM12 complete; actual billing/acoustic/runtime unproven; central-cost shared oracle final REV12.",
+  "ownerPlan": "G8.3-owner-plan.json",
+  "acceptance": "G8.2 accepted after independent integrity; G8.3 not started, findings not closed."
 }
