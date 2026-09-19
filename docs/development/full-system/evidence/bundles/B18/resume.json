@@ -2,11 +2,11 @@
   "bundleId": "B18",
   "currentPackageId": "G8.3",
   "sliceId": "B18-G83-F04",
-  "threadId": "01a0bacb-34ce-73d3-96e2-c6429e56699b",
-  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\6d97\\LexiQuest",
-  "branch": "lexiquest/b18-g83-f04-c03",
-  "inputCheckpointSha": "b7a1e3122bab5ec6f5fe8fcb58611589e7c27284",
-  "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+  "threadId": "01a0badb-b828-7dd0-a1b6-0243eb18e611",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\9555\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f04-c04",
+  "inputCheckpointSha": "680f92bd4d83f2c253ff393c3b9471b2030c8e37",
+  "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
   "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
   "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
@@ -16,23 +16,23 @@
   "B18Accepted": false,
   "B19Dispatched": false,
   "writerReleased": false,
-  "completedSlice": null,
-  "findingsClosed": 48,
-  "remainingOpenFindings": 21,
-  "nextSlice": "B18-G83-F04",
-  "historyPath": "resume-history-before-F04-C03.json",
+  "completedSlice": "B18-G83-F04",
+  "findingsClosed": 50,
+  "remainingOpenFindings": 19,
+  "nextSlice": "B18-G83-F05",
+  "historyPath": "resume-history-before-F04-C04.json",
   "evidence": [
-    "G8.3-F04-C03-checkpoint.json",
-    "G8.3-F04-C03-integrity.json",
+    "G8.3-F04-acceptance.json",
+    "G8.3-F04-integrity.json",
     "G8.3-owner-plan.json",
     "defects.json"
   ],
   "nextWork": [
-    "Remaining F04 REV08-05 partial playback start failure cleanup and REV08-06 stale untagged completion. Read exact findings plus actual AudioPlayer/handler/orchestrator/facade composition; no edits or reproduced outcomes for these two in C03.",
-    "F01 native completion policy conservatively withholds proof after interrupt. Do not mistake generation-fenced old closures for SDK utterance identity. Preserve stop-chain fences from C02.",
-    "Use controlled RED/fix/GREEN and local review; finish all12F04 outcomes before F05. Preserve postG83Boundary and no direct B19."
+    "F05 only: REV09-01..06 sync/backend/receipt/consent/archive correctness. Read exact finding contracts, callers and relevant REV12; none edited or reproduced in F04-C04.",
+    "Preserve accepted F01/F02/F03/F04 and all 69IDs/1429dispositions/564REV12. Controlled RED/fix/GREEN plus changed-code local review; no research activation/synchronization/study/statistical work.",
+    "Retain postG83Boundary. After final G8.3 acceptance notify master for E0/E1 Engineering Spec v3/reference reconciliation; no direct B19 dispatch; retain G8.4-G8.9."
   ],
-  "verification": "Final77voice+48LM=125test executions across8targets in2bounded runs; analyzer0on4Dart. Final pre/post equal1378source inputs. Initial tokenise RED lacks independent hashes, no acceptance reuse. Local changed-code review only.",
+  "verification": "Final173 tests across10targets in1bounded run; analyzer0on5Dart.6equal pre/post pairs,1381inputs. Initial RED6fail; affected-initial118pass/3old-oracle failures retained. Local review only.",
   "policies": {
     "model": "gpt-6-astra",
     "thinking": "medium",
@@ -43,16 +43,13 @@
     "branchPrefix": "lexiquest/",
     "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
   },
-  "continuationId": "B18-G83-F04-C03",
+  "continuationId": "B18-G83-F04-C04",
   "remainingF02": [],
   "F02Accepted": true,
-  "nextContinuation": "B18-G83-F04-C04",
+  "nextContinuation": "B18-G83-F05-C01",
   "remainingF03": [],
   "F03Accepted": true,
   "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
-  "remainingF04": [
-    "B18-REV08-05",
-    "B18-REV08-06"
-  ],
-  "F04Accepted": false
+  "remainingF04": [],
+  "F04Accepted": true
 }

@@ -1,0 +1,58 @@
+{
+  "bundleId": "B18",
+  "currentPackageId": "G8.3",
+  "sliceId": "B18-G83-F04",
+  "threadId": "01a0bacb-34ce-73d3-96e2-c6429e56699b",
+  "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\6d97\\LexiQuest",
+  "branch": "lexiquest/b18-g83-f04-c03",
+  "inputCheckpointSha": "b7a1e3122bab5ec6f5fe8fcb58611589e7c27284",
+  "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "G82Accepted": true,
+  "G83Started": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "writerReleased": false,
+  "completedSlice": null,
+  "findingsClosed": 48,
+  "remainingOpenFindings": 21,
+  "nextSlice": "B18-G83-F04",
+  "historyPath": "resume-history-before-F04-C03.json",
+  "evidence": [
+    "G8.3-F04-C03-checkpoint.json",
+    "G8.3-F04-C03-integrity.json",
+    "G8.3-owner-plan.json",
+    "defects.json"
+  ],
+  "nextWork": [
+    "Remaining F04 REV08-05 partial playback start failure cleanup and REV08-06 stale untagged completion. Read exact findings plus actual AudioPlayer/handler/orchestrator/facade composition; no edits or reproduced outcomes for these two in C03.",
+    "F01 native completion policy conservatively withholds proof after interrupt. Do not mistake generation-fenced old closures for SDK utterance identity. Preserve stop-chain fences from C02.",
+    "Use controlled RED/fix/GREEN and local review; finish all12F04 outcomes before F05. Preserve postG83Boundary and no direct B19."
+  ],
+  "verification": "Final77voice+48LM=125test executions across8targets in2bounded runs; analyzer0on4Dart. Final pre/post equal1378source inputs. Initial tokenise RED lacks independent hashes, no acceptance reuse. Local changed-code review only.",
+  "policies": {
+    "model": "gpt-6-astra",
+    "thinking": "medium",
+    "serviceTierPolicy": "Standard/default only; never Fast/priority",
+    "effectiveServiceTier": "unverified",
+    "singleWriter": true,
+    "subagents": false,
+    "branchPrefix": "lexiquest/",
+    "recoveryPolicy": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\recovery-policy.json"
+  },
+  "continuationId": "B18-G83-F04-C03",
+  "remainingF02": [],
+  "F02Accepted": true,
+  "nextContinuation": "B18-G83-F04-C04",
+  "remainingF03": [],
+  "F03Accepted": true,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "remainingF04": [
+    "B18-REV08-05",
+    "B18-REV08-06"
+  ],
+  "F04Accepted": false
+}

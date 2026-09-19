@@ -93,13 +93,10 @@
         "B18-REV08-10",
         "B18-REV08-11"
       ],
-      "status": "in-progress-partial-checkpoint",
-      "closedCount": 10,
-      "pendingFindingIDs": [
-        "B18-REV08-05",
-        "B18-REV08-06"
-      ],
-      "receipt": "G8.3-F04-C03-checkpoint.json"
+      "status": "accepted",
+      "closedCount": 12,
+      "pendingFindingIDs": [],
+      "receipt": "G8.3-F04-acceptance.json"
     },
     {
       "sliceId": "B18-G83-F05",
@@ -693,7 +690,9 @@
       "dependencies": [],
       "regression": "SDK-shaped player sets active then throws; compose handler/orchestrator/facade, verify fallback waits stop, stop error blocks fallback; preserve completion-owned cleanup.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "receipt": "G8.3-F04-acceptance.json"
     },
     {
       "findingId": "B18-REV08-06",
@@ -703,7 +702,9 @@
       "dependencies": [],
       "regression": "Controlled SDK stream: startA stopA startB emit lateA then actualB; prove B completion not prematurely trusted. Document platform event contract/device pending; no acoustic claim.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "receipt": "G8.3-F04-acceptance.json"
     },
     {
       "findingId": "B18-REV08-07",

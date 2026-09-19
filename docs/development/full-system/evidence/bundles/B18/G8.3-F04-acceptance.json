@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F04",
+  "continuationId": "B18-G83-F04-C04",
+  "status": "accepted-slice",
+  "recordedAtUtc": "2026-09-19T18:23:11.234368+00:00",
+  "threadId": "01a0badb-b828-7dd0-a1b6-0243eb18e611",
+  "inputCheckpointSha": "680f92bd4d83f2c253ff393c3b9471b2030c8e37",
+  "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "acceptedF03Sha": "61376ad8dd95ff07f4fa8ea4947312a7ea2baef6",
+  "findings": [
+    {
+      "findingId": "B18-REV08-05",
+      "status": "closed-regression-verified",
+      "outcome": "Actual AudioplayersAdapter/PluginVoiceAudioPlayer/SynthesizedVoiceRouteHandler/VoiceOrchestrator/VoiceUseCases composed with SDK-shaped boundary. Partial-start failure drains audio before fallback for fresh/cache and completion/start-only paths. Cleanup failure reports cleanupIncomplete, blocks fallback, retains start-only facade stop obligation; completion-owned cleanup preserved. Late retired start failure cannot issue replacement stop. No physical acoustic claim.",
+      "redRun": "composition-red",
+      "greenRun": "final"
+    },
+    {
+      "findingId": "B18-REV08-06",
+      "status": "closed-regression-verified",
+      "outcome": "Controlled global SDK stream reproduces delayed A completion falsely completing B after stop/start. Adapter now withholds natural completion proof after interruption, plain untracked playback or uncertain terminal events. Ordinary speech remains available; completion-required facade stops and reports unsupportedCapability. Uninterrupted natural ends retain proof for subsequent playback. No utterance ID or timing guarantee invented; fresh adapter required to restore trust.",
+      "redRun": "composition-red",
+      "greenRun": "final"
+    }
+  ],
+  "allF04Outcomes": [
+    {
+      "findingId": "B18-REV08-01",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/features/ai_tutor/application/ai_tutor_use_cases.dart",
+      "originalStatus": "open-candidate-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Deferred cancellation-aware provider, actual AiTutorUseCases with unique operation/event IDs and actual secure/Drift fenced composition where practical: start replyA; request remove/revoke; synchronously submit replyB during drain; releaseA; assert only one provider generation and replyB blocked, credential revoked, pending/terminal records truthful. Repeat for both operations; preserve paid-completed-result and lease-loss oracles.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-02",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/features/ai_tutor/data/openai_compatible_gateway.dart",
+      "originalStatus": "open-candidate-runtime-reproduction-pending",
+      "dependencies": [],
+      "regression": "Real gateway decoder with synthetic rawJSON containing validchoices/text and cost1e308; assert reply survives, badcostnull, oneHTTP request, then actualusecase completion success with truthful unknown accounting. Retainfinitepositive/zero/negative/typeinvalid counter tests and limits; no provider network.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV06-07",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/screens/ai_tutor_settings_screen.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Deferred fake A/B settings and usage loads through actual widget: replace dependency/property, complete B then A, assert B-only consent/key/model/usage with unknown values on failure. Cover null initial tutor unavailable instead of endless loading, and confirmation returning after replacement before mutation. No live provider.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "98212933f88998fd4ec95f2fdc6da0e572aa0d0a",
+      "receipt": "G8.3-F04-C01-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-03",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/voice/vox_cpm_standard_provider.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Synthetic wrong-engine responses through both clients and actual synthesized handler/factory; assert no falsely attributed playback/cache, correct matching endpoints retain behavior. No server call.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-04",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/voice/vox_cpm_standard_provider.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Controlled streamed client boundary/over-bound/stalled/late chunks and cancellation counter; retain 401 retry/circuit/quota and no live requests. Mirror/legacy analogous risks dormant.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-05",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/voice/voice_audio_player.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "SDK-shaped player sets active then throws; compose handler/orchestrator/facade, verify fallback waits stop, stop error blocks fallback; preserve completion-owned cleanup.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "receipt": "G8.3-F04-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV08-06",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/voice/voice_audio_player.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Controlled SDK stream: startA stopA startB emit lateA then actualB; prove B completion not prematurely trusted. Document platform event contract/device pending; no acoustic claim.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a0ade5a64ca7f69cc96ae75e19ebdcf379ea9394",
+      "receipt": "G8.3-F04-acceptance.json"
+    },
+    {
+      "findingId": "B18-REV08-07",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/voice/voice_orchestrator.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Use actual VoiceUseCases+VoiceOrchestrator with per-call deferred stop handlerA and recording handlerB; prove old chain cannot stop B after replacement playback; retain best-effort all-handler cleanup on genuine explicit stop failure.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-08",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "backend/lexiquest_lm/train/tokenise_dataset.py",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Pure synthetic tokenizer fixtures exact EOS count, short/long prompt and long completion, mask alignment and nonpositive length rejection; no training/model/network. Resolve intended truncation policy before fix.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-09",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "backend/lexiquest_lm/train/lora_finetune.py",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Extract or intercept pure feature conversion with varying unmasked suffix after masked prefix, all-masked and zero-epoch cases; no GPU, dataset generation or research execution.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-10",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "backend/lexiquest_lm/scripts/upload_to_huggingface.py",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Fake huggingface_hub whose network functions fail if called, synthetic temp adapter; dry-run no username must plan offline or require explicit username without network. Never upload.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "a79b694ff8c45131a28992f14a8a2a5253d32340",
+      "receipt": "G8.3-F04-C03-checkpoint.json"
+    },
+    {
+      "findingId": "B18-REV08-11",
+      "ownerSlice": "B18-G83-F04",
+      "sourceFile": "lib/screens/object_scanner_screen.dart",
+      "originalStatus": "candidate-reproduction-pending",
+      "dependencies": [],
+      "regression": "Widget fake deferred voice through actual route session: cover/resume or speak replacement, settle old failure/cancel; current UI remains unchanged, genuine current failure visible.",
+      "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
+      "status": "closed-regression-verified",
+      "fixSha": "73300674da25f64a2aa98977075389f6dccd10dd",
+      "receipt": "G8.3-F04-C02-checkpoint.json"
+    }
+  ],
+  "priorReceipts": [
+    "G8.3-F04-C01-checkpoint.json",
+    "G8.3-F04-C02-checkpoint.json",
+    "G8.3-F04-C03-checkpoint.json"
+  ],
+  "closedInThisContinuation": 2,
+  "closedF04": 12,
+  "remainingF04": [],
+  "totalClosed": 50,
+  "remainingOpenFindings": 19,
+  "dartTestsPassed": 173,
+  "testTargetCount": 10,
+  "successfulFinalVerifierRuns": 1,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 5,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/features/voice/application/voice_use_cases.dart",
+      "sha256": "2f918d3f7de7c54cb770894dd1349ceadb2566be90b964de799008e766aa1eff"
+    },
+    {
+      "path": "lib/voice/synthesized_voice_route_handler.dart",
+      "sha256": "cff6d7f648be7d671dfba8139fb775b55a945da67a48c9df0355b74ae3d489f5"
+    },
+    {
+      "path": "lib/voice/voice_audio_player.dart",
+      "sha256": "05f512fbfa8bd780f37e07b1ba922a10f64c8d4d34701d8e184795cf84e196c9"
+    },
+    {
+      "path": "test/voice/voice_audio_player_test.dart",
+      "sha256": "7462eecc7ae2595fd693cdcba458eb4d65c6d7306f253c55be354adf4354777f"
+    },
+    {
+      "path": "test/voice/voice_playback_cleanup_composition_test.dart",
+      "sha256": "9f59147d83842a13e36fe22a085caf806ed22c56408bd1845260a73087404216"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F04-C04",
+  "evidenceManifestSha256": "303e163872be38b80367ddb75d45f6e9b6d43b7ca49b2452c7b12fca0133ffd8",
+  "review": {
+    "kind": "local-changed-code-review",
+    "reviewer": "current task; no independent/subagent review",
+    "baseSha": "680f92bd4d83f2c253ff393c3b9471b2030c8e37",
+    "files": [
+      "lib/features/voice/application/voice_use_cases.dart",
+      "lib/voice/synthesized_voice_route_handler.dart",
+      "lib/voice/voice_audio_player.dart",
+      "test/voice/voice_audio_player_test.dart",
+      "test/voice/voice_playback_cleanup_composition_test.dart"
+    ],
+    "requirements": [
+      "REV08-05 failed-start cleanup before fallback, cleanupIncomplete fail-closed and retained facade stop obligation",
+      "REV08-06 untagged stale completion cannot certify replacement"
+    ],
+    "findings": [],
+    "checked": [
+      "Both cached/fresh and completion/start-only plugin playback paths drain before fallback.",
+      "Cleanup failure uses non-fallback category and start-only facade keeps stop/release/takeover obligation. Completion-owned path still waits confirmed stop.",
+      "Cancellation before/after awaited cleanup prevents retired failure from issuing new stops; C02 orchestrator fences untouched and retested.",
+      "Adapter trust becomes false on interruption, plain untracked playback and terminal uncertainty; no timing or generation heuristic pretends to identify SDK event. Uninterrupted natural ends retain subsequent completion proof.",
+      "F01 native lifecycle and F02/F03 owner/terminal boundaries unchanged; affected factory/facade/native/scenario regression passed.",
+      "Historical mixed line endings preserved; changed/new lines LF; no blanket formatter on existing source."
+    ],
+    "pluginContract": {
+      "path": "C:\\Users\\Phet\\AppData\\Local\\Pub\\Cache\\hosted\\pub.dev\\audioplayers-6.8.1\\lib\\src\\audioplayer.dart",
+      "sha256": "f11a7ac63231d6f20d2e3422f82eec3b22f37d77bf8c8187f8a04733d8c1fc12",
+      "lines": "127-132,195-202,251-262",
+      "observation": "onPlayerComplete is Stream<void>, filtered by event type; no utterance ID. stop sends playerId; no acoustic or late-internal-side-effect guarantee inferred."
+    },
+    "verification": {
+      "finalTests": 173,
+      "targets": 10,
+      "analysisFiles": 5,
+      "analysisIssues": 0,
+      "prePostPairs": 6,
+      "inputs": 1381
+    },
+    "limitations": [
+      "SDK-shaped synthetic tests only; native/device/acoustic/provider execution NOT RUN.",
+      "After interruption the same adapter intentionally withholds completion proof; ordinary speech remains available. Completion-required facade stops and reports unsupportedCapability until a fresh runtime adapter.",
+      "No claim to repair delayed SDK-internal stop side effects or cancel an SDK future.",
+      "Prior C01/C02/C03 receipts preserve historical test evidence; this continuation does not rerun unrelated passed gates."
+    ]
+  },
+  "priorEvidenceReuse": "Retain C01 cost/tutor/settings, C02 provenance/scanner, C03 HTTP/LM outcomes and exact prior receipts. Changed voice lifecycle/facade/factory/orchestrator/native/scenario paths rechecked here; unrelated historical gate executions are not repeated or claimed as fresh.",
+  "limitations": [
+    "SDK-shaped synthetic tests only; native/device/acoustic/provider execution NOT RUN.",
+    "After interruption the same adapter intentionally withholds completion proof; ordinary speech remains available. Completion-required facade stops and reports unsupportedCapability until a fresh runtime adapter.",
+    "No claim to repair delayed SDK-internal stop side effects or cancel an SDK future.",
+    "Prior C01/C02/C03 receipts preserve historical test evidence; this continuation does not rerun unrelated passed gates."
+  ],
+  "F04Accepted": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}
