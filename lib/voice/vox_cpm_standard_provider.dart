@@ -214,7 +214,7 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     if (mime != 'audio/wav' ||
         response.bodyBytes.isEmpty ||
         requestId.isEmpty ||
-        engine.isEmpty ||
+        engine != 'voxcpm2' ||
         modelVersion.isEmpty ||
         sampleRate == null ||
         sampleRate <= 0) {

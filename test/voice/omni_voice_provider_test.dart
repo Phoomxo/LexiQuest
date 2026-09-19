@@ -293,6 +293,25 @@ Future<VoiceFailure> _captureFailure(Future<void> Function() action) async {
 }
 
 void main() {
+  for (final engine in ['voxcpm2', 'omnivoice-other', 'unknown']) {
+    test('rejects wrong engine $engine before synthesis attribution', () async {
+      final failure = await _failureFromResponse(
+        _wavResponseWith(engine: engine),
+      );
+      expect(failure.category, VoiceFailureCategory.synthesis);
+    });
+  }
+  for (final engine in ['omnivoice', 'omnivoice-prod', ' omnivoice ']) {
+    test('accepts documented OmniVoice engine $engine', () async {
+      final provider = _providerWith(
+        client: MockClient((_) async => _wavResponseWith(engine: engine)),
+      );
+      expect(
+        (await provider.synthesize(_validRequest())).engine,
+        VoiceEngine.omniVoice,
+      );
+    });
+  }
   test('POSTs exactly to baseUri.resolve("/v1/speech")', () async {
     final server = _SpeechServer(<http.Response>[_wavResponse()]);
     final tokenProvider = _RecordingTokenProvider(token: 'id-token');
@@ -371,9 +390,8 @@ void main() {
 
     expect(audio.bytes, Uint8List.fromList(_wavBytes));
     expect(audio.requestId, 'req-123');
-    // The response x-voice-engine header ('omnivoice-prod') must still be
-    // present and nonblank, but the provider-neutral VoiceAudio.engine exposes
-    // the normalized VoiceEngine enum rather than the raw backend string.
+    // Only the backend engine and the established production alias normalize
+    // to OmniVoice; arbitrary nonblank provenance must fail closed.
     expect(audio.engine, VoiceEngine.omniVoice);
     expect(audio.modelVersion, 'omnivoice-2026-07');
     expect(audio.sampleRate, 24000);

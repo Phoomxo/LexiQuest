@@ -125,6 +125,67 @@ Future<InstalledStandardVoicePack> _installedPack({
 }
 
 void main() {
+  for (final rollback in [false, true]) {
+    test(
+      'wrong remote engine avoids cache and false telemetry (rollback=$rollback)',
+      () async {
+        var matching = false;
+        final client = _RecordingHttpClient((_) async {
+          final wav = _wavResponse();
+          return http.Response.bytes(
+            wav.bodyBytes,
+            200,
+            headers: {
+              ...wav.headers,
+              'x-voice-engine': matching
+                  ? (rollback ? 'omnivoice' : 'voxcpm2')
+                  : (rollback ? 'voxcpm2' : 'omnivoice'),
+            },
+          );
+        });
+        final native = _RecordingNativeTtsAdapter();
+        final player = _RecordingAudioPlayerAdapter();
+        final sink = _RecordingTelemetrySink();
+        final service = VoiceServiceFactory.create(
+          config: _config(),
+          client: client,
+          firebaseTokenReader: _RecordingTokenReader(_idToken),
+          nativeTtsAdapter: native,
+          audioPlayerAdapter: player,
+          telemetrySink: sink,
+          useOmniVoiceRollback: rollback,
+        );
+        addTearDown(service.dispose);
+        final first = await service.speak(_request());
+        expect(first.actualEngine, VoiceEngine.nativeTts);
+        expect(first.usedFallback, isTrue);
+        expect(player.playBytesCalls, isEmpty);
+        expect(native.speakCalls, hasLength(1));
+        expect(sink.events.single.actualEngine, VoiceEngine.nativeTts);
+        expect(
+          sink.events.single.fallbackReason,
+          VoiceFailureCategory.synthesis,
+        );
+        matching = true;
+        final second = await service.speak(_request());
+        expect(
+          client.sendCount,
+          2,
+          reason: 'Rejected audio must never enter the cache',
+        );
+        expect(second.cacheHit, isFalse);
+        expect(
+          second.actualEngine,
+          rollback ? VoiceEngine.omniVoice : VoiceEngine.voxCpmStandard,
+        );
+        expect(player.playBytesCalls, hasLength(1));
+        final third = await service.speak(_request());
+        expect(third.cacheHit, isTrue);
+        expect(client.sendCount, 2);
+        expect(player.playBytesCalls, hasLength(2));
+      },
+    );
+  }
   test('factory wires authenticated VoxCPM2 playback and telemetry', () async {
     final config = _config();
     final tokenReader = _RecordingTokenReader(_idToken);
@@ -187,7 +248,14 @@ void main() {
   });
 
   test('factory preserves OmniVoice as an explicit rollback engine', () async {
-    final client = _RecordingHttpClient((_) async => _wavResponse());
+    final client = _RecordingHttpClient((_) async {
+      final wav = _wavResponse();
+      return http.Response.bytes(
+        wav.bodyBytes,
+        200,
+        headers: {...wav.headers, 'x-voice-engine': 'omnivoice'},
+      );
+    });
     final native = _RecordingNativeTtsAdapter();
     final service = VoiceServiceFactory.create(
       config: _config(),
@@ -251,7 +319,13 @@ void main() {
         'to the default route',
         () async {
           final tokenReader = _RecordingTokenReader(_idToken);
-          final client = _RecordingHttpClient((_) async => _wavResponse());
+          final client = _RecordingHttpClient((_) async {
+            final wav = _wavResponse();
+            return http.Response.bytes(wav.bodyBytes, 200, headers: {
+              ...wav.headers,
+              'x-voice-engine': rollback ? 'omnivoice' : 'voxcpm2',
+            });
+          });
           final native = _RecordingLocalNativeTtsAdapter();
           final player = _RecordingAudioPlayerAdapter();
           final sink = _RecordingTelemetrySink();

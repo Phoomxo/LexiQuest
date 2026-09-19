@@ -235,7 +235,7 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
     if (!_isAudioWav(contentType) ||
         response.bodyBytes.isEmpty ||
         requestId.trim().isEmpty ||
-        engine.trim().isEmpty ||
+        !const {'omnivoice', 'omnivoice-prod'}.contains(engine.trim()) ||
         modelVersion.trim().isEmpty) {
       throw _synthesisFailure;
     }

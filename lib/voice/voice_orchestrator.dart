@@ -194,18 +194,16 @@ final class VoiceOrchestrator implements VoiceProvider {
     StackTrace? firstStackTrace;
 
     for (final engine in _handlerRegistry.engines) {
+      cancellation?.throwIfCancelled();
       try {
         await _handlerRegistry.providerFor(engine)!.stop();
       } on Object catch (error, stackTrace) {
         firstFailure ??= error;
         firstStackTrace ??= stackTrace;
       }
-      try {
-        cancellation?.throwIfCancelled();
-      } on Object catch (error, stackTrace) {
-        firstFailure ??= error;
-        firstStackTrace ??= stackTrace;
-      }
+      // A retired chain no longer owns subsequent handlers. A genuine stop
+      // failure still drains all handlers while this generation owns cleanup.
+      cancellation?.throwIfCancelled();
     }
 
     if (firstFailure case final failure?) {
@@ -223,8 +221,13 @@ final class VoiceOrchestrator implements VoiceProvider {
 
   @override
   Future<void> stop() async {
-    _generation++;
-    await _stopAllHandlers();
+    final generation = ++_generation;
+    await _stopAllHandlers(
+      cancellation: _GenerationCancellationToken(
+        generation: generation,
+        currentGeneration: () => _generation,
+      ),
+    );
   }
 }
 

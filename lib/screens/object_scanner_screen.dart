@@ -44,6 +44,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   ModelCancellation? _downloadCancellation;
   int _captureEpoch = 0;
   int _benchmarkEpoch = 0;
+  int _speechEpoch = 0;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -393,6 +394,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Future<void> _speak(String text) async {
     final session = routeVoiceSession;
     if (session == null) return;
+    final speechEpoch = ++_speechEpoch;
+    final captureEpoch = _captureEpoch;
     try {
       await session.speak(
         VoiceRequest.create(
@@ -405,8 +408,17 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
           contentType: 'object-scanner',
         ),
       );
-    } catch (_) {
-      if (mounted) setState(() => _error = 'ระบบอ่านออกเสียงไม่พร้อมใช้งาน');
+    } on Object catch (error) {
+      if (error is VoiceFailure &&
+          error.category == VoiceFailureCategory.cancelled) {
+        return;
+      }
+      if (mounted &&
+          session.isCurrent &&
+          speechEpoch == _speechEpoch &&
+          captureEpoch == _captureEpoch) {
+        setState(() => _error = 'ระบบอ่านออกเสียงไม่พร้อมใช้งาน');
+      }
     }
   }
 

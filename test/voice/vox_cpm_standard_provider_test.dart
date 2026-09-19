@@ -53,6 +53,32 @@ final class _Tokens implements VoiceAuthTokenProvider {
 }
 
 void main() {
+  for (final engine in ['omnivoice', 'voxcpm2-other', 'unknown']) {
+    test('rejects wrong engine $engine before synthesis attribution', () async {
+      final wav = _wav();
+      final provider = VoxCpmStandardProvider(
+        client: MockClient(
+          (_) async => http.Response.bytes(
+            wav.bodyBytes,
+            200,
+            headers: {...wav.headers, 'x-voice-engine': engine},
+          ),
+        ),
+        authTokenProvider: _Tokens(),
+        baseUri: _baseUri,
+      );
+      await expectLater(
+        provider.synthesize(_request()),
+        throwsA(
+          isA<VoiceFailure>().having(
+            (e) => e.category,
+            'category',
+            VoiceFailureCategory.synthesis,
+          ),
+        ),
+      );
+    });
+  }
   test('declares only standard-content target speech capabilities', () {
     final provider = VoxCpmStandardProvider(
       client: MockClient((_) async => _wav()),

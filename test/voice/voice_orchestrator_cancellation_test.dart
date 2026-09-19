@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_orchestrator.dart';
@@ -135,6 +136,89 @@ const _onlineContext = VoiceRouteContext(
 );
 
 void main() {
+  for (final failRetiredStop in [false, true]) {
+    test(
+      'retired facade pre-stop cannot silence replacement (failure=$failRetiredStop)',
+      () async {
+        final entered = Completer<void>();
+        final release = Completer<void>();
+        final first = _StopRaceHandler(
+          VoiceEngine.nativeTts,
+          onStop: (count) async {
+            if (count == 1) {
+              entered.complete();
+              await release.future;
+              if (failRetiredStop) throw StateError('retired stop failure');
+            }
+          },
+        );
+        final audible = _StopRaceHandler(VoiceEngine.omniVoice);
+        final provider = VoiceOrchestrator(
+          policySource: const StaticVoicePolicySource(_onlineContext),
+          policyResolver: const VoicePolicyResolver(),
+          handlerRegistry: _registry([first, audible]),
+        );
+        final facade = VoiceUseCases(
+          provider: provider,
+          disposeProvider: () async {},
+        );
+        addTearDown(facade.dispose);
+        final session = facade.acquireSession();
+        final old = session.speak(_request());
+        final cancelled = expectLater(
+          old,
+          throwsA(_failure(VoiceFailureCategory.cancelled)),
+        );
+        await entered.future;
+        await session.stop();
+        await cancelled;
+        await session.speak(_request());
+        expect(audible.active, isTrue);
+        final stopsAtReplacement = audible.stopCount;
+        release.complete();
+        await pumpEventQueue();
+        expect(audible.stopCount, stopsAtReplacement);
+        expect(audible.active, isTrue);
+        expect(audible.speakCount, 1);
+        await session.stop();
+        expect(audible.active, isFalse);
+      },
+    );
+  }
+
+  test('retired explicit stop cannot silence a newer direct speak', () async {
+    final entered = Completer<void>();
+    final release = Completer<void>();
+    final first = _StopRaceHandler(
+      VoiceEngine.nativeTts,
+      onStop: (count) async {
+        if (count == 1) {
+          entered.complete();
+          await release.future;
+        }
+      },
+    );
+    final audible = _StopRaceHandler(VoiceEngine.omniVoice);
+    final provider = VoiceOrchestrator(
+      policySource: const StaticVoicePolicySource(_onlineContext),
+      policyResolver: const VoicePolicyResolver(),
+      handlerRegistry: _registry([first, audible]),
+    );
+    final oldStop = provider.stop();
+    final cancelled = expectLater(
+      oldStop,
+      throwsA(_failure(VoiceFailureCategory.cancelled)),
+    );
+    await entered.future;
+    await provider.speak(_request());
+    final stopsAtReplacement = audible.stopCount;
+    release.complete();
+    await cancelled;
+    expect(audible.stopCount, stopsAtReplacement);
+    expect(audible.active, isTrue);
+    await provider.stop();
+    expect(audible.active, isFalse);
+  });
   // Standard order is voxCpmStandard -> omniVoice -> nativeTts; only omniVoice
   // and nativeTts are registered, so a practice request resolves to
   // [omniVoice, nativeTts].
@@ -283,4 +367,42 @@ void main() {
       expect(native.speakRequests, isEmpty);
     },
   );
+}
+
+class _StopRaceHandler implements VoiceRouteHandler {
+  _StopRaceHandler(VoiceEngine engine, {this.onStop})
+    : descriptor = VoiceProviderDescriptor(
+        engine: engine,
+        capabilities: const {VoiceCapability.standardTargetSpeech},
+        privacyScope: VoicePrivacyScope.standardContent,
+        allowsStandardCache: false,
+      );
+  @override
+  final VoiceProviderDescriptor descriptor;
+  final Future<void> Function(int count)? onStop;
+  int stopCount = 0;
+  int speakCount = 0;
+  bool active = false;
+  @override
+  Future<void> stop() async {
+    final count = ++stopCount;
+    await onStop?.call(count);
+    active = false;
+  }
+
+  @override
+  Future<VoicePlaybackResult> speak(
+    VoiceRequest request,
+    VoiceCancellationToken cancellation,
+  ) async {
+    cancellation.throwIfCancelled();
+    speakCount++;
+    active = true;
+    return VoicePlaybackResult(
+      requestedEngine: descriptor.engine,
+      actualEngine: descriptor.engine,
+      usedFallback: false,
+      cacheHit: false,
+    );
+  }
 }
