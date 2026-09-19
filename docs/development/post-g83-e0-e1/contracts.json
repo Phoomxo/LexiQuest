@@ -1,0 +1,265 @@
+{
+  "status": "proposed design contracts; not application schema",
+  "acceptedSchema": 28,
+  "migrationNumber": null,
+  "commonLifecycle": {
+    "initialSync": "local-only; no new outbox",
+    "export": "extend ownerLifecycleManifest and coherent OwnerLifecycleArchiveExporter",
+    "delete": "real owner deletion including cache/checkpoints/results and personal sets",
+    "guestUpgrade": "transactional owner remap; preserve logical ids and invalidate captured old generation",
+    "restore": "validate manifest/schema/hash/owner before writes; reject unsupported newer archive",
+    "rollback": "disable capabilities; retain compatible schema/reader, no downgrade or DB reset"
+  },
+  "contracts": [
+    {
+      "name": "LearningSetRevision",
+      "fields": [
+        "ownerId",
+        "id",
+        "revision",
+        "schemaVersion",
+        "createdAtUtc",
+        "payloadHash",
+        "corpusManifestHash",
+        "filterSnapshot",
+        "targetSenseRefs",
+        "archivedAtUtc",
+        "operationId"
+      ],
+      "storage": [
+        "personal_set_revisions",
+        "personal_set_members"
+      ],
+      "keys": [
+        "UNIQUE(ownerId,id,revision)",
+        "UNIQUE(ownerId,id,revision,senseRefHash)",
+        "UNIQUE(ownerId,operationId)"
+      ],
+      "invariants": [
+        "nonempty members",
+        "each sense ref resolves under pinned corpus/crosswalk",
+        "immutable after save",
+        "archive does not mutate prior members"
+      ],
+      "transaction": "insert revision and members atomically; expected prior revision guard"
+    },
+    {
+      "name": "ActivitySpec",
+      "fields": [
+        "id",
+        "revision",
+        "setId",
+        "setRevision",
+        "purpose",
+        "targetLanguage",
+        "explanationLanguage",
+        "modeConfig",
+        "itemRevision",
+        "rubricRevision",
+        "hintPolicyRevision"
+      ],
+      "storage": [
+        "verified activity artifact; pinned supplemental session association"
+      ],
+      "keys": [
+        "immutable content hash"
+      ],
+      "invariants": [
+        "resolved before session admission",
+        "mode availability and content quality checked",
+        "no reinterpretation of existing EventEnvelopeV2"
+      ],
+      "transaction": "pin association during canonical session admission"
+    },
+    {
+      "name": "StudyPlanRevision",
+      "fields": [
+        "ownerId",
+        "id",
+        "revision",
+        "schemaVersion",
+        "createdAtUtc",
+        "payloadHash",
+        "goalId",
+        "timezoneId",
+        "availableMinutes",
+        "dueItems",
+        "newItems",
+        "carryOver",
+        "rationale",
+        "priorRevision",
+        "status"
+      ],
+      "storage": [
+        "study_plan_revisions",
+        "active_plan_pointer"
+      ],
+      "keys": [
+        "UNIQUE(ownerId,id,revision)",
+        "PRIMARY KEY(ownerId) on active pointer"
+      ],
+      "invariants": [
+        "due before new within budget",
+        "carry-over never removes canonical due work",
+        "proposal read-only until accepted"
+      ],
+      "transaction": "CAS active pointer and insert accepted revision in one transaction"
+    },
+    {
+      "name": "AssessmentResult",
+      "fields": [
+        "ownerId",
+        "id",
+        "revision",
+        "schemaVersion",
+        "createdAtUtc",
+        "payloadHash",
+        "attemptId",
+        "sessionId",
+        "operationId",
+        "activityRevision",
+        "dimensions",
+        "evidenceSpans",
+        "status",
+        "assistance",
+        "assessorProvenance",
+        "supersedesResultId"
+      ],
+      "storage": [
+        "activity_extension_results"
+      ],
+      "keys": [
+        "UNIQUE(ownerId,operationId)",
+        "FOREIGN reference to pinned owner/session association"
+      ],
+      "invariants": [
+        "status assessed|uncertain|unassessable",
+        "dimensions meaning/use/form each supported|partial|unsupported|unknown",
+        "unknown cannot become confident aggregate",
+        "no binary correctness coercion",
+        "changed payload with reused operationId rejected"
+      ],
+      "transaction": "persist accepted supplemental result only after authority check; never direct SRS/reward writes"
+    },
+    {
+      "name": "ScenarioDefinition",
+      "fields": [
+        "id",
+        "revision",
+        "senseRefs",
+        "nodes",
+        "languageObjectives",
+        "transitions",
+        "terminalNodes",
+        "exitAction",
+        "turnBudget",
+        "repairBudget",
+        "reviewProvenance"
+      ],
+      "storage": [
+        "verified content artifact"
+      ],
+      "keys": [
+        "unique node ids and transition ids"
+      ],
+      "invariants": [
+        "every choice has language objective",
+        "all refs resolve",
+        "every admitted path terminates under budget",
+        "no dead end without safe exit"
+      ],
+      "transaction": "content validation before admission; branch decision checkpoint joined to canonical attempt receipt"
+    },
+    {
+      "name": "AudioLesson",
+      "fields": [
+        "id",
+        "revision",
+        "senseRefs",
+        "scriptRevision",
+        "format",
+        "segments",
+        "mediaRevision",
+        "transcript",
+        "alignmentAvailability",
+        "reviewProvenance"
+      ],
+      "storage": [
+        "verified script artifact",
+        "owner-scoped bounded media cache",
+        "activity_extension_checkpoints"
+      ],
+      "keys": [
+        "cache key includes owner/content/provider/voice/config hash"
+      ],
+      "invariants": [
+        "script verified before synthesis",
+        "resume only completed segment boundary",
+        "untagged completion cannot advance checkpoint",
+        "no mastery/reward from playback"
+      ],
+      "transaction": "save checkpoint after trustworthy completion; media cleanup outside DB transaction"
+    },
+    {
+      "name": "TransferProbe",
+      "fields": [
+        "ownerId",
+        "id",
+        "revision",
+        "schemaVersion",
+        "createdAtUtc",
+        "payloadHash",
+        "originAttemptId",
+        "originContentRevision",
+        "originContextHash",
+        "itemRevision",
+        "contextHash",
+        "eligibleAtUtc",
+        "occurredAtUtc",
+        "timingTrust",
+        "assistance",
+        "probePolicyRevision"
+      ],
+      "storage": [
+        "activity_extension_results",
+        "activity_extension_checkpoints"
+      ],
+      "keys": [
+        "UNIQUE(ownerId,originAttemptId,itemRevision,probePolicyRevision)"
+      ],
+      "invariants": [
+        "distinct item/context",
+        "delay satisfied or clearly timing-unverified",
+        "same owner and retained origin",
+        "personal use never writes research instruments"
+      ],
+      "transaction": "origin/eligibility recheck at admission and commit; canonical attempt authority unchanged"
+    },
+    {
+      "name": "GeneratedDraft",
+      "fields": [
+        "inputHash",
+        "corpusManifestHash",
+        "senseRefs",
+        "schemaRevision",
+        "promptRevision",
+        "providerRevision",
+        "validationResult",
+        "reviewState"
+      ],
+      "storage": [
+        "bounded owner draft payload, not published content"
+      ],
+      "keys": [
+        "owner-scoped draft identity"
+      ],
+      "invariants": [
+        "untrusted data only",
+        "not executable",
+        "never approved solely because generation succeeded",
+        "raw audio ephemeral"
+      ],
+      "transaction": "bounded local draft only; no network inside transaction"
+    }
+  ]
+}

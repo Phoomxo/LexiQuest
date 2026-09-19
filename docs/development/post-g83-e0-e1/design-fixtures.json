@@ -1,0 +1,379 @@
+{
+  "status": "design oracles; NOT EXECUTED; not production content",
+  "policy": {
+    "id": "v3-design-policy-1",
+    "maxHints": 2,
+    "maxRepairs": 3,
+    "maxDialogueTurns": 6,
+    "minimumProbeDelayHours": 24,
+    "audioCacheMaxBytes": 20971520,
+    "audioCacheMaxLessons": 10,
+    "empiricallyValidated": false
+  },
+  "contentSeeds": [
+    {
+      "wordId": "cefrj15:about",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": null,
+      "meaning": "ประมาณ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:borrow",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 0,
+      "meaning": "ยืม",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:make",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 0,
+      "meaning": "ทำ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:take",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 0,
+      "meaning": "นำไป",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:effect",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 2,
+      "meaning": "ผลกระทบ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:advice",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 1,
+      "meaning": "คำแนะนำ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:advise",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 1,
+      "meaning": "แนะนำ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:able",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 0,
+      "meaning": "สามารถทำได้",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    },
+    {
+      "wordId": "cefrj15:action",
+      "senseKey": "primary-v1",
+      "sourceMeaningIndex": 0,
+      "meaning": "การกระทำ",
+      "corpusManifestHash": "0b5e5e4d22e7ea8cd33ed2001e89dfafe2b50580346680e4d33fcd45414b0bfa",
+      "approval": "design fixture only; human/content admission pending"
+    }
+  ],
+  "inventory": {
+    "targetLevels": [
+      "A1",
+      "A2",
+      "B1",
+      "B2"
+    ],
+    "levelCoverage": "must verify during authored content admission",
+    "contextsPerSense": 4,
+    "minimumDevelopmentContexts": 36,
+    "humanReviewer": null,
+    "rejectCriteria": [
+      "sense/POS mismatch",
+      "ambiguous key",
+      "unsupported translation",
+      "reused transfer context",
+      "unbounded graph",
+      "unknown provenance"
+    ]
+  },
+  "cases": [
+    {
+      "id": "SET-REV",
+      "feature": "F01",
+      "input": {
+        "savedRevision": 1,
+        "sessionRevision": 1,
+        "editAddsWord": "cefrj15:advice"
+      },
+      "expected": {
+        "newRevision": 2,
+        "sessionRevision": 1,
+        "oldRevisionMutated": false
+      }
+    },
+    {
+      "id": "SET-DUP",
+      "feature": "F01",
+      "input": {
+        "members": [
+          "cefrj15:borrow/primary-v1",
+          "cefrj15:borrow/primary-v1"
+        ]
+      },
+      "expected": {
+        "save": "reject duplicate",
+        "writes": 0
+      }
+    },
+    {
+      "id": "PLAN-BUDGET",
+      "feature": "F02",
+      "input": {
+        "availableMinutes": 10,
+        "dueMinutes": 12,
+        "newMinutes": 5
+      },
+      "expected": {
+        "allocatedDueMinutes": 10,
+        "carryOverDueMinutes": 2,
+        "newMinutes": 0,
+        "dueProgressDeleted": false
+      }
+    },
+    {
+      "id": "PLAN-CONFLICT",
+      "feature": "F02",
+      "input": {
+        "expectedRevision": 2,
+        "activeRevision": 3
+      },
+      "expected": {
+        "accept": "conflict",
+        "activeRevision": 3
+      }
+    },
+    {
+      "id": "ASSISTANCE",
+      "feature": "F03",
+      "input": {
+        "priorHintLevel": 1,
+        "retryCorrect": true
+      },
+      "expected": {
+        "evidenceClass": "guidedPractice",
+        "masterySrs": "deny",
+        "xp": "deny"
+      }
+    },
+    {
+      "id": "RUBRIC-VALID",
+      "feature": "F04",
+      "input": {
+        "target": "borrow",
+        "answers": [
+          "May I borrow your pen?",
+          "Could I borrow a book from you?"
+        ]
+      },
+      "expected": {
+        "meaning": "supported",
+        "use": "supported",
+        "form": "supported",
+        "binarySrsConversion": false
+      }
+    },
+    {
+      "id": "RUBRIC-UNCERTAIN",
+      "feature": "F04",
+      "input": {
+        "target": "effect",
+        "answer": "The effect was interesting.",
+        "contextProvided": false
+      },
+      "expected": {
+        "status": "uncertain",
+        "reason": "insufficient context for intended target use",
+        "srsWrites": 0
+      }
+    },
+    {
+      "id": "ASR-UNCERTAIN",
+      "feature": "F05",
+      "input": {
+        "transcript": "I want to burrow a pen",
+        "asrConfidence": "unknown"
+      },
+      "expected": {
+        "status": "uncertain",
+        "lexicalPenalty": false,
+        "action": "repeat or labeled text fallback"
+      }
+    },
+    {
+      "id": "OWNER-LATE",
+      "feature": "F05",
+      "input": {
+        "requestOwner": "A",
+        "activeOwner": "B",
+        "lateTranscript": true
+      },
+      "expected": {
+        "persistedResults": 0,
+        "displayTranscript": false
+      }
+    },
+    {
+      "id": "CONTEXT-AMBIGUOUS",
+      "feature": "F06",
+      "input": {
+        "prompt": "Please ___ a photo.",
+        "options": [
+          "take",
+          "make"
+        ],
+        "reviewedSenseRationale": false
+      },
+      "expected": {
+        "admit": false,
+        "reason": "requires reviewed context/rationale, not broad string key"
+      }
+    },
+    {
+      "id": "GRAPH-EXIT",
+      "feature": "F07",
+      "input": {
+        "nodes": {
+          "start": [
+            "repair",
+            "done"
+          ],
+          "repair": [
+            "done"
+          ],
+          "done": []
+        },
+        "turnBudget": 6
+      },
+      "expected": {
+        "valid": true,
+        "terminalReachableFromEveryNode": true
+      }
+    },
+    {
+      "id": "GRAPH-CYCLE",
+      "feature": "F07",
+      "input": {
+        "nodes": {
+          "start": [
+            "repair"
+          ],
+          "repair": [
+            "start"
+          ]
+        },
+        "terminal": null
+      },
+      "expected": {
+        "valid": false
+      }
+    },
+    {
+      "id": "AUDIO-STALE",
+      "feature": "F08",
+      "input": {
+        "segment": 2,
+        "ownerGeneration": 1,
+        "currentGeneration": 2,
+        "untaggedCompletion": true
+      },
+      "expected": {
+        "segmentAdvance": false,
+        "completionClaim": false,
+        "cleanupRequired": true
+      }
+    },
+    {
+      "id": "PROBE-DELAY",
+      "feature": "F09",
+      "input": {
+        "originUtc": "2026-09-20T00:00:00Z",
+        "nowUtc": "2026-09-20T23:59:59Z",
+        "delayHours": 24,
+        "distinctContext": true
+      },
+      "expected": {
+        "eligible": false
+      }
+    },
+    {
+      "id": "PROBE-DISTINCT",
+      "feature": "F09",
+      "input": {
+        "elapsedHours": 25,
+        "originContextHash": "same",
+        "probeContextHash": "same"
+      },
+      "expected": {
+        "eligible": false
+      }
+    },
+    {
+      "id": "PROBE-CLOCK",
+      "feature": "F09",
+      "input": {
+        "originUtc": "2026-09-20T00:00:00Z",
+        "nowUtc": "2026-09-19T23:00:00Z"
+      },
+      "expected": {
+        "eligible": false,
+        "timingStatus": "uncertain"
+      }
+    },
+    {
+      "id": "LOST-ACK",
+      "feature": "ALL",
+      "input": {
+        "operationId": "op42",
+        "ack": "lost",
+        "durableRecord": "same payload"
+      },
+      "expected": {
+        "retryOperationId": "op42",
+        "additionalWrites": 0
+      }
+    },
+    {
+      "id": "RESEARCH-OFF",
+      "feature": "ALL",
+      "input": {
+        "participant": false,
+        "activity": "personal"
+      },
+      "expected": {
+        "researchRows": 0,
+        "researchEvents": 0,
+        "researchOutbox": 0
+      }
+    },
+    {
+      "id": "RESTORE-OLDER",
+      "feature": "ALL",
+      "input": {
+        "archiveSchema": "future-extension",
+        "readerSchema": 28
+      },
+      "expected": {
+        "result": "reject before writes",
+        "writes": 0
+      }
+    }
+  ]
+}

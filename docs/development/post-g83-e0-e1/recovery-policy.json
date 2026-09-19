@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "authority": "Latest explicit user instruction: diagnose, fix and rerun autonomously until the full authorized plan is complete; do not stop a task merely because a command or test fails repeatedly",
+  "scope": "B06 and every successor full-system task",
+  "supersedes": "Any repeat-count or 10-minute rule interpreted as ending the task or waiting for user approval for recoverable implementation, test, fixture, path or tooling failures",
+  "workflow": "Record failure, diagnose root cause, change code/fixture/tooling as evidence warrants, rerun relevant tests including previous failures, review result and continue. Repeated failure or stalled method triggers a new diagnostic approach, not an automatic task stop.",
+  "reruns": "Authorized whenever needed to verify a fix or investigate unresolved failures; reuse unchanged passed evidence only when valid. Never weaken acceptance or falsely claim PASS.",
+  "stopTaskWhen": "User explicitly pauses; indispensable external access or user-only decision is missing; or a documented concrete blocker leaves no safe useful work within authorized scope. Ordinary test failure is not such a blocker.",
+  "propagation": "Current writer must update AGENTS, active workflow and remaining execution wrappers that conflict before successor dispatch, then include this policy in every successor prompt and handoff",
+  "preserve": "Single writer, accepted evidence, no unauthorized spending/deployment, lexiquest/ prefix, Astra Medium, Standard/default"
+}
