@@ -706,6 +706,18 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
         updates: {database.outboxOperations},
       );
       if (changed != 1) return null;
+      if (_requiresAttemptSnapshot(operation.entityType) &&
+          operation.attemptCount == 0) {
+        await (database.update(
+          database.outboxOperations,
+        )..where((row) => row.operationId.equals(operation.operationId))).write(
+          db.OutboxOperationsCompanion(
+            attemptedMutationJson: Value(
+              _encodeAttemptSnapshot(claim.mutation),
+            ),
+          ),
+        );
+      }
       return ClaimedSyncOperation(
         leaseToken: claim.leaseToken,
         attemptCount: reservedCount,
@@ -2059,12 +2071,70 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
     return match;
   }
 
+  // Mutable entity rows can change after a send loses its acknowledgement.
+  // Keep the exact first-send envelope in the same transaction as reservation.
+  // The process-local owner gate is deliberately excluded from persisted data.
+  static bool _requiresAttemptSnapshot(String entityType) =>
+      const {'category', 'word', 'srsState'}.contains(entityType);
+
+  static String _encodeAttemptSnapshot(PushMutation mutation) => jsonEncode({
+    'operationId': mutation.operationId,
+    'firebaseUid': mutation.firebaseUid,
+    'collection': mutation.collection.name,
+    'entityId': mutation.entityId,
+    'operationKind': mutation.operationKind.name,
+    'payloadVersion': mutation.payloadVersion,
+    'baseRevision': mutation.baseRevision,
+    'localRevision': mutation.localRevision,
+    'clientUpdatedAtUtcMs': mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    'payload': mutation.payload,
+  });
+
+  static PushMutation _decodeAttemptSnapshot(
+    db.OutboxOperation operation,
+    String firebaseUid,
+    int baseRevision,
+  ) {
+    final data =
+        jsonDecode(operation.attemptedMutationJson!) as Map<String, dynamic>;
+    final collection = SyncCollection.values.byName(
+      data['collection'] as String,
+    );
+    if (data['operationId'] != operation.operationId ||
+        data['firebaseUid'] != firebaseUid ||
+        collection.entityType != operation.entityType ||
+        data['entityId'] != operation.entityId ||
+        data['operationKind'] != operation.operationKind ||
+        data['baseRevision'] != baseRevision) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return PushMutation(
+      operationId: operation.operationId,
+      firebaseUid: firebaseUid,
+      collection: collection,
+      entityId: operation.entityId,
+      operationKind: SyncOperationKind.values.byName(
+        data['operationKind'] as String,
+      ),
+      payloadVersion: data['payloadVersion'] as int,
+      baseRevision: baseRevision,
+      localRevision: data['localRevision'] as int,
+      clientUpdatedAtUtc: _utc(data['clientUpdatedAtUtcMs'] as int),
+      payload: Map<String, Object?>.from(data['payload'] as Map),
+    );
+  }
+
   Future<PushMutation> _reconstructMutation(
     db.OutboxOperation operation, {
     required String firebaseUid,
     required int baseRevision,
     String? ownerGateToken,
   }) async {
+    if (_requiresAttemptSnapshot(operation.entityType) &&
+        operation.attemptCount > 0 &&
+        operation.attemptedMutationJson != null) {
+      return _decodeAttemptSnapshot(operation, firebaseUid, baseRevision);
+    }
     if (ResearchSyncContract.collectionForEntityType(operation.entityType) !=
         null) {
       return _research.mutation(
@@ -2074,6 +2144,10 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
         token: ownerGateToken,
       );
     }
+    // Pre-v28 attempted rows have no payload snapshot. Their persisted
+    // operation identity still fixes the original result revision. Preserve
+    // that identity; never accept a newer receipt merely because the mutable
+    // cache advanced. Legacy payload history is not manufactured here.
     switch (operation.entityType) {
       case 'category':
         final category =
@@ -2094,7 +2168,9 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
           operationKind: _operationKind(operation.operationKind),
           payloadVersion: operation.payloadVersion,
           baseRevision: baseRevision,
-          localRevision: category.localRevision,
+          localRevision: operation.attemptCount > 0
+              ? _operationRevision(operation)
+              : category.localRevision,
           clientUpdatedAtUtc: _utc(category.updatedAtUtcMs),
           payload: <String, Object?>{
             'name': category.name,
@@ -2138,7 +2214,9 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
           operationKind: _operationKind(operation.operationKind),
           payloadVersion: payloadVersion,
           baseRevision: baseRevision,
-          localRevision: word.localRevision,
+          localRevision: operation.attemptCount > 0
+              ? _operationRevision(operation)
+              : word.localRevision,
           clientUpdatedAtUtc: _utc(word.updatedAtUtcMs),
           payload: payload,
         );
@@ -2268,7 +2346,9 @@ final class DriftSyncStore implements SyncStore, ResearchMeasurementSyncStore {
                 ))
                 .getSingleOrNull();
         if (srs == null) throw StateError('outbox srsState was not found');
-        final localRevision = await _srsLocalRevision(operation);
+        final localRevision = operation.attemptCount > 0
+            ? _operationRevision(operation)
+            : await _srsLocalRevision(operation);
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,

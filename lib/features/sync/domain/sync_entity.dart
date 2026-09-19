@@ -1385,6 +1385,7 @@ abstract final class AssessmentRunSyncPayloadContract {
             25,
             26,
             27,
+            28,
           }.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||

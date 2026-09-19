@@ -89,7 +89,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 27;
+  static const int currentSchemaVersion = 28;
 
   AppDatabase(super.executor);
 
@@ -129,6 +129,14 @@ final class AppDatabase extends _$AppDatabase {
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
       await _createMissingTables(migrator);
+      if (from < 28) {
+        await _addColumnIfMissing(
+          migrator,
+          'outbox_operations',
+          outboxOperations,
+          outboxOperations.attemptedMutationJson,
+        );
+      }
       if (from < 2) {
         await _addColumnIfMissing(
           migrator,

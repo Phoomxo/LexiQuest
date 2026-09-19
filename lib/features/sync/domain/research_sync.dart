@@ -366,7 +366,7 @@ abstract final class ResearchSyncContract {
         integer(p['consentVersion'], min: 1);
         integer(p['consentDecidedAtUtcMs']);
         integer(p['databaseSchemaVersion'], min: 24);
-        if (!const <int>{24, 25, 26, 27}.contains(p['databaseSchemaVersion'])) {
+        if (!const <int>{24, 25, 26, 27, 28}.contains(p['databaseSchemaVersion'])) {
           _invalid();
         }
         presentation(p['treatment']);

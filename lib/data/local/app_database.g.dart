@@ -21478,6 +21478,17 @@ class $OutboxOperationsTable extends OutboxOperations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _attemptedMutationJsonMeta =
+      const VerificationMeta('attemptedMutationJson');
+  @override
+  late final GeneratedColumn<String> attemptedMutationJson =
+      GeneratedColumn<String>(
+        'attempted_mutation_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     operationId,
@@ -21496,6 +21507,7 @@ class $OutboxOperationsTable extends OutboxOperations
     createdAtUtcMs,
     acknowledgedAtUtcMs,
     failureCode,
+    attemptedMutationJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21650,6 +21662,15 @@ class $OutboxOperationsTable extends OutboxOperations
         ),
       );
     }
+    if (data.containsKey('attempted_mutation_json')) {
+      context.handle(
+        _attemptedMutationJsonMeta,
+        attemptedMutationJson.isAcceptableOrUnknown(
+          data['attempted_mutation_json']!,
+          _attemptedMutationJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21723,6 +21744,10 @@ class $OutboxOperationsTable extends OutboxOperations
         DriftSqlType.string,
         data['${effectivePrefix}failure_code'],
       ),
+      attemptedMutationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attempted_mutation_json'],
+      ),
     );
   }
 
@@ -21749,6 +21774,7 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
   final int createdAtUtcMs;
   final int? acknowledgedAtUtcMs;
   final String? failureCode;
+  final String? attemptedMutationJson;
   const OutboxOperation({
     required this.operationId,
     required this.ownerId,
@@ -21766,6 +21792,7 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     required this.createdAtUtcMs,
     this.acknowledgedAtUtcMs,
     this.failureCode,
+    this.attemptedMutationJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -21797,6 +21824,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     }
     if (!nullToAbsent || failureCode != null) {
       map['failure_code'] = Variable<String>(failureCode);
+    }
+    if (!nullToAbsent || attemptedMutationJson != null) {
+      map['attempted_mutation_json'] = Variable<String>(attemptedMutationJson);
     }
     return map;
   }
@@ -21831,6 +21861,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       failureCode: failureCode == null && nullToAbsent
           ? const Value.absent()
           : Value(failureCode),
+      attemptedMutationJson: attemptedMutationJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(attemptedMutationJson),
     );
   }
 
@@ -21860,6 +21893,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
         json['acknowledgedAtUtcMs'],
       ),
       failureCode: serializer.fromJson<String?>(json['failureCode']),
+      attemptedMutationJson: serializer.fromJson<String?>(
+        json['attemptedMutationJson'],
+      ),
     );
   }
   @override
@@ -21882,6 +21918,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
       'acknowledgedAtUtcMs': serializer.toJson<int?>(acknowledgedAtUtcMs),
       'failureCode': serializer.toJson<String?>(failureCode),
+      'attemptedMutationJson': serializer.toJson<String?>(
+        attemptedMutationJson,
+      ),
     };
   }
 
@@ -21902,6 +21941,7 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     int? createdAtUtcMs,
     Value<int?> acknowledgedAtUtcMs = const Value.absent(),
     Value<String?> failureCode = const Value.absent(),
+    Value<String?> attemptedMutationJson = const Value.absent(),
   }) => OutboxOperation(
     operationId: operationId ?? this.operationId,
     ownerId: ownerId ?? this.ownerId,
@@ -21927,6 +21967,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
         ? acknowledgedAtUtcMs.value
         : this.acknowledgedAtUtcMs,
     failureCode: failureCode.present ? failureCode.value : this.failureCode,
+    attemptedMutationJson: attemptedMutationJson.present
+        ? attemptedMutationJson.value
+        : this.attemptedMutationJson,
   );
   OutboxOperation copyWithCompanion(OutboxOperationsCompanion data) {
     return OutboxOperation(
@@ -21972,6 +22015,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       failureCode: data.failureCode.present
           ? data.failureCode.value
           : this.failureCode,
+      attemptedMutationJson: data.attemptedMutationJson.present
+          ? data.attemptedMutationJson.value
+          : this.attemptedMutationJson,
     );
   }
 
@@ -21993,7 +22039,8 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
           ..write('lastAttemptAtUtcMs: $lastAttemptAtUtcMs, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('acknowledgedAtUtcMs: $acknowledgedAtUtcMs, ')
-          ..write('failureCode: $failureCode')
+          ..write('failureCode: $failureCode, ')
+          ..write('attemptedMutationJson: $attemptedMutationJson')
           ..write(')'))
         .toString();
   }
@@ -22016,6 +22063,7 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     createdAtUtcMs,
     acknowledgedAtUtcMs,
     failureCode,
+    attemptedMutationJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -22036,7 +22084,8 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
           other.lastAttemptAtUtcMs == this.lastAttemptAtUtcMs &&
           other.createdAtUtcMs == this.createdAtUtcMs &&
           other.acknowledgedAtUtcMs == this.acknowledgedAtUtcMs &&
-          other.failureCode == this.failureCode);
+          other.failureCode == this.failureCode &&
+          other.attemptedMutationJson == this.attemptedMutationJson);
 }
 
 class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
@@ -22056,6 +22105,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
   final Value<int> createdAtUtcMs;
   final Value<int?> acknowledgedAtUtcMs;
   final Value<String?> failureCode;
+  final Value<String?> attemptedMutationJson;
   final Value<int> rowid;
   const OutboxOperationsCompanion({
     this.operationId = const Value.absent(),
@@ -22074,6 +22124,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     this.createdAtUtcMs = const Value.absent(),
     this.acknowledgedAtUtcMs = const Value.absent(),
     this.failureCode = const Value.absent(),
+    this.attemptedMutationJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   OutboxOperationsCompanion.insert({
@@ -22093,6 +22144,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     required int createdAtUtcMs,
     this.acknowledgedAtUtcMs = const Value.absent(),
     this.failureCode = const Value.absent(),
+    this.attemptedMutationJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : operationId = Value(operationId),
        ownerId = Value(ownerId),
@@ -22117,6 +22169,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     Expression<int>? createdAtUtcMs,
     Expression<int>? acknowledgedAtUtcMs,
     Expression<String>? failureCode,
+    Expression<String>? attemptedMutationJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -22140,6 +22193,8 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
       if (acknowledgedAtUtcMs != null)
         'acknowledged_at_utc_ms': acknowledgedAtUtcMs,
       if (failureCode != null) 'failure_code': failureCode,
+      if (attemptedMutationJson != null)
+        'attempted_mutation_json': attemptedMutationJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -22161,6 +22216,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     Value<int>? createdAtUtcMs,
     Value<int?>? acknowledgedAtUtcMs,
     Value<String?>? failureCode,
+    Value<String?>? attemptedMutationJson,
     Value<int>? rowid,
   }) {
     return OutboxOperationsCompanion(
@@ -22180,6 +22236,8 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
       createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
       acknowledgedAtUtcMs: acknowledgedAtUtcMs ?? this.acknowledgedAtUtcMs,
       failureCode: failureCode ?? this.failureCode,
+      attemptedMutationJson:
+          attemptedMutationJson ?? this.attemptedMutationJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -22235,6 +22293,11 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     if (failureCode.present) {
       map['failure_code'] = Variable<String>(failureCode.value);
     }
+    if (attemptedMutationJson.present) {
+      map['attempted_mutation_json'] = Variable<String>(
+        attemptedMutationJson.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -22260,6 +22323,7 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('acknowledgedAtUtcMs: $acknowledgedAtUtcMs, ')
           ..write('failureCode: $failureCode, ')
+          ..write('attemptedMutationJson: $attemptedMutationJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -57830,6 +57894,7 @@ typedef $$OutboxOperationsTableCreateCompanionBuilder =
       required int createdAtUtcMs,
       Value<int?> acknowledgedAtUtcMs,
       Value<String?> failureCode,
+      Value<String?> attemptedMutationJson,
       Value<int> rowid,
     });
 typedef $$OutboxOperationsTableUpdateCompanionBuilder =
@@ -57850,6 +57915,7 @@ typedef $$OutboxOperationsTableUpdateCompanionBuilder =
       Value<int> createdAtUtcMs,
       Value<int?> acknowledgedAtUtcMs,
       Value<String?> failureCode,
+      Value<String?> attemptedMutationJson,
       Value<int> rowid,
     });
 
@@ -57964,6 +58030,11 @@ class $$OutboxOperationsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get attemptedMutationJson => $composableBuilder(
+    column: $table.attemptedMutationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$LocalOwnersTableFilterComposer get ownerId {
     final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -58072,6 +58143,11 @@ class $$OutboxOperationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get attemptedMutationJson => $composableBuilder(
+    column: $table.attemptedMutationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -58176,6 +58252,11 @@ class $$OutboxOperationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get attemptedMutationJson => $composableBuilder(
+    column: $table.attemptedMutationJson,
+    builder: (column) => column,
+  );
+
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -58246,6 +58327,7 @@ class $$OutboxOperationsTableTableManager
                 Value<int> createdAtUtcMs = const Value.absent(),
                 Value<int?> acknowledgedAtUtcMs = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
+                Value<String?> attemptedMutationJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => OutboxOperationsCompanion(
                 operationId: operationId,
@@ -58264,6 +58346,7 @@ class $$OutboxOperationsTableTableManager
                 createdAtUtcMs: createdAtUtcMs,
                 acknowledgedAtUtcMs: acknowledgedAtUtcMs,
                 failureCode: failureCode,
+                attemptedMutationJson: attemptedMutationJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -58284,6 +58367,7 @@ class $$OutboxOperationsTableTableManager
                 required int createdAtUtcMs,
                 Value<int?> acknowledgedAtUtcMs = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
+                Value<String?> attemptedMutationJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => OutboxOperationsCompanion.insert(
                 operationId: operationId,
@@ -58302,6 +58386,7 @@ class $$OutboxOperationsTableTableManager
                 createdAtUtcMs: createdAtUtcMs,
                 acknowledgedAtUtcMs: acknowledgedAtUtcMs,
                 failureCode: failureCode,
+                attemptedMutationJson: attemptedMutationJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

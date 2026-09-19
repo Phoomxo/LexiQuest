@@ -4901,9 +4901,16 @@ void main() {
         runId: pair.guestRun.id,
         completedAtUtc: terminalAtUtc,
       );
+      // Model the account's earlier active session before the guest merge.
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = (id = 'account-owner')",
+      );
       await assessments.complete(
         runId: pair.targetRun.id,
         completedAtUtc: terminalAtUtc,
+      );
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = (id = 'guest-owner')",
       );
       final result = await repository.upgrade(
         activeOwnerId: 'guest-owner',
@@ -5976,7 +5983,9 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
-  await database.customInsert("INSERT INTO legacy_learning_records(id,owner_id,source_table,payload_json) VALUES('legacy-row','guest-owner','associations','{}')");
+  await database.customInsert(
+    "INSERT INTO legacy_learning_records(id,owner_id,source_table,payload_json) VALUES('legacy-row','guest-owner','associations','{}')",
+  );
 
   final sessionConfiguration = SessionConfiguration.validated(
     schemaVersion: sessionConfigurationSchemaVersion,

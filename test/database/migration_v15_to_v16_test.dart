@@ -13,7 +13,7 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 27);
+    expect(AppDatabase.currentSchemaVersion, 28);
     final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
       15,
     );

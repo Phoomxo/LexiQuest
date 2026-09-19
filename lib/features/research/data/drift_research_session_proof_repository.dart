@@ -22,6 +22,10 @@ final class DriftResearchSessionProofRepository {
     required this.nowUtc,
   });
 
+  // Scheduling hints have no authority and are never persisted for denials.
+  // Database scope survives repository reconstruction, but not database reopen.
+  static final _scanHints = Expando<Map<String, _ProofScanCursor>>();
+
   final AppDatabase database;
   final ResearchMeasurementSyncRollout rollout;
   final ResearchSyncAuthorizer? authorizeCandidate;
@@ -48,8 +52,11 @@ final class DriftResearchSessionProofRepository {
         return 0;
       }
       final checkpointBefore = await _checkpoint(ownerId);
-      final cursor = _ProofScanCursor.decode(checkpointBefore);
+      final hints = _scanHints[database] ??= <String, _ProofScanCursor>{};
+      final hintKey = jsonEncode([ownerId, firebaseUid]);
+      final cursor = hints[hintKey] ?? _ProofScanCursor.decode(checkpointBefore);
       final candidates = await _candidates(ownerId, cursor, limit);
+      if (candidates.isNotEmpty) hints[hintKey] = candidates.last.cursor;
       var inserted = 0;
       var first = true;
       _ProofScanCursor? frontier;

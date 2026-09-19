@@ -726,8 +726,8 @@ service cloud.firestore {
     }
 
     // srs_states/{wordId} — per-word spaced-repetition state mirror. Entity id
-    // equals payload.wordId; revision is pinned to 1 (single immutable revision
-    // per word; last-write-wins is enforced client-side before enqueueing).
+    // equals payload.wordId. The cache advances with a linked immutable receipt;
+    // local immutable answer evidence remains the projection authority.
     function fieldSrsStatePayloadOk() {
       let payload = request.resource.data.payload;
       return payload.keys().hasOnly([
@@ -756,7 +756,7 @@ service cloud.firestore {
         && payload.dueAtUtcMs >= 0
         && payload.algorithmVersion is int
         && payload.algorithmVersion >= 0
-        && request.resource.data.revision == 1
+        && payload.wordId == request.resource.data.entityId
         && !request.resource.data.isDeleted;
     }
 
@@ -875,7 +875,7 @@ service cloud.firestore {
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
         && payload.databaseSchemaVersion is int
-        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && fieldAssessmentRunFeatureContractOk(payload)
@@ -1020,7 +1020,7 @@ service cloud.firestore {
       // response/opportunity/event references in one atomic entity+receipt.
       return p.diff(a.runPins).affectedKeys().hasOnly(['id','permitId',
           'permitPayloadSha256','permitRevision','state','startedAtUtcMs','closedAtUtcMs'])
-        && p.databaseSchemaVersion is int && p.databaseSchemaVersion in [24, 25, 26, 27]
+        && p.databaseSchemaVersion is int && p.databaseSchemaVersion in [24, 25, 26, 27, 28]
         && p.startedAtUtcMs >= a.issuedAtUtcMs && p.startedAtUtcMs < a.expiresAtUtcMs;
     }
     function researchRunOk(uid, id) {
@@ -1534,15 +1534,16 @@ service cloud.firestore {
       let entityPath =
         /databases/$(database)/documents/field_users/$(uid)/srs_states/$(entityId);
       let entity = getAfter(entityPath).data;
-      // srs_states uses the same single-immutable-revision contract as the
-      // other learning evidence (attempts, reading_events, reward_transactions).
-      return !exists(entityPath)
+      return ((!exists(entityPath)
+               && request.resource.data.baseRevision == 0)
+              || (exists(entityPath)
+                  && get(entityPath).data.revision
+                     == request.resource.data.baseRevision))
         && request.resource.data.operationKind == 'upsert'
-        && request.resource.data.baseRevision == 0
-        && request.resource.data.resultingRevision == 1
         && entity.entityId == entityId
+        && entity.payload.wordId == entityId
         && entity.lastOperationId == request.resource.data.operationId
-        && entity.revision == 1;
+        && entity.revision == request.resource.data.resultingRevision;
     }
 
     function fieldOperationMatchesAchievementUnlock(uid) {
@@ -1809,11 +1810,11 @@ service cloud.firestore {
 
       match /srs_states/{wordId} {
         allow read: if ownsFieldUser(uid);
-        allow create: if ownsFieldUser(uid)
+        allow create, update: if ownsFieldUser(uid)
           && fieldEntityEnvelopeOk(wordId)
           && fieldSrsStatePayloadOk()
           && fieldOperationLinksEntity(uid, 'srsState', wordId);
-        allow update, delete: if false;
+        allow delete: if false;
       }
 
       match /achievement_unlocks/{unlockId} {

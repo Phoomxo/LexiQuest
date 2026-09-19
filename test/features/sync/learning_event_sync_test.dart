@@ -5,6 +5,8 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
@@ -2008,162 +2010,204 @@ void main() {
     expect(claim.mutation.localRevision, 5);
   });
 
-  test(
-    'lost SRS acknowledgement replays older id before second review',
-    () async {
-      final previousWarningSetting =
-          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
-      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
-      final directory = await Directory.systemTemp.createTemp(
-        'lexiquest-srs-lost-ack-',
-      );
-      final path = '${directory.path}${Platform.pathSeparator}learning.sqlite';
-      final cloud = _SrsIdempotentFakeCloud();
-      final firstDatabase = AppDatabase(NativeDatabase(File(path)));
-      try {
-        await firstDatabase.customSelect('SELECT 1').getSingle();
-        await _seedVocabulary(firstDatabase);
-        await _bindOwner(
-          firstDatabase,
-          ownerId: 'owner-1',
-          firebaseUid: 'firebase-1',
+  for (final legacy in [false, true]) {
+    test(
+      'lost SRS acknowledgement replays older id before second review (legacy: $legacy)',
+      () async {
+        final previousWarningSetting =
+            driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-srs-lost-ack-',
         );
-        final learning = DriftLearningRepository(firstDatabase);
-        await learning.startSession(
-          LearningSessionDraft(
-            id: 'session-srs',
+        final path =
+            '${directory.path}${Platform.pathSeparator}learning.sqlite';
+        final cloud = _SrsIdempotentFakeCloud();
+        final firstDatabase = AppDatabase(NativeDatabase(File(path)));
+        try {
+          await firstDatabase.customSelect('SELECT 1').getSingle();
+          await _seedVocabulary(firstDatabase);
+          await _bindOwner(
+            firstDatabase,
             ownerId: 'owner-1',
-            activityType: 'quiz',
-            startedAtUtc: now,
-            appVersion: 'test',
-            buildId: 'test',
-          ),
-        );
-        await _recordSrsReview(
-          learning,
-          id: 'attempt-srs-1',
-          attemptNumber: 1,
-          occurredAtUtc: now,
-        );
-        expect(
-          await DriftOwnerOperationGate(firstDatabase).tryAcquire(
-            token: 'run-first',
-            nowUtc: now,
-            leaseDuration: const Duration(minutes: 5),
-          ),
-          isTrue,
-        );
-        final firstStore = DriftSyncStore(firstDatabase);
-        final firstSrs =
-            (await firstStore.claimPending(
+            firebaseUid: 'firebase-1',
+          );
+          final learning = DriftLearningRepository(firstDatabase);
+          await learning.startSession(
+            LearningSessionDraft(
+              id: 'session-srs',
               ownerId: 'owner-1',
-              firebaseUid: 'firebase-1',
-              limit: 10,
-              leaseToken: 'lease-first',
-              ownerGateToken: 'run-first',
-              leaseDuration: const Duration(minutes: 5),
+              activityType: 'quiz',
+              startedAtUtc: now,
+              appVersion: 'test',
+              buildId: 'test',
+            ),
+          );
+          await _recordSrsReview(
+            learning,
+            id: 'attempt-srs-1',
+            attemptNumber: 1,
+            occurredAtUtc: now,
+          );
+          expect(
+            await DriftOwnerOperationGate(firstDatabase).tryAcquire(
+              token: 'run-first',
               nowUtc: now,
-            )).singleWhere(
-              (claim) => claim.mutation.collection == SyncCollection.srsStates,
+              leaseDuration: const Duration(minutes: 5),
+            ),
+            isTrue,
+          );
+          final firstStore = DriftSyncStore(firstDatabase);
+          final firstSrs =
+              (await firstStore.claimPending(
+                ownerId: 'owner-1',
+                firebaseUid: 'firebase-1',
+                limit: 10,
+                leaseToken: 'lease-first',
+                ownerGateToken: 'run-first',
+                leaseDuration: const Duration(minutes: 5),
+                nowUtc: now,
+              )).singleWhere(
+                (claim) =>
+                    claim.mutation.collection == SyncCollection.srsStates,
+              );
+          final firstAttempt = (await firstStore.beginAttempt(
+            claim: firstSrs,
+            ownerGateToken: 'run-first',
+            nowUtc: now,
+          ))!;
+          await cloud.push(firstAttempt.mutation);
+          if (legacy) {
+            await firstDatabase.customStatement(
+              'UPDATE outbox_operations SET attempted_mutation_json = NULL',
             );
-        final firstAttempt = (await firstStore.beginAttempt(
-          claim: firstSrs,
-          ownerGateToken: 'run-first',
-          nowUtc: now,
-        ))!;
-        await cloud.push(firstAttempt.mutation);
-      } finally {
-        await firstDatabase.close();
-      }
+          }
+        } finally {
+          await firstDatabase.close();
+        }
 
-      final reopenedAt = now.add(const Duration(minutes: 5));
-      final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
-      try {
-        await reopenedDatabase.customSelect('SELECT 1').getSingle();
-        await _recordSrsReview(
-          DriftLearningRepository(reopenedDatabase),
-          id: 'attempt-srs-2',
-          attemptNumber: 2,
-          occurredAtUtc: reopenedAt,
-        );
-        expect(
-          await DriftOwnerOperationGate(reopenedDatabase).tryAcquire(
-            token: 'run-reopened',
+        final reopenedAt = now.add(const Duration(minutes: 5));
+        final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
+        try {
+          await reopenedDatabase.customSelect('SELECT 1').getSingle();
+          await _recordSrsReview(
+            DriftLearningRepository(reopenedDatabase),
+            id: 'attempt-srs-2',
+            attemptNumber: 2,
+            occurredAtUtc: reopenedAt,
+          );
+          expect(
+            await DriftOwnerOperationGate(reopenedDatabase).tryAcquire(
+              token: 'run-reopened',
+              nowUtc: reopenedAt,
+              leaseDuration: const Duration(minutes: 10),
+            ),
+            isTrue,
+          );
+          final reopenedStore = DriftSyncStore(reopenedDatabase);
+          final replayLease =
+              (await reopenedStore.claimPending(
+                ownerId: 'owner-1',
+                firebaseUid: 'firebase-1',
+                limit: 10,
+                leaseToken: 'lease-replay',
+                ownerGateToken: 'run-reopened',
+                leaseDuration: const Duration(minutes: 5),
+                nowUtc: reopenedAt,
+              )).singleWhere(
+                (claim) =>
+                    claim.mutation.collection == SyncCollection.srsStates,
+              );
+
+          expect(
+            replayLease.mutation.operationId,
+            _srsOperationId('attempt-srs-1', 1),
+          );
+          expect(replayLease.mutation.localRevision, 1);
+          expect(replayLease.mutation.payload['repetitions'], legacy ? 2 : 1);
+          final replayAttempt = (await reopenedStore.beginAttempt(
+            claim: replayLease,
+            ownerGateToken: 'run-reopened',
             nowUtc: reopenedAt,
-            leaseDuration: const Duration(minutes: 10),
-          ),
-          isTrue,
-        );
-        final reopenedStore = DriftSyncStore(reopenedDatabase);
-        final replayLease =
-            (await reopenedStore.claimPending(
-              ownerId: 'owner-1',
-              firebaseUid: 'firebase-1',
-              limit: 10,
-              leaseToken: 'lease-replay',
+          ))!;
+          final oldAcknowledgement = await cloud.push(replayAttempt.mutation);
+          expect(oldAcknowledgement.resultingRevision, 1);
+          await reopenedStore.acknowledge(
+            operationId: replayAttempt.mutation.operationId,
+            leaseToken: replayAttempt.leaseToken,
+            ownerGateToken: 'run-reopened',
+            nowUtc: reopenedAt,
+            acknowledgement: oldAcknowledgement,
+          );
+
+          final laterLease =
+              (await reopenedStore.claimPending(
+                ownerId: 'owner-1',
+                firebaseUid: 'firebase-1',
+                limit: 10,
+                leaseToken: 'lease-later',
+                ownerGateToken: 'run-reopened',
+                leaseDuration: const Duration(minutes: 5),
+                nowUtc: reopenedAt,
+              )).singleWhere(
+                (claim) =>
+                    claim.mutation.collection == SyncCollection.srsStates,
+              );
+
+          expect(
+            laterLease.mutation.operationId,
+            _srsOperationId('attempt-srs-2', 2),
+          );
+          expect(laterLease.mutation.baseRevision, 1);
+          expect(laterLease.mutation.localRevision, 2);
+          expect(laterLease.mutation.payload['repetitions'], 2);
+          final laterAttempt = (await reopenedStore.beginAttempt(
+            claim: laterLease,
+            ownerGateToken: 'run-reopened',
+            nowUtc: reopenedAt,
+          ))!;
+          final laterAcknowledgement = await cloud.push(laterAttempt.mutation);
+          expect(laterAcknowledgement.resultingRevision, 2);
+          expect(
+            await reopenedStore.acknowledge(
+              operationId: laterAttempt.mutation.operationId,
+              leaseToken: laterAttempt.leaseToken,
               ownerGateToken: 'run-reopened',
-              leaseDuration: const Duration(minutes: 5),
               nowUtc: reopenedAt,
-            )).singleWhere(
-              (claim) => claim.mutation.collection == SyncCollection.srsStates,
-            );
-
-        expect(
-          replayLease.mutation.operationId,
-          _srsOperationId('attempt-srs-1', 1),
-        );
-        expect(replayLease.mutation.localRevision, 2);
-        expect(replayLease.mutation.payload['repetitions'], 2);
-        final replayAttempt = (await reopenedStore.beginAttempt(
-          claim: replayLease,
-          ownerGateToken: 'run-reopened',
-          nowUtc: reopenedAt,
-        ))!;
-        final oldAcknowledgement = await cloud.push(replayAttempt.mutation);
-        expect(oldAcknowledgement.resultingRevision, 1);
-        await reopenedStore.acknowledge(
-          operationId: replayAttempt.mutation.operationId,
-          leaseToken: replayAttempt.leaseToken,
-          ownerGateToken: 'run-reopened',
-          nowUtc: reopenedAt,
-          acknowledgement: oldAcknowledgement,
-        );
-
-        final laterLease =
-            (await reopenedStore.claimPending(
-              ownerId: 'owner-1',
-              firebaseUid: 'firebase-1',
-              limit: 10,
-              leaseToken: 'lease-later',
-              ownerGateToken: 'run-reopened',
-              leaseDuration: const Duration(minutes: 5),
-              nowUtc: reopenedAt,
-            )).singleWhere(
-              (claim) => claim.mutation.collection == SyncCollection.srsStates,
-            );
-
-        expect(
-          laterLease.mutation.operationId,
-          _srsOperationId('attempt-srs-2', 2),
-        );
-        expect(laterLease.mutation.baseRevision, 1);
-        expect(laterLease.mutation.localRevision, 2);
-        expect(
-          cloud.requestsFor('firebase-1', _srsOperationId('attempt-srs-1', 1)),
-          2,
-        );
-        expect(
-          cloud.appliesFor('firebase-1', _srsOperationId('attempt-srs-1', 1)),
-          1,
-        );
-      } finally {
-        await reopenedDatabase.close();
-        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
-            previousWarningSetting;
-        await directory.delete(recursive: true);
-      }
-    },
-  );
+              acknowledgement: laterAcknowledgement,
+            ),
+            isTrue,
+          );
+          expect(
+            cloud.appliesFor('firebase-1', _srsOperationId('attempt-srs-2', 2)),
+            1,
+          );
+          expect(
+            await reopenedDatabase
+                .select(reopenedDatabase.answerAttempts)
+                .get(),
+            hasLength(2),
+          );
+          expect(
+            cloud.requestsFor(
+              'firebase-1',
+              _srsOperationId('attempt-srs-1', 1),
+            ),
+            2,
+          );
+          expect(
+            cloud.appliesFor('firebase-1', _srsOperationId('attempt-srs-1', 1)),
+            1,
+          );
+        } finally {
+          await reopenedDatabase.close();
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+              previousWarningSetting;
+          await directory.delete(recursive: true);
+        }
+      },
+    );
+  }
 
   test(
     'independent devices use distinct SRS ids at the same base revision',
@@ -3144,22 +3188,25 @@ final class _RevisionedSrsCloud {
 }
 
 final class _SrsIdempotentFakeCloud {
-  final Map<String, PushAcknowledged> _acknowledgements =
-      <String, PushAcknowledged>{};
+  final Map<String, Map<String, Object?>> _acknowledgements =
+      <String, Map<String, Object?>>{};
   final Map<String, int> _requests = <String, int>{};
   final Map<String, int> _applies = <String, int>{};
 
   Future<PushAcknowledged> push(PushMutation mutation) async {
     final key = '${mutation.firebaseUid}\u001f${mutation.operationId}';
     _requests[key] = (_requests[key] ?? 0) + 1;
-    return _acknowledgements.putIfAbsent(key, () {
+    final receipt = _acknowledgements.putIfAbsent(key, () {
       _applies[key] = (_applies[key] ?? 0) + 1;
-      return PushAcknowledged(
-        operationId: mutation.operationId,
-        resultingRevision: mutation.localRevision,
-        acknowledgedAtUtc: mutation.clientUpdatedAtUtc,
+      return FirestoreSyncCodec.encodeOperation(
+        mutation,
+        acknowledgedAt: Timestamp.fromDate(mutation.clientUpdatedAtUtc),
       );
     });
+    return FirestoreSyncCodec.decodeAcknowledgement(
+      receipt,
+      expectedMutation: mutation,
+    );
   }
 
   int requestsFor(String uid, String operationId) =>

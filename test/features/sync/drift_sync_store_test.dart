@@ -3,6 +3,14 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
+import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
@@ -361,23 +369,12 @@ void main() {
       final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
       try {
         await reopenedDatabase.customSelect('SELECT 1').getSingle();
-        await (reopenedDatabase.update(
-          reopenedDatabase.vocabularyCategories,
-        )..where((row) => row.id.equals('category:file'))).write(
-          const VocabularyCategoriesCompanion(
-            name: Value('Later edit'),
-            normalizedName: Value('later edit'),
-            localRevision: Value(2),
-            updatedAtUtcMs: Value(2),
-          ),
-        );
-        await _insertOutbox(
-          reopenedDatabase,
+        await DriftVocabularyRepository(reopenedDatabase).renameCategory(
           ownerId: 'owner-file',
-          operationId: 'category:category:file:2',
-          entityId: 'category:file',
-          baseRevision: 1,
-          createdAtUtcMs: 2,
+          categoryId: 'category:file',
+          name: 'Later edit',
+          normalizedName: 'later edit',
+          nowUtc: reopenedAt,
         );
         expect(
           await DriftOwnerOperationGate(reopenedDatabase).tryAcquire(
@@ -462,8 +459,266 @@ void main() {
   );
 
   test(
-    'new replay carrying latest revision retires later never-attempted edit',
+    'SyncEngine reopens and delivers original receipt then repository category edit',
     () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-lost-ack-barrier-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}sync.sqlite';
+      final cloud = _IdempotentFakeCloud();
+      final firstDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await firstDatabase.customSelect('SELECT 1').getSingle();
+        await _insertOwner(firstDatabase, 'owner-file');
+        await _insertCategory(
+          firstDatabase,
+          ownerId: 'owner-file',
+          id: 'category:file',
+          name: 'First edit',
+        );
+        await _insertOutbox(
+          firstDatabase,
+          ownerId: 'owner-file',
+          operationId: 'category:category:file:1',
+          entityId: 'category:file',
+          baseRevision: 0,
+          createdAtUtcMs: 1,
+        );
+        expect(
+          await DriftOwnerOperationGate(firstDatabase).tryAcquire(
+            token: 'run-first',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final firstStore = DriftSyncStore(firstDatabase);
+        final firstLease = (await firstStore.claimPending(
+          ownerId: 'owner-file',
+          firebaseUid: 'firebase-file',
+          limit: 1,
+          leaseToken: 'lease-first',
+          ownerGateToken: 'run-first',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: nowUtc,
+        )).single;
+        final firstAttempt = (await firstStore.beginAttempt(
+          claim: firstLease,
+          ownerGateToken: 'run-first',
+          nowUtc: nowUtc,
+        ))!;
+        await cloud.push(firstAttempt.mutation);
+      } finally {
+        await firstDatabase.close();
+      }
+
+      final reopenedAt = nowUtc.add(const Duration(minutes: 5));
+      final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await reopenedDatabase.customSelect('SELECT 1').getSingle();
+        await DriftVocabularyRepository(reopenedDatabase).renameCategory(
+          ownerId: 'owner-file',
+          categoryId: 'category:file',
+          name: 'Later edit',
+          normalizedName: 'later edit',
+          nowUtc: reopenedAt,
+        );
+        await (reopenedDatabase.update(
+          reopenedDatabase.localOwners,
+        )..where((row) => row.id.equals('owner-file'))).write(
+          const LocalOwnersCompanion(firebaseUid: Value('firebase-file')),
+        );
+        var lease = 0;
+        final engine = SyncEngine(
+          owners: DriftLocalOwnerRepository(
+            reopenedDatabase,
+            generateId: () => 'unused',
+            nowUtc: () => reopenedAt,
+          ),
+          store: DriftSyncStore(reopenedDatabase),
+          gateway: cloud,
+          policyProvider: cloud.fetchPolicy,
+          ownerGate: DriftOwnerOperationGate(reopenedDatabase),
+          mutex: SyncMutex(),
+          backoff: const SyncBackoff(jitterFraction: 0),
+          nowUtc: () => reopenedAt,
+          generateLeaseToken: () => 'engine-${++lease}',
+        );
+        final replay = await engine.run();
+        expect(replay.status, SyncRunStatus.completed);
+        expect(replay.pushed, 1);
+        final later = await engine.run();
+        expect(later.status, SyncRunStatus.completed);
+        expect(later.pushed, 1);
+        final rows = await reopenedDatabase
+            .select(reopenedDatabase.outboxOperations)
+            .get();
+        expect(rows, hasLength(2));
+        expect(rows.every((row) => row.state == 'acknowledged'), isTrue);
+        final category = await reopenedDatabase
+            .select(reopenedDatabase.vocabularyCategories)
+            .getSingle();
+        expect(category.name, 'Later edit');
+        expect(category.localRevision, 2);
+        expect(category.cloudRevision, 2);
+        expect(
+          cloud.requestsFor('firebase-file', 'category:category:file:1'),
+          2,
+        );
+        expect(
+          cloud.appliesFor('firebase-file', 'category:category:file:1'),
+          1,
+        );
+        expect(
+          cloud.appliesFor('firebase-file', 'category:category:file:2'),
+          1,
+        );
+      } finally {
+        await reopenedDatabase.close();
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test(
+    'legacy nullable snapshot replays original receipt and preserves repository edit',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-lost-ack-barrier-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}sync.sqlite';
+      final cloud = _IdempotentFakeCloud();
+      final firstDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await firstDatabase.customSelect('SELECT 1').getSingle();
+        await _insertOwner(firstDatabase, 'owner-file');
+        await _insertCategory(
+          firstDatabase,
+          ownerId: 'owner-file',
+          id: 'category:file',
+          name: 'First edit',
+        );
+        await _insertOutbox(
+          firstDatabase,
+          ownerId: 'owner-file',
+          operationId: 'category:category:file:1',
+          entityId: 'category:file',
+          baseRevision: 0,
+          createdAtUtcMs: 1,
+        );
+        expect(
+          await DriftOwnerOperationGate(firstDatabase).tryAcquire(
+            token: 'run-first',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final firstStore = DriftSyncStore(firstDatabase);
+        final firstLease = (await firstStore.claimPending(
+          ownerId: 'owner-file',
+          firebaseUid: 'firebase-file',
+          limit: 1,
+          leaseToken: 'lease-first',
+          ownerGateToken: 'run-first',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: nowUtc,
+        )).single;
+        final firstAttempt = (await firstStore.beginAttempt(
+          claim: firstLease,
+          ownerGateToken: 'run-first',
+          nowUtc: nowUtc,
+        ))!;
+        await cloud.push(firstAttempt.mutation);
+        await firstDatabase.customStatement(
+          'UPDATE outbox_operations SET attempted_mutation_json = NULL',
+        );
+      } finally {
+        await firstDatabase.close();
+      }
+
+      final reopenedAt = nowUtc.add(const Duration(minutes: 5));
+      final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await reopenedDatabase.customSelect('SELECT 1').getSingle();
+        await DriftVocabularyRepository(reopenedDatabase).renameCategory(
+          ownerId: 'owner-file',
+          categoryId: 'category:file',
+          name: 'Later edit',
+          normalizedName: 'later edit',
+          nowUtc: reopenedAt,
+        );
+        await (reopenedDatabase.update(
+          reopenedDatabase.localOwners,
+        )..where((row) => row.id.equals('owner-file'))).write(
+          const LocalOwnersCompanion(firebaseUid: Value('firebase-file')),
+        );
+        var lease = 0;
+        final engine = SyncEngine(
+          owners: DriftLocalOwnerRepository(
+            reopenedDatabase,
+            generateId: () => 'unused',
+            nowUtc: () => reopenedAt,
+          ),
+          store: DriftSyncStore(reopenedDatabase),
+          gateway: cloud,
+          policyProvider: cloud.fetchPolicy,
+          ownerGate: DriftOwnerOperationGate(reopenedDatabase),
+          mutex: SyncMutex(),
+          backoff: const SyncBackoff(jitterFraction: 0),
+          nowUtc: () => reopenedAt,
+          generateLeaseToken: () => 'engine-${++lease}',
+        );
+        final replay = await engine.run();
+        expect(replay.status, SyncRunStatus.completed);
+        expect(replay.pushed, 1);
+        final later = await engine.run();
+        expect(later.status, SyncRunStatus.completed);
+        expect(later.pushed, 1);
+        final rows = await reopenedDatabase
+            .select(reopenedDatabase.outboxOperations)
+            .get();
+        expect(rows, hasLength(2));
+        expect(rows.every((row) => row.state == 'acknowledged'), isTrue);
+        final category = await reopenedDatabase
+            .select(reopenedDatabase.vocabularyCategories)
+            .getSingle();
+        expect(category.name, 'Later edit');
+        expect(category.localRevision, 2);
+        expect(category.cloudRevision, 2);
+        expect(
+          cloud.requestsFor('firebase-file', 'category:category:file:1'),
+          2,
+        );
+        expect(
+          cloud.appliesFor('firebase-file', 'category:category:file:1'),
+          1,
+        );
+        expect(
+          cloud.appliesFor('firebase-file', 'category:category:file:2'),
+          1,
+        );
+      } finally {
+        await reopenedDatabase.close();
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+        await directory.delete(recursive: true);
+      }
+    },
+  );
+
+  test(
+    'never-committed first send replays its snapshot before the later edit',
+    () async {
+      final cloud = _IdempotentFakeCloud();
       await _insertCategory(
         database,
         ownerId: 'owner-a',
@@ -527,17 +782,14 @@ void main() {
         ownerGateToken: 'test-owner-gate',
         nowUtc: replayAt,
       ))!;
-      expect(replayAttempt.mutation.localRevision, 2);
+      expect(replayAttempt.mutation.localRevision, 1);
+      expect(replayAttempt.mutation.payload['name'], 'First edit');
       await store.acknowledge(
         operationId: replayAttempt.mutation.operationId,
         leaseToken: replayAttempt.leaseToken,
         ownerGateToken: 'test-owner-gate',
         nowUtc: replayAt,
-        acknowledgement: PushAcknowledged(
-          operationId: replayAttempt.mutation.operationId,
-          resultingRevision: 2,
-          acknowledgedAtUtc: replayAt,
-        ),
+        acknowledgement: await cloud.push(replayAttempt.mutation),
       );
 
       final remaining = await store.claimPending(
@@ -555,9 +807,12 @@ void main() {
               ))
               .getSingle();
 
-      expect(remaining, isEmpty);
-      expect(later.state, 'superseded');
-      expect(later.failureCode, 'includedInAcknowledgedReplay');
+      expect(remaining, hasLength(1));
+      expect(remaining.single.mutation.localRevision, 2);
+      expect(remaining.single.mutation.baseRevision, 1);
+      expect(remaining.single.mutation.payload['name'], 'Latest edit');
+      expect(later.state, 'inFlight');
+      expect(later.failureCode, isNull);
     },
   );
 
@@ -2580,23 +2835,43 @@ Future<void> _seedOneCategoryOperation(AppDatabase database) async {
   );
 }
 
-final class _IdempotentFakeCloud {
-  final Map<String, PushAcknowledged> _acknowledgements =
-      <String, PushAcknowledged>{};
+final class _IdempotentFakeCloud implements SyncGateway {
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() async => CloudSyncPolicy(
+    enabled: true,
+    source: CloudSyncPolicySource.cache,
+    fetchedAtUtc: DateTime.utc(2026),
+    expiresAtUtc: DateTime.utc(2027),
+  );
+
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) async => PullPage(changes: const [], nextCursor: after, hasMore: false);
+
+  final Map<String, Map<String, Object?>> _acknowledgements =
+      <String, Map<String, Object?>>{};
   final Map<String, int> _requests = <String, int>{};
   final Map<String, int> _applies = <String, int>{};
 
+  @override
   Future<PushAcknowledged> push(PushMutation mutation) async {
     final key = '${mutation.firebaseUid}\u001f${mutation.operationId}';
     _requests[key] = (_requests[key] ?? 0) + 1;
-    return _acknowledgements.putIfAbsent(key, () {
+    final receipt = _acknowledgements.putIfAbsent(key, () {
       _applies[key] = (_applies[key] ?? 0) + 1;
-      return PushAcknowledged(
-        operationId: mutation.operationId,
-        resultingRevision: mutation.localRevision,
-        acknowledgedAtUtc: mutation.clientUpdatedAtUtc,
+      return FirestoreSyncCodec.encodeOperation(
+        mutation,
+        acknowledgedAt: Timestamp.fromDate(mutation.clientUpdatedAtUtc),
       );
     });
+    return FirestoreSyncCodec.decodeAcknowledgement(
+      receipt,
+      expectedMutation: mutation,
+    );
   }
 
   int requestsFor(String uid, String operationId) =>

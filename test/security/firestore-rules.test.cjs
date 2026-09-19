@@ -140,7 +140,7 @@ function researchEvent(f, type) {
 }
 
 describe('R4b Research trusted sync boundary', () => {
-  for (const version of [24, 25, 26, 27, 23, 28, '25', '26', 25.5, 26.5]) {
+  for (const version of [24, 25, 26, 27, 28, 23, 29, '25', '26', 25.5, 26.5]) {
     it(`research schema transport enforces supported version ${version} (${typeof version})`, async () => {
       const f = researchFixture();
       f.run.databaseSchemaVersion = version;
@@ -148,7 +148,7 @@ describe('R4b Research trusted sync boundary', () => {
       f.authority.runPins.databaseSchemaVersion = version;
       await seedResearch(f);
       const write = writeResearch(authDb(), 'motivation_measurement_runs', 'motivationMeasurementRun', f.run);
-      await ([24, 25, 26, 27].includes(version) ? assertSucceeds(write) : assertFails(write));
+      await ([24, 25, 26, 27, 28].includes(version) ? assertSucceeds(write) : assertFails(write));
     });
   }
   it('research schema transport retains the exact trusted issuer schema pin', async () => {
@@ -2420,7 +2420,61 @@ describe('field sync ownership and atomic revision contract', () => {
     );
   });
 
-  it('accepts immutable srs_states mirroring per-word review state', async () => {
+  it('advances mutable SRS mirror only with a fresh linked receipt and current base', async () => {
+    const db = authDb();
+    const payload = {
+      wordId: 'srs-mutable', stability: 1, difficulty: 0.3, intervalDays: 1,
+      repetitions: 1, lapses: 0, lastReviewAtUtcMs: 4000,
+      dueAtUtcMs: 100000, algorithmVersion: 1,
+    };
+    const write = (baseRevision, revision, operationId, options = {}) => {
+      const client = options.client ?? db;
+      const batch = writeBatch(client);
+      batch.set(doc(client, 'field_users', alice, 'srs_states', payload.wordId), {
+        schemaVersion: 1, entityId: payload.wordId,
+        payload: {...payload, repetitions: revision, ...(options.payload ?? {})},
+        revision, isDeleted: options.isDeleted ?? false,
+        clientUpdatedAtUtcMs: 4000, serverUpdatedAt: serverTimestamp(),
+        lastOperationId: operationId,
+      });
+      if (!options.withoutReceipt) batch.set(doc(client, 'field_users', alice, 'operations', operationId), {
+        schemaVersion: 1, operationId, entityType: 'srsState', entityId: payload.wordId,
+        operationKind: 'upsert', baseRevision, resultingRevision: revision,
+        acknowledgedAt: serverTimestamp(),
+      });
+      return batch.commit();
+    };
+    await assertSucceeds(write(0, 1, 'srs-mutable-1'));
+    await assertSucceeds(write(1, 2, 'srs-mutable-2'));
+    const entityRef = doc(db, 'field_users', alice, 'srs_states', payload.wordId);
+    const receiptRef = doc(db, 'field_users', alice, 'operations', 'srs-mutable-2');
+    assert.equal((await getDoc(entityRef)).data().revision, 2);
+    assert.equal((await getDoc(receiptRef)).data().resultingRevision, 2);
+    await assertFails(write(1, 2, 'srs-mutable-2')); // receipt is immutable
+    await assertFails(write(0, 3, 'srs-stale'));
+    await assertFails(write(3, 4, 'srs-gap-base'));
+    await assertFails(write(2, 2, 'srs-no-advance'));
+    await assertFails(write(2, 3, 'srs-missing', {withoutReceipt: true}));
+    await assertFails(write(2, 3, 'srs-cross-owner', {client: authDb(bob)}));
+    await assertFails(write(2, 3, 'srs-tombstone', {isDeleted: true}));
+    await assertFails(write(2, 3, 'srs-extra', {payload: {unexpected: true}}));
+    await assertFails(write(2, 3, 'srs-word-mismatch', {payload: {wordId: 'other'}}));
+    assert.equal((await getDoc(entityRef)).data().revision, 2);
+    await assertSucceeds(write(2, 3, 'srs-mutable-3'));
+  });
+
+  it('rejects SRS payload identity mismatch on first creation', async () => {
+    await assertFails(writeFieldLearningEvent(authDb(), {
+      collection: 'srs_states', entityType: 'srsState', entityId: 'srs-identity',
+      operationId: 'srs-identity-op', payload: {
+        wordId: 'other', stability: 1, difficulty: 0.3, intervalDays: 1,
+        repetitions: 1, lapses: 0, lastReviewAtUtcMs: 4000,
+        dueAtUtcMs: 100000, algorithmVersion: 1,
+      },
+    }));
+  });
+
+  it('accepts initial srs_states mirroring per-word review state', async () => {
     const db = authDb();
     await assertSucceeds(
       writeFieldLearningEvent(db, {
@@ -2501,7 +2555,7 @@ describe('field sync ownership and atomic revision contract', () => {
     );
   });
 
-  it('keeps srs_states create-only and owner-isolated', async () => {
+  it('rejects unlinked SRS updates and keeps the mirror owner-isolated', async () => {
     const db = authDb();
     await assertSucceeds(
       writeFieldLearningEvent(db, {
@@ -2970,7 +3024,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]) {
+    for (const databaseSchemaVersion of [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -2984,7 +3038,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 28, '25', '26', 25.5, 26.5]) {
+    for (const databaseSchemaVersion of [14, 29, '25', '26', 25.5, 26.5]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

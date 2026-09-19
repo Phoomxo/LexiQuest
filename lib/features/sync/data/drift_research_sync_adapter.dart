@@ -23,6 +23,10 @@ final class DriftResearchSyncAdapter {
     required this.authorizer,
     DateTime Function()? researchNowUtc,
   }) : _researchNowUtc = researchNowUtc ?? (() => DateTime.now().toUtc());
+  // Weak database-scoped scheduling only: no denied candidate is persisted,
+  // and every candidate is re-authorized after crossing a page boundary.
+  static final _scanHints = Expando<Map<String, (String, String)>>();
+
   final db.AppDatabase database;
   final ResearchMeasurementSyncRollout rollout;
   final ResearchSyncAuthorizer? authorizer;
@@ -111,19 +115,17 @@ final class DriftResearchSyncAdapter {
     var inserted = 0;
     // Recover denial first, even after receipts/permits expire or are revoked.
     // Existing operations (including acknowledgements) preserve one identity.
-    final withdrawals = await database
-        .customSelect(
-          '''
-      SELECT p.id FROM research_participation_permits p
-      WHERE p.owner_id = ? AND ${_withdrawalScope('p')}
-        AND NOT EXISTS (SELECT 1 FROM outbox_operations o
-          WHERE o.owner_id = p.owner_id AND o.entity_id = p.id
-            AND o.entity_type = 'researchWithdrawal')
-      ORDER BY p.id LIMIT ?
-    ''',
-          variables: [Variable(ownerId), Variable(limit)],
-        )
-        .get();
+    final withdrawals = await _candidateRows(
+      ownerId,
+      firebaseUid,
+      'research_participation_permits',
+      'id',
+      "${_withdrawalScope('t')} AND NOT EXISTS (SELECT 1 FROM outbox_operations o "
+          "WHERE o.owner_id = t.owner_id AND o.entity_id = t.id "
+          "AND o.entity_type = 'researchWithdrawal')",
+      limit,
+      withdrawal: true,
+    );
     for (final row in withdrawals) {
       final s = await snapshot(
         SyncCollection.researchWithdrawals,
@@ -175,12 +177,14 @@ final class DriftResearchSyncAdapter {
           : c == SyncCollection.researchParticipationPermits
           ? 'is_deleted = 0 AND last_acknowledged_at_utc_ms IS NULL'
           : 'is_deleted = 0 AND local_revision > cloud_revision';
-      final rows = await database
-          .customSelect(
-            'SELECT $idColumn FROM $table t WHERE owner_id = ? AND $filter ORDER BY $idColumn LIMIT ?',
-            variables: [Variable(ownerId), Variable(limit)],
-          )
-          .get();
+      final rows = await _candidateRows(
+        ownerId,
+        firebaseUid,
+        table,
+        idColumn,
+        filter,
+        limit,
+      );
       for (final row in rows) {
         if (inserted >= limit) return inserted;
         try {
@@ -237,6 +241,70 @@ final class DriftResearchSyncAdapter {
       }
     }
     return inserted;
+  }
+
+  Future<List<QueryRow>> _candidateRows(
+    String owner,
+    String uid,
+    String table,
+    String idColumn,
+    String filter,
+    int limit, {
+    bool withdrawal = false,
+  }) async {
+    final hints = _scanHints[database] ??= <String, (String, String)>{};
+    final key = jsonEncode([owner, uid, table, withdrawal]);
+    final cursor = hints[key];
+    Future<String?> upper() async =>
+        (await database
+                .customSelect(
+                  'SELECT MAX($idColumn) AS ceiling FROM $table t WHERE owner_id = ? AND $filter',
+                  variables: [Variable(owner)],
+                )
+                .getSingle())
+            .readNullable<String>('ceiling');
+    final ceiling = cursor?.$2 ?? await upper();
+    if (ceiling == null) return [];
+    final tail = await database
+        .customSelect(
+          'SELECT $idColumn FROM $table t WHERE owner_id = ? AND $filter '
+          'AND $idColumn <= ? ${cursor == null ? '' : 'AND $idColumn > ? '} '
+          'ORDER BY $idColumn LIMIT ?',
+          variables: [
+            Variable(owner),
+            Variable(ceiling),
+            if (cursor != null) Variable(cursor.$1),
+            Variable(limit),
+          ],
+        )
+        .get();
+    var finalCeiling = ceiling;
+    final rows = [...tail];
+    if (cursor != null && rows.length < limit) {
+      final nextCeiling = await upper();
+      if (nextCeiling != null) {
+        final head = await database
+            .customSelect(
+              'SELECT $idColumn FROM $table t WHERE owner_id = ? AND $filter '
+              'AND $idColumn <= ? AND NOT ($idColumn <= ? AND $idColumn > ?) '
+              'ORDER BY $idColumn LIMIT ?',
+              variables: [
+                Variable(owner),
+                Variable(nextCeiling),
+                Variable(ceiling),
+                Variable(cursor.$1),
+                Variable(limit - rows.length),
+              ],
+            )
+            .get();
+        if (head.isNotEmpty) finalCeiling = nextCeiling;
+        rows.addAll(head);
+      }
+    }
+    if (rows.isNotEmpty) {
+      hints[key] = (rows.last.read<String>(idColumn), finalCeiling);
+    }
+    return rows;
   }
 
   Future<bool> claimAllowed(

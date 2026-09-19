@@ -19,6 +19,7 @@ import 'package:vocab_learning_app/features/research/domain/research_participati
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_research_sync_adapter.dart';
 import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 
 import '../../support/motivation_research_fixture.dart';
 import '../../support/pair_purpose_fixture.dart';
@@ -795,6 +796,117 @@ void main() {
       },
     );
   }
+
+  test(
+    'denied proof prefix advances in bounded memory across repository recreation',
+    () async {
+      await accepted(index: 0);
+      await accepted(index: 1);
+      final candidates = await rows('measurement_opportunities');
+      final deniedSession = candidates.first['learning_session_id'];
+      final validSession = candidates.last['learning_session_id'];
+      final sourceBefore = await rows('events_v2');
+      final consentBefore = await rows('research_consents');
+      var calls = 0;
+      Future<bool> admit(ResearchSyncRequest request) async {
+        calls++;
+        if (request.payload['learningSessionId'] == deniedSession) return false;
+        return composed(request);
+      }
+
+      var inserted = 0;
+      for (var run = 0; run < 3 && inserted == 0; run++) {
+        final before = calls;
+        inserted += await prepare(repository(admit), limit: 1);
+        expect(calls - before, lessThanOrEqualTo(1));
+        if (run == 0) expect(await rows('sync_checkpoints'), isEmpty);
+      }
+      expect(inserted, 1);
+      final proofs = await rows('research_session_proofs');
+      expect(proofs, hasLength(1));
+      expect(proofs.single['learning_session_id'], validSession);
+      expect(await rows('events_v2'), sourceBefore);
+      expect(await rows('research_consents'), consentBefore);
+    },
+  );
+
+  test(
+    'denied enqueue prefix reaches a later authorized opportunity after adapter recreation',
+    () async {
+      await accepted(index: 0);
+      await accepted(index: 1);
+      final candidates = await rows('measurement_opportunities');
+      final validId = candidates.last['id'];
+      final before = await rows('measurement_opportunities');
+      Future<bool> admit(ResearchSyncRequest request) async =>
+          request.collection == SyncCollection.measurementOpportunities &&
+          request.entityId == validId &&
+          await authority.authorize(request);
+      var inserted = 0;
+      for (var run = 0; run < 3 && inserted == 0; run++) {
+        final recreated = DriftResearchSyncAdapter(
+          f.database,
+          rollout: _rollout,
+          authorizer: admit,
+          researchNowUtc: () => f.now,
+        );
+        inserted += await recreated.enqueue(
+          ownerId: _owner,
+          firebaseUid: _uid,
+          ownerGateToken: _token,
+          nowUtc: f.now,
+          limit: 1,
+        );
+      }
+      expect(inserted, 1);
+      final operations = (await rows('outbox_operations'))
+          .where((row) => row['entity_type'] == 'measurementOpportunity')
+          .toList();
+      expect(operations, hasLength(1));
+      expect(operations.single['entity_id'], validId);
+      expect(await rows('measurement_opportunities'), before);
+      expect(await rows('sync_checkpoints'), isEmpty);
+      await expectNoProofs();
+    },
+  );
+
+  test(
+    'all-denied proof scans wrap finitely without any persisted scheduling write',
+    () async {
+      for (var index = 0; index < 3; index++) {
+        await accepted(index: index);
+      }
+      final before = {
+        for (final table in [
+          'research_consents',
+          'events_v2',
+          'outbox_operations',
+          'research_session_proofs',
+          'sync_checkpoints',
+        ])
+          table: await rows(table),
+      };
+      final seen = <String>[];
+      for (var call = 0; call < 4; call++) {
+        expect(
+          await prepare(
+            repository((request) async {
+              seen.add(request.entityId);
+              return false;
+            }),
+            limit: 1,
+          ),
+          0,
+        );
+        expect(seen, hasLength(call + 1));
+      }
+      expect(seen.take(3).toSet(), hasLength(3));
+      expect(seen.last, seen.first);
+      for (final entry in before.entries) {
+        expect(await rows(entry.key), entry.value);
+      }
+    },
+  );
 
   const localPreparation = 'local:research-session-proof-preparation:v1';
 

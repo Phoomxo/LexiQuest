@@ -14,7 +14,7 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 27);
+      expect(AppDatabase.currentSchemaVersion, 28);
       expect(currentDatabaseTableInventory, hasLength(50));
       expect(
         currentDatabaseTableInventory.difference(schemaSixteenInventory),

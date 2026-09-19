@@ -14,7 +14,7 @@ void main() {
         NativeDatabase.memory(setup: createSchemaTwentyThreeFixture),
       );
       addTearDown(database.close);
-      expect(AppDatabase.currentSchemaVersion, 27);
+      expect(AppDatabase.currentSchemaVersion, 28);
       await expectCurrentDatabaseContract(database);
       expect(await currentDatabaseTableNames(database), hasLength(50));
       for (final table in researchTables) {

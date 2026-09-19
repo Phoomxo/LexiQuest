@@ -19,6 +19,7 @@ class OutboxOperations extends Table {
   IntColumn get createdAtUtcMs => integer()();
   IntColumn get acknowledgedAtUtcMs => integer().nullable()();
   TextColumn get failureCode => text().nullable()();
+  TextColumn get attemptedMutationJson => text().nullable()();
 
   @override
   Set<Column<Object>> get primaryKey => {operationId};
