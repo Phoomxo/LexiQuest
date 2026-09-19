@@ -331,9 +331,11 @@ final class AiTutorUseCases implements AiTutorController {
     required bool shareLearningSummary,
   }) async {
     _checkNotDisposed();
-    if (!providerConsent) await _cancelActiveOperations();
+    final draining = !providerConsent
+        ? _cancelActiveOperations()
+        : Future<void>.value();
     final cancellation = AiCancellation();
-    await _track(
+    final transition = _track(
       cancellation,
       _transitionGate.run(
         () => ownerCoordinator.run(cancellation, (ownerId) async {
@@ -351,14 +353,16 @@ final class AiTutorUseCases implements AiTutorController {
         }),
       ),
     );
+    // Reserve the transition synchronously before yielding to cancellation drain.
+    await Future.wait<void>([draining, transition]);
   }
 
   @override
   Future<void> removeKey() async {
     _checkNotDisposed();
-    await _cancelActiveOperations();
+    final draining = _cancelActiveOperations();
     final cancellation = AiCancellation();
-    await _track(
+    final transition = _track(
       cancellation,
       _transitionGate.run(
         () => ownerCoordinator.run(cancellation, (ownerId) async {
@@ -366,6 +370,8 @@ final class AiTutorUseCases implements AiTutorController {
         }),
       ),
     );
+    // Reserve the transition synchronously before yielding to cancellation drain.
+    await Future.wait<void>([draining, transition]);
   }
 
   @override

@@ -59,6 +59,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   });
 
   Future<void> _confirmLeave() async {
+    final generation = _tutorGeneration;
     final leave = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -80,10 +81,10 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         ],
       ),
     );
-    if (leave == true && mounted) {
+    if (leave == true && _isCurrent(generation)) {
       setState(() => _allowLeave = true);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.pop(context);
+        if (_isCurrent(generation)) Navigator.pop(context);
       });
     }
   }
@@ -95,15 +96,51 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindTutor();
+  }
+
+  @override
+  void didUpdateWidget(covariant AiTutorSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindTutor();
+  }
+
+  int _tutorGeneration = 0;
+  bool _tutorResolved = false;
+
+  bool _isCurrent(int generation) => mounted && generation == _tutorGeneration;
+
+  void _bindTutor() {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
-    if (identical(resolvedTutor, _tutor)) return;
+    if (_tutorResolved && identical(resolvedTutor, _tutor)) return;
+    _tutorResolved = true;
+    _tutorGeneration++;
+    _cancellation?.cancel();
+    _cancellation = null;
     _tutor = resolvedTutor;
+    _settingsKnown = false;
+    _usageKnown = false;
+    _hasKey = false;
+    _providerConsent = _savedProviderConsent = false;
+    _summaryConsent = _savedSummaryConsent = false;
+    _providerId = _savedProviderId = AiProviderId.gemini;
+    _savedBaseUrl = '';
+    _models = const [];
+    _model = null;
+    _usageSummaries = const [];
+    _saving = false;
+    _draftChanged = false;
+    _allowLeave = false;
+    _notice = null;
+    _keyController.clear();
+    _baseUrlController.clear();
     _load();
   }
 
   Future<void> _load() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null) {
       setState(() {
         _loading = false;
@@ -117,7 +154,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     });
     try {
       final status = await tutor.loadSettings();
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       setState(() {
         _settingsKnown = true;
         _hasKey = status.hasKey;
@@ -136,21 +173,24 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         _baseUrlController.text = status.customBaseUrl ?? '';
       });
       final usageSummaries = await tutor.loadUsage();
-      if (mounted) {
+      if (_isCurrent(generation)) {
         setState(() {
           _usageSummaries = usageSummaries;
           _usageKnown = true;
         });
       }
     } on AiTutorException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (_isCurrent(generation)) {
+        setState(() => _error = _failureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (_isCurrent(generation)) setState(() => _loading = false);
     }
   }
 
   Future<void> _loadModels() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     if (!_providerConsent) {
       setState(
@@ -187,7 +227,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
             : null,
         cancellation: cancellation,
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       if (models.isEmpty && _providerId != AiProviderId.customOpenAi) {
         setState(
           () =>
@@ -204,9 +244,11 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
             : 'เลือกรุ่น AI แล้วกดบันทึกผู้ให้บริการ';
       });
     } on AiTutorException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (_isCurrent(generation)) {
+        setState(() => _error = _failureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
       if (identical(_cancellation, cancellation)) _cancellation = null;
     }
   }
@@ -215,6 +257,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   /// Called when the participant has an active key but has not typed a new one.
   Future<void> _loadModelsFromStoredKey() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final cancellation = AiCancellation();
     _cancellation = cancellation;
@@ -227,7 +270,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
       final models = await tutor.listModelsForActiveCredential(
         cancellation: cancellation,
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       setState(() {
         _models = models;
         // Discovery never chooses on the participant's behalf.
@@ -237,15 +280,18 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
             : 'เลือกรุ่น AI แล้วกดบันทึกผู้ให้บริการ';
       });
     } on AiTutorException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (_isCurrent(generation)) {
+        setState(() => _error = _failureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
       if (identical(_cancellation, cancellation)) _cancellation = null;
     }
   }
 
   Future<void> _validateAndSave() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final key = _keyController.text.trim();
     final model = _model?.trim() ?? '';
@@ -290,7 +336,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
             : null,
         cancellation: cancellation,
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       _keyController.clear();
       setState(() {
         _hasKey = true;
@@ -302,9 +348,11 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         _notice = 'ตรวจสอบและบันทึกรหัสเชื่อมต่ออย่างปลอดภัยแล้ว';
       });
     } on AiTutorException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (_isCurrent(generation)) {
+        setState(() => _error = _failureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
       if (identical(_cancellation, cancellation)) _cancellation = null;
     }
   }
@@ -314,6 +362,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   /// and has not typed a replacement key.
   Future<void> _configureActiveModel({required String model}) async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final cancellation = AiCancellation();
     _cancellation = cancellation;
@@ -328,22 +377,25 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         shareLearningSummary: _summaryConsent,
         cancellation: cancellation,
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       setState(() {
         _savedSummaryConsent = _summaryConsent;
         _draftChanged = false;
         _notice = 'บันทึกรุ่น AI แล้ว';
       });
     } on AiTutorException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (_isCurrent(generation)) {
+        setState(() => _error = _failureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
       if (identical(_cancellation, cancellation)) _cancellation = null;
     }
   }
 
   Future<void> _saveConsents({bool withdraw = false}) async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final providerConsent = withdraw ? false : _providerConsent;
     final summaryConsent = providerConsent && _summaryConsent;
@@ -357,7 +409,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         providerConsent: providerConsent,
         shareLearningSummary: summaryConsent,
       );
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       setState(() {
         _savedProviderConsent = _providerConsent = providerConsent;
         _savedSummaryConsent = _summaryConsent = summaryConsent;
@@ -366,7 +418,8 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
             : 'หยุดอนุญาตการส่งข้อความและสรุปการเรียนแล้ว';
       });
     } on AiTutorException catch (error) {
-      if (mounted) {
+      if (!_isCurrent(generation)) return;
+      if (_isCurrent(generation)) {
         setState(() {
           _settingsKnown = false;
           _notice = 'กำลังตรวจสอบผลการบันทึกความยินยอม…';
@@ -375,7 +428,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
       }
       try {
         final status = await tutor.loadSettings();
-        if (!mounted) return;
+        if (!_isCurrent(generation)) return;
         setState(() {
           _settingsKnown = true;
           _hasKey = status.hasKey;
@@ -388,7 +441,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
               : 'ตรวจสอบแล้ว: ไม่อนุญาตส่งข้อความและสรุปการเรียน';
         });
       } on AiTutorException {
-        if (mounted) {
+        if (_isCurrent(generation)) {
           setState(() {
             _notice = 'ยังยืนยันผลการบันทึกและความยินยอมปัจจุบันไม่ได้';
             _error = _failureText(error.code);
@@ -396,12 +449,13 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         }
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
     }
   }
 
   Future<void> _removeKey() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -423,7 +477,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !_isCurrent(generation)) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -431,7 +485,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     });
     try {
       await tutor.removeKey();
-      if (!mounted) return;
+      if (!_isCurrent(generation)) return;
       _keyController.clear();
       setState(() {
         _hasKey = false;
@@ -445,19 +499,20 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         _notice = 'ลบรหัสเชื่อมต่อและความยินยอมแล้ว';
       });
     } on AiTutorException catch (error) {
-      if (mounted) {
+      if (_isCurrent(generation)) {
         setState(() {
           _notice = null;
           _error = _failureText(error.code);
         });
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
     }
   }
 
   Future<void> _clearUsage() async {
     final tutor = _tutor;
+    final generation = _tutorGeneration;
     if (tutor == null || _saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -480,7 +535,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !_isCurrent(generation)) return;
     setState(() {
       _saving = true;
       _error = null;
@@ -488,8 +543,9 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     });
     try {
       await tutor.clearUsage();
+      if (!_isCurrent(generation)) return;
       final summaries = await tutor.loadUsage();
-      if (mounted) {
+      if (_isCurrent(generation)) {
         setState(() {
           _usageSummaries = summaries;
           _usageKnown = true;
@@ -497,14 +553,14 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
         });
       }
     } on AiTutorException catch (error) {
-      if (mounted) {
+      if (_isCurrent(generation)) {
         setState(() {
           _notice = null;
           _error = _failureText(error.code);
         });
       }
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (_isCurrent(generation)) setState(() => _saving = false);
     }
   }
 

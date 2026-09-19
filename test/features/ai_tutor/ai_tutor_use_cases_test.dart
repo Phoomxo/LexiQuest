@@ -61,6 +61,52 @@ void main() {
     );
   }
 
+  for (final remove in [true, false]) {
+    test('F04 revoke reserves order during drain remove=$remove', () async {
+      var id = 0;
+      final tutor = createTutor(eventId: () => 'revoke-${id++}');
+      addTearDown(tutor.dispose);
+      final started = Completer<void>();
+      final release = Completer<void>();
+      gateway.onGenerate = () async {
+        if (!started.isCompleted) started.complete();
+        await release.future;
+      };
+      final first = tutor.reply(scenario: 'Cafe', learnerMessage: 'first');
+      await started.future;
+      final revoking = remove
+          ? tutor.removeKey()
+          : tutor.updateConsents(
+              providerConsent: false,
+              shareLearningSummary: false,
+            );
+      final second = tutor.reply(scenario: 'Cafe', learnerMessage: 'second');
+      final rejected = expectLater(
+        second,
+        throwsA(
+          _aiFailure(
+            remove ? AiFailureCode.missingKey : AiFailureCode.consentRequired,
+          ),
+        ),
+      );
+      release.complete();
+      // A provider that has already produced a paid result must remain accounted.
+      expect((await first).text, 'live reply');
+      await revoking;
+      await rejected;
+      expect(gateway.generateCalls, 1);
+      expect(usage.pending, isEmpty);
+      expect(usage.completed, hasLength(1));
+      expect(usage.completed.single.$2.outcome, 'success');
+      final credential = await store.readCredentialForOwner('owner-a');
+      if (remove) {
+        expect(credential, isNull);
+      } else {
+        expect(credential!.providerConsent, isFalse);
+      }
+    });
+  }
+
   test('B13 missing key does not begin usage or invoke gateway', () async {
     await store.deleteCredential();
     final tutor = createTutor();

@@ -1,4 +1,12 @@
 import 'dart:async';
+import 'package:drift/native.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +14,200 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 
 void main() {
+  testWidgets(
+    'F04 inherited replacement retires deferred usage and preserves B data',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      addTearDown(db.close);
+      final gate = Completer<void>();
+      final old = _FailingClearTutor()
+        ..consent = true
+        ..usageGate = gate
+        ..usageSummaries = [_summary('old-usage')];
+      final current = _FailingClearTutor()
+        ..usageSummaries = [_summary('current-usage')];
+      Widget shell(AiTutorController tutor) => AppDependenciesScope(
+        dependencies: _dependencies(db, tutor),
+        child: const MaterialApp(home: AiTutorSettingsScreen()),
+      );
+      await tester.pumpWidget(shell(old));
+      await tester.pump();
+      await tester.pumpWidget(shell(current));
+      await tester.pumpAndSettle();
+      gate.complete();
+      await tester.pumpAndSettle();
+      final tile = find.widgetWithText(ListTile, 'OpenAI / current-usage');
+      await tester.scrollUntilVisible(
+        tile,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(tile, findsOneWidget);
+      expect(find.text('OpenAI / old-usage'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('F04 replacement usage failure displays unknown not old usage', (
+    tester,
+  ) async {
+    final old = _FailingClearTutor()..usageSummaries = [_summary('old-usage')];
+    await tester.pumpWidget(
+      MaterialApp(home: AiTutorSettingsScreen(aiTutor: old)),
+    );
+    await tester.pumpAndSettle();
+    final current = _FailingClearTutor()..failUsageLoad = true;
+    await tester.pumpWidget(
+      MaterialApp(home: AiTutorSettingsScreen(aiTutor: current)),
+    );
+    await tester.pumpAndSettle();
+    final clear = find.byKey(const ValueKey('ai-clear-usage'));
+    await tester.scrollUntilVisible(
+      clear,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('OpenAI / old-usage'), findsNothing);
+    expect(find.text('ยังโหลดสถิติการใช้ AI ไม่สำเร็จ'), findsOneWidget);
+  });
+
+  testWidgets(
+    'F04 old mutation failure cannot reconcile replacement settings',
+    (tester) async {
+      final gate = Completer<void>();
+      final old = _FailingClearTutor()
+        ..consent = true
+        ..consentGate = gate
+        ..failConsent = true;
+      final current = _FailingClearTutor();
+      await tester.pumpWidget(
+        MaterialApp(home: AiTutorSettingsScreen(aiTutor: old)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('ai-withdraw-consent')));
+      await tester.pump();
+      await tester.pumpWidget(
+        MaterialApp(home: AiTutorSettingsScreen(aiTutor: current)),
+      );
+      await tester.pumpAndSettle();
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(old.settingsReads, 1);
+      expect(
+        find.text('ความยินยอมที่บันทึก: ไม่อนุญาตส่งข้อความ'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('ai-settings-error')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('F04 null initial tutor is visibly unavailable', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AiTutorSettingsScreen()));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byKey(const ValueKey('ai-settings-error')), findsOneWidget);
+  });
+
+  for (final pendingUsage in [false, true]) {
+    testWidgets('F04 replacement retires old load usage=$pendingUsage', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final old = _FailingClearTutor()..consent = true;
+      if (pendingUsage) {
+        old.usageGate = gate;
+      } else {
+        old.settingsGate = gate;
+      }
+      final current = _FailingClearTutor();
+      await tester.pumpWidget(
+        MaterialApp(home: AiTutorSettingsScreen(aiTutor: old)),
+      );
+      await tester.pump();
+      await tester.pumpWidget(
+        MaterialApp(home: AiTutorSettingsScreen(aiTutor: current)),
+      );
+      await tester.pumpAndSettle();
+      expect(current.settingsReads, 1);
+      expect(
+        find.text('ความยินยอมที่บันทึก: ไม่อนุญาตส่งข้อความ'),
+        findsOneWidget,
+      );
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('ความยินยอมที่บันทึก: อนุญาตส่งข้อความ'), findsNothing);
+      expect(
+        find.text('ความยินยอมที่บันทึก: ไม่อนุญาตส่งข้อความ'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('F04 failed replacement clears known saved state', (
+    tester,
+  ) async {
+    final old = _FailingClearTutor()..consent = true;
+    await tester.pumpWidget(
+      MaterialApp(home: AiTutorSettingsScreen(aiTutor: old)),
+    );
+    await tester.pumpAndSettle();
+    final current = _FailingClearTutor()..failSettingsLoad = true;
+    await tester.pumpWidget(
+      MaterialApp(home: AiTutorSettingsScreen(aiTutor: current)),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text('ยังตรวจสอบการตั้งค่าและความยินยอมไม่ได้'),
+      findsOneWidget,
+    );
+    expect(find.text('ความยินยอมที่บันทึก: อนุญาตส่งข้อความ'), findsNothing);
+  });
+
+  for (final remove in [true, false]) {
+    testWidgets(
+      'F04 old confirmation cannot mutate replacement remove=$remove',
+      (tester) async {
+        final old = _FailingClearTutor()..consent = true;
+        final current = _FailingClearTutor();
+        final selected = ValueNotifier<AiTutorController>(old);
+        addTearDown(selected.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ValueListenableBuilder<AiTutorController>(
+              valueListenable: selected,
+              builder: (_, tutor, _) => AiTutorSettingsScreen(aiTutor: tutor),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final button = find.byKey(
+          ValueKey(remove ? 'ai-remove-key' : 'ai-clear-usage'),
+        );
+        await tester.scrollUntilVisible(
+          button,
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        selected.value = current;
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(
+            FilledButton,
+            remove ? 'ลบรหัสเชื่อมต่อ' : 'ล้างสถิติในเครื่อง',
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(old.removeCalls + old.clearCalls, 0);
+        expect(current.removeCalls + current.clearCalls, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   for (final tokenCase in <(String, int?, int, int, int)>[
     ('unknown', null, 0, 0, 2),
     ('partial', null, 10, 3, 4),
@@ -320,6 +522,9 @@ void main() {
 }
 
 final class _FailingClearTutor implements AiTutorController {
+  Completer<void>? settingsGate;
+  Completer<void>? usageGate;
+  int removeCalls = 0;
   int clearCalls = 0;
   int activeModelCalls = 0;
   bool consent = false;
@@ -336,6 +541,7 @@ final class _FailingClearTutor implements AiTutorController {
   @override
   Future<AiTutorSettingsStatus> loadSettings() async {
     settingsReads++;
+    await settingsGate?.future;
     if (failSettingsLoad || (settingsReads > 1 && failReadback)) {
       throw const AiTutorException(AiFailureCode.secureStorage);
     }
@@ -350,6 +556,7 @@ final class _FailingClearTutor implements AiTutorController {
 
   @override
   Future<List<AiUsageSummary>> loadUsage() async {
+    await usageGate?.future;
     if (failUsageLoad) {
       throw const AiTutorException(AiFailureCode.localPersistence);
     }
@@ -400,7 +607,9 @@ final class _FailingClearTutor implements AiTutorController {
   }
 
   @override
-  Future<void> removeKey() => throw UnimplementedError();
+  Future<void> removeKey() async {
+    removeCalls++;
+  }
 
   @override
   Future<AiTutorReply> reply({
@@ -424,4 +633,47 @@ final class _FailingClearTutor implements AiTutorController {
     if (failConsent) throw const AiTutorException(AiFailureCode.secureStorage);
     consent = providerConsent;
   }
+}
+
+AiUsageSummary _summary(String model) => AiUsageSummary(
+  providerId: AiProviderId.openai,
+  model: model,
+  requestCount: 1,
+  successCount: 1,
+  failureCount: 0,
+  indeterminateCount: 0,
+  totalTokens: 5,
+  knownTokens: 5,
+  tokenReportedRequestCount: 1,
+  totalLatencyMs: 1,
+  providerReportedCostMicrosUsd: null,
+);
+
+AppDependencies _dependencies(AppDatabase database, AiTutorController tutor) {
+  final research = InertResearchDependencies(database);
+  return AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _GuestSession(),
+    quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
+    aiTutor: tutor,
+  );
+}
+
+class _GuestSession implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionFailed(GuestSessionFailure.unknown);
 }

@@ -10,6 +10,35 @@ import 'package:vocab_learning_app/features/ai_tutor/data/openai_responses_gatew
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 
 void main() {
+  for (final (cost, expected) in <(String, int?)>[
+    ('1e308', null),
+    ('1e30', null),
+    ('-1', null),
+    ('"bad"', null),
+    ('0', 0),
+    ('0.000012', 12),
+  ]) {
+    test('F04 advisory cost $cost preserves paid reply', () async {
+      final client = _RecordingClient(
+        (_, _) async => _response(
+          200,
+          '{"choices":[{"message":{"content":"paid reply"}}],'
+          '"usage":{"prompt_tokens":2,"completion_tokens":3,"total_tokens":5,"cost":$cost}}',
+        ),
+      );
+      final gateway = OpenAiCompatibleGateway(
+        client: client,
+        baseUri: Uri.parse('https://synthetic.example'),
+        model: 'test',
+      );
+      final reply = await _reply(gateway);
+      expect(reply.text, 'paid reply');
+      expect(reply.usage!.providerReportedCostMicrosUsd, expected);
+      expect(reply.usage!.totalTokens, 5);
+      expect(client.requests, hasLength(1));
+    });
+  }
+
   test('B13 pre-cancelled Gemini bridge sends no HTTP request', () async {
     final client = _RecordingClient((_, _) async => _response(200, '{}'));
     final gateway = AiTutorGatewayFactory(

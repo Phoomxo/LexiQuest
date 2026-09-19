@@ -235,7 +235,14 @@ final class OpenAiCompatibleGateway implements AiTutorGateway {
       _ => null,
     };
     final costMicros = switch (raw['cost']) {
-      final num value when value >= 0 => (value * 1000000).round(),
+      // Keep micro-dollar values exactly representable on VM and web. Usage
+      // is advisory: overflow must not discard a successfully paid reply.
+      final num value
+          when value.isFinite &&
+              value >= 0 &&
+              (value * 1000000).isFinite &&
+              value * 1000000 <= 9007199254740991 =>
+        (value * 1000000).round(),
       _ => null,
     };
     if (input == null &&
