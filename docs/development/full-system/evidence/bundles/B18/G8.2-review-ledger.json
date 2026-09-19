@@ -35079,11 +35079,13 @@
       "lines": 113,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full113 lines read. Fixedmanifest modelstatus/download, openactive checksrecordstate/path/delegates andstreamsactualsize/SHA beforeinterpreter, corruptmarksfailed. No root/linkpathvalidation here, operatorDBpath trusted. BenchCPU/XNNsequential onzeroinput, closesfinally, neverGPU; allocationproductsoperator-manifestboundedonlypositive. No model execution.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "reviewNotes": "Full113 lines read. Fixedmanifest modelstatus/download, openactive checksrecordstate/path/delegates andstreamsactualsize/SHA beforeinterpreter, corruptmarksfailed. No root/linkpathvalidation here, operatorDBpath trusted. BenchCPU/XNNsequential onzeroinput, closesfinally, neverGPU; allocationproductsoperator-manifestboundedonlypositive. No model execution. Semantic disposition: REV-07-zone-review.json REV07-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35100,11 +35102,13 @@
       "lines": 97,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full97 lines read. Stopwatchoperation+sampledprocessRSS, warmups then1..100measured, sorteduppermiddlemedian andnearest-rankp90. warmupcountunboundedpositive, RSSsampleafterrunnottruewithinrunpeak, runtime.runincludesclassificationallocation/sort. No performance/quality resultfabricated orrun.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "reviewNotes": "Full97 lines read. Stopwatchoperation+sampledprocessRSS, warmups then1..100measured, sorteduppermiddlemedian andnearest-rankp90. warmupcountunboundedpositive, RSSsampleafterrunnottruewithinrunpeak, runtime.runincludesclassificationallocation/sort. No performance/quality resultfabricated orrun. Semantic disposition: REV-07-zone-review.json REV07-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35121,11 +35125,13 @@
       "lines": 630,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full630 lines read. Sameinstanceinflightdedupwithoutmanifestcomparison, globalfixedmanifestlivecallerlimitsmismatchrisk. Perfilenamefilelock boundedpoll,partialresume/restart/fullpartialcrash SHA+interpreter before rename+atomicDBactivation; cachedfilealsoverifies beforeactivation. Streamingaddsoversizechunktosinkbeforecheckingbound, awaitsDBwriteperchunk, noabsoluteelapsed/downloadcapacityceiling orminappcompatibilitycheckhere. Downloadpathsweakerlinkcheckingthanremoval. Cancellationafterlockbutcachedvalidbranch canactivatewithoutnewcheck; finalrenamecommitboundaryintentneedsoracle. Removalcanonical/hash/linkverificationdeletesfilebeforecallerrecordmutation, failedrecorddeletionleavesmissingbytes requiringrepair, no rollback. Escapedremover rejectedaftercallback but concurrentlyunawaitedcall couldoutlivelease. Diagnosticsbest-effortstablecompletion avoidsregrant. Disposecancelsactiveanddrainsallunboundedplatformops. No install/inference orruntime.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-01"
+      ],
+      "reviewNotes": "Full630 lines read. Sameinstanceinflightdedupwithoutmanifestcomparison, globalfixedmanifestlivecallerlimitsmismatchrisk. Perfilenamefilelock boundedpoll,partialresume/restart/fullpartialcrash SHA+interpreter before rename+atomicDBactivation; cachedfilealsoverifies beforeactivation. Streamingaddsoversizechunktosinkbeforecheckingbound, awaitsDBwriteperchunk, noabsoluteelapsed/downloadcapacityceiling orminappcompatibilitycheckhere. Downloadpathsweakerlinkcheckingthanremoval. Cancellationafterlockbutcachedvalidbranch canactivatewithoutnewcheck; finalrenamecommitboundaryintentneedsoracle. Removalcanonical/hash/linkverificationdeletesfilebeforecallerrecordmutation, failedrecorddeletionleavesmissingbytes requiringrepair, no rollback. Escapedremover rejectedaftercallback but concurrentlyunawaitedcall couldoutlivelease. Diagnosticsbest-effortstablecompletion avoidsregrant. Disposecancelsactiveanddrainsallunboundedplatformops. No install/inference orruntime. Semantic disposition: REV-07-zone-review.json REV07-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35142,11 +35148,11 @@
       "lines": 104,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full104 lines read. Sharedglobalmodelrecords, typedUTCwrites/exactenumdecode; activateatomicallydemotesallactive theninsertsselectedactive irrespectivemodelIDpurpose. No statevalidationbeyondDBschema andmutatorconstructedrecord. Read only.",
+      "reviewNotes": "Full104 lines read. Sharedglobalmodelrecords, typedUTCwrites/exactenumdecode; activateatomicallydemotesallactive theninsertsselectedactive irrespectivemodelIDpurpose. No statevalidationbeyondDBschema andmutatorconstructedrecord. Read only. Semantic disposition: REV-07-zone-review.json REV07-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35163,11 +35169,11 @@
       "lines": 104,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full104 lines read. AbortableGET rangeforpositiveoffset,30sheaderaborttimer andbodyinactivitytimeout,typednetwork/cancel. Headerawait reliesclientabortcompliance(noFuturetimeout), bodytricklehasnototaldeadline. ContentRangeparsesonlystartnotend/total; managersizehashrejectincorrectfinalbytes. NoHTTPSenforcementstandalonebutmanifestHTTPS. No socketcalls.",
+      "reviewNotes": "Full104 lines read. AbortableGET rangeforpositiveoffset,30sheaderaborttimer andbodyinactivitytimeout,typednetwork/cancel. Headerawait reliesclientabortcompliance(noFuturetimeout), bodytricklehasnototaldeadline. ContentRangeparsesonlystartnotend/total; managersizehashrejectincorrectfinalbytes. NoHTTPSenforcementstandalonebutmanifestHTTPS. No socketcalls. Semantic disposition: REV-07-zone-review.json REV07-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35184,11 +35190,13 @@
       "lines": 215,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full215 lines read. ActualnativeinterpreterCPU/XNN,oneinput/outputexactshape/type,labelZIPbasenamecount validation withcleanup; GPUenumwouldreportGPUwithoutdelegateifcustommanifestallows butproductionmanifest/policydeny. Hashcheckedbeforecallingbutclassstandalone trustsfile; labeldecompressionunboundedtrustedhashartifact. RGBbytecountexact,quantdequant/floatsfiniteclamped scores sortedtopK; no normalization check/labelunique. Syncnativeinferenceexecutedinasyncmethod oncallingisolate, nooffload. close setsclosedbefore sequentialcleanup canleakdelegateifinterpreterclosefails. No native load orbenchmark.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-02"
+      ],
+      "reviewNotes": "Full215 lines read. ActualnativeinterpreterCPU/XNN,oneinput/outputexactshape/type,labelZIPbasenamecount validation withcleanup; GPUenumwouldreportGPUwithoutdelegateifcustommanifestallows butproductionmanifest/policydeny. Hashcheckedbeforecallingbutclassstandalone trustsfile; labeldecompressionunboundedtrustedhashartifact. RGBbytecountexact,quantdequant/floatsfiniteclamped scores sortedtopK; no normalization check/labelunique. Syncnativeinferenceexecutedinasyncmethod oncallingisolate, nooffload. close setsclosedbefore sequentialcleanup canleakdelegateifinterpreterclosefails. No native load orbenchmark. Semantic disposition: REV-07-zone-review.json REV07-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35205,11 +35213,11 @@
       "lines": 203,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full203 lines read. Download/cancel/failure/delegate domain, copyWithcannotclearlocalpath, classifiershapesassumed byimplementers. GPU policyhardfalse regardlessallowlist selectsXNNPack; doesnotproveactualGPUfallback/devicebenchmark. Recordsconstructorunvalidated delegatedrepo/manifest. No execution.",
+      "reviewNotes": "Full203 lines read. Download/cancel/failure/delegate domain, copyWithcannotclearlocalpath, classifiershapesassumed byimplementers. GPU policyhardfalse regardlessallowlist selectsXNNPack; doesnotproveactualGPUfallback/devicebenchmark. Recordsconstructorunvalidated delegatedrepo/manifest. No execution. Semantic disposition: REV-07-zone-review.json REV07-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -35226,11 +35234,11 @@
       "lines": 106,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full106 lines read. Immutablepositiveinput/outputshape/backgroundindices,HTTPSsource/hash/bytes/license/minappregex/requiredCPU; pinnedretainedMobileNetbaseline4287874bytesSHA d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b. minAppVersion notenforcedhere. id/version onlynonempty→sanitizedfilenamecollisionspossibleforoperatorcustommanifest. SourceHTTPSscheme nohost/credentialcheck. No remote retrieval.",
+      "reviewNotes": "Full106 lines read. Immutablepositiveinput/outputshape/backgroundindices,HTTPSsource/hash/bytes/license/minappregex/requiredCPU; pinnedretainedMobileNetbaseline4287874bytesSHA d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b. minAppVersion notenforcedhere. id/version onlynonempty→sanitizedfilenamecollisionspossibleforoperatorcustommanifest. SourceHTTPSscheme nohost/credentialcheck. No remote retrieval. Semantic disposition: REV-07-zone-review.json REV07-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:21:41.665601+00:00",
       "readRanges": [
         [
@@ -37590,11 +37598,11 @@
       "lines": 40,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full40 lines read. DecodebakeEXIForientation thenlinearcentersquare224RGB, outputfixed150528bytes. Decodesfullinputwithoutpreflightcompressed/pixeldimensionceil; camera usesmediumresolutionbutexternalinputs couldlarge. CapturedrotationDegreesnotpassed andEXIFonlyorientation used. Exceptionmappingcoversdecodeonly;scannerwrapsrest. No inferenceexecuted.",
+      "reviewNotes": "Full40 lines read. DecodebakeEXIForientation thenlinearcentersquare224RGB, outputfixed150528bytes. Decodesfullinputwithoutpreflightcompressed/pixeldimensionceil; camera usesmediumresolutionbutexternalinputs couldlarge. CapturedrotationDegreesnotpassed andEXIFonlyorientation used. Exceptionmappingcoversdecodeonly;scannerwrapsrest. No inferenceexecuted. Semantic disposition: REV-07-zone-review.json REV07-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:20:41.445693+00:00",
       "readRanges": [
         [
@@ -37611,11 +37619,14 @@
       "lines": 489,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full489 lines read. Synchronousleaseidentitytakeover +seriallifecycle andscanepoch invalidation; ownerpinnedbeforecapture/recheckedafterclassify, inputprobs/indexvalidated/backgroundexcluded/minconfidence default.15butbootstrapconfigneedscheck. Exactissuedresultidentity andowner/mutationpredicate passedcanonicalvocabularywriter. RuntimeopenedCPUonceandkeptpaused; downloadnewmodeldoesnotreplaceopenruntimehere, manifestfixedusecases. Leasetakeoverpausefailureignoredthennewinitallowed needcleanuporacles; disposeclosesruntimebeforecamera, thrownclosecanpreventcameradispose. No claimdeviceaccuracy/training orrun.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-02",
+        "B18-REV07-03"
+      ],
+      "reviewNotes": "Full489 lines read. Synchronousleaseidentitytakeover +seriallifecycle andscanepoch invalidation; ownerpinnedbeforecapture/recheckedafterclassify, inputprobs/indexvalidated/backgroundexcluded/minconfidence default.15butbootstrapconfigneedscheck. Exactissuedresultidentity andowner/mutationpredicate passedcanonicalvocabularywriter. RuntimeopenedCPUonceandkeptpaused; downloadnewmodeldoesnotreplaceopenruntimehere, manifestfixedusecases. Leasetakeoverpausefailureignoredthennewinitallowed needcleanuporacles; disposeclosesruntimebeforecamera, thrownclosecanpreventcameradispose. No claimdeviceaccuracy/training orrun. Semantic disposition: REV-07-zone-review.json REV07-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:20:41.445693+00:00",
       "readRanges": [
         [
@@ -42955,11 +42966,13 @@
       "lines": 748,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-07",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full748 lines read in1-365/366-748. Runtime owned scanner leases follow route voice and app foreground; capture/benchmark results fenced by epoch, scanner, lease and current token. Download cancelled on cover/background, initialization failure deferred through native permission lifecycle. Accept pins result and lease before/after persistence, stale UI ignored; durable use-case fencing reviewed separately. Speech catch only mounted, so old session failure can surface on newer route state. Capture can start during benchmark although model controller serializes operations. Scrollable results and wrapped actions; benchmark rendered as local measurements, no physical device validation. Manual vocabulary route reaches CategoriesPage subject to existing transitive gating finding. Read only, no execution.",
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "reviewNotes": "Full748 lines read in1-365/366-748. Runtime owned scanner leases follow route voice and app foreground; capture/benchmark results fenced by epoch, scanner, lease and current token. Download cancelled on cover/background, initialization failure deferred through native permission lifecycle. Accept pins result and lease before/after persistence, stale UI ignored; durable use-case fencing reviewed separately. Speech catch only mounted, so old session failure can surface on newer route state. Capture can start during benchmark although model controller serializes operations. Scrollable results and wrapped actions; benchmark rendered as local measurements, no physical device validation. Manual vocabulary route reaches CategoriesPage subject to existing transitive gating finding. Read only, no execution. Semantic disposition: REV-07-zone-review.json REV07-X05; static only, runtime NOT RUN. Correction: prior claim that model controller serializes capture/benchmark is unsupported; separate handles and missing benchmark drain are recorded in REV07-X03/REV07-03.",
       "sourceReadDate": "2026-09-14T03:25:27.730142+00:00",
       "readRanges": [
         [
@@ -43920,11 +43933,11 @@
       "lines": 58,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Sort copy by timestamp and rounded70/85percent boundaries, mutable returned lists and no group/dedup/tie isolation. Not current camera group-split pipeline; no production caller in lib search. Source review only.",
+      "reviewNotes": "Full file read. Sort copy by timestamp and rounded70/85percent boundaries, mutable returned lists and no group/dedup/tie isolation. Not current camera group-split pipeline; no production caller in lib search. Source review only. Semantic disposition: REV-07-zone-review.json REV07-X06; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
       "readRanges": [
         [
@@ -44130,11 +44143,11 @@
       "lines": 1240,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-07",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1240 lines read. Immutable in-code vocabulary records with exact trimmed/lowercase label lookup and sole reviewed coffee cup alias; unknown labels null, no substring fallback. Category/CEFR reads case-insensitive but not trimmed; returned allEntries unmodifiable. Header ML Kit is historical versus actual bootstrap LiteRT baseline; bootstrap1680 supplies no minimumConfidence override, so live default .15. Built-in CEFR/IPA annotations are authored data, not external certification; precise model label coverage differs from catalog entry count. No runtime execution.",
+      "reviewNotes": "Full1240 lines read. Immutable in-code vocabulary records with exact trimmed/lowercase label lookup and sole reviewed coffee cup alias; unknown labels null, no substring fallback. Category/CEFR reads case-insensitive but not trimmed; returned allEntries unmodifiable. Header ML Kit is historical versus actual bootstrap LiteRT baseline; bootstrap1680 supplies no minimumConfidence override, so live default .15. Built-in CEFR/IPA annotations are authored data, not external certification; precise model label coverage differs from catalog entry count. No runtime execution. Semantic disposition: REV-07-zone-review.json REV07-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:28:23.267702+00:00",
       "readRanges": [
         [
@@ -49193,11 +49206,11 @@
       "lines": 224,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full224 lines read. Real temporary model bytes/SHA with fake repository/runtime; same-length corruption marks failed. CPU/XNN benchmark opens/closes all fake runtimes and11 invocations; title bounded real runtime runs does not mean native inference. No B18 execution.",
+      "reviewNotes": "Full224 lines read. Real temporary model bytes/SHA with fake repository/runtime; same-length corruption marks failed. CPU/XNN benchmark opens/closes all fake runtimes and11 invocations; title bounded real runtime runs does not mean native inference. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49214,11 +49227,11 @@
       "lines": 81,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full81 lines read. Actual memory Drift persists typed failures, bytes and UTC; activation demotes previous model. No transaction rollback failure case. No B18 execution.",
+      "reviewNotes": "Full81 lines read. Actual memory Drift persists typed failures, bytes and UTC; activation demotes previous model. No transaction rollback failure case. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49249,11 +49262,11 @@
       "lines": 53,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full53 lines read. Actual native CPU synthetic fixed float TFLite hash 9d9b1b6ac4c1fb05e60a74a7b8fd9da954e36245d0f7432dd998fa9e625ac187, four float32 classes, book probability .6 and sum1. Synthetic runtime contract, not product accuracy. No B18 execution.",
+      "reviewNotes": "Full53 lines read. Actual native CPU synthetic fixed float TFLite hash 9d9b1b6ac4c1fb05e60a74a7b8fd9da954e36245d0f7432dd998fa9e625ac187, four float32 classes, book probability .6 and sum1. Synthetic runtime contract, not product accuracy. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49270,11 +49283,11 @@
       "lines": 147,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full147 lines read. Actual local HTTP sockets validate range4096/tail10, header stall50ms, precancel and body-stall cancellation. No invalid range-end/oversize/trickling absolute deadline oracle. Local socket tests not remote service evidence. No B18 execution.",
+      "reviewNotes": "Full147 lines read. Actual local HTTP sockets validate range4096/tail10, header stall50ms, precancel and body-stall cancellation. No invalid range-end/oversize/trickling absolute deadline oracle. Local socket tests not remote service evidence. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49291,11 +49304,11 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full59 lines read. Native CPU/XNN zero224 input,10 samples/3warmups, positive ordered durations and stdout RSS, release-excluded tag. Model env/default build fixture with no hash assertion in this file; no physical GPU/device/thermal result. No B18 execution.",
+      "reviewNotes": "Full59 lines read. Native CPU/XNN zero224 input,10 samples/3warmups, positive ordered durations and stdout RSS, release-excluded tag. Model env/default build fixture with no hash assertion in this file; no physical GPU/device/thermal result. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49312,11 +49325,11 @@
       "lines": 85,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full85 lines read. Native XNN zero-image three labels/range and CPU wrong-output-shape verifier rejection. File existence rather than SHA assertion despite checksum-pinned title relies preparation gate. Release excluded. No B18 execution.",
+      "reviewNotes": "Full85 lines read. Native XNN zero-image three labels/range and CPU wrong-output-shape verifier rejection. File existence rather than SHA assertion despite checksum-pinned title relies preparation gate. Release excluded. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49333,11 +49346,11 @@
       "lines": 116,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full116 lines read. Fake1..5ms durations verify median3/p905, one warmup plus five measured invocations, fixed64MiB RSS. GPU hard disabled despite allowlist/request. No physical performance or even median/warmup upper bound oracle. No B18 execution.",
+      "reviewNotes": "Full116 lines read. Fake1..5ms durations verify median3/p905, one warmup plus five measured invocations, fixed64MiB RSS. GPU hard disabled despite allowlist/request. No physical performance or even median/warmup upper bound oracle. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49354,11 +49367,11 @@
       "lines": 1013,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1013 lines read across resume boundary. Actual temp bytes and fake verifier/source cover full-partial recovery avoiding EOF range, bad hashes, verifier cancellation/rejection, oversized existing partial restart, range ignored/mismatch, corrupt active repair, identical in-instance dedup and two-manager file locking. Actual file-backed Drift counter reopen reconciles missed completion once, redownload increments second time and cached opens do not; legacy marker upgrade and cached cross-version completion preserved. Removal waits active transfer; cooperative cancellation source proves dispose drain. No oversized incoming chunk, noncooperative drain, cached verification cancellation, or simultaneous different-manifest in-instance oracle. Repository/verifier largely fakes; no B18 execution.",
+      "reviewNotes": "Full1013 lines read across resume boundary. Actual temp bytes and fake verifier/source cover full-partial recovery avoiding EOF range, bad hashes, verifier cancellation/rejection, oversized existing partial restart, range ignored/mismatch, corrupt active repair, identical in-instance dedup and two-manager file locking. Actual file-backed Drift counter reopen reconciles missed completion once, redownload increments second time and cached opens do not; legacy marker upgrade and cached cross-version completion preserved. Removal waits active transfer; cooperative cancellation source proves dispose drain. No oversized incoming chunk, noncooperative drain, cached verification cancellation, or simultaneous different-manifest in-instance oracle. Repository/verifier largely fakes; no B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -49375,11 +49388,11 @@
       "lines": 51,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full51 lines read. Static baseline identity/license/minimum version/hash4287874/tensors/delegates; invalid manifest changes several fields together and does not isolate individual checks or enforce minimum app version at activation. No B18 execution.",
+      "reviewNotes": "Full51 lines read. Static baseline identity/license/minimum version/hash4287874/tensors/delegates; invalid manifest changes several fields together and does not isolate individual checks or enforce minimum app version at activation. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:26:23.565168+00:00",
       "readRanges": [
         [
@@ -52021,11 +52034,11 @@
       "lines": 74,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full74 lines read. Real PNG/JPEG codecs verify center crop excludes bands, exact raw RGB order, EXIF6 rotates once with JPEG tolerance, deterministic224 output and invalid bytes typed failure. No oversized encoded/decompressed image bound. No B18 execution.",
+      "reviewNotes": "Full74 lines read. Real PNG/JPEG codecs verify center crop excludes bands, exact raw RGB order, EXIF6 rotates once with JPEG tolerance, deterministic224 output and invalid bytes typed failure. No oversized encoded/decompressed image bound. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:27:34.765830+00:00",
       "readRanges": [
         [
@@ -52042,11 +52055,11 @@
       "lines": 1117,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1117 lines read. Real Drift owner switches during inference/after preview reject; held transaction lifecycle expiry rolls back all writes, SQLite abort trigger simulates insertion failure and recovery. Actual file reopen and mounted scanner-to-categories UI preserve word/provenance/two outbox rows. Lost-ack callback commits then throws; eight concurrent retries reuse same durable word. Identity-cloned result rejected, invalid finite/range/index outputs rejected, background/unknown primary not replaced with lower mapped label, threshold .14 below default .15. Camera/preprocessor/runtime are fake except invalid-image codec case; late runtime disposal tested but not close throwing. No native camera/device accuracy or B18 execution.",
+      "reviewNotes": "Full1117 lines read. Real Drift owner switches during inference/after preview reject; held transaction lifecycle expiry rolls back all writes, SQLite abort trigger simulates insertion failure and recovery. Actual file reopen and mounted scanner-to-categories UI preserve word/provenance/two outbox rows. Lost-ack callback commits then throws; eight concurrent retries reuse same durable word. Identity-cloned result rejected, invalid finite/range/index outputs rejected, background/unknown primary not replaced with lower mapped label, threshold .14 below default .15. Camera/preprocessor/runtime are fake except invalid-image codec case; late runtime disposal tested but not close throwing. No native camera/device accuracy or B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:27:34.765830+00:00",
       "readRanges": [
         [
@@ -52063,11 +52076,11 @@
       "lines": 166,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full166 lines read. Fake sessions cover failed initialize cleanup/retry, five pause/resume cycles close once, concurrent init shares session, pending init pause and subsequent resume supersession. Fake takePicture throws unimplemented, so no actual capture file deletion/EXIF/native permission or dispose-error oracle. No B18 execution.",
+      "reviewNotes": "Full166 lines read. Fake sessions cover failed initialize cleanup/retry, five pause/resume cycles close once, concurrent init shares session, pending init pause and subsequent resume supersession. Fake takePicture throws unimplemented, so no actual capture file deletion/EXIF/native permission or dispose-error oracle. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:27:34.765830+00:00",
       "readRanges": [
         [
@@ -55677,11 +55690,11 @@
       "lines": 1444,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1444 lines read in1-480/481-980/981-1444. Fake scanner uses actual lease manager and deferred initialization/capture/download/benchmark/accept to verify shared route takeover order, background permission failure recovery, stale success/failure suppression and save single-flight/retry. Test titled real adapter persistence only counts fake accept and returns constant word, no actual database or camera. Fake benchmark returns n10 constants independent of requested defaults; no speed measurement. Actual Navigator child cover/pop and manual CategoriesPage route tested.390px2x mapped/unmapped render optional captures/no overflow, no action hit-test assertion for every scaled result. No runtime execution, physical camera/audio or feature withdrawal claim.",
+      "reviewNotes": "Full1444 lines read in1-480/481-980/981-1444. Fake scanner uses actual lease manager and deferred initialization/capture/download/benchmark/accept to verify shared route takeover order, background permission failure recovery, stale success/failure suppression and save single-flight/retry. Test titled real adapter persistence only counts fake accept and returns constant word, no actual database or camera. Fake benchmark returns n10 constants independent of requested defaults; no speed measurement. Actual Navigator child cover/pop and manual CategoriesPage route tested.390px2x mapped/unmapped render optional captures/no overflow, no action hit-test assertion for every scaled result. No runtime execution, physical camera/audio or feature withdrawal claim. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:26:52.934275+00:00",
       "readRanges": [
         [
@@ -56622,11 +56635,11 @@
       "lines": 30,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full30 lines. Synthetic100-item counts70/15/15 plus empty; no overlap/content identity/reproducibility/learner isolation oracle. Read-only oracle review; no execution.",
+      "reviewNotes": "Full30 lines. Synthetic100-item counts70/15/15 plus empty; no overlap/content identity/reproducibility/learner isolation oracle. Read-only oracle review; no execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:47:22.113406+00:00",
       "readRanges": [
         [
@@ -56832,11 +56845,11 @@
       "lines": 132,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:50:21.937883+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Exact case/trim and sole coffee cup alias mapping, unknown and substring lookalikes rejected, required fields populated, CEFR membership and sorted categories/min120 entries. No exhaustive model-label semantic alignment, dictionary certification or label uniqueness test. No B18 execution.",
+      "reviewNotes": "Full file read. Exact case/trim and sole coffee cup alias mapping, unknown and substring lookalikes rejected, required fields populated, CEFR membership and sorted categories/min120 entries. No exhaustive model-label semantic alignment, dictionary certification or label uniqueness test. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:28:23.267702+00:00",
       "readRanges": [
         [
@@ -60545,7 +60558,7 @@
     }
   ],
   "reviewProgress": {
-    "zone": "REV-07",
+    "zone": "REV-08",
     "zoneAccepted": false,
     "completedZones": [
       "REV-01",
@@ -60553,13 +60566,14 @@
       "REV-03",
       "REV-04",
       "REV-05",
-      "REV-06"
+      "REV-06",
+      "REV-07"
     ],
-    "completedProductionZoneFiles": 479,
-    "focusedRev12OracleDispositions": 58,
-    "totalStaticDispositions": 537,
-    "sourceReadAwaitingCrossCheck": 892,
-    "historyPath": "review-progress-before-REV06.json",
-    "notes": "Static dispositions only;40open findings17static-confirmed/23candidates. REV12 historical/shared/orphan audit required. G8.2 not accepted; no runtime execution."
+    "completedProductionZoneFiles": 492,
+    "focusedRev12OracleDispositions": 73,
+    "totalStaticDispositions": 565,
+    "sourceReadAwaitingCrossCheck": 864,
+    "historyPath": "review-progress-before-REV07.json",
+    "notes": "43open findings17static/26candidate; all1429observations retained. REV12 reconciles historical/shared/orphan notes. G8.2 not accepted; runtime NOT RUN."
   }
 }

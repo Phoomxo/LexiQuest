@@ -1,0 +1,18 @@
+{
+  "zone": "REV-07",
+  "zoneAccepted": false,
+  "completedZones": [
+    "REV-01",
+    "REV-02",
+    "REV-03",
+    "REV-04",
+    "REV-05",
+    "REV-06"
+  ],
+  "completedProductionZoneFiles": 479,
+  "focusedRev12OracleDispositions": 58,
+  "totalStaticDispositions": 537,
+  "sourceReadAwaitingCrossCheck": 892,
+  "historyPath": "review-progress-before-REV06.json",
+  "notes": "Static dispositions only;40open findings17static-confirmed/23candidates. REV12 historical/shared/orphan audit required. G8.2 not accepted; no runtime execution."
+}

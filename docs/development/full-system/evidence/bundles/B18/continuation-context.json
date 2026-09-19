@@ -6,18 +6,16 @@
     "REV-03",
     "REV-04",
     "REV-05",
-    "REV-06"
+    "REV-06",
+    "REV-07"
   ],
   "pending": {
-    "REV-07": [
-      "Training already accepted B11A actual compute, no rerun. Retained baseline/candidate pins in notes. Web development90.83 vs82.5, lightbulb0/3@.6, unknownN0/null not physical camera evidence. Candidate disabled URLnull.",
-      "Media/device/library oracles fully read; fake interpreter/static validation not native quality, rollback/model identity and source-rights scope remain important. No acquisition/training/device operation authorized by review."
-    ],
     "REV-08": [
       "OpenREV08-01 AI revocation cancellation-drain before enqueue andREV08-02 cost1e308 overflow need runtime later; legacy Gemini enqueue-first actual contrast. Paid usage3HTTPlogical not one-billed-request; no invented estimated costs.",
       "Allvoice33lib30tests/facade710, backendvoice28+lock139/620, AI22+lock63/319, LMsource/lock85/425/422 read. B14text similarity is not acoustic/native playback acceptance.",
       "Pending final dispositions: mirror/recorder dormant APIs/defaultNoop/unbounded body/provenance/untagged completion; actual queued stop may intentionally returnfalse. AI fallback429/cachecasefold/concurrentcachemiss not automatically defects. LM doubleim_end/tail/hashrandom/allmasked dryrun/whoami not executed; torch3wheels lack hash/size.",
-      "REV06 supplementary candidate REV06-07 owns ai_tutor_settings_screen stale generation/known flags; avoid duplicate finding. Supplemental AI settings widget notes reviewed, final oracle disposition belongs REV08/REV12."
+      "REV06 supplementary candidate REV06-07 owns ai_tutor_settings_screen stale generation/known flags; avoid duplicate finding. Supplemental AI settings widget notes reviewed, final oracle disposition belongs REV08/REV12.",
+      "REV07 supplemental object_scanner_screen._speak393-410 mounted-only late error; assess with common route voice cancellation/error contract. REV07-03 benchmark lifecycle belongs camera, avoid duplicate. No native speech evidence from camera review."
     ],
     "REV-09": [
       "REV09-01 actualFirestoreACKrevision codec mismatch after lostACK/edit is static; mocks bypass codec including owner upgrade/scheduler. REV09-02 denied proof prefix can starve eligible later rows; all-denied no-write invariant retained.",
@@ -38,29 +36,68 @@
       "All564 source/generated files fully read or structured-reviewed; final zone needs semantic cross-check attribution and leftover shared/orphan tests, no reread all. Four open static test/tool findingsREV12-01..04 have regressions in defects.json.",
       "Drift structured50table571column pairing succeeded including inherited ResearchOwnedRecord; generated managers have no live lib callers. No fresh regeneration/analyzer/versioncompat proof; locks drift2.34.3/dev2.34.5/buildrunner2.15.1.",
       "New owned review scripts require disposition too: checkpoint_audit now accepts exactly3 user-authorized policy files using frozen+new hashes, not application changes; all other frozen bytes exact. AST/integrity is not semantic/runtime acceptance. Do not blindly rerun freeze_inventory/record_review/merge_review_observations after completed zone notes.",
-      "REV06 completed57+35 (total537/pending892);9new candidate IDsREV06-01..09,40total17static/23candidate. Preserve receiptsREV01-05 and audit supplemental ledger links; avatar/profile/AI widget notes supplemental only, not in completed35. Historical empty projection_rebuild_v2 oracle is limited, not nonempty rebuild evidence."
+      "REV06 completed57+35 (total537/pending892);9new candidate IDsREV06-01..09,40total17static/23candidate. Preserve receiptsREV01-05 and audit supplemental ledger links; avatar/profile/AI widget notes supplemental only, not in completed35. Historical empty projection_rebuild_v2 oracle is limited, not nonempty rebuild evidence.",
+      "REV07 completed13+15:total565/pending864;43findings17static/26candidate. Prior screen benchmark serialization note explicitly corrected; REV07-03 tracks actual separate-handle disposal gap."
     ]
   },
   "oracleOwnership": {
-    "nextSlice": "REV-07",
+    "nextSlice": "REV-08",
     "nextSliceTests": [
-      "test/features/device_model/device_model_use_cases_test.dart",
-      "test/features/device_model/drift_model_download_repository_test.dart",
-      "test/features/device_model/float_classifier_test.dart",
-      "test/features/device_model/http_model_byte_source_test.dart",
-      "test/features/device_model/litert_benchmark_test.dart",
-      "test/features/device_model/litert_image_classifier_test.dart",
-      "test/features/device_model/model_benchmark_test.dart",
-      "test/features/device_model/model_download_manager_test.dart",
-      "test/features/device_model/model_manifest_test.dart",
-      "test/features/media_practice/plugin_camera_gateway_test.dart",
-      "test/features/media_practice/image_preprocessor_test.dart",
-      "test/features/media_practice/object_scanner_use_cases_test.dart",
-      "test/screens/object_scanner_screen_test.dart",
-      "test/services/dataset_partitioning_service_test.dart",
-      "test/services/object_vocabulary_database_test.dart"
+      "test/ai/ai_models_test.dart",
+      "test/features/ai_tutor/ai_gateway_adapters_test.dart",
+      "test/features/ai_tutor/ai_gateway_loopback_test.dart",
+      "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+      "test/features/ai_tutor/authored_quality_transport_test.dart",
+      "test/features/ai_tutor/drift_ai_usage_repository_test.dart",
+      "test/features/ai_tutor/owner_operation_coordinator_test.dart",
+      "test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart",
+      "test/features/gemini/ai_tutor_gateway_factory_test.dart",
+      "test/features/gemini/gemini_rest_gateway_test.dart",
+      "test/features/gemini/gemini_tutor_use_cases_test.dart",
+      "test/features/gemini/retry_gemini_gateway_test.dart",
+      "test/features/gemini/secure_gemini_settings_store_test.dart",
+      "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+      "test/features/media_practice/speech_practice_use_cases_test.dart",
+      "test/features/voice/route_voice_session_mixin_test.dart",
+      "test/features/voice/voice_use_cases_test.dart",
+      "test/scenarios/ai_voice_fallback_journey_test.dart",
+      "test/screens/ai_tutor_screen_test.dart",
+      "test/screens/ai_tutor_settings_screen_test.dart",
+      "test/screens/gemini_settings_screen_test.dart",
+      "test/screens/speak_to_text_screen_voice_test.dart",
+      "test/services/ai_voice_reading_adapters_test.dart",
+      "test/voice/bundled_voice_asset_provider_test.dart",
+      "test/voice/file_standard_voice_pack_store_test.dart",
+      "test/voice/firestore_voice_telemetry_test.dart",
+      "test/voice/http_standard_voice_pack_source_test.dart",
+      "test/voice/installed_voice_pack_provider_test.dart",
+      "test/voice/native_tts_provider_test.dart",
+      "test/voice/native_voice_route_handler_test.dart",
+      "test/voice/omni_voice_provider_test.dart",
+      "test/voice/platform_filesystem_capacity_test.dart",
+      "test/voice/standard_voice_pack_download_manager_test.dart",
+      "test/voice/standard_voice_pack_manifest_test.dart",
+      "test/voice/synthesized_voice_route_handler_test.dart",
+      "test/voice/voice_audio_cache_test.dart",
+      "test/voice/voice_audio_player_test.dart",
+      "test/voice/voice_auth_token_provider_test.dart",
+      "test/voice/voice_mirror_gateway_test.dart",
+      "test/voice/voice_mirror_recorder_test.dart",
+      "test/voice/voice_mirror_session_controller_test.dart",
+      "test/voice/voice_models_test.dart",
+      "test/voice/voice_orchestrator_cancellation_test.dart",
+      "test/voice/voice_orchestrator_telemetry_test.dart",
+      "test/voice/voice_orchestrator_test.dart",
+      "test/voice/voice_policy_test.dart",
+      "test/voice/voice_provider_descriptor_test.dart",
+      "test/voice/voice_provider_registry_test.dart",
+      "test/voice/voice_request_quota_test.dart",
+      "test/voice/voice_service_factory_test.dart",
+      "test/voice/voice_telemetry_test.dart",
+      "test/voice/vox_cpm_mirror_provider_test.dart",
+      "test/voice/vox_cpm_standard_provider_test.dart"
     ],
-    "remainingSharedAndOrphanOwner": "REV12 final gate reconciles58completed REV05/06 oracles, historical REV01-04 notes and supplemental avatar/profile/AI widget references. REV07 owns15camera/model oracles. CLI model/APK/field verification stays REV11; speech/noncamera media stays REV08; sync-specific reward/preference/reminder tests REV09. No orphan omission.",
+    "remainingSharedAndOrphanOwner": "REV12 final reconciles73completed REV05-07 oracles plus earlierREV01-04/shared/orphan/supplemental references. REV08 owns listed AI/voice/speech oracles; backend/LM/CLI test ownership follows historical zones, no omission. Split context at durable checkpoint if needed.",
     "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2.",
     "completedDomainOracles": {
       "REV-05": {
@@ -132,6 +169,27 @@
           "test/widgets/gentle_streak_card_test.dart",
           "test/widgets/reward_avatar_preview_test.dart"
         ]
+      },
+      "REV-07": {
+        "receipt": "REV-07-zone-review.json",
+        "count": 15,
+        "paths": [
+          "test/features/device_model/device_model_use_cases_test.dart",
+          "test/features/device_model/drift_model_download_repository_test.dart",
+          "test/features/device_model/float_classifier_test.dart",
+          "test/features/device_model/http_model_byte_source_test.dart",
+          "test/features/device_model/litert_benchmark_test.dart",
+          "test/features/device_model/litert_image_classifier_test.dart",
+          "test/features/device_model/model_benchmark_test.dart",
+          "test/features/device_model/model_download_manager_test.dart",
+          "test/features/device_model/model_manifest_test.dart",
+          "test/features/media_practice/plugin_camera_gateway_test.dart",
+          "test/features/media_practice/image_preprocessor_test.dart",
+          "test/features/media_practice/object_scanner_use_cases_test.dart",
+          "test/screens/object_scanner_screen_test.dart",
+          "test/services/dataset_partitioning_service_test.dart",
+          "test/services/object_vocabulary_database_test.dart"
+        ]
       }
     }
   },
@@ -141,7 +199,8 @@
   },
   "completedSliceReceipts": {
     "REV-05": "REV-05-zone-review.json",
-    "REV-06": "REV-06-zone-review.json"
+    "REV-06": "REV-06-zone-review.json",
+    "REV-07": "REV-07-zone-review.json"
   },
-  "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain."
+  "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain. REV07 domain FORM09 complete, REV11 retains CLI/formula delta final disposition; no registry rewrite."
 }

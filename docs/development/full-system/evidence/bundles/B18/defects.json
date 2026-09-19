@@ -709,6 +709,71 @@
       ],
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV07-01",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/device_model/application/model_download_manager.dart",
+      "relatedFiles": [
+        "test/features/device_model/model_download_manager_test.dart",
+        "lib/screens/object_scanner_screen.dart"
+      ],
+      "trigger": "Cancellation or dispose occurs while cached final artifact verifier is awaiting, before a ready/recovered artifact becomes active.",
+      "expected": "A cancelled operation before activation must not newly activate the cached artifact or report fresh success.",
+      "actual": "Cached branch309-332 awaits verification then activates/returns without checking cancellation/disposed; fresh partial branch441-448 checks. Existing tests cover cancellation during partial verifier, not cached verifier. Already-active verified artifact is a separate no-new-activation case.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Real temporary valid final bytes and ready/missing row with deferred verifier: cancel/dispose then release; assert no new activation or completion event, truthful cancellation, subsequent uncancelled recovery succeeds. Retain fresh commit-boundary and diagnostics exactly-once tests.",
+      "evidenceLocations": [
+        "model_download_manager.dart:295-332,441-458,520-533"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV07-02",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/device_model/data/litert_image_classifier.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart"
+      ],
+      "trigger": "Runtime.close throws during scanner disposal with an initialized camera.",
+      "expected": "Remaining camera/native cleanup is attempted exactly once despite an earlier cleanup failure; lease/result invalidation remains immediate.",
+      "actual": "_dispose nulls runtime then invokes close before camera.dispose without finally; memoized failed dispose cannot later retry camera cleanup. LiteRt close similarly marks closed before sequential interpreter/delegate/options cleanup. Failure injection/native throw reachability requires G8.3 reproduction.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Inject throwing runtime.close and count camera.dispose through actual ObjectScannerUseCases; assert camera attempted once and error retained. Exercise repeated disposal/late initialization and native resource wrapper failure where injectable; no physical leak claim from fake.",
+      "evidenceLocations": [
+        "object_scanner_use_cases.dart:474-483",
+        "litert_image_classifier.dart:201-207"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV07-03",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/device_model/application/device_model_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/device_model/application/model_benchmark.dart",
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/screens/object_scanner_screen.dart",
+        "test/features/device_model/device_model_use_cases_test.dart"
+      ],
+      "trigger": "Application resources dispose while a screen-started benchmark awaits repository/openRuntime, or a benchmark request starts after disposal.",
+      "expected": "No unowned late native interpreter starts after disposal completes; in-flight benchmark resources settle/close before teardown, or explicit cancellation invalidates admission.",
+      "actual": "DeviceModelUseCases.dispose delegates only to downloadManager. benchmarkActive/openActive lack lifecycle guard/tracking; scanner.dispose only owns its _runtime, benchmark opens separate handles. Screen epoch suppresses display but does not cancel benchmark. Native sync runtime may limit interleaving during inference; awaits during admission are real.",
+      "ownerPackage": "G5.1/G5.2/G5.3",
+      "proposedRegression": "Deferred repository/openRuntime and fake runtime through actual DeviceModelUseCases: start benchmark, dispose, complete open; assert bounded drain/cancellation and all handles closed, postdispose admission denied. Also cover route background stale display and ordinary CPU/XNN results.",
+      "evidenceLocations": [
+        "device_model_use_cases.dart:44-80,83-111",
+        "object_scanner_use_cases.dart:284-293,474-483",
+        "object_scanner_screen.dart:307-344"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [

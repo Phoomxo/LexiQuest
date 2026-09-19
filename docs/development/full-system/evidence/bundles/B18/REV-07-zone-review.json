@@ -1,0 +1,395 @@
+{
+  "zone": "REV-07",
+  "sliceId": "B18-G82-REV-07",
+  "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "checkpointInputSha": "0ce5c5952ce0112636c67ed68c4700c9d498e8b7",
+  "reviewCompletedAtUtc": "2026-09-19T11:50:21.937883+00:00",
+  "staticReviewComplete": true,
+  "developmentAccepted": false,
+  "runtimeTestsRun": false,
+  "crossChecks": [
+    {
+      "id": "REV07-X01",
+      "key": "identity-rollback",
+      "evidence": [
+        "lib/features/device_model/domain/model_manifest.dart",
+        "lib/features/device_model/domain/model_lifecycle.dart",
+        "lib/features/device_model/data/drift_model_download_repository.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "docs/development/full-system/evidence/bundles/B12/G5.6-acceptance.json"
+      ],
+      "disposition": "Bootstrap1663 binds only fieldImageClassifier; retained1001-output baseline4287874bytes SHA d3949e8a3556c79739cb675e0be7476503bcce76938031c6a1048e13e0cb7d8b. Candidate16-output12871389bytes SHA7d20e11746f986b666b487bb8327edc1ff4cf3dd4f7d7e13e5a3d955b020da96 stays releaseEnabled=false/distributionUri=null. Rollback is retained production selection, not an exercised installed downgrade. Repository activation transaction demotes prior active records; all current production use cases pin one manifest. Arbitrary manifest filename collisions/minimum-version admission/GPU custom allowlist are extension constraints, no live candidate upgrade path established. Typed state/UTC repository oracle lacks injected transaction-failure proof. No native quality inference from static manifest tests."
+    },
+    {
+      "id": "REV07-X02",
+      "key": "download-cache",
+      "evidence": [
+        "lib/features/device_model/application/model_download_manager.dart",
+        "lib/features/device_model/data/http_model_byte_source.dart",
+        "test/features/device_model/model_download_manager_test.dart",
+        "test/features/device_model/http_model_byte_source_test.dart"
+      ],
+      "disposition": "File lock, SHA/size/interpreter verification, full-partial crash recovery and atomic repository activation preserve model byte identity. Incoming excess chunk is queued before size rejection; final activation still rejects. Header and body inactivity timeout are not absolute elapsed deadlines; no production size bypass accepted. Fixed manifest limits different-manifest dedup risk. Cached verification lacks postawait cancellation before activation: REV07-01. Final fresh rename/activation is a commit boundary; do not demand undo after completed durable activation. Removal failure between bytes and record can require repair; existing artifact reopen verifies bytes. Real temporary-file/Drift recovery and loopback HTTP oracles are narrower than remote/native/device proof."
+    },
+    {
+      "id": "REV07-X03",
+      "key": "runtime-benchmark",
+      "evidence": [
+        "lib/features/device_model/application/device_model_use_cases.dart",
+        "lib/features/device_model/application/model_benchmark.dart",
+        "lib/features/device_model/data/litert_image_classifier.dart",
+        "test/features/device_model/device_model_use_cases_test.dart",
+        "test/features/device_model/model_benchmark_test.dart"
+      ],
+      "disposition": "openActive streams actual size/SHA before loading; interpreter validates exact tensors and embedded label count. Finite quantized/float scores are clamped; label semantic correctness remains model/data authority. CPU/XNN benchmark creates separate interpreters sequentially, upper-middle median and nearest-rank p90, sampled process RSS not true within-run peak or pipeline latency. Correct prior screen observation: there is no shared operation serializer between benchmark and capture; UI permits capture while benchmark awaits and runtime model handles are separate. Defaults bound current UI runs3/20, not arbitrary positive warmups. REV07-03 tracks missing benchmark disposal admission/drain; no measured device failure. Native fixture tests have actual native code but were NOT RUN here, and zero-input/synthetic float contracts are not product quality."
+    },
+    {
+      "id": "REV07-X04",
+      "key": "scanner-lifecycle",
+      "evidence": [
+        "lib/features/media_practice/application/object_scanner_use_cases.dart",
+        "lib/features/media_practice/data/plugin_camera_gateway.dart",
+        "lib/runtime/app_bootstrap.dart",
+        "test/features/media_practice/object_scanner_use_cases_test.dart",
+        "test/features/media_practice/plugin_camera_gateway_test.dart"
+      ],
+      "disposition": "Lease takeover invalidates synchronously and queues lifecycle operations; stale scans/result-clones/owner changes rejected before canonical vocabulary admission. Real Drift transaction/lostACK/reopen tests establish narrower intended persistence oracle, with fake camera/runtime. Runtime stays pinned across pause and no live alternate model selection exists. Pause error recovery does not establish two live camera sessions: gateway clears session before dispose; native failure remains unmeasured. Runtime close throw can skip final camera dispose: REV07-02. Plugin temp deletion happens in finally; no capture implementation in fake camera oracle, no native permission/capture/cleanup evidence. Historical REV03 receipt unchanged; supplemental camera adapter contract examined only."
+    },
+    {
+      "id": "REV07-X05",
+      "key": "preprocess-vocabulary-screen",
+      "evidence": [
+        "lib/features/media_practice/application/image_preprocessor.dart",
+        "lib/services/object_vocabulary_database.dart",
+        "lib/screens/object_scanner_screen.dart",
+        "test/features/media_practice/image_preprocessor_test.dart",
+        "test/screens/object_scanner_screen_test.dart",
+        "test/services/object_vocabulary_database_test.dart"
+      ],
+      "disposition": "EXIF bake then224 center-square rawRGB agrees with pinned runtime. sensorOrientation is sensor metadata and not automatically an extra encoded-JPEG rotation; no established double-rotation bug. No predecode dimension cap, but current camera medium-resolution input; arbitrary image ingestion not established. Exact trimmed/casefold mapping and sole coffee-cup alias reject substring/unknown; primary unrecognized/background result does not substitute lower mapped label. Live threshold remains .15; development candidate threshold.6 is separate. CEFR/IPA authored, not dictionary certification. Screen capture/download/accept epochs and lease fences preserve stale-result authority. Real-adapter widget title only fake accept; 2x layout and mounted checks do not prove all hit targets/native accessibility. Speech mounted-only late error belongs REV08 supplemental follow-up, not new duplicate camera finding."
+    },
+    {
+      "id": "REV07-X06",
+      "key": "data-rights-partition",
+      "evidence": [
+        "lib/services/dataset_partitioning_service.dart",
+        "test/services/dataset_partitioning_service_test.dart",
+        "docs/development/full-system/evidence/bundles/B11A/G5.3a-sources.json",
+        "docs/development/full-system/evidence/bundles/B11A/G5.3b-acceptance.json",
+        "docs/development/full-system/evidence/bundles/B11A/G5.3c-acceptance.json"
+      ],
+      "disposition": "Legacy chronological70/15/15 service has no lib caller and count-only synthetic oracle; it is not current camera split authority. Accepted B11A used retained477 images357train/120validation, grouped canonical author/image/product/full-crop pHash, excluded bridges retained, separate deterministic split namespace. Rights evidence records per-image landing/license/identity and exclusion of retailers without permission; this is reuse of historical acquisition evidence, not current legal revalidation or new acquisition. Upstream validation/test deliberately development before fitting; pretraining overlap unknown. Actual training/export/native probe acceptance remains unchanged, no rerun. Tools camera_web_dataset/train/export keep REV11 final disposition; content proofs not replaced with legacy random split."
+    },
+    {
+      "id": "REV07-X07",
+      "key": "FORM09-evidence",
+      "evidence": [
+        "docs/development/full-system/evidence/bundles/B01/G0.7-formula-registry.json",
+        "docs/development/full-system/evidence/bundles/B12/G5.4-acceptance.json",
+        "docs/development/full-system/evidence/bundles/B12/G5.5-acceptance.json",
+        "docs/development/full-system/evidence/bundles/B12/G5.6-acceptance.json",
+        "tools/camera_accuracy.py",
+        "tools/camera_development_evaluation.py"
+      ],
+      "disposition": "FORM09 domain disposition: known accepted-and-correct / knownN, unknown false accepts / unknownN, per-class recall / truthN; Wilson95 uses same cohort, n0 yields null rate/interval. Historical development109/120top1=90.83% differs from99/120correctAccepted=82.5% at fixed.6; lightbulb0/3 accepted correct, unknownN0/null. These are reused descriptive evidence, not a fresh statistical report. Thresholds .85/.05/.75 inclusive do not authorize rollout; candidate remains disabled. Separate development schema/pinned inputs and no new fresh test opening preserve selection boundary. Legacy FORM09 registry hash is historical; REV11 owns final CLI formula/oracle delta review. No baseline paired actual inference, physical camera, unknown sample or native resource gate newly proven."
+    }
+  ],
+  "files": [
+    {
+      "path": "lib/features/device_model/application/device_model_use_cases.dart",
+      "sha256": "075140a688f98f4118e5854d290ead5f44967b47289b192d572f8e51b435a95f",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "crossCheck": "REV07-X03"
+    },
+    {
+      "path": "lib/features/device_model/application/model_benchmark.dart",
+      "sha256": "fe47aa6d36fbf95c1b6cc4d5f4dac0fe1bad81fe12589e7297aabd54af5ad7e0",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "crossCheck": "REV07-X03"
+    },
+    {
+      "path": "lib/features/device_model/application/model_download_manager.dart",
+      "sha256": "e6e9fee9f64c8dcd599d8f9bbff7f6cc60e1049da773875a67982fd9c9eedea7",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-01"
+      ],
+      "crossCheck": "REV07-X02"
+    },
+    {
+      "path": "lib/features/device_model/data/drift_model_download_repository.dart",
+      "sha256": "58e24cf39b6c7d9b9f39aa846b3850405e837fb6ee7a096fdb4167e1aa4f01e9",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X01"
+    },
+    {
+      "path": "lib/features/device_model/data/http_model_byte_source.dart",
+      "sha256": "ecc5a7291ad14166f567d50f0c497065b557b5aa40d08b6bac83ff80d6eb552c",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X02"
+    },
+    {
+      "path": "lib/features/device_model/data/litert_image_classifier.dart",
+      "sha256": "e8e024b9921eb5cdfbe83da8ef3765a86cf691347a5d587f5230ae59824ef273",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-02"
+      ],
+      "crossCheck": "REV07-X03"
+    },
+    {
+      "path": "lib/features/device_model/domain/model_lifecycle.dart",
+      "sha256": "294c91480140b3bdecabd2928b1ef2b188c5d15ca16af70daf3aa3b6b38b6c80",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X01"
+    },
+    {
+      "path": "lib/features/device_model/domain/model_manifest.dart",
+      "sha256": "4f2c764194e99426aa91f3eaf7b06bb8a404caa6f7243a84d1c32297cbc6d89d",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X01"
+    },
+    {
+      "path": "lib/features/media_practice/application/image_preprocessor.dart",
+      "sha256": "2994a971cc532ed9e7adcb309b99f93eea133d0332a61725d9fb3131b0870370",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X05"
+    },
+    {
+      "path": "lib/features/media_practice/application/object_scanner_use_cases.dart",
+      "sha256": "6801ae47bccf70743013da469fbad6ddb22ce890f0a0ff1316806a2fd5814039",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-02",
+        "B18-REV07-03"
+      ],
+      "crossCheck": "REV07-X04"
+    },
+    {
+      "path": "lib/screens/object_scanner_screen.dart",
+      "sha256": "8ac4c297077f0f6ffa8dd2fb2bab29cea9c1f99179dd64e7d402b6409f7a71ec",
+      "status": "reviewed-with-findings",
+      "findingIDs": [
+        "B18-REV07-03"
+      ],
+      "crossCheck": "REV07-X05"
+    },
+    {
+      "path": "lib/services/dataset_partitioning_service.dart",
+      "sha256": "65c71dff44abadbed069343358cf30533d7196d8a066c7a538cb43cc211e9838",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X06"
+    },
+    {
+      "path": "lib/services/object_vocabulary_database.dart",
+      "sha256": "c37559d86109bfde50c143afeb6e86018116763b2f2eb6d55d5228a82684a8c3",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "crossCheck": "REV07-X05"
+    }
+  ],
+  "focusedOracles": [
+    {
+      "path": "test/features/device_model/device_model_use_cases_test.dart",
+      "sha256": "2e7b1233825e7d7bb57f45a9122ffc49a1a7860190776190f3ddb54dc96c637e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full224 lines read. Real temporary model bytes/SHA with fake repository/runtime; same-length corruption marks failed. CPU/XNN benchmark opens/closes all fake runtimes and11 invocations; title bounded real runtime runs does not mean native inference. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [
+        "B18-REV07-03"
+      ],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/drift_model_download_repository_test.dart",
+      "sha256": "78a90733767c02237e5d9bd3f09848acf3ca23568bd69f9eec62b3e789a35416",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full81 lines read. Actual memory Drift persists typed failures, bytes and UTC; activation demotes previous model. No transaction rollback failure case. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/float_classifier_test.dart",
+      "sha256": "9b71676aee5802d88d7da8dcbccd2df8725c7b082c3a36e3450e9069e308028e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full53 lines read. Actual native CPU synthetic fixed float TFLite hash 9d9b1b6ac4c1fb05e60a74a7b8fd9da954e36245d0f7432dd998fa9e625ac187, four float32 classes, book probability .6 and sum1. Synthetic runtime contract, not product accuracy. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/http_model_byte_source_test.dart",
+      "sha256": "46ad5e0a84c160c0755685caea74d925df284f845bd50ce804215c69023db889",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full147 lines read. Actual local HTTP sockets validate range4096/tail10, header stall50ms, precancel and body-stall cancellation. No invalid range-end/oversize/trickling absolute deadline oracle. Local socket tests not remote service evidence. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/litert_benchmark_test.dart",
+      "sha256": "65dfbe9212d3479a4a042cbe6742a34296c2ab5e4e5fe0f09ef92464fa17f0bc",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full59 lines read. Native CPU/XNN zero224 input,10 samples/3warmups, positive ordered durations and stdout RSS, release-excluded tag. Model env/default build fixture with no hash assertion in this file; no physical GPU/device/thermal result. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/litert_image_classifier_test.dart",
+      "sha256": "5994398d4617524bb2597696d1601645a866d539b36b27f3b296d3312930984f",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full85 lines read. Native XNN zero-image three labels/range and CPU wrong-output-shape verifier rejection. File existence rather than SHA assertion despite checksum-pinned title relies preparation gate. Release excluded. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/model_benchmark_test.dart",
+      "sha256": "10587fcc2bbe6f57e1ae269dbc9a7c712f44f59e535cb7ed6db89a68ad1697c3",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full116 lines read. Fake1..5ms durations verify median3/p905, one warmup plus five measured invocations, fixed64MiB RSS. GPU hard disabled despite allowlist/request. No physical performance or even median/warmup upper bound oracle. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "sha256": "7e8156942b1920adac45b8f7281a17bcdad076adc1a6ee27417f93996649a5da",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1013 lines read across resume boundary. Actual temp bytes and fake verifier/source cover full-partial recovery avoiding EOF range, bad hashes, verifier cancellation/rejection, oversized existing partial restart, range ignored/mismatch, corrupt active repair, identical in-instance dedup and two-manager file locking. Actual file-backed Drift counter reopen reconciles missed completion once, redownload increments second time and cached opens do not; legacy marker upgrade and cached cross-version completion preserved. Removal waits active transfer; cooperative cancellation source proves dispose drain. No oversized incoming chunk, noncooperative drain, cached verification cancellation, or simultaneous different-manifest in-instance oracle. Repository/verifier largely fakes; no B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [
+        "B18-REV07-01"
+      ],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/device_model/model_manifest_test.dart",
+      "sha256": "0be71c5491c254b345340e9909fd9b99a9a94a2adaa7b96ec15f7bbecbc4ca31",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full51 lines read. Static baseline identity/license/minimum version/hash4287874/tensors/delegates; invalid manifest changes several fields together and does not isolate individual checks or enforce minimum app version at activation. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/media_practice/plugin_camera_gateway_test.dart",
+      "sha256": "48c71bd9d17c5fa6094671f77ffdd70286c93c917a609e95ae493bc8e7822e92",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full166 lines read. Fake sessions cover failed initialize cleanup/retry, five pause/resume cycles close once, concurrent init shares session, pending init pause and subsequent resume supersession. Fake takePicture throws unimplemented, so no actual capture file deletion/EXIF/native permission or dispose-error oracle. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/media_practice/image_preprocessor_test.dart",
+      "sha256": "961033fb39df8776ea406e0aa86e5f70bc5365597f0b3dff1f87a9db6d49a7a9",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full74 lines read. Real PNG/JPEG codecs verify center crop excludes bands, exact raw RGB order, EXIF6 rotates once with JPEG tolerance, deterministic224 output and invalid bytes typed failure. No oversized encoded/decompressed image bound. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "sha256": "6994d7ed63e10cf67e0f5c6aa6a8a4faed1db63f96020f91f2326935fc6d9ccb",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1117 lines read. Real Drift owner switches during inference/after preview reject; held transaction lifecycle expiry rolls back all writes, SQLite abort trigger simulates insertion failure and recovery. Actual file reopen and mounted scanner-to-categories UI preserve word/provenance/two outbox rows. Lost-ack callback commits then throws; eight concurrent retries reuse same durable word. Identity-cloned result rejected, invalid finite/range/index outputs rejected, background/unknown primary not replaced with lower mapped label, threshold .14 below default .15. Camera/preprocessor/runtime are fake except invalid-image codec case; late runtime disposal tested but not close throwing. No native camera/device accuracy or B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [
+        "B18-REV07-02"
+      ],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/screens/object_scanner_screen_test.dart",
+      "sha256": "02bbdd19a3178142f6486650338a5cfad08d0f7d3e792bee3e9e7945e95eb52c",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full1444 lines read in1-480/481-980/981-1444. Fake scanner uses actual lease manager and deferred initialization/capture/download/benchmark/accept to verify shared route takeover order, background permission failure recovery, stale success/failure suppression and save single-flight/retry. Test titled real adapter persistence only counts fake accept and returns constant word, no actual database or camera. Fake benchmark returns n10 constants independent of requested defaults; no speed measurement. Actual Navigator child cover/pop and manual CategoriesPage route tested.390px2x mapped/unmapped render optional captures/no overflow, no action hit-test assertion for every scaled result. No runtime execution, physical camera/audio or feature withdrawal claim. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [
+        "B18-REV07-03"
+      ],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/services/dataset_partitioning_service_test.dart",
+      "sha256": "c19e761a51cfc6a37f265ff4f139c97167bd54e36d5dec0c197617d8a8bbc31e",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full30 lines. Synthetic100-item counts70/15/15 plus empty; no overlap/content identity/reproducibility/learner isolation oracle. Read-only oracle review; no execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    },
+    {
+      "path": "test/services/object_vocabulary_database_test.dart",
+      "sha256": "8526084efb772dbe141d1db2989df55263890578603d8a963fcfec2708df2b17",
+      "zone": "REV-12",
+      "status": "reviewed-no-actionable-finding",
+      "findingIDs": [],
+      "disposition": "Full file read. Exact case/trim and sole coffee cup alias mapping, unknown and substring lookalikes rejected, required fields populated, CEFR membership and sorted categories/min120 entries. No exhaustive model-label semantic alignment, dictionary certification or label uniqueness test. No B18 execution. Focused REV07 oracle disposition complete; original coverage limitations retained, missing regressions tracked separately; runtime NOT RUN.",
+      "regressionGaps": [],
+      "reviewOwner": "B18-G82-REV-07",
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "formulas": [
+    {
+      "formulaId": "FORM-09",
+      "domainOwner": "REV-07",
+      "toolingOwner": "REV-11",
+      "disposition": "FORM09 domain disposition: known accepted-and-correct / knownN, unknown false accepts / unknownN, per-class recall / truthN; Wilson95 uses same cohort, n0 yields null rate/interval. Historical development109/120top1=90.83% differs from99/120correctAccepted=82.5% at fixed.6; lightbulb0/3 accepted correct, unknownN0/null. These are reused descriptive evidence, not a fresh statistical report. Thresholds .85/.05/.75 inclusive do not authorize rollout; candidate remains disabled. Separate development schema/pinned inputs and no new fresh test opening preserve selection boundary. Legacy FORM09 registry hash is historical; REV11 owns final CLI formula/oracle delta review. No baseline paired actual inference, physical camera, unknown sample or native resource gate newly proven.",
+      "historicalRegistryUnchanged": true,
+      "runtimeStatus": "NOT RUN"
+    }
+  ],
+  "newFindingIDs": [
+    "B18-REV07-01",
+    "B18-REV07-02",
+    "B18-REV07-03"
+  ],
+  "supplementalOracleReferences": [],
+  "limitations": "13production+15focusedREV12 oracles only.3new candidates require reproduction. Historical REV01-06 receipts and B11A/B12 accepted evidence unchanged. No source fix/G8.2/G8.3/B18 acceptance or runtime/device/provider/training/acquisition/research/deployment."
+}
