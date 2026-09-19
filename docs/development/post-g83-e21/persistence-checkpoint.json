@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E2.1",
+  "checkpoint": "C04",
+  "E21Accepted": false,
+  "baseSha": "d7dc0cf3021a9f9333c6a43daaab15b7d314af52",
+  "databaseSchemaVersion": 29,
+  "scope": "Personal-set persistence, migration, owner export/delete and transactional guest remap only",
+  "verification": {
+    "status": "Passed",
+    "tests": 346,
+    "targets": 26,
+    "newTests": 14,
+    "fingerprint": "659305e2ef8789f6935e485a3ca5cbb6c8812bb049a607de3ca64404a814674a",
+    "postFingerprint": "659305e2ef8789f6935e485a3ca5cbb6c8812bb049a607de3ca64404a814674a",
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.1\\c04-verification\\targeted-learning-13f605a16905e7c595e551f224ebb6c1b9c0b754f8bd03ae885dd47334479891.json",
+    "implementationAnalysis": "No issues found",
+    "integrationAnalysis": "One baseline unnecessary_underscores info: original source line verified identical",
+    "generatedExistingDataClassPrefixEqual": true,
+    "originalCorpusPinsUnchanged": 9
+  },
+  "invariants": [
+    "Owner-scoped CAS, durable operation replay/collision, atomic revision/member insertion",
+    "Exact pinned crosswalk resolution for new saves; history and exact replay before content availability check",
+    "Archive preserves pin/members/title/filters; member projection integrity checked",
+    "Canonical lease before content and first/last transaction write; A-B-A stale token rejected",
+    "SQL immutability with actual owner-only cascade; conflict aborts complete guest merge",
+    "Manifest exports exact revisions; deletion child-before-parent preserves other owner"
+  ],
+  "recovery": [
+    "Prior incorrect task stop superseded by user recovery authorization; authorized AGENTS change retained",
+    "Seven pub-generated EOL files proven normalized and Git-blob equal before restoration",
+    "Fixture API typo corrected to prepareActive before valid lifecycle RED",
+    "SQLite FK cascade touched unchanged key columns; trigger now compares actual OLD/NEW values",
+    "Locale decoding failed during fixture maintenance; corrected to byte-preserving substitutions",
+    "Current table inventory 50 to 52/direct-owner40 to42; historical inventories exclude new tables",
+    "Assessment history fixture pins schema28 explicitly with assertions, while local DB is29; production research wire contracts/rules unchanged"
+  ],
+  "review": {
+    "kind": "local self-review",
+    "independent": false,
+    "subagents": false
+  },
+  "remaining": [
+    "Restore codecs/envelope/idempotency and old/new archive compatibility; missing pins historical/unavailable",
+    "Application owner generation before lease acquisition and runtime coordinator wiring",
+    "Accessible real catalog/planning list/edit/preview/activity UI",
+    "Canonical exact revision/pin launch and current quality checks; no direct SRS/rewards/history writes",
+    "Launch/restore/research-off/navigation/accessibility oracles and E2.1 acceptance"
+  ],
+  "limitations": [
+    "Repository not wired to runtime UI yet",
+    "Exporter is not full restore",
+    "Research schema29 wire admission/remote rollout remains unsupported and outside this production package",
+    "No full suite/build/device/live/release gate"
+  ],
+  "serviceTier": "Standard/default requested; effective tier unverified",
+  "noSubagents": true
+}

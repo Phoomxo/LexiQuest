@@ -14,11 +14,13 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 28);
-      expect(currentDatabaseTableInventory, hasLength(50));
+      expect(AppDatabase.currentSchemaVersion, 29);
+      expect(currentDatabaseTableInventory, hasLength(52));
       expect(currentDatabaseTableInventory.difference(schemaTwentyInventory), {
         'research_session_proofs',
       'legacy_learning_records',
+      'personal_set_revisions',
+      'personal_set_members',
         'learner_preferences',
       });
       await expectCurrentDatabaseContract(database);
@@ -91,6 +93,8 @@ void main() {
 final schemaTwentyInventory = currentDatabaseTableInventory.difference(const {
   'research_session_proofs',
       'legacy_learning_records',
+      'personal_set_revisions',
+      'personal_set_members',
   'learner_preferences',
 });
 

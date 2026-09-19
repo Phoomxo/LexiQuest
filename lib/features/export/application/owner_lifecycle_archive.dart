@@ -17,6 +17,9 @@ import '../../learning/domain/session_configuration.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../review/domain/content_quality_report.dart';
 import '../../time_tracking/domain/learning_time_segment.dart';
+import '../../learning_packs/data/drift_personal_set_repository.dart';
+import '../../learning_packs/data/drift_content_manifest_repository.dart';
+import '../../learning_packs/domain/sense_crosswalk_repository.dart';
 
 final class OwnerLifecycleArchiveArtifact {
   const OwnerLifecycleArchiveArtifact({
@@ -158,6 +161,7 @@ final class OwnerLifecycleArchiveExporter {
     required Map<String, String> documentAliases,
   }) async {
     return switch (descriptor.tableName) {
+      'personal_set_revisions' => _personalSetRevisions(ownerId),
       'local_owners' => _ownerRoot(ownerId),
       'legacy_learning_records' => _legacyLearningHistory(ownerId),
       'research_consents' => _researchConsents(ownerId),
@@ -186,6 +190,20 @@ final class OwnerLifecycleArchiveExporter {
       'model_downloads' => _modelDownloads(),
       _ => _countRecord(descriptor, ownerId),
     };
+  }
+
+  Future<List<Map<String, Object?>>> _personalSetRevisions(String ownerId) async {
+    final repository = DriftPersonalSetRepository(database,
+      SenseCrosswalkRepository(DriftContentManifestRepository(database)), nowUtc: nowUtc);
+    final rows = await (database.select(database.personalSetRevisions)
+      ..where((r) => r.ownerId.equals(ownerId))
+      ..orderBy([(r) => OrderingTerm.asc(r.setId), (r) => OrderingTerm.asc(r.revision)])).get();
+    final records = <Map<String, Object?>>[];
+    for (final row in rows) {
+      final revision = await repository.readExact(ownerId: ownerId, setId: row.setId, revision: row.revision);
+      records.add({'revision': revision!.toJson()});
+    }
+    return records;
   }
 
   Future<List<Map<String, Object?>>> _legacyLearningHistory(

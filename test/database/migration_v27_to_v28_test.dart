@@ -26,6 +26,8 @@ void main() {
       // the actual v27 table shape, retaining the complete surrounding schema.
       final sqlite = raw.sqlite3.open(file.path);
       try {
+        sqlite.execute('DROP TABLE personal_set_members');
+        sqlite.execute('DROP TABLE personal_set_revisions');
         sqlite.execute(
           'ALTER TABLE outbox_operations DROP COLUMN attempted_mutation_json',
         );
@@ -53,8 +55,10 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          28,
+          AppDatabase.currentSchemaVersion,
         );
+        expect(await database.select(database.personalSetRevisions).get(), isEmpty);
+        expect(await database.select(database.personalSetMembers).get(), isEmpty);
       } finally {
         await database.close();
         await directory.delete(recursive: true);

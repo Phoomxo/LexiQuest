@@ -35,3 +35,15 @@ Continue **E2.1**, not E2.2. All E6 integration and E7 G8.4–G8.9 obligations r
 **32 tests ผ่านใน 3 bounded targets (11 ใหม่)** พร้อม fingerprint ก่อน/หลังตรงกัน และ Dart analysis ไม่มีปัญหา. Local review พบและแก้ schemaVersion ทศนิยมที่เคยผ่าน decoder; เก็บ RED และการแก้ EOL/import error ใน [C03 receipt](post-g83-e21/personal-set-codec-checkpoint.json). ไม่มี independent review.
 
 **E2.1 ยังไม่ accepted.** C03 เป็น value/codec เท่านั้น: schema ยัง 28, ไม่มี personal-set table/repository/lifecycle/restore/UI/launch. ต่อ C04 ที่ persistence และ lifecycle ตามรายการค้างด้านบน; ห้ามใช้ผล 32 tests นี้แทน migration หรือ feature acceptance.
+
+## Checkpoint C04 — durable personal sets (2026-09-20)
+
+เพิ่ม schema **29** และ owner-scoped immutable revisions/members. Repository ทำ expected-revision CAS, durable operation replay/collision และบันทึก revision พร้อมสมาชิกใน transaction เดียว. การสร้าง/แก้ไขตรวจ exact crosswalk; historical read และ retry เดิมเปิดได้เมื่อ artifact ไม่อยู่แล้ว. Archive เก็บ pin/members/title/filters เดิม. Canonical owner lease ถูกตรวจทั้งก่อนโหลดและก่อน/หลังการเขียน; A→B→A ระหว่างโหลดไม่รับ token เก่า.
+
+เชื่อม lifecycle manifest, coherent export, child-before-parent deletion และ guest remap จริงโดยรักษา payload hash. การชน key ระหว่าง owner ยกเลิก transaction ทั้งชุด. Local review พบ SQLite cascade แตะ key ที่ค่าไม่เปลี่ยน จึงแก้ immutability trigger ให้ตรวจ OLD/NEW จริง; ไม่ยกเลิก guard. Export ยังไม่ใช่ full restore และ repository ยังไม่เชื่อม runtime/UI.
+
+**346 tests ผ่านใน 26 bounded targets (14 ใหม่)** ครอบคลุม migration matrix, persistence/restart/replay, rollback, owner isolation/merge/export/delete; fingerprint ก่อน/หลังตรงกัน. Implementation analysis ไม่มีปัญหา; integration test มี info เดิมหนึ่งจุดที่ตรวจ source ตรง baseline. Generated data classes เดิมและ corpus pins ทั้ง 9 ไม่เปลี่ยน. [C04 receipt](post-g83-e21/persistence-checkpoint.json) เก็บหลักฐานและ recovery. การหยุดเพราะ path ผิดก่อนหน้านี้ได้รับการแก้ไขตามคำสั่งผู้ใช้และบันทึก recovery ใน AGENTS.md แล้ว.
+
+Fixture ประวัติ assessment ตรึง schema 28 พร้อม assertions ว่าประวัติยังเป็น 28 ในฐานข้อมูล 29; ไม่เปิด research หรือขยาย remote wire admission. Research schema 29 rollout ยังอยู่นอก scope นี้. ไม่มี full suite/build/device/live/release gate และไม่มี independent review.
+
+**E2.1 ยังไม่ accepted.** ต่อด้วย restore envelope/codec/idempotency และ old/new archive compatibility, application owner generation ก่อน acquire lease, runtime wiring, catalog/planning UI และ canonical exact-revision activity launch พร้อม navigation/accessibility/research-off oracles. ส่งต่อเฉพาะ E2.1; ไม่ส่ง E2.2 จน feature acceptance ครบ.

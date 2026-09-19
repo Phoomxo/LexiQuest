@@ -893,7 +893,7 @@ Future<void> _expectLayout(AppDatabase db) async {
       db,
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
     ),
-    hasLength(50),
+    hasLength(52),
   );
   final names = (await _rows(
     db,

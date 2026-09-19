@@ -1,5 +1,13 @@
 # LexiQuest Development Guardrails
 
+## Mandatory recovery interpretation — user reaffirmed 2026-09-20
+
+- Missing paths, invalid Windows wildcards, command failures and failing tests are recoverable engineering work. Their repetition NEVER by itself authorizes ending the task or releasing the writer as blocked.
+- Stop the failed METHOD; discover real paths/symbols, inspect the cause, correct the approach, fix and retest, then continue the current scope automatically. `rg --files -g 'pattern' .` discovers paths; use `Test-Path -LiteralPath` before exact reads. A search with no matches is information, not a task-stopping condition.
+- Before any blocked final response, check the latest user authorization and recovery policy. Stop only for an explicit user pause or a concrete indispensable external prerequisite with no useful authorized work remaining. Record that prerequisite and attempted alternatives. Never cite AGENTS.md as requiring a stop merely because errors repeated; it explicitly requires recovery.
+- Preserve acceptance: no skipped defects, weakened assertions, fabricated PASS or false slice completion. Context handoffs must preserve unresolved work and exact checkpoints, not bypass gates.
+- Every successor prompt must include this recovery interpretation and current implementation authorization; verify these are present before dispatch. Engineering Spec V3 implementation/succession is authorized in external post-g83-v3-implementation-authorization.json; historical analysis-only restrictions are superseded.
+
 ## Current Full-System authority — 2026-09-13 revision 4
 
 - User branch policy: use `lexiquest/` only; never use codex/codeic in branch names. Inspect native worktree names and rename before source writes. Preserve accepted historical receipts; see external `branch-naming-policy.json`.

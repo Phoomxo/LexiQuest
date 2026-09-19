@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:crypto/crypto.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/packaged_sense_crosswalk.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/personal_sets.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/sense_crosswalk_repository.dart';
 
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -4896,6 +4901,9 @@ void main() {
         40,
         isUtc: true,
       );
+      expect(pair.guestRun.databaseSchemaVersion, 28);
+      expect(pair.targetRun.databaseSchemaVersion, 28);
+      expect(database.schemaVersion, 29);
       final assessments = DriftAssessmentRepository(database);
       await assessments.complete(
         runId: pair.guestRun.id,
@@ -5755,7 +5763,9 @@ AssessmentRun _assessmentRun({
         '2222222222222222222222222222222222222222222222222222222222222222',
     appVersion: '1.0.0',
     buildId: 'task-12-owner-upgrade',
-    databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+    // Retained historical research evidence uses its original supported wire
+    // schema. Local personal-set schema 29 does not authorize research rollout.
+    databaseSchemaVersion: 28,
     contentRevision: 'assessment-content-r1',
     evidencePolicyVersion: EvidenceContext.currentPolicyVersion,
     featureContractRevision: currentFeatureContractIdentity.revision,
@@ -5983,6 +5993,30 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  final crosswalk = SenseCrosswalk.fromBytes(
+    await File(PackagedSenseCrosswalk.assetPath).readAsBytes(),
+    expectedSha256: PackagedSenseCrosswalk.artifactHash,
+    corpusManifestHash: PackagedSenseCrosswalk.corpusManifestHash,
+    reviewManifest: PackagedSenseCrosswalk.manifest,
+  );
+  final personalSet = PersonalSetRevision.create(
+    setId: 'set:upgrade-fixture', operationId: 'set:upgrade-save',
+    expectedPriorRevision: 0, createdAtUtcMs: 1, title: 'Retained objects',
+    crosswalkPin: SenseCrosswalkPin.fromJson({
+      'corpusManifestHash': PackagedSenseCrosswalk.corpusManifestHash,
+      'revision': 1, 'artifactHash': PackagedSenseCrosswalk.artifactHash,
+    }), members: [crosswalk.entries.first.ref],
+  );
+  await database.into(database.personalSetRevisions).insert(PersonalSetRevisionsCompanion.insert(
+    ownerId: 'guest-owner', setId: personalSet.setId, revision: 1,
+    operationId: personalSet.operationId, payloadHash: personalSet.payloadHash,
+    payloadJson: jsonEncode(personalSet.toJson()), archived: false,
+  ));
+  final refJson = jsonEncode(personalSet.members.single.toJson());
+  await database.into(database.personalSetMembers).insert(PersonalSetMembersCompanion.insert(
+    ownerId: 'guest-owner', setId: personalSet.setId, revision: 1, position: 0,
+    senseRefHash: sha256.convert(utf8.encode(refJson)).toString(), senseRefJson: refJson,
+  ));
   await database.customInsert(
     "INSERT INTO legacy_learning_records(id,owner_id,source_table,payload_json) VALUES('legacy-row','guest-owner','associations','{}')",
   );

@@ -36872,6 +36872,937 @@ class LearnerPreferencesCompanion
   }
 }
 
+class $PersonalSetRevisionsTable extends PersonalSetRevisions
+    with TableInfo<$PersonalSetRevisionsTable, PersonalSetRevisionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonalSetRevisionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _setIdMeta = const VerificationMeta('setId');
+  @override
+  late final GeneratedColumn<String> setId = GeneratedColumn<String>(
+    'set_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (revision > 0)',
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadHashMeta = const VerificationMeta(
+    'payloadHash',
+  );
+  @override
+  late final GeneratedColumn<String> payloadHash = GeneratedColumn<String>(
+    'payload_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _archivedMeta = const VerificationMeta(
+    'archived',
+  );
+  @override
+  late final GeneratedColumn<bool> archived = GeneratedColumn<bool>(
+    'archived',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("archived" IN (0, 1))',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    setId,
+    revision,
+    operationId,
+    payloadHash,
+    payloadJson,
+    archived,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personal_set_revisions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PersonalSetRevisionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('set_id')) {
+      context.handle(
+        _setIdMeta,
+        setId.isAcceptableOrUnknown(data['set_id']!, _setIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_setIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('payload_hash')) {
+      context.handle(
+        _payloadHashMeta,
+        payloadHash.isAcceptableOrUnknown(
+          data['payload_hash']!,
+          _payloadHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadHashMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('archived')) {
+      context.handle(
+        _archivedMeta,
+        archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_archivedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, setId, revision};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, operationId},
+  ];
+  @override
+  PersonalSetRevisionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonalSetRevisionRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      setId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}set_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      payloadHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_hash'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      archived: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}archived'],
+      )!,
+    );
+  }
+
+  @override
+  $PersonalSetRevisionsTable createAlias(String alias) {
+    return $PersonalSetRevisionsTable(attachedDatabase, alias);
+  }
+}
+
+class PersonalSetRevisionRow extends DataClass
+    implements Insertable<PersonalSetRevisionRow> {
+  final String ownerId;
+  final String setId;
+  final int revision;
+  final String operationId;
+  final String payloadHash;
+  final String payloadJson;
+  final bool archived;
+  const PersonalSetRevisionRow({
+    required this.ownerId,
+    required this.setId,
+    required this.revision,
+    required this.operationId,
+    required this.payloadHash,
+    required this.payloadJson,
+    required this.archived,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['set_id'] = Variable<String>(setId);
+    map['revision'] = Variable<int>(revision);
+    map['operation_id'] = Variable<String>(operationId);
+    map['payload_hash'] = Variable<String>(payloadHash);
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['archived'] = Variable<bool>(archived);
+    return map;
+  }
+
+  PersonalSetRevisionsCompanion toCompanion(bool nullToAbsent) {
+    return PersonalSetRevisionsCompanion(
+      ownerId: Value(ownerId),
+      setId: Value(setId),
+      revision: Value(revision),
+      operationId: Value(operationId),
+      payloadHash: Value(payloadHash),
+      payloadJson: Value(payloadJson),
+      archived: Value(archived),
+    );
+  }
+
+  factory PersonalSetRevisionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonalSetRevisionRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      setId: serializer.fromJson<String>(json['setId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      payloadHash: serializer.fromJson<String>(json['payloadHash']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      archived: serializer.fromJson<bool>(json['archived']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'setId': serializer.toJson<String>(setId),
+      'revision': serializer.toJson<int>(revision),
+      'operationId': serializer.toJson<String>(operationId),
+      'payloadHash': serializer.toJson<String>(payloadHash),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'archived': serializer.toJson<bool>(archived),
+    };
+  }
+
+  PersonalSetRevisionRow copyWith({
+    String? ownerId,
+    String? setId,
+    int? revision,
+    String? operationId,
+    String? payloadHash,
+    String? payloadJson,
+    bool? archived,
+  }) => PersonalSetRevisionRow(
+    ownerId: ownerId ?? this.ownerId,
+    setId: setId ?? this.setId,
+    revision: revision ?? this.revision,
+    operationId: operationId ?? this.operationId,
+    payloadHash: payloadHash ?? this.payloadHash,
+    payloadJson: payloadJson ?? this.payloadJson,
+    archived: archived ?? this.archived,
+  );
+  PersonalSetRevisionRow copyWithCompanion(PersonalSetRevisionsCompanion data) {
+    return PersonalSetRevisionRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      setId: data.setId.present ? data.setId.value : this.setId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      payloadHash: data.payloadHash.present
+          ? data.payloadHash.value
+          : this.payloadHash,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      archived: data.archived.present ? data.archived.value : this.archived,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalSetRevisionRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('setId: $setId, ')
+          ..write('revision: $revision, ')
+          ..write('operationId: $operationId, ')
+          ..write('payloadHash: $payloadHash, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('archived: $archived')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    setId,
+    revision,
+    operationId,
+    payloadHash,
+    payloadJson,
+    archived,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonalSetRevisionRow &&
+          other.ownerId == this.ownerId &&
+          other.setId == this.setId &&
+          other.revision == this.revision &&
+          other.operationId == this.operationId &&
+          other.payloadHash == this.payloadHash &&
+          other.payloadJson == this.payloadJson &&
+          other.archived == this.archived);
+}
+
+class PersonalSetRevisionsCompanion
+    extends UpdateCompanion<PersonalSetRevisionRow> {
+  final Value<String> ownerId;
+  final Value<String> setId;
+  final Value<int> revision;
+  final Value<String> operationId;
+  final Value<String> payloadHash;
+  final Value<String> payloadJson;
+  final Value<bool> archived;
+  final Value<int> rowid;
+  const PersonalSetRevisionsCompanion({
+    this.ownerId = const Value.absent(),
+    this.setId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.payloadHash = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.archived = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonalSetRevisionsCompanion.insert({
+    required String ownerId,
+    required String setId,
+    required int revision,
+    required String operationId,
+    required String payloadHash,
+    required String payloadJson,
+    required bool archived,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       setId = Value(setId),
+       revision = Value(revision),
+       operationId = Value(operationId),
+       payloadHash = Value(payloadHash),
+       payloadJson = Value(payloadJson),
+       archived = Value(archived);
+  static Insertable<PersonalSetRevisionRow> custom({
+    Expression<String>? ownerId,
+    Expression<String>? setId,
+    Expression<int>? revision,
+    Expression<String>? operationId,
+    Expression<String>? payloadHash,
+    Expression<String>? payloadJson,
+    Expression<bool>? archived,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (setId != null) 'set_id': setId,
+      if (revision != null) 'revision': revision,
+      if (operationId != null) 'operation_id': operationId,
+      if (payloadHash != null) 'payload_hash': payloadHash,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (archived != null) 'archived': archived,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonalSetRevisionsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? setId,
+    Value<int>? revision,
+    Value<String>? operationId,
+    Value<String>? payloadHash,
+    Value<String>? payloadJson,
+    Value<bool>? archived,
+    Value<int>? rowid,
+  }) {
+    return PersonalSetRevisionsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      setId: setId ?? this.setId,
+      revision: revision ?? this.revision,
+      operationId: operationId ?? this.operationId,
+      payloadHash: payloadHash ?? this.payloadHash,
+      payloadJson: payloadJson ?? this.payloadJson,
+      archived: archived ?? this.archived,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (setId.present) {
+      map['set_id'] = Variable<String>(setId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (payloadHash.present) {
+      map['payload_hash'] = Variable<String>(payloadHash.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (archived.present) {
+      map['archived'] = Variable<bool>(archived.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalSetRevisionsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('setId: $setId, ')
+          ..write('revision: $revision, ')
+          ..write('operationId: $operationId, ')
+          ..write('payloadHash: $payloadHash, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('archived: $archived, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PersonalSetMembersTable extends PersonalSetMembers
+    with TableInfo<$PersonalSetMembersTable, PersonalSetMemberRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PersonalSetMembersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _setIdMeta = const VerificationMeta('setId');
+  @override
+  late final GeneratedColumn<String> setId = GeneratedColumn<String>(
+    'set_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (position >= 0)',
+  );
+  static const VerificationMeta _senseRefHashMeta = const VerificationMeta(
+    'senseRefHash',
+  );
+  @override
+  late final GeneratedColumn<String> senseRefHash = GeneratedColumn<String>(
+    'sense_ref_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _senseRefJsonMeta = const VerificationMeta(
+    'senseRefJson',
+  );
+  @override
+  late final GeneratedColumn<String> senseRefJson = GeneratedColumn<String>(
+    'sense_ref_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    setId,
+    revision,
+    position,
+    senseRefHash,
+    senseRefJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'personal_set_members';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PersonalSetMemberRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('set_id')) {
+      context.handle(
+        _setIdMeta,
+        setId.isAcceptableOrUnknown(data['set_id']!, _setIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_setIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('sense_ref_hash')) {
+      context.handle(
+        _senseRefHashMeta,
+        senseRefHash.isAcceptableOrUnknown(
+          data['sense_ref_hash']!,
+          _senseRefHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_senseRefHashMeta);
+    }
+    if (data.containsKey('sense_ref_json')) {
+      context.handle(
+        _senseRefJsonMeta,
+        senseRefJson.isAcceptableOrUnknown(
+          data['sense_ref_json']!,
+          _senseRefJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_senseRefJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, setId, revision, position};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, setId, revision, senseRefHash},
+  ];
+  @override
+  PersonalSetMemberRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PersonalSetMemberRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      setId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}set_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      senseRefHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sense_ref_hash'],
+      )!,
+      senseRefJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sense_ref_json'],
+      )!,
+    );
+  }
+
+  @override
+  $PersonalSetMembersTable createAlias(String alias) {
+    return $PersonalSetMembersTable(attachedDatabase, alias);
+  }
+}
+
+class PersonalSetMemberRow extends DataClass
+    implements Insertable<PersonalSetMemberRow> {
+  final String ownerId;
+  final String setId;
+  final int revision;
+  final int position;
+  final String senseRefHash;
+  final String senseRefJson;
+  const PersonalSetMemberRow({
+    required this.ownerId,
+    required this.setId,
+    required this.revision,
+    required this.position,
+    required this.senseRefHash,
+    required this.senseRefJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['set_id'] = Variable<String>(setId);
+    map['revision'] = Variable<int>(revision);
+    map['position'] = Variable<int>(position);
+    map['sense_ref_hash'] = Variable<String>(senseRefHash);
+    map['sense_ref_json'] = Variable<String>(senseRefJson);
+    return map;
+  }
+
+  PersonalSetMembersCompanion toCompanion(bool nullToAbsent) {
+    return PersonalSetMembersCompanion(
+      ownerId: Value(ownerId),
+      setId: Value(setId),
+      revision: Value(revision),
+      position: Value(position),
+      senseRefHash: Value(senseRefHash),
+      senseRefJson: Value(senseRefJson),
+    );
+  }
+
+  factory PersonalSetMemberRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PersonalSetMemberRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      setId: serializer.fromJson<String>(json['setId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      position: serializer.fromJson<int>(json['position']),
+      senseRefHash: serializer.fromJson<String>(json['senseRefHash']),
+      senseRefJson: serializer.fromJson<String>(json['senseRefJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'setId': serializer.toJson<String>(setId),
+      'revision': serializer.toJson<int>(revision),
+      'position': serializer.toJson<int>(position),
+      'senseRefHash': serializer.toJson<String>(senseRefHash),
+      'senseRefJson': serializer.toJson<String>(senseRefJson),
+    };
+  }
+
+  PersonalSetMemberRow copyWith({
+    String? ownerId,
+    String? setId,
+    int? revision,
+    int? position,
+    String? senseRefHash,
+    String? senseRefJson,
+  }) => PersonalSetMemberRow(
+    ownerId: ownerId ?? this.ownerId,
+    setId: setId ?? this.setId,
+    revision: revision ?? this.revision,
+    position: position ?? this.position,
+    senseRefHash: senseRefHash ?? this.senseRefHash,
+    senseRefJson: senseRefJson ?? this.senseRefJson,
+  );
+  PersonalSetMemberRow copyWithCompanion(PersonalSetMembersCompanion data) {
+    return PersonalSetMemberRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      setId: data.setId.present ? data.setId.value : this.setId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      position: data.position.present ? data.position.value : this.position,
+      senseRefHash: data.senseRefHash.present
+          ? data.senseRefHash.value
+          : this.senseRefHash,
+      senseRefJson: data.senseRefJson.present
+          ? data.senseRefJson.value
+          : this.senseRefJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalSetMemberRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('setId: $setId, ')
+          ..write('revision: $revision, ')
+          ..write('position: $position, ')
+          ..write('senseRefHash: $senseRefHash, ')
+          ..write('senseRefJson: $senseRefJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    setId,
+    revision,
+    position,
+    senseRefHash,
+    senseRefJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PersonalSetMemberRow &&
+          other.ownerId == this.ownerId &&
+          other.setId == this.setId &&
+          other.revision == this.revision &&
+          other.position == this.position &&
+          other.senseRefHash == this.senseRefHash &&
+          other.senseRefJson == this.senseRefJson);
+}
+
+class PersonalSetMembersCompanion
+    extends UpdateCompanion<PersonalSetMemberRow> {
+  final Value<String> ownerId;
+  final Value<String> setId;
+  final Value<int> revision;
+  final Value<int> position;
+  final Value<String> senseRefHash;
+  final Value<String> senseRefJson;
+  final Value<int> rowid;
+  const PersonalSetMembersCompanion({
+    this.ownerId = const Value.absent(),
+    this.setId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.position = const Value.absent(),
+    this.senseRefHash = const Value.absent(),
+    this.senseRefJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PersonalSetMembersCompanion.insert({
+    required String ownerId,
+    required String setId,
+    required int revision,
+    required int position,
+    required String senseRefHash,
+    required String senseRefJson,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       setId = Value(setId),
+       revision = Value(revision),
+       position = Value(position),
+       senseRefHash = Value(senseRefHash),
+       senseRefJson = Value(senseRefJson);
+  static Insertable<PersonalSetMemberRow> custom({
+    Expression<String>? ownerId,
+    Expression<String>? setId,
+    Expression<int>? revision,
+    Expression<int>? position,
+    Expression<String>? senseRefHash,
+    Expression<String>? senseRefJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (setId != null) 'set_id': setId,
+      if (revision != null) 'revision': revision,
+      if (position != null) 'position': position,
+      if (senseRefHash != null) 'sense_ref_hash': senseRefHash,
+      if (senseRefJson != null) 'sense_ref_json': senseRefJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PersonalSetMembersCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? setId,
+    Value<int>? revision,
+    Value<int>? position,
+    Value<String>? senseRefHash,
+    Value<String>? senseRefJson,
+    Value<int>? rowid,
+  }) {
+    return PersonalSetMembersCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      setId: setId ?? this.setId,
+      revision: revision ?? this.revision,
+      position: position ?? this.position,
+      senseRefHash: senseRefHash ?? this.senseRefHash,
+      senseRefJson: senseRefJson ?? this.senseRefJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (setId.present) {
+      map['set_id'] = Variable<String>(setId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (senseRefHash.present) {
+      map['sense_ref_hash'] = Variable<String>(senseRefHash.value);
+    }
+    if (senseRefJson.present) {
+      map['sense_ref_json'] = Variable<String>(senseRefJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PersonalSetMembersCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('setId: $setId, ')
+          ..write('revision: $revision, ')
+          ..write('position: $position, ')
+          ..write('senseRefHash: $senseRefHash, ')
+          ..write('senseRefJson: $senseRefJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -36966,6 +37897,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StudyRemindersTable studyReminders = $StudyRemindersTable(this);
   late final $LearnerPreferencesTable learnerPreferences =
       $LearnerPreferencesTable(this);
+  late final $PersonalSetRevisionsTable personalSetRevisions =
+      $PersonalSetRevisionsTable(this);
+  late final $PersonalSetMembersTable personalSetMembers =
+      $PersonalSetMembersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -37021,6 +37956,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningGoals,
     studyReminders,
     learnerPreferences,
+    personalSetRevisions,
+    personalSetMembers,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -38016,6 +38953,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _learnerPreferencesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $PersonalSetRevisionsTable,
+    List<PersonalSetRevisionRow>
+  >
+  _personalSetRevisionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.personalSetRevisions,
+        aliasName: 'local_owners__id__personal_set_revisions__owner_id',
+      );
+
+  $$PersonalSetRevisionsTableProcessedTableManager
+  get personalSetRevisionsRefs {
+    final manager = $$PersonalSetRevisionsTableTableManager(
+      $_db,
+      $_db.personalSetRevisions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _personalSetRevisionsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -39068,6 +40030,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$LearnerPreferencesTableFilterComposer(
             $db: $db,
             $table: $db.learnerPreferences,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> personalSetRevisionsRefs(
+    Expression<bool> Function($$PersonalSetRevisionsTableFilterComposer f) f,
+  ) {
+    final $$PersonalSetRevisionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.personalSetRevisions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PersonalSetRevisionsTableFilterComposer(
+            $db: $db,
+            $table: $db.personalSetRevisions,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -40179,6 +41166,32 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> personalSetRevisionsRefs<T extends Object>(
+    Expression<T> Function($$PersonalSetRevisionsTableAnnotationComposer a) f,
+  ) {
+    final $$PersonalSetRevisionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.personalSetRevisions,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$PersonalSetRevisionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.personalSetRevisions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -40235,6 +41248,7 @@ class $$LocalOwnersTableTableManager
             bool learningGoalsRefs,
             bool studyRemindersRefs,
             bool learnerPreferencesRefs,
+            bool personalSetRevisionsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -40334,6 +41348,7 @@ class $$LocalOwnersTableTableManager
                 learningGoalsRefs = false,
                 studyRemindersRefs = false,
                 learnerPreferencesRefs = false,
+                personalSetRevisionsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -40381,6 +41396,7 @@ class $$LocalOwnersTableTableManager
                     if (learningGoalsRefs) db.learningGoals,
                     if (studyRemindersRefs) db.studyReminders,
                     if (learnerPreferencesRefs) db.learnerPreferences,
+                    if (personalSetRevisionsRefs) db.personalSetRevisions,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -41225,6 +42241,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (personalSetRevisionsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          PersonalSetRevisionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._personalSetRevisionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).personalSetRevisionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -41286,6 +42323,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool learningGoalsRefs,
         bool studyRemindersRefs,
         bool learnerPreferencesRefs,
+        bool personalSetRevisionsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -68314,6 +69352,622 @@ typedef $$LearnerPreferencesTableProcessedTableManager =
       LearnerPreferenceRow,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$PersonalSetRevisionsTableCreateCompanionBuilder =
+    PersonalSetRevisionsCompanion Function({
+      required String ownerId,
+      required String setId,
+      required int revision,
+      required String operationId,
+      required String payloadHash,
+      required String payloadJson,
+      required bool archived,
+      Value<int> rowid,
+    });
+typedef $$PersonalSetRevisionsTableUpdateCompanionBuilder =
+    PersonalSetRevisionsCompanion Function({
+      Value<String> ownerId,
+      Value<String> setId,
+      Value<int> revision,
+      Value<String> operationId,
+      Value<String> payloadHash,
+      Value<String> payloadJson,
+      Value<bool> archived,
+      Value<int> rowid,
+    });
+
+final class $$PersonalSetRevisionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $PersonalSetRevisionsTable,
+          PersonalSetRevisionRow
+        > {
+  $$PersonalSetRevisionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('personal_set_revisions__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$PersonalSetRevisionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonalSetRevisionsTable> {
+  $$PersonalSetRevisionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get setId => $composableBuilder(
+    column: $table.setId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalSetRevisionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonalSetRevisionsTable> {
+  $$PersonalSetRevisionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get setId => $composableBuilder(
+    column: $table.setId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get archived => $composableBuilder(
+    column: $table.archived,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalSetRevisionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonalSetRevisionsTable> {
+  $$PersonalSetRevisionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get setId =>
+      $composableBuilder(column: $table.setId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get archived =>
+      $composableBuilder(column: $table.archived, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$PersonalSetRevisionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PersonalSetRevisionsTable,
+          PersonalSetRevisionRow,
+          $$PersonalSetRevisionsTableFilterComposer,
+          $$PersonalSetRevisionsTableOrderingComposer,
+          $$PersonalSetRevisionsTableAnnotationComposer,
+          $$PersonalSetRevisionsTableCreateCompanionBuilder,
+          $$PersonalSetRevisionsTableUpdateCompanionBuilder,
+          (PersonalSetRevisionRow, $$PersonalSetRevisionsTableReferences),
+          PersonalSetRevisionRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$PersonalSetRevisionsTableTableManager(
+    _$AppDatabase db,
+    $PersonalSetRevisionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonalSetRevisionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonalSetRevisionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PersonalSetRevisionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> setId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<String> payloadHash = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<bool> archived = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalSetRevisionsCompanion(
+                ownerId: ownerId,
+                setId: setId,
+                revision: revision,
+                operationId: operationId,
+                payloadHash: payloadHash,
+                payloadJson: payloadJson,
+                archived: archived,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String setId,
+                required int revision,
+                required String operationId,
+                required String payloadHash,
+                required String payloadJson,
+                required bool archived,
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalSetRevisionsCompanion.insert(
+                ownerId: ownerId,
+                setId: setId,
+                revision: revision,
+                operationId: operationId,
+                payloadHash: payloadHash,
+                payloadJson: payloadJson,
+                archived: archived,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PersonalSetRevisionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$PersonalSetRevisionsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$PersonalSetRevisionsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PersonalSetRevisionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PersonalSetRevisionsTable,
+      PersonalSetRevisionRow,
+      $$PersonalSetRevisionsTableFilterComposer,
+      $$PersonalSetRevisionsTableOrderingComposer,
+      $$PersonalSetRevisionsTableAnnotationComposer,
+      $$PersonalSetRevisionsTableCreateCompanionBuilder,
+      $$PersonalSetRevisionsTableUpdateCompanionBuilder,
+      (PersonalSetRevisionRow, $$PersonalSetRevisionsTableReferences),
+      PersonalSetRevisionRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$PersonalSetMembersTableCreateCompanionBuilder =
+    PersonalSetMembersCompanion Function({
+      required String ownerId,
+      required String setId,
+      required int revision,
+      required int position,
+      required String senseRefHash,
+      required String senseRefJson,
+      Value<int> rowid,
+    });
+typedef $$PersonalSetMembersTableUpdateCompanionBuilder =
+    PersonalSetMembersCompanion Function({
+      Value<String> ownerId,
+      Value<String> setId,
+      Value<int> revision,
+      Value<int> position,
+      Value<String> senseRefHash,
+      Value<String> senseRefJson,
+      Value<int> rowid,
+    });
+
+class $$PersonalSetMembersTableFilterComposer
+    extends Composer<_$AppDatabase, $PersonalSetMembersTable> {
+  $$PersonalSetMembersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get setId => $composableBuilder(
+    column: $table.setId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senseRefHash => $composableBuilder(
+    column: $table.senseRefHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get senseRefJson => $composableBuilder(
+    column: $table.senseRefJson,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PersonalSetMembersTableOrderingComposer
+    extends Composer<_$AppDatabase, $PersonalSetMembersTable> {
+  $$PersonalSetMembersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get setId => $composableBuilder(
+    column: $table.setId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senseRefHash => $composableBuilder(
+    column: $table.senseRefHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get senseRefJson => $composableBuilder(
+    column: $table.senseRefJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PersonalSetMembersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PersonalSetMembersTable> {
+  $$PersonalSetMembersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<String> get setId =>
+      $composableBuilder(column: $table.setId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get senseRefHash => $composableBuilder(
+    column: $table.senseRefHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get senseRefJson => $composableBuilder(
+    column: $table.senseRefJson,
+    builder: (column) => column,
+  );
+}
+
+class $$PersonalSetMembersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PersonalSetMembersTable,
+          PersonalSetMemberRow,
+          $$PersonalSetMembersTableFilterComposer,
+          $$PersonalSetMembersTableOrderingComposer,
+          $$PersonalSetMembersTableAnnotationComposer,
+          $$PersonalSetMembersTableCreateCompanionBuilder,
+          $$PersonalSetMembersTableUpdateCompanionBuilder,
+          (
+            PersonalSetMemberRow,
+            BaseReferences<
+              _$AppDatabase,
+              $PersonalSetMembersTable,
+              PersonalSetMemberRow
+            >,
+          ),
+          PersonalSetMemberRow,
+          PrefetchHooks Function()
+        > {
+  $$PersonalSetMembersTableTableManager(
+    _$AppDatabase db,
+    $PersonalSetMembersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PersonalSetMembersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PersonalSetMembersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PersonalSetMembersTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> setId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String> senseRefHash = const Value.absent(),
+                Value<String> senseRefJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalSetMembersCompanion(
+                ownerId: ownerId,
+                setId: setId,
+                revision: revision,
+                position: position,
+                senseRefHash: senseRefHash,
+                senseRefJson: senseRefJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String setId,
+                required int revision,
+                required int position,
+                required String senseRefHash,
+                required String senseRefJson,
+                Value<int> rowid = const Value.absent(),
+              }) => PersonalSetMembersCompanion.insert(
+                ownerId: ownerId,
+                setId: setId,
+                revision: revision,
+                position: position,
+                senseRefHash: senseRefHash,
+                senseRefJson: senseRefJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PersonalSetMembersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PersonalSetMembersTable,
+      PersonalSetMemberRow,
+      $$PersonalSetMembersTableFilterComposer,
+      $$PersonalSetMembersTableOrderingComposer,
+      $$PersonalSetMembersTableAnnotationComposer,
+      $$PersonalSetMembersTableCreateCompanionBuilder,
+      $$PersonalSetMembersTableUpdateCompanionBuilder,
+      (
+        PersonalSetMemberRow,
+        BaseReferences<
+          _$AppDatabase,
+          $PersonalSetMembersTable,
+          PersonalSetMemberRow
+        >,
+      ),
+      PersonalSetMemberRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -68437,4 +70091,8 @@ class $AppDatabaseManager {
       $$StudyRemindersTableTableManager(_db, _db.studyReminders);
   $$LearnerPreferencesTableTableManager get learnerPreferences =>
       $$LearnerPreferencesTableTableManager(_db, _db.learnerPreferences);
+  $$PersonalSetRevisionsTableTableManager get personalSetRevisions =>
+      $$PersonalSetRevisionsTableTableManager(_db, _db.personalSetRevisions);
+  $$PersonalSetMembersTableTableManager get personalSetMembers =>
+      $$PersonalSetMembersTableTableManager(_db, _db.personalSetMembers);
 }

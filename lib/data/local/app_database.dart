@@ -21,6 +21,7 @@ import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
 import 'tables/planning_tables.dart';
+import 'tables/personal_set_tables.dart';
 import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
@@ -86,10 +87,12 @@ part 'app_database.g.dart';
     LearningGoals,
     StudyReminders,
     LearnerPreferences,
+    PersonalSetRevisions,
+    PersonalSetMembers,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 28;
+  static const int currentSchemaVersion = 29;
 
   AppDatabase(super.executor);
 
@@ -397,6 +400,7 @@ final class AppDatabase extends _$AppDatabase {
       await _createContentManifestImmutabilityTriggers();
       await _createLearningTimeGuards();
       await _createQuestGuards();
+      await _createPersonalSetGuards();
       await installResearchSchemaGuards((sql) => customStatement(sql));
     },
   );
@@ -825,7 +829,35 @@ final class AppDatabase extends _$AppDatabase {
     }
   }
 
+  Future<void> _createPersonalSetGuards() async {
+    for (final (table, fields, key) in [
+      ('personal_set_revisions',
+       'set_id, revision, operation_id, payload_hash, payload_json, archived',
+       '(owner_id = NEW.owner_id AND set_id = NEW.set_id AND revision = NEW.revision) OR (owner_id = NEW.owner_id AND operation_id = NEW.operation_id)'),
+      ('personal_set_members',
+       'set_id, revision, position, sense_ref_hash, sense_ref_json',
+       'owner_id = NEW.owner_id AND set_id = NEW.set_id AND revision = NEW.revision AND (position = NEW.position OR sense_ref_hash = NEW.sense_ref_hash)'),
+    ]) {
+      // Only owner remapping is mutable; composite FK cascades to members.
+      // Deletion is intentionally available to the owner lifecycle authority.
+      final changed = fields.split(', ').map((field) => 'OLD.$field IS NOT NEW.$field').join(' OR ');
+      await customStatement('CREATE TRIGGER IF NOT EXISTS ${table}_immutable '
+          'BEFORE UPDATE OF $fields ON $table WHEN $changed BEGIN '
+          "SELECT RAISE(ABORT, 'personal_set_immutable'); END");
+      await customStatement('CREATE TRIGGER IF NOT EXISTS ${table}_no_replace '
+          'BEFORE INSERT ON $table WHEN EXISTS (SELECT 1 FROM $table WHERE $key) '
+          "BEGIN SELECT RAISE(ABORT, 'personal_set_duplicate'); END");
+    }
+  }
+
   Future<void> _createMissingTables(Migrator migrator) async {
+    // v29: additive extension; retain every prior learning/evidence table.
+    if (!await _tableExists('personal_set_revisions')) {
+      await migrator.createTable(personalSetRevisions);
+    }
+    if (!await _tableExists('personal_set_members')) {
+      await migrator.createTable(personalSetMembers);
+    }
     if (!await _tableExists('local_owners')) {
       await migrator.createTable(localOwners);
     }
