@@ -15,12 +15,19 @@ final class AdventureTodayEntryCard extends StatefulWidget {
 final class _AdventureTodayEntryCardState
     extends State<AdventureTodayEntryCard> {
   var _opening = false;
+  var _failed = false;
+  static const _failureMessage = 'เปิดภารกิจไม่ได้ในขณะนี้ แตะเพื่อลองอีกครั้ง';
 
   Future<void> _open() async {
-    if (_opening) return;
-    setState(() => _opening = true);
+    if (!mounted || _opening) return;
+    setState(() {
+      _opening = true;
+      _failed = false;
+    });
     try {
       await widget.onOpen();
+    } catch (_) {
+      if (mounted) setState(() => _failed = true);
     } finally {
       if (mounted) setState(() => _opening = false);
     }
@@ -37,7 +44,10 @@ final class _AdventureTodayEntryCardState
         child: Semantics(
           button: true,
           enabled: !_opening,
-          label: entry.semanticsLabel,
+          label: _failed
+              ? '${entry.semanticsLabel}. $_failureMessage'
+              : entry.semanticsLabel,
+          liveRegion: _failed,
           excludeSemantics: true,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 64),
@@ -58,6 +68,7 @@ final class _AdventureTodayEntryCardState
                         const Text(
                           'เปลี่ยนรายการวันนี้เป็นเส้นทางภารกิจแบบเบา ๆ',
                         ),
+                        if (_failed) const Text(_failureMessage),
                       ],
                     ),
                   ),

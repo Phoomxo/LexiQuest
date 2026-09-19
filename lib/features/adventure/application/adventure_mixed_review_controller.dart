@@ -98,6 +98,7 @@ final class AdventureMixedReviewController extends ChangeNotifier {
   PendingLearningSessionClose? _pendingClose;
   bool _initialized = false;
   bool _disposed = false;
+  bool _flashcardRevealed = false;
 
   AdventureMixedReviewPhase get phase => _phase;
   AdventureMixedReviewPrompt? get prompt => _prompt;
@@ -107,6 +108,7 @@ final class AdventureMixedReviewController extends ChangeNotifier {
   Object? get failure => _failure;
   LearningSessionSummary? get summary => _summary;
   bool get isRepair => _role == AdventureLearningItemRole.repair;
+  bool get hasRevealedFlashcard => _flashcardRevealed;
   bool get isBusy => switch (_phase) {
     AdventureMixedReviewPhase.initializing ||
     AdventureMixedReviewPhase.savingFlashcard ||
@@ -164,7 +166,9 @@ final class AdventureMixedReviewController extends ChangeNotifier {
       await _selectNextPrompt();
     } catch (error) {
       _failure = error;
-      _setPhase(AdventureMixedReviewPhase.failed);
+      if (_phase != AdventureMixedReviewPhase.completionRetryRequired) {
+        _setPhase(AdventureMixedReviewPhase.failed);
+      }
       rethrow;
     }
   }
@@ -267,6 +271,7 @@ final class AdventureMixedReviewController extends ChangeNotifier {
       throw StateError('Flashcard cannot be revealed now.');
     }
     host.recordInteraction();
+    _flashcardRevealed = true;
     _setPhase(AdventureMixedReviewPhase.flashcardRevealed);
   }
 
@@ -733,6 +738,7 @@ final class AdventureMixedReviewController extends ChangeNotifier {
       promptVariant: occurrence.promptVariant,
     );
     _prompt = prompt;
+    _flashcardRevealed = false;
     _role = occurrence.role;
     _feedback = null;
     _supportMessage = null;
@@ -759,6 +765,7 @@ final class AdventureMixedReviewController extends ChangeNotifier {
     AdventureLearningItemRole role,
   ) {
     _prompt = prompt;
+    _flashcardRevealed = false;
     _role = role;
     _feedback = null;
     _supportMessage = null;

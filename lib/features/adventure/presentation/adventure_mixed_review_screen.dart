@@ -219,12 +219,12 @@ final class _AdventureMixedReviewScreenState
               children: <Widget>[
                 _QuestProgressCard(controller: controller),
                 const SizedBox(height: 16),
-                if (prompt == null)
+                if (prompt == null && controller.isBusy)
                   const Padding(
                     padding: EdgeInsets.all(32),
                     child: Center(child: CircularProgressIndicator()),
-                  )
-                else ...<Widget>[
+                  ),
+                if (prompt != null) ...<Widget>[
                   _PromptCard(controller: controller, prompt: prompt),
                   const SizedBox(height: 16),
                   _responseArea(controller, prompt),
@@ -234,7 +234,6 @@ final class _AdventureMixedReviewScreenState
                       key: ValueKey<String>('mixed-review-saving'),
                     ),
                   ],
-                  ..._retryControls(controller),
                   if (controller.phase ==
                       AdventureMixedReviewPhase.answered) ...<Widget>[
                     if (AccessibilityModeFeedbackSlot.maybeOf(context)
@@ -264,6 +263,7 @@ final class _AdventureMixedReviewScreenState
                     ),
                   ],
                 ],
+                ..._retryControls(controller),
               ],
             ),
           ),
@@ -314,7 +314,10 @@ final class _AdventureMixedReviewScreenState
       );
     }
     if (prompt.mode == LessonMode.flashcard) {
-      final revealed =
+      final revealed = controller.hasRevealedFlashcard;
+      final canReveal =
+          controller.phase == AdventureMixedReviewPhase.awaitingFlashcardReveal;
+      final canContinue =
           controller.phase == AdventureMixedReviewPhase.flashcardRevealed;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -341,11 +344,18 @@ final class _AdventureMixedReviewScreenState
                   ? 'mixed-review-flashcard-continue'
                   : 'mixed-review-flashcard-reveal',
             ),
-            onPressed: controller.isBusy
+            onPressed: !canReveal && !canContinue
                 ? null
-                : revealed
+                : canContinue
                 ? () => _perform(controller.continueAfterFlashcard)
-                : controller.revealFlashcard,
+                : () {
+                    if (mounted &&
+                        controller.canSkip &&
+                        controller.phase ==
+                            AdventureMixedReviewPhase.awaitingFlashcardReveal) {
+                      controller.revealFlashcard();
+                    }
+                  },
             icon: Icon(
               revealed ? Icons.arrow_forward_rounded : Icons.visibility,
             ),
@@ -437,7 +447,9 @@ final class _AdventureMixedReviewScreenState
     final response = _typedController.text;
     if (!mounted || !controller.canSubmit || response.trim().isEmpty) return;
     if (_typedController.value.composing.isValid &&
-        !_typedController.value.composing.isCollapsed) return;
+        !_typedController.value.composing.isCollapsed) {
+      return;
+    }
     unawaited(
       _perform(
         () => controller.submitTyped(

@@ -312,14 +312,8 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                   key: const ValueKey<String>('current-evidence-retry'),
                   onPressed: review.isSaving ? null : _retryEvidence,
                   child: const Text('ลองบันทึกคำตอบเดิมอีกครั้ง'),
-                )
-              else if (review.phase ==
-                  DefinitionQuizReviewPhase.completionRetryRequired)
-                FilledButton(
-                  key: const ValueKey<String>('current-evidence-retry'),
-                  onPressed: review.isSaving ? null : _retryCompletion,
-                  child: const Text('ลองจบกิจกรรมอีกครั้ง'),
                 ),
+
               if (review.feedback case final feedback?) ...<Widget>[
                 const SizedBox(height: 12),
                 AccessibilitySemanticRegion(
@@ -340,6 +334,13 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 ),
               ],
             ],
+            if (review.phase ==
+                DefinitionQuizReviewPhase.completionRetryRequired)
+              FilledButton(
+                key: const ValueKey<String>('current-evidence-retry'),
+                onPressed: review.isSaving ? null : _retryCompletion,
+                child: const Text('ลองจบกิจกรรมอีกครั้ง'),
+              ),
           ],
         ),
       ),

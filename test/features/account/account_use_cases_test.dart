@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/screens/email_action_screen.dart';
 import 'package:vocab_learning_app/features/account/application/account_use_cases.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
@@ -48,6 +49,54 @@ void main() {
       expect(upgrades.transitionLog, ['upgrade', 'clearEntry']);
     },
   );
+
+  for (final failure in [
+    AccountFailureCode.weakPassword,
+    AccountFailureCode.network,
+  ]) {
+    testWidgets('F03 password reset retains editable form after $failure', (
+      tester,
+    ) async {
+      gateway.resetFailure = failure == AccountFailureCode.network
+          ? const AccountException(AccountFailureCode.network)
+          : null;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: EmailActionScreen(
+            action: const EmailAction(
+              mode: EmailActionMode.resetPassword,
+              code: 'original-code',
+            ),
+            account: accounts,
+          ),
+        ),
+      );
+      await tester.enterText(
+        find.byType(TextField),
+        failure == AccountFailureCode.weakPassword ? 'short' : 'validpassword',
+      );
+      await tester.tap(find.text('เปลี่ยนรหัสผ่าน'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(
+        gateway.resetCodes,
+        failure == AccountFailureCode.weakPassword
+            ? isEmpty
+            : ['original-code'],
+      );
+      gateway.resetFailure = null;
+      await tester.enterText(find.byType(TextField), 'correctedpassword');
+      await tester.tap(find.text('เปลี่ยนรหัสผ่าน'));
+      await tester.pumpAndSettle();
+      expect(find.text('เปลี่ยนรหัสผ่านสำเร็จ'), findsOneWidget);
+      expect(gateway.resetCodes, everyElement('original-code'));
+      expect(
+        gateway.resetCodes.length,
+        failure == AccountFailureCode.weakPassword ? 1 : 2,
+      );
+    });
+  }
 
   test(
     'sign in merges the active local owner into the existing account',
@@ -373,6 +422,8 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
 }
 
 final class _FakeGateway implements AccountGateway {
+  Object? resetFailure;
+  final List<String> resetCodes = [];
   int registerCalls = 0;
   int signOutCalls = 0;
   String? registerEmail;
@@ -422,7 +473,10 @@ final class _FakeGateway implements AccountGateway {
   Future<void> confirmPasswordReset({
     required String code,
     required String newPassword,
-  }) async {}
+  }) async {
+    resetCodes.add(code);
+    if (resetFailure case final failure?) throw failure;
+  }
 
   @override
   Future<AccountSession> reload() async => currentSession!;

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyWord;
 import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
@@ -24,6 +25,8 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
 
 import '../support/accessibility_semantics_test_support.dart';
+
+import '../support/fail_once_session_close_repository.dart';
 
 void main() {
   late AppDatabase database;
@@ -78,6 +81,64 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  testWidgets('F03 last skipped item retains exact completion retry', (
+    tester,
+  ) async {
+    final repository = FailOnceSessionCloseRepository(
+      DriftLearningRepository(database),
+    );
+    learning = LearningUseCases(
+      owners: owners,
+      repository: repository,
+      generateId: () => 'skip-${++generatedId}',
+      nowUtc: () => DateTime.utc(2026, 8, 25, 10, 0, generatedId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'f03-skip'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DefinitionQuizScreen(
+          categoryId: 'category:travel',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const DefinitionQuizModeAdapter(),
+          loadLexicalWords: (_) async => [],
+        ),
+      ),
+    );
+    final skip = find.byKey(const ValueKey<String>('definition-quiz-skip'));
+    await _pumpUntilFound(tester, skip);
+    await tester.tap(skip);
+    await tester.pumpAndSettle();
+    await tester.tap(skip);
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 1)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(repository.closes, hasLength(1));
+    final retry = find.byKey(const ValueKey<String>('current-evidence-retry'));
+    expect(retry, findsOneWidget);
+    await tester.ensureVisible(retry);
+    await tester.tap(retry);
+    await _pumpUntilFound(tester, find.byType(ScoreScreen));
+    expect(repository.closes, hasLength(2));
+    expect(repository.closes[1], repository.closes[0]);
+    final attempts = await tester.runAsync(
+      () => database.select(database.answerAttempts).get(),
+    );
+    expect(attempts, isEmpty);
+    final sessions = await tester.runAsync(
+      () => database.select(database.learningSessions).get(),
+    );
+    expect(sessions, hasLength(1));
+    expect(
+      sessions!.single.endedAtUtcMs,
+      repository.closes.first.$3.millisecondsSinceEpoch,
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
     'f38 ultra review: definition feedback follows response semantics',

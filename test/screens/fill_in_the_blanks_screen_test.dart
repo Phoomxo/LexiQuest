@@ -39,6 +39,8 @@ import '../support/accessibility_semantics_test_support.dart';
 import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
+import '../support/fail_once_session_close_repository.dart';
+
 void main() {
   late AppDatabase database;
   late DriftLocalOwnerRepository owners;
@@ -92,7 +94,67 @@ void main() {
 
   tearDown(() => database.close());
 
-  testWidgets('B05 cloze blank and composing input never writes evidence', (tester) async {
+  testWidgets('F03 last skipped item retains exact completion retry', (
+    tester,
+  ) async {
+    final repository = FailOnceSessionCloseRepository(
+      DriftLearningRepository(database),
+    );
+    learning = LearningUseCases(
+      owners: owners,
+      repository: repository,
+      generateId: () => 'skip-${++generatedId}',
+      nowUtc: () => DateTime.utc(2026, 8, 25, 10, 0, generatedId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'f03-skip'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FillInTheBlanksScreen(
+          categoryId: 'category:travel',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          modeAdapter: const ClozeModeAdapter(),
+          loadLexicalWords: (_) async => [],
+        ),
+      ),
+    );
+    final skip = find.byKey(const ValueKey<String>('cloze-skip'));
+    await _pumpUntilFound(tester, skip);
+    await tester.tap(skip);
+    await tester.pumpAndSettle();
+    await tester.tap(skip);
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 1)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(repository.closes, hasLength(1));
+    final retry = find.byKey(const ValueKey<String>('current-evidence-retry'));
+    expect(retry, findsOneWidget);
+    await tester.ensureVisible(retry);
+    await tester.tap(retry);
+    await _pumpUntilFound(tester, find.byType(ScoreScreen));
+    expect(repository.closes, hasLength(2));
+    expect(repository.closes[1], repository.closes[0]);
+    final attempts = await tester.runAsync(
+      () => database.select(database.answerAttempts).get(),
+    );
+    expect(attempts, isEmpty);
+    final sessions = await tester.runAsync(
+      () => database.select(database.learningSessions).get(),
+    );
+    expect(sessions, hasLength(1));
+    expect(
+      sessions!.single.endedAtUtcMs,
+      repository.closes.first.$3.millisecondsSinceEpoch,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('B05 cloze blank and composing input never writes evidence', (
+    tester,
+  ) async {
     await tester.pumpWidget(MaterialApp(home: _screen(learning)));
     await _pumpUntilFound(tester, find.text('The _____ is busy.'));
     await tester.tap(find.byKey(const ValueKey('cloze-mode-typed')));
@@ -104,18 +166,24 @@ void main() {
     await tester.pump();
     expect(await database.select(database.answerAttempts).get(), isEmpty);
     await tester.showKeyboard(input);
-    tester.testTextInput.updateEditingValue(const TextEditingValue(
-      text: 'airport', selection: TextSelection.collapsed(offset: 7),
-      composing: TextRange(start: 0, end: 7),
-    ));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'airport',
+        selection: TextSelection.collapsed(offset: 7),
+        composing: TextRange(start: 0, end: 7),
+      ),
+    );
     await tester.pump();
     expect(tester.widget<FilledButton>(submit).onPressed, isNull);
     tester.widget<TextField>(input).onSubmitted!('airport');
     await tester.pump();
     expect(await database.select(database.answerAttempts).get(), isEmpty);
-    tester.testTextInput.updateEditingValue(const TextEditingValue(
-      text: 'airport', selection: TextSelection.collapsed(offset: 7),
-    ));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'airport',
+        selection: TextSelection.collapsed(offset: 7),
+      ),
+    );
     await tester.pump();
     expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
     tester.widget<FilledButton>(submit).onPressed!();
@@ -480,9 +548,14 @@ void main() {
         reason: 'typed recall cannot be exposed to selected-mode answers',
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey<String>('cloze-mode-typed')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-mode-typed')),
+      );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('cloze-mode-typed')).hitTestable(), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('cloze-mode-typed')).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
       await tester.pump();
       expectInsideAccessibilityRole(
@@ -501,10 +574,22 @@ void main() {
         ' AIRPORT ',
       );
       await tester.pump();
-      await tester.ensureVisible(find.byKey(const ValueKey<String>('cloze-submit-typed')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')),
+      );
       await tester.pump();
-      expect(tester.widget<FilledButton>(find.byKey(const ValueKey<String>('cloze-submit-typed'))).onPressed, isNotNull);
-      expect(find.byKey(const ValueKey<String>('cloze-submit-typed')).hitTestable(), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey<String>('cloze-submit-typed')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(
         find.byKey(const ValueKey<String>('cloze-submit-typed')),
       );
@@ -527,9 +612,14 @@ void main() {
       await _pumpUntilFound(tester, find.text('The _____ closes.'));
       await tester.tap(find.text('ดูวิธีคิด'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey<String>('cloze-mode-typed')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-mode-typed')),
+      );
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('cloze-mode-typed')).hitTestable(), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('cloze-mode-typed')).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
       await tester.pump();
       await tester.enterText(
@@ -541,10 +631,22 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      await tester.ensureVisible(find.byKey(const ValueKey<String>('cloze-submit-typed')));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')),
+      );
       await tester.pump();
-      expect(tester.widget<FilledButton>(find.byKey(const ValueKey<String>('cloze-submit-typed'))).onPressed, isNotNull);
-      expect(find.byKey(const ValueKey<String>('cloze-submit-typed')).hitTestable(), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey<String>('cloze-submit-typed')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')).hitTestable(),
+        findsOneWidget,
+      );
       await tester.tap(
         find.byKey(const ValueKey<String>('cloze-submit-typed')),
       );
@@ -639,10 +741,15 @@ void main() {
       find.byKey(const ValueKey<String>('cloze-mode-selected')),
     );
     await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const ValueKey<String>('cloze-mode-selected')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey<String>('cloze-mode-selected')).hitTestable(), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-selected')));
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('cloze-mode-selected')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('cloze-mode-selected')).hitTestable(),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-selected')));
     await tester.pump();
     expect(option, findsOneWidget);
     await tester.ensureVisible(option);

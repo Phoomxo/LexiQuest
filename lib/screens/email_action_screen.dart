@@ -19,6 +19,7 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
   final _password = TextEditingController();
   AccountUseCases? _account;
   bool _busy = false;
+  bool _terminal = false;
   String? _status;
 
   @override
@@ -35,8 +36,11 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
 
   Future<void> _apply() async {
     final account = _account;
-    if (account == null || _busy) return;
-    setState(() => _busy = true);
+    if (account == null || _busy || _terminal) return;
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
     try {
       await account.applyEmailAction(
         widget.action,
@@ -46,6 +50,7 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
       );
       if (!mounted) return;
       setState(() {
+        _terminal = true;
         _status = widget.action.mode == EmailActionMode.verifyEmail
             ? 'ยืนยันอีเมลสำเร็จ'
             : 'เปลี่ยนรหัสผ่านสำเร็จ';
@@ -53,11 +58,16 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
     } on AccountException catch (error) {
       if (!mounted) return;
       setState(() {
+        _terminal =
+            error.code == AccountFailureCode.expiredActionCode ||
+            error.code == AccountFailureCode.invalidActionCode;
         _status = switch (error.code) {
           AccountFailureCode.expiredActionCode => 'ลิงก์นี้หมดอายุแล้ว',
+          AccountFailureCode.invalidActionCode =>
+            'ลิงก์นี้ไม่ถูกต้องหรือถูกใช้งานแล้ว',
           AccountFailureCode.weakPassword =>
             'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
-          _ => 'ลิงก์นี้ไม่ถูกต้องหรือถูกใช้งานแล้ว',
+          _ => 'ยังดำเนินการไม่ได้ กรุณาลองอีกครั้ง',
         };
       });
     } finally {
@@ -81,7 +91,7 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              if (reset && _status == null) ...[
+              if (reset && !_terminal) ...[
                 TextField(
                   controller: _password,
                   obscureText: true,
@@ -102,7 +112,15 @@ class _EmailActionScreenState extends State<EmailActionScreen> {
               ],
               if (_busy) const CircularProgressIndicator(),
               if (_status != null) ...[
-                Text(_status!, textAlign: TextAlign.center),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(_status!, textAlign: TextAlign.center),
+                ),
+                if (!reset && !_terminal)
+                  FilledButton(
+                    onPressed: _busy ? null : _apply,
+                    child: const Text('ลองอีกครั้ง'),
+                  ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () =>

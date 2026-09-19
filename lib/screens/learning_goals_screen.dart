@@ -47,6 +47,7 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   Future<bool>? _reminderEntryAvailable;
   Listenable? _registryChanges;
   final Set<String> _deleting = {};
+  bool _openingGoal = false;
 
   LearningGoalUseCases? _resolveUseCases() =>
       widget.useCases ?? AppDependenciesScope.maybeOf(context)?.learningGoals;
@@ -140,19 +141,37 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
     LearningGoalMutationGuard mutationAllowed, {
     LearningGoal? goal,
   }) async {
-    final openingOwnerId = await useCases.activeOwnerId();
-    if (!mounted || !mutationAllowed()) return;
-    final created = await showDialog<LearningGoal>(
-      context: context,
-      builder: (_) => _CreateLearningGoalDialog(
-        useCases: useCases,
-        registry: registry,
-        mutationAllowed: mutationAllowed,
-        openingOwnerId: openingOwnerId,
-        initialGoal: goal,
-      ),
-    );
-    if (created != null && mounted && mutationAllowed()) _reload(useCases);
+    if (_openingGoal || !mounted || !mutationAllowed()) return;
+    _openingGoal = true;
+    try {
+      final openingOwnerId = await useCases.activeOwnerId();
+      if (!mounted || !mutationAllowed()) return;
+      if (openingOwnerId != await useCases.activeOwnerId()) {
+        throw const LearningGoalOwnerChanged();
+      }
+      if (!mounted || !mutationAllowed()) return;
+      final created = await showDialog<LearningGoal>(
+        context: context,
+        builder: (_) => _CreateLearningGoalDialog(
+          useCases: useCases,
+          registry: registry,
+          mutationAllowed: mutationAllowed,
+          openingOwnerId: openingOwnerId,
+          initialGoal: goal,
+        ),
+      );
+      if (created != null && mounted && mutationAllowed()) _reload(useCases);
+    } catch (_) {
+      if (mounted && mutationAllowed()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ยังเปิดเป้าหมายไม่ได้ กรุณาลองอีกครั้ง'),
+          ),
+        );
+      }
+    } finally {
+      _openingGoal = false;
+    }
   }
 
   Future<void> _deleteGoal(

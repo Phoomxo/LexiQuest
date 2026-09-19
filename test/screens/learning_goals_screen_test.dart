@@ -18,6 +18,78 @@ import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 
 void main() {
   setUpAll(timezone_data.initializeTimeZones);
+  for (final editing in [false, true]) {
+    for (final scenario in ['double tap', 'lookup failure', 'owner change']) {
+      testWidgets(
+        'F03 goal opening $editing $scenario is fenced and retryable',
+        (tester) async {
+          final goal = LearningGoal(
+            id: 'goal:opening',
+            kind: LearningGoalKind.personal,
+            title: 'Opening target',
+            deadlineAtUtc: DateTime.utc(2026, 9, 25),
+            timezone: const LearningGoalTimezoneContext(
+              timezoneId: 'Asia/Bangkok',
+              utcOffsetMinutes: 420,
+            ),
+            status: LearningGoalStatus.active,
+            createdAtUtc: DateTime.utc(2026, 9, 19),
+            updatedAtUtc: DateTime.utc(2026, 9, 19),
+          );
+          final gate = Completer<String>();
+          var calls = 0;
+          var currentOwner = 'owner-a';
+          final cases = LearningGoalUseCases(
+            repository: _Goals(editing ? [goal] : []),
+            activeOwnerId: () {
+              calls++;
+              return calls == 1 ? gate.future : Future.value(currentOwner);
+            },
+            nowUtc: () => DateTime.utc(2026, 9, 19),
+            generateId: () => 'goal:new',
+          );
+          await tester.pumpWidget(
+            MaterialApp(home: LearningGoalsScreen(useCases: cases)),
+          );
+          await tester.pumpAndSettle();
+          final button = find.byKey(
+            ValueKey(
+              editing
+                  ? 'learning-goal/goal:opening/edit'
+                  : 'learning-goals/add',
+            ),
+          );
+          await tester.tap(button);
+          if (scenario == 'double tap') await tester.tap(button);
+          await tester.pump();
+          if (scenario == 'double tap') expect(calls, 1);
+          if (scenario == 'lookup failure') {
+            gate.completeError(StateError('owner unavailable'));
+          } else {
+            if (scenario == 'owner change') currentOwner = 'owner-b';
+            gate.complete('owner-a');
+          }
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          if (scenario == 'double tap') {
+            expect(find.byType(AlertDialog), findsOneWidget);
+            Navigator.of(tester.element(find.byType(AlertDialog))).pop();
+            await tester.pumpAndSettle();
+            expect(find.byType(AlertDialog), findsNothing);
+          } else {
+            expect(find.byType(AlertDialog), findsNothing);
+            expect(
+              find.text('ยังเปิดเป้าหมายไม่ได้ กรุณาลองอีกครั้ง'),
+              findsOneWidget,
+            );
+            await tester.tap(button);
+            await tester.pumpAndSettle();
+            expect(find.byType(AlertDialog), findsOneWidget);
+          }
+        },
+      );
+    }
+  }
   testWidgets(
     'G4.2 edits and deletes a personal goal through durable actions',
     (tester) async {

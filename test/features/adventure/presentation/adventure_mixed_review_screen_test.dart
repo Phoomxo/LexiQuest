@@ -39,16 +39,83 @@ void main() {
 
   tearDown(() => fixture.close());
 
-  testWidgets('B06 Adventure IME waits for committed typed response', (tester) async {
+  testWidgets(
+    'F03 recovered closing run offers exact completion retry without a prompt',
+    (tester) async {
+      final harness = await _startHarness(tester, fixture, itemCount: 1);
+      await tester.runAsync(() async {
+        final controller = AdventureMixedReviewController(
+          recovery: harness.recovery,
+          catalog: harness.catalog,
+          registry: harness.registry,
+          host: harness.host,
+        );
+        await controller.initialize();
+        await controller.skip();
+        final close = fixture.learning.captureSessionClose(
+          sessionId: harness.recovery.currentRun!.session.id,
+          ownerId: fixture.ownerId,
+        );
+        await harness.recovery.checkpointSessionClose(close);
+        controller.dispose();
+        // Rehydrate the durable checkpoint and its exact terminal command.
+        await harness.recovery.recoverExact(
+          ownerId: fixture.ownerId,
+          sessionId: close.sessionId,
+        );
+      });
+      final terminalAt = harness.recovery.currentRun!.state.terminalAtUtc;
+      harness.host.failCloseOnce = true;
+      await tester.pumpWidget(harness.app());
+      await _pumpUntil(tester, () => harness.host.closeCalls == 1);
+      await tester.pump();
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      expect(retry, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('mixed-review-prompt')),
+        findsNothing,
+      );
+      await tester.tap(retry);
+      await _pumpUntil(
+        tester,
+        () => find.text('mixed-review-complete').evaluate().isNotEmpty,
+      );
+      expect(harness.host.closeCalls, 2);
+      expect(harness.host.closeTimes, everyElement(terminalAt));
+      expect(await _readAttempts(tester, fixture), isEmpty);
+      final sessions = await tester.runAsync(
+        () => fixture.database.select(fixture.database.learningSessions).get(),
+      );
+      expect(sessions, hasLength(1));
+      expect(
+        harness.recovery.currentRun!.state.phase,
+        AdventureLearningCheckpointPhase.completed,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('B06 Adventure IME waits for committed typed response', (
+    tester,
+  ) async {
     final harness = await _startHarness(tester, fixture, itemCount: 1);
     await tester.pumpWidget(harness.app());
-    final input = find.byKey(const ValueKey<String>('mixed-review-typed-input'));
+    final input = find.byKey(
+      const ValueKey<String>('mixed-review-typed-input'),
+    );
     await _pumpUntil(tester, () => input.evaluate().isNotEmpty);
     final field = tester.widget<TextField>(input);
-    field.controller!.value = const TextEditingValue(text: 'station', composing: TextRange(start: 0, end: 7));
+    field.controller!.value = const TextEditingValue(
+      text: 'station',
+      composing: TextRange(start: 0, end: 7),
+    );
     field.onSubmitted!('station');
     for (var i = 0; i < 20; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 1)),
+      );
       await tester.pump(const Duration(milliseconds: 10));
     }
     expect(harness.host.recordCalls, 0);
@@ -218,85 +285,130 @@ void main() {
     expect(find.textContaining('จะกลับมาอีกครั้ง'), findsOneWidget);
   });
 
-  testWidgets(
-    'flashcard repair reveal and continue create no answer evidence',
-    (tester) async {
-      final harness = await _startHarness(
-        tester,
-        fixture,
-        itemCount: 5,
-        lexicalWords: const <VocabularyWord>[],
-      );
-      await tester.pumpWidget(harness.app());
-      await _pumpUntil(
-        tester,
-        () => find
-            .byKey(const ValueKey<String>('mixed-review-typed-input'))
-            .evaluate()
-            .isNotEmpty,
-      );
+  for (final skipFlashcard in [false, true]) {
+    testWidgets(
+      'flashcard repair reveal and continue create no answer evidence skip=$skipFlashcard',
+      (tester) async {
+        final harness = await _startHarness(
+          tester,
+          fixture,
+          itemCount: 5,
+          lexicalWords: const <VocabularyWord>[],
+        );
+        await tester.pumpWidget(harness.app());
+        await _pumpUntil(
+          tester,
+          () => find
+              .byKey(const ValueKey<String>('mixed-review-typed-input'))
+              .evaluate()
+              .isNotEmpty,
+        );
 
-      await _submitTyped(tester, harness.host, 'wrong-answer');
-      for (final answerAndPrompt in <(String, String)>[
-        ('ticket', 'ตั๋ว'),
-        ('platform', 'ชานชาลา'),
-        ('journey', 'การเดินทาง'),
-      ]) {
-        await _goNext(tester, expectedPrompt: answerAndPrompt.$2);
-        await _submitTyped(tester, harness.host, answerAndPrompt.$1);
-      }
-      await _goNext(
-        tester,
-        expectedKey: const ValueKey<String>('mixed-review-flashcard-reveal'),
-      );
+        await _submitTyped(tester, harness.host, 'wrong-answer');
+        for (final answerAndPrompt in <(String, String)>[
+          ('ticket', 'ตั๋ว'),
+          ('platform', 'ชานชาลา'),
+          ('journey', 'การเดินทาง'),
+        ]) {
+          await _goNext(tester, expectedPrompt: answerAndPrompt.$2);
+          await _submitTyped(tester, harness.host, answerAndPrompt.$1);
+        }
+        await _goNext(
+          tester,
+          expectedKey: const ValueKey<String>('mixed-review-flashcard-reveal'),
+        );
 
-      expect(
-        find.byKey(const ValueKey<String>('mixed-review-repair-badge')),
-        findsOneWidget,
-      );
-      expect(find.text('การ์ดช่วยจำ'), findsOneWidget);
-      expect(find.text('station'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey<String>('mixed-review-flashcard-reveal')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
-        findsNothing,
-      );
-      expect(harness.host.recordCalls, 4);
-      expect(await _readAttempts(tester, fixture), hasLength(4));
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-repair-badge')),
+          findsOneWidget,
+        );
+        expect(find.text('การ์ดช่วยจำ'), findsOneWidget);
+        expect(find.text('station'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-flashcard-reveal')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
+          findsNothing,
+        );
+        expect(harness.host.recordCalls, 4);
+        expect(await _readAttempts(tester, fixture), hasLength(4));
 
-      final reveal = find.byKey(
-        const ValueKey<String>('mixed-review-flashcard-reveal'),
-      );
-      await tester.ensureVisible(reveal);
-      await tester.pump();
-      await tester.tap(reveal);
-      await tester.pump();
+        if (skipFlashcard) {
+          final skip = find.byKey(const ValueKey<String>('mixed-review-skip'));
+          await tester.ensureVisible(skip);
+          await tester.tap(skip);
+          await _pumpUntil(
+            tester,
+            () => find
+                .byKey(const ValueKey<String>('mixed-review-next'))
+                .evaluate()
+                .isNotEmpty,
+          );
+          expect(
+            find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
+            findsNothing,
+          );
+          expect(
+            tester
+                .widget<FilledButton>(
+                  find.byKey(
+                    const ValueKey<String>('mixed-review-flashcard-reveal'),
+                  ),
+                )
+                .onPressed,
+            isNull,
+          );
+          expect(await _readAttempts(tester, fixture), hasLength(4));
+          await _goNext(tester, expectedPrompt: 'สนามบิน');
+          return;
+        }
 
-      expect(
-        find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
-        findsOneWidget,
-      );
-      expect(find.text('สถานี'), findsOneWidget);
+        final reveal = find.byKey(
+          const ValueKey<String>('mixed-review-flashcard-reveal'),
+        );
+        final retainedReveal = tester.widget<FilledButton>(reveal).onPressed!;
+        await tester.ensureVisible(reveal);
+        await tester.pump();
+        await tester.tap(reveal);
+        await tester.pump();
 
-      final continueButton = find.byKey(
-        const ValueKey<String>('mixed-review-flashcard-continue'),
-      );
-      await tester.ensureVisible(continueButton);
-      await tester.pump();
-      await tester.tap(continueButton);
-      await _pumpUntil(
-        tester,
-        () => find.text('ทบทวนคำนี้แล้ว ไปต่อได้เลย').evaluate().isNotEmpty,
-      );
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
+          findsOneWidget,
+        );
+        expect(find.text('สถานี'), findsOneWidget);
 
-      expect(find.text('ทบทวนคำนี้แล้ว ไปต่อได้เลย'), findsOneWidget);
-      expect(harness.host.recordCalls, 4);
-      expect(await _readAttempts(tester, fixture), hasLength(4));
-    },
-  );
+        final continueButton = find.byKey(
+          const ValueKey<String>('mixed-review-flashcard-continue'),
+        );
+        await tester.ensureVisible(continueButton);
+        await tester.pump();
+        await tester.tap(continueButton);
+        await _pumpUntil(
+          tester,
+          () => find.text('ทบทวนคำนี้แล้ว ไปต่อได้เลย').evaluate().isNotEmpty,
+        );
+
+        expect(find.text('ทบทวนคำนี้แล้ว ไปต่อได้เลย'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-flashcard-answer')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('mixed-review-flashcard-reveal')),
+          findsNothing,
+        );
+        retainedReveal();
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        await _goNext(tester, expectedPrompt: 'สนามบิน');
+        expect(harness.host.recordCalls, 4);
+        expect(await _readAttempts(tester, fixture), hasLength(4));
+      },
+    );
+  }
 
   testWidgets(
     '320px dark high-contrast reduced-motion layout supports 200 percent text',
@@ -626,6 +738,9 @@ final class _RecordingLessonHost implements AdventureMixedReviewLessonHost {
   final Completer<void>? recordGate;
   int recordCalls = 0;
   int committedCalls = 0;
+  bool failCloseOnce = false;
+  int closeCalls = 0;
+  final List<DateTime> closeTimes = [];
   final List<String> evidenceIds = <String>[];
   final List<LessonMode> occurrenceModes = <LessonMode>[];
 
@@ -678,7 +793,15 @@ final class _RecordingLessonHost implements AdventureMixedReviewLessonHost {
   @override
   Future<LearningSessionSummary> completeRecovery(
     PendingLearningSessionClose close,
-  ) => close.requiresRetry ? close.retry() : close.finish();
+  ) async {
+    closeCalls++;
+    closeTimes.add(close.completedAtUtc);
+    if (failCloseOnce) {
+      failCloseOnce = false;
+      throw StateError('injected transient close failure');
+    }
+    return close.requiresRetry ? close.retry() : close.finish();
+  }
 }
 
 final class _MixedReviewFixture {
