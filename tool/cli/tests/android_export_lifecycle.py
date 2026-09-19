@@ -38,4 +38,3 @@ for case in ['destroy','oversize','worker','positive','picker-cancel','close-err
  if r.returncode:failed.append(case)
 (output/'result.json').write_text(json.dumps({'failed':failed,'toolchainHashes':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in cp+api_cp},'sourceHashes':{str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}},indent=2))
 print('Native evidence: '+str(output));sys.exit(bool(failed))
-
