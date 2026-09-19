@@ -564,7 +564,7 @@
     {
       "id": "B18-REV05-01",
       "severity": "P1",
-      "status": "candidate-owner-transition-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/assessment/application/assessment_use_cases.dart",
       "relatedFiles": [
         "lib/features/assessment/data/drift_assessment_repository.dart",
@@ -581,13 +581,20 @@
         "drift_assessment_repository.dart:393-440",
         "main_navigation_screen.dart:1116-1148"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-01",
+        "redRun": "owner-red; foreground-red",
+        "greenRun": "final",
+        "outcome": "Configured assessment rechecks current canonical owner after authority awaits, during existing presentation and foreground use, and after time start. Final completion SQL predicates require the uniquely active owner, including an owner switch after authorityGuard. Real Drift retains old consent/assignment and accepted answer, rejects stale presentation/terminal/outbox, and permits same-owner retry. Foreground rejection is observed and rendered as failure. Pinned abandonment cleanup semantics are retained."
+      },
+      "reviewStatusAtG82": "candidate-owner-transition-reproduction-pending"
     },
     {
       "id": "B18-REV05-02",
       "severity": "P2",
-      "status": "candidate-terminal-ack-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/features/assessment/application/assessment_use_cases.dart",
       "relatedFiles": [
         "lib/screens/pre_post_assessment_screen.dart",
@@ -602,13 +609,20 @@
         "assessment_use_cases.dart:291-339,457-459,682-722,1189-1226",
         "pre_post_assessment_screen.dart:85-112,150-175,207"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-02",
+        "redRun": "terminal-red",
+        "greenRun": "final",
+        "outcome": "An actual Drift adapter commits completion then throws non-conflict StateError; application reconciles durable completion and renders result without duplicate answer or terminal outbox. Failure before commit remains retryable; opposite terminal conflicts remain rejected. This proves the configured adapter fault seam, not an installed transport failure."
+      },
+      "reviewStatusAtG82": "candidate-terminal-ack-reproduction-pending"
     },
     {
       "id": "B18-REV05-03",
       "severity": "P2",
-      "status": "candidate-background-response-clock-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/pre_post_assessment_screen.dart",
       "relatedFiles": [
         "lib/features/assessment/application/assessment_use_cases.dart"
@@ -621,13 +635,20 @@
       "evidenceLocations": [
         "pre_post_assessment_screen.dart:58-82,115-144"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-03",
+        "redRun": "clock-red",
+        "greenRun": "final",
+        "outcome": "Two-item configured widget holds the first durable response acknowledgement across pause. The next response stopwatch starts only when resumed. Canonical durations are200ms and300ms, excluding60000ms paused; separate monotonic effort totals500ms. First response identity remains unchanged."
+      },
+      "reviewStatusAtG82": "candidate-background-response-clock-reproduction-pending"
     },
     {
       "id": "B18-REV05-04",
       "severity": "P2",
-      "status": "candidate-compatibility-animation-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/srs_flashcards_screen.dart",
       "relatedFiles": [
         "lib/screens/cefr_selection_screen.dart",
@@ -643,8 +664,15 @@
         "cefr_selection_screen.dart:174",
         "wordbook_import_screen.dart:172"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "retest": {
+        "receipt": "G8.3-F03-acceptance.json",
+        "findingId": "B18-REV05-04",
+        "redRun": "flash-red",
+        "greenRun": "final",
+        "outcome": "Real authorized Legacy compatibility route admits one rating during reverse animation, rejects repeated retained callbacks, settles cancelled handlers on disposal and advances exactly one card under normal/reduced motion. Answer attempts and learning sessions remain empty. No SRS/points/research evidence is granted."
+      },
+      "reviewStatusAtG82": "candidate-compatibility-animation-reproduction-pending"
     },
     {
       "id": "B18-REV06-01",

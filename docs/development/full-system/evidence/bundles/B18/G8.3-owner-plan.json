@@ -70,15 +70,10 @@
         "B18-REV06-06",
         "B18-REV06-08"
       ],
-      "status": "partial-continuation-checkpoint",
-      "closedCount": 15,
-      "pendingFindingIDs": [
-        "B18-REV05-01",
-        "B18-REV05-02",
-        "B18-REV05-03",
-        "B18-REV05-04"
-      ],
-      "receipt": "G8.3-F03-C04-checkpoint.json"
+      "status": "accepted-slice",
+      "closedCount": 19,
+      "pendingFindingIDs": [],
+      "receipt": "G8.3-F03-acceptance.json"
     },
     {
       "sliceId": "B18-G83-F04",
@@ -472,7 +467,9 @@
       "dependencies": [],
       "regression": "Real Drift plus controlled await: owner A valid configured presentation, switch to B while authority/completion held; assert no A terminal/outbox mutation or content reuse under B, while exact same-owner retry still works. Cover existing-presentation foreground and post-finish completion separately; no research activation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
     },
     {
       "findingId": "B18-REV05-02",
@@ -482,7 +479,9 @@
       "dependencies": [],
       "regression": "Wrap actual Drift complete to commit once then throw StateError; complete a fully answered configured form through real widget and retry. Expect durable completion/comparison visible, one terminal revision/outbox and no extra evidence. Also failed-before-commit retry and abandon conflict remain distinct.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
     },
     {
       "findingId": "B18-REV05-03",
@@ -492,7 +491,9 @@
       "dependencies": [],
       "regression": "Configured two-item widget, controlled first response persistence, pause app before ACK, release ACK, advance fake time while paused, resume and answer second. Assert second canonical response duration excludes paused interval and first receipt unchanged; compare monotonic effort separately.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
     },
     {
       "findingId": "B18-REV05-04",
@@ -502,7 +503,9 @@
       "dependencies": [],
       "regression": "Use real compatibility route with Legacy owner/feature gate, three cards, rapid ratings during flip under normal and reduced motion and pop mid-transition. Assert no skipped card, stale setState, uncaught error or permanently pending handler; canonical evidence remains empty.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "a65a4a076d225aafba2b667e9c34e11c8976e682",
+      "receipt": "G8.3-F03-acceptance.json"
     },
     {
       "findingId": "B18-REV06-01",
