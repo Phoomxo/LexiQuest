@@ -21,6 +21,92 @@ void main() {
   );
 
   test(
+    'Android byte limit rejects before saver or channel allocation',
+    () async {
+      var called = false;
+      final large = ExportArtifact(
+        format: artifact.format,
+        suggestedFileName: artifact.suggestedFileName,
+        mimeType: artifact.mimeType,
+        bytes: Uint8List(16 * 1024 * 1024 + 1),
+        recordCount: 1,
+        schemaVersion: 1,
+        algorithmVersion: 1,
+        generatedAtUtc: artifact.generatedAtUtc,
+        timeZone: 'UTC',
+        exclusions: [],
+      );
+      final store = FileSelectorExportStore(
+        isAndroid: true,
+        androidSaver: (_) async {
+          called = true;
+          return 'content://test/large';
+        },
+      );
+      await expectLater(
+        store.save(large, cancellation: ExportCancellation()),
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.unavailable,
+          ),
+        ),
+      );
+      expect(called, isFalse);
+    },
+  );
+
+  test(
+    'Android cancellation reaches pending native write and maps CANCELLED',
+    () async {
+      const channel = MethodChannel('com.lexiquest.app/export');
+      final pending = Completer<String?>();
+      final cancellation = ExportCancellation();
+      String? operation;
+      var cancels = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'saveExportFile') {
+              operation = (call.arguments as Map)['operationId'] as String?;
+              return pending.future;
+            }
+            if (call.method == 'cancelExportFile') {
+              expect((call.arguments as Map)['operationId'], operation);
+              cancels++;
+              pending.completeError(PlatformException(code: 'CANCELLED'));
+            }
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+      final result = const FileSelectorExportStore(
+        isAndroid: true,
+      ).save(artifact, cancellation: cancellation);
+      final expectation = expectLater(
+        result,
+        throwsA(
+          isA<ExportException>().having(
+            (e) => e.code,
+            'code',
+            ExportFailureCode.cancelled,
+          ),
+        ),
+      );
+      cancellation.cancel();
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      if (!pending.isCompleted) {
+        pending.completeError(PlatformException(code: 'CANCELLED'));
+      }
+      await expectation;
+      expect(operation, isNotNull);
+      expect(cancels, 1);
+    },
+  );
+
+  test(
     'Android cancellation discards completed document before reporting cancelled',
     () async {
       final cancellation = ExportCancellation();

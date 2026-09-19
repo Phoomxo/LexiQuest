@@ -42,6 +42,12 @@ final class FileSelectorShareCardStore implements AchievementShareCardStore {
       if (destination == null) {
         return const AchievementShareCardStoreResult.cancelled();
       }
+      if (androidSaver == null) {
+        await _androidChannel.invokeMethod<void>('finishExportFile', {
+          'location': destination,
+          'discard': false,
+        });
+      }
       return AchievementShareCardStoreResult.saved(destination: destination);
     } on AchievementShareCardException {
       rethrow;

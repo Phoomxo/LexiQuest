@@ -9,6 +9,42 @@ import 'package:vocab_learning_app/features/achievements/data/file_selector_shar
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 
 void main() {
+  test('Android share card waits for native finish acknowledgement', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('com.lexiquest.app/export');
+    final finish = Completer<void>();
+    final methods = <String>[];
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      methods.add(call.method);
+      if (call.method == 'saveExportFile') return 'content://test/card';
+      if (call.method == 'finishExportFile') {
+        expect(call.arguments, {
+          'location': 'content://test/card',
+          'discard': false,
+        });
+        await finish.future;
+      }
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final artifact = await _canonicalArtifact();
+    var completed = false;
+    final saved = const FileSelectorShareCardStore(isAndroid: true)
+        .selectDestinationAndSave(artifact)
+        .then((value) {
+          completed = true;
+          return value;
+        });
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    final before = completed;
+    finish.complete();
+    await saved;
+    expect(methods, ['saveExportFile', 'finishExportFile']);
+    expect(before, isFalse);
+  });
+
   test(
     'separate owner view scopes do not merge identical receipt exports',
     () async {

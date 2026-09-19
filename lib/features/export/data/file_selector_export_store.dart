@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
@@ -22,6 +23,10 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     this.desktopSaver,
     this.temporaryDirectory,
   });
+
+  /// In-memory method-channel admission limit; artifacts are never truncated.
+  static const androidMaximumBytes = 16 * 1024 * 1024;
+  static int _nextAndroidOperation = 0;
 
   static const _androidChannel = MethodChannel('com.lexiquest.app/export');
 
@@ -147,10 +152,13 @@ final class FileSelectorExportStore implements ExportArtifactStore {
     ExportArtifact artifact,
     ExportCancellation cancellation,
   ) async {
+    if (artifact.bytes.length > androidMaximumBytes) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
     try {
-      final location = await (androidSaver ?? _saveWithAndroidDocumentPicker)(
-        artifact,
-      );
+      final location = await (androidSaver != null
+          ? androidSaver!(artifact)
+          : _saveWithAndroidDocumentPicker(artifact, cancellation));
       if (location == null) {
         throw const ExportException(ExportFailureCode.cancelled);
       }
@@ -176,6 +184,8 @@ final class FileSelectorExportStore implements ExportArtifactStore {
       rethrow;
     } on PlatformException catch (error) {
       final code = switch (error.code) {
+        'CANCELLED' => ExportFailureCode.cancelled,
+        'PAYLOAD_TOO_LARGE' => ExportFailureCode.unavailable,
         'PERMISSION_DENIED' => ExportFailureCode.permissionDenied,
         'INSUFFICIENT_SPACE' => ExportFailureCode.insufficientSpace,
         'UNAVAILABLE' => ExportFailureCode.unavailable,
@@ -194,12 +204,38 @@ final class FileSelectorExportStore implements ExportArtifactStore {
         'discard': true,
       });
 
-  Future<String?> _saveWithAndroidDocumentPicker(ExportArtifact artifact) {
-    return _androidChannel.invokeMethod<String>('saveExportFile', {
-      'suggestedName': artifact.suggestedFileName,
-      'mimeType': artifact.mimeType,
-      'bytes': artifact.bytes,
+  Future<String?> _saveWithAndroidDocumentPicker(
+    ExportArtifact artifact,
+    ExportCancellation cancellation,
+  ) async {
+    final operationId =
+        '${DateTime.now().microsecondsSinceEpoch}-${_nextAndroidOperation++}';
+    var cancellationSent = false;
+    // ExportCancellation is shared by all stores. Poll only while native save is
+    // pending; this avoids changing existing cancellation clients/listeners.
+    final timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (!cancellation.isCancelled || cancellationSent) return;
+      cancellationSent = true;
+      // This acknowledges the cancellation request only. The save Future still
+      // owns the provider-close/cleanup result, including CLEANUP_FAILED.
+      unawaited(
+        _androidChannel
+            .invokeMethod<void>('cancelExportFile', {
+              'operationId': operationId,
+            })
+            .catchError((Object _) {}),
+      );
     });
+    try {
+      return await _androidChannel.invokeMethod<String>('saveExportFile', {
+        'operationId': operationId,
+        'suggestedName': artifact.suggestedFileName,
+        'mimeType': artifact.mimeType,
+        'bytes': artifact.bytes,
+      });
+    } finally {
+      timer.cancel();
+    }
   }
 
   String _extension(String fileName) => fileName.split('.').last;
