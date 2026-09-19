@@ -199,7 +199,10 @@ final class VoiceUseCases {
     final accepted = session._accepts(attempt);
     if (!accepted || providerGeneration != _providerGeneration) return;
 
-    _providerMayNeedStop = attempt.completion != null;
+    _providerMayNeedStop =
+        attempt.completion != null ||
+        (error is VoiceFailure &&
+            error.category == VoiceFailureCategory.cleanupIncomplete);
     _settleError(
       session,
       attempt,

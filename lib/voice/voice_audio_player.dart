@@ -53,6 +53,7 @@ final class AudioplayersAdapter
   final AudioPlayer Function() _audioPlayerFactory;
   _AudioPlaybackOperation? _activePlayback;
   int _generation = 0;
+  bool _completionTrusted = true;
 
   AudioPlayer get _resolved => _audioPlayer ??= _audioPlayerFactory();
 
@@ -61,6 +62,9 @@ final class AudioplayersAdapter
     final generation = ++_generation;
     await _retirePlayback(_activePlayback, _playbackCancelledFailure);
     if (generation != _generation) return;
+    // Without tracking this playback's natural end, later global events
+    // cannot authenticate the completion of another utterance.
+    _completionTrusted = false;
     await _playBytesRaw(bytes);
   }
 
@@ -72,6 +76,10 @@ final class AudioplayersAdapter
     final generation = ++_generation;
     await _retirePlayback(_activePlayback, _playbackCancelledFailure);
     if (generation != _generation) throw _playbackCancelledFailure;
+    if (!_completionTrusted) {
+      await _playBytesRaw(bytes);
+      return const VoiceAudioPlayback(completed: null);
+    }
     final completion = Completer<void>();
     completion.future.ignore();
     final operation = _AudioPlaybackOperation(completion);
@@ -84,13 +92,17 @@ final class AudioplayersAdapter
             if (!completion.isCompleted) completion.complete();
           },
           onError: (Object _, StackTrace stackTrace) {
-            if (identical(_activePlayback, operation)) _activePlayback = null;
+            if (!identical(_activePlayback, operation)) return;
+            _completionTrusted = false;
+            _activePlayback = null;
             if (!completion.isCompleted) {
               completion.completeError(_playbackFailure, stackTrace);
             }
           },
           onDone: () {
-            if (identical(_activePlayback, operation)) _activePlayback = null;
+            if (!identical(_activePlayback, operation)) return;
+            _completionTrusted = false;
+            _activePlayback = null;
             if (!completion.isCompleted) {
               completion.completeError(_playbackFailure, StackTrace.current);
             }
@@ -144,6 +156,12 @@ final class AudioplayersAdapter
     VoiceFailure failure,
   ) async {
     if (operation == null) return;
+    if (!operation.completion.isCompleted) {
+      // The SDK stream has no utterance identity. After interruption or an
+      // uncertain start, late events cannot prove a replacement's natural end.
+      // Keep ordinary speech available; a fresh adapter is needed for proof.
+      _completionTrusted = false;
+    }
     if (identical(_activePlayback, operation)) _activePlayback = null;
     if (!operation.completion.isCompleted) {
       operation.completion.completeError(failure, StackTrace.current);

@@ -64,7 +64,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
       final cachedBytes = await _audioCache.get(lookupKey);
       cancellation.throwIfCancelled();
       if (cachedBytes != null) {
-        final playback = await _play(cachedBytes);
+        final playback = await _play(cachedBytes, cancellation);
         cancellation.throwIfCancelled();
         return _result(
           request: request,
@@ -92,7 +92,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
       cancellation.throwIfCancelled();
     }
 
-    final playback = await _play(audio.bytes);
+    final playback = await _play(audio.bytes, cancellation);
     cancellation.throwIfCancelled();
     return _result(
       request: request,
@@ -103,13 +103,34 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
     );
   }
 
-  Future<VoiceAudioPlayback?> _play(Uint8List bytes) async {
+  Future<VoiceAudioPlayback?> _play(
+    Uint8List bytes,
+    VoiceCancellationToken cancellation,
+  ) async {
     final player = _audioPlayer;
-    if (player is VoiceAudioPlayerWithCompletion) {
-      return player.playWithCompletion(bytes);
+    try {
+      if (player is VoiceAudioPlayerWithCompletion) {
+        return await player.playWithCompletion(bytes);
+      }
+      await player.play(bytes);
+      return null;
+    } on Object {
+      // A failed start acknowledgement does not prove silence. The owning
+      // route must drain possible partial playback before fallback may start.
+      // A retired route must not stop a replacement sharing this player.
+      cancellation.throwIfCancelled();
+      try {
+        await player.stop();
+      } on Object {
+        cancellation.throwIfCancelled();
+        throw const VoiceFailure(
+          category: VoiceFailureCategory.cleanupIncomplete,
+          message: 'Failed audio playback could not be stopped.',
+        );
+      }
+      cancellation.throwIfCancelled();
+      rethrow;
     }
-    await player.play(bytes);
-    return null;
   }
 
   void _validateRoute(VoiceRequest request) {

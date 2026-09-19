@@ -149,7 +149,7 @@ void main() {
   });
 
   test(
-    'replacement rejects old completion and owns a fresh native event',
+    'replacement rejects old completion and withholds ambiguous proof',
     () async {
       final native = _ControlledNativeAudioPlayer();
       final adapter = AudioplayersAdapter(audioPlayer: native);
@@ -160,8 +160,10 @@ void main() {
       );
       final second = await adapter.playBytesWithCompletion(_wavBytes());
       await retired;
+      expect(second.completed, isNull);
+      expect(native.playCalls, 2);
       native.completeNaturally();
-      await second.completed;
+      await adapter.dispose();
     },
   );
 
@@ -177,7 +179,7 @@ void main() {
   });
 
   test(
-    'late failure from replaced native play cannot retire the new proof',
+    'late failure from replaced native play keeps replacement speech available',
     () async {
       final firstPlay = Completer<void>();
       final native = _ControlledNativeAudioPlayer(playGates: [firstPlay, null]);
@@ -189,16 +191,14 @@ void main() {
       final second = await adapter.playBytesWithCompletion(_wavBytes());
       firstPlay.completeError(StateError('late first play failure'));
       await firstFailure;
-      var secondCompleted = false;
-      second.completed!.then((_) => secondCompleted = true);
-      await Future<void>.delayed(Duration.zero);
-      expect(secondCompleted, isFalse);
+      expect(second.completed, isNull);
+      expect(native.playCalls, 2);
       native.completeNaturally();
-      await second.completed;
+      await adapter.dispose();
     },
   );
 
-  test('late stop acknowledgement cannot retire a replacement proof', () async {
+  test('late stop acknowledgement keeps completion untrusted', () async {
     final stopGate = Completer<void>();
     final native = _ControlledNativeAudioPlayer(stopGate: stopGate);
     final adapter = AudioplayersAdapter(audioPlayer: native);
@@ -209,12 +209,10 @@ void main() {
     final second = await adapter.playBytesWithCompletion(_wavBytes());
     stopGate.complete();
     await stopping;
-    var secondCompleted = false;
-    second.completed!.then((_) => secondCompleted = true);
-    await Future<void>.delayed(Duration.zero);
-    expect(secondCompleted, isFalse);
+    expect(second.completed, isNull);
+    expect(native.playCalls, 2);
     native.completeNaturally();
-    await second.completed;
+    await adapter.dispose();
   });
 
   test('stop begun without a proof cannot retire a later playback', () async {
@@ -235,7 +233,7 @@ void main() {
   });
 
   test(
-    'late dispose acknowledgement cannot retire a replacement proof',
+    'late dispose acknowledgement cannot restore adapter completion trust',
     () async {
       final disposeGate = Completer<void>();
       final firstNative = _ControlledNativeAudioPlayer(
@@ -253,12 +251,10 @@ void main() {
       final second = await adapter.playBytesWithCompletion(_wavBytes());
       disposeGate.complete();
       await disposing;
-      var secondCompleted = false;
-      second.completed!.then((_) => secondCompleted = true);
-      await Future<void>.delayed(Duration.zero);
-      expect(secondCompleted, isFalse);
+      expect(second.completed, isNull);
+      expect(secondNative.playCalls, 1);
       secondNative.completeNaturally();
-      await second.completed;
+      await adapter.dispose();
     },
   );
   test('delegates non-empty WAV bytes to playBytes exactly once', () async {
