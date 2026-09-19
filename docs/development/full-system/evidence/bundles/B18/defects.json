@@ -518,6 +518,197 @@
       ],
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV06-01",
+      "severity": "P1",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/rewards/application/reward_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/rewards/data/drift_reward_repository.dart",
+        "lib/screens/avatar_equipment_screen.dart",
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "trigger": "Owner A opens shop; switch active owner while purchase/equip awaits projection availability or queued repository work, then release old operation.",
+      "expected": "An obsolete owner command cannot create a new purchase/equip/outbox or publish completion into the replacement owner view; exact same-owner replay remains valid.",
+      "actual": "Use case captures owner once. _avatarOperation checks projection availability, not current ownership; repository purchase/equip transactions never check active owner or a caller generation. Bootstrap gives this live repository to shop. Widget continuation checks mounted only and finally reloads the current dependency, with busy/message state retained across replacement. Owner-transition coordinator drains learning reconciliation, not this reward queue. No runtime race reproduced.",
+      "ownerPackage": "G4.4/G4.5/G1.1",
+      "proposedRegression": "Real Drift two active-owner transitions plus controlled await before purchase/equip transaction; compare complete A/B reward/outbox/coin snapshots. Test owner switch after preflight and dependency replacement while ACK/readback held. Positive same-owner purchase, exact replay, failed-before-commit and lost-ACK remain distinct.",
+      "evidenceLocations": [
+        "reward_use_cases.dart:45-91,125-173",
+        "drift_reward_repository.dart:63-168,170-260",
+        "avatar_equipment_screen.dart:29-50,104-190",
+        "app_bootstrap.dart:1149-1164"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-02",
+      "severity": "P1",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart"
+      ],
+      "trigger": "Actual local erasure holds reminder pending/cancel await while its owner-operation lease expires or is replaced; resume cleanup after another authorized operation proceeds.",
+      "expected": "Every native operation in erasure must verify its exact lease before and after awaits; stale cleanup cannot cancel fresh reminders or obscure authoritative erasure result.",
+      "actual": "coordinateOwnerErasure begins a fence but never assigns _transitionNativeGuard. _pendingNativeEntries/_cancelNative therefore have nullable no-op guard on this path, unlike coordinateOwnerChange. Bootstrap passes current lease token and outer deletion checks, which do not surround native enumeration and final cleanup. Exact pre-delete platform IDs are reused after operation returns. Actual OS consequence remains unexecuted.",
+      "ownerPackage": "G4.3/G7.3/G7.4",
+      "proposedRegression": "Use actual bootstrap erasure binding or equivalent exact composition with Drift owner gate and controllable native fake. Hold enumeration/cancel, replace token and reactivate a fresh reminder, then release. Assert stale actor issues no subsequent cancel, authoritative result preserved, cleanup does not unfence new token. Keep positive same-lease deletion and failure recovery.",
+      "evidenceLocations": [
+        "study_reminder_use_cases.dart:423-524,606-647,1231-1289",
+        "app_bootstrap.dart:725-777"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-03",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/reminders/domain/study_reminder.dart",
+      "relatedFiles": [
+        "lib/features/reminders/application/study_reminder_use_cases.dart",
+        "lib/screens/study_reminder_settings_screen.dart"
+      ],
+      "trigger": "Opt in on the second occurrence of 01:15 during America/New_York fall-back, with quiet hours ending at ambiguous 01:30.",
+      "expected": "Quiet-hour adjustment must return a future instant at or after the requested instant, outside quiet hours, with deterministic fold handling.",
+      "actual": "shiftOutside converts requested instant to local fields then constructs a new TZDateTime without fold/offset or lower-bound check. The repeated-hour end can resolve to the earlier fold. Existing oracle covers spring DST only. Exact locked timezone-library result must be reproduced; no claim it has run.",
+      "ownerPackage": "G4.3",
+      "proposedRegression": "Using actual locked timezone package, cover both folds around 2026-11-01, overnight/daytime quiet windows and end boundary. Assert effective>=requested, outside quiet interval, and optIn keeps future native schedule; include ordinary/spring cases and saved requested instant unchanged.",
+      "evidenceLocations": [
+        "study_reminder.dart:83-101,182-184"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-04",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/preferences/application/learner_preferences_use_cases.dart",
+      "relatedFiles": [
+        "lib/features/preferences/data/drift_learner_preferences_repository.dart",
+        "lib/features/adventure/application/adventure_presentation_preferences.dart"
+      ],
+      "trigger": "Adventure home selection and learning-preference quiz save overlap after both read the same owner row.",
+      "expected": "Updating home presentation preserves a concurrent committed goal/minutes/activity edit, and editing semantic preferences preserves a concurrent home choice.",
+      "actual": "save and saveHomeExperience read outside repository transaction and submit full semantic snapshots. Adventure serializes its own save tails only; core preference save is outside that queue. Repository preserves display fields and serializes writes, but has no expected semantic revision or transactional field merge. Concurrent UI reachability and lost update require controlled reproduction.",
+      "ownerPackage": "G4.6/G2.8",
+      "proposedRegression": "Actual Drift, hold home read before semantic quiz save commits, release home write; repeat reverse order. Assert both independent edits, monotonic timestamps and single correct superseding cloud intent; preserve display revision and assignment payload. Positive conflicting same-field policy must be explicit.",
+      "evidenceLocations": [
+        "learner_preferences_use_cases.dart:23-75",
+        "drift_learner_preferences_repository.dart:34-145",
+        "adventure_presentation_preferences.dart:30-58"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-05",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/preferences/application/display_preferences_controller.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/runtime/resource_disposer_stack.dart",
+        "lib/main.dart"
+      ],
+      "trigger": "A theme/motion/read operation is queued or awaiting persistence while owning AppDependencies is replaced or disposed.",
+      "expected": "Retired controller must drain or cancel pending work safely without notifying a disposed ChangeNotifier; persistence outcome must remain truthful.",
+      "actual": "Controller inherits dispose with no retired generation and _enqueue/_replace can continue to notifyListeners. Bootstrap resources.own(displayPreferences.dispose) and MyApp dependency replacement dispose it; resource stack does not await the controller private queue. Existing tests cover owner queue, not disposal. Debug assertion versus release behavior must be separated.",
+      "ownerPackage": "G4.6/G0.1",
+      "proposedRegression": "Hold actual preference read/write, dispose runtime/controller, release and await all futures; assert no notify-after-dispose/unhandled asynchronous error and no stale presentation. Compare before-commit and after-commit paths without discarding durable acknowledged preference.",
+      "evidenceLocations": [
+        "display_preferences_controller.dart:35-117",
+        "app_bootstrap.dart:1136-1138",
+        "main.dart:97-108",
+        "resource_disposer_stack.dart:28-41"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-06",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/screens/profile_settings_screen.dart",
+      "relatedFiles": [
+        "lib/screens/main_navigation_screen.dart"
+      ],
+      "trigger": "Profile stays active with a loaded or pending profile when dependencies/loader or owner identity changes.",
+      "expected": "Profile axes and header refer to the same current owner; replaced loader invalidates retained result.",
+      "actual": "didChangeDependencies returns early while active with nonnull _load; no didUpdateWidget handles loader replacement. build samples current account separately. Main navigation constructs live ProfileSettingsScreen without an owner key. This establishes a stale-view seam, not proof of data leaving the device; actual account/root lifecycle race remains candidate.",
+      "ownerPackage": "G4.1/G1.1",
+      "proposedRegression": "Widget with distinct A/B profile evidence and current account headers: hold A loader, replace dependencies while TickerMode remains active, release A after B; then repeat already-loaded case and actual owner transition shell. Assert no A axes under B and same-owner tab reactivation still loads.",
+      "evidenceLocations": [
+        "profile_settings_screen.dart:22-62",
+        "main_navigation_screen.dart:199-210"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-07",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/screens/ai_tutor_settings_screen.dart",
+      "relatedFiles": [
+        "lib/runtime/app_dependencies.dart"
+      ],
+      "trigger": "AI settings dependency is replaced while old settings/usage load is pending, or injected aiTutor widget property changes without inherited dependency notification.",
+      "expected": "Only current tutor generation may publish saved-consent/key/usage state; unavailable or failed replacement must not retain known flags from old tutor.",
+      "actual": "didChangeDependencies rebinds _tutor but _load captures old tutor and checks mounted only after each await; no didUpdateWidget/property generation fence. _settingsKnown/_usageKnown are not cleared on reload failure. Old load may overwrite newer saved-state display. No provider call or credential leak reproduced; backend settings authority remains separate.",
+      "ownerPackage": "G6.1/G6.3/G2.1",
+      "proposedRegression": "Deferred fake A/B settings and usage loads through actual widget: replace dependency/property, complete B then A, assert B-only consent/key/model/usage with unknown values on failure. Cover null initial tutor unavailable instead of endless loading, and confirmation returning after replacement before mutation. No live provider.",
+      "evidenceLocations": [
+        "ai_tutor_settings_screen.dart:96-149,403-435,459-492"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-08",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/screens/learning_goals_screen.dart",
+      "relatedFiles": [
+        "lib/features/goals/application/learning_goal_use_cases.dart"
+      ],
+      "trigger": "Rapid add/edit taps while activeOwnerId awaits, or active-owner lookup fails before opening goal dialog.",
+      "expected": "One opening flow per user action remains available for recovery; lookup failure is handled without an unobserved async error or stacked duplicate dialogs.",
+      "actual": "_createGoal awaits owner before showDialog without a busy/opening fence or catch. Per-dialog submit guard prevents duplicate submit only after separate dialogs are already created. Canonical repository owner/idempotency safeguards remain valid and this is not a demonstrated duplicate durable write.",
+      "ownerPackage": "G4.2/G2.1",
+      "proposedRegression": "Hold actual screen owner lookup, tap Add twice then release; assert one dialog/one prepared command. Inject lookup failure then retry successfully. Repeat edit and owner switch during opening; retain existing save retry/owner denial tests.",
+      "evidenceLocations": [
+        "learning_goals_screen.dart:137-156",
+        "test/screens/learning_goals_screen_test.dart"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV06-09",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "lib/features/reminders/domain/reminder_scheduler.dart",
+      "relatedFiles": [
+        "lib/features/reminders/application/study_reminder_use_cases.dart",
+        "lib/features/reminders/data/platform_reminder_scheduler.dart"
+      ],
+      "trigger": "Two valid persisted reminder identities hash to the same positive 31-bit platform ID.",
+      "expected": "An unrelated reminder is not silently overwritten/cancelled while both durable intents appear acknowledged; collision handling must be deterministic.",
+      "actual": "FNV output is truncated to 31 bits (zero remapped to1); payload preserves owner/reminder but native schedule/cancel keys only integer ID. Repair checks tuple identity yet schedules with the same colliding key; no allocation registry or conflict rejection observed. Concrete admitted collision pair and effect must be reproduced, not inferred as common frequency.",
+      "ownerPackage": "G4.3",
+      "proposedRegression": "Find and pin a real hash collision using valid IDs accepted by domain and actual generator-compatible shape. Actual Drift + native fake keyed by integer: create both, reconcile/restart/cancel one; assert other retained and statuses truthful. Keep exactID orphan cleanup, owner-change gates and ordinary idempotency.",
+      "evidenceLocations": [
+        "reminder_scheduler.dart:82-92",
+        "study_reminder_use_cases.dart:1062-1084,1164-1184,1231-1260,1409-1428",
+        "platform_reminder_scheduler.dart:101-129"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -574,6 +765,16 @@
       "rootCause": "Native checkout autocrlf changed raw hashes; git archive also respected conversion. Status retained stale stat markers despite empty diff. One list_threads limit100 rejected; UTF8 implicit cp874 decode failed; guessed source paths not present.",
       "action": "Used raw cat-file blob stream with EOL-equivalence guard and verified all13 handoff+3610 inventory hashes; index refresh via core.autocrlf=false add --update yielded empty stage/clean status. Resolved task through CODEX_THREAD_ID and read_thread, master creation receipt confirmed. Used rg --files discovery and explicit UTF8. No historical evidence regenerated, assertions weakened or runtime tests run.",
       "externalPreflight": "B18-REV05-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV06",
+      "status": "method-corrected",
+      "actual": "Native checkout changed2028 raw EOL hashes; console cp874 failed on non-Thai Unicode. Several guessed file paths and one Windows wildcard-path search failed; combined output truncation occurred.",
+      "action": "Restored only EOL-equivalent exact checkpoint blobs after clean precondition; verified3610 inventory,15handoff evidence and3hash-pinned amendments; core.autocrlf=false index refresh left no staged delta. Changed console to UTF8, used rg --files and directory/symbol searches and bounded reads. No application tests, source changes or historical evidence regeneration.",
+      "externalPreflight": "B18-REV06-preflight.json",
+      "receiptGenerationRecovery": "First next-oracle selection included excluded binary fixture and count assertion rejected it before ledger writes. Restricted selection to test source; retained exact15/allREV12/pending assertions.",
+      "integrityRecovery": "First validator counted only candidate-prefixed statuses and missed5historical open-candidate statuses. Inspected full status histogram, counted candidate classification anywhere in status, retained exact23candidate/17static totals and unchanged prior31 finding assertion.",
+      "stagingRecovery": "First git diff --cached --check detected CRLF as trailing whitespace in newly written evidence/report; PowerShell/Python default newline translation caused it. Normalize only this slice nine staged output files to LF, preserve prior historical files, and explicitly capture check exit code before commit."
     }
   ]
 }

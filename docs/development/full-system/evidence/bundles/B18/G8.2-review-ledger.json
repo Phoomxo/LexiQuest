@@ -283,11 +283,11 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full4 lines read. Java interactive update plus Gradle8.10.2 importsetting and wrapperenabled whereasactualwrapper9.1; editor setting not build authority.",
+      "reviewNotes": "Full4 lines read. Java interactive update plus Gradle8.10.2 importsetting and wrapperenabled whereasactualwrapper9.1; editor setting not build authority. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:34:04.923452+00:00",
       "readRanges": [
         [
@@ -33671,11 +33671,11 @@
       "lines": 255,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full255 lines read. Confirmed request resolves exactly one known structural unlock from supplied snapshot; deterministic escaped SVG includes only reviewed title/version/UTC date, no owner/source IDs. Defensive bytes and private artifact constructor. In-flight dedup key includes view scope and full source receipt, releases in finally. Snapshot authority is caller responsibility; source screen re-read confirms generation/activity/share-instance fence before dialog confirmation and completion, no new unlock mutation.",
+      "reviewNotes": "Full255 lines read. Confirmed request resolves exactly one known structural unlock from supplied snapshot; deterministic escaped SVG includes only reviewed title/version/UTC date, no owner/source IDs. Defensive bytes and private artifact constructor. In-flight dedup key includes view scope and full source receipt, releases in finally. Snapshot authority is caller responsibility; source screen re-read confirms generation/activity/share-instance fence before dialog confirmation and completion, no new unlock mutation. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:46:43.868630+00:00",
       "readRanges": [
         [
@@ -33692,11 +33692,11 @@
       "lines": 131,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full131 lines read. Validates ID/title/UTC/name/mime/1MiB cap, Android existing export channel receives exact immutable bytes; desktop user picker before direct XFile save, no shared temp path. Android failures typed, desktop picker errors outside local catch but screen catches generically. Native persistence/overwrite semantics are delegated, mock picker tests do not prove installed-device behavior.",
+      "reviewNotes": "Full131 lines read. Validates ID/title/UTC/name/mime/1MiB cap, Android existing export channel receives exact immutable bytes; desktop user picker before direct XFile save, no shared temp path. Android failures typed, desktop picker errors outside local catch but screen catches generically. Native persistence/overwrite semantics are delegated, mock picker tests do not prove installed-device behavior. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:46:43.868630+00:00",
       "readRanges": [
         [
@@ -33713,11 +33713,11 @@
       "lines": 44,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full44 lines read. Static themed Flutter metadata preview with semantics and date; no destination/evidence ID. Preview is not rendering exported SVG, so widget oracle cannot prove SVG typography/clipping or platform Thai font support.",
+      "reviewNotes": "Full44 lines read. Static themed Flutter metadata preview with semantics and date; no destination/evidence ID. Preview is not rendering exported SVG, so widget oracle cannot prove SVG typography/clipping or platform Thai font support. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:46:43.868630+00:00",
       "readRanges": [
         [
@@ -33904,11 +33904,13 @@
       "lines": 59,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "reviewed-no-actionable-finding",
+      "status": "reviewed-with-findings",
       "zone": "REV-03",
       "reviewerPassDate": "2026-09-19T11:07:30.790914+00:00",
-      "findingIDs": [],
-      "reviewNotes": "Full file read. Reads canonical preference and returns Standard on owner mismatch. Writes serialized per owner across shared instance, previous failure does not poison tail; expected owner passed to canonical preferences save and identity-matched cleanup removes tail. No own persistence table. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix.",
+      "findingIDs": [
+        "B18-REV06-04"
+      ],
+      "reviewNotes": "Full file read. Reads canonical preference and returns Standard on owner mismatch. Writes serialized per owner across shared instance, previous failure does not poison tail; expected owner passed to canonical preferences save and identity-matched cleanup removes tail. No own persistence table. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix. Supplemental REV06 candidate attribution: B18-REV06-04. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-13T22:39:00.534126+00:00",
       "readRanges": [
         [
@@ -34930,11 +34932,11 @@
       "lines": 12,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full12 lines read. Synchronous pure catalog resolver, no IO/AI/evidence writer. Commit ordering belongs to lesson producer.",
+      "reviewNotes": "Full12 lines read. Synchronous pure catalog resolver, no IO/AI/evidence writer. Commit ordering belongs to lesson producer. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:49:27.374289+00:00",
       "readRanges": [
         [
@@ -34951,11 +34953,11 @@
       "lines": 78,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full78 lines read. V1 signal/session/count validity and equality; start requires0, retry positive, completion permits0, unknown rejected. Context includes session ID but no owner/raw response. Copy supplied publicly; presentation independently resolves allowlisted copy.",
+      "reviewNotes": "Full78 lines read. V1 signal/session/count validity and equality; start requires0, retry positive, completion permits0, unknown rejected. Context includes session ID but no owner/raw response. Copy supplied publicly; presentation independently resolves allowlisted copy. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:49:27.374289+00:00",
       "readRanges": [
         [
@@ -34972,11 +34974,11 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full29 lines read. Private versioned compile-time catalog, canonical V1 signal validation yields exactly three reviewed scripts, unknown/future null. Cannot authenticate post-commit fact itself.",
+      "reviewNotes": "Full29 lines read. Private versioned compile-time catalog, canonical V1 signal validation yields exactly three reviewed scripts, unknown/future null. Cannot authenticate post-commit fact itself. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:49:27.374289+00:00",
       "readRanges": [
         [
@@ -34993,11 +34995,11 @@
       "lines": 67,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full67 lines read. Revalidates event/version and ignores arbitrary supplied copy in favor of fixed Thai/English signal map; unsupported locale Thai. Live semantic excludes duplicate child semantics, passive card, motion duration honors MediaQuery; reaction identity keys switcher.",
+      "reviewNotes": "Full67 lines read. Revalidates event/version and ignores arbitrary supplied copy in favor of fixed Thai/English signal map; unsupported locale Thai. Live semantic excludes duplicate child semantics, passive card, motion duration honors MediaQuery; reaction identity keys switcher. Cross-check disposition: REV-06-zone-review.json/REV06-X07; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:49:27.374289+00:00",
       "readRanges": [
         [
@@ -35497,11 +35499,11 @@
       "lines": 112,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full112 lines read. LiveFlutterSecureValueStore usesAndroidv2namespace explicitRSAwrappedAES, disablesmigration/reset; iOSfirstunlockthisdevice. LegacyGeminiglobalkeys/consents separatewrites andtypedGeminierrors, noownerisolation; libsearch showslegacyproductionfactoryunused while AiTutorproduction usesonlySecureValueStore. No realKeystore run.",
+      "reviewNotes": "Full112 lines read. LiveFlutterSecureValueStore usesAndroidv2namespace explicitRSAwrappedAES, disablesmigration/reset; iOSfirstunlockthisdevice. LegacyGeminiglobalkeys/consents separatewrites andtypedGeminierrors, noownerisolation; libsearch showslegacyproductionfactoryunused while AiTutorproduction usesonlySecureValueStore. No realKeystore run. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:18:09.335929+00:00",
       "readRanges": [
         [
@@ -35539,11 +35541,13 @@
       "lines": 185,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full185 lines read. Prepared commands pin expectedowner and identity/time, execute passes guard; update enforcesopeningowner and monotonic1ms timestamp on clockreversal. Statussame returnsnoop and otherwise repository checks existingowner. Countdown compares date ordinals in pinned timezone, avoiding DST23/25hours. Does not serialize opening dialog itself (UI prior concern).",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-08"
+      ],
+      "reviewNotes": "Full185 lines read. Prepared commands pin expectedowner and identity/time, execute passes guard; update enforcesopeningowner and monotonic1ms timestamp on clockreversal. Statussame returnsnoop and otherwise repository checks existingowner. Countdown compares date ordinals in pinned timezone, avoiding DST23/25hours. Does not serialize opening dialog itself (UI prior concern). Cross-check disposition: REV-06-zone-review.json/REV06-X01; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:38:29.676910+00:00",
       "readRanges": [
         [
@@ -35560,11 +35564,11 @@
       "lines": 224,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full224 lines read. Singleactiveowner read inside transaction after ownerensure, expectedowner and existingowner checked; exact/semantic retry no newrevision beforeguard since noop. Newwrites guardchecked, timestamp/createdidentity conflicts and deletedrestoration denied. Goaldelete transaction creates reminder cancellation intents then rechecksguard. Postcommit notifier canfail; retry durablematch suppresses notification. Lists allactiveownergoals unbounded, no newly found defect.",
+      "reviewNotes": "Full224 lines read. Singleactiveowner read inside transaction after ownerensure, expectedowner and existingowner checked; exact/semantic retry no newrevision beforeguard since noop. Newwrites guardchecked, timestamp/createdidentity conflicts and deletedrestoration denied. Goaldelete transaction creates reminder cancellation intents then rechecksguard. Postcommit notifier canfail; retry durablematch suppresses notification. Lists allactiveownergoals unbounded, no newly found defect. Cross-check disposition: REV-06-zone-review.json/REV06-X01; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:38:29.676910+00:00",
       "readRanges": [
         [
@@ -35581,11 +35585,11 @@
       "lines": 145,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full145 lines read. Private validated factory rejects controlchars, trimmed/nonempty/rune limits, nonnegativeUTC and updatedbeforecreated; truncatesms and verifies timezoneoffset at deadline via canonicaltimecontract. Immutablecopy preservesID/created, closed goal/status codes; no university admission score synthesized.",
+      "reviewNotes": "Full145 lines read. Private validated factory rejects controlchars, trimmed/nonempty/rune limits, nonnegativeUTC and updatedbeforecreated; truncatesms and verifies timezoneoffset at deadline via canonicaltimecontract. Immutablecopy preservesID/created, closed goal/status codes; no university admission score synthesized. Cross-check disposition: REV-06-zone-review.json/REV06-X01; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:38:29.676910+00:00",
       "readRanges": [
         [
@@ -35602,11 +35606,11 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full24 lines read. Save accepts optional live mutation guard and expectedowner, list returnsdomain; typed ownerchanged/unavailable exceptions. Implementations must enforceatomic checks, actualDrift reviewed.",
+      "reviewNotes": "Full24 lines read. Save accepts optional live mutation guard and expectedowner, list returnsdomain; typed ownerchanged/unavailable exceptions. Implementations must enforceatomic checks, actualDrift reviewed. Cross-check disposition: REV-06-zone-review.json/REV06-X01; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:38:29.676910+00:00",
       "readRanges": [
         [
@@ -37775,11 +37779,11 @@
       "lines": 282,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full282 lines read. Canonical v2 projectEvent validates evidence identity/time/pins/eligibility then delegates atomic repository application; legacy recordLearningDay uses separate state-save/daylog and exact-time replay pins durable day. getGentleStreak calls getOrCreate, so read-only description includes initial persistence. Library-wide caller search finds no external calls to legacy recording/grant/consume APIs; do not promote dormant race as live defect. UTC/future checks and receipt ownership reviewed. No execution.",
+      "reviewNotes": "Full282 lines read. Canonical v2 projectEvent validates evidence identity/time/pins/eligibility then delegates atomic repository application; legacy recordLearningDay uses separate state-save/daylog and exact-time replay pins durable day. getGentleStreak calls getOrCreate, so read-only description includes initial persistence. Library-wide caller search finds no external calls to legacy recording/grant/consume APIs; do not promote dormant race as live defect. UTC/future checks and receipt ownership reviewed. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X02; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -37796,11 +37800,11 @@
       "lines": 751,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full751 lines read in contiguous1-390/391-751. State/daylog/application are transactional for canonical projection; existing application checked before active policy rejection permits exact historical replay. Cutover persists max occurrence/eventID tuple, owner merge preserves max horizon and time, rollback only empty exact cutover. Stored applications compare full envelope/source/owner/policy with strict receipt and payload; old version-key alias migrated transactionally, insert-ignore readback verifies actual result. getOrCreate outside transaction returns initial after insert-ignore without readback, but canonical projection calls within transaction. Legacy save/record methods individually non-atomic as a pair; external callers not found. No runtime acceptance.",
+      "reviewNotes": "Full751 lines read in contiguous1-390/391-751. State/daylog/application are transactional for canonical projection; existing application checked before active policy rejection permits exact historical replay. Cutover persists max occurrence/eventID tuple, owner merge preserves max horizon and time, rollback only empty exact cutover. Stored applications compare full envelope/source/owner/policy with strict receipt and payload; old version-key alias migrated transactionally, insert-ignore readback verifies actual result. getOrCreate outside transaction returns initial after insert-ignore without readback, but canonical projection calls within transaction. Legacy save/record methods individually non-atomic as a pair; external callers not found. No runtime acceptance. Cross-check disposition: REV-06-zone-review.json/REV06-X02; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -37817,11 +37821,11 @@
       "lines": 448,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full448 lines read. Pure policy extracts learner calendar labels and compares UTC calendar dates to avoid DST duration drift. Same-day unchanged, consecutive increments, one missed day with freeze preserves current without increment, larger gap restarts1 retaining best. Rejects historical evidence; strict state bounds and receipt closed shape/date binding, positive historical version for replay. Missing lastLearned with preexisting best could reset best in started branch, requires actual reachable malformed-state proof; not promoted. Gentle snapshot phase is calm display, not mutation. No execution.",
+      "reviewNotes": "Full448 lines read. Pure policy extracts learner calendar labels and compares UTC calendar dates to avoid DST duration drift. Same-day unchanged, consecutive increments, one missed day with freeze preserves current without increment, larger gap restarts1 retaining best. Rejects historical evidence; strict state bounds and receipt closed shape/date binding, positive historical version for replay. Missing lastLearned with preexisting best could reset best in started branch, requires actual reachable malformed-state proof; not promoted. Gentle snapshot phase is calm display, not mutation. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X02; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -37838,11 +37842,11 @@
       "lines": 79,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full79 lines read. IANA TZDateTime determines calendar label; getLearningDay returns host-local DateTime with label fields, callers convert labels to UTC before day arithmetic. Next boundary constructs timezone-specific tomorrow and loops until strictly future, including skipped calendar days. No direct UTC argument validation but actual use-case clock validates. No device-zone or runtime proof.",
+      "reviewNotes": "Full79 lines read. IANA TZDateTime determines calendar label; getLearningDay returns host-local DateTime with label fields, callers convert labels to UTC before day arithmetic. Next boundary constructs timezone-specific tomorrow and loops until strictly future, including skipped calendar days. No direct UTC argument validation but actual use-case clock validates. No device-zone or runtime proof. Cross-check disposition: REV-06-zone-review.json/REV06-X02; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -38006,11 +38010,13 @@
       "lines": 117,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full117 lines read. Serial queue recovers errors, captures owner before enqueue, skips stale owner/no-op edits and preserves the other display field at execution. Refresh failure resets to ownerless defaults. No disposal generation cancels pending replace/notify; pending-disposal oracle not present, app-owned lifecycle needs cross-check. Source read only.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-05"
+      ],
+      "reviewNotes": "Full117 lines read. Serial queue recovers errors, captures owner before enqueue, skips stale owner/no-op edits and preserves the other display field at execution. Refresh failure resets to ownerless defaults. No disposal generation cancels pending replace/notify; pending-disposal oracle not present, app-owned lifecycle needs cross-check. Source read only. Cross-check disposition: REV-06-zone-review.json/REV06-X03; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -38027,11 +38033,13 @@
       "lines": 139,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full139 lines read. Owner-qualified reads and expected-owner writes, reread after persistence; semantic saves preserve omitted home selection and separate repository path preserves display. Home change performs full semantic read-modify-write, so concurrent other semantic edits require cross-check. Effective study-minute clamping validates bounds and never changes assignments.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-04"
+      ],
+      "reviewNotes": "Full139 lines read. Owner-qualified reads and expected-owner writes, reread after persistence; semantic saves preserve omitted home selection and separate repository path preserves display. Home change performs full semantic read-modify-write, so concurrent other semantic edits require cross-check. Effective study-minute clamping validates bounds and never changes assignments. Cross-check disposition: REV-06-zone-review.json/REV06-X03; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -38048,11 +38056,13 @@
       "lines": 255,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full255 lines read. Transaction checks active owner, semantic no-op precedes guard, singleton superseding outbox uses cloud base plus one and monotonically advanced timestamp. Semantic updates preserve local display. Display-only writes create revision-zero defaults without cloud intent; display update/no-op on tombstoned existing row does not restore it, while reads return defaults. Tombstone reachability and concurrent semantic writes remain cross-check candidates, not accepted defects.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-04"
+      ],
+      "reviewNotes": "Full255 lines read. Transaction checks active owner, semantic no-op precedes guard, singleton superseding outbox uses cloud base plus one and monotonically advanced timestamp. Semantic updates preserve local display. Display-only writes create revision-zero defaults without cloud intent; display update/no-op on tombstoned existing row does not restore it, while reads return defaults. Tombstone reachability and concurrent semantic writes remain cross-check candidates, not accepted defects. Cross-check disposition: REV-06-zone-review.json/REV06-X03; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -38069,11 +38079,11 @@
       "lines": 297,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full297 lines read. Closed goal/activity/theme/motion enums; unknown home falls back standard with fixed-code callback. Version1/2 and v1 home constraint, minutes1..240, nonnegative UTC millisecond timestamps. JSON excludes owner and local display intentionally; equality includes both. Owner only nonblank trim; raw unknown enum appears in validation text. Effective clamp DTO relies on use-case validation.",
+      "reviewNotes": "Full297 lines read. Closed goal/activity/theme/motion enums; unknown home falls back standard with fixed-code callback. Version1/2 and v1 home constraint, minutes1..240, nonnegative UTC millisecond timestamps. JSON excludes owner and local display intentionally; equality includes both. Owner only nonblank trim; raw unknown enum appears in validation text. Effective clamp DTO relies on use-case validation. Cross-check disposition: REV-06-zone-review.json/REV06-X03; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -38090,11 +38100,11 @@
       "lines": 25,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full25 lines read. Owner-qualified semantic save with optional commit guard; separate display save explicitly local-only and creates no cloud intent.",
+      "reviewNotes": "Full25 lines read. Owner-qualified semantic save with optional commit guard; separate display save explicitly local-only and creates no cloud intent. Cross-check disposition: REV-06-zone-review.json/REV06-X03; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -38300,11 +38310,11 @@
       "lines": 97,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full97 lines read. Immutable built-in daily5correct/50XP and weekly20correct/200XP v1; startup expires then seeds serially. Actual assignment uses local calendar with explicit duration upper bound rather than rolling24h/week. Catalog update commentary promises old active completion; use-case version pin rejects changed active catalog, needs oracle contract cross-check before finding. No execution.",
+      "reviewNotes": "Full97 lines read. Immutable built-in daily5correct/50XP and weekly20correct/200XP v1; startup expires then seeds serially. Actual assignment uses local calendar with explicit duration upper bound rather than rolling24h/week. Catalog update commentary promises old active completion; use-case version pin rejects changed active catalog, needs oracle contract cross-check before finding. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38321,11 +38331,11 @@
       "lines": 795,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full795 lines read. Assignment deep snapshot/period; refresh owner/disposal/guard both before and after best-effort scheduling. Direct processEvent rejects; canonical projector relies external evidence/serialization fence, expires by current clock but accepts historical event within durable active/expired window, saves progress then completes separately and recovers earned grants by source. Missing same-version metadata fails closed; active catalog-version replacement blocks while completed history remains pinned. Reward grants strict owner/id/positiveXP/exact source/batch64, errors propagate durable retries. _now onlyUTC, completion uses wall clock without comparing source/assignment; actual scheduler clock contract pending. Shadow questId derived incorrectly from instance suffix and questTypealwaysdaily, shadow not deployed award authority. No B18 execution.",
+      "reviewNotes": "Full795 lines read. Assignment deep snapshot/period; refresh owner/disposal/guard both before and after best-effort scheduling. Direct processEvent rejects; canonical projector relies external evidence/serialization fence, expires by current clock but accepts historical event within durable active/expired window, saves progress then completes separately and recovers earned grants by source. Missing same-version metadata fails closed; active catalog-version replacement blocks while completed history remains pinned. Reward grants strict owner/id/positiveXP/exact source/batch64, errors propagate durable retries. _now onlyUTC, completion uses wall clock without comparing source/assignment; actual scheduler clock contract pending. Shadow questId derived incorrectly from instance suffix and questTypealwaysdaily, shadow not deployed award authority. No B18 execution. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38342,11 +38352,11 @@
       "lines": 556,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full556 lines read. Assignment transaction unique active owner, expiration, allstate local-period occupancy and conservative legacy once handling; freezes definition/progress and blocks incompatible active version. Raw upsert replaces same/lower versions but actual assignment guards same-active consistency. Projection selects<=64time-window candidates and rejects overlaps; completed recovery source exact independent of removed catalog. Separate progress/terminal writes rely outer reconcile serialization/durable replay. State transitions by instanceID without priorstate or affected-row verification, direct repository callers need bound. Progress row ID concatenation unescaped but actual generatedinstance/objectivecatalog known. No runtime claim.",
+      "reviewNotes": "Full556 lines read. Assignment transaction unique active owner, expiration, allstate local-period occupancy and conservative legacy once handling; freezes definition/progress and blocks incompatible active version. Raw upsert replaces same/lower versions but actual assignment guards same-active consistency. Projection selects<=64time-window candidates and rejects overlaps; completed recovery source exact independent of removed catalog. Separate progress/terminal writes rely outer reconcile serialization/durable replay. State transitions by instanceID without priorstate or affected-row verification, direct repository callers need bound. Progress row ID concatenation unescaped but actual generatedinstance/objectivecatalog known. No runtime claim. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38363,11 +38373,11 @@
       "lines": 286,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full286 lines read. Closed snapshot shape64KiB/depth16/objectives64, positive targets/version/duration, finite JSON filters, deep-freeze decode and structural definition equality. Progress matches IDs/targets/bounds/unique sourceIDs but not count==sourceIDs length, accommodating potential migrated counts requires oracle. Storage JSON fields decoded before final aggregate64KiB budget; runtime authored catalog bounded separately. ZeroXP definition allowed whereas reward decoder requirespositive; built-ins50/200 only. No execution.",
+      "reviewNotes": "Full286 lines read. Closed snapshot shape64KiB/depth16/objectives64, positive targets/version/duration, finite JSON filters, deep-freeze decode and structural definition equality. Progress matches IDs/targets/bounds/unique sourceIDs but not count==sourceIDs length, accommodating potential migrated counts requires oracle. Storage JSON fields decoded before final aggregate64KiB budget; runtime authored catalog bounded separately. ZeroXP definition allowed whereas reward decoder requirespositive; built-ins50/200 only. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38384,11 +38394,11 @@
       "lines": 301,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full301 lines read. Public const models retain caller mutable collections despite immutable commentary; snapshot codec deep-freezes operational assignment. Criteria uses shallow == for filters, so allowed nested list/map values cannot structurally match independent decoded event; built-ins scalarbool only. Advance skips complete objectives and deduplicates source IDs per objective; complete factory does not validate completion/UTC itself. Operational caller gates must supply those properties; no live defect promoted.",
+      "reviewNotes": "Full301 lines read. Public const models retain caller mutable collections despite immutable commentary; snapshot codec deep-freezes operational assignment. Criteria uses shallow == for filters, so allowed nested list/map values cannot structurally match independent decoded event; built-ins scalarbool only. Advance skips complete objectives and deduplicates source IDs per objective; complete factory does not validate completion/UTC itself. Operational caller gates must supply those properties; no live defect promoted. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38405,11 +38415,11 @@
       "lines": 93,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full93 lines read. IANA local midnight/Monday periods pinned as day/week key, deadline=min(calendarEnd,assignment+duration), once key for story/milestone. UTC assignment validated; overflow-clamped legacy deadline, no epoch minimum here. Timezone key excludes zone deliberately needs travel occupancy tests. No execution.",
+      "reviewNotes": "Full93 lines read. IANA local midnight/Monday periods pinned as day/week key, deadline=min(calendarEnd,assignment+duration), once key for story/milestone. UTC assignment validated; overflow-clamped legacy deadline, no epoch minimum here. Timezone key excludes zone deliberately needs travel occupancy tests. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38426,11 +38436,11 @@
       "lines": 92,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full92 lines read. Assignment atomic expiration/unique-active-owner/period occupancy contract, bounded64projection and source-specific completed recovery independent of live catalog. Legacy start/upsert/transitions weaker ports documented idempotent; actual implementation and callers inspected separately. No execution.",
+      "reviewNotes": "Full92 lines read. Assignment atomic expiration/unique-active-owner/period occupancy contract, bounded64projection and source-specific completed recovery independent of live catalog. Legacy start/upsert/transitions weaker ports documented idempotent; actual implementation and callers inspected separately. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X04; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:47:33.479147+00:00",
       "readRanges": [
         [
@@ -38573,11 +38583,15 @@
       "lines": 1581,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full1581 lines read contiguous1-280/281-580/581-920/921-1260/1261-1581. Repository-keyed serializer, durablefeatureepoch+ownergate around schedule,4passrevisionrepair,2passcurrentownerrepair and exactnativeIDsfororphans. Status two-readrevision/feature/owner stablecheck, no prompt/ack/write. OptIn future/quietvalidation beforepermission and guardedSave, result aggregatefailed/cancelled can represent otherreminders notsole request. FeatureEnabled runtimehint intentionallyignored durableloaderauthority. OwnerChange pre/postnative exactleaseguard, failedcleanup preservesauthoritativeoutcome; OwnerErasure lacks same _transitionNativeGuard proof and relies outer lifecycle token checks, needs caller review. No notification delivery claim/execution.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-02",
+        "B18-REV06-03",
+        "B18-REV06-09"
+      ],
+      "reviewNotes": "Full1581 lines read contiguous1-280/281-580/581-920/921-1260/1261-1581. Repository-keyed serializer, durablefeatureepoch+ownergate around schedule,4passrevisionrepair,2passcurrentownerrepair and exactnativeIDsfororphans. Status two-readrevision/feature/owner stablecheck, no prompt/ack/write. OptIn future/quietvalidation beforepermission and guardedSave, result aggregatefailed/cancelled can represent otherreminders notsole request. FeatureEnabled runtimehint intentionallyignored durableloaderauthority. OwnerChange pre/postnative exactleaseguard, failedcleanup preservesauthoritativeoutcome; OwnerErasure lacks same _transitionNativeGuard proof and relies outer lifecycle token checks, needs caller review. No notification delivery claim/execution. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -38594,11 +38608,11 @@
       "lines": 562,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full562 lines read. Activeowner reread within saveTx, validates goalreference then synchronousmutationguard beforewrite. Desiredrow+revision platformintent atomic, oldpending superseded; semanticreplay returnswithout timestamp advance/guard sideeffect. resolve/ack exactidentity/kind/revision/state. Failure record select+update outsideTx can overwrite retrycount metadata after supersession, doesnotresetstate. Allownerlisting unbounded. _mutate listthen save may stale under independentwriters but save monotonic check. Quietpair partialrow convertednull instead ofreject, source schema must enforce. No runtime.",
+      "reviewNotes": "Full562 lines read. Activeowner reread within saveTx, validates goalreference then synchronousmutationguard beforewrite. Desiredrow+revision platformintent atomic, oldpending superseded; semanticreplay returnswithout timestamp advance/guard sideeffect. resolve/ack exactidentity/kind/revision/state. Failure record select+update outsideTx can overwrite retrycount metadata after supersession, doesnotresetstate. Allownerlisting unbounded. _mutate listthen save may stale under independentwriters but save monotonic check. Quietpair partialrow convertednull instead ofreject, source schema must enforce. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -38615,11 +38629,13 @@
       "lines": 308,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full308 lines read. Retryable memoizedinit, Android/iOS only, currentOSpermission via plugin notcached, no initprompt, inexactAllowWhileIdle and encodedowner/reminderpayload. iOScap64 checks decoded reminder entries only, ignoring foreign/malformed native requests; nativeAPI fullpopulation limit needs actualotherwriters. Decode allows extra/whitespace/overlongfields but ignores malformedjson/types. No revision/time in pendingpayload; upperlayers rely durableoutbox. No native execution.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-09"
+      ],
+      "reviewNotes": "Full308 lines read. Retryable memoizedinit, Android/iOS only, currentOSpermission via plugin notcached, no initprompt, inexactAllowWhileIdle and encodedowner/reminderpayload. iOScap64 checks decoded reminder entries only, ignoring foreign/malformed native requests; nativeAPI fullpopulation limit needs actualotherwriters. Decode allows extra/whitespace/overlongfields but ignores malformedjson/types. No revision/time in pendingpayload; upperlayers rely durableoutbox. No native execution. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -38636,11 +38652,13 @@
       "lines": 92,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full92 lines read. Immutable schedule/pending identity DTOs and explicit unsupported no-op. Stable positive31bit FNV over UTF16 owner+unit-separator+ID, not collision-free despite owner-isolation wording; domain rejects control delimiters, random hashcollision possible requires actual collision handling oracle. No runtime.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-09"
+      ],
+      "reviewNotes": "Full92 lines read. Immutable schedule/pending identity DTOs and explicit unsupported no-op. Stable positive31bit FNV over UTF16 owner+unit-separator+ID, not collision-free despite owner-isolation wording; domain rejects control delimiters, random hashcollision possible requires actual collision handling oracle. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -38657,11 +38675,13 @@
       "lines": 258,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full258 lines read. Canonical control-free bounded identities, UTCmillisecond normalization, actualIANAoffset validation, deleted impliesdisabled. Quiet-hours shift to localwallend, overnight/daytime/equaldisabled; ambiguous fall-back quiet-end may map before requestedsecondfold, needs timezone source/oracle. QuietHours bounds assert-only constructor but operational optIn revalidates. copyWith cannot clearquietHours withnull; actual optIn reconstructs fullinstance. Rebase preserves requestedwallclock explicitly, runtimehintignored elsewhere. No execution.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-03"
+      ],
+      "reviewNotes": "Full258 lines read. Canonical control-free bounded identities, UTCmillisecond normalization, actualIANAoffset validation, deleted impliesdisabled. Quiet-hours shift to localwallend, overnight/daytime/equaldisabled; ambiguous fall-back quiet-end may map before requestedsecondfold, needs timezone source/oracle. QuietHours bounds assert-only constructor but operational optIn revalidates. copyWith cannot clearquietHours withnull; actual optIn reconstructs fullinstance. Rebase preserves requestedwallclock explicitly, runtimehintignored elsewhere. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -38678,11 +38698,11 @@
       "lines": 120,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full120 lines read. Activeowner/token/fence contracts, mutationguard, durable revision-bound desired state/platform intent and exactack interfaces. Schedule observation explicitly distinct from delivered notification; no standalone validation inDTOs. No runtime.",
+      "reviewNotes": "Full120 lines read. Activeowner/token/fence contracts, mutationguard, durable revision-bound desired state/platform intent and exactack interfaces. Schedule observation explicitly distinct from delivered notification; no standalone validation inDTOs. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X05; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -39562,11 +39582,13 @@
       "lines": 189,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full189 lines read. Avatar/progression must agree canonical progress, availability gate wraps StateError; purchase checkscurrentcatalog/owned/unlocked then repository checksdurably. Purchase trimskeypermissively versus grant/equipexact whitespace; actual UI generates canonicalkeys. loadAvatar progression/account reads separateawaits; ownerTx must recheck. grantCoins façade no activeownerrecheck but no external façade caller found; production bootstrap callsrepositoryfromcanonicalreconciler. Mutationnotification can throw aftercommit, idempotentretry relevant. No execution.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-01"
+      ],
+      "reviewNotes": "Full189 lines read. Avatar/progression must agree canonical progress, availability gate wraps StateError; purchase checkscurrentcatalog/owned/unlocked then repository checksdurably. Purchase trimskeypermissively versus grant/equipexact whitespace; actual UI generates canonicalkeys. loadAvatar progression/account reads separateawaits; ownerTx must recheck. grantCoins façade no activeownerrecheck but no external façade caller found; production bootstrap callsrepositoryfromcanonicalreconciler. Mutationnotification can throw aftercommit, idempotentretry relevant. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39583,11 +39605,11 @@
       "lines": 198,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full198 lines read. Dryrun eligibility/request/canGrant/logging only, no production transactionwrites. Inmemory/debuglogs retain unbounded entries and rawowner/eventerror; logger.logError itself outsideguardcanthrow, outer quest caller ignore guards. Library construction search no actual shadow instantiation; dormant observations, not live release failure. No runtime.",
+      "reviewNotes": "Full198 lines read. Dryrun eligibility/request/canGrant/logging only, no production transactionwrites. Inmemory/debuglogs retain unbounded entries and rawowner/eventerror; logger.logError itself outsideguardcanthrow, outer quest caller ignore guards. Library construction search no actual shadow instantiation; dormant observations, not live release failure. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39604,11 +39626,11 @@
       "lines": 920,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full920 lines read contiguous1-260/261-590/591-920. Durable complete v1-set fingerprint, strict marker envelope and closed payload; trusted cloud echo canonicalizes carry proof with server time and exact original fields. Admission updates marker before caller inserts row, requiring sync outer transaction. Owner merge preserves rejected marker provenance via quarantine; only portable validated complete population can clear. Pre-marker carry batch bounded256 after fetching full population, late-first-launch intentionally converts all raw pre-cutover rows. IDs permit NUL/newline while digest uses delimiters; actual canonical ID sources needed before collision finding. Unkeyed carry receipts share client-attested historical UTC trust, not hostile-device proof. Empty rollback requires no durable rewards. No execution.",
+      "reviewNotes": "Full920 lines read contiguous1-260/261-590/591-920. Durable complete v1-set fingerprint, strict marker envelope and closed payload; trusted cloud echo canonicalizes carry proof with server time and exact original fields. Admission updates marker before caller inserts row, requiring sync outer transaction. Owner merge preserves rejected marker provenance via quarantine; only portable validated complete population can clear. Pre-marker carry batch bounded256 after fetching full population, late-first-launch intentionally converts all raw pre-cutover rows. IDs permit NUL/newline while digest uses delimiters; actual canonical ID sources needed before collision finding. Unkeyed carry receipts share client-attested historical UTC trust, not hostile-device proof. Empty rollback requires no durable rewards. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:56:26.565038+00:00",
       "readRanges": [
         [
@@ -39625,11 +39647,11 @@
       "lines": 273,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full273 lines read in preceding continuation. Owner transaction backfills positive quizCorrect/questCompletion points with stable point-ID SHA and canonical source fallback. Exact by-ID replay validates outbox; same-source replay validates amount/time but does not recreate outbox. V2 canonical quiz authority suppresses legacy backfill after existing-row checks, exact owner/attempt/version identity. All rows materialized, no bounded paging. No runtime.",
+      "reviewNotes": "Full273 lines read in preceding continuation. Owner transaction backfills positive quizCorrect/questCompletion points with stable point-ID SHA and canonical source fallback. Exact by-ID replay validates outbox; same-source replay validates amount/time but does not recreate outbox. V2 canonical quiz authority suppresses legacy backfill after existing-row checks, exact owner/attempt/version identity. All rows materialized, no bounded paging. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:56:26.565038+00:00",
       "readRanges": [
         [
@@ -39646,11 +39668,11 @@
       "lines": 194,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full194 lines read in preceding continuation. Validates complete sorted transaction population, grandfather marker, policy and duplicate earning source before deleting/rebuilding ownership/equipment. Sums all grants first, then chronological first affordable purchase per item, then eligible equips; later grants can fund earlier purchases as convergent history projection, oracle pending. coinBalance deducts only accepted owned acquisition IDs. Repository callers wrap rebuild in transaction; standalone public method has no own outer transaction. No execution.",
+      "reviewNotes": "Full194 lines read in preceding continuation. Validates complete sorted transaction population, grandfather marker, policy and duplicate earning source before deleting/rebuilding ownership/equipment. Sums all grants first, then chronological first affordable purchase per item, then eligible equips; later grants can fund earlier purchases as convergent history projection, oracle pending. coinBalance deducts only accepted owned acquisition IDs. Repository callers wrap rebuild in transaction; standalone public method has no own outer transaction. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:56:26.565038+00:00",
       "readRanges": [
         [
@@ -39667,11 +39689,13 @@
       "lines": 888,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full888 lines read across contiguous1-300/301-600/601-888. Per-instance serial queue plus SQLite transactions; purchase/equip rebuild before admission and after writes, exact frozen catalog and canonical lifetimeXP receipt, coin+outbox and quest XP+coin+outbox atomic. StateError during projection rolls back then retries persistence without avatar projection; identity/partial-state errors remain checked in retry. Legacy quest replay compares population/amount only, unlike strict modern full source/time identity. No current active-owner fence here; UI/use-case owner capture requires lifecycle caller cross-check. Account returns fresh but mutable set/map detached from DB, not immutable snapshot guarantee. Deprecated XP-only grant no library caller found. No B18 execution.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-01"
+      ],
+      "reviewNotes": "Full888 lines read across contiguous1-300/301-600/601-888. Per-instance serial queue plus SQLite transactions; purchase/equip rebuild before admission and after writes, exact frozen catalog and canonical lifetimeXP receipt, coin+outbox and quest XP+coin+outbox atomic. StateError during projection rolls back then retries persistence without avatar projection; identity/partial-state errors remain checked in retry. Legacy quest replay compares population/amount only, unlike strict modern full source/time identity. No current active-owner fence here; UI/use-case owner capture requires lifecycle caller cross-check. Account returns fresh but mutable set/map detached from DB, not immutable snapshot guarantee. Deprecated XP-only grant no library caller found. No B18 execution. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:56:26.565038+00:00",
       "readRanges": [
         [
@@ -39688,11 +39712,11 @@
       "lines": 453,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full453 lines read. p1level=floor(XP/20)+1, immutableunlockset, frozenv2catalog and canonicalportable XP purchase receipt binding price/item/key/time/version/claimedXP bySHA. Receipt integrity is unkeyed hash, not independent authenticity of XP; source canonicalwriter and authenticatedtransport remain trust boundary. Legacycarryreceipt exacttransactionkey/type/price/time before2026-10-01 UTC horizon, fullhash mustmatch; rules rollout still external requirement. _canonicalInt rejectsalternate numericencodings; hugeintnextlevel arithmetic overflow needs boundedledger authority cross-check, no reachability proven. No runtime.",
+      "reviewNotes": "Full453 lines read. p1level=floor(XP/20)+1, immutableunlockset, frozenv2catalog and canonicalportable XP purchase receipt binding price/item/key/time/version/claimedXP bySHA. Receipt integrity is unkeyed hash, not independent authenticity of XP; source canonicalwriter and authenticatedtransport remain trust boundary. Legacycarryreceipt exacttransactionkey/type/price/time before2026-10-01 UTC horizon, fullhash mustmatch; rules rollout still external requirement. _canonicalInt rejectsalternate numericencodings; hugeintnextlevel arithmetic overflow needs boundedledger authority cross-check, no reachability proven. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39709,11 +39733,11 @@
       "lines": 168,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full168 lines read. Persisted coin/backfill positivecatalog0noitem/slot, purchases exactversionedprice/slot/source shape and fullv2receipt validation, equip0. Legacy fullcarry proof handled external eligibility; this policyonlyprefixshape. Awardv1 source SHA yields separate XP/coin keys, ineligibleboth0, amountpositive. Identifierlength/epochminimum enforced, upperinteger accumulation delegated repository. No execution.",
+      "reviewNotes": "Full168 lines read. Persisted coin/backfill positivecatalog0noitem/slot, purchases exactversionedprice/slot/source shape and fullv2receipt validation, equip0. Legacy fullcarry proof handled external eligibility; this policyonlyprefixshape. Awardv1 source SHA yields separate XP/coin keys, ineligibleboth0, amountpositive. Identifierlength/epochminimum enforced, upperinteger accumulation delegated repository. No execution. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39730,11 +39754,11 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full109 lines read. Legacy shadow policy10correctcoin/daily50weekly200milestone500, typed casts throw malformed payload, no canonical evidence/protocol check. Distinct from operational economyaward policy; library construction search finds no live shadow orchestrator composition. Not promoted as production grant bypass. No runtime.",
+      "reviewNotes": "Full109 lines read. Legacy shadow policy10correctcoin/daily50weekly200milestone500, typed casts throw malformed payload, no canonical evidence/protocol check. Distinct from operational economyaward policy; library construction search finds no live shadow orchestrator composition. Not promoted as production grant bypass. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39751,11 +39775,11 @@
       "lines": 81,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full81 lines read. Shadow command copies eventowner/source/idempotency and decision amount/version, no eligibility-result or UTC validation in factory itself. Actual shadow calls only eligible decisions; no production persistence writer found. No runtime.",
+      "reviewNotes": "Full81 lines read. Shadow command copies eventowner/source/idempotency and decision amount/version, no eligibility-result or UTC validation in factory itself. Actual shadow calls only eligible decisions; no production persistence writer found. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -39772,11 +39796,11 @@
       "lines": 238,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full238 lines read. Frozen v1/v2 six cosmetic definitions, currentv2 and historical lookup explicit; unknown version empty. Free default theme, paid five cosmetics with level2..5, no relic item. Account constructor does not defensivelycopy set/map; repository construction must enforce immutable snapshots. No runtime.",
+      "reviewNotes": "Full238 lines read. Frozen v1/v2 six cosmetic definitions, currentv2 and historical lookup explicit; unknown version empty. Free default theme, paid five cosmetics with level2..5, no relic item. Account constructor does not defensivelycopy set/map; repository construction must enforce immutable snapshots. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:51:06.221725+00:00",
       "readRanges": [
         [
@@ -41129,11 +41153,13 @@
       "lines": 156,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "reviewed-no-actionable-finding",
+      "status": "reviewed-with-findings",
       "zone": "REV-01",
       "reviewerPassDate": "2026-09-19T10:52:41.466171+00:00",
-      "findingIDs": [],
-      "reviewNotes": "Traced bootstrap typed storage failure, mounted/dependency identity checks on resume, detached background sync and owned dependency disposal. Other bootstrap failures still propagate; follow initialization finding.",
+      "findingIDs": [
+        "B18-REV06-05"
+      ],
+      "reviewNotes": "Traced bootstrap typed storage failure, mounted/dependency identity checks on resume, detached background sync and owned dependency disposal. Other bootstrap failures still propagate; follow initialization finding. Supplemental REV06 candidate attribution: B18-REV06-05. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "crossCheckDisposition": "REV-01-zone-review.json"
     },
@@ -41166,11 +41192,11 @@
       "lines": 5,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Nullable URL value only with no fetch/mutation; consumer trust boundary separate. No B18 execution.",
+      "reviewNotes": "Full file read. Nullable URL value only with no fetch/mutation; consumer trust boundary separate. No B18 execution. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T00:34:45.342148+00:00",
       "readRanges": [
         [
@@ -41708,9 +41734,12 @@
       "zone": "REV-01",
       "reviewerPassDate": "2026-09-19T10:52:41.466171+00:00",
       "findingIDs": [
-        "B18-REV01-01"
+        "B18-REV01-01",
+        "B18-REV06-01",
+        "B18-REV06-02",
+        "B18-REV06-05"
       ],
-      "reviewNotes": "Full composition/control flow read in bounded chunks; cleanup registration finding requires reproduction. Imports and provider initialization inspected; no runtime claim. Full7727-line bootstrap oracle and guest binding/restart, real app navigation, disposal stack and feature override oracles now reviewed. Bound erasure actual SQL lease/currentowner plus reminder coordinator checked640..815; two-connection fake-native convergence is scoped. Reconcile success-only fixture does not cover throwing pre-registration offline manager: REV01-01 retained. Late Firebase timeout cannot activate gateways. Factory provider/feature composition remains distinct from device/live/research activation; all current pending claims retain limits.",
+      "reviewNotes": "Full composition/control flow read in bounded chunks; cleanup registration finding requires reproduction. Imports and provider initialization inspected; no runtime claim. Full7727-line bootstrap oracle and guest binding/restart, real app navigation, disposal stack and feature override oracles now reviewed. Bound erasure actual SQL lease/currentowner plus reminder coordinator checked640..815; two-connection fake-native convergence is scoped. Reconcile success-only fixture does not cover throwing pre-registration offline manager: REV01-01 retained. Late Firebase timeout cannot activate gateways. Factory provider/feature composition remains distinct from device/live/research activation; all current pending claims retain limits. Supplemental REV06 candidate attribution: B18-REV06-01,B18-REV06-02,B18-REV06-05. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "readRanges": [
         [
@@ -41745,11 +41774,13 @@
       "lines": 396,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "reviewed-no-actionable-finding",
+      "status": "reviewed-with-findings",
       "zone": "REV-01",
       "reviewerPassDate": "2026-09-19T10:52:41.466171+00:00",
-      "findingIDs": [],
-      "reviewNotes": "Checked optional capability dependencies, exact shared learning/review/adventure identity comparisons and idempotent dispose future. Broader feature gates still require caller review.",
+      "findingIDs": [
+        "B18-REV06-07"
+      ],
+      "reviewNotes": "Checked optional capability dependencies, exact shared learning/review/adventure identity comparisons and idempotent dispose future. Broader feature gates still require caller review. Supplemental REV06 candidate attribution: B18-REV06-07. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "crossCheckDisposition": "REV-01-zone-review.json"
     },
@@ -42067,11 +42098,13 @@
       "lines": 41,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "reviewed-no-actionable-finding",
+      "status": "reviewed-with-findings",
       "zone": "REV-01",
       "reviewerPassDate": "2026-09-19T10:52:41.466171+00:00",
-      "findingIDs": [],
-      "reviewNotes": "Reverse cleanup exhausts disposers and preserves first error; initialization cleanup suppresses cleanup errors to retain original failure. own() assumes no registration after disposal.",
+      "findingIDs": [
+        "B18-REV06-05"
+      ],
+      "reviewNotes": "Reverse cleanup exhausts disposers and preserves first error; initialization cleanup suppresses cleanup errors to retain original failure. own() assumes no registration after disposal. Supplemental REV06 candidate attribution: B18-REV06-05. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-13T21:46:43.238796+00:00",
       "crossCheckDisposition": "REV-01-zone-review.json"
     },
@@ -42215,11 +42248,13 @@
       "lines": 896,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full896 lines read contiguous1-340/341-896. Draft versus durable consent, explicit withdrawal and postcommit readback unknown handling; provider/baseURL change blocks storedkey reuse, discovery no defaultmodel, requestcancel/dispose, honest partialtoken/cost summaries. Resolve onlydidChangeDependencies no didUpdateWidget/generation fence; oldload can publish after replacement and knownflags notreset onload failure. Initialnull tutor identicalnull skips unavailable branch; actual bootstrap callers normallynonnull. Dialog confirmation lacks secondbusy/tutor identity check. Settings saves mutation exceptions typed only; lostACK configure/remove not reconciled likeconsent. No runtime.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-07"
+      ],
+      "reviewNotes": "Full896 lines read contiguous1-340/341-896. Draft versus durable consent, explicit withdrawal and postcommit readback unknown handling; provider/baseURL change blocks storedkey reuse, discovery no defaultmodel, requestcancel/dispose, honest partialtoken/cost summaries. Resolve onlydidChangeDependencies no didUpdateWidget/generation fence; oldload can publish after replacement and knownflags notreset onload failure. Initialnull tutor identicalnull skips unavailable branch; actual bootstrap callers normallynonnull. Dialog confirmation lacks secondbusy/tutor identity check. Settings saves mutation exceptions typed only; lostACK configure/remove not reconciled likeconsent. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X08; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:18:43.967815+00:00",
       "readRanges": [
         [
@@ -42278,11 +42313,13 @@
       "lines": 591,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full591 lines read. Per-item busy fence before await, generated microsecond+sequence keys, lost-ACK nonrewarderror triggers readback and blocks action until resolved; reload never repeats purchase, projection error retry. Dependency replacement resets preview/state but not busy/messages nor fences old mutation completion by dependency identity; needs live owner transition cross-check. Previewonlyheadgear, no write, reducedmotionjump. Metrics stack for narrow/large text, error/loadingcentercolumns not scrollable. No runtime.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-01"
+      ],
+      "reviewNotes": "Full591 lines read. Per-item busy fence before await, generated microsecond+sequence keys, lost-ACK nonrewarderror triggers readback and blocks action until resolved; reload never repeats purchase, projection error retry. Dependency replacement resets preview/state but not busy/messages nor fences old mutation completion by dependency identity; needs live owner transition cross-check. Previewonlyheadgear, no write, reducedmotionjump. Metrics stack for narrow/large text, error/loadingcentercolumns not scrollable. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X06; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -42599,11 +42636,11 @@
       "lines": 319,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full319 lines read. Legacy narrow controller-only settings, didChangeDependencies sameinitialnullspinner/no didUpdate fence, draft consent no savedstatus distinction, keyfield stayseditable duringrequest, dispose cancelsvalidator. No production lib construction found (only class), so dormant UI concerns not promoted. No device Keystore proof from hardcodedcopy. No runtime.",
+      "reviewNotes": "Full319 lines read. Legacy narrow controller-only settings, didChangeDependencies sameinitialnullspinner/no didUpdate fence, draft consent no savedstatus distinction, keyfield stayseditable duringrequest, dispose cancelsvalidator. No production lib construction found (only class), so dormant UI concerns not promoted. No device Keystore proof from hardcodedcopy. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:18:43.967815+00:00",
       "readRanges": [
         [
@@ -42664,11 +42701,13 @@
       "lines": 666,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "reviewed-no-actionable-finding",
+      "status": "reviewed-with-findings",
       "zone": "REV-03",
       "reviewerPassDate": "2026-09-19T11:07:30.790914+00:00",
-      "findingIDs": [],
-      "reviewNotes": "Full666 lines read. Goal source/listener rebinding, reminder availability runtime+canOpenSettings, parent identity/live studyPlanning guard, pinned opening owner for create/edit. Dialog retains prepared immutable command and locks details after uncertain write; owner drift closes, registry emergency-off dismisses. Delete per-ID busy and soft-delete command; status callback relies durable semantic idempotency, catches failures silently. Initial activeOwnerId await in create has no catch and no single-flight before dialog, unpromoted failure/concurrency cross-check for use cases/tests. Dialog cancel allowed during submission, guard tied parent not dialog; user-intent/commit timing not yet established. No B18 execution. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix.",
+      "findingIDs": [
+        "B18-REV06-08"
+      ],
+      "reviewNotes": "Full666 lines read. Goal source/listener rebinding, reminder availability runtime+canOpenSettings, parent identity/live studyPlanning guard, pinned opening owner for create/edit. Dialog retains prepared immutable command and locks details after uncertain write; owner drift closes, registry emergency-off dismisses. Delete per-ID busy and soft-delete command; status callback relies durable semantic idempotency, catches failures silently. Initial activeOwnerId await in create has no catch and no single-flight before dialog, unpromoted failure/concurrency cross-check for use cases/tests. Dialog cancel allowed during submission, guard tied parent not dialog; user-intent/commit timing not yet established. No B18 execution. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix. Supplemental REV06 candidate attribution: B18-REV06-08. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-14T00:11:39.938387+00:00",
       "readRanges": [
         [
@@ -42833,9 +42872,10 @@
       "zone": "REV-03",
       "reviewerPassDate": "2026-09-19T11:07:30.790914+00:00",
       "findingIDs": [
-        "B18-REV05-01"
+        "B18-REV05-01",
+        "B18-REV06-06"
       ],
-      "reviewNotes": "Full2193 lines read. Profile always-visible ensures nonempty primary list; selected stable ID reconciles live registry changes, indexed children retain state with ticker fencing and per-feature lazy gates. Today owner checks and canonical recommendation routing, exact mixed-review snapshot recovery plus terminal recovery card independent of Adventure presentation; card generations reject stale loads. Mission config revalidated against owner/protocol/adapter, active-owner config save, snapshot before accepted run. Result/companion promotion requires live Adventure authority otherwise standard score. Registered drawer shadowing uses one-word loader and shell so local fallback is not its production path. Today guard pops only its current route, covered child preserved until pop. Review/history replay caller captures owner and uses explicit quiz gate. MainNavigation imports neither dormant GameLauncher/Boss nor legacy CEFR/world-map. Remaining cross-check: historical terminal mixed-review catalog reconstruction validates original prompts even closing, follow existing recovered-closing finding/oracles. No runtime or new authority claim. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix. REV05 cross-zone follow-up: B18-REV05-01; prior receipt retained as historical, no runtime confirmation.",
+      "reviewNotes": "Full2193 lines read. Profile always-visible ensures nonempty primary list; selected stable ID reconciles live registry changes, indexed children retain state with ticker fencing and per-feature lazy gates. Today owner checks and canonical recommendation routing, exact mixed-review snapshot recovery plus terminal recovery card independent of Adventure presentation; card generations reject stale loads. Mission config revalidated against owner/protocol/adapter, active-owner config save, snapshot before accepted run. Result/companion promotion requires live Adventure authority otherwise standard score. Registered drawer shadowing uses one-word loader and shell so local fallback is not its production path. Today guard pops only its current route, covered child preserved until pop. Review/history replay caller captures owner and uses explicit quiz gate. MainNavigation imports neither dormant GameLauncher/Boss nor legacy CEFR/world-map. Remaining cross-check: historical terminal mixed-review catalog reconstruction validates original prompts even closing, follow existing recovered-closing finding/oracles. No runtime or new authority claim. Cross-check disposition: REV-03-zone-review.json; static review only, open findings require G8.3 reproduction/fix. REV05 cross-zone follow-up: B18-REV05-01; prior receipt retained as historical, no runtime confirmation. Supplemental REV06 candidate attribution: B18-REV06-06. Prior receipt preserved; this link is not acceptance of pending zone.",
       "sourceReadDate": "2026-09-14T00:03:10.382765+00:00",
       "readRanges": [
         [
@@ -43045,11 +43085,13 @@
       "lines": 211,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full211 lines read. Lazyload onTickerMode activation, independentread-only mastery/SRS/effort axes and nullableaccuracy/noEvidence, compactdetails andoptionaloverviewcallback. Existingactivefuture retained across dependencies/loaderchange with no didUpdateWidget/ownercheck, accountheader sampledfresh can mismatcholdprofile pending actualrootlifecycle. Error has no retry excepttabreactivation; no runtime.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-06"
+      ],
+      "reviewNotes": "Full211 lines read. Lazyload onTickerMode activation, independentread-only mastery/SRS/effort axes and nullableaccuracy/noEvidence, compactdetails andoptionaloverviewcallback. Existingactivefuture retained across dependencies/loaderchange with no didUpdateWidget/ownercheck, accountheader sampledfresh can mismatcholdprofile pending actualrootlifecycle. Error has no retry excepttabreactivation; no runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X08; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:18:43.967815+00:00",
       "readRanges": [
         [
@@ -43303,11 +43345,11 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full15 lines read. Compatibility wrapper delegates to AvatarEquipmentScreen; rewards authority remains in canonical feature implementation.",
+      "reviewNotes": "Full15 lines read. Compatibility wrapper delegates to AvatarEquipmentScreen; rewards authority remains in canonical feature implementation. Cross-check disposition: REV-06-zone-review.json/REV06-X10; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:25:27.730142+00:00",
       "readRanges": [
         [
@@ -43410,11 +43452,13 @@
       "lines": 325,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-06",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full325 lines read. Openingowner+bindingepoch pins asynchronous status/save and source/dependency replacement, observerdetach/dispose; readonly refreshonresume. Explicit one-shotdate/time/zone/quietpickers, requestedvseffective display and elapsednotdelivery. Enabledreminderonlycancel, reschedule requirescancelthenoptIn. MutationUnavailable maybePop has no submittingreset ifrootroutecannotpop; ownerchange/rootreachability needscaller. OtheroptInfailures conflatedvalidationtext, cancelerror silent. No runtime.",
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
+      "findingIDs": [
+        "B18-REV06-03"
+      ],
+      "reviewNotes": "Full325 lines read. Openingowner+bindingepoch pins asynchronous status/save and source/dependency replacement, observerdetach/dispose; readonly refreshonresume. Explicit one-shotdate/time/zone/quietpickers, requestedvseffective display and elapsednotdelivery. Enabledreminderonlycancel, reschedule requirescancelthenoptIn. MutationUnavailable maybePop has no submittingreset ifrootroutecannotpop; ownerchange/rootreachability needscaller. OtheroptInfailures conflatedvalidationtext, cancelerror silent. No runtime. Cross-check disposition: REV-06-zone-review.json/REV06-X10; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T03:02:49.516210+00:00",
       "readRanges": [
         [
@@ -43582,11 +43626,11 @@
       "lines": 80,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Static persona-to-two-quest templates with advertised rewards but no durable grant; no production caller in lib symbol search. Dormant alternate DailyQuest model, canonical quest system separately reviewed. Source review only.",
+      "reviewNotes": "Full file read. Static persona-to-two-quest templates with advertised rewards but no durable grant; no production caller in lib symbol search. Dormant alternate DailyQuest model, canonical quest system separately reviewed. Source review only. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
       "readRanges": [
         [
@@ -44338,11 +44382,11 @@
       "lines": 98,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Explicitly deprecated/quarantined in-memory alternate quest model, default invented streak/freeze, mutable quest objects escape unmodifiable outer list, negative progress accepted. No production caller in lib symbol search; canonical QuestUseCases/Drift authority separate. Source review only.",
+      "reviewNotes": "Full file read. Explicitly deprecated/quarantined in-memory alternate quest model, default invented streak/freeze, mutable quest objects escape unmodifiable outer list, negative progress accepted. No production caller in lib symbol search; canonical QuestUseCases/Drift authority separate. Source review only. Cross-check disposition: REV-06-zone-review.json/REV06-X09; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T01:45:52.207322+00:00",
       "readRanges": [
         [
@@ -45325,11 +45369,11 @@
       "lines": 182,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full182 lines read. Passive states/loading/error/paused, enabled hides all including callback; recovery action optional, snapshots do not mutate persistence. Explicit semantic summary plus child nodes may repeat visible labels in native reader; actual accessibility traversal required before finding. Data constructor permits nullable snapshot yet dereferences for enabled data; actual callers need valid snapshot, no reachable null established. Flexible width/scroll handled by parent. No runtime claim.",
+      "reviewNotes": "Full182 lines read. Passive states/loading/error/paused, enabled hides all including callback; recovery action optional, snapshots do not mutate persistence. Explicit semantic summary plus child nodes may repeat visible labels in native reader; actual accessibility traversal required before finding. Data constructor permits nullable snapshot yet dereferences for enabled data; actual callers need valid snapshot, no reachable null established. Flexible width/scroll handled by parent. No runtime claim. Cross-check disposition: REV-06-zone-review.json/REV06-X10; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:41:19.578564+00:00",
       "readRanges": [
         [
@@ -45493,11 +45537,11 @@
       "lines": 197,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-06",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full197 lines read. Local static painter supports headgear_ipa atcatalog1/2, otherwise samebase with honest unavailable semantics; whole drawing excludes child semantics. Scale size shortestside, shouldRepaint onlyheadgear matching sole painter state; no size validity guard but live144constant. No remote assets/native rendering proof.",
+      "reviewNotes": "Full197 lines read. Local static painter supports headgear_ipa atcatalog1/2, otherwise samebase with honest unavailable semantics; whole drawing excludes child semantics. Scale size shortestside, shouldRepaint onlyheadgear matching sole painter state; no size validity guard but live144constant. No remote assets/native rendering proof. Cross-check disposition: REV-06-zone-review.json/REV06-X10; static review only, open candidates require G8.3 reproduction.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -46874,11 +46918,11 @@
       "lines": 1494,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1494 lines read with bounded contiguous rereads after initial output truncation. Handwritten lexical detector scans production excluding generated DB/tables; fixed-point aliases, balanced callbacks, table/manager producers, cascades, direct/batch/raw SQL writes and unique owner migration method allowlist. Extensive synthetic positive and negative cases plus actual source scan. Scope-insensitive alias names and raw SQL/companion matching unmasked source can overmatch comments; masking string interpolation can miss executable expressions, so this is guardrail rather than complete Dart semantic proof. Canonical-source review independently follows operational writes. No B18 execution.",
+      "reviewNotes": "Full1494 lines read with bounded contiguous rereads after initial output truncation. Handwritten lexical detector scans production excluding generated DB/tables; fixed-point aliases, balanced callbacks, table/manager producers, cascades, direct/batch/raw SQL writes and unique owner migration method allowlist. Extensive synthetic positive and negative cases plus actual source scan. Scope-insensitive alias names and raw SQL/companion matching unmasked source can overmatch comments; masking string interpolation can miss executable expressions, so this is guardrail rather than complete Dart semantic proof. Canonical-source review independently follows operational writes. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -49583,11 +49627,11 @@
       "lines": 701,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Actual Drift owner switch afterpreflight and preparedretrytoB denied with positiveBcounterpart; create concurrent retries and postcommit notificationlostACK retainone row/outbox. Semantic statusretry no revision, sameclock+1ms. Tombstonedelete cancels linkedreminder atomically and deniesstalerestore; edits deliberately do not move independently opted-in reminder. Bangkok midnight actualdateboundaries, DST datearithmetic injects learningDay rather than actual conversion. Guard preflight rejection and timezone/C1control validation. No duplicateopeningdialog/lookupfailure oracle or B18 execution.",
+      "reviewNotes": "Full file read. Actual Drift owner switch afterpreflight and preparedretrytoB denied with positiveBcounterpart; create concurrent retries and postcommit notificationlostACK retainone row/outbox. Semantic statusretry no revision, sameclock+1ms. Tombstonedelete cancels linkedreminder atomically and deniesstalerestore; edits deliberately do not move independently opted-in reminder. Bangkok midnight actualdateboundaries, DST datearithmetic injects learningDay rather than actual conversion. Guard preflight rejection and timezone/C1control validation. No duplicateopeningdialog/lookupfailure oracle or B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:38:29.676910+00:00",
       "readRanges": [
         [
@@ -52103,11 +52147,11 @@
       "lines": 969,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full969 lines read. Actual Drift learning/evidence/reconciler/streak projection, eligibility skip/shadow outcomes, precise nested v2 receipts and cutover horizon, grandfathered surplus. SQL-trigger failure after durable StreakPolicyApplied but before outer receipt verifies replay uses stored day despite timezone shift and concurrent retries. Restart means recreated objects over same in-memory DB, not file/process reopen. Legacy version-scoped alias manually migrated and replayed under active3 preserving original2. Context provider is synthetic policy authority; no remote research activated. No B18 execution.",
+      "reviewNotes": "Full969 lines read. Actual Drift learning/evidence/reconciler/streak projection, eligibility skip/shadow outcomes, precise nested v2 receipts and cutover horizon, grandfathered surplus. SQL-trigger failure after durable StreakPolicyApplied but before outer receipt verifies replay uses stored day despite timezone shift and concurrent retries. Restart means recreated objects over same in-memory DB, not file/process reopen. Legacy version-scoped alias manually migrated and replayed under active3 preserving original2. Context provider is synthetic policy authority; no remote research activated. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:41:19.578564+00:00",
       "readRanges": [
         [
@@ -52124,11 +52168,11 @@
       "lines": 357,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full357 lines read. Real in-memory Drift with fake fixed owner/clock exercises legacy direct-record API, exact timestamp timezone replay, rollback/future rejection, DST dates, freeze cap/grandfather surplus and concurrent token grants/consumption. Twelve concurrent duplicate same-day writes all compute identical state; this does not establish mixed-day transactional safety or canonical event replay. Read-only snapshot assertion starts with existing state, not initial getOrCreate. No test execution.",
+      "reviewNotes": "Full357 lines read. Real in-memory Drift with fake fixed owner/clock exercises legacy direct-record API, exact timestamp timezone replay, rollback/future rejection, DST dates, freeze cap/grandfather surplus and concurrent token grants/consumption. Twelve concurrent duplicate same-day writes all compute identical state; this does not establish mixed-day transactional safety or canonical event replay. Read-only snapshot assertion starts with existing state, not initial getOrCreate. No test execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -52145,11 +52189,11 @@
       "lines": 170,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full170 lines read. Bangkok/NewYork boundaries and travel label mapping; spring/fall UTC instants verify next midnight strictly future. Source-string check requires TZ construction and forbids fixed24h addition; does not execute alternate host zone or skipped-date case. Travel case tests date mapping, not persisted streak recovery. No B18 execution.",
+      "reviewNotes": "Full170 lines read. Bangkok/NewYork boundaries and travel label mapping; spring/fall UTC instants verify next midnight strictly future. Source-string check requires TZ construction and forbids fixed24h addition; does not execute alternate host zone or skipped-date case. Travel case tests date mapping, not persisted streak recovery. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:40:21.059094+00:00",
       "readRanges": [
         [
@@ -52187,11 +52231,11 @@
       "lines": 328,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. File-backed Drift restart preserves display and semantic/assignment payload and outbox count; corrupt display defaults, same-mode no-op and closed-DB refresh defaults. Held owner lookup then actual owner switch and queued refresh rejects prior-owner edit and preserves next owner display. No pending-disposal or tombstoned-display oracle. Synthetic local assignment only, no research activation; no B18 execution.",
+      "reviewNotes": "Full file read. File-backed Drift restart preserves display and semantic/assignment payload and outbox count; corrupt display defaults, same-mode no-op and closed-DB refresh defaults. Held owner lookup then actual owner switch and queued refresh rejects prior-owner edit and preserves next owner display. No pending-disposal or tombstoned-display oracle. Synthetic local assignment only, no research activation; no B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -52208,11 +52252,11 @@
       "lines": 399,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Real Drift defaults without row, version/home fallback, owner denial, valid bounds, restart exact match. Offline writes intentionally remain cloud0/local1 with prior intent superseded; semantic no-op/guard and notification counts covered. Synthetic assignment unchanged by effective clamp; false guard models feature rollback rather than actual registry, home retained across re-enable. No concurrent home/core read-modify-write or tombstoned-display case. No B18 execution.",
+      "reviewNotes": "Full file read. Real Drift defaults without row, version/home fallback, owner denial, valid bounds, restart exact match. Offline writes intentionally remain cloud0/local1 with prior intent superseded; semantic no-op/guard and notification counts covered. Synthetic assignment unchanged by effective clamp; false guard models feature rollback rather than actual registry, home retained across re-enable. No concurrent home/core read-modify-write or tombstoned-display case. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:43:55.634980+00:00",
       "readRanges": [
         [
@@ -52313,11 +52357,11 @@
       "lines": 299,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full299 lines read. Actual memoryDrift definition overwrite, duplicate legacy instance, progress/state persistence and SQLbounded deterministic owner-isolated status ordering. Seeds legacy instances without capturedperiod/snapshot and completedtimestamps in some rows, so tests do not establish canonicalassignment/replay validity. Counter1 with no sourceIDs fixture confirms legacy-count shape used. No runtime execution.",
+      "reviewNotes": "Full299 lines read. Actual memoryDrift definition overwrite, duplicate legacy instance, progress/state persistence and SQLbounded deterministic owner-isolated status ordering. Seeds legacy instances without capturedperiod/snapshot and completedtimestamps in some rows, so tests do not establish canonicalassignment/replay validity. Counter1 with no sourceIDs fixture confirms legacy-count shape used. No runtime execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -52334,11 +52378,11 @@
       "lines": 79,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full79 lines read. Built-in positive version/uniqueIDs/positiveXP/weekly>daily and QuizCompleted criteria. Duration merely nonnull despite24h/7day message, actual local-calendar semantics tested separately. No startup version migration assertion or execution.",
+      "reviewNotes": "Full79 lines read. Built-in positive version/uniqueIDs/positiveXP/weekly>daily and QuizCompleted criteria. Duration merely nonnull despite24h/7day message, actual local-calendar semantics tested separately. No startup version migration assertion or execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -52355,11 +52399,11 @@
       "lines": 157,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full157 lines read. Roundtrip full snapshot fields/origin/reencode, strict unknownshape/version, UTF8Thai64KiB ceiling, positive duration ceiling and duplicate objectives rejection. No nested-filter structural match or count/evidence mismatch oracle. No B18 execution.",
+      "reviewNotes": "Full157 lines read. Roundtrip full snapshot fields/origin/reencode, strict unknownshape/version, UTF8Thai64KiB ceiling, positive duration ceiling and duplicate objectives rejection. No nested-filter structural match or count/evidence mismatch oracle. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -52376,11 +52420,11 @@
       "lines": 881,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full881 lines read. Actual learning store/reconciler/quest/reward SQLite transactions with injected outerreceipt SQLabort and reward sink outage; original50XP+50coins exact source/time preserved after catalog replacement/removal, saved receipt bypasses malformed live metadata. Eligibility/skip/shadow policy and corrupt receipt preflight, concurrent sameowner replays. Restart recreates reconciler over same memoryDB, no process/file reopen. Synthetic research context only, no remote activation. No B18 execution.",
+      "reviewNotes": "Full881 lines read. Actual learning store/reconciler/quest/reward SQLite transactions with injected outerreceipt SQLabort and reward sink outage; original50XP+50coins exact source/time preserved after catalog replacement/removal, saved receipt bypasses malformed live metadata. Eligibility/skip/shadow policy and corrupt receipt preflight, concurrent sameowner replays. Restart recreates reconciler over same memoryDB, no process/file reopen. Synthetic research context only, no remote activation. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:49:56.896266+00:00",
       "readRanges": [
         [
@@ -52397,11 +52441,11 @@
       "lines": 256,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full256 lines read. Scalarbool criterion/type mismatch, increment/complete cap/evidence list/idempotencykey and debug assert emptyobjective. Const zeroXP definitions accepted in enum smoke; no operational reward reconciliation. No nested filters/deepimmutability or temporal validation proof. No execution.",
+      "reviewNotes": "Full256 lines read. Scalarbool criterion/type mismatch, increment/complete cap/evidence list/idempotencykey and debug assert emptyobjective. Const zeroXP definitions accepted in enum smoke; no operational reward reconciliation. No nested filters/deepimmutability or temporal validation proof. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -52418,11 +52462,11 @@
       "lines": 113,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full113 lines read. Actual timezone data daily spring/fall23/25h and Monday week spans DST, explicit duration minboundary, once noexpiry and local/nonpositive input rejection. Uses definition without duration forDST, built-in24h fall day has earlier deadline deliberately min. No timezone-change occupancy test or runtime execution.",
+      "reviewNotes": "Full113 lines read. Actual timezone data daily spring/fall23/25h and Monday week spans DST, explicit duration minboundary, once noexpiry and local/nonpositive input rejection. Uses definition without duration forDST, built-in24h fall day has earlier deadline deliberately min. No timezone-change occupancy test or runtime execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -52439,11 +52483,11 @@
       "lines": 2249,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full2249 lines read. Real memoryDrift with failure-after-progress/completion wrappers; precise grant recovery despite version replacement/catalog removal,105histories source-bound retrieval and200irrelevantrows no broad history dependency. Runtime owner Tx tested after actual is_active switch, guard pre/post/scheduling SQLtrigger and disposal midawait. Period renewal/equality/late historical events/once legacy corruption and8parallelassignment. Active version change explicitly rejected, preserving snapshot; not an accidental regression merely contrary catalog prose. Twelve duplicate projection calls all same event do not establish distinct-event concurrency safety. Boundary accepts event1sec after fixedwallclock and checks completion existence without completiontime monotonic assertion; clock rollback remains unpromoted candidate. Strict reward negatives include zeroXP, legacy enum definitionzeroXP not live catalog. No B18 runtime execution.",
+      "reviewNotes": "Full2249 lines read. Real memoryDrift with failure-after-progress/completion wrappers; precise grant recovery despite version replacement/catalog removal,105histories source-bound retrieval and200irrelevantrows no broad history dependency. Runtime owner Tx tested after actual is_active switch, guard pre/post/scheduling SQLtrigger and disposal midawait. Period renewal/equality/late historical events/once legacy corruption and8parallelassignment. Active version change explicitly rejected, preserving snapshot; not an accidental regression merely contrary catalog prose. Twelve duplicate projection calls all same event do not establish distinct-event concurrency safety. Boundary accepts event1sec after fixedwallclock and checks completion existence without completiontime monotonic assertion; clock rollback remains unpromoted candidate. Strict reward negatives include zeroXP, legacy enum definitionzeroXP not live catalog. No B18 runtime execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:49:56.896266+00:00",
       "readRanges": [
         [
@@ -52523,11 +52567,11 @@
       "lines": 327,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full327 lines read. RealDrift ownerlease exactexpiry/takeover, desired+outbox exactfields, duplicate/conflictingreplay, actualfileclose/reopen, cancel/delete retainedevidence, SQLactiveowner switch deniesforeignsave and stalerevisionresolve/ack. No SQLoutboxfailure injection or concurrentfailuremetadata. No execution.",
+      "reviewNotes": "Full327 lines read. RealDrift ownerlease exactexpiry/takeover, desired+outbox exactfields, duplicate/conflictingreplay, actualfileclose/reopen, cancel/delete retainedevidence, SQLactiveowner switch deniesforeignsave and stalerevisionresolve/ack. No SQLoutboxfailure injection or concurrentfailuremetadata. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -52544,11 +52588,11 @@
       "lines": 386,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full386 lines read. ActualFlutterplugin MethodChannel mocks currentAndroid/iOSpermission query/revoke/provisional and nativepayloadenumeration preserving actualID ignoringforeignmalformed. Schedule/cap via fakegateway, no actualzonedSchedule channelargument/nativeOSdelivery. iOScap seededonlyvalidreminders, noforeigncapacity orsimultaneous64th. StableID sample doesnotprove collisionfree. No execution.",
+      "reviewNotes": "Full386 lines read. ActualFlutterplugin MethodChannel mocks currentAndroid/iOSpermission query/revoke/provisional and nativepayloadenumeration preserving actualID ignoringforeignmalformed. Schedule/cap via fakegateway, no actualzonedSchedule channelargument/nativeOSdelivery. iOScap seededonlyvalidreminders, noforeigncapacity orsimultaneous64th. StableID sample doesnotprove collisionfree. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -52565,11 +52609,11 @@
       "lines": 2140,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full2140 lines read contiguous1-320/321-800/801-1280/1281-1750/1751-2140. ActualDrift desired/outbox/ownergate plus controllablenativefake, fullsnapshot readonly status, staleowner/revision/epoch/fence denied. OwnerChange pre/posttokenloss/SQLunfencefail preservesresult, independentrepository workers/issuedcancel and orphanreactivation converge boundedfreshdesiredtime; actualfile restart separateoracle. OptIn requestedowner beforequeue, permission/futurezone/DSTspringquiet, cancel/delete/featureoff/same-repositoryserialization and compensationrace. No erasuretokenloss, fall-backfoldquiet-end,31bithashcollision, or nativephysicaldelivery. Scheduler list replaces priorrequests so count reflects finalIDstate rather than totalcalls. No B18 execution.",
+      "reviewNotes": "Full2140 lines read contiguous1-320/321-800/801-1280/1281-1750/1751-2140. ActualDrift desired/outbox/ownergate plus controllablenativefake, fullsnapshot readonly status, staleowner/revision/epoch/fence denied. OwnerChange pre/posttokenloss/SQLunfencefail preservesresult, independentrepository workers/issuedcancel and orphanreactivation converge boundedfreshdesiredtime; actualfile restart separateoracle. OptIn requestedowner beforequeue, permission/futurezone/DSTspringquiet, cancel/delete/featureoff/same-repositoryserialization and compensationrace. No erasuretokenloss, fall-backfoldquiet-end,31bithashcollision, or nativephysicaldelivery. Scheduler list replaces priorrequests so count reflects finalIDstate rather than totalcalls. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:01:42.332067+00:00",
       "readRanges": [
         [
@@ -53092,11 +53136,11 @@
       "lines": 232,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full232 lines read. Pure XP threshold20/40, v1/v2 catalog mapping, negative/mismatched catalog deny, full purchase receipt and tampered key/XP/level reject, legacy purchase/equip carry and exact October1 cutoff. No integer overflow or authority of claimed XP beyond hash. No execution.",
+      "reviewNotes": "Full232 lines read. Pure XP threshold20/40, v1/v2 catalog mapping, negative/mismatched catalog deny, full purchase receipt and tampered key/XP/level reject, legacy purchase/equip carry and exact October1 cutoff. No integer overflow or authority of claimed XP beyond hash. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53113,11 +53157,11 @@
       "lines": 335,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full335 lines read. Actual memory Drift incremental idempotent legacy backfill/outbox count, v2 sparse synthetic envelope suppresses backfill and v1 permits, existing same-source amount/time rejects and deterministic payload tampering, hashed overlong legacy point fallback. No outbox deletion recovery for same-source alternative ID or multirow rollback injection. No execution.",
+      "reviewNotes": "Full335 lines read. Actual memory Drift incremental idempotent legacy backfill/outbox count, v2 sparse synthetic envelope suppresses backfill and v1 permits, existing same-source amount/time rejects and deterministic payload tampering, hashed overlong legacy point fallback. No outbox deletion recovery for same-source alternative ID or multirow rollback injection. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53134,11 +53178,11 @@
       "lines": 643,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full643 lines read. Real memory Drift validates grants/accepted purchases, insufficient balance, repeated rebuild and unchanged point audit; full owned/equipped row snapshots preserved for malformed transaction/source duplicates/late v1 and corrupted carry. Fixed pre-horizon injected clock; post-horizon raw initial population denied, portable pair admitted. No later-grant funding earlier purchase case or deletion-stage SQL failure with standalone rebuild. No execution.",
+      "reviewNotes": "Full643 lines read. Real memory Drift validates grants/accepted purchases, insufficient balance, repeated rebuild and unchanged point audit; full owned/equipped row snapshots preserved for malformed transaction/source duplicates/late v1 and corrupted carry. Fixed pre-horizon injected clock; post-horizon raw initial population denied, portable pair admitted. No later-grant funding earlier purchase case or deletion-stage SQL failure with standalone rebuild. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53155,11 +53199,11 @@
       "lines": 192,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full192 lines read. Four permitted transaction shapes and cross-shape negatives; deterministic separate equal XP/coin award and ineligible zero. Calls broad isValid rather than full isValidPersistedRow for basic shapes; full receipt negatives in separate oracle. No runtime.",
+      "reviewNotes": "Full192 lines read. Four permitted transaction shapes and cross-shape negatives; deterministic separate equal XP/coin award and ineligible zero. Calls broad isValid rather than full isValidPersistedRow for basic shapes; full receipt negatives in separate oracle. No runtime. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53176,11 +53220,11 @@
       "lines": 243,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full243 lines read. Historical header/title claim rebuild from event log exceeds actual assertions: deletes XP then only checks two event rows, never rebuilds XP. Third case seeds no reward transactions and compares two zero balances, so only empty rebuilder idempotency. Duplicate event test uses broad throwsAnything with different event IDs/samekey; not specific SQL constraint proof. This oracle cannot establish nonempty canonical event-to-reward reconstruction; newer integration oracles reviewed separately. No B18 execution.",
+      "reviewNotes": "Full243 lines read. Historical header/title claim rebuild from event log exceeds actual assertions: deletes XP then only checks two event rows, never rebuilds XP. Third case seeds no reward transactions and compares two zero balances, so only empty rebuilder idempotency. Duplicate event test uses broad throwsAnything with different event IDs/samekey; not specific SQL constraint proof. This oracle cannot establish nonempty canonical event-to-reward reconstruction; newer integration oracles reviewed separately. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53197,11 +53241,11 @@
       "lines": 132,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full132 lines read. Shadow legacy10/50/200/500 values, missing correct/unknown event/quest and JSON selectedfields. No malformed type handling, deep immutability or canonical engagement eligibility; no production shadow caller found. No execution.",
+      "reviewNotes": "Full132 lines read. Shadow legacy10/50/200/500 values, missing correct/unknown event/quest and JSON selectedfields. No malformed type handling, deep immutability or canonical engagement eligibility; no production shadow caller found. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53218,11 +53262,11 @@
       "lines": 947,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full947 lines read. Actual owner/Drift/progress/reward composition, parallel distinct purchases limitedbalance, exact replay/outbox and XP unchanged, source time/amount collisions, modern quest paired authority, crossownerkeys, progressionthreshold, replay/rebuild objects over same memoryDB. Explicit legacy quest replay accepts different incoming occurrence by design preserving deployed source. Quarantine normal and explicit paths keep XP/coins/outbox then block/avatarrepair. No active-owner switch during awaits, SQL commit failure here or file/process restart. No execution.",
+      "reviewNotes": "Full947 lines read. Actual owner/Drift/progress/reward composition, parallel distinct purchases limitedbalance, exact replay/outbox and XP unchanged, source time/amount collisions, modern quest paired authority, crossownerkeys, progressionthreshold, replay/rebuild objects over same memoryDB. Explicit legacy quest replay accepts different incoming occurrence by design preserving deployed source. Quarantine normal and explicit paths keep XP/coins/outbox then block/avatarrepair. No active-owner switch during awaits, SQL commit failure here or file/process restart. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -53239,11 +53283,11 @@
       "lines": 157,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full157 lines read. In-memory logger fake canGrant decision/request/duplicate-policy/error swallowing and five entries. No throwing logger, no DB writer or production composition, no durable idempotency. No execution.",
+      "reviewNotes": "Full157 lines read. In-memory logger fake canGrant decision/request/duplicate-policy/error swallowing and five entries. No throwing logger, no DB writer or production composition, no durable idempotency. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -55360,11 +55404,11 @@
       "lines": 643,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full643 lines read. Actual Drift create-edit-soft-delete revision3 and opening-owner switch before submit deny goals/outbox; positive counterpart confirms completed submission rather than validation false positive. Fake dependency replacement reloads, controlled blocking save duplicate submit one generated command, date/time Bangkok conversion. Duplicate add/open-owner-await and owner lookup failure not covered; blocking fake ignores guard and owner, so not storage concurrency proof. Reminder unknown permission entry allowed, denied/runtimeoff hidden with inert scheduler; no native scheduling or B18 execution.",
+      "reviewNotes": "Full643 lines read. Actual Drift create-edit-soft-delete revision3 and opening-owner switch before submit deny goals/outbox; positive counterpart confirms completed submission rather than validation false positive. Fake dependency replacement reloads, controlled blocking save duplicate submit one generated command, date/time Bangkok conversion. Duplicate add/open-owner-await and owner lookup failure not covered; blocking fake ignores guard and owner, so not storage concurrency proof. Reminder unknown permission entry allowed, denied/runtimeoff hidden with inert scheduler; no native scheduling or B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:13:10.085617+00:00",
       "readRanges": [
         [
@@ -55444,11 +55488,11 @@
       "lines": 361,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full361 lines read. Bare supplied use-case widgets with mutable fake repository/owner verify unsaved edits discarded, deferred read disposal and dependency replacement, held save checks mutation guard after release, owner switch denies save,0minutes invalid.393x8332x dropdown taps called device regression but are widget only. Default and replacement enum displays not asserted in late-read case beyond minutes45. Fake storage guard does not prove atomic Drift owner admission; no B18 execution.",
+      "reviewNotes": "Full361 lines read. Bare supplied use-case widgets with mutable fake repository/owner verify unsaved edits discarded, deferred read disposal and dependency replacement, held save checks mutation guard after release, owner switch denies save,0minutes invalid.393x8332x dropdown taps called device regression but are widget only. Default and replacement enum displays not asserted in late-read case beyond minutes45. Fake storage guard does not prove atomic Drift owner admission; no B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:13:10.085617+00:00",
       "readRanges": [
         [
@@ -55822,11 +55866,11 @@
       "lines": 511,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full511 lines read. Real Drift dailyrefresh updates visible Day2 while retaining expired row. Fakes test listener detach, dependency replacement/disposal while oldfuture pending, retryonlyreads and50bound, pinned authoredlabels, allstate nonpunitive labels and no internalIDs/rewardclaim buttons. Fake owner fixed despite label new-owner-state; actual owner-switch correctness supplied application tests separately. No realscreenreader, large-text or device claim; no B18 execution.",
+      "reviewNotes": "Full511 lines read. Real Drift dailyrefresh updates visible Day2 while retaining expired row. Fakes test listener detach, dependency replacement/disposal while oldfuture pending, retryonlyreads and50bound, pinned authoredlabels, allstate nonpunitive labels and no internalIDs/rewardclaim buttons. Fake owner fixed despite label new-owner-state; actual owner-switch correctness supplied application tests separately. No realscreenreader, large-text or device claim; no B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:49:56.896266+00:00",
       "readRanges": [
         [
@@ -56095,11 +56139,11 @@
       "lines": 678,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full678 lines read. RealmemoryDrift with fakeOS, heldoldnative reads replacement/disposal and observerdetach, reopeningpendingdoesnotschedule/prompt, resumepermissionrevoked, actual date/timepickeroptIn/quieteffective/cancel, missinggoal/pickercancel/denied/past/retry preservesNYinstant. No quiet-end DSTfold or rootroutefailedmaybePop case, no large-textjourney. No execution.",
+      "reviewNotes": "Full678 lines read. RealmemoryDrift with fakeOS, heldoldnative reads replacement/disposal and observerdetach, reopeningpendingdoesnotschedule/prompt, resumepermissionrevoked, actual date/timepickeroptIn/quieteffective/cancel, missinggoal/pickercancel/denied/past/retry preservesNYinstant. No quiet-end DSTfold or rootroutefailedmaybePop case, no large-textjourney. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:02:49.516210+00:00",
       "readRanges": [
         [
@@ -56326,11 +56370,11 @@
       "lines": 31,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full31 lines read. Legacy persona staticquest titles/XP assertions for two personas, no behavioral adaptation or canonical reward persistence. No B18 execution.",
+      "reviewNotes": "Full31 lines read. Legacy persona staticquest titles/XP assertions for two personas, no behavioral adaptation or canonical reward persistence. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -56893,11 +56937,11 @@
       "lines": 19,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full19 lines read. SinglelegacySrsItem lowbox alreadydue usingwallclock, onlypositivecombinedcondition; no futuredue/highboxnegative or canonicalnotification behavior. No execution.",
+      "reviewNotes": "Full19 lines read. SinglelegacySrsItem lowbox alreadydue usingwallclock, onlypositivecombinedcondition; no futuredue/highboxnegative or canonicalnotification behavior. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:02:49.516210+00:00",
       "readRanges": [
         [
@@ -56935,11 +56979,11 @@
       "lines": 29,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full29 lines read. Shared legacy in-memory service checks day/token mutation and quest completion/single claim. No canonical database/evidence, owner switching or restart; not operational streak authority proof. No B18 execution.",
+      "reviewNotes": "Full29 lines read. Shared legacy in-memory service checks day/token mutation and quest completion/single claim. No canonical database/evidence, owner switching or restart; not operational streak authority proof. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:41:19.578564+00:00",
       "readRanges": [
         [
@@ -57250,11 +57294,11 @@
       "lines": 94,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full94 lines read. Inert fake fixed owner/time/id; repository assignmentsfalse and emptyqueries/noopwrites. Supports unrelated widget setup, must not establish real quest scheduling or persistence. No execution.",
+      "reviewNotes": "Full94 lines read. Inert fake fixed owner/time/id; repository assignmentsfalse and emptyqueries/noopwrites. Supports unrelated widget setup, must not establish real quest scheduling or persistence. No execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:48:25.179942+00:00",
       "readRanges": [
         [
@@ -58006,11 +58050,11 @@
       "lines": 161,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full161 lines read. Static states/calm-copy blacklist, semantic summary lookup and real recovery tap, enabled toggling hides action.320x640 at2.5x wraps MaterialApp with inherited MediaQuery (SDK inheritance already verified separately); no overflow check but no effective scale or recovery hit-test assertion in that case. No actual screen-reader traversal or rendering execution.",
+      "reviewNotes": "Full161 lines read. Static states/calm-copy blacklist, semantic summary lookup and real recovery tap, enabled toggling hides action.320x640 at2.5x wraps MaterialApp with inherited MediaQuery (SDK inheritance already verified separately); no overflow check but no effective scale or recovery hit-test assertion in that case. No actual screen-reader traversal or rendering execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:41:19.578564+00:00",
       "readRanges": [
         [
@@ -58090,11 +58134,11 @@
       "lines": 144,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T11:39:31.882703+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full144 lines read. Real RepaintBoundary rawRGBA comparison proves headgear differs, unknowncatalog/corruptitem identicalbase and labels, v1support,2x fixed144bounds.5s raster deadlines and image finallydisposed. Pixel inequality not visual-quality approval; no device/native accessibility. No B18 execution.",
+      "reviewNotes": "Full144 lines read. Real RepaintBoundary rawRGBA comparison proves headgear differs, unknowncatalog/corruptitem identicalbase and labels, v1support,2x fixed144bounds.5s raster deadlines and image finallydisposed. Pixel inequality not visual-quality approval; no device/native accessibility. No B18 execution. Focused REV06 oracle disposition complete: original limits preserved, missing regressions tracked separately; runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T02:58:20.023866+00:00",
       "readRanges": [
         [
@@ -60501,20 +60545,21 @@
     }
   ],
   "reviewProgress": {
-    "zone": "REV-06",
+    "zone": "REV-07",
     "zoneAccepted": false,
     "completedZones": [
       "REV-01",
       "REV-02",
       "REV-03",
       "REV-04",
-      "REV-05"
+      "REV-05",
+      "REV-06"
     ],
-    "completedProductionZoneFiles": 422,
-    "focusedRev12OracleDispositions": 23,
-    "totalStaticDispositions": 445,
-    "sourceReadAwaitingCrossCheck": 984,
-    "historyPath": "review-progress-before-REV05.json",
-    "notes": "Static dispositions only; 31 open findings (17 static-confirmed,14 candidates). REV12 final shared/orphan audit still required. G8.2 not accepted; no G8.3/runtime execution."
+    "completedProductionZoneFiles": 479,
+    "focusedRev12OracleDispositions": 58,
+    "totalStaticDispositions": 537,
+    "sourceReadAwaitingCrossCheck": 892,
+    "historyPath": "review-progress-before-REV06.json",
+    "notes": "Static dispositions only;40open findings17static-confirmed/23candidates. REV12 historical/shared/orphan audit required. G8.2 not accepted; no runtime execution."
   }
 }

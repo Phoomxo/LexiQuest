@@ -5,13 +5,10 @@
     "REV-02",
     "REV-03",
     "REV-04",
-    "REV-05"
+    "REV-05",
+    "REV-06"
   ],
   "pending": {
-    "REV-06": [
-      "Quest7lib10tests/rewards11lib10tests read. Active catalog upgrade reject intentional; historical projection-rebuild-v2 fixture has empty XP/coins despite broad name. Shop ACK retry oracle lacks owner-switch case.",
-      "Reminder production native calls gate every operation; actual erasure binding vs reconstructed coordinator distinguished in bootstrap notes. File2connections with fake native, not OS delivery. Goals/display preference independent revisions, event/motivation canonical TX, legacy streak no callers."
-    ],
     "REV-07": [
       "Training already accepted B11A actual compute, no rerun. Retained baseline/candidate pins in notes. Web development90.83 vs82.5, lightbulb0/3@.6, unknownN0/null not physical camera evidence. Candidate disabled URLnull.",
       "Media/device/library oracles fully read; fake interpreter/static validation not native quality, rollback/model identity and source-rights scope remain important. No acquisition/training/device operation authorized by review."
@@ -19,12 +16,14 @@
     "REV-08": [
       "OpenREV08-01 AI revocation cancellation-drain before enqueue andREV08-02 cost1e308 overflow need runtime later; legacy Gemini enqueue-first actual contrast. Paid usage3HTTPlogical not one-billed-request; no invented estimated costs.",
       "Allvoice33lib30tests/facade710, backendvoice28+lock139/620, AI22+lock63/319, LMsource/lock85/425/422 read. B14text similarity is not acoustic/native playback acceptance.",
-      "Pending final dispositions: mirror/recorder dormant APIs/defaultNoop/unbounded body/provenance/untagged completion; actual queued stop may intentionally returnfalse. AI fallback429/cachecasefold/concurrentcachemiss not automatically defects. LM doubleim_end/tail/hashrandom/allmasked dryrun/whoami not executed; torch3wheels lack hash/size."
+      "Pending final dispositions: mirror/recorder dormant APIs/defaultNoop/unbounded body/provenance/untagged completion; actual queued stop may intentionally returnfalse. AI fallback429/cachecasefold/concurrentcachemiss not automatically defects. LM doubleim_end/tail/hashrandom/allmasked dryrun/whoami not executed; torch3wheels lack hash/size.",
+      "REV06 supplementary candidate REV06-07 owns ai_tutor_settings_screen stale generation/known flags; avoid duplicate finding. Supplemental AI settings widget notes reviewed, final oracle disposition belongs REV08/REV12."
     ],
     "REV-09": [
       "REV09-01 actualFirestoreACKrevision codec mismatch after lostACK/edit is static; mocks bypass codec including owner upgrade/scheduler. REV09-02 denied proof prefix can starve eligible later rows; all-denied no-write invariant retained.",
       "Rules2266+tests4134 fully read. Four contradictory P2.6 createpaths are dormant/noSyncCollection livecaller, do not fabricate current cloud bug. SRS payloadwordID versusentitykey rule check stillneeds finaldisposition.",
-      "Research authorizer proof/signature/receipt/measurement/runtime read; configured source fixtures are not activation, actual remote sync, assignment or statistical result. Export owner-isolation full-table/file snapshots read. Legacy rules future cutoff1790812800000 oracle stops being future later, currentdate pre-cutoff."
+      "Research authorizer proof/signature/receipt/measurement/runtime read; configured source fixtures are not activation, actual remote sync, assignment or statistical result. Export owner-isolation full-table/file snapshots read. Legacy rules future cutoff1790812800000 oracle stops being future later, currentdate pre-cutoff.",
+      "REV06-01 reward owner admission andREV06-02 actual bootstrap erasure-native lease gaps are candidates for G8.3; no fixes. REV06-04 semantic preferences concurrent whole-row saves separate from existing ACKcodec finding. Keep sync-specific oracles here."
     ],
     "REV-10": [
       "Android SAF in-memory pending URI/activity restore/bounded sync write/closeflush ACK/deleteENOSPC require Dart contract disposition. Windows WM_FONTCHANGE/GetMessage-1/COM earlyreturn/UTF8zero and hugefiles potential, no proven runtime failure yet.",
@@ -38,49 +37,30 @@
     "REV-12": [
       "All564 source/generated files fully read or structured-reviewed; final zone needs semantic cross-check attribution and leftover shared/orphan tests, no reread all. Four open static test/tool findingsREV12-01..04 have regressions in defects.json.",
       "Drift structured50table571column pairing succeeded including inherited ResearchOwnedRecord; generated managers have no live lib callers. No fresh regeneration/analyzer/versioncompat proof; locks drift2.34.3/dev2.34.5/buildrunner2.15.1.",
-      "New owned review scripts require disposition too: checkpoint_audit now accepts exactly3 user-authorized policy files using frozen+new hashes, not application changes; all other frozen bytes exact. AST/integrity is not semantic/runtime acceptance. Do not blindly rerun freeze_inventory/record_review/merge_review_observations after completed zone notes."
+      "New owned review scripts require disposition too: checkpoint_audit now accepts exactly3 user-authorized policy files using frozen+new hashes, not application changes; all other frozen bytes exact. AST/integrity is not semantic/runtime acceptance. Do not blindly rerun freeze_inventory/record_review/merge_review_observations after completed zone notes.",
+      "REV06 completed57+35 (total537/pending892);9new candidate IDsREV06-01..09,40total17static/23candidate. Preserve receiptsREV01-05 and audit supplemental ledger links; avatar/profile/AI widget notes supplemental only, not in completed35. Historical empty projection_rebuild_v2 oracle is limited, not nonempty rebuild evidence."
     ]
   },
   "oracleOwnership": {
-    "nextSlice": "REV-06",
+    "nextSlice": "REV-07",
     "nextSliceTests": [
-      "test/architecture/streak_authority_test.dart",
-      "test/features/goals/learning_goal_use_cases_test.dart",
-      "test/features/motivation/streak_learning_integration_test.dart",
-      "test/features/motivation/streak_use_cases_test.dart",
-      "test/features/motivation/timezone_policy_test.dart",
-      "test/features/preferences/display_preferences_controller_test.dart",
-      "test/features/preferences/learner_preferences_use_cases_test.dart",
-      "test/features/quest/drift_quest_repository_test.dart",
-      "test/features/quest/quest_catalog_provider_test.dart",
-      "test/features/quest/quest_definition_codec_test.dart",
-      "test/features/quest/quest_learning_integration_test.dart",
-      "test/features/quest/quest_models_test.dart",
-      "test/features/quest/quest_period_test.dart",
-      "test/features/quest/quest_use_cases_test.dart",
-      "test/features/reminders/drift_study_reminder_repository_test.dart",
-      "test/features/reminders/platform_reminder_scheduler_test.dart",
-      "test/features/reminders/study_reminder_use_cases_test.dart",
-      "test/features/rewards/avatar_progression_policy_test.dart",
-      "test/features/rewards/data/drift_economy_cutover_test.dart",
-      "test/features/rewards/data/drift_reward_projection_rebuilder_test.dart",
-      "test/features/rewards/economy_transaction_policy_test.dart",
-      "test/features/rewards/projection_rebuild_v2_test.dart",
-      "test/features/rewards/reward_eligibility_test.dart",
-      "test/features/rewards/reward_use_cases_test.dart",
-      "test/features/rewards/shadow_reward_orchestrator_test.dart",
-      "test/screens/learning_goals_screen_test.dart",
-      "test/screens/learning_preference_quiz_screen_test.dart",
-      "test/screens/quest_status_screen_test.dart",
-      "test/screens/study_reminder_settings_screen_test.dart",
-      "test/services/adaptive_daily_quest_service_test.dart",
-      "test/services/spaced_review_reminder_service_test.dart",
-      "test/services/streak_and_daily_quest_service_test.dart",
-      "test/support/test_quest_use_cases.dart",
-      "test/widgets/gentle_streak_card_test.dart",
-      "test/widgets/reward_avatar_preview_test.dart"
+      "test/features/device_model/device_model_use_cases_test.dart",
+      "test/features/device_model/drift_model_download_repository_test.dart",
+      "test/features/device_model/float_classifier_test.dart",
+      "test/features/device_model/http_model_byte_source_test.dart",
+      "test/features/device_model/litert_benchmark_test.dart",
+      "test/features/device_model/litert_image_classifier_test.dart",
+      "test/features/device_model/model_benchmark_test.dart",
+      "test/features/device_model/model_download_manager_test.dart",
+      "test/features/device_model/model_manifest_test.dart",
+      "test/features/media_practice/plugin_camera_gateway_test.dart",
+      "test/features/media_practice/image_preprocessor_test.dart",
+      "test/features/media_practice/object_scanner_use_cases_test.dart",
+      "test/screens/object_scanner_screen_test.dart",
+      "test/services/dataset_partitioning_service_test.dart",
+      "test/services/object_vocabulary_database_test.dart"
     ],
-    "remainingSharedAndOrphanOwner": "REV-12 + gate; reconcile 23 completed REV05 oracles and historical REV01-04 cross-check notes, assign all remaining shared/orphan tests explicitly. Sync-specific reward/preferences/reminder tests retain REV09 ownership; no orphan omission.",
+    "remainingSharedAndOrphanOwner": "REV12 final gate reconciles58completed REV05/06 oracles, historical REV01-04 notes and supplemental avatar/profile/AI widget references. REV07 owns15camera/model oracles. CLI model/APK/field verification stays REV11; speech/noncamera media stays REV08; sync-specific reward/preference/reminder tests REV09. No orphan omission.",
     "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2.",
     "completedDomainOracles": {
       "REV-05": {
@@ -111,6 +91,47 @@
           "test/screens/today_hub_screen_test.dart",
           "test/screens/weakness_clinic_screen_test.dart"
         ]
+      },
+      "REV-06": {
+        "receipt": "REV-06-zone-review.json",
+        "count": 35,
+        "paths": [
+          "test/architecture/streak_authority_test.dart",
+          "test/features/goals/learning_goal_use_cases_test.dart",
+          "test/features/motivation/streak_learning_integration_test.dart",
+          "test/features/motivation/streak_use_cases_test.dart",
+          "test/features/motivation/timezone_policy_test.dart",
+          "test/features/preferences/display_preferences_controller_test.dart",
+          "test/features/preferences/learner_preferences_use_cases_test.dart",
+          "test/features/quest/drift_quest_repository_test.dart",
+          "test/features/quest/quest_catalog_provider_test.dart",
+          "test/features/quest/quest_definition_codec_test.dart",
+          "test/features/quest/quest_learning_integration_test.dart",
+          "test/features/quest/quest_models_test.dart",
+          "test/features/quest/quest_period_test.dart",
+          "test/features/quest/quest_use_cases_test.dart",
+          "test/features/reminders/drift_study_reminder_repository_test.dart",
+          "test/features/reminders/platform_reminder_scheduler_test.dart",
+          "test/features/reminders/study_reminder_use_cases_test.dart",
+          "test/features/rewards/avatar_progression_policy_test.dart",
+          "test/features/rewards/data/drift_economy_cutover_test.dart",
+          "test/features/rewards/data/drift_reward_projection_rebuilder_test.dart",
+          "test/features/rewards/economy_transaction_policy_test.dart",
+          "test/features/rewards/projection_rebuild_v2_test.dart",
+          "test/features/rewards/reward_eligibility_test.dart",
+          "test/features/rewards/reward_use_cases_test.dart",
+          "test/features/rewards/shadow_reward_orchestrator_test.dart",
+          "test/screens/learning_goals_screen_test.dart",
+          "test/screens/learning_preference_quiz_screen_test.dart",
+          "test/screens/quest_status_screen_test.dart",
+          "test/screens/study_reminder_settings_screen_test.dart",
+          "test/services/adaptive_daily_quest_service_test.dart",
+          "test/services/spaced_review_reminder_service_test.dart",
+          "test/services/streak_and_daily_quest_service_test.dart",
+          "test/support/test_quest_use_cases.dart",
+          "test/widgets/gentle_streak_card_test.dart",
+          "test/widgets/reward_avatar_preview_test.dart"
+        ]
       }
     }
   },
@@ -119,7 +140,8 @@
     "zoneReceipts": "Validate file counts, exactSHA/path/status/finding IDs against ledger before commit; generated from explicit already-read cross-check conclusions, not automatic inference."
   },
   "completedSliceReceipts": {
-    "REV-05": "REV-05-zone-review.json"
+    "REV-05": "REV-05-zone-review.json",
+    "REV-06": "REV-06-zone-review.json"
   },
-  "formulaOwnership": "REV-05-zone-review.json/formulas maps all FORM01-12; REV06 completes FORM04/05 and goal part07, REV07 camera09 with REV11 tooling, REV08 speech10/usage12. No formula moved or silently accepted."
+  "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain."
 }
