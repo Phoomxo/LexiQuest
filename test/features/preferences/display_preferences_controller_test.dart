@@ -308,8 +308,9 @@ final class _HeldPreferences implements LearnerPreferencesRepository {
   @override
   Future<void> save(
     LearnerPreferences preferences, {
+    LearnerPreferencesWriteScope scope = LearnerPreferencesWriteScope.all,
     LearnerPreferencesMutationGuard? mutationAllowed,
-  }) => inner.save(preferences, mutationAllowed: mutationAllowed);
+  }) => inner.save(preferences, scope: scope, mutationAllowed: mutationAllowed);
   @override
   Future<void> saveDisplayPreferences(
     String ownerId,

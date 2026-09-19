@@ -318,6 +318,7 @@ final class _Preferences implements LearnerPreferencesRepository {
   @override
   Future<void> save(
     LearnerPreferences preferences, {
+    LearnerPreferencesWriteScope scope = LearnerPreferencesWriteScope.all,
     LearnerPreferencesMutationGuard? mutationAllowed,
   }) async {
     if (beforeSave != null) await beforeSave!.future;

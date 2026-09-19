@@ -4,6 +4,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import '../../identity/domain/local_owner_repository.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../domain/study_reminder.dart';
+import '../domain/reminder_scheduler.dart';
 import '../domain/study_reminder_repository.dart';
 
 final class DriftStudyReminderRepository implements StudyReminderRepository {
@@ -11,6 +12,23 @@ final class DriftStudyReminderRepository implements StudyReminderRepository {
 
   final db.AppDatabase database;
   final LocalOwnerRepository owners;
+
+  @override
+  Future<bool> platformIdentityConflicts(
+    String ownerId,
+    String reminderId,
+  ) async {
+    final id = studyReminderPlatformId(ownerId, reminderId);
+    final rows = await database
+        .customSelect('SELECT id, owner_id FROM study_reminders')
+        .get();
+    return rows.any((row) {
+      final otherOwner = row.read<String>('owner_id');
+      final otherId = row.read<String>('id');
+      return (otherOwner != ownerId || otherId != reminderId) &&
+          studyReminderPlatformId(otherOwner, otherId) == id;
+    });
+  }
 
   @override
   Future<String> activeOwnerId() async {
@@ -76,6 +94,10 @@ final class DriftStudyReminderRepository implements StudyReminderRepository {
       final existing = await (database.select(
         database.studyReminders,
       )..where((row) => row.id.equals(reminder.id))).getSingleOrNull();
+      if ((existing == null || (reminder.isEnabled && !reminder.isDeleted)) &&
+          await platformIdentityConflicts(ownerId, reminder.id)) {
+        throw StateError('study reminder platform identity collision');
+      }
       if (existing == null) {
         _requireMutationAllowed(mutationAllowed);
         await database

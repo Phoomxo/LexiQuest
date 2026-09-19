@@ -34,6 +34,7 @@ final class DriftLearnerPreferencesRepository
   @override
   Future<void> save(
     LearnerPreferences preferences, {
+    LearnerPreferencesWriteScope scope = LearnerPreferencesWriteScope.all,
     LearnerPreferencesMutationGuard? mutationAllowed,
   }) async {
     final changed = await database.transaction(() async {
@@ -47,6 +48,34 @@ final class DriftLearnerPreferencesRepository
           await (database.select(database.learnerPreferences)
                 ..where((row) => row.ownerId.equals(preferences.ownerId)))
               .getSingleOrNull();
+      if (scope != LearnerPreferencesWriteScope.all) {
+        final current = existing == null || existing.isDeleted
+            ? LearnerPreferences.defaults(
+                ownerId: preferences.ownerId,
+                updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  0,
+                  isUtc: true,
+                ),
+              )
+            : _toDomain(existing);
+        final homeOnly = scope == LearnerPreferencesWriteScope.home;
+        preferences = LearnerPreferences(
+          ownerId: preferences.ownerId,
+          preferenceVersion: 2,
+          goal: homeOnly ? current.goal : preferences.goal,
+          availableMinutesPerDay: homeOnly
+              ? current.availableMinutesPerDay
+              : preferences.availableMinutesPerDay,
+          activityPreference: homeOnly
+              ? current.activityPreference
+              : preferences.activityPreference,
+          homeExperience: homeOnly
+              ? preferences.homeExperience
+              : current.homeExperience,
+          updatedAtUtc: preferences.updatedAtUtc,
+          display: current.display,
+        );
+      }
       if (existing != null &&
           !existing.isDeleted &&
           existing.localRevision > 0 &&

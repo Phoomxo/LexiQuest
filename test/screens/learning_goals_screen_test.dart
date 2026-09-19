@@ -459,6 +459,12 @@ final class _BlockingGoals implements LearningGoalRepository {
 }
 
 final class _ReminderRepository implements StudyReminderRepository {
+  @override
+  Future<bool> platformIdentityConflicts(
+    String ownerId,
+    String reminderId,
+  ) async => false;
+
   final List<StudyReminder> reminders = [];
 
   @override

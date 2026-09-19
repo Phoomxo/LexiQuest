@@ -131,10 +131,15 @@ final class LegacyLearningSnapshot {
   final Map<String, List<Map<String, Object?>>> records;
   final String? ownerId;
 
-  static LegacyLearningSnapshot read(File file) {
+  static LegacyLearningSnapshot read(
+    File file, {
+    Database Function(String path)? openReadOnly,
+  }) {
     const maxBytes = 64 * 1024 * 1024;
     if (file.lengthSync() > maxBytes) _reject();
-    final source = sqlite3.open(file.path, mode: OpenMode.readOnly);
+    final source =
+        openReadOnly?.call(file.path) ??
+        sqlite3.open(file.path, mode: OpenMode.readOnly);
     try {
       source.execute('BEGIN');
       if (source.select('PRAGMA user_version').single.values.single != 1 ||
@@ -149,6 +154,39 @@ final class LegacyLearningSnapshot {
       if (tables.length != _columns.length ||
           !tables.containsAll(_columns.keys))
         _reject();
+      // Admit the entire read-only transaction before transferring payloads
+      // into Dart. Include WAL rows; file length alone is not a snapshot bound.
+      // Six bytes per input byte bounds JSON escaping. Column names, scalar
+      // text and punctuation are charged conservatively as well.
+      var admittedBytes = 0;
+      var admittedRows = 0;
+      for (final entry in _columns.entries) {
+        final columns = source
+            .select('PRAGMA table_info(${entry.key})')
+            .map((row) => row['name'])
+            .toSet();
+        if (columns.length != entry.value.length ||
+            !columns.containsAll(entry.value)) {
+          _reject();
+        }
+        final costs = entry.value
+            .map(
+              (column) =>
+                  "(CASE WHEN typeof($column) IN ('text','blob') "
+                  "THEN 6 * length(CAST($column AS BLOB)) ELSE 32 END)"
+                  " + ${column.length + 6}",
+            )
+            .join(' + ');
+        final budget = source
+            .select(
+              'SELECT count(*) AS n, coalesce(sum(cost), 0) AS bytes FROM '
+              '(SELECT 2 + $costs AS cost FROM ${entry.key} LIMIT 100001)',
+            )
+            .single;
+        admittedRows += budget['n'] as int;
+        admittedBytes += budget['bytes'] as int;
+        if (admittedRows > 100000 || admittedBytes > maxBytes) _reject();
+      }
       final records = <String, List<Map<String, Object?>>>{};
       final owners = <String>{};
       var bytes = 0;

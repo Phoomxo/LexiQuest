@@ -16,6 +16,80 @@ import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository
 import 'package:vocab_learning_app/screens/avatar_equipment_screen.dart';
 
 void main() {
+  testWidgets('F02 replacement retires old shop command and busy state', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'swap-owner',
+      nowUtc: () => DateTime.utc(2026),
+    );
+    final owner = await owners.getOrCreateActiveOwner();
+    await database
+        .into(database.pointsLedgerEntries)
+        .insert(
+          PointsLedgerEntriesCompanion.insert(
+            id: 'xp',
+            ownerId: owner.id,
+            idempotencyKey: 'xp',
+            entryType: 'quizCorrect',
+            amount: 200,
+            occurredAtUtcMs: 1,
+          ),
+        );
+    final blocked = _BlockingOwners(owners);
+    var sequence = 0;
+    RewardUseCases make(LocalOwnerRepository o) => RewardUseCases(
+      owners: o,
+      repository: DriftRewardRepository(database),
+      progress: ProgressUseCases(
+        owners: o,
+        queries: DriftProgressQueries(database),
+        nowUtc: () => DateTime.utc(2026),
+      ),
+      generateId: () => 'swap-${sequence++}',
+      nowUtc: () => DateTime.utc(2026),
+    );
+    final old = make(blocked);
+    final replacement = make(owners);
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: old)),
+    );
+    await tester.pumpAndSettle();
+    final beforeTransactions =
+        (await database.select(database.rewardTransactions).get())
+            .map((row) => row.toJson())
+            .toList();
+    final purchase = find.byKey(const ValueKey('reward-purchase/theme_ocean'));
+    await _scrollToCenter(tester, purchase, delta: 200);
+    final release = Completer<void>();
+    blocked.pending = release.future;
+    await tester.tap(purchase);
+    await tester.pump();
+    expect(find.text('กำลังบันทึกรายการ…'), findsOneWidget);
+    await tester.pumpWidget(
+      MaterialApp(home: AvatarEquipmentScreen(rewards: replacement)),
+    );
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    // Capture before settling the old callback, then always drain it.
+    final staleBusy = find.text('กำลังบันทึกรายการ…').evaluate().length;
+    blocked.pending = null;
+    release.complete();
+    await tester.pumpAndSettle();
+    expect(staleBusy, 0);
+    expect(
+      (await database.select(database.rewardTransactions).get())
+          .map((row) => row.toJson())
+          .toList(),
+      beforeTransactions,
+    );
+    expect(find.text('ซื้อรายการและบันทึกในเครื่องแล้ว'), findsNothing);
+  });
+
   testWidgets(
     'headgear preview changes the avatar then cancel restores it without a transaction',
     (tester) async {

@@ -19,6 +19,7 @@ void main() {
   var sequence = 0;
 
   setUp(() async {
+    sequence = 0;
     database = AppDatabase(NativeDatabase.memory());
     owners = DriftLocalOwnerRepository(
       database,
@@ -47,6 +48,149 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test(
+    'F02 retirement at final account read rolls back transaction and outbox',
+    () async {
+      await repository.load('local:owner');
+      final before = (await database.select(database.rewardTransactions).get())
+          .map((r) => r.toJson())
+          .toList();
+      final outboxBefore =
+          (await database.select(database.outboxOperations).get())
+              .map((r) => r.toJson())
+              .toList();
+      var checks = 0;
+      await expectLater(
+        repository.purchase(
+          ownerId: 'local:owner',
+          item: RewardCatalog.byId('theme_ocean')!,
+          idempotencyKey: 'retired-at-commit',
+          transactionId: 'retired-at-commit',
+          occurredAtUtc: DateTime.utc(2026),
+          mutationAllowed: () => ++checks == 1,
+        ),
+        throwsA(isA<RewardException>()),
+      );
+      expect(checks, 2);
+      expect(
+        (await database.select(database.rewardTransactions).get())
+            .map((r) => r.toJson())
+            .toList(),
+        before,
+      );
+      expect(
+        (await database.select(database.outboxOperations).get())
+            .map((r) => r.toJson())
+            .toList(),
+        outboxBefore,
+      );
+    },
+  );
+
+  for (final equip in [false, true]) {
+    test(
+      'F02 queued ${equip ? "equip" : "purchase"} rejects owner drift after preflight',
+      () async {
+        // Both owners exist; snapshot all money/outbox/projection state before dispatch.
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'owner-b',
+                createdAtUtcMs: 1,
+                isActive: const Value(false),
+              ),
+            );
+        await repository.load('local:owner');
+        await repository.load('owner-b');
+        Future<List<Map<String, Object?>>> snapshot() async => [
+          for (final table in [
+            'reward_transactions',
+            'owned_reward_items',
+            'equipped_reward_items',
+            'outbox_operations',
+          ])
+            {
+              'table': table,
+              'rows':
+                  (await database
+                          .customSelect('SELECT * FROM $table ORDER BY 1')
+                          .get())
+                      .map((r) => r.data)
+                      .toList(),
+            },
+        ];
+        final before = await snapshot();
+        Future<void>? switched;
+        final raced = RewardUseCases(
+          owners: owners,
+          repository: repository,
+          progress: progress,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+          generateId: () {
+            // Queue a real Drift owner transition after the final use-case
+            // availability check and before the repository's queued transaction.
+            switched = database.transaction(() async {
+              await database.customStatement(
+                'UPDATE local_owners SET is_active = 0',
+              );
+              await database.customStatement(
+                "UPDATE local_owners SET is_active = 1 WHERE id = 'owner-b'",
+              );
+            });
+            return 'obsolete-command';
+          },
+        );
+        await expectLater(
+          equip
+              ? raced.equip('theme_default', idempotencyKey: 'obsolete-equip')
+              : raced.purchase(
+                  itemId: 'theme_ocean',
+                  catalogVersion: RewardCatalog.version,
+                  idempotencyKey: 'obsolete-purchase',
+                ),
+          throwsA(isA<RewardException>()),
+        );
+        await switched;
+        expect((await owners.getOrCreateActiveOwner()).id, 'owner-b');
+        expect(await snapshot(), before);
+        // Return to A and execute a NEW explicit command; exact replay stays valid.
+        await database.customStatement(
+          "UPDATE local_owners SET is_active = CASE WHEN id = 'local:owner' THEN 1 ELSE 0 END",
+        );
+        if (equip) {
+          final result = await rewards.equip(
+            'theme_default',
+            idempotencyKey: 'fresh',
+          );
+          expect(result.status, EquipStatus.equipped);
+          expect(
+            (await rewards.equip(
+              'theme_default',
+              idempotencyKey: 'fresh',
+            )).status,
+            EquipStatus.replayed,
+          );
+        } else {
+          final result = await rewards.purchase(
+            itemId: 'theme_ocean',
+            catalogVersion: RewardCatalog.version,
+            idempotencyKey: 'fresh',
+          );
+          expect(result.status, PurchaseStatus.purchased);
+          expect(
+            (await rewards.purchase(
+              itemId: 'theme_ocean',
+              catalogVersion: RewardCatalog.version,
+              idempotencyKey: 'fresh',
+            )).status,
+            PurchaseStatus.replayed,
+          );
+        }
+      },
+    );
+  }
 
   test('purchase is atomic, durable, and idempotent', () async {
     final first = await rewards.purchase(

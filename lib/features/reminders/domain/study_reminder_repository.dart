@@ -45,6 +45,9 @@ final class StudyReminderDesiredState {
 abstract interface class StudyReminderRepository {
   Future<String> activeOwnerId();
 
+  /// Includes historical/deleted identities: native IDs must not be reused.
+  Future<bool> platformIdentityConflicts(String ownerId, String reminderId);
+
   Future<bool> isOwnerOperationTokenOwned({
     required String operationToken,
     required DateTime nowUtc,

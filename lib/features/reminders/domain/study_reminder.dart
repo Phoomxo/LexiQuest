@@ -96,7 +96,23 @@ final class ReminderQuietHours {
       endMinutes ~/ 60,
       endMinutes % 60,
     );
-    return target.toUtc();
+    DateTime result = target.toUtc();
+    if (result.isBefore(scheduledAtUtc) ||
+        contains(target.hour * 60 + target.minute)) {
+      // The constructor may choose the first fold of an ambiguous wall time.
+      // Walk real instants only in that exceptional case, never backwards.
+      result = DateTime.fromMillisecondsSinceEpoch(
+        (scheduledAtUtc.millisecondsSinceEpoch ~/ 60000 + 1) * 60000,
+        isUtc: true,
+      );
+      for (var minute = 0; minute < 48 * 60; minute++) {
+        final candidate = tz.TZDateTime.from(result, location);
+        if (!contains(candidate.hour * 60 + candidate.minute)) return result;
+        result = result.add(const Duration(minutes: 1));
+      }
+      throw StateError('Quiet hours have no reachable end within two days');
+    }
+    return result;
   }
 }
 

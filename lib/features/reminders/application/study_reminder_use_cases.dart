@@ -609,38 +609,64 @@ final class StudyReminderUseCases {
     required Future<T> Function() operation,
   }) => _serialize(() async {
     final owner = _canonicalIdentifier(ownerId, 'ownerId');
-    if (await repository.activeOwnerId() != owner) {
-      throw StateError('reminder owner erasure source is not active');
+    final token = _canonicalIdentifier(operationToken, 'operationToken');
+    Future<void> requireLease() async {
+      if (!await repository.isOwnerOperationTokenOwned(
+        operationToken: token,
+        nowUtc: _utcNow(),
+      )) {
+        throw StateError('reminder erasure lease was lost');
+      }
     }
-    await repository.beginOwnerOperationFence(
-      ownerId: owner,
-      operationToken: operationToken,
-      nowUtc: _utcNow(),
-    );
+
+    await _requireTransitionAuthority(owner, token);
+    _transitionNativeGuard = requireLease;
     try {
+      await repository.beginOwnerOperationFence(
+        ownerId: owner,
+        operationToken: token,
+        nowUtc: _utcNow(),
+      );
       final capturedPlatformIds = await _ownerPlatformIds(owner);
-      await _cancelPlatformIds(capturedPlatformIds, failOnError: true);
+      await _cancelPlatformIds(
+        capturedPlatformIds,
+        failOnError: true,
+        entryOwner: owner,
+      );
+      await _requireTransitionAuthority(owner, token);
+      Future<void> sweep() async {
+        try {
+          // Erasure may remove the owner row. The exact lease remains the
+          // authority; never create an owner to authorize cleanup afterwards.
+          await _cancelPlatformIds(
+            capturedPlatformIds,
+            failOnError: false,
+            entryOwner: owner,
+          );
+        } on Object {
+          _recordFailure(StudyReminderFailureKind.platformSideEffect);
+        }
+      }
+
       late final T result;
       try {
         result = await operation();
       } catch (error, stackTrace) {
-        await _cancelPlatformIds(capturedPlatformIds, failOnError: false);
+        await sweep();
         Error.throwWithStackTrace(error, stackTrace);
       }
-      // Rows and outbox entries may now be gone. Reuse the exact pre-delete
-      // platform identities so the final sweep never needs a new active owner.
-      await _cancelPlatformIds(capturedPlatformIds, failOnError: false);
+      await sweep();
       return result;
     } finally {
       try {
         await repository.endOwnerOperationFence(
           ownerId: owner,
-          operationToken: operationToken,
+          operationToken: token,
         );
       } on Object {
-        // The canonical lease release makes an uncleared marker inert. Never
-        // replace the authoritative erasure result or failure during cleanup.
+        // Preserve the authoritative deletion outcome; only our marker is eligible.
       }
+      _transitionNativeGuard = null;
     }
   });
 
@@ -935,6 +961,25 @@ final class StudyReminderUseCases {
     );
   }
 
+  Future<bool> _platformIdentityUnavailable(
+    String ownerId,
+    String reminderId,
+  ) async {
+    try {
+      if (await repository.platformIdentityConflicts(ownerId, reminderId)) {
+        return true;
+      }
+      final id = studyReminderPlatformId(ownerId, reminderId);
+      return (await _pendingNativeEntries()).any(
+        (entry) =>
+            entry.platformId == id &&
+            (entry.ownerId != ownerId || entry.reminderId != reminderId),
+      );
+    } on Object {
+      return true;
+    }
+  }
+
   Future<_PlatformDelta> _applyIntent(
     StudyReminderPlatformIntent intent, {
     required bool supported,
@@ -944,6 +989,18 @@ final class StudyReminderUseCases {
       intent.ownerId,
       intent.reminderId,
     );
+    if (await _platformIdentityUnavailable(intent.ownerId, intent.reminderId)) {
+      try {
+        await repository.recordPlatformFailure(
+          intent,
+          attemptedAtUtc: _utcNow(),
+          failureCode: 'platformIdentityUnavailable',
+        );
+      } on Object {
+        /* Preserve the pending intent and native identity. */
+      }
+      return const _PlatformDelta(failed: 1);
+    }
     var scheduled = 0;
     var cancelled = 0;
     try {
@@ -1061,6 +1118,9 @@ final class StudyReminderUseCases {
     required ReminderPermissionState permission,
   }) async {
     final platformId = studyReminderPlatformId(ownerId, reminderId);
+    if (await _platformIdentityUnavailable(ownerId, reminderId)) {
+      return const _PlatformDelta(failed: 1);
+    }
     var scheduled = 0;
     var cancelled = 0;
     int? appliedRevision;

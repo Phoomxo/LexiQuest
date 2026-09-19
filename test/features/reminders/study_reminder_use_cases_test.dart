@@ -50,6 +50,243 @@ void main() {
 
   tearDown(() => database.close());
 
+  test(
+    'F02 erasure lost during dispatched cancel issues no later native cancel',
+    () async {
+      final owner = await repository.activeOwnerId();
+      final gate = DriftOwnerOperationGate(database);
+      final now = DateTime.utc(2026, 8, 28);
+      await gate.tryAcquire(
+        token: 'old',
+        nowUtc: now,
+        leaseDuration: const Duration(minutes: 1),
+      );
+      scheduler.pending[123] = ReminderPlatformEntry(
+        platformId: 123,
+        ownerId: owner,
+        reminderId: 'old',
+      );
+      scheduler.beforeCancel = (_) async {
+        scheduler.beforeCancel = null;
+        await gate.release(token: 'old');
+        await gate.tryAcquire(
+          token: 'new',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        );
+        await repository.beginOwnerOperationFence(
+          ownerId: owner,
+          operationToken: 'new',
+          nowUtc: now,
+        );
+      };
+      var operationCalled = false;
+      await expectLater(
+        useCases.coordinateOwnerErasure(
+          ownerId: owner,
+          operationToken: 'old',
+          operation: () async {
+            operationCalled = true;
+            return true;
+          },
+        ),
+        throwsA(isA<StateError>()),
+      );
+      // An already-dispatched platform call cannot be revoked by this API.
+      // The contract here is no subsequent native effect or authoritative erase.
+      expect(scheduler.cancelled, [123]);
+      expect(operationCalled, isFalse);
+      expect(await gate.isOwned(token: 'new', nowUtc: now), isTrue);
+      expect(
+        await repository.isOwnerOperationFenced(ownerId: owner, nowUtc: now),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'F02 second-fold opt-in retains requested time and schedules future native instant',
+    () async {
+      final now = DateTime.utc(2026, 11, 1, 6);
+      final requested = DateTime.utc(2026, 11, 1, 6, 15);
+      final folded = StudyReminderUseCases(
+        repository: repository,
+        scheduler: scheduler,
+        nowUtc: () => now,
+        generateId: () => 'fold',
+        loadFeatureEligibility: () async =>
+            const StudyReminderFeatureEligibility(enabled: true, epoch: 0),
+      );
+      final result = await folded.optIn(
+        source: const StudyReminderSource.dueReview(),
+        scheduledAtUtc: requested,
+        timezoneId: 'America/New_York',
+        quietHours: const ReminderQuietHours(startMinutes: 0, endMinutes: 90),
+        mutationAllowed: () => true,
+      );
+      expect(result, StudyReminderOptInResult.scheduled);
+      expect((await repository.list()).single.scheduledAtUtc, requested);
+      expect(
+        scheduler.scheduled.single.scheduledAtUtc,
+        DateTime.utc(2026, 11, 1, 6, 30),
+      );
+    },
+  );
+
+  const collisionA = 'reminder:d88bf34c-785f-4bff-964f-e91a72d62376';
+  const collisionB = 'reminder:44b1f0b4-bc4e-49b7-ac2d-09d163cbcc41';
+  Future<StudyReminder> collisionReminder(String id) async => StudyReminder(
+    id: id,
+    ownerId: await repository.activeOwnerId(),
+    source: const StudyReminderSource.dueReview(),
+    scheduledAtUtc: DateTime.utc(2026, 8, 29),
+    timezone: const StudyReminderTimezoneContext(
+      timezoneId: 'UTC',
+      utcOffsetMinutes: 0,
+    ),
+    isEnabled: true,
+    createdAtUtc: DateTime.utc(2026, 8, 28),
+    updatedAtUtc: DateTime.utc(2026, 8, 28),
+  );
+  test(
+    'F02 rejects a real UUID-shaped platform ID collision before durable admission',
+    () async {
+      final a = await collisionReminder(collisionA);
+      final b = await collisionReminder(collisionB);
+      expect(studyReminderPlatformId(a.ownerId, a.id), 1806778660);
+      expect(studyReminderPlatformId(b.ownerId, b.id), 1806778660);
+      await repository.save(a);
+      await expectLater(repository.save(b), throwsA(isA<StateError>()));
+      expect(
+        await database.select(database.studyReminders).get(),
+        hasLength(1),
+      );
+      expect(
+        await repository.pendingPlatformIntentsForOwner(a.ownerId),
+        hasLength(1),
+      );
+    },
+  );
+  for (final cancel in [false, true]) {
+    test(
+      'F02 pre-existing collision preserves native identity on restart, cancel=$cancel',
+      () async {
+        scheduler.permission = ReminderPermissionState.granted;
+        final a = await collisionReminder(collisionA);
+        await repository.save(a);
+        await useCases.reconcile(featureEnabled: true);
+        final original = scheduler.pending[1806778660];
+        expect(original?.reminderId, collisionA);
+        final row = await database.select(database.studyReminders).getSingle();
+        // A historical database can already contain the colliding identity.
+        await database
+            .into(database.studyReminders)
+            .insert(
+              row.toCompanion(false).copyWith(id: const Value(collisionB)),
+            );
+        if (cancel) {
+          await repository.cancel(
+            collisionB,
+            updatedAtUtc: DateTime.utc(2026, 8, 28, 1),
+          );
+        }
+        final restarted = StudyReminderUseCases(
+          repository: repository,
+          scheduler: scheduler,
+          nowUtc: () => DateTime.utc(2026, 8, 28),
+          generateId: () => 'unused',
+          loadFeatureEligibility: () async =>
+              const StudyReminderFeatureEligibility(enabled: true, epoch: 0),
+        );
+        final result = await restarted.reconcile(featureEnabled: true);
+        expect(result.failed, greaterThan(0));
+        expect(scheduler.pending[1806778660], original);
+        if (cancel) {
+          expect(
+            await repository.pendingPlatformIntentsForOwner(a.ownerId),
+            isNotEmpty,
+          );
+        }
+      },
+    );
+  }
+
+  for (final loseAfterCommit in [false, true]) {
+    test(
+      'F02 erasure guards exact lease, committed=$loseAfterCommit',
+      () async {
+        final owner = await repository.activeOwnerId();
+        final gate = DriftOwnerOperationGate(database);
+        final now = DateTime.utc(2026, 8, 28);
+        await gate.tryAcquire(
+          token: 'old',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        );
+        const id = 123;
+        final fresh = ReminderPlatformEntry(
+          platformId: id,
+          ownerId: owner,
+          reminderId: 'fresh',
+        );
+        scheduler.pending[id] = ReminderPlatformEntry(
+          platformId: id,
+          ownerId: owner,
+          reminderId: 'old',
+        );
+        Future<void> replaceLease() async {
+          await gate.release(token: 'old');
+          expect(
+            await gate.tryAcquire(
+              token: 'new',
+              nowUtc: now,
+              leaseDuration: const Duration(minutes: 1),
+            ),
+            isTrue,
+          );
+          await repository.beginOwnerOperationFence(
+            ownerId: owner,
+            operationToken: 'new',
+            nowUtc: now,
+          );
+          scheduler.pending[id] = fresh;
+        }
+
+        if (!loseAfterCommit) {
+          scheduler.beforePendingReturn = () async {
+            scheduler.beforePendingReturn = null;
+            await replaceLease();
+          };
+        }
+        var committed = false;
+        final pending = useCases.coordinateOwnerErasure(
+          ownerId: owner,
+          operationToken: 'old',
+          operation: () async {
+            // Equivalent exact token composition used by bootstrap's eraser.
+            await gate.requireOwned(token: 'old', nowUtc: now);
+            committed = true;
+            await replaceLease();
+            return 'authoritative deletion result';
+          },
+        );
+        if (loseAfterCommit) {
+          expect(await pending, 'authoritative deletion result');
+        } else {
+          await expectLater(pending, throwsA(isA<StateError>()));
+        }
+        expect(committed, loseAfterCommit);
+        expect(scheduler.pending[id], fresh);
+        expect(scheduler.cancelled.length, loseAfterCommit ? 1 : 0);
+        expect(await gate.isOwned(token: 'new', nowUtc: now), isTrue);
+        expect(
+          await repository.isOwnerOperationFenced(ownerId: owner, nowUtc: now),
+          isTrue,
+        );
+      },
+    );
+  }
+
   group('read-only reminder status snapshot', () {
     const source = StudyReminderSource.dueReview();
     final statusNow = DateTime.utc(2026, 8, 28);

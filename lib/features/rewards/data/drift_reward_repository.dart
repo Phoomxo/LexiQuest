@@ -66,6 +66,7 @@ final class DriftRewardRepository {
     required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
+    bool Function()? mutationAllowed,
   }) {
     _requireIdentifier(ownerId, 'ownerId');
     _requireIdentifier(idempotencyKey, 'idempotencyKey');
@@ -76,9 +77,10 @@ final class DriftRewardRepository {
     }
     final epoch = occurredAtUtc.millisecondsSinceEpoch;
     return _serialized(() async {
-      await progressionEligibility.establishCutover(ownerId);
-      await cutover.ensureSeparated(ownerId);
       return database.transaction(() async {
+        await _requireAvatarAuthority(ownerId, mutationAllowed);
+        await progressionEligibility.establishCutover(ownerId);
+        await cutover.ensureSeparated(ownerId);
         await projections.rebuild(ownerId);
         final replay =
             await (database.select(database.rewardTransactions)..where(
@@ -91,7 +93,10 @@ final class DriftRewardRepository {
           _requireExactPurchase(replay, ownerId: ownerId, item: item);
           return PurchaseResult(
             status: PurchaseStatus.replayed,
-            account: await _loadSeparated(ownerId),
+            account: await _loadAuthorizedAvatarAccount(
+              ownerId,
+              mutationAllowed,
+            ),
           );
         }
         final owned =
@@ -103,7 +108,10 @@ final class DriftRewardRepository {
         if (owned != null) {
           return PurchaseResult(
             status: PurchaseStatus.alreadyOwned,
-            account: await _loadSeparated(ownerId),
+            account: await _loadAuthorizedAvatarAccount(
+              ownerId,
+              mutationAllowed,
+            ),
           );
         }
         final account = await _loadSeparated(ownerId);
@@ -161,7 +169,7 @@ final class DriftRewardRepository {
         await projections.rebuild(ownerId);
         return PurchaseResult(
           status: PurchaseStatus.purchased,
-          account: await _loadSeparated(ownerId),
+          account: await _loadAuthorizedAvatarAccount(ownerId, mutationAllowed),
         );
       });
     });
@@ -173,6 +181,7 @@ final class DriftRewardRepository {
     required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
+    bool Function()? mutationAllowed,
   }) {
     _requireIdentifier(ownerId, 'ownerId');
     _requireIdentifier(idempotencyKey, 'idempotencyKey');
@@ -193,8 +202,9 @@ final class DriftRewardRepository {
       occurredAtUtcMs: epoch,
     );
     return _serialized(() async {
-      await cutover.ensureSeparated(ownerId);
       return database.transaction(() async {
+        await _requireAvatarAuthority(ownerId, mutationAllowed);
+        await cutover.ensureSeparated(ownerId);
         await projections.rebuild(ownerId);
         final replay =
             await (database.select(database.rewardTransactions)..where(
@@ -212,7 +222,10 @@ final class DriftRewardRepository {
           );
           return EquipResult(
             status: EquipStatus.replayed,
-            account: await _loadSeparated(ownerId),
+            account: await _loadAuthorizedAvatarAccount(
+              ownerId,
+              mutationAllowed,
+            ),
           );
         }
         final transactionIdCollision = await (database.select(
@@ -255,7 +268,7 @@ final class DriftRewardRepository {
         await projections.rebuild(ownerId);
         return EquipResult(
           status: EquipStatus.equipped,
-          account: await _loadSeparated(ownerId),
+          account: await _loadAuthorizedAvatarAccount(ownerId, mutationAllowed),
         );
       });
     });
@@ -718,6 +731,31 @@ final class DriftRewardRepository {
             createdAtUtcMs: occurredAtUtcMs,
           ),
         );
+  }
+
+  Future<RewardAccount> _loadAuthorizedAvatarAccount(
+    String ownerId,
+    bool Function()? allowed,
+  ) async {
+    final account = await _loadSeparated(ownerId);
+    await _requireAvatarAuthority(ownerId, allowed);
+    return account;
+  }
+
+  Future<void> _requireAvatarAuthority(
+    String ownerId,
+    bool Function()? allowed,
+  ) async {
+    final active =
+        await (database.select(database.localOwners)
+              ..where((row) => row.isActive.equals(true))
+              ..limit(2))
+            .get();
+    if (active.length != 1 ||
+        active.single.id != ownerId ||
+        !(allowed?.call() ?? true)) {
+      throw const RewardException(RewardFailureCode.evidenceUnavailable);
+    }
   }
 
   Future<T> _serialized<T>(Future<T> Function() operation) async {

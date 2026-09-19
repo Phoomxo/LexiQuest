@@ -430,7 +430,41 @@ final class DriftLearningRepository
         'Reading namespace requires atomic exact pinned admission',
       );
     }
-    await _insertLearningSession(session);
+    await database.transaction(() async {
+      final activeOwners =
+          await (database.select(database.localOwners)
+                ..where((row) => row.isActive.equals(true))
+                ..limit(2))
+              .get();
+      if (activeOwners.length != 1 ||
+          activeOwners.single.id != session.ownerId) {
+        throw StateError(
+          'Learning session owner is no longer uniquely active.',
+        );
+      }
+      final existing = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(session.id))).getSingleOrNull();
+      if (existing != null) {
+        if (existing.ownerId != session.ownerId ||
+            existing.activityType != session.activityType ||
+            existing.startedAtUtcMs !=
+                _requiredUtc(
+                  session.startedAtUtc,
+                  'startedAtUtc',
+                ).millisecondsSinceEpoch ||
+            existing.appVersion != session.appVersion ||
+            existing.buildId != session.buildId ||
+            existing.sessionConfigurationIdentity !=
+                session.sessionConfiguration?.contentIdentity ||
+            existing.sessionConfigurationJson !=
+                session.sessionConfiguration?.stableSerialization) {
+          throw StateError('learning session identity conflict');
+        }
+        return;
+      }
+      await _insertLearningSession(session);
+    });
   }
 
   Future<void> _insertLearningSession(LearningSessionDraft session) async {
@@ -2556,6 +2590,13 @@ LIMIT 1
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      if (endedAtUtc.millisecondsSinceEpoch < row.startedAtUtcMs) {
+        throw ArgumentError.value(
+          endedAtUtc,
+          'endedAtUtc',
+          'precedes session start',
+        );
+      }
       LearningActivityCheckpoint? readingCheckpoint;
       AssociativeReadingCheckpoint? readingState;
       if (row.activityType == 'associativeReading') {
@@ -3395,6 +3436,13 @@ LIMIT 1
               ))
               .getSingleOrNull();
       if (row == null) throw StateError('learning session not found');
+      if (terminalAtUtcMs < row.startedAtUtcMs) {
+        throw ArgumentError.value(
+          abandonedAtUtc,
+          'abandonedAtUtc',
+          'precedes session start',
+        );
+      }
       if (row.state == 'abandoned') {
         if (row.endedAtUtcMs == terminalAtUtcMs) return _rowToSummary(row);
         throw StateError(

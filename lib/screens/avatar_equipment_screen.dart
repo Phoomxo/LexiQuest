@@ -24,6 +24,7 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _previewItemId;
   var _requestSequence = 0;
+  var _authorityGeneration = 0;
 
   @override
   void didUpdateWidget(covariant AvatarEquipmentScreen oldWidget) {
@@ -31,6 +32,10 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
     if (!identical(oldWidget.rewards, widget.rewards)) {
       _rewards =
           widget.rewards ?? AppDependenciesScope.maybeOf(context)?.rewards;
+      _authorityGeneration++;
+      _busyItems.clear();
+      _itemMessages.clear();
+      _checkingItems.clear();
       _previewItemId = null;
       _state = _loadAvatar();
     }
@@ -43,6 +48,10 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         widget.rewards ?? AppDependenciesScope.maybeOf(context)?.rewards;
     if (!identical(_rewards, rewards)) {
       _rewards = rewards;
+      _authorityGeneration++;
+      _busyItems.clear();
+      _itemMessages.clear();
+      _checkingItems.clear();
       _previewItemId = null;
       _state = _loadAvatar();
     }
@@ -51,13 +60,14 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
 
   Future<AvatarRewardState> _loadAvatar() {
     final rewards = _rewards;
+    final generation = _authorityGeneration;
     final load = rewards == null
         ? Future<AvatarRewardState>.error(
             StateError('reward dependency unavailable'),
           )
         : rewards.loadAvatar();
     final observed = load.then((state) {
-      if (mounted) {
+      if (mounted && generation == _authorityGeneration) {
         for (final itemId in _checkingItems) {
           _itemMessages.remove(itemId);
         }
@@ -103,6 +113,8 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
 
   Future<void> _purchase(RewardCatalogItem item) async {
     final rewards = _rewards;
+    final generation = _authorityGeneration;
+    bool current() => mounted && generation == _authorityGeneration;
     if (rewards == null || _busyItems.contains(item.id)) return;
     setState(() {
       _busyItems.add(item.id);
@@ -113,14 +125,15 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         itemId: item.id,
         catalogVersion: item.catalogVersion,
         idempotencyKey: _operationKey('purchase', item),
+        mutationAllowed: current,
       );
-      if (!mounted) return;
+      if (!mounted || !current()) return;
       final text = result.status == PurchaseStatus.purchased
           ? 'ซื้อรายการและบันทึกในเครื่องแล้ว'
           : 'รายการนี้เป็นของคุณอยู่แล้ว';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || !current()) return;
       final text = switch (error is RewardException ? error.code : null) {
         RewardFailureCode.insufficientBalance => 'เหรียญไม่เพียงพอ',
         RewardFailureCode.lockedByProgression =>
@@ -139,12 +152,14 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         ).showSnackBar(SnackBar(content: Text(text)));
       }
     } finally {
-      if (mounted) _reconcileItem(item.id);
+      if (current()) _reconcileItem(item.id);
     }
   }
 
   Future<void> _equip(RewardCatalogItem item) async {
     final rewards = _rewards;
+    final generation = _authorityGeneration;
+    bool current() => mounted && generation == _authorityGeneration;
     if (rewards == null || _busyItems.contains(item.id)) return;
     setState(() {
       _busyItems.add(item.id);
@@ -154,13 +169,14 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
       await rewards.equip(
         item.id,
         idempotencyKey: _operationKey('equip', item),
+        mutationAllowed: current,
       );
-      if (!mounted) return;
+      if (!mounted || !current()) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('บันทึกรายการที่เลือกใช้งานแล้ว')),
       );
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted || !current()) return;
       final message =
           error is RewardException &&
               error.code == RewardFailureCode.evidenceUnavailable
@@ -177,14 +193,15 @@ class _AvatarEquipmentScreenState extends State<AvatarEquipmentScreen> {
         ).showSnackBar(SnackBar(content: Text(message)));
       }
     } finally {
-      if (mounted) _reconcileItem(item.id);
+      if (current()) _reconcileItem(item.id);
     }
   }
 
   void _reconcileItem(String itemId) {
+    final generation = _authorityGeneration;
     _previewItemId = null;
     final next = _loadAvatar().whenComplete(() {
-      _busyItems.remove(itemId);
+      if (generation == _authorityGeneration) _busyItems.remove(itemId);
     });
     next.ignore();
     setState(() {

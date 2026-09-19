@@ -1,5 +1,9 @@
 import 'learner_preferences.dart';
 
+/// Independent fields merge at the repository transaction boundary.
+/// Conflicting writes to the same scope use commit order (last commit wins).
+enum LearnerPreferencesWriteScope { all, learning, home }
+
 typedef LearnerPreferencesMutationGuard = bool Function();
 
 final class LearnerPreferencesMutationUnavailable implements Exception {
@@ -11,6 +15,7 @@ abstract interface class LearnerPreferencesRepository {
 
   Future<void> save(
     LearnerPreferences preferences, {
+    LearnerPreferencesWriteScope scope = LearnerPreferencesWriteScope.all,
     LearnerPreferencesMutationGuard? mutationAllowed,
   });
 

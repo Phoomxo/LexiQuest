@@ -42,7 +42,13 @@ final class LearnerPreferencesUseCases {
       homeExperience: homeExperience ?? current.homeExperience,
       updatedAtUtc: nowUtc(),
     );
-    await repository.save(candidate, mutationAllowed: mutationAllowed);
+    await repository.save(
+      candidate,
+      scope: homeExperience == null
+          ? LearnerPreferencesWriteScope.learning
+          : LearnerPreferencesWriteScope.all,
+      mutationAllowed: mutationAllowed,
+    );
     return repository.read(owner.id);
   }
 
@@ -56,10 +62,6 @@ final class LearnerPreferencesUseCases {
       throw const LearnerPreferencesMutationUnavailable();
     }
     final current = await repository.read(owner.id);
-    if (current.homeExperience == homeExperience &&
-        current.preferenceVersion == 2) {
-      return current;
-    }
     await repository.save(
       LearnerPreferences(
         ownerId: owner.id,
@@ -71,6 +73,7 @@ final class LearnerPreferencesUseCases {
         updatedAtUtc: nowUtc(),
         display: current.display,
       ),
+      scope: LearnerPreferencesWriteScope.home,
       mutationAllowed: mutationAllowed,
     );
     return repository.read(owner.id);

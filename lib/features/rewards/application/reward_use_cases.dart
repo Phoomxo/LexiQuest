@@ -54,6 +54,7 @@ final class RewardUseCases implements RewardAccountReader {
     required String itemId,
     required int catalogVersion,
     required String idempotencyKey,
+    bool Function()? mutationAllowed,
   }) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {
@@ -68,6 +69,10 @@ final class RewardUseCases implements RewardAccountReader {
       throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
     }
     final owner = await owners.getOrCreateActiveOwner();
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const RewardException(RewardFailureCode.evidenceUnavailable);
+    }
+
     final currentAccount = await _avatarOperation(
       owner.id,
       () => repository.load(owner.id),
@@ -86,6 +91,7 @@ final class RewardUseCases implements RewardAccountReader {
         idempotencyKey: key,
         transactionId: 'reward:${_nextId()}',
         occurredAtUtc: _now(),
+        mutationAllowed: mutationAllowed,
       ),
     );
     if (result.status == PurchaseStatus.purchased) onLocalMutation?.call();
@@ -122,6 +128,7 @@ final class RewardUseCases implements RewardAccountReader {
   Future<EquipResult> equip(
     String itemId, {
     required String idempotencyKey,
+    bool Function()? mutationAllowed,
   }) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {
@@ -132,6 +139,10 @@ final class RewardUseCases implements RewardAccountReader {
       throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
     }
     final owner = await owners.getOrCreateActiveOwner();
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const RewardException(RewardFailureCode.evidenceUnavailable);
+    }
+
     final result = await _avatarOperation(
       owner.id,
       () => repository.equip(
@@ -140,6 +151,7 @@ final class RewardUseCases implements RewardAccountReader {
         idempotencyKey: key,
         transactionId: 'reward:${_nextId()}',
         occurredAtUtc: _now(),
+        mutationAllowed: mutationAllowed,
       ),
     );
     if (result.status == EquipStatus.equipped) onLocalMutation?.call();

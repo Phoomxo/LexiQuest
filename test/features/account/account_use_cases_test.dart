@@ -576,6 +576,7 @@ final class _MemoryLearnerPreferencesRepository
   @override
   Future<void> save(
     LearnerPreferences preferences, {
+    LearnerPreferencesWriteScope scope = LearnerPreferencesWriteScope.all,
     LearnerPreferencesMutationGuard? mutationAllowed,
   }) async {
     if (!(mutationAllowed?.call() ?? true)) {

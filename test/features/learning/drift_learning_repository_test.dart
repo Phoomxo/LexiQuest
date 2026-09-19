@@ -415,6 +415,9 @@ void main() {
               isActive: const Value(false),
             ),
           );
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = CASE WHEN id = 'owner-2' THEN 1 ELSE 0 END",
+      );
       final otherOwner = LearningSessionDraft(
         id: 'session:other-owner',
         ownerId: 'owner-2',
@@ -432,6 +435,9 @@ void main() {
           occurredAtUtc: otherOwner.startedAtUtc!,
           state: const <String, Object?>{'schemaVersion': 1},
         ),
+      );
+      await database.customStatement(
+        "UPDATE local_owners SET is_active = CASE WHEN id = 'owner-1' THEN 1 ELSE 0 END",
       );
       final next = LearningSessionDraft(
         id: 'session:next',
