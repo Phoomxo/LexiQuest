@@ -1036,6 +1036,116 @@
       "proposedRegression": "Real Drift two-owner fixture with deferred repository boundary: invoke consent accept/withdraw for A, switch active owner to B, release old call; verify intended owner admission semantics, unchanged unrelated consent/withdrawal/outbox and positive same-owner controls. Keep deny withdrawal independent of remote receipt availability; no research activation.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV10-01",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "relatedFiles": [
+        "lib/features/export/data/file_selector_export_store.dart",
+        "android/app/src/main/AndroidManifest.xml"
+      ],
+      "trigger": "Activity or process is recreated while ACTION_CREATE_DOCUMENT is pending, or after a document write but before finishExportFile. Ordinary orientation is handled by manifest configChanges and is not asserted to recreate it.",
+      "expected": "A surviving operation settles truthfully; recreated sessions can reconcile uncommitted created documents without silently reporting success or losing rollback authority.",
+      "actual": "pendingExportResult/pendingExportBytes/unsettledExportUris exist only in the Activity instance. A callback with null pending state returns without settlement; a new instance rejects finish for an old URI. No saved-state/reconciliation or destruction settlement is implemented. Process death also destroys Dart, so a hung surviving Future is not claimed for that case. Native reproduction remains required.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native recreation and retained-engine versus process-restart cases around picker/write/finish; assert truthful Dart settlement, no unauthorized artifact retention, and cleanup failure visibility. Keep positive finish and cancel cases.",
+      "evidenceLocations": [
+        "MainActivity.kt:24-26,34-44,122-149",
+        "lib/features/export/data/file_selector_export_store.dart:146-205"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV10-02",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "android/app/src/main/kotlin/com/lexiquest/app/MainActivity.kt",
+      "relatedFiles": [
+        "lib/features/export/data/file_selector_export_store.dart",
+        "lib/features/export/domain/export_contracts.dart",
+        "lib/features/export/application/export_use_cases.dart"
+      ],
+      "trigger": "A large owner export or a slow SAF provider is accepted.",
+      "expected": "Export remains responsive and has a bounded resource/cancellation policy; success is acknowledged only after the supported provider completion boundary.",
+      "actual": "Artifact is a full Uint8List with no byte ceiling in its contract or saver. Native onActivityResult writes the full ByteArray synchronously, flushes and closes before acknowledging. Large/slow work can block the Activity callback; no stream/chunk cancellation or admission bound. This is a resource candidate, not measured ANR/OOM.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Controlled slow provider and large bounded fixtures measure callback responsiveness and cancellation at write/flush/close; verify no success on close failure and cleanupFailed on deletion failure. Do not introduce arbitrary truncation.",
+      "evidenceLocations": [
+        "MainActivity.kt:63-77,137-168",
+        "lib/features/export/data/file_selector_export_store.dart:197-205",
+        "export_contracts.dart:43-72"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV10-03",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "windows/runner/utils.cpp",
+      "relatedFiles": [
+        "windows/runner/utils.h",
+        "windows/runner/main.cpp"
+      ],
+      "trigger": "WideCharToMultiByte size query returns zero for invalid UTF-16 command-line input.",
+      "expected": "Conversion returns the documented empty failure result without a huge allocation or exception escaping startup.",
+      "actual": "Size query result is decremented before assigning unsigned target_length. Zero becomes UINT_MAX; on a 64-bit string whose max_size exceeds that value, resize attempts roughly 4 GiB before the second conversion error check. Actual native input/API/allocator behavior has not run.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native invalid-surrogate and mocked size-query failure tests with allocation bound, plus null/empty/ASCII/Thai/supplementary Unicode positives. Preserve error result without accepting malformed encoding.",
+      "evidenceLocations": [
+        "utils.cpp:44-64",
+        "utils.h:12-19",
+        "main.cpp:22-26"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV10-04",
+      "severity": "P2",
+      "status": "candidate-reproduction-pending",
+      "file": "windows/runner/flutter_window.cpp",
+      "relatedFiles": [
+        "windows/runner/win32_window.cpp"
+      ],
+      "trigger": "WM_FONTCHANGE is delivered during a creation/destruction interval when the object is attached to HWND but flutter_controller_ is null.",
+      "expected": "Messages arriving outside controller lifetime safely fall through or are ignored.",
+      "actual": "Plugin dispatch checks flutter_controller_, but WM_FONTCHANGE dereferences it unconditionally. Base WndProc routes after WM_NCCREATE and controller is set only in OnCreate, reset in OnDestroy. A real delivery ordering in that interval remains to be reproduced; no crash is claimed.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Native lifecycle harness delivers font-change before controller initialization and during teardown; confirm actual dispatch eligibility, then keep normal font reload behavior.",
+      "evidenceLocations": [
+        "flutter_window.cpp:41-69",
+        "win32_window.cpp:136-158,164-172,218-228"
+      ],
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV10-05",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "test/runtime/app_build_info_test.dart",
+      "relatedFiles": [
+        "lib/runtime/app_build_info.dart",
+        "pubspec.yaml",
+        "tool/cli/package-field-release.ps1"
+      ],
+      "trigger": "Start a development build without LEXIQUEST_VERSION override; execute the test claiming the default equals pubspec.",
+      "expected": "Displayed development version and oracle reflect the chosen current version authority; explicit release identity remains authoritative.",
+      "actual": "pubspec.yaml declares 1.0.0+14, while AppBuildInfo.fromEnvironment defaults to 1.0.0+1 and the test explicitly expects +1 under a pubspec-default title. This is a static fallback/oracle mismatch. package-field-release supplies LEXIQUEST_VERSION and native build-name/build-number, so installed signed release mismatch is not inferred.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Targeted test compares default to deliberate version authority and tests explicit injected identity independently; preserve disposal/resume/accessibility assertions in this mixed test file. Do not silently change public release version or historical receipts.",
+      "evidenceLocations": [
+        "app_build_info_test.dart:85-91",
+        "app_build_info.dart:11-19",
+        "pubspec.yaml:5",
+        "package-field-release.ps1:277-280"
+      ],
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
@@ -1109,6 +1219,13 @@
       "actual": "Native checkout altered2036 raw EOL hashes; one guessed brief directory failed; some broad multi-file output truncated.",
       "action": "Restored only EOL-equivalent checkpoint raw blobs, checked3610 inventory/23handoff/3policy hashes and empty index; discovered actual brief with rg --files and bounded omitted ranges. UTF8/LF evidence outputs. No historical regeneration or runtime execution.",
       "externalPreflight": "REV08-preflight.json"
+    },
+    {
+      "id": "B18-ENV-REV10",
+      "status": "method-corrected",
+      "actual": "Checkout produced2061 EOL-only raw differences. Python default cp874 decode failed once. Guessed brief/dart_test/release-profile paths caused missing-path diagnostics.",
+      "action": "Compared raw Git blobs and restored only EOL-equivalent bytes;3610inventory/31handoff/3policy equality plus empty stage. Explicit UTF8 decoding/LF writing. Stopped guessed-path search, used rg --files discovery and existing literal paths. No historical regeneration; all application/runtime checks NOT RUN.",
+      "externalPreflight": "B18-REV10-preflight.json"
     }
   ]
 }

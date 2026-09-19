@@ -9,18 +9,15 @@
     "REV-06",
     "REV-07",
     "REV-08",
-    "REV-09"
+    "REV-09",
+    "REV-10"
   ],
   "pending": {
-    "REV-10": [
-      "Android SAF in-memory pending URI/activity restore/bounded sync write/closeflush ACK/deleteENOSPC require Dart contract disposition. Windows WM_FONTCHANGE/GetMessage-1/COM earlyreturn/UTF8zero and hugefiles potential, no proven runtime failure yet.",
-      "mac10.14 defaultpermissions/no networkclient/media/filegrants and iOS missing release notification config need supportedtarget/release contract cross-check. Empty Apple tests no physical PASS. Preview APKunsigneddebug32assets/hash/flags is not installed release.",
-      "REV09 Dart export cross-check: cancellation before Android finish; native34-44 finish removes unsettled URI as commit boundary. REV10 still owns activity loss/SAF closeflush/delete rollback semantics. REV09-05 archive diagnostic field-default mismatch is separate from actual preview/installed build verification."
-    ],
     "REV-11": [
       "Release collector579/2098 regex oracle: failed dumpsys yields null indistinguishable clean install; determine operational gate consequence. ELF verifier actual parser vs synthetic6259tests, no APK/device execution.",
       "Historical finalplan1186 excludes transitive inputs/package-lock/newAI/Adventure/LM; B19 must create new version, never overwrite pinned historical schema26/49 artifactSHA666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534.",
-      "verify-scope source819 read: prehash/noafter, backendvenvinstall, stderr/read wait possible. Existing fixtures not actual workloads. CI PSexitbehavior/expiredSep14 OSVexception are observations; no security scan/workflow invocation. Cloud helpers fixedproject/budgetpagination read-only review only."
+      "verify-scope source819 read: prehash/noafter, backendvenvinstall, stderr/read wait possible. Existing fixtures not actual workloads. CI PSexitbehavior/expiredSep14 OSVexception are observations; no security scan/workflow invocation. Cloud helpers fixedproject/budgetpagination read-only review only.",
+      "Android wrapper has no distributionSha256Sum pin; correlate actual dependency/provenance gate without inventing runtime tampering. Release Gradle validates signing/provenance shape; artifact authenticity must come from existing bounded verifier contract. REV10 release script supplies LEXIQUEST_VERSION, so REV10-05 affects fallback/oracle, not proven signed-release mismatch."
     ],
     "REV-12": [
       "All564 source/generated files fully read or structured-reviewed; final zone needs semantic cross-check attribution and leftover shared/orphan tests, no reread all. Four open static test/tool findingsREV12-01..04 have regressions in defects.json.",
@@ -31,15 +28,14 @@
     ]
   },
   "oracleOwnership": {
-    "nextSlice": "REV-10",
+    "nextSlice": "REV-11",
     "nextSliceTests": [
-      "test/architecture/notification_platform_contract_test.dart",
-      "test/config/android_network_security_test.dart",
-      "test/config/app_config_test.dart",
-      "test/config/flutter_dependency_surface_test.dart",
-      "test/runtime/app_build_info_test.dart"
+      "tool/cli/tests/ci-workflow.tests.ps1",
+      "tool/cli/tests/package-field-release.tests.ps1",
+      "tool/cli/tests/release-profile.tests.ps1",
+      "tool/cli/tests/verify-scope.tests.ps1"
     ],
-    "remainingSharedAndOrphanOwner": "REV12 reconciles178completedREV05-09 oracles plus earlierREV01-04/shared/orphan/supplemental notes and all564zonepaths. REV10 owns5exact nextSliceTests. Other runtime/bootstrap/config tests remain finalREV12 unless explicitly reconciled; avoid rereading all.",
+    "remainingSharedAndOrphanOwner": "REV12 reconciles183completedREV05-10 oracles plus earlierREV01-04/shared/orphan/supplemental notes and all564zonepaths. REV11 owns4exact nextSliceTests; may explicitly reconcile additional relevant caller oracles without arbitrary zone expansion. REV10 supplemental build-info attribution remains final reconciliation.",
     "rule": "Use existing per-file observations and receipts, inspect only unresolved callers/contracts or changed source. No test execution for G8.2.",
     "completedDomainOracles": {
       "REV-05": {
@@ -249,6 +245,17 @@
           "test/scenarios/file_backed_sync_recovery_test.dart",
           "test/screens/export_center_screen_test.dart"
         ]
+      },
+      "REV-10": {
+        "receipt": "REV-10-zone-review.json",
+        "count": 5,
+        "paths": [
+          "test/architecture/notification_platform_contract_test.dart",
+          "test/config/android_network_security_test.dart",
+          "test/config/app_config_test.dart",
+          "test/config/flutter_dependency_surface_test.dart",
+          "test/runtime/app_build_info_test.dart"
+        ]
       }
     }
   },
@@ -261,7 +268,8 @@
     "REV-06": "REV-06-zone-review.json",
     "REV-07": "REV-07-zone-review.json",
     "REV-08": "REV-08-zone-review.json",
-    "REV-09": "REV-09-zone-review.json"
+    "REV-09": "REV-09-zone-review.json",
+    "REV-10": "REV-10-zone-review.json"
   },
   "formulaOwnership": "REV05 receipt maps FORM01-12; REV06 closes FORM04/05 and goal FORM07, preserving historical registry. REV07 cameraFORM09 with REV11tooling; REV08 speechFORM10/usageFORM12 remain. REV07 domain FORM09 complete, REV11 retains CLI/formula delta final disposition; no registry rewrite. REV08 domain FORM10/FORM12 complete; actual billing/acoustic/runtime unproven; central-cost shared oracle final REV12."
 }

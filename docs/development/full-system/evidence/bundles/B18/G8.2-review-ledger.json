@@ -367,11 +367,11 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Excludes generated wrappers/cache/localproperties and all signing keystores/keyproperties; ignoredstatus check separate.",
+      "reviewNotes": "Full file read. Excludes generated wrappers/cache/localproperties and all signing keystores/keyproperties; ignoredstatus check separate. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -388,11 +388,11 @@
       "lines": 135,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full135 lines read. API26 floor/compile36, Java17 desugaring and NDK28.2 pin; release signing requires actual keystore plus four properties, provenance 40hex commit/12prefix/64hex model. taskGraph packageRelease/bundleRelease prefix gate only; no artifact/keystore authenticity verified here. Firebase BOM pin, inherited targetSDK and Flutter version. No build.",
+      "reviewNotes": "Full135 lines read. API26 floor/compile36, Java17 desugaring and NDK28.2 pin; release signing requires actual keystore plus four properties, provenance 40hex commit/12prefix/64hex model. taskGraph packageRelease/bundleRelease prefix gate only; no artifact/keystore authenticity verified here. Firebase BOM pin, inherited targetSDK and Flutter version. No build. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -409,11 +409,11 @@
       "lines": 48,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Two public Android clients legacy example and com.lexiquest.app; productionclient appID matches DefaultFirebaseOptions.android. OAuth arrays empty, not sign-in capability proof.",
+      "reviewNotes": "Full file read. Two public Android clients legacy example and com.lexiquest.app; productionclient appID matches DefaultFirebaseOptions.android. OAuth arrays empty, not sign-in capability proof. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -430,11 +430,11 @@
       "lines": 6,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Keeps WorkManager reflected Room WorkDatabase_Impl zeroarg constructor to avoid startup failure; no broad keepall rules or build execution.",
+      "reviewNotes": "Full file read. Keeps WorkManager reflected Room WorkDatabase_Impl zeroarg constructor to avoid startup failure; no broad keepall rules or build execution. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -451,11 +451,11 @@
       "lines": 4,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Only debug network security override; release inherits main cleartextfalse.",
+      "reviewNotes": "Full file read. Only debug network security override; release inherits main cleartextfalse. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -472,11 +472,11 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Debug permits all cleartext at native layer and system anchors only; Dart config must enforce host allowlist. Does not constrain native plugin HTTP by itself.",
+      "reviewNotes": "Full file read. Debug permits all cleartext at native layer and system anchors only; Dart config must enforce host allowlist. Does not constrain native plugin HTTP by itself. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -493,11 +493,11 @@
       "lines": 90,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Camera/microphone optional hardware, explicit network/notification/boot permissions; backup and cleartext disabled. Exported singleTop launcher, verified HTTPS auth/action prefix, no custom scheme. Nonexported notification receivers and speech/TTS/process text queries. Actual mergedmanifest/device approval not established by source.",
+      "reviewNotes": "Full file read. Camera/microphone optional hardware, explicit network/notification/boot permissions; backup and cleartext disabled. Exported singleTop launcher, verified HTTPS auth/action prefix, no custom scheme. Nonexported notification receivers and speech/TTS/process text queries. Actual mergedmanifest/device approval not established by source. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -514,11 +514,11 @@
       "lines": 5,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full5 lines read. Empty legacy package FlutterActivity, actual namespace/manifest points com.lexiquest.app; no custom channel implementation here.",
+      "reviewNotes": "Full5 lines read. Empty legacy package FlutterActivity, actual namespace/manifest points com.lexiquest.app; no custom channel implementation here. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -535,11 +535,14 @@
       "lines": 201,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-10",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full201 lines read. Actual manifest activity provides storage StatFs and SAF export. One pending picker, sanitizes suggested basename, in-memory payload/result and unsettled URI authority; write/flush/close before success and delete-on-failure with ENOSPC cause classification. Writes synchronous on activity result thread, no byte bound or process/activity restoration/teardown settlement; only ActivityNotFound caught on picker launch. Dart owner/revocation completion handshake needs cross-check; no native test/device claim.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-01",
+        "B18-REV10-02"
+      ],
+      "reviewNotes": "Full201 lines read. Actual manifest activity provides storage StatFs and SAF export. One pending picker, sanitizes suggested basename, in-memory payload/result and unsettled URI authority; write/flush/close before success and delete-on-failure with ENOSPC cause classification. Writes synchronous on activity result thread, no byte bound or process/activity restoration/teardown settlement; only ActivityNotFound caught on picker launch. Dart owner/revocation completion handshake needs cross-check; no native test/device claim. Semantic disposition: REV-10-zone-review.json REV10-X01; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -556,11 +559,11 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. API21+ splash uses theme colorBackground; optionalbitmap commented.",
+      "reviewNotes": "Full file read. API21+ splash uses theme colorBackground; optionalbitmap commented. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -577,11 +580,11 @@
       "lines": 10,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. 24dp monochrome white notification bell vector; no executable behavior.",
+      "reviewNotes": "Full file read. 24dp monochrome white notification bell vector; no executable behavior. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -598,11 +601,11 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Legacy splash fixedwhite background; optionalbitmap commented, darktheme legacycontrast limited.",
+      "reviewNotes": "Full file read. Legacy splash fixedwhite background; optionalbitmap commented, darktheme legacycontrast limited. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -689,11 +692,11 @@
       "lines": 3,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Resource shrinker retains named notification icon used dynamically by plugin.",
+      "reviewNotes": "Full file read. Resource shrinker retains named notification icon used dynamically by plugin. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -710,11 +713,11 @@
       "lines": 18,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Dark no-title launch and normal theme backgrounds; drawableversion determines actual splashcolor.",
+      "reviewNotes": "Full file read. Dark no-title launch and normal theme backgrounds; drawableversion determines actual splashcolor. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -731,11 +734,11 @@
       "lines": 18,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Light no-title launch and normal window backgrounds; runtimeFlutter manages actual UI.",
+      "reviewNotes": "Full file read. Light no-title launch and normal window backgrounds; runtimeFlutter manages actual UI. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -752,11 +755,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Profile requests INTERNET only, no debug cleartext override.",
+      "reviewNotes": "Full file read. Profile requests INTERNET only, no debug cleartext override. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -773,11 +776,11 @@
       "lines": 13,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Release source/build/model fingerprint metadata use Gradle placeholders; source declaration not proof installed values.",
+      "reviewNotes": "Full file read. Release source/build/model fingerprint metadata use Gradle placeholders; source declaration not proof installed values. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -794,11 +797,11 @@
       "lines": 24,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full24 lines read. Google/MavenCentral repository order, common build root ../../build and per-subproject directories; all evaluation depends app; clean deletes configured build root. Source only, no clean/build executed.",
+      "reviewNotes": "Full24 lines read. Google/MavenCentral repository order, common build root ../../build and per-subproject directories; all evaluation depends app; clean deletes configured build root. Source only, no clean/build executed. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -815,11 +818,11 @@
       "lines": 6,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. 8Gheap/4Gmetaspace and heapdump diagnostics, AndroidX, AGP9 compatibility disables newDSL/builtinKotlin, bundled GPUacceleratorfalse. Config only no memory/build claim.",
+      "reviewNotes": "Full file read. 8Gheap/4Gmetaspace and heapdump diagnostics, AndroidX, AGP9 compatibility disables newDSL/builtinKotlin, bundled GPUacceleratorfalse. Config only no memory/build claim. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -836,11 +839,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Gradle9.1.0 HTTPS all distribution,10snetworktimeout, URLvalidation but no distributionSha256Sum pin. Existing wrapper usage/provenance must remain scoped, no download.",
+      "reviewNotes": "Full file read. Gradle9.1.0 HTTPS all distribution,10snetworktimeout, URLvalidation but no distributionSha256Sum pin. Existing wrapper usage/provenance must remain scoped, no download. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -857,11 +860,11 @@
       "lines": 16,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Explicit nonsecret signing placeholders and file instructions, release failclosed claim implemented separately in Gradle; no keystore created.",
+      "reviewNotes": "Full file read. Explicit nonsecret signing placeholders and file instructions, release failclosed claim implemented separately in Gradle; no keystore created. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -878,11 +881,11 @@
       "lines": 27,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full27 lines read. Requires local.properties flutter.sdk, included Flutter Gradle build; pinned loader1 AGP9.0.1 Kotlin2.3.20 GoogleServices4.4.2, app only. Local SDK path authority not validated by this file.",
+      "reviewNotes": "Full27 lines read. Requires local.properties flutter.sdk, included Flutter Gradle build; pinned loader1 AGP9.0.1 Kotlin2.3.20 GoogleServices4.4.2, app only. Local SDK path authority not validated by this file. Semantic disposition: REV-10-zone-review.json REV10-X02; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -32027,11 +32030,11 @@
       "lines": 34,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full34 lines read. Xcode/CocoaPods/generated Flutter intermediates and registrant ignored, legacy default IDE files excepted; generated plugin provenance cannot be inferred from checkout.",
+      "reviewNotes": "Full34 lines read. Xcode/CocoaPods/generated Flutter intermediates and registrant ignored, legacy default IDE files excepted; generated plugin provenance cannot be inferred from checkout. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32048,11 +32051,11 @@
       "lines": 26,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Generated Flutter framework identity with MinimumOS12; Runner deploymenttarget may differ and determinesappbuild.",
+      "reviewNotes": "Full file read. Generated Flutter framework identity with MinimumOS12; Runner deploymenttarget may differ and determinesappbuild. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -32069,11 +32072,11 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Includes Generated.xcconfig only; resolved SDK/build configuration external generated input.",
+      "reviewNotes": "Full1 line read. Includes Generated.xcconfig only; resolved SDK/build configuration external generated input. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32090,11 +32093,11 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Includes same Generated.xcconfig; no local release override.",
+      "reviewNotes": "Full1 line read. Includes same Generated.xcconfig; no local release override. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32111,11 +32114,11 @@
       "lines": 616,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full616 lines read. Target/scheme UUIDs resolve Runner/tests, resources/storyboards and generated ObjC registrar wired. Flutter build/embed scripts always out of date, empty framework lists/no Pod or SPM integration in frozen file; generated Flutter tooling may modify later, no build proof. iOS13 project target vs framework plist12, Swift5, legacy bundle ID, no development team or associated-domain entitlement. Version inherited Flutter, automatic signing tests only.",
+      "reviewNotes": "Full616 lines read. Target/scheme UUIDs resolve Runner/tests, resources/storyboards and generated ObjC registrar wired. Flutter build/embed scripts always out of date, empty framework lists/no Pod or SPM integration in frozen file; generated Flutter tooling may modify later, no build proof. iOS13 project target vs framework plist12, Swift5, legacy bundle ID, no development team or associated-domain entitlement. Version inherited Flutter, automatic signing tests only. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -32132,11 +32135,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full7 lines read. Project internal workspace self reference only.",
+      "reviewNotes": "Full7 lines read. Project internal workspace self reference only. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32153,11 +32156,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32174,11 +32177,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens.",
+      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32195,11 +32198,11 @@
       "lines": 98,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full98 lines read. Runner app and test UUID references, Debug run/test/analyze, Profile profiling, Release archive; parallel build/test flags source only, no tests invoked.",
+      "reviewNotes": "Full98 lines read. Runner app and test UUID references, Debug run/test/analyze, Profile profiling, Release archive; parallel build/test flags source only, no tests invoked. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32216,11 +32219,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full7 lines read. Root workspace references Runner project only, no Pods project entry.",
+      "reviewNotes": "Full7 lines read. Root workspace references Runner project only, no Pods project entry. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32237,11 +32240,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32258,11 +32261,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens.",
+      "reviewNotes": "Full8 lines read. Xcode PreviewsEnabled false only; does not disable actual application screens. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32279,11 +32282,11 @@
       "lines": 13,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full13 lines read. Registers generated plugins then delegates launch to FlutterAppDelegate; no custom export/storage/auth handlers.",
+      "reviewNotes": "Full13 lines read. Registers generated plugins then delegates launch to FlutterAppDelegate; no custom export/storage/auth handlers. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32300,11 +32303,11 @@
       "lines": 122,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full122 lines read. Nineteen iPhone/iPad/marketing size-scale references, including1024 store icon. Manifest source only; pixel dimensions/branding not inspected.",
+      "reviewNotes": "Full122 lines read. Nineteen iPhone/iPad/marketing size-scale references, including1024 store icon. Manifest source only; pixel dimensions/branding not inspected. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -32531,11 +32534,11 @@
       "lines": 23,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full23 lines read. Universal launch image1x/2x/3x references, no pixel/content validation or branding claim.",
+      "reviewNotes": "Full23 lines read. Universal launch image1x/2x/3x references, no pixel/content validation or branding claim. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32608,11 +32611,11 @@
       "lines": 37,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full37 lines read. White static launch view with centered intrinsic LaunchImage and autolayout; no app controls or runtime state.",
+      "reviewNotes": "Full37 lines read. White static launch view with centered intrinsic LaunchImage and autolayout; no app controls or runtime state. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32629,11 +32632,11 @@
       "lines": 26,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full26 lines read. Single FlutterViewController initial scene, white resizable600x600 design frame; actual logical layout owned by Flutter.",
+      "reviewNotes": "Full26 lines read. Single FlutterViewController initial scene, white resizable600x600 design frame; actual logical layout owned by Flutter. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32650,11 +32653,11 @@
       "lines": 55,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Runtime buildidentifier/version substitutions, camera/microphone/speech usage explanations and landscape/iPad support; placeholder Vocab Learning App name remains. No associateddomains/background modes specifiedhere; no native iOS verification.",
+      "reviewNotes": "Full file read. Runtime buildidentifier/version substitutions, camera/microphone/speech usage explanations and landscape/iPad support; placeholder Vocab Learning App name remains. No associateddomains/background modes specifiedhere; no native iOS verification. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -32671,11 +32674,11 @@
       "lines": 1,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Imports generated plugin registrar header only.",
+      "reviewNotes": "Full1 line read. Imports generated plugin registrar header only. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -32692,11 +32695,11 @@
       "lines": 12,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full12 lines read. Empty testExample has no assertion, does not verify native startup/media/export.",
+      "reviewNotes": "Full12 lines read. Empty testExample has no assertion, does not verify native startup/media/export. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -45684,11 +45687,11 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Only flutter/ephemeral ignored by platform file; root ignore applies separately.",
+      "reviewNotes": "Full1 line read. Only flutter/ephemeral ignored by platform file; root ignore applies separately. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45705,11 +45708,11 @@
       "lines": 145,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full145 lines read. Legacy binary/application names, C++14 warnings-as-errors, sysroot isolation, GTK3 and relative lib rpath. Install removes build bundle and re-copies assets/native libraries; non-Debug AOT install. Generated plugin list included. No Linux build or install executed.",
+      "reviewNotes": "Full145 lines read. Legacy binary/application names, C++14 warnings-as-errors, sysroot isolation, GTK3 and relative lib rpath. Install removes build bundle and re-copies assets/native libraries; non-Debug AOT install. Generated plugin list included. No Linux build or install executed. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45726,11 +45729,11 @@
       "lines": 88,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full88 lines read. Reads ephemeral generated config, GTK/GLib/GIO Flutter shared library interface; publishes project asset/AOT paths. Phony output forces Flutter backend with supplied environment/platform/build type. Generated dependencies require actual SDK/build to validate.",
+      "reviewNotes": "Full88 lines read. Reads ephemeral generated config, GTK/GLib/GIO Flutter shared library interface; publishes project asset/AOT paths. Phony output forces Flutter backend with supplied environment/platform/build type. Generated dependencies require actual SDK/build to validate. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45810,11 +45813,11 @@
       "lines": 6,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full6 lines read. Autoptr owns app, returns g_application_run exit status.",
+      "reviewNotes": "Full6 lines read. Autoptr owns app, returns g_application_run exit status. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45831,11 +45834,11 @@
       "lines": 124,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full124 lines read. GTK app GNOME/X11 header-bar fallback, 1280x720 view/plugin registration, command arguments copied and disposed, nonunique app allows separate processes. No product channels or lifecycle persistence beyond Flutter plugins; no Linux runtime proof.",
+      "reviewNotes": "Full124 lines read. GTK app GNOME/X11 header-bar fallback, 1280x720 view/plugin registration, command arguments copied and disposed, nonunique app allows separate processes. No product channels or lifecycle persistence beyond Flutter plugins; no Linux runtime proof. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45852,11 +45855,11 @@
       "lines": 18,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full18 lines read. Final GTK application type declaration and constructor; no extra state/API.",
+      "reviewNotes": "Full18 lines read. Final GTK application type declaration and constructor; no extra state/API. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -45873,11 +45876,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full7 lines read. Pods/Flutter ephemeral and Xcode user files ignored.",
+      "reviewNotes": "Full7 lines read. Pods/Flutter ephemeral and Xcode user files ignored. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -45894,11 +45897,11 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Includes ephemeral Flutter generated config only.",
+      "reviewNotes": "Full1 line read. Includes ephemeral Flutter generated config only. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -45915,11 +45918,11 @@
       "lines": 1,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full1 line read. Same generated config include, entitlements controlled in project configuration.",
+      "reviewNotes": "Full1 line read. Same generated config include, entitlements controlled in project configuration. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -45957,11 +45960,11 @@
       "lines": 705,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full705 lines read. Runner depends Flutter Assemble with generated input/output tripwire and embed script; scheme UUIDs match. Swift5/macOS10.14/C++14, threeconfig entitlement links correct DebugProfile versus Release; actual previously-read entitlements lack network-client/media/file grants. Empty framework lists/no dependency integration in frozen file, no build/signing/notarization proof; test target uses legacy product.",
+      "reviewNotes": "Full705 lines read. Runner depends Flutter Assemble with generated input/output tripwire and embed script; scheme UUIDs match. Swift5/macOS10.14/C++14, threeconfig entitlement links correct DebugProfile versus Release; actual previously-read entitlements lack network-client/media/file grants. Empty framework lists/no dependency integration in frozen file, no build/signing/notarization proof; test target uses legacy product. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -45978,11 +45981,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -45999,11 +46002,11 @@
       "lines": 98,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full98 lines read. Legacy app product Runner UUID and tests, Debug run/test/analyze/Profile/Release archive; no native execution.",
+      "reviewNotes": "Full98 lines read. Legacy app product Runner UUID and tests, Debug run/test/analyze/Profile/Release archive; no native execution. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46020,11 +46023,11 @@
       "lines": 7,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full7 lines read. Root workspace points Runner project only.",
+      "reviewNotes": "Full7 lines read. Root workspace points Runner project only. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46041,11 +46044,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion.",
+      "reviewNotes": "Full8 lines read. IDEDidComputeMac32BitWarning true records IDE warning state only; no deployment/runtime capability assertion. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46062,11 +46065,11 @@
       "lines": 9,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full9 lines read. Flutter app delegate terminates after last window closes; no restore/export/storage channels.",
+      "reviewNotes": "Full9 lines read. Flutter app delegate terminates after last window closes; no restore/export/storage channels. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46083,11 +46086,11 @@
       "lines": 68,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full68 lines read. Ten mac1x/2x icon slots16..512 with16..1024 filenames; assets visual validation excluded here.",
+      "reviewNotes": "Full68 lines read. Ten mac1x/2x icon slots16..512 with16..1024 filenames; assets visual validation excluded here. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46202,11 +46205,11 @@
       "lines": 343,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full343 lines read. Cocoa responder-chain menus edit/find/spelling/substitution/speech/window and800x600 resizable Flutter window wired delegate; preferences item has no action, help empty. APP_NAME template replacement delegated Flutter, native menu features not equivalent to app study controls. No macOS accessibility/runtime test.",
+      "reviewNotes": "Full343 lines read. Cocoa responder-chain menus edit/find/spelling/substitution/speech/window and800x600 resizable Flutter window wired delegate; preferences item has no action, help empty. APP_NAME template replacement delegated Flutter, native menu features not equivalent to app study controls. No macOS accessibility/runtime test. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -46223,11 +46226,11 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Template app name/example bundle ID/copyright2024 remain; iOS/macOS Firebaseoptions use same examplebundleidentifier.",
+      "reviewNotes": "Full file read. Template app name/example bundle ID/copyright2024 remain; iOS/macOS Firebaseoptions use same examplebundleidentifier. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46244,11 +46247,11 @@
       "lines": 2,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Includes generated Flutter Debug then shared warning settings.",
+      "reviewNotes": "Full file read. Includes generated Flutter Debug then shared warning settings. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46265,11 +46268,11 @@
       "lines": 2,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Includes generated Flutter Release then shared warning settings.",
+      "reviewNotes": "Full file read. Includes generated Flutter Release then shared warning settings. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46286,11 +46289,11 @@
       "lines": 13,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Enables nativecompiler warning set including shadow/unreachable/strictselectors; not executed.",
+      "reviewNotes": "Full file read. Enables nativecompiler warning set including shadow/unreachable/strictselectors; not executed. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46307,11 +46310,11 @@
       "lines": 12,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Sandbox plus JIT and incomingnetworkserver only; lacks outgoingnetworkclient/audio/camera/fileuserselected entitlements. Native capability unverified.",
+      "reviewNotes": "Full file read. Sandbox plus JIT and incomingnetworkserver only; lacks outgoingnetworkclient/audio/camera/fileuserselected entitlements. Native capability unverified. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46328,11 +46331,11 @@
       "lines": 32,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Template bundle/build/nib/OS metadata, lacks camera/microphone/speech privacy usage descriptions; platform support must be checked before claiming media availability.",
+      "reviewNotes": "Full file read. Template bundle/build/nib/OS metadata, lacks camera/microphone/speech privacy usage descriptions; platform support must be checked before claiming media availability. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46349,11 +46352,11 @@
       "lines": 15,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full15 lines read. Instantiates Flutter controller from nib preserving window frame, registers plugins before superclass awake. No custom channels.",
+      "reviewNotes": "Full15 lines read. Instantiates Flutter controller from nib preserving window frame, registers plugins before superclass awake. No custom channels. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46370,11 +46373,11 @@
       "lines": 8,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Sandbox only; missing networkclient/media/file permissions compared with crossplatform services. Appbuild support/caller gating still to assess, no macOS runtimeclaim.",
+      "reviewNotes": "Full file read. Sandbox only; missing networkclient/media/file permissions compared with crossplatform services. Appbuild support/caller gating still to assess, no macOS runtimeclaim. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -46391,11 +46394,11 @@
       "lines": 12,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full12 lines read. Empty native testExample; no startup/plugin/permission oracle.",
+      "reviewNotes": "Full12 lines read. Empty native testExample; no startup/plugin/permission oracle. Semantic disposition: REV-10-zone-review.json REV10-X03; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -46832,11 +46835,11 @@
       "lines": 115,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full115 lines read. YAML exact dependency pins plus Android regex setup/scheduler mode, no physical reboot/delivery. iOS test explicitly release-excluded references absent Podfile/lock and Podincludes/delegate assignment missing in source; correctly not evidence iOS integration works. Source review only no nativebuild.",
+      "reviewNotes": "Full115 lines read. YAML exact dependency pins plus Android regex setup/scheduler mode, no physical reboot/delivery. iOS test explicitly release-excluded references absent Podfile/lock and Podincludes/delegate assignment missing in source; correctly not evidence iOS integration works. Source review only no nativebuild. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:51:11.113463+00:00",
       "readRanges": [
         [
@@ -47065,11 +47068,11 @@
       "lines": 149,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full149 lines read. Source XML string checks main/profile/release no cleartext true, debug config permits via network policy and no duplicate activity/permissions. Missingoptionalsets yield empty and pass, no XML/mergedmanifest parser or native HTTP proving Dartallowlist coversplugins.",
+      "reviewNotes": "Full149 lines read. Source XML string checks main/profile/release no cleartext true, debug config permits via network policy and no duplicate activity/permissions. Missingoptionalsets yield empty and pass, no XML/mergedmanifest parser or native HTTP proving Dartallowlist coversplugins. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -47086,11 +47089,11 @@
       "lines": 338,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Pure parser origin positive/negative matrix release versus debug loopback/privateIPv4, credentials/query/path/malformed hosts, fixed error labels and sentinels; AI default and distinct origin mirror HTTP matrix. No real endpoint/TLS/network or installed dart-defines assertion. No B18 execution.",
+      "reviewNotes": "Full file read. Pure parser origin positive/negative matrix release versus debug loopback/privateIPv4, credentials/query/path/malformed hosts, fixed error labels and sentinels; AI default and distinct origin mirror HTTP matrix. No real endpoint/TLS/network or installed dart-defines assertion. No B18 execution. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T00:34:09.564401+00:00",
       "readRanges": [
         [
@@ -47107,11 +47110,11 @@
       "lines": 94,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-12",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full94 lines read. Root-resolving raw pubspec regex absent9/retained18 dependency names. No YAML sections/versions/transitive/plugin-platform viability or actual importreachability oracle.",
+      "reviewNotes": "Full94 lines read. Root-resolving raw pubspec regex absent9/retained18 dependency names. No YAML sections/versions/transitive/plugin-platform viability or actual importreachability oracle. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:46:30.343166+00:00",
       "readRanges": [
         [
@@ -54425,11 +54428,13 @@
       "lines": 363,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-12",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full363 lines. Actual MyApp disposal exactlyonce/embedding ownership/async cleanup failures on replacement/unmount, initial/resume sync callbacks and platformbrightness/reducedmotion. Display repository fakeignores mutationguard; no ownerreplacement profile stale-load case. Version test claims pubspec default but expects1.0.0+1 versus actualmanifest1.0.0+14; explicit builddefine path separate. No installed identity/runtime execution.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-05"
+      ],
+      "reviewNotes": "Full363 lines. Actual MyApp disposal exactlyonce/embedding ownership/async cleanup failures on replacement/unmount, initial/resume sync callbacks and platformbrightness/reducedmotion. Display repository fakeignores mutationguard; no ownerreplacement profile stale-load case. Version test claims pubspec default but expects1.0.0+1 versus actualmanifest1.0.0+14; explicit builddefine path separate. No installed identity/runtime execution. Semantic disposition: REV-10-zone-review.json REV10-X07; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:49:43.552922+00:00",
       "readRanges": [
         [
@@ -60224,11 +60229,11 @@
       "lines": 38,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full38 lines read. Flutter build base placeholder, UTF8 LexiQuest metadata/icons/manifest and asynchronous bootstrap script. No inline cloud code, CSP/offline policy or runtime feature proof here.",
+      "reviewNotes": "Full38 lines read. Flutter build base placeholder, UTF8 LexiQuest metadata/icons/manifest and asynchronous bootstrap script. No inline cloud code, CSP/offline policy or runtime feature proof here. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60245,11 +60250,11 @@
       "lines": 35,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. Template standalone PWA metadata, portraitprimary, four192/512maskableicon references; no offlinecache or browsercapability guarantee.",
+      "reviewNotes": "Full file read. Template standalone PWA metadata, portraitprimary, four192/512maskableicon references; no offlinecache or browsercapability guarantee. Semantic disposition: REV-10-zone-review.json REV10-X05; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -60266,11 +60271,11 @@
       "lines": 17,
       "category": "configuration",
       "rationale": "Review build/dependency/runtime or fixture input semantics",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full17 lines read. Ephemeral, VisualStudio user/build/cache ignores with directory exception; no executable behavior.",
+      "reviewNotes": "Full17 lines read. Ephemeral, VisualStudio user/build/cache ignores with directory exception; no executable behavior. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60287,11 +60292,11 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full109 lines read. CMake3.14/C++17 Unicode warnings-as-errors, profile release flags, Flutter and runner/plugin inclusion. Install next to executable, asset directory removal/re-copy and native assets/AOT config selection. No configure/build/install run.",
+      "reviewNotes": "Full109 lines read. CMake3.14/C++17 Unicode warnings-as-errors, profile release flags, Flutter and runner/plugin inclusion. Install next to executable, asset directory removal/re-copy and native assets/AOT config selection. No configure/build/install run. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60308,11 +60313,11 @@
       "lines": 109,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full109 lines read. Ephemeral SDK config and C++ wrappers, fallback windows-x64, Flutter DLL import interface and static wrapper libraries. Symbolic phony output drives tool_backend.bat per config; no actual SDK ABI or packaged library verification.",
+      "reviewNotes": "Full109 lines read. Ephemeral SDK config and C++ wrappers, fallback windows-x64, Flutter DLL import interface and static wrapper libraries. Symbolic phony output drives tool_backend.bat per config; no actual SDK ABI or packaged library verification. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60392,11 +60397,11 @@
       "lines": 40,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full40 lines read. Four native source files plus generated registrar/resource/manifest, Flutter version definitions and NOMINMAX; flutter wrapper and dwmapi links. No release signing/provenance gate in this target.",
+      "reviewNotes": "Full40 lines read. Four native source files plus generated registrar/resource/manifest, Flutter version definitions and NOMINMAX; flutter wrapper and dwmapi links. No release signing/provenance gate in this target. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60413,11 +60418,11 @@
       "lines": 121,
       "category": "handwritten-source",
       "rationale": "Executable JavaScript or native resource source",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full121 lines read. UTF8 resource source, icon101, Flutter-derived version with1.0.0 fallback, legacy company/product/copyright strings; no signature or source/model provenance.",
+      "reviewNotes": "Full121 lines read. UTF8 resource source, icon101, Flutter-derived version with1.0.0 fallback, legacy company/product/copyright strings; no signature or source/model provenance. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60434,11 +60439,13 @@
       "lines": 71,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-10",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full71 lines read. Controller checked at create, plugin registration before child attach, first-frame show+forced redraw. Controller reset on destroy; font-change branch dereferences without same null guard used for plugin message dispatch. Native timing reproduction/platform support required before promotion. No execution.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-04"
+      ],
+      "reviewNotes": "Full71 lines read. Controller checked at create, plugin registration before child attach, first-frame show+forced redraw. Controller reset on destroy; font-change branch dereferences without same null guard used for plugin message dispatch. Native timing reproduction/platform support required before promotion. No execution. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60455,11 +60462,11 @@
       "lines": 33,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full33 lines read. Owns copied DartProject and unique controller, virtual lifecycle/message overrides; no extra export/storage channels.",
+      "reviewNotes": "Full33 lines read. Owns copied DartProject and unique controller, virtual lifecycle/message overrides; no extra export/storage channels. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60476,11 +60483,11 @@
       "lines": 43,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full43 lines read. STA COM then data-relative project with UTF8 args, 1280x720 legacy title, quit on close. GetMessage loop treats -1 as truthy and early create failure skips COM uninitialize; native failure behavior not tested here.",
+      "reviewNotes": "Full43 lines read. STA COM then data-relative project with UTF8 args, 1280x720 legacy title, quit on close. GetMessage loop treats -1 as truthy and early create failure skips COM uninitialize; native failure behavior not tested here. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60497,11 +60504,11 @@
       "lines": 16,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full16 lines read. Icon101 matches resource and win32 load, designer next IDs only.",
+      "reviewNotes": "Full16 lines read. Icon101 matches resource and win32 load, designer next IDs only. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:45:22.922165+00:00",
       "readRanges": [
         [
@@ -60532,11 +60539,11 @@
       "lines": 14,
       "category": "configuration",
       "rationale": "Native build, UI or runtime configuration",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full file read. PerMonitorV2 DPI and Windows10/11 compatibility declaration, no elevation requested.",
+      "reviewNotes": "Full file read. PerMonitorV2 DPI and Windows10/11 compatibility declaration, no elevation requested. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:32:18.122509+00:00",
       "readRanges": [
         [
@@ -60553,11 +60560,13 @@
       "lines": 65,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-10",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full65 lines read. Frees CommandLineToArgvW memory, strict UTF16 conversion; first conversion zero minus1 assigned unsigned can become UINT_MAX and evade max_size guard on64bit, attempt4GiB allocation on malformed UTF16. Source candidate pending native oracle; console freopen checks inverted success convention. No native execution.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-03"
+      ],
+      "reviewNotes": "Full65 lines read. Frees CommandLineToArgvW memory, strict UTF16 conversion; first conversion zero minus1 assigned unsigned can become UINT_MAX and evade max_size guard on64bit, attempt4GiB allocation on malformed UTF16. Source candidate pending native oracle; console freopen checks inverted success convention. No native execution. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60574,11 +60583,13 @@
       "lines": 19,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-10",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full19 lines read. Console and UTF16/argv conversion interfaces document empty on failure, source implementation failure-path caveat recorded separately.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-03"
+      ],
+      "reviewNotes": "Full19 lines read. Console and UTF16/argv conversion interfaces document empty on failure, source implementation failure-path caveat recorded separately. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60595,11 +60606,13 @@
       "lines": 288,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-with-findings",
       "zone": "REV-10",
-      "reviewerPassDate": null,
-      "findingIDs": [],
-      "reviewNotes": "Full288 lines read. Window-class singleton/global count, DPI scale/create, GWLP_USERDATA routing, resize/focus/theme-registry handling, recursive destroy made handle-null first on WM_DESTROY. Registration/API return values largely ignored, base DefWindowProc uses stored handle; singleton intentionally lifetime-long. No installed/native lifecycle validation.",
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
+      "findingIDs": [
+        "B18-REV10-04"
+      ],
+      "reviewNotes": "Full288 lines read. Window-class singleton/global count, DPI scale/create, GWLP_USERDATA routing, resize/focus/theme-registry handling, recursive destroy made handle-null first on WM_DESTROY. Registration/API return values largely ignored, base DefWindowProc uses stored handle; singleton intentionally lifetime-long. No installed/native lifecycle validation. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60616,11 +60629,11 @@
       "lines": 102,
       "category": "handwritten-source",
       "rationale": "Semantic review required, including historical executable tools",
-      "status": "source-read-awaiting-cross-check",
+      "status": "reviewed-no-actionable-finding",
       "zone": "REV-10",
-      "reviewerPassDate": null,
+      "reviewerPassDate": "2026-09-19T12:25:28.258165+00:00",
       "findingIDs": [],
-      "reviewNotes": "Full102 lines read. Virtual base owns HWNDs plus quit flag, unsigned origin/size, friend WndProc registrar; initial null handles and public create/show/destroy interfaces. No product persistence behavior.",
+      "reviewNotes": "Full102 lines read. Virtual base owns HWNDs plus quit flag, unsigned origin/size, friend WndProc registrar; initial null handles and public create/show/destroy interfaces. No product persistence behavior. Semantic disposition: REV-10-zone-review.json REV10-X04; static only, runtime NOT RUN.",
       "sourceReadDate": "2026-09-14T03:44:01.752044+00:00",
       "readRanges": [
         [
@@ -60631,7 +60644,7 @@
     }
   ],
   "reviewProgress": {
-    "zone": "REV-10",
+    "zone": "REV-11",
     "zoneAccepted": false,
     "completedZones": [
       "REV-01",
@@ -60642,13 +60655,14 @@
       "REV-06",
       "REV-07",
       "REV-08",
-      "REV-09"
+      "REV-09",
+      "REV-10"
     ],
-    "completedProductionZoneFiles": 675,
-    "focusedRev12OracleDispositions": 178,
-    "totalStaticDispositions": 853,
-    "sourceReadAwaitingCrossCheck": 576,
-    "historyPath": "review-progress-before-REV09.json",
-    "notes": "56 open findings18static/38candidate;1429observations retained. G8.2 not accepted. No runtime. FinalREV12 retains shared/orphan/supplemental ownership."
+    "completedProductionZoneFiles": 759,
+    "focusedRev12OracleDispositions": 183,
+    "totalStaticDispositions": 942,
+    "sourceReadAwaitingCrossCheck": 487,
+    "historyPath": "review-progress-before-REV10.json",
+    "notes": "61open findings19static/42candidate;1429observations retained. G8.2 not accepted. No runtime. REV11 owns106zone+4exactnextoracles; finalREV12 retains shared/orphan/supplemental ownership."
   }
 }
