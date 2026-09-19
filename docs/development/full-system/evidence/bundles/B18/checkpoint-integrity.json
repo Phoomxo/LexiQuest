@@ -2,12 +2,14 @@
   "sourceSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
   "trackedRawBytesVerified": 3610,
   "sourceAndConfigStatus": {
-    "source-read-awaiting-cross-check": 1429
+    "source-read-awaiting-cross-check": 1330,
+    "reviewed-no-actionable-finding": 94,
+    "reviewed-with-findings": 5
   },
   "ignoredFiles": [],
   "newReviewTooling": [
-    "docs/development/full-system/evidence/bundles/B18/generated-drift-structural-review.json",
-    "docs/development/full-system/evidence/bundles/B18/review_generated_drift.py"
+    "docs/development/full-system/evidence/bundles/B18/REV-01-zone-review.json",
+    "docs/development/full-system/evidence/bundles/B18/REV-02-zone-review.json"
   ],
   "semanticReviewComplete": false,
   "G82Accepted": false,

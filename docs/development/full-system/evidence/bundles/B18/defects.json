@@ -293,6 +293,60 @@
       "proposedRegression": "Use verify-scope Targeted/Runtime with only verify-gemini-byok.tests.ps1 for RED then GREEN. Replace stale26 assertion with current contract authority while preserving schema getter, credential namespace/owner fences/secret negatives. Do not lower application schema or run full legacy gate/APK/network.",
       "fixSha": null,
       "retest": null
+    },
+    {
+      "id": "B18-REV03-06",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/features/adventure/domain/adventure_reaction.dart",
+      "relatedFiles": [
+        "lib/features/adventure/presentation/widgets/adventure_companion_panel.dart",
+        "lib/features/adventure/application/adventure_mixed_review_controller.dart",
+        "lib/features/learning/application/unified_lesson_controller.dart",
+        "lib/features/review/domain/review_queue_item.dart"
+      ],
+      "trigger": "Skip an original mixed-review item with no prior incorrect/SRS/saved/report evidence while Adventure companion is visible.",
+      "expected": "Companion copy describes skip without promising a persisted review item unless the canonical Review authority actually contains it.",
+      "actual": "Skipped reaction promises in Thai/English and accessibility text that the item is kept for review. Actual original skip only stores recovery checkpoint and increments presentation skippedItemCount; Review authorities are SRS/incorrect attempts/reports/saved intent and none is created by this path. Repair skips can already have an incorrect-source item, but the unconditional original-skip claim is false.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Exercise original skip with empty prior review authorities, assert no fabricated answer/SRS/bookmark, and render truthful Thai/English/semantics copy. Preserve existing incorrect-source repair deferral.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-07",
+      "severity": "P2",
+      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "file": "lib/screens/quiz_screen.dart",
+      "relatedFiles": [
+        "lib/features/learning/application/unified_lesson_controller.dart",
+        "lib/features/learning/data/drift_learning_repository.dart",
+        "test/screens/quiz_screen_test.dart"
+      ],
+      "trigger": "After a canonical answer has committed, ask to leave the Quiz route.",
+      "expected": "Exit confirmation explains that accepted answers remain saved and the unfinished session ends.",
+      "actual": "Confirmation line799 states session progress will not be saved, while abandon preserves canonical answer/events/projections and only marks session abandoned. This contradicts durable behavior and can mislead users about retained learning data.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Meaningful widget/real repository journey commits an answer, opens exit confirmation, verifies truthful retention copy, abandons and verifies same evidence remains with abandoned session. Do not change canonical retention to match the false copy.",
+      "fixSha": null,
+      "retest": null
+    },
+    {
+      "id": "B18-REV03-08",
+      "severity": "P2",
+      "status": "open-candidate-runtime-reproduction-pending",
+      "file": "lib/screens/setting_screen.dart",
+      "relatedFiles": [
+        "lib/runtime/app_bootstrap.dart",
+        "lib/features/account/application/local_data_deletion.dart"
+      ],
+      "trigger": "Open local erase confirmation for ownerA, then active owner changes to B before confirming.",
+      "expected": "Confirmation applies to the owner whose deletion was presented, or rejects stale confirmation.",
+      "actual": "_eraseLocalData reads active owner only after confirmation. Canonical eraser correctly checks that newly supplied B is active, so its guard cannot detect that the user confirmed while viewing A. Need bounded owner-transition widget reproduction; do not run real erasure.",
+      "ownerPackage": "G8.3",
+      "proposedRegression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
+      "fixSha": null,
+      "retest": null
     }
   ],
   "toolingObservations": [
