@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F03",
+  "continuationId": "B18-G83-F03-C03",
+  "status": "partial-continuation-checkpoint",
+  "recordedAtUtc": "2026-09-19T16:09:55.210591+00:00",
+  "threadId": "01a0ba53-8ce3-7042-88d0-6d363275b3d8",
+  "inputCheckpointSha": "7a85f702d753bf8d88ff71a1aab667c6c867c376",
+  "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+  "sourceFreezeSha": "b0321b3416ca67c9098644f5df59d353071cfdc3",
+  "acceptedG81Sha": "6c24330bc1c5dd11519504e52a4998c70df6e605",
+  "acceptedG82Sha": "4c7b287c9c0ea977bd71dd94e65ad9b5c04bb936",
+  "acceptedF01Sha": "b386b5b280d050aad3bcbc13b9686ace54f9dd3c",
+  "acceptedF02Sha": "9177d016d0b7918d88d47325394964a1271ac0a7",
+  "findings": [
+    {
+      "findingId": "B18-REV03-05",
+      "status": "closed-regression-verified",
+      "redRun": "vocab-red4/vocab-red5",
+      "greenRun": "final2",
+      "outcome": "Every vocabulary category/editor/import/examples route uses its originating registry; current admission fences retained mutation/navigation callbacks and pending dialogs. Production services still resolve from scope; explicit fixture injection remains supported. Real Drift proves no word/outbox additions after withdrawal, enabled writes succeed and committed writes survive withdrawal."
+    },
+    {
+      "findingId": "B18-REV03-08",
+      "status": "closed-regression-verified",
+      "redRun": "erase-red",
+      "greenRun": "final2",
+      "outcome": "Erasure captures the presented owner before confirmation, rejects a replacement owner, contains lookup failure/cancellation, releases confirmation state for retry and retains production atomic owner lease enforcement."
+    },
+    {
+      "findingId": "B18-REV03-11",
+      "status": "closed-regression-verified",
+      "redRun": "register-red",
+      "greenRun": "final2",
+      "outcome": "Successful registration is retained independently from unresolved local consent persistence. Owner lookup/repository failures are contained; explicit accept/decline is retained; retry completes verification without a second account registration. Credentials/initial agreement are locked after registration. Synthetic services only."
+    }
+  ],
+  "closedInThisCheckpoint": 3,
+  "closedF03": 13,
+  "remainingF03": [
+    "B18-REV03-09",
+    "B18-REV05-01",
+    "B18-REV05-02",
+    "B18-REV05-03",
+    "B18-REV05-04",
+    "B18-REV06-06"
+  ],
+  "totalClosed": 32,
+  "remainingOpenFindings": 37,
+  "dartTestsPassed": 96,
+  "testTargetCount": 9,
+  "analysis": {
+    "exitCode": 0,
+    "changedDartFiles": 11,
+    "issues": 0
+  },
+  "changedSource": [
+    {
+      "path": "lib/screens/add_multiple_words_screen.dart",
+      "sha256": "31dec4308131ad5e06ce177ff0c9e2037c942320fc7fad6a47d9d89fbac52bd3"
+    },
+    {
+      "path": "lib/screens/add_vocab_screen.dart",
+      "sha256": "cab50c4e906c77c06c189f0ccff3bb5f41ae438fbad1d3f4b2c452b42974e2d7"
+    },
+    {
+      "path": "lib/screens/categories_page.dart",
+      "sha256": "d87d8fb48ddf53c2e38ef1186ec262f8710a69afd9edacec96a2c0e8df19c724"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "8a524d3789a7bf7494172a2cbb84980b06b907dbae39cd600c0da994ab39e9b7"
+    },
+    {
+      "path": "lib/screens/register_screen.dart",
+      "sha256": "60b97c5aba3f93e8cde5641be0fc5b3978b6552e5e381919b0b8cf294de20929"
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "sha256": "18ea1300226a4b75e2c62a0396b0144e86dc30ce09207b529a1b10474189b714"
+    },
+    {
+      "path": "lib/screens/vocab_list_screen.dart",
+      "sha256": "365223715e10001e79beb384ca4a16b2cc96c74f245b28fc4344d57e34a9711f"
+    },
+    {
+      "path": "test/screens/registration_consent_recovery_test.dart",
+      "sha256": "fd46dbcf8c33bb2a4fee5389c34bc99faa9071162ecf6644a5699749c74798f9"
+    },
+    {
+      "path": "test/screens/setting_screen_data_erasure_test.dart",
+      "sha256": "8387f11e534369993ce98802d6f53dc7693adbf53ee4b912d8781cec19f2c2a7"
+    },
+    {
+      "path": "test/screens/vocab_list_screen_test.dart",
+      "sha256": "961370536fe2f6c3f98f6c4f3faf7a8d495b9d21b4ac8ec5f45f5653fd28eca4"
+    },
+    {
+      "path": "test/screens/vocabulary_route_withdrawal_test.dart",
+      "sha256": "5f5fa992889c9c0764ba63f19427651b6de29d4f0a8de1bea3d98a718326e65c"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F03\\C03",
+  "evidenceManifestSha256": "1f5134e7116dc3072e31e12080c3946655d3d2fe04a83d56d80d5f99a7c68dfe",
+  "review": "review.json; local review only",
+  "limitations": [
+    "F03 only13/19 outcomes closed;6remain. F04 gated.",
+    "Final pre/post1338inputs unchanged;21pairs equal.",
+    "Installed/native/device/provider/full-release not run. Whole-app analyzer historical issues not rechecked."
+  ],
+  "F03Accepted": false,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json"
+}

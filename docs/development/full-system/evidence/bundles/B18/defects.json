@@ -207,15 +207,22 @@
     {
       "id": "B18-REV03-05",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/vocab_list_screen.dart",
       "trigger": "Open production Vocabulary tab, push a personal category and AddWordScreen, then emergencyOff Feature.vocabulary while editor remains on Navigator stack; submit a valid new word",
       "expected": "Withdrawal disables the open vocabulary route and rejects any newly initiated mutation through retained UI callbacks",
       "actual": "MainNavigation gates only CategoriesPage. CategoriesPage pushes bare VocabListScreen, which pushes bare editor/import routes. AppNavigator.pushPage directly builds MaterialPageRoute with no feature wrapper. Editor/usecases/repository ordinary create path has no live feature check; parent gate rebuild cannot remove sibling Navigator routes, so a new word and outbox write remain admissible after withdrawal. Existing widget tests do not toggle registry on these pushed routes.",
       "ownerPackage": "G4.1",
       "proposedRegression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-05",
+        "redRun": "vocab-red4/vocab-red5",
+        "greenRun": "final2",
+        "outcome": "Every vocabulary category/editor/import/examples route uses its originating registry; current admission fences retained mutation/navigation callbacks and pending dialogs. Production services still resolve from scope; explicit fixture injection remains supported. Real Drift proves no word/outbox additions after withdrawal, enabled writes succeed and committed writes survive withdrawal."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV09-01",
@@ -412,7 +419,7 @@
     {
       "id": "B18-REV03-08",
       "severity": "P2",
-      "status": "open-candidate-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/setting_screen.dart",
       "relatedFiles": [
         "lib/runtime/app_bootstrap.dart",
@@ -423,8 +430,15 @@
       "actual": "_eraseLocalData reads active owner only after confirmation. Canonical eraser correctly checks that newly supplied B is active, so its guard cannot detect that the user confirmed while viewing A. Need bounded owner-transition widget reproduction; do not run real erasure.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-08",
+        "redRun": "erase-red",
+        "greenRun": "final2",
+        "outcome": "Erasure captures the presented owner before confirmation, rejects a replacement owner, contains lookup failure/cancellation, releases confirmation state for retry and retains production atomic owner lease enforcement."
+      },
+      "reviewStatusAtG82": "open-candidate-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-09",
@@ -470,7 +484,7 @@
     {
       "id": "B18-REV03-11",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/screens/register_screen.dart",
       "relatedFiles": [
         "lib/features/consent/application/research_consent_use_cases.dart",
@@ -481,8 +495,15 @@
       "actual": "Only AccountException is caught. ResearchConsentUseCases deliberately propagates primary repository/owner errors, unlike detached sync errors. The registration handler finally clears busy but escapes before verification navigation; subsequent submit repeats registration. Existing two widget tests only cover absent privacy agreement/provider.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Fake successful account and failing local consent repository; assert no unhandled exception, no false consent success, and recoverable verification/consent state without a second account registration. No real account creation or research activation.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "retest": {
+        "receipt": "G8.3-F03-C03-checkpoint.json",
+        "findingId": "B18-REV03-11",
+        "redRun": "register-red",
+        "greenRun": "final2",
+        "outcome": "Successful registration is retained independently from unresolved local consent persistence. Owner lookup/repository failures are contained; explicit accept/decline is retained; retry completes verification without a second account registration. Credentials/initial agreement are locked after registration. Synthetic services only."
+      },
+      "reviewStatusAtG82": "open-static-confirmed-runtime-reproduction-pending"
     },
     {
       "id": "B18-REV03-12",

@@ -71,19 +71,16 @@
         "B18-REV06-08"
       ],
       "status": "partial-continuation-checkpoint",
-      "closedCount": 10,
+      "closedCount": 13,
       "pendingFindingIDs": [
-        "B18-REV03-05",
-        "B18-REV03-08",
         "B18-REV03-09",
-        "B18-REV03-11",
         "B18-REV05-01",
         "B18-REV05-02",
         "B18-REV05-03",
         "B18-REV05-04",
         "B18-REV06-06"
       ],
-      "receipt": "G8.3-F03-C02-checkpoint.json"
+      "receipt": "G8.3-F03-C03-checkpoint.json"
     },
     {
       "sliceId": "B18-G83-F04",
@@ -277,7 +274,9 @@
       "dependencies": [],
       "regression": "Real Drift + production RuntimeFeatureRegistry widget: open category/editor through actual Navigator, retain submit callback, emergency-off vocabulary, invoke stale callback and verify zero word/outbox additions; positive enabled counterpart and import descendant. Bind every descendant to same explicit parent registry and fence new mutations without interrupting already committed writes. Reproduce in G8.3, no live services.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV09-01",
@@ -401,7 +400,9 @@
       "dependencies": [],
       "regression": "Deferred confirmation with fake owner switch and recording eraser must never erase B. Pin original owner before dialog and reject change after await; retain production lease guard and cancellation behavior.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-09",
@@ -435,7 +436,9 @@
       ],
       "regression": "Fake successful account and failing local consent repository; assert no unhandled exception, no false consent success, and recoverable verification/consent state without a second account registration. No real account creation or research activation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "d49c4f900b28620e7c2576def926afe58a0e5e52",
+      "receipt": "G8.3-F03-C03-checkpoint.json"
     },
     {
       "findingId": "B18-REV03-12",
