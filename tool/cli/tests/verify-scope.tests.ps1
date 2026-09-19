@@ -86,6 +86,8 @@ if (-not $rejected) { throw 'Missing command must be rejected before any suite s
 $fixture = Join-Path $repoRoot ('build/verification/scope-contract-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path "$fixture/tool/cli/tests" -Force | Out-Null
 Copy-Item -LiteralPath $runner -Destination "$fixture/tool/cli/verify-scope.ps1"
+# Match repository output exclusions; generated logs are not oracle inputs.
+[IO.File]::WriteAllText("$fixture/.gitignore", "build/`ntranscript.log`n")
 foreach ($name in @('r15-scope.tests.ps1','verify-scope.tests.ps1')) {
     [IO.File]::WriteAllText("$fixture/tool/cli/tests/$name", 'Add-Content -LiteralPath (Join-Path $PSScriptRoot "../../../build/calls.txt") -Value "run"')
 }

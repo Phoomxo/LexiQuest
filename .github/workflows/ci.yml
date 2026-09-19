@@ -41,16 +41,25 @@ jobs:
         shell: pwsh
         run: |
           ./tool/cli/tests/runtime-probes.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/run-android.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/ci-workflow.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/dependabot-config.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/osv-pr-workflow.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/osv-scheduled-workflow.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/osv-config.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/firebase-seed-security.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/model-loading-security.tests.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./tool/cli/tests/android-manifest-security.tests.ps1
-
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'

@@ -94,6 +94,10 @@ function Get-Sha256Text {
 function Get-AreaPathPattern {
     param([string]$SelectedArea)
 
+    # CLI oracles read repository-wide configs, documents and platform inputs.
+    # Conservatively hash the repository without expanding executed commands.
+    if ($CliOnly -or $CliTestTargets.Count -gt 0) { return '^' }
+
     # Frontend suites share feature authorities, bootstrap and test helpers.
     # Conservative input coverage avoids reusing a pass after an unstaged
     # dependency edit. This changes cache validity, not the selected tests.
@@ -116,7 +120,7 @@ function Get-AreaPathPattern {
             return $flutterInputs + '|^(functions/|firebase\.json$|firestore\.rules$|package(-lock)?\.json$)'
         }
         'Runtime' {
-            return $flutterInputs + '|^(android/|\.github/workflows/)'
+            return '^' # Subsystem Runtime also selects repository-reading CLI contracts.
         }
         'BackendAI' { return '^(backend/ai_api/|tool/cli/|\.gitattributes$|uv\.toml$|\.python-version$)' }
         'BackendVoice' { return '^(backend/voice_api/|tool/cli/|\.gitattributes$|uv\.toml$|\.python-version$)' }
@@ -125,7 +129,7 @@ function Get-AreaPathPattern {
             return $flutterInputs + '|^(integration_test/|android/|\.github/workflows/)'
         }
         'All' {
-            return $flutterInputs + '|^(integration_test/|backend/|functions/|tools/|android/|firebase\.json$|firestore\.rules$|storage\.rules$|supabase/|\.github/workflows/|package(-lock)?\.json$)'
+            return '^' # Release invokes the repository-wide CLI gate.
         }
         default { throw ('Unsupported area: ' + $SelectedArea) }
     }
@@ -198,10 +202,11 @@ function Get-EnvironmentFingerprint {
 function Test-ReusableCommand {
     param([object]$Previous, [string]$Fingerprint)
     if ($null -eq $Previous) { return $false }
-    foreach ($field in @('fingerprint','Status','ExitCode','Stdout','Stderr','StdoutHash','StderrHash','StartedAt','FinishedAt')) {
+    foreach ($field in @('fingerprint','Status','ExitCode','Stdout','Stderr','StdoutHash','StderrHash','StartedAt','FinishedAt','postFingerprint')) {
         if ($null -eq $Previous.PSObject.Properties[$field]) { return $false }
     }
     if ($Previous.Status -ne 'Passed' -or $Previous.ExitCode -ne 0 -or $Previous.fingerprint -ne $Fingerprint) { return $false }
+    if ($Previous.postFingerprint -ne $Fingerprint) { return $false }
     foreach ($stream in @('Stdout','Stderr')) {
         if (-not (Test-Path -LiteralPath $Previous.$stream -PathType Leaf)) { return $false }
         if ((Get-VerificationFileHash -LiteralPath $Previous.$stream).Hash -ne $Previous.($stream + 'Hash')) { return $false }
@@ -584,7 +589,7 @@ function Invoke-BoundedCommand {
     )
 
     $safeName = ($Command.Name -replace '[^A-Za-z0-9._-]', '-').Trim('-')
-    $LogDirectory = Join-Path $LogDirectory ($Command.commandKey.Substring(0, 12) + '-' + $SourceFingerprint.Substring(0, 12))
+    $LogDirectory = Join-Path $LogDirectory ($Command.commandKey.Substring(0, 12) + '-' + $SourceFingerprint.Substring(0, 12) + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
     New-Item -ItemType Directory -Force -Path $LogDirectory | Out-Null
     $stdoutPath = Join-Path $LogDirectory ($safeName + '.stdout.log')
     $stderrPath = Join-Path $LogDirectory ($safeName + '.stderr.log')
@@ -630,35 +635,37 @@ function Invoke-BoundedCommand {
     $process.StartInfo = $processInfo
     [void]$process.Start()
 
+    # Drain immediately: Console.Error and wrapper errors bypass child log redirects.
+    $wrapperRead = $process.StandardError.ReadToEndAsync()
     $finished = $process.WaitForExit($LimitSeconds * 1000)
     if (-not $finished) {
         & taskkill.exe /PID $process.Id /T /F | Out-Null
-        return [pscustomobject]@{
-            Name = $Command.Name
-            commandKey = $Command.commandKey
-            fingerprint = $SourceFingerprint
-            Status = 'TimedOut'
-            ExitCode = $null
-            StartedAt = $startedAt.ToString('o')
-            FinishedAt = [DateTimeOffset]::UtcNow.ToString('o')
-            Stdout = $stdoutPath
-            Stderr = $stderrPath
-        }
+        if (-not $process.WaitForExit(5000)) { throw 'Timed-out process tree did not stop.' }
     }
 
     $process.WaitForExit()
-    $wrapperError = $process.StandardError.ReadToEnd()
+    $wrapperError = $wrapperRead.GetAwaiter().GetResult()
     if (-not [string]::IsNullOrWhiteSpace($wrapperError)) {
-        Add-Content -LiteralPath $stderrPath -Value $wrapperError -Encoding UTF8
+        $encoding = [Text.UTF8Encoding]::new($false)
+        if (Test-Path -LiteralPath $stderrPath) {
+            $bytes = [IO.File]::ReadAllBytes($stderrPath)
+            if ($bytes.Length -ge 2 -and $bytes[0] -eq 255 -and $bytes[1] -eq 254) { $encoding = [Text.Encoding]::Unicode }
+        }
+        [IO.File]::AppendAllText($stderrPath, $wrapperError, $encoding)
     }
     $process.Refresh()
-    $status = if ($process.ExitCode -eq 0) { 'Passed' } else { 'Failed' }
+    $exitCode = $process.ExitCode
+    $process.Dispose()
+    foreach ($path in @($stdoutPath, $stderrPath)) {
+        if (-not (Test-Path -LiteralPath $path)) { [IO.File]::WriteAllText($path, '') }
+    }
+    $status = if ($finished) { if ($exitCode -eq 0) { 'Passed' } else { 'Failed' } } else { 'TimedOut' }
     return [pscustomobject]@{
         Name = $Command.Name
         commandKey = $Command.commandKey
         fingerprint = $SourceFingerprint
         Status = $status
-        ExitCode = $process.ExitCode
+        ExitCode = if ($finished) { $exitCode } else { $null }
         StartedAt = $startedAt.ToString('o')
         FinishedAt = [DateTimeOffset]::UtcNow.ToString('o')
         Stdout = $stdoutPath
@@ -728,7 +735,12 @@ try {
         }
     }
 
+    $initialByArea = @{}
+    foreach ($sourceArea in @($commands.SourceArea | Sort-Object -Unique)) {
+        $initialByArea[$sourceArea] = Get-SourceFingerprint -SelectedArea $sourceArea -ResolvedBaseSha $resolvedBaseSha -CurrentHeadSha $headSha
+    }
     $result = [ordered]@{
+        areaFingerprints = $initialByArea
         schemaVersion = 'verify-scope-v2'
         headSha = $headSha
         baseSha = $resolvedBaseSha
@@ -760,11 +772,12 @@ try {
             -ResolvedBaseSha $resolvedBaseSha `
             -CurrentHeadSha $headSha
         $previousCommand = $previousByCommand[[string]$command.commandKey]
-        if (Test-ReusableCommand -Previous $previousCommand -Fingerprint $commandFingerprint) {
+        if ($commandFingerprint -eq $initialByArea[$command.SourceArea] -and (Test-ReusableCommand -Previous $previousCommand -Fingerprint $commandFingerprint)) {
             $result.commands += [pscustomobject]@{
                 Name = $previousCommand.Name
                 commandKey = $previousCommand.commandKey
                 fingerprint = $commandFingerprint
+                postFingerprint = $previousCommand.postFingerprint
                 Status = 'Passed'
                 ExitCode = 0
                 StartedAt = $previousCommand.StartedAt
@@ -785,6 +798,11 @@ try {
             -LimitSeconds $timeoutSeconds[$Level] `
             -LogDirectory $resultDirectory `
             -SourceFingerprint $commandFingerprint
+        $postFingerprint = Get-SourceFingerprint -SelectedArea $command.SourceArea -ResolvedBaseSha $resolvedBaseSha -CurrentHeadSha ((& git rev-parse HEAD).Trim())
+        $commandResult | Add-Member NoteProperty postFingerprint $postFingerprint
+        if ($postFingerprint -ne $commandFingerprint -or $commandFingerprint -ne $initialByArea[$command.SourceArea]) {
+            $commandResult.Status = 'InputDrift'
+        }
         foreach ($stream in @('Stdout','Stderr')) {
             $hash = if (Test-Path -LiteralPath $commandResult.$stream -PathType Leaf) { (Get-VerificationFileHash -LiteralPath $commandResult.$stream).Hash } else { $null }
             $commandResult | Add-Member NoteProperty ($stream + 'Hash') $hash
@@ -807,6 +825,19 @@ try {
         }
     }
 
+    $finalFingerprint = Get-SourceFingerprint -SelectedArea $Area -ResolvedBaseSha $resolvedBaseSha -CurrentHeadSha ((& git rev-parse HEAD).Trim())
+    $result.postFingerprint = $finalFingerprint
+    $changedAreas = @(foreach ($sourceArea in $initialByArea.Keys) {
+        $finalArea = Get-SourceFingerprint -SelectedArea $sourceArea -ResolvedBaseSha $resolvedBaseSha -CurrentHeadSha ((& git rev-parse HEAD).Trim())
+        if ($finalArea -ne $initialByArea[$sourceArea]) { $sourceArea }
+    })
+    if ($finalFingerprint -ne $fingerprint -or $changedAreas.Count -gt 0) {
+        $result.status = 'InputDrift'
+        $result.finishedAt = [DateTimeOffset]::UtcNow.ToString('o')
+        Save-VerificationResult -Result $result -Path $resultPath
+        Write-Host 'FAIL: inputs changed across the verification run.' -ForegroundColor Red
+        exit 1
+    }
     $result.status = 'Passed'
     $result.finishedAt = [DateTimeOffset]::UtcNow.ToString('o')
     Save-VerificationResult -Result $result -Path $resultPath

@@ -11,7 +11,7 @@ final class AppBuildInfo {
   const AppBuildInfo.fromEnvironment()
     : version = const String.fromEnvironment(
         'LEXIQUEST_VERSION',
-        defaultValue: '1.0.0+1',
+        defaultValue: '1.0.0+14',
       ),
       buildId = const String.fromEnvironment(
         'LEXIQUEST_BUILD_ID',

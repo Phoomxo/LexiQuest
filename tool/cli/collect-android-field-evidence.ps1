@@ -148,17 +148,23 @@ function Get-InstalledVersionCode {
         [Parameter(Mandatory)][string]$PackageName
     )
 
-    $packageOutput = @(
-        & adb -s $Serial shell dumpsys package $PackageName 2>$null
-    )
-    $versionMatch = [regex]::Match(
-        ($packageOutput -join "`n"),
-        '(?m)^\s*versionCode=(\d+)\b'
-    )
-    if (-not $versionMatch.Success) {
-        return $null
+    # A successful package listing proves absence; failed or malformed queries do not.
+    $listed = @(& adb -s $Serial shell pm list packages $PackageName 2>&1)
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to establish prior package state.' }
+    $lines = @($listed | ForEach-Object { ([string]$_).Trim() } | Where-Object { $_ })
+    if (@($lines | Where-Object { $_ -notmatch '^package:[A-Za-z0-9_.]+$' }).Count) {
+        throw 'Malformed prior package listing.'
     }
-    return [int]$versionMatch.Groups[1].Value
+    if (('package:' + $PackageName) -cnotin $lines) { return $null }
+    $packageOutput = @(& adb -s $Serial shell dumpsys package $PackageName 2>&1)
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to read prior installed version.' }
+    $versions = @([regex]::Matches(($packageOutput -join "`n"), '(?m)^\s*versionCode=(\d+)\b') |
+        ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    $version = 0
+    if ($versions.Count -ne 1 -or -not [int]::TryParse($versions[0], [ref]$version) -or $version -lt 1) {
+        throw 'Prior installed version is unknown or invalid.'
+    }
+    return $version
 }
 
 if ($null -eq (Get-Command adb -ErrorAction SilentlyContinue)) {

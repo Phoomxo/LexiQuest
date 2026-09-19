@@ -28,6 +28,8 @@ if (-not (Test-Path -LiteralPath $modulePath)) {
     exit 1
 }
 $source = [System.IO.File]::ReadAllText($modulePath)
+& node --check $modulePath
+Assert-True ($LASTEXITCODE -eq 0) 'seed module parses without executing initialization'
 
 Assert-False ($source -match '[A-Za-z]:[\\/](Users|Documents and Settings)[\\/]') 'no absolute Windows user path'
 Assert-False ($source -match 'firebase-adminsdk') 'no firebase-adminsdk credential filename'
@@ -37,6 +39,9 @@ Assert-True ($source -match 'applicationDefault') 'seed uses Application Default
 Assert-True ($source -match 'require\.main\s*===\s*module') 'importing the module is side-effect free'
 Assert-True ($source -match 'module\.exports') 'module exports maintenance functions'
 Assert-True ($source -match 'module\.exports\s*=\s*\{[^}]*addDefaultCategories') 'module exports addDefaultCategories'
+
+& node (Join-Path $PSScriptRoot 'firebase-seed-contract.cjs')
+Assert-True ($LASTEXITCODE -eq 0) 'seed import and denied execution are side-effect free'
 
 Write-Host ("Firebase seed security tests: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
 if ($script:Failed -gt 0) { exit 1 }

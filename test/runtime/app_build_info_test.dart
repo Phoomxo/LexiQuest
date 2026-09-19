@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,7 +87,11 @@ void main() {
       'fromEnvironment defaults to pubspec version and a development id',
       () {
         const info = AppBuildInfo.fromEnvironment();
-        expect(info.version, '1.0.0+1');
+        final pubspec = File('pubspec.yaml').readAsStringSync();
+        final version = RegExp(r'^version:\s*(\S+)', multiLine: true)
+            .firstMatch(pubspec)!
+            .group(1);
+        expect(info.version, version);
         expect(info.buildId, 'development');
       },
     );

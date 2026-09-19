@@ -844,6 +844,12 @@ void main() {
     26,
     23,
     27,
+    28,
+    29,
+    '27',
+    27.0,
+    '28',
+    28.0,
     '25',
     25.0,
     25.5,
@@ -864,7 +870,7 @@ void main() {
         );
         expect(
           validate,
-          version is int && (version == 24 || version == 25 || version == 26)
+          version is int && const {24, 25, 26, 27, 28}.contains(version)
               ? returnsNormally
               : throwsA(isA<SyncFailure>()),
         );

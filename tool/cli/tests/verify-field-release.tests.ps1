@@ -2018,13 +2018,20 @@ foreach ($needle in @(
     'flutter build apk --release',
     'apksigner',
     'signingCertificateSha256',
-    'Get-FileHash',
+    'Get-LexiQuestFileHash',
     'git status --porcelain',
     'docs/field',
     '--untracked-files=all'
 )) {
     Assert-True $packagerText.Contains($needle) "packager contains $needle"
 }
+
+. (Join-Path $repoRoot 'tool/cli/lib/release-profile.ps1')
+$hashVector = Join-Path $repoRoot ('build/release-hash-' + [guid]::NewGuid().ToString('N'))
+[IO.File]::WriteAllText($hashVector, 'abc', [Text.UTF8Encoding]::new($false))
+try {
+    Assert-True ((Get-LexiQuestFileHash -LiteralPath $hashVector).Hash -eq 'BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD') 'actual packager hash helper matches the standard SHA256 vector'
+} finally { Remove-Item -LiteralPath $hashVector }
 
 $assemblerText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/new-field-release-evidence.ps1'

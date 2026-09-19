@@ -8,6 +8,8 @@ import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integra
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
+import '../support/current_database_contract.dart';
+
 void main() {
   late AppDatabase database;
 
@@ -31,6 +33,9 @@ void main() {
       ),
       baseline.copyWith(
         tableNames: <String>[...baseline.tableNames, 'pair_stars'],
+      ),
+      baseline.copyWith(
+        tableNames: <String>[...baseline.tableNames.skip(1), 'unknown_table'],
       ),
       // A same-count substitution must still trip the star-authority ban.
       baseline.copyWith(
@@ -80,7 +85,8 @@ void _validateBoundary(_PairBoundarySnapshot snapshot) {
       snapshot.appRoutes.join(',') != 'login,register,emailVerification,home') {
     throw StateError('Pair Matching must not create a main destination.');
   }
-  if (snapshot.tableNames.length != 49 ||
+  if (snapshot.tableNames.length != currentDatabaseTableInventory.length ||
+      !snapshot.tableNames.toSet().containsAll(currentDatabaseTableInventory) ||
       snapshot.tableNames.any(
         (name) => name.contains('pair_star') || name.contains('matching_star'),
       )) {

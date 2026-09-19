@@ -81,14 +81,36 @@ async function main() {
     urlPrefix: "https://billingbudgets.googleapis.com",
     apiVersion: "v1",
   });
-  const listed = (
-    await budgetClient.get(`/${billingAccountName}/budgets`, {
+  const budgets = [];
+  const seenTokens = new Set();
+  let pageToken;
+  do {
+    const listed = (await budgetClient.get(`/${billingAccountName}/budgets`, {
       timeout: 30000,
-    })
-  ).body;
-  const existing = (listed.budgets || []).find(
-    (budget) => budget.displayName === displayName,
-  );
+      queryParams: pageToken ? { pageToken } : {},
+    })).body;
+    if (!listed || (listed.budgets !== undefined && !Array.isArray(listed.budgets))) {
+      throw new Error("Invalid budget listing response.");
+    }
+    budgets.push(...(listed.budgets || []));
+    pageToken = listed.nextPageToken;
+    if (pageToken) {
+      if (typeof pageToken !== "string" || seenTokens.has(pageToken)) {
+        throw new Error("Budget pagination did not advance.");
+      }
+      seenTokens.add(pageToken);
+    }
+  } while (pageToken);
+  const sameName = budgets.filter(budget => budget.displayName === displayName);
+  if (sameName.length > 1 || sameName.some(budget =>
+    budget.budgetFilter?.projects?.length !== 1 ||
+    budget.budgetFilter.projects[0] !== `projects/${projectNumber}`)) {
+    throw new Error("Budget identity is ambiguous or belongs to another project.");
+  }
+  const existing = sameName[0];
+  if (existing && (!existing.name?.startsWith(`${billingAccountName}/budgets/`) || !existing.etag)) {
+    throw new Error("Existing budget resource identity or concurrency token is missing.");
+  }
 
   const body = {
     displayName,
@@ -137,8 +159,19 @@ async function main() {
   const thresholds = (result.thresholdRules || [])
     .map((rule) => Number(rule.thresholdPercent))
     .sort();
-  if (JSON.stringify(thresholds) !== JSON.stringify([0.5, 0.8, 1])) {
-    throw new Error("Budget thresholds did not reconcile to 50/80/100.");
+  if (JSON.stringify(thresholds) !== JSON.stringify([0.5, 0.8, 1]) ||
+      result.thresholdRules.some(rule => rule.spendBasis !== "CURRENT_SPEND") ||
+      result.displayName !== displayName ||
+      !result.name?.startsWith(`${billingAccountName}/budgets/`) ||
+      (existing && result.name !== existing.name) ||
+      result.budgetFilter?.projects?.length !== 1 ||
+      result.budgetFilter.projects[0] !== `projects/${projectNumber}` ||
+      result.budgetFilter.calendarPeriod !== "MONTH" ||
+      result.amount?.specifiedAmount?.currencyCode !== "THB" ||
+      String(result.amount.specifiedAmount.units) !== monthlyAmountThb ||
+      (result.amount.specifiedAmount.nanos || 0) !== 0 ||
+      result.allUpdatesRule?.disableDefaultIamRecipients !== false) {
+    throw new Error("Budget identity, amount, period or alert policy did not reconcile.");
   }
 
   const evidence = {

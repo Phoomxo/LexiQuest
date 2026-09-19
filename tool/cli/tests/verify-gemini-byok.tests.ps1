@@ -130,9 +130,9 @@ foreach ($needle in @(
 }
 
 $database = Get-Content -LiteralPath $databasePath -Raw -Encoding utf8
-if (-not $database.Contains('static const int currentSchemaVersion = 26;') -or
+if (-not ($database -match 'static const int currentSchemaVersion = [1-9][0-9]*;') -or
     -not $database.Contains('int get schemaVersion => currentSchemaVersion;')) {
-    Write-Error 'AI credential metadata must use the current schema-26 database authority.'
+    Write-Error 'AI credential metadata must use the current versioned database authority.'
 }
 
 $secureAiStoreTest = Get-Content -LiteralPath $secureAiStoreTestPath -Raw -Encoding utf8

@@ -39,25 +39,24 @@ foreach ($url in $urls) {
     if ([int]$response.StatusCode -ne 200) {
         throw "Asset Links returned HTTP $($response.StatusCode): $url"
     }
-    $statement = @($response.Content | ConvertFrom-Json)
-    $target = @(
-        $statement |
-            Where-Object {
-                $_.target.namespace -eq 'android_app' -and
-                $_.target.package_name -eq 'com.lexiquest.app'
-            }
-    ) | Select-Object -First 1
-    if ($null -eq $target) {
-        throw "Production package is absent from Asset Links: $url"
+    $statements = $response.Content | ConvertFrom-Json
+    $matched = $false
+    foreach ($statement in @($statements)) {
+        if ($null -eq $statement -or $null -eq $statement.PSObject.Properties['target'] -or
+            $null -eq $statement.PSObject.Properties['relation']) { continue }
+        $target = $statement.target
+        if ($null -eq $target -or $null -eq $target.PSObject.Properties['namespace'] -or
+            $null -eq $target.PSObject.Properties['package_name'] -or
+            $null -eq $target.PSObject.Properties['sha256_cert_fingerprints']) { continue }
+        if ($target.namespace -cne 'android_app' -or $target.package_name -cne 'com.lexiquest.app' -or
+            'delegate_permission/common.handle_all_urls' -cnotin @($statement.relation)) { continue }
+        $fingerprints = @($target.sha256_cert_fingerprints | ForEach-Object {
+            ([string]$_).Replace(':', '').ToUpperInvariant()
+        })
+        if ($certificate -cin $fingerprints) { $matched = $true; break }
     }
-    $fingerprints = @(
-        $target.target.sha256_cert_fingerprints |
-            ForEach-Object {
-                ([string]$_).Replace(':', '').ToUpperInvariant()
-            }
-    )
-    if ($certificate -notin $fingerprints) {
-        throw "Release certificate is absent from Asset Links: $url"
+    if (-not $matched) {
+        throw "No Asset Links statement binds package, certificate and URL-handling relation: $url"
     }
     $results += [ordered]@{
         url = $url
