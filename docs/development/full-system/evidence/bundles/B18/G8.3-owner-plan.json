@@ -135,7 +135,9 @@
         "B18-REV11-07",
         "B18-REV11-08"
       ],
-      "status": "planned"
+      "status": "accepted",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "sliceId": "B18-G83-F07",
@@ -300,7 +302,9 @@
       ],
       "regression": "Run bounded targeted existing schema matrix to record RED; correct expected supported set to include27 and add28 plus string/floating27 negatives. Retain24 historical pin rejection in current-run authorizer and every malformed-type assertion. This is a stale oracle correction, not relaxing transport.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV09-02",
@@ -350,7 +354,9 @@
       ],
       "regression": "Use bounded non-executing node --check or equivalent parser oracle to demonstrate RED and GREEN after repairing duplicated splice; add syntax oracle to targeted maintainer scope. Do not run seed or initialize Firebase. Preserve environment guard and inspect reviewed vocabulary changes rather than silently bulk-seeding remote data.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV12-03",
@@ -362,7 +368,9 @@
       ],
       "regression": "Run targeted existing Pair boundary test to record RED, align to exact current database table inventory and keep f45/extra-route/star-table and same-count substitution negatives meaningful. Do not regenerate historic final test plan or reduce schema27 to26.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV12-04",
@@ -374,7 +382,9 @@
       ],
       "regression": "Use verify-scope Targeted/Runtime with only verify-gemini-byok.tests.ps1 for RED then GREEN. Replace stale26 assertion with current contract authority while preserving schema getter, credential namespace/owner fences/secret negatives. Do not lower application schema or run full legacy gate/APK/network.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV03-06",
@@ -880,7 +890,9 @@
       "dependencies": [],
       "regression": "Targeted test compares default to deliberate version authority and tests explicit injected identity independently; preserve disposal/resume/accessibility assertions in this mixed test file. Do not silently change public release version or historical receipts.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-01",
@@ -890,7 +902,9 @@
       "dependencies": [],
       "regression": "Fake ADB success-absent, present, nonzero, malformed and transient-error cases; unknown must abort or stay pending, never sign pass. Keep real lower-version upgrade and installed-byte checks.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-02",
@@ -900,7 +914,9 @@
       "dependencies": [],
       "regression": "Disposable runner fixture with real selected-oracle input dependency: change package.json and another non-tool config/doc, require rerun; unchanged control must reuse. Do not broaden actual execution scope to full suite.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-03",
@@ -910,7 +926,9 @@
       "dependencies": [],
       "regression": "Child changes a covered input during execution: require explicit drift rejection/invalidation; unchanged run still reuses. Separate legitimate environment setup from the verified phase and test it without installing real dependencies.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-04",
@@ -920,7 +938,9 @@
       "dependencies": [],
       "regression": "Inject HTTP fixtures with missing/wrong relation and correct relation; test multiple statements and content-type/redirect contract as appropriate. No live hosting or deployment.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-05",
@@ -930,7 +950,9 @@
       "dependencies": [],
       "regression": "Injected client only: paginated target, same-name foreign project, duplicates and response mismatch; ensure no unintended mutation and validate project/currency/amount, not thresholds alone.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-06",
@@ -940,7 +962,9 @@
       "dependencies": [],
       "regression": "Use authoritative pinned schema or supported local parser fixture to confirm group enum, reject invalid values and preserve nine ecosystem scopes; no dependency update service invocation.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-07",
@@ -950,7 +974,9 @@
       "dependencies": [],
       "regression": "Controlled same-shell early exit1 followed by success using the CI invocation contract; assert nonzero step result for first/middle/last failure without running hosted workflow.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     },
     {
       "findingId": "B18-REV11-08",
@@ -960,7 +986,9 @@
       "dependencies": [],
       "regression": "Bounded fake child/wrapper failure producing enough wrapper stderr; concurrently drain and verify complete evidence/exit plus timeout-tree cleanup. Preserve ordinary child log behavior.",
       "closure": "Reproduce then fix plus affected regression; candidate may be refuted only with explicit reachable-contract evidence. Group completion alone never closes finding.",
-      "status": "pending-reproduction"
+      "status": "closed-regression-verified",
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "receipt": "G8.3-F06-acceptance.json"
     }
   ],
   "sharedObligations": [

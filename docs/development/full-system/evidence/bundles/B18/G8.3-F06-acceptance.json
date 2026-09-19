@@ -1,0 +1,513 @@
+{
+  "schemaVersion": 1,
+  "bundleId": "B18",
+  "packageId": "G8.3",
+  "sliceId": "B18-G83-F06",
+  "status": "accepted",
+  "recordedAtUtc": "2026-09-19T20:12:42.901330+00:00",
+  "threadId": "01a0bb28-9866-7dd0-8eec-007b3a456d56",
+  "inputCheckpointSha": "33b84e240beb94bbce86e52cb1bf98225167f07c",
+  "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+  "findings": [
+    {
+      "id": "B18-REV12-01",
+      "red": "oracles-red",
+      "green": "final-flutter",
+      "outcome": "Explicit integer schemas24–28; unsupported29 and string/double27/28 denied. Historical issuer/schema pins unchanged."
+    },
+    {
+      "id": "B18-REV12-02",
+      "red": "seed-red + seed-import-red",
+      "green": "final-cli",
+      "outcome": "Removed exact duplicated8-category suffix, retained10 unique categories/197 words. Parse and import/denied-seed checks load no SDK. Guard now precedes lazy initialization; no seed executed."
+    },
+    {
+      "id": "B18-REV12-03",
+      "red": "oracles-red",
+      "green": "final-flutter",
+      "outcome": "Current exact50-table inventory replaces49 count; wrong same-count table, star table, route and f45 mutations remain rejected."
+    },
+    {
+      "id": "B18-REV12-04",
+      "red": "gemini-red",
+      "green": "final-cli",
+      "outcome": "Gemini oracle follows current declared schema authority/getter; credential owner namespaces and no-secret assertions retained."
+    },
+    {
+      "id": "B18-REV10-05",
+      "red": "oracles-red",
+      "green": "final-flutter + final-cli02",
+      "outcome": "Development fallback now matches unchanged pubspec1.0.0+14. Real dart-define version/build injection independently checked; release version parameter untouched."
+    },
+    {
+      "id": "B18-REV11-01",
+      "red": "adb-red",
+      "green": "final-cli + final-cli02",
+      "outcome": "Prior package state requires successful well-formed listing; installed version requires successful unambiguous positive version query. Unknown aborts before install/signing; absent/present and six error controls use fakeADB."
+    },
+    {
+      "id": "B18-REV11-02",
+      "red": "verifier-red + verifier-mixed-red",
+      "green": "final-verifier",
+      "outcome": "Repository-reading CLI selections, implicit Runtime CLI and release gate conservatively hash all Git-visible repository inputs. Root/doc edits invalidate reuse; commands executed remain bounded."
+    },
+    {
+      "id": "B18-REV11-03",
+      "red": "verifier-red + verifier-mixed-red",
+      "green": "final-verifier",
+      "outcome": "Per-command pre/post and per-selected-area initial/final fingerprints reject source/environment drift; old unbound results cannot resume. Stable setup then verification succeeds. Endpoint checks are not a continuous filesystem lock."
+    },
+    {
+      "id": "B18-REV11-04",
+      "red": "assetlinks-red03",
+      "green": "final-cli",
+      "outcome": "One matching statement must bind exact package/namespace, release certificate and URL-handling relation; missing/wrong/split statements denied and later valid statement accepted. Injected HTTP only."
+    },
+    {
+      "id": "B18-REV11-05",
+      "red": "budget-red",
+      "green": "final-cli",
+      "outcome": "Enumerate every page before deciding mutation; same-name foreign project or duplicate identity aborts. Validate returned project/name/period/currency/amount/threshold basis/recipients before evidence. Injected clients only; no cloud activity."
+    },
+    {
+      "id": "B18-REV11-06",
+      "red": "dependabot-red",
+      "green": "final-cli",
+      "outcome": "All9groups use documented minor/patch enums; existing ecosystem/path scopes preserved and wrong enum controls rejected. Local scoped schema oracle, not hosted service validation."
+    },
+    {
+      "id": "B18-REV11-07",
+      "red": "ci-exit-red02",
+      "green": "final-cli",
+      "outcome": "Actual extracted CI body checks each script exit. Local pwsh success/first/middle/last failure cases model documented GitHub wrapper; no hosted workflow triggered."
+    },
+    {
+      "id": "B18-REV11-08",
+      "red": "verifier-red",
+      "green": "final-verifier",
+      "outcome": "Drain wrapper stderr asynchronously from process start. 256KiB pressure completes with exit7; timeout kills descendant and retains emitted stderr. Preserve child UTF16 log encoding, unique attempt log directory."
+    }
+  ],
+  "closedF06": [
+    "B18-REV10-05",
+    "B18-REV11-01",
+    "B18-REV11-02",
+    "B18-REV11-03",
+    "B18-REV11-04",
+    "B18-REV11-05",
+    "B18-REV11-06",
+    "B18-REV11-07",
+    "B18-REV11-08",
+    "B18-REV12-01",
+    "B18-REV12-02",
+    "B18-REV12-03",
+    "B18-REV12-04"
+  ],
+  "remainingF06": [],
+  "totalClosed": 69,
+  "remainingOpenFindings": 0,
+  "flutterTests": 180,
+  "flutterTargets": 3,
+  "cliContracts": 14,
+  "fieldReleaseAssertions": 203,
+  "verification": {
+    "acceptedCommands": {
+      "firebase-seed-security.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\e825fe0955d7.log",
+          "Stderr": "final-cli\\0d2161b77376.log"
+        }
+      },
+      "verify-gemini-byok.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\416804849a44.log",
+          "Stderr": "final-cli\\b83aea4d27a5.log"
+        }
+      },
+      "verify-scope-integrity.tests.ps1": {
+        "run": "final-verifier",
+        "result": "final-verifier\\b88efcfb63f2.json",
+        "fingerprint": "c9335705201d7b0d85957ae22dd51b29c0bf75644ec132c3a10e1515ff9134d5",
+        "streams": {
+          "Stdout": "final-verifier\\a7450201e269.log",
+          "Stderr": "final-verifier\\a07fdfab0284.log"
+        }
+      },
+      "verify-scope.tests.ps1": {
+        "run": "final-verifier",
+        "result": "final-verifier\\b88efcfb63f2.json",
+        "fingerprint": "c9335705201d7b0d85957ae22dd51b29c0bf75644ec132c3a10e1515ff9134d5",
+        "streams": {
+          "Stdout": "final-verifier\\59a95e696d64.log",
+          "Stderr": "final-verifier\\3735ffad04da.log"
+        }
+      },
+      "android-prior-state.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\012d09e5c960.log",
+          "Stderr": "final-cli\\d1c0efeb9a31.log"
+        }
+      },
+      "hosted-asset-links.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\a1d9c9b07fbd.log",
+          "Stderr": "final-cli\\aa8cdfe5223b.log"
+        }
+      },
+      "ci-exit-propagation.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\6a0a83d53588.log",
+          "Stderr": "final-cli\\38a79ee4eac5.log"
+        }
+      },
+      "dependabot-config.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\7b21611d213f.log",
+          "Stderr": "final-cli\\45a3e346420c.log"
+        }
+      },
+      "firebase-budget.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\07cbf78a3f60.log",
+          "Stderr": "final-cli\\6bfb40e20dfe.log"
+        }
+      },
+      "ci-workflow.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\b3e08bc89054.log",
+          "Stderr": "final-cli\\6758834c0dbd.log"
+        }
+      },
+      "android-manifest-security.tests.ps1": {
+        "run": "final-cli",
+        "result": "final-cli\\d8d1f006f8e0.json",
+        "fingerprint": "c6f3771c9094e6e77e88133ee119dba65d641a883c01652f476e83b4ac72d057",
+        "streams": {
+          "Stdout": "final-cli\\bc35de46a4dc.log",
+          "Stderr": "final-cli\\62cc51cc2539.log"
+        }
+      },
+      "verify-scope-selection.tests.ps1": {
+        "run": "final-verifier",
+        "result": "final-verifier\\b88efcfb63f2.json",
+        "fingerprint": "c9335705201d7b0d85957ae22dd51b29c0bf75644ec132c3a10e1515ff9134d5",
+        "streams": {
+          "Stdout": "final-verifier\\9ba2bfa0ec73.log",
+          "Stderr": "final-verifier\\92c20b052656.log"
+        }
+      },
+      "verify-field-release.tests.ps1": {
+        "run": "final-cli02",
+        "result": "final-cli02\\0bb0a8a4a322.json",
+        "fingerprint": "6134c2c872f71bc7a2d5b97e011da646331dea1c3c5a230414eb875d01aeeff6",
+        "streams": {
+          "Stdout": "final-cli02\\1813d197c834.log",
+          "Stderr": "final-cli02\\73e32c2696f3.log"
+        }
+      },
+      "app-build-info.tests.ps1": {
+        "run": "final-cli02",
+        "result": "final-cli02\\0bb0a8a4a322.json",
+        "fingerprint": "6134c2c872f71bc7a2d5b97e011da646331dea1c3c5a230414eb875d01aeeff6",
+        "streams": {
+          "Stdout": "final-cli02\\dda6c667acf6.log",
+          "Stderr": "final-cli02\\76c16687f9f4.log"
+        }
+      },
+      "Explicit Flutter tests": {
+        "run": "final-flutter",
+        "result": "final-flutter\\a2da1127eebb.json",
+        "fingerprint": "1ee5e3f4a3f8a24eda175d6ed189e329775e121e4d07dfbc1976cbfc72d52160",
+        "streams": {
+          "Stdout": "final-flutter\\179be97a619a.log",
+          "Stderr": "final-flutter\\eca3b5aa6b10.log"
+        }
+      }
+    },
+    "cliContracts": 14,
+    "flutterTargets": 3,
+    "flutterTests": 180,
+    "fieldReleaseAssertions": 203,
+    "prePostPairs": [
+      {
+        "run": "adb-red",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "assetlinks-red",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "assetlinks-red02",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "assetlinks-red03",
+        "inputs": 3762,
+        "exitCode": 1
+      },
+      {
+        "run": "budget-red",
+        "inputs": 3762,
+        "exitCode": 1
+      },
+      {
+        "run": "ci-exit-red",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "ci-exit-red02",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "cli-oracles-green",
+        "inputs": 3756,
+        "exitCode": 1
+      },
+      {
+        "run": "cli-oracles-green02",
+        "inputs": 3756,
+        "exitCode": 0
+      },
+      {
+        "run": "dependabot-red",
+        "inputs": 3760,
+        "exitCode": 1
+      },
+      {
+        "run": "final-analysis",
+        "inputs": 3777,
+        "exitCode": 0
+      },
+      {
+        "run": "final-cli",
+        "inputs": 3763,
+        "exitCode": 1
+      },
+      {
+        "run": "final-cli02",
+        "inputs": 3764,
+        "exitCode": 0
+      },
+      {
+        "run": "final-field-version",
+        "inputs": 3763,
+        "exitCode": 1
+      },
+      {
+        "run": "final-flutter",
+        "inputs": 3777,
+        "exitCode": 0
+      },
+      {
+        "run": "final-verifier",
+        "inputs": 3764,
+        "exitCode": 0
+      },
+      {
+        "run": "gemini-red",
+        "inputs": 3755,
+        "exitCode": 1
+      },
+      {
+        "run": "maintenance-green",
+        "inputs": 3762,
+        "exitCode": 0
+      },
+      {
+        "run": "oracles-green",
+        "inputs": 3756,
+        "exitCode": 0
+      },
+      {
+        "run": "oracles-red",
+        "inputs": 3755,
+        "exitCode": 1
+      },
+      {
+        "run": "seed-import-red",
+        "inputs": 3756,
+        "exitCode": 1
+      },
+      {
+        "run": "seed-red",
+        "inputs": 3755,
+        "exitCode": 1
+      },
+      {
+        "run": "verifier-green",
+        "inputs": 3757,
+        "exitCode": 1
+      },
+      {
+        "run": "verifier-green02",
+        "inputs": 3757,
+        "exitCode": 0
+      },
+      {
+        "run": "verifier-mixed-red",
+        "inputs": 3764,
+        "exitCode": 1
+      },
+      {
+        "run": "verifier-red",
+        "inputs": 3757,
+        "exitCode": 1
+      }
+    ],
+    "evidenceReuse": "Latest passed per-command results retained. Later verifier-only refinements reran all3 verifier suites; field and other CLI production/test bodies unchanged. Failed aggregate final-cli preserves11valid passed command results and its failed field-suite environment attempt."
+  },
+  "analysis": {
+    "targets": 4,
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "infos": 0
+  },
+  "changedSource": [
+    {
+      "path": ".github/dependabot.yml",
+      "sha256": "c53eb03a8d4e2b6f6389c04ed65599de502d7502e55901d24c04a48f9eec2b7e"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "49e2eb0fdffac6bb7f16d5d28267f5e1958486b1c6c911e72231b5e0f29e43eb"
+    },
+    {
+      "path": "lib/add_default_categories.js",
+      "sha256": "858085b3e25bf006f5654911eb49d4146e1e4c17d10aee70e6d2ce9bee53fa6b"
+    },
+    {
+      "path": "lib/runtime/app_build_info.dart",
+      "sha256": "920368c8de25b9736a93af21b5c2ff9f28dbfbe0881360b7a15f604c9fd3d781"
+    },
+    {
+      "path": "test/architecture/pair_matching_f10_boundary_test.dart",
+      "sha256": "80d4af3a0039131b6bef60b49e8e06a109767eddbdd5a2a60ade9ad3a7dc20f3"
+    },
+    {
+      "path": "test/features/research/research_sync_authorizer_test.dart",
+      "sha256": "7ffa7a3558b575d08435a944daa34d4dd21871d0ed0ad0690977e80dcf174d54"
+    },
+    {
+      "path": "test/runtime/app_build_info_test.dart",
+      "sha256": "74dd6f9e362909d7806dfd4c481334d4cfb1572ac863a1b02b9dfd37b8f6a917"
+    },
+    {
+      "path": "tool/cli/collect-android-field-evidence.ps1",
+      "sha256": "fe8d8ccb50d090211478dcf27bbf5f4e7064c0821354cca1aa63895add2e98aa"
+    },
+    {
+      "path": "tool/cli/configure-firebase-budget.cjs",
+      "sha256": "22fb4cc9fa59996c874b173ca6ba12844a0d3927150e3db65b7ed581bb09ef5e"
+    },
+    {
+      "path": "tool/cli/tests/android-prior-state.tests.ps1",
+      "sha256": "0682871aa69494c4be7443b22cdbafffeb50a34e308ccb58a86c7ba4ca3abb7c"
+    },
+    {
+      "path": "tool/cli/tests/app-build-info.tests.ps1",
+      "sha256": "a2eaab2056665db302bdf6bcbe71faf6e3e0d67d1f245268c5904b755ca18156"
+    },
+    {
+      "path": "tool/cli/tests/ci-exit-propagation.tests.ps1",
+      "sha256": "1d820e77c21de4c595fcbe7f4c4fa5297562c89fd62bd0f69023c330a386e7db"
+    },
+    {
+      "path": "tool/cli/tests/dependabot-config.tests.ps1",
+      "sha256": "43b165b10dc862c05ed4978d8736fedb42778e3ba46af104d0cadeb838855186"
+    },
+    {
+      "path": "tool/cli/tests/firebase-budget-contract.cjs",
+      "sha256": "83006f32150465691d49537c1993f9cbc5c6055b56c729ff6a1c16ab4ce098ae"
+    },
+    {
+      "path": "tool/cli/tests/firebase-budget.tests.ps1",
+      "sha256": "c70bdec7d545f2d0376d00da60022288e7ea7e5fd62b322ff5d3d2a210dc7974"
+    },
+    {
+      "path": "tool/cli/tests/firebase-seed-contract.cjs",
+      "sha256": "33b6a572771c6ec905c7edd4c58739043ae0c1f587b81d84b87d18ba4f7b9059"
+    },
+    {
+      "path": "tool/cli/tests/firebase-seed-security.tests.ps1",
+      "sha256": "e9ebd73c1d120f820371e482f5e018c82d0cd0228ba2fbe6990e725c3c10aee8"
+    },
+    {
+      "path": "tool/cli/tests/hosted-asset-links.tests.ps1",
+      "sha256": "4773d5d2b7c4b2a0509eacce5e9f8aa2d1ee4bfca52dcabfb11f550197a05eb1"
+    },
+    {
+      "path": "tool/cli/tests/verify-field-release.tests.ps1",
+      "sha256": "021da672cffd0b7a08a568ae0403bb9bf119378599bdd08030508b771b971e29"
+    },
+    {
+      "path": "tool/cli/tests/verify-gemini-byok.tests.ps1",
+      "sha256": "e90cf653551468487647998f872a1252f277df10b0e4a81d08d38c1af0bd4a88"
+    },
+    {
+      "path": "tool/cli/tests/verify-scope-integrity.tests.ps1",
+      "sha256": "d440e187d8d79170a7ec45998558bfe74fb3c721b91a4ea3ada38067b65c4fd1"
+    },
+    {
+      "path": "tool/cli/tests/verify-scope-selection.tests.ps1",
+      "sha256": "811aa9b4feade4277cdd3e63a2eae5de7bded1dafa83c7277514b903367e6fd5"
+    },
+    {
+      "path": "tool/cli/tests/verify-scope.tests.ps1",
+      "sha256": "68155a751c0e6fef1915dc22ce809217c6a2d437024dc6c975dd5ad739fdef2d"
+    },
+    {
+      "path": "tool/cli/verify-hosted-asset-links.ps1",
+      "sha256": "efc12b5ceb9fdebdbb03ccff4df55c245a8a2ca2a0d176e3d86a0ba69c16bffa"
+    },
+    {
+      "path": "tool/cli/verify-scope.ps1",
+      "sha256": "c9ebe7502e25893ba3010a2f5429e86680eb35ba9b68914bbba00c22992a3595"
+    }
+  ],
+  "evidenceRoot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\B18-G83-F06",
+  "evidenceManifestSha256": "bc4aeda3a8ab7c7d407442c54768ea7287a04a92a2ae676fafe2265b4d496db4",
+  "review": "local changed-code review; no independent reviewer",
+  "F06Accepted": true,
+  "G83Accepted": false,
+  "B18Accepted": false,
+  "B19Dispatched": false,
+  "postG83Boundary": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-v3-boundary.json",
+  "limitations": [
+    "Local changed-code review only; no independent reviewer.",
+    "No hosted CI/Dependabot service, physicalADB/APK/install/signing, live HTTP/billing, Firebase seed, cloud deployment, research activation/sync/study/statistical reporting, training/GPU or full-release run.",
+    "Verifier uses endpoint input checks, not a continuous filesystem lock. Conservative CLI repository fingerprints may invalidate on unrelated Git-visible files.",
+    "Inherited PowerShell7 module path broke Get-FileHash in WindowsPowerShell; affected field suite rerun with WindowsPowerShell module paths. Preexisting stale packager assertion repaired without production hash change."
+  ],
+  "nextSlice": "B18-G83-F07"
+}

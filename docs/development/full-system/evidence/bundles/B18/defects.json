@@ -257,7 +257,7 @@
     {
       "id": "B18-REV12-01",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "test/features/research/research_sync_authorizer_test.dart",
       "relatedFiles": [
         "lib/features/sync/domain/research_sync.dart",
@@ -268,8 +268,14 @@
       "actual": "research_sync.dart369 accepts27 and currentSchemaVersion is27; existing test requires SyncFailure for27. Static deterministic oracle mismatch; B18 test not run yet.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Run bounded targeted existing schema matrix to record RED; correct expected supported set to include27 and add28 plus string/floating27 negatives. Retain24 historical pin rejection in current-run authorizer and every malformed-type assertion. This is a stale oracle correction, not relaxing transport.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-01",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter",
+        "outcome": "Explicit integer schemas24–28; unsupported29 and string/double27/28 denied. Historical issuer/schema pins unchanged."
+      }
     },
     {
       "id": "B18-REV09-02",
@@ -350,7 +356,7 @@
     {
       "id": "B18-REV12-02",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "lib/add_default_categories.js",
       "relatedFiles": [
         "package.json",
@@ -361,13 +367,19 @@
       "actual": "The defaultCategories array closes its Nature object then immediately contains a naked quoted words property without a comma/object boundary, followed by duplicated category data. This is invalid JavaScript syntax. package.json routes seed directly to this file, while existing PowerShell contract only matches strings and cannot detect the parse failure.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Use bounded non-executing node --check or equivalent parser oracle to demonstrate RED and GREEN after repairing duplicated splice; add syntax oracle to targeted maintainer scope. Do not run seed or initialize Firebase. Preserve environment guard and inspect reviewed vocabulary changes rather than silently bulk-seeding remote data.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-02",
+        "redRun": "seed-red + seed-import-red",
+        "greenRun": "final-cli",
+        "outcome": "Removed exact duplicated8-category suffix, retained10 unique categories/197 words. Parse and import/denied-seed checks load no SDK. Guard now precedes lazy initialization; no seed executed."
+      }
     },
     {
       "id": "B18-REV12-03",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "test/architecture/pair_matching_f10_boundary_test.dart",
       "relatedFiles": [
         "lib/data/local/app_database.dart",
@@ -379,13 +391,19 @@
       "actual": "The baseline expects returnsNormally but validator line83 rejects tableNames.length !=49. Current source annotation and generated allSchemaEntities36909-36960 contain50tables; current_database_contract also enumerates50. No application schema change is warranted. Runtime RED pending.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Run targeted existing Pair boundary test to record RED, align to exact current database table inventory and keep f45/extra-route/star-table and same-count substitution negatives meaningful. Do not regenerate historic final test plan or reduce schema27 to26.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-03",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter",
+        "outcome": "Current exact50-table inventory replaces49 count; wrong same-count table, star table, route and f45 mutations remain rejected."
+      }
     },
     {
       "id": "B18-REV12-04",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "tool/cli/tests/verify-gemini-byok.tests.ps1",
       "relatedFiles": [
         "lib/data/local/app_database.dart",
@@ -397,8 +415,14 @@
       "actual": "Lines133-135 require literal currentSchemaVersion =26 and emit schema-26 error; app_database.dart92 declares27. All prior checks succeeding necessarily reaches this rejection. Runtime reproduction pending.",
       "ownerPackage": "G8.3",
       "proposedRegression": "Use verify-scope Targeted/Runtime with only verify-gemini-byok.tests.ps1 for RED then GREEN. Replace stale26 assertion with current contract authority while preserving schema getter, credential namespace/owner fences/secret negatives. Do not lower application schema or run full legacy gate/APK/network.",
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV12-04",
+        "redRun": "gemini-red",
+        "greenRun": "final-cli",
+        "outcome": "Gemini oracle follows current declared schema authority/getter; credential owner namespaces and no-secret assertions retained."
+      }
     },
     {
       "id": "B18-REV03-06",
@@ -1497,7 +1521,7 @@
     {
       "id": "B18-REV10-05",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "test/runtime/app_build_info_test.dart",
       "relatedFiles": [
         "lib/runtime/app_build_info.dart",
@@ -1515,13 +1539,19 @@
         "pubspec.yaml:5",
         "package-field-release.ps1:277-280"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV10-05",
+        "redRun": "oracles-red",
+        "greenRun": "final-flutter + final-cli02",
+        "outcome": "Development fallback now matches unchanged pubspec1.0.0+14. Real dart-define version/build injection independently checked; release version parameter untouched."
+      }
     },
     {
       "id": "B18-REV11-01",
       "severity": "P1",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "tool/cli/collect-android-field-evidence.ps1",
       "relatedFiles": [
         "tool/cli/lib/field-release-evidence.ps1",
@@ -1539,13 +1569,19 @@
         "field-release-evidence.ps1:1142-1172",
         "verify-field-release.tests.ps1:1934-1943"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-01",
+        "redRun": "adb-red",
+        "greenRun": "final-cli + final-cli02",
+        "outcome": "Prior package state requires successful well-formed listing; installed version requires successful unambiguous positive version query. Unknown aborts before install/signing; absent/present and six error controls use fakeADB."
+      }
     },
     {
       "id": "B18-REV11-02",
       "severity": "P1",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "tool/cli/verify-scope.ps1",
       "relatedFiles": [
         "tool/cli/tests/ci-workflow.tests.ps1",
@@ -1566,13 +1602,19 @@
         "ci-workflow.tests.ps1:229-237",
         "verify-scope.tests.ps1:112-132"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-02",
+        "redRun": "verifier-red + verifier-mixed-red",
+        "greenRun": "final-verifier",
+        "outcome": "Repository-reading CLI selections, implicit Runtime CLI and release gate conservatively hash all Git-visible repository inputs. Root/doc edits invalidate reuse; commands executed remain bounded."
+      }
     },
     {
       "id": "B18-REV11-03",
       "severity": "P1",
-      "status": "candidate-runtime-reproduction-required",
+      "status": "closed-regression-verified",
       "file": "tool/cli/verify-scope.ps1",
       "relatedFiles": [
         "tool/cli/tests/verify-scope.tests.ps1"
@@ -1587,13 +1629,19 @@
         "verify-scope.ps1:731-749",
         "verify-scope.ps1:757-812"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-03",
+        "redRun": "verifier-red + verifier-mixed-red",
+        "greenRun": "final-verifier",
+        "outcome": "Per-command pre/post and per-selected-area initial/final fingerprints reject source/environment drift; old unbound results cannot resume. Stable setup then verification succeeds. Endpoint checks are not a continuous filesystem lock."
+      }
     },
     {
       "id": "B18-REV11-04",
       "severity": "P2",
-      "status": "open-static-confirmed-runtime-reproduction-pending",
+      "status": "closed-regression-verified",
       "file": "tool/cli/verify-hosted-asset-links.ps1",
       "relatedFiles": [
         "hosting/public/.well-known/assetlinks.json",
@@ -1608,13 +1656,19 @@
         "verify-hosted-asset-links.ps1:37-69",
         "hosting/public/.well-known/assetlinks.json:3-5"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-04",
+        "redRun": "assetlinks-red03",
+        "greenRun": "final-cli",
+        "outcome": "One matching statement must bind exact package/namespace, release certificate and URL-handling relation; missing/wrong/split statements denied and later valid statement accepted. Injected HTTP only."
+      }
     },
     {
       "id": "B18-REV11-05",
       "severity": "P2",
-      "status": "candidate-runtime-reproduction-required",
+      "status": "closed-regression-verified",
       "file": "tool/cli/configure-firebase-budget.cjs",
       "relatedFiles": [
         "tool/cli/tests/verify-field-release.tests.ps1"
@@ -1628,13 +1682,19 @@
         "configure-firebase-budget.cjs:84-91",
         "configure-firebase-budget.cjs:94-141"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-05",
+        "redRun": "budget-red",
+        "greenRun": "final-cli",
+        "outcome": "Enumerate every page before deciding mutation; same-name foreign project or duplicate identity aborts. Validate returned project/name/period/currency/amount/threshold basis/recipients before evidence. Injected clients only; no cloud activity."
+      }
     },
     {
       "id": "B18-REV11-06",
       "severity": "P2",
-      "status": "candidate-runtime-reproduction-required",
+      "status": "closed-regression-verified",
       "file": ".github/dependabot.yml",
       "relatedFiles": [
         "tool/cli/tests/dependabot-config.tests.ps1"
@@ -1648,13 +1708,19 @@
         ".github/dependabot.yml:10-13",
         "tool/cli/tests/dependabot-config.tests.ps1:30-38"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-06",
+        "redRun": "dependabot-red",
+        "greenRun": "final-cli",
+        "outcome": "All9groups use documented minor/patch enums; existing ecosystem/path scopes preserved and wrong enum controls rejected. Local scoped schema oracle, not hosted service validation."
+      }
     },
     {
       "id": "B18-REV11-07",
       "severity": "P1",
-      "status": "candidate-runtime-reproduction-required",
+      "status": "closed-regression-verified",
       "file": ".github/workflows/ci.yml",
       "relatedFiles": [
         "tool/cli/tests/ci-workflow.tests.ps1"
@@ -1668,13 +1734,19 @@
         ".github/workflows/ci.yml:40-52",
         "tool/cli/tests/ci-workflow.tests.ps1:227-250"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-07",
+        "redRun": "ci-exit-red02",
+        "greenRun": "final-cli",
+        "outcome": "Actual extracted CI body checks each script exit. Local pwsh success/first/middle/last failure cases model documented GitHub wrapper; no hosted workflow triggered."
+      }
     },
     {
       "id": "B18-REV11-08",
       "severity": "P2",
-      "status": "candidate-runtime-reproduction-required",
+      "status": "closed-regression-verified",
       "file": "tool/cli/verify-scope.ps1",
       "relatedFiles": [
         "tool/cli/tests/verify-scope.tests.ps1"
@@ -1688,8 +1760,14 @@
         "verify-scope.ps1:599-615",
         "verify-scope.ps1:627-650"
       ],
-      "fixSha": null,
-      "retest": null
+      "fixSha": "3d41b48f6d494a7e3e487c3ef54a805c12bdfb8c",
+      "retest": {
+        "receipt": "G8.3-F06-acceptance.json",
+        "findingId": "B18-REV11-08",
+        "redRun": "verifier-red",
+        "greenRun": "final-verifier",
+        "outcome": "Drain wrapper stderr asynchronously from process start. 256KiB pressure completes with exit7; timeout kills descendant and retains emitted stderr. Preserve child UTF16 log encoding, unique attempt log directory."
+      }
     }
   ],
   "toolingObservations": [
