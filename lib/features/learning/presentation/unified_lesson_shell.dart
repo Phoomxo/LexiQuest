@@ -1538,7 +1538,12 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Material(
+    color: Theme.of(context).scaffoldBackgroundColor,
+    child: _buildContent(context),
+  );
+
+  Widget _buildContent(BuildContext context) {
     final controller = widget.controller;
     if (controller == null) {
       return AccessibilityScope(
@@ -1619,7 +1624,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                           role: AccessibilitySemanticRole.feedback,
                           child: AnswerFeedbackPanel(
                             feedback: feedback,
-                            onOpenGuidedRepair: (app) => app.open(controller.requireGuidedRepairFeedback()),
+                            onOpenGuidedRepair: (app) => app.open(
+                              controller.requireGuidedRepairFeedback(),
+                            ),
                             bookmarkIdentity: feedback.bookmarkIdentity,
                             onBookmark: bookmarkLearningItem,
                             reportIdentity: feedback.bookmarkIdentity,
@@ -1676,20 +1683,27 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                             ),
                           ),
                       ];
-                      return Column(
-                        children: <Widget>[
-                          if (auxiliary.isNotEmpty)
-                            Flexible(
-                              child: SingleChildScrollView(
-                                key: const ValueKey('lesson-auxiliary-scroll'),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: auxiliary,
+                      return LayoutBuilder(
+                        builder: (context, constraints) => Column(
+                          children: <Widget>[
+                            if (auxiliary.isNotEmpty)
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: constraints.maxHeight / 2,
+                                ),
+                                child: SingleChildScrollView(
+                                  key: const ValueKey(
+                                    'lesson-auxiliary-scroll',
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: auxiliary,
+                                  ),
                                 ),
                               ),
-                            ),
-                          Expanded(child: placedModeSurface),
-                        ],
+                            Expanded(child: placedModeSurface),
+                          ],
+                        ),
                       );
                     },
                   ),

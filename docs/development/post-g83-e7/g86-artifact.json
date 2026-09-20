@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+  "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-5535da0e-production-debug.apk",
+  "apkSha256": "0af6be6dfcf91359affdc10b7d4851eb8be45063fc5c4e80ae81a28470573f6f",
+  "apkBytes": 228208157,
+  "buildMode": "debug",
+  "entrypoint": "lib/main.dart",
+  "dartDefines": {},
+  "buildIdDisplayed": "development (default; external SHA provenance retained)",
+  "packagedSourceAssets": [
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/NOTICE.txt",
+      "source": "assets\\content\\cefr_editorial\\NOTICE.txt",
+      "sha256": "68e612bf9677f1a3fd6aed130f26882ee3f1d3a791e2c64399f02303afd447b6"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/batch-1.json",
+      "source": "assets\\content\\cefr_editorial\\batch-1.json",
+      "sha256": "d7ab58a1cce6d7d30b92418b234161ab1a75088da7934516f33d5791159b027b"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/batch-2.json",
+      "source": "assets\\content\\cefr_editorial\\batch-2.json",
+      "sha256": "9a53ab6653d1fcebd61d8cf9a6251e11b5075e26ea865cc819e3fb29d100e46e"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/batch-3.json",
+      "source": "assets\\content\\cefr_editorial\\batch-3.json",
+      "sha256": "b2534412e7ee71bb913f229952902f25e5d46265931a094dd6cd1316d3642f06"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/complete-1.json",
+      "source": "assets\\content\\cefr_editorial\\complete-1.json",
+      "sha256": "c615817a58afb6ecb9b5c24d8c35b8b5d9f1af133a9ba659697858d8ff953551"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/complete-2.json",
+      "source": "assets\\content\\cefr_editorial\\complete-2.json",
+      "sha256": "f173b57c3540c4e44b39fe8ade0be7c6b1c75961ff39d74fbc90a930c3cab0c9"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/complete-3.json",
+      "source": "assets\\content\\cefr_editorial\\complete-3.json",
+      "sha256": "3c0d6c460b99f99c99b51371f101dbd668de48c2dc93e8ebde1cd99e24647d3f"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/sense-review-1.json",
+      "source": "assets\\content\\cefr_editorial\\sense-review-1.json",
+      "sha256": "c3fcc05d70288e528517a6cbea1881cd285dbb7410fcd43243e80a4c8fa223eb"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/sense-review-2.json",
+      "source": "assets\\content\\cefr_editorial\\sense-review-2.json",
+      "sha256": "ebb94097be4a1d6a47f24849b0a76f2967af70c3f6c662e9d9e321f4d498278a"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_editorial/sense-review-3.json",
+      "source": "assets\\content\\cefr_editorial\\sense-review-3.json",
+      "sha256": "a2c9b8f1178fd0e6c5b4370fc46d7fd597cf477812dfbc5b326491ab5e3fd804"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_expanded/NOTICE.txt",
+      "source": "assets\\content\\cefr_expanded\\NOTICE.txt",
+      "sha256": "1f03ec83b301bd0df4ff3e32922d6dc4a7afe1b06d8e42398406de7a492b8f87"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_expanded/advanced-profile.json",
+      "source": "assets\\content\\cefr_expanded\\advanced-profile.json",
+      "sha256": "694a96a5cd413aa41c8547691d54eabed8f8746ca08dcf970e3dd288fc7ebe05"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_expanded/advanced-translations.json",
+      "source": "assets\\content\\cefr_expanded\\advanced-translations.json",
+      "sha256": "3e25d52af96d5524ca786c07cc840772ee6862cb381e7b2cda96c16a1d116130"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_expanded/core-extension.json",
+      "source": "assets\\content\\cefr_expanded\\core-extension.json",
+      "sha256": "da83baf5ecfb8b64a486da6e784c7ca3d5ae373e18e7fccc02d09179cf7bf6bf"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_expanded/octanove-source.csv",
+      "source": "assets\\content\\cefr_expanded\\octanove-source.csv",
+      "sha256": "18c33a407f2f89f7b8de9671c6d45fe3ea0bce45e7d2d7dcaab48d73e0f7b380"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_starter/LICENSE-th.txt",
+      "source": "assets\\content\\cefr_starter\\LICENSE-th.txt",
+      "sha256": "c5ee569c4f90f797b400ca57b608b87baf90d052244e03c477ec4d2d616fbd6f"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_starter/LICENSE.txt",
+      "source": "assets\\content\\cefr_starter\\LICENSE.txt",
+      "sha256": "ad4492b38d5a82e0e57793be2ada45ed6f129f0ca04a97019f408f76545528f8"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_starter/NOTICE.txt",
+      "source": "assets\\content\\cefr_starter\\NOTICE.txt",
+      "sha256": "c2267164a0939906b131acc1b6b7ba9799f5f8615cfb3345e58254e4808a916a"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/cefr_starter/catalog.json",
+      "source": "assets\\content\\cefr_starter\\catalog.json",
+      "sha256": "b1af6f5c444650d39d6873bf7db7632585b2220b69bce323327693c021641140"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-bag/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-bag\\r1.json",
+      "sha256": "9b27908a43e5f047ab8cf00ee9684d902255aa67e11f4c703032ba321856cf7b"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-book/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-book\\r1.json",
+      "sha256": "a92b4c2e6a8db6c1b760b82ee7bc8341afcd26b974bba78a06c0385696731bee"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-bottle/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-bottle\\r1.json",
+      "sha256": "61dd55ca6b4a3574e304be3738befba59b9a5c1ba17993ef411db189b713c562"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-chair/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-chair\\r1.json",
+      "sha256": "33d514b228ae7033e1d1242a77054178aecf1e67587b1514bb05901f47591fdd"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-clock/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-clock\\r1.json",
+      "sha256": "a662360d388bb4466a97b3f915d4fb77cd9b6cec0624b2e87b9a62176be7d3b9"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-cup/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-cup\\r1.json",
+      "sha256": "4af13e68ae9dc7364560bb9cd15e40c5e0fb1a43d16b8f46ea8f8376adf1cc38"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-door/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-door\\r1.json",
+      "sha256": "c5118f9b9d159b18c0694d63d7667481c2189832a5b39307a1f83b5ef00aac04"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-key/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-key\\r1.json",
+      "sha256": "834b6e191333dc96238269dd4884dd09546eab26aee93f0ca1df19ff776e6cdf"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-pencil/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-pencil\\r1.json",
+      "sha256": "5c2c96810f0b52bcafcafb31cc418382dfc9ae5a2be4326878f25285625dfbca"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-plate/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-plate\\r1.json",
+      "sha256": "4deed1ddfb40df024d5d014b8323ea08f824f5b7a0653113c7c01316ac6c05ce"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-spoon/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-spoon\\r1.json",
+      "sha256": "8cadc285886d20ad391423309e455b82bbb6f008253480c0274894a5491c8795"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/lexical_metadata/starter-window/r1.json",
+      "source": "assets\\content\\lexical_metadata\\starter-window\\r1.json",
+      "sha256": "1fa2337cdb2f423fb85068d9ec2cf468dc82448c44a2b36ea22a104e2d2fbc4c"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/content/sense_crosswalk/starter-r1.json",
+      "source": "assets\\content\\sense_crosswalk\\starter-r1.json",
+      "sha256": "a3a639e9487aa69e7e294f7cd9fc70b222c6ee325bae23844afbfa3e3aa1b115"
+    },
+    {
+      "entry": "assets/flutter_assets/assets/fonts/NotoSansThai-Variable.ttf",
+      "source": "assets\\fonts\\NotoSansThai-Variable.ttf",
+      "sha256": "5a1c559bb539583c8a1fd99d1c5b9491e5e14478c9cd2bd0970d5c3096cc9ef8"
+    }
+  ],
+  "packagedModelWeights": [],
+  "modelDisposition": "No model weights bundled in production APK; installed model is managed separately. Host fixture hash is not device model acceptance.",
+  "nativeRuntimeGate": "g86-apk-runtime.log: PASS",
+  "localPreview": {
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-5535da0e-local-preview-debug.apk",
+    "apkSha256": "1674ebc5d630fa2348c9c263028a255c3b7092f77fbedf23d130810cd0a6b243",
+    "installedSha256": "1674ebc5d630fa2348c9c263028a255c3b7092f77fbedf23d130810cd0a6b243",
+    "apkBytes": 268597164,
+    "dartDefines": {
+      "LEXIQUEST_LEARNING_PREVIEW": "true",
+      "LEXIQUEST_CLOUD_SYNC_ENABLED": "false",
+      "LEXIQUEST_BUILD_ID": "5535da0e29bb-e7-preview"
+    },
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-preview-runtime.log",
+    "research": "unchanged off; consent declined"
+  }
+}

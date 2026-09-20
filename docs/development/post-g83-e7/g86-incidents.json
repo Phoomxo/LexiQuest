@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "incidents": [
+    {
+      "id": "E7-G86-TOOL-01",
+      "kind": "tap-target",
+      "observed": "History tap at center of full-width semantics did not hit the shorter visible button",
+      "resolution": "Fresh screenshot identified actual visual button, tap x240 y1588 opened History",
+      "status": "resolved-no-product-defect"
+    },
+    {
+      "id": "E7-G86-TOOL-02",
+      "kind": "stale-uiautomator-dump",
+      "observed": "Pair board XML repeated prior setup while contemporaneous screenshot showed active board",
+      "affectedXml": [
+        "g86-pair-board.xml",
+        "g86-pair-board-settled.xml"
+      ],
+      "disposition": "Not accepted as current board evidence; screenshots used",
+      "resolution": "capture_android.py now uses unique remote XML path and requires dump success marker before pull",
+      "status": "resolved-tool-method"
+    },
+    {
+      "id": "E7-G86-ORACLE-01",
+      "kind": "incorrect-aggregate-equality",
+      "observed": "Replay test initially expected no new answer_attempts (14 versus 18)",
+      "resolution": "Preserve all original attempts and require exactly four new recreational engagementAllowed=false records; compare 17 protected tables unchanged",
+      "evidence": "g86-replay-invariance.json",
+      "status": "resolved-stronger-contract-specific-oracle"
+    },
+    {
+      "id": "E7-G86-VISUAL-01",
+      "kind": "keyboard-surface-observation",
+      "observed": "After native keyboard configuration, debug screenshot showed black outside reduced activity viewport and green border; result screen redrew full viewport",
+      "evidence": [
+        "g86-typed-mixed-choice.png",
+        "g86-typed-mixed-result.png",
+        "g86-input-method.txt"
+      ],
+      "status": "diagnosis-pending",
+      "acceptance": "Do not claim flawless device layout; investigate before G86 completion"
+    }
+  ]
+}

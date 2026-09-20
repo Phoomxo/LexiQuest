@@ -77,17 +77,22 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
-  test('guided repair entry requires acknowledged incorrect feedback', () async {
-    final fixture = await _fixture();
-    expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
-    await fixture.controller.start(fixture.startCommand);
-    await fixture.controller.submit(fixture.submission(isCorrect: false));
-    final original = fixture.controller.feedback;
-    expect(fixture.controller.requireGuidedRepairFeedback(), same(original));
-    expect(fixture.controller.feedback, same(original));
-    await fixture.controller.abandon(fixture.now.add(const Duration(seconds: 2)));
-    expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
-  });
+  test(
+    'guided repair entry requires acknowledged incorrect feedback',
+    () async {
+      final fixture = await _fixture();
+      expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.controller.submit(fixture.submission(isCorrect: false));
+      final original = fixture.controller.feedback;
+      expect(fixture.controller.requireGuidedRepairFeedback(), same(original));
+      expect(fixture.controller.feedback, same(original));
+      await fixture.controller.abandon(
+        fixture.now.add(const Duration(seconds: 2)),
+      );
+      expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
+    },
+  );
   testWidgets('lesson progress semantics describe lifecycle in Thai', (
     tester,
   ) async {
@@ -4386,6 +4391,110 @@ void main() {
 
       expect(first.hintState!.hintLevel, 1);
       expect(second.hintState!.hintLevel, 0);
+    },
+  );
+
+  testWidgets(
+    'shell layout gives the activity all space left by a short hint',
+    (tester) async {
+      final adapter = _HintAdapter();
+      final fixture = await _fixture(
+        adapter: adapter,
+        hints: HintUseCases(policy: adapter.hintPolicy),
+      );
+      await fixture.controller.start(fixture.startCommand);
+      const activityKey = ValueKey<String>('remaining-activity-space');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            builder: (_) => const SizedBox.expand(key: activityKey),
+          ),
+        ),
+      );
+      final activity = tester.getRect(find.byKey(activityKey));
+      final hint = tester.getRect(find.byType(HintPanel));
+      expect(activity.top, closeTo(hint.bottom, 0.01));
+      expect(activity.bottom, closeTo(600, 0.01));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'shell layout paints a full surface behind native activity children',
+    (tester) async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      Material? surface;
+      const activityKey = ValueKey<String>('painted-activity-space');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            builder: (context) {
+              surface = context.findAncestorWidgetOfExactType<Material>();
+              return const SizedBox.expand(key: activityKey);
+            },
+          ),
+        ),
+      );
+      expect(surface, isNotNull);
+      expect(surface!.type, isNot(MaterialType.transparency));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'shell layout bounds long hints and retains a reachable activity',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 480);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final adapter = _HintAdapter();
+      final fixture = await _fixture(
+        adapter: adapter,
+        hints: HintUseCases(policy: adapter.hintPolicy),
+      );
+      await fixture.controller.start(fixture.startCommand);
+      fixture.controller.revealNextHint();
+      fixture.controller.revealNextHint();
+      var taps = 0;
+      const activityKey = ValueKey<String>('small-activity-space');
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            companionBuilder: (_, _) => const SizedBox(height: 20),
+            builder: (_) => SizedBox.expand(
+              key: activityKey,
+              child: Center(
+                child: FilledButton(
+                  onPressed: () => taps++,
+                  child: const Text('Answer'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final scroll = find.byKey(const ValueKey('lesson-auxiliary-scroll'));
+      final auxiliary = tester.getRect(scroll);
+      final activity = tester.getRect(find.byKey(activityKey));
+      expect(auxiliary.height, lessThanOrEqualTo(228));
+      expect(activity.top, closeTo(auxiliary.bottom, 0.01));
+      expect(activity.bottom, closeTo(480, 0.01));
+      await tester.tap(find.text('Answer'));
+      await tester.drag(scroll, const Offset(0, -200));
+      await tester.pumpAndSettle();
+      expect(taps, 1);
+      expect(tester.takeException(), isNull);
     },
   );
 

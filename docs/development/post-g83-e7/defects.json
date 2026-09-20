@@ -16,7 +16,7 @@
     "actual": "Failed assertion; original stdout retained",
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -39,7 +39,7 @@
     "actual": "Failed assertion; original stdout retained",
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -60,7 +60,7 @@
     "actual": "Expected 27, actual 34; fixture retained eight extensions and v28 column",
     "evidence": "BATCH-01 original verifier logs",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-f2d02d1b7af92373c4b91c8d57739cb77ed834d60f3f1cfad1daaa5ac6cc4769.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -81,7 +81,7 @@
     ],
     "fix": "Bounded condition-based frame pumping before original visible and durable assertions; no assertion removed",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-85d01be73d854af0c8ef0c3326e41cd3374d7d08043e744a506dae4abfc4c405.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -105,7 +105,7 @@
     ],
     "fix": "Reviewed all eight original/current images; updated only four obsolete snapshots, exact equality remains required.",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-3ba17442bfde50c2f23e2c9d2d783d656785b9fe9cce190cd4d83770213e5c65.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -125,7 +125,7 @@
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -147,7 +147,7 @@
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -168,7 +168,7 @@
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -187,7 +187,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
       "result": "PASS",
@@ -215,7 +215,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
       "result": "PASS",
@@ -239,7 +239,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/0153c5563fcf-a1ef2f6baaf5-8e38654a/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-a53ff962810dd17ff9418500c89dc0f1e6e6345f45f18fcec4d0cdd65c7dc740.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -258,7 +258,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/3095beabbdc7-c60646767053-5fae7ff6/verify-scope-integration.tests.ps1.stderr.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -276,7 +276,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
       "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
@@ -297,7 +297,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -315,7 +315,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
       "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
@@ -336,7 +336,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -354,7 +354,7 @@
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d68b3f8db0c4-71c43cceb4b2-0500554d/Explicit-Flutter-tests.stdout.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-bf66f655b04095db53f910fa0427f72cb7a18173da54f888c6199e6dbe1929ff.json",
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
   },
@@ -376,7 +376,7 @@
     ],
     "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze.log",
     "status": "fixed-local-verified-G88-review-pending",
-    "fixSHA": null,
+    "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "static": "No issues found",
       "regression": [
@@ -392,5 +392,28 @@
       "result": "No issues found"
     },
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+  },
+  {
+    "DefectID": "E7-D19",
+    "TestCaseID": "G86-native-typed-recall-layout",
+    "sourceSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "environment": "LexiQuest_API_35 emulator and focused flutter-tester regression",
+    "title": "Lesson auxiliary flex leaves activity space unused and shell has no background",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Flexible loose auxiliary and Expanded mode split available height equally. A short hint consumes less than its allocation, leaving unused space below the mode; shell has no opaque Material surface.",
+    "files": [
+      "lib/features/learning/presentation/unified_lesson_shell.dart",
+      "test/features/learning/unified_lesson_controller_test.dart"
+    ],
+    "steps": "Open preview typed/definition activity after configuration; observe shortened activity and unpainted background; reproduce under 800x600 widget viewport.",
+    "expected": "Activity fills all remaining space beneath a short hint; opaque background covers shell; long auxiliary content stays bounded and scrollable.",
+    "actual": "Activity bottom376 rather than600; no Material ancestor; native screenshot retained black areas.",
+    "evidence": "build/verification/5535da0e29bb32a70c65a62a88dc33b41de7930d/896bf1280c1c-cda49c509e50-36a22597/Explicit-Flutter-tests.stdout.log",
+    "status": "fixed-local-280-tests-analyzer-pass-native-retest-pending",
+    "fixSHA": null,
+    "retest": "targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json",
+    "affectedRegression": "9 shared shell consumers, 280 tests passed: targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json",
+    "fix": "Opaque themed Material and bounded intrinsic-height auxiliary scroll; activity Expanded gets remaining actual height."
   }
 ]

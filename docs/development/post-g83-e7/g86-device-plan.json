@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "package": "G8.6",
+  "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+  "status": "in-progress",
+  "device": "emulator-5554",
+  "avd": "LexiQuest_API_35",
+  "deviceClass": "Android emulator, not physical acceptance",
+  "existingApplication": "pm path returned no installation",
+  "network": "airplane enabled, wifi/data disabled before app install",
+  "buildCommand": "flutter build apk --debug --no-pub",
+  "buildLog": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/post-g83-e7/g86-build-debug.log",
+  "installPolicy": "adb install -r -t only; no uninstall or clear-data fallback",
+  "cases": [
+    "artifact-source-content-runtime integrity",
+    "cold start offline",
+    "first lesson",
+    "available mode inventory and journeys",
+    "history and replay",
+    "force-stop/relaunch durable persistence"
+  ],
+  "limitations": [
+    "Core integration temporary DB reopen does not establish production process restart",
+    "External account/provider fakes remain separately labelled",
+    "Physical camera, human audio/TalkBack and live providers remain pending"
+  ],
+  "recovery": "Diagnose failed methods, fix and retest without skipping acceptance"
+}

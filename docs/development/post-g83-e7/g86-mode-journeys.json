@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+  "status": "partial; D19 source fix requires native layout retest",
+  "emulator": "LexiQuest_API_35",
+  "modes": [
+    {
+      "mode": "meaningQuiz",
+      "configuration": "default",
+      "status": "completed",
+      "result": "10/10; distinct-process offline restart preserved",
+      "evidence": [
+        "g86-lesson-result.xml",
+        "g86-progress-after-restart.xml"
+      ]
+    },
+    {
+      "mode": "typedRecall",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "mixed two-question session 2/2; Android keyboard book accepted",
+      "evidence": [
+        "g86-typed-feedback.xml",
+        "g86-typed-two-result.xml"
+      ]
+    },
+    {
+      "mode": "matching",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "4/4 without hints; 3 stars; restart/history and replay4/4; protected tables unchanged",
+      "evidence": [
+        "g86-pair-result.xml",
+        "g86-pair-history-after-restart.xml",
+        "g86-replay-result.xml",
+        "g86-replay-invariance.json"
+      ]
+    },
+    {
+      "mode": "definitionQuiz",
+      "configuration": "local-preview",
+      "status": "completed",
+      "result": "10/10 approved definitions",
+      "evidence": [
+        "g86-definition-result.xml"
+      ]
+    },
+    {
+      "mode": "shadowing",
+      "configuration": "default",
+      "status": "partial-native-entry-only",
+      "result": "Entered and tapped local voice button; abandoned recorded. No acoustic or microphone acceptance.",
+      "evidence": [
+        "g86-shadowing-offline.xml",
+        "g86-history-open.xml"
+      ]
+    },
+    {
+      "mode": "flashcard",
+      "status": "pending"
+    },
+    {
+      "mode": "cloze",
+      "status": "pending"
+    },
+    {
+      "mode": "wordScramble",
+      "status": "pending"
+    },
+    {
+      "mode": "sentenceScramble",
+      "status": "pending"
+    },
+    {
+      "mode": "associativeReading",
+      "status": "pending"
+    },
+    {
+      "mode": "cefrReading",
+      "status": "pending"
+    },
+    {
+      "mode": "dictation",
+      "status": "pending"
+    },
+    {
+      "mode": "speaking",
+      "status": "pending"
+    },
+    {
+      "mode": "handwritingScratchpad",
+      "status": "pending"
+    }
+  ],
+  "otherPaths": {
+    "history": "passed on local-preview; hidden in default field registry",
+    "replay": "passed with persisted recreational evidence and unchanged progress/rewards",
+    "defaultCloud": "network disabled; consent declined",
+    "physicalProviderAndHuman": "pending; no substitution"
+  }
+}
