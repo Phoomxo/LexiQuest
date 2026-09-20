@@ -1,0 +1,2 @@
+# New V1-R1 receipts pin exact bytes; imported evidence remains untouched.
+V1-R1*.json -text whitespace=cr-at-eol

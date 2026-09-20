@@ -1,0 +1,68 @@
+{
+  "status": "PASS",
+  "kind": "real-binary-unauthenticated",
+  "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
+  "timestampUtc": "2026-09-20T16:24:02.537353+00:00",
+  "binary": {
+    "version": "codex-cli 0.146.0",
+    "sha256": "bc343ba420dc2e2e9f59e6fc5e5bf0aae1cd8c771fc319665241fc9c0271fddb"
+  },
+  "login": "NOT_RUN",
+  "inference": "NOT_RUN",
+  "remoteRevoke": "NOT_RUN",
+  "helpSha256": "97a371dd6b3fbb165f46a5f1309f872689fe335068dbdccb3cc932002c0a6e20",
+  "schemaPins": {
+    "CancelLoginAccountParams.json": "1e4c2930d9cdaf4a8b02facc54ca919629217ce6aa45bae65beab674861c60f4",
+    "CancelLoginAccountResponse.json": "8691ac0cb3c82ec8df9f523ac8571cb99b00efa2d5531bcc13c6ef34bd7892d2",
+    "ClientRequest.json": "63fd34096cc990b4a7c5a59b1826d7f2d04d9014b524f0af1eeefc3e0dce8cf6",
+    "GetAccountParams.json": "d0dc3c0d428d37b1ec7887fa6b044244e6474578e1ff397c0872b2a6292073db",
+    "GetAccountResponse.json": "a8b27a203541460d6593723f646900e1df4417e0de43dfc36c485643810e1f1a",
+    "InitializeParams.json": "4f576f99e285beb28f71f48a72b887c1f517dada86fee348fe2af0a35511de23",
+    "InitializeResponse.json": "86dcd236d0576a82c85b933586dc45731260eab1b6edb3447b03f790277322b1",
+    "LogoutAccountResponse.json": "ac14ddfca2ec6092b0039be8720262d5a9930484d23e62544d2ef0b7e1db7926"
+  },
+  "protocol": {
+    "initialize": {
+      "requiredFieldsPresent": true,
+      "isolatedHomeMatched": true
+    },
+    "beforeLogout": {
+      "account": null,
+      "requiresOpenaiAuth": true
+    },
+    "logout": {},
+    "accountUpdated": {
+      "authMode": null
+    },
+    "afterLogout": {
+      "account": null,
+      "requiresOpenaiAuth": true
+    }
+  },
+  "isolation": {
+    "environmentKeys": [
+      "APPDATA",
+      "CODEX_HOME",
+      "COMSPEC",
+      "HOME",
+      "LOCALAPPDATA",
+      "SYSTEMDRIVE",
+      "SYSTEMROOT",
+      "TEMP",
+      "TMP",
+      "USERPROFILE",
+      "WINDIR",
+      "XDG_CACHE_HOME",
+      "XDG_CONFIG_HOME"
+    ],
+    "credentialStore": "file",
+    "authFileAbsentBefore": true,
+    "authFileAbsentAfter": true,
+    "cwdEmptyBefore": true,
+    "parentEnvironmentMutated": false,
+    "boundary": "configuration isolation; not an OS sandbox or network trace"
+  },
+  "childReaped": true,
+  "childExitCode": 0,
+  "temporaryRootRemoved": true
+}
