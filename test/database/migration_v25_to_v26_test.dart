@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 
 import '../support/schema_v25_fixture.dart';
+import '../support/current_database_contract.dart';
 import 'migration_v23_to_v24_test.dart' as older;
 
 void main() {
@@ -77,7 +78,7 @@ void main() {
   );
 
   test(
-    'fresh26 has exactly49 tables and the reserved guards and indexes',
+    'fresh current schema has exact table inventory and reserved guards and indexes',
     () async {
       final db = _database();
       await _expectLayout(db);
@@ -888,13 +889,7 @@ Future<List<Map<String, Object?>>> _schema(AppDatabase db) => _rows(
 );
 Future<void> _expectLayout(AppDatabase db) async {
   expect((await _rows(db, 'PRAGMA user_version')).single.values.single, AppDatabase.currentSchemaVersion);
-  expect(
-    await _rows(
-      db,
-      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-    ),
-    hasLength(52),
-  );
+  await expectCurrentDatabaseContract(db);
   final names = (await _rows(
     db,
     'SELECT name FROM sqlite_master',

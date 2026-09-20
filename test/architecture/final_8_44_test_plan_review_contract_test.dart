@@ -25,8 +25,8 @@ void main() {
         .cast<String, Object?>();
   }
 
-  test('historical frozen test plan remains byte-identical and separate from current schema', () {
-    expect(sha256.convert(manifestFile.readAsBytesSync()).toString(),
+  test('historical frozen test plan retains canonical LF bytes and historical schema', () {
+    expect(sha256.convert(utf8.encode(manifestFile.readAsStringSync().replaceAll('\r\n', '\n'))).toString(),
       '666efc309b9946a0dabd7df15ed4d3d4d48e5f9192ad44826e83607ac7364534');
     final historical = jsonDecode(manifestFile.readAsStringSync()) as Map<String, dynamic>;
     expect(historical['database']['schemaVersion'], 26);

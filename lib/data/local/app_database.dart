@@ -397,9 +397,15 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 25) await _upgradeQuestPeriods(migrator);
       if (from < 26) await _upgradeResearchSessionProofs(migrator);
-      // The v30/v31 extensions are one additive unit. Do not wrap historical table
+      // The v29-v34 extensions are one additive unit. Do not wrap historical table
       // rebuilds here: those own their foreign-key/transaction boundaries.
       await transaction(() async {
+        if (!await _tableExists('personal_set_revisions')) {
+          await migrator.createTable(personalSetRevisions);
+        }
+        if (!await _tableExists('personal_set_members')) {
+          await migrator.createTable(personalSetMembers);
+        }
         if (!await _tableExists('audio_lesson_checkpoints')) {
           await migrator.createTable(audioLessonCheckpoints);
         }
@@ -924,13 +930,6 @@ final class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _createMissingTables(Migrator migrator) async {
-    // v29: additive extension; retain every prior learning/evidence table.
-    if (!await _tableExists('personal_set_revisions')) {
-      await migrator.createTable(personalSetRevisions);
-    }
-    if (!await _tableExists('personal_set_members')) {
-      await migrator.createTable(personalSetMembers);
-    }
     if (!await _tableExists('local_owners')) {
       await migrator.createTable(localOwners);
     }

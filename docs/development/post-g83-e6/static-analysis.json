@@ -1,0 +1,892 @@
+{
+  "command": "dart analyze --format=machine lib test tool/final_test_plan/generate_final_test_plan.dart",
+  "exitCode": 2,
+  "diagnosticLogSha256": "9267caf1fb92d29b6d297a89fe5784e87ecbb95a3cbc0ad1953bd426597aa3ff",
+  "counts": {
+    "WARNING": 1,
+    "INFO": 109
+  },
+  "findings": [
+    {
+      "severity": "WARNING",
+      "code": "UNNECESSARY_CAST",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 216,
+      "sourceLine": "owners.add(owner as String);",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 147,
+      "sourceLine": "_reject();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 156,
+      "sourceLine": "_reject();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 201,
+      "sourceLine": "_reject();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 215,
+      "sourceLine": "_reject();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/data/local/legacy_learning_import.dart",
+      "line": 285,
+      "sourceLine": "_reject();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+      "line": 816,
+      "sourceLine": "throw StateError('Reading upgrade checkpoint missing');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+      "line": 930,
+      "sourceLine": "throw StateError('Reading category rename bound exceeded');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+      "line": 4536,
+      "sourceLine": "return 'compatibilityRepresentative';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/identity/data/drift_owner_upgrade_repository.dart",
+      "line": 4542,
+      "sourceLine": "return 'activeUniqueness';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 1181,
+      "sourceLine": "throw StateError('Reading content is unavailable');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 1250,
+      "sourceLine": "throw StateError('Reading recovery is missing');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 1255,
+      "sourceLine": "throw StateError('Reading document content changed');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 1358,
+      "sourceLine": "throw StateError('Canonical reading checkpoint missing');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 2611,
+      "sourceLine": "throw StateError('Canonical reading checkpoint missing');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/data/drift_learning_repository.dart",
+      "line": 2621,
+      "sourceLine": "throw StateError('Reading has not reached completion');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/domain/associative_reading_checkpoint.dart",
+      "line": 161,
+      "sourceLine": "throw const FormatException('Invalid reading answer set');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/learning/domain/first_answer_accuracy.dart",
+      "line": 31,
+      "sourceLine": "result.add(row);",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "lib/features/learning/presentation/handwriting_scratchpad_route.dart",
+      "line": 59,
+      "sourceLine": "}, onError: (Object _, StackTrace __) {",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/application/quest_use_cases.dart",
+      "line": 122,
+      "sourceLine": "throw ArgumentError.value(expectedOwnerId, 'expectedOwnerId');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/application/quest_use_cases.dart",
+      "line": 143,
+      "sourceLine": "Error.throwWithStackTrace(ownerFailure, ownerFailureStack!);",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/application/quest_use_cases.dart",
+      "line": 321,
+      "sourceLine": "throw StateError('quest completion has no pinned reward');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/application/quest_use_cases.dart",
+      "line": 394,
+      "sourceLine": "definition = null;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/data/drift_quest_repository.dart",
+      "line": 136,
+      "sourceLine": "throw StateError('quest assignment lacks durable period or definition');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/data/drift_quest_repository.dart",
+      "line": 262,
+      "sourceLine": "throw StateError('quest projection catalog exceeds 64');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/data/drift_quest_repository.dart",
+      "line": 281,
+      "sourceLine": "throw StateError('quest event window candidates exceed 64');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/data/drift_quest_repository.dart",
+      "line": 284,
+      "sourceLine": "throw StateError('overlapping canonical quest windows');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/data/drift_quest_repository.dart",
+      "line": 339,
+      "sourceLine": "throw StateError('quest source recovery exceeds bound');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 40,
+      "sourceLine": "throw const FormatException('unknown quest snapshot version');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 118,
+      "sourceLine": "return false;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 186,
+      "sourceLine": "throw const FormatException('invalid quest objective count');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 189,
+      "sourceLine": "throw const FormatException('invalid quest duration');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 207,
+      "sourceLine": "throw const FormatException('invalid quest filters');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 244,
+      "sourceLine": "throw const FormatException('quest snapshot exceeds 64 KiB');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 251,
+      "sourceLine": "throw const FormatException('quest filter nesting exceeds limit');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 253,
+      "sourceLine": "return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 279,
+      "sourceLine": "return a.length == b.length &&",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_definition_codec.dart",
+      "line": 282,
+      "sourceLine": "return a.length == b.length &&",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/quest/domain/quest_period.dart",
+      "line": 31,
+      "sourceLine": "throw ArgumentError('quest assignment must be UTC');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "PREFER_INITIALIZING_FORMALS",
+      "path": "lib/features/recommendation/application/recommendation_use_cases.dart",
+      "line": 129,
+      "sourceLine": "_modeAvailabilityFor = modeAvailabilityFor;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 533,
+      "sourceLine": "throw StateError('reminder owner-operation lease was lost');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 539,
+      "sourceLine": "throw StateError('reminder owner-operation authority changed');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 566,
+      "sourceLine": "continue;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 595,
+      "sourceLine": "return false;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 597,
+      "sourceLine": "return false;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/reminders/application/study_reminder_use_cases.dart",
+      "line": 1317,
+      "sourceLine": "continue;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "line": 761,
+      "sourceLine": "return null;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "line": 772,
+      "sourceLine": "return null;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/research/data/drift_research_session_proof_repository.dart",
+      "line": 786,
+      "sourceLine": "throw const FormatException('Invalid proof source field');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/research/data/drift_research_sync_authorizer.dart",
+      "line": 593,
+      "sourceLine": "continue;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "line": 387,
+      "sourceLine": "return false;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "line": 615,
+      "sourceLine": "return false;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "line": 1035,
+      "sourceLine": "throw const InvalidSyncPayloadFailure();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "line": 1049,
+      "sourceLine": "throw const InvalidSyncPayloadFailure();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/features/sync/data/drift_research_sync_adapter.dart",
+      "line": 1064,
+      "sourceLine": "throw const ProviderUnavailableSyncFailure();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/runtime/app_bootstrap.dart",
+      "line": 1232,
+      "sourceLine": "throw StateError('Quest runtime has been disposed.');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/runtime/app_bootstrap.dart",
+      "line": 1270,
+      "sourceLine": "throw StateError('Quest entry owner transition is active.');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_launcher_screen.dart",
+      "line": 413,
+      "sourceLine": "configuration = recovery.session.sessionConfiguration;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_launcher_screen.dart",
+      "line": 417,
+      "sourceLine": "throw StateError('Reading configuration revalidation unavailable');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_launcher_screen.dart",
+      "line": 436,
+      "sourceLine": "await learning.abandonSession(",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_launcher_screen.dart",
+      "line": 531,
+      "sourceLine": "setState(() {",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "line": 440,
+      "sourceLine": "throw StateError('Reading checkpoint is unavailable');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "line": 445,
+      "sourceLine": "throw StateError('Reading content identity changed');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "line": 453,
+      "sourceLine": "_restoredRecallOccurrences.add(index);",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "line": 456,
+      "sourceLine": "throw StateError('Stopped reading cannot resume');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/associative_reading_session_screen.dart",
+      "line": 460,
+      "sourceLine": "throw StateError('Reading lifecycle is unavailable');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/choose_mode_screen.dart",
+      "line": 495,
+      "sourceLine": "dependencies?.features.isEnabled(Feature.quiz) != true) return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/choose_mode_screen.dart",
+      "line": 499,
+      "sourceLine": "dependencies?.features.isEnabled(Feature.quiz) != true) return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "PREFER_INITIALIZING_FORMALS",
+      "path": "lib/screens/pair_matching_learn_screen.dart",
+      "line": 30,
+      "sourceLine": "replayOperationId = replayOperationId,",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "PREFER_INITIALIZING_FORMALS",
+      "path": "lib/screens/pair_matching_learn_screen.dart",
+      "line": 31,
+      "sourceLine": "expectedOwnerId = expectedOwnerId;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/sentence_scramble_screen.dart",
+      "line": 136,
+      "sourceLine": "return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/shadowing_challenge_screen.dart",
+      "line": 231,
+      "sourceLine": "return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "lib/screens/speak_to_text_screen.dart",
+      "line": 391,
+      "sourceLine": "return;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "USE_BUILD_CONTEXT_SYNCHRONOUSLY",
+      "path": "lib/screens/study_reminder_settings_screen.dart",
+      "line": 152,
+      "sourceLine": "if (_isCurrent(epoch)) Navigator.of(context).maybePop();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "USE_BUILD_CONTEXT_SYNCHRONOUSLY",
+      "path": "lib/screens/study_reminder_settings_screen.dart",
+      "line": 187,
+      "sourceLine": "if (_isCurrent(epoch)) Navigator.of(context).maybePop();",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_IMPORT",
+      "path": "test/architecture/final_8_44_test_plan_contract_test.dart",
+      "line": 8,
+      "sourceLine": "import 'package:vocab_learning_app/features/sync/domain/research_sync.dart';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/data/local/legacy_learning_import_test.dart",
+      "line": 380,
+      "sourceLine": "values['target_word_keys_json'] = '[\"word-a\"]';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/data/local/legacy_learning_import_test.dart",
+      "line": 382,
+      "sourceLine": "values['payload_json'] = '{\"preserved\":true}';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/data/local/legacy_learning_import_test.dart",
+      "line": 384,
+      "sourceLine": "values['content_fingerprint'] = 'a' * 64;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/database/migration_v25_to_v26_test.dart",
+      "line": 360,
+      "sourceLine": "run['assignment_id'] = 'assignment:other';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/database/migration_v25_to_v26_test.dart",
+      "line": 1060,
+      "sourceLine": "yield (",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/device_model/model_download_manager_test.dart",
+      "line": 1096,
+      "sourceLine": "throw const ModelLifecycleException(ModelFailureCode.interpreterRejected);",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "test/features/identity/drift_owner_upgrade_repository_test.dart",
+      "line": 258,
+      "sourceLine": "onError: (Object _, StackTrace __) {",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "test/features/learning/learning_use_cases_test.dart",
+      "line": 229,
+      "sourceLine": "onError: (Object _, StackTrace __) {},",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "AVOID_PRINT",
+      "path": "test/features/learning/session_configuration_mode_matrix_test.dart",
+      "line": 45,
+      "sourceLine": "print('B06_MODE_MATRIX:${jsonEncode({",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/quest/quest_learning_integration_test.dart",
+      "line": 185,
+      "sourceLine": "throw StateError('synthetic reward outage');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/quest/quest_use_cases_test.dart",
+      "line": 516,
+      "sourceLine": "throw StateError('synthetic same-owner lease lost');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "test/features/quest/quest_use_cases_test.dart",
+      "line": 605,
+      "sourceLine": "onError: (Object _, StackTrace __) {},",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_IMPORT",
+      "path": "test/features/reminders/platform_reminder_scheduler_test.dart",
+      "line": 4,
+      "sourceLine": "import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "DEPEND_ON_REFERENCED_PACKAGES",
+      "path": "test/features/reminders/platform_reminder_scheduler_test.dart",
+      "line": 4,
+      "sourceLine": "import 'package:flutter_local_notifications_platform_interface/flutter_local_notifications_platform_interface.dart';",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 524,
+      "sourceLine": "scheduler.beforePermissionReturn = () async =>",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 527,
+      "sourceLine": "scheduler.beforePendingReturn = () async =>",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 733,
+      "sourceLine": "throw StateError('synthetic second precancel failure');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 968,
+      "sourceLine": "throw StateError(",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 1125,
+      "sourceLine": "await drained.timeout(const Duration(seconds: 3));",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/reminders/study_reminder_use_cases_test.dart",
+      "line": 1354,
+      "sourceLine": "throw StateError('synthetic native cancellation failure');",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/research/research_session_proof_test.dart",
+      "line": 597,
+      "sourceLine": "other.owners.single['created_at_utc_ms'] = _start - 2000;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/sync/research_session_proof_transport_test.dart",
+      "line": 1198,
+      "sourceLine": "proofTransactionWrites++;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/features/sync/research_session_proof_transport_test.dart",
+      "line": 1673,
+      "sourceLine": "return (b.mutation.payload['proofRevision']! as int).compareTo(",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "line": 5286,
+      "sourceLine": "onError: (Object _, StackTrace __) {},",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "UNNECESSARY_UNDERSCORES",
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "line": 5347,
+      "sourceLine": "onError: (Object _, StackTrace __) {",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "USE_NULL_AWARE_ELEMENTS",
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "line": 5428,
+      "sourceLine": "if (workerDrain != null) workerDrain,",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "USE_NULL_AWARE_ELEMENTS",
+      "path": "test/runtime/app_bootstrap_test.dart",
+      "line": 5429,
+      "sourceLine": "if (transitionDrain != null) transitionDrain,",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "CURLY_BRACES_IN_FLOW_CONTROL_STRUCTURES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 420,
+      "sourceLine": "await tester.runAsync(",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2132,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2193,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2232,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2279,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2340,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    },
+    {
+      "severity": "INFO",
+      "code": "ANNOTATE_OVERRIDES",
+      "path": "test/screens/associative_reading_launcher_screen_test.dart",
+      "line": 2404,
+      "sourceLine": "final DriftLearningRepository _delegate;",
+      "baselineContainsSameLine": true
+    }
+  ],
+  "interpretation": "Inherited diagnostics, not an analyzer-clean claim; no new diagnostic or error."
+}

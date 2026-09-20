@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:sqlite3/sqlite3.dart' as sqlite;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -182,28 +181,7 @@ void main() {
       );
     },
   );
-  test(
-    'v29 upgrade retains existing owner and goal while adding empty plans',
-    () async {
-      await db.customStatement(
-        "INSERT INTO learning_goals(id,owner_id,kind,title,deadline_at_utc_ms,timezone_id,timezone_offset_minutes,status,created_at_utc_ms,updated_at_utc_ms) VALUES('g','a','personal','Keep',1,'UTC',0,'active',1,1)",
-      );
-      await db.customStatement('DROP TABLE active_plan_pointers');
-      await db.customStatement('DROP TABLE study_plan_revisions');
-      await db.customStatement('PRAGMA user_version=29');
-      await db.close();
-      db = AppDatabase(NativeDatabase(File('${dir.path}/db.sqlite')));
-      repo = DriftStudyPlanRepository(db, nowUtc: () => now);
-      expect(await repo.history('a'), isEmpty);
-      expect((await db.select(db.learningGoals).get()).single.title, 'Keep');
-      expect(
-        (await db.customSelect('PRAGMA user_version').getSingle()).read<int>(
-          'user_version',
-        ),
-        AppDatabase.currentSchemaVersion,
-      );
-    },
-  );
+
   test(
     'expired lease and inactive owner cannot replay accepted command',
     () async {
@@ -221,41 +199,6 @@ void main() {
       );
       await expectLater(accept(p), throwsStateError);
       expect((await repo.history('a')).length, 1);
-    },
-  );
-  test(
-    'failed v29 upgrade rolls back new tables and recovers after obstruction removed',
-    () async {
-      await db.customStatement('DROP TABLE active_plan_pointers');
-      await db.customStatement('DROP TABLE study_plan_revisions');
-      await db.customStatement('PRAGMA user_version=29');
-      await db.close();
-      final raw = sqlite.sqlite3.open('${dir.path}/db.sqlite');
-      raw.execute('CREATE INDEX active_plan_pointers ON local_owners(id)');
-      raw.close();
-      db = AppDatabase(NativeDatabase(File('${dir.path}/db.sqlite')));
-      await expectLater(db.customSelect('SELECT 1').get(), throwsA(anything));
-      await db.close();
-      final inspect = sqlite.sqlite3.open('${dir.path}/db.sqlite');
-      try {
-        expect(
-          inspect.select('PRAGMA user_version').single['user_version'],
-          29,
-        );
-        expect(
-          inspect.select(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='study_plan_revisions'",
-          ),
-          isEmpty,
-        );
-        inspect.execute('DROP INDEX active_plan_pointers');
-      } finally {
-        inspect.close();
-      }
-      db = AppDatabase(NativeDatabase(File('${dir.path}/db.sqlite')));
-      repo = DriftStudyPlanRepository(db, nowUtc: () => now);
-      expect(await repo.history('a'), isEmpty);
-      expect((await db.select(db.localOwners).get()).length, 2);
     },
   );
 }

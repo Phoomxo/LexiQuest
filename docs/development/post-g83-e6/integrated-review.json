@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "baseline": "09a4d747903b1624e80fea8b1f9b605830858ebc",
+  "acceptedInput": "e0b7fb62e08f319463540409c6cf29eebdf0ce69",
+  "reviewer": "Single writer AI review; not an independent reviewer",
+  "features": [
+    {
+      "feature": "F01",
+      "name": "Personal sets",
+      "acceptedSlice": "E2.1",
+      "sliceReport": "docs/development/post-g83-e21.md",
+      "review": "Immutable revisions, packaged sense access, duplicate selection, current-owner fencing, activity and archive adapters",
+      "designComparison": "R5-02 layout reference; list/editor/preview and bounded subset disclosure",
+      "representativeTest": "test/features/learning_packs/personal_set_activities_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F02",
+      "name": "Study plans",
+      "acceptedSlice": "E2.2",
+      "sliceReport": "docs/development/post-g83-e22.md",
+      "review": "Goal/time snapshots, deterministic proposals, active revision pointers, accept/replay, restore and retired generation",
+      "designComparison": "S01/S05/S11/R4-03 flow references; goal/time/proposal and explicit acceptance",
+      "representativeTest": "test/features/goals/study_plan_lifecycle_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F03",
+      "name": "Guided repair",
+      "acceptedSlice": "E3.1",
+      "sliceReport": "docs/development/post-g83-e31.md",
+      "review": "Original first attempt retained; hint/retry receipts separate, withdrawn content rejected, tutor guard and no extra reward",
+      "designComparison": "A01/A07 feedback and repair flow; D02 closes withdrawn content access",
+      "representativeTest": "test/features/learning/context_practice_lifecycle_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F04",
+      "name": "Written practice",
+      "acceptedSlice": "E3.3",
+      "sliceReport": "docs/development/post-g83-e33.md",
+      "review": "Versioned deterministic rubric, feedback versus evidence eligibility, immutable terminal result, lifecycle retirement",
+      "designComparison": "A04 related flow only; narrow-screen result reviewed; no human rubric calibration claim",
+      "representativeTest": "test/features/learning/written_practice_lifecycle_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F05",
+      "name": "Speaking scenarios",
+      "acceptedSlice": "E4.1",
+      "sliceReport": "docs/development/post-g83-e41.md",
+      "review": "Microphone/ASR boundaries, typed fallback provenance, retirement hides late transcript, private capture lifecycle",
+      "designComparison": "R1-02/S06 related mode; fallback result and 320px/200% text reviewed",
+      "representativeTest": "test/features/media_practice/speaking_scenario_lifecycle_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F06",
+      "name": "Context practice",
+      "acceptedSlice": "E3.2",
+      "sliceReport": "docs/development/post-g83-e32.md",
+      "review": "Authored options/why feedback, answer identity, content and owner guards, canonical attempt and reward integration",
+      "designComparison": "No exact original screen; authored context and why panel flow reviewed",
+      "representativeTest": "test/features/learning/context_practice_use_cases_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F07",
+      "name": "Dialogue missions",
+      "acceptedSlice": "E5.1",
+      "sliceReport": "docs/development/post-g83-e51.md",
+      "review": "Branch/checkpoint replay, restart, single canonical completion reward, adventure entry and durable owner retirement",
+      "designComparison": "No original branching-dialogue reference; state and navigation contracts reviewed",
+      "representativeTest": "test/features/adventure/dialogue_mission_use_cases_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F08",
+      "name": "Audio lessons",
+      "acceptedSlice": "E4.2",
+      "sliceReport": "docs/development/post-g83-e42.md",
+      "review": "Transcript fallback, interruption checkpoint, cache identity, playback lease cleanup and stale callbacks",
+      "designComparison": "R7-01/R7-02 audio/transcript; compact fallback screenshot reviewed; acoustic proof remains separate",
+      "representativeTest": "test/features/voice/audio_lesson_use_cases_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    },
+    {
+      "feature": "F09",
+      "name": "Delayed transfer probes",
+      "acceptedSlice": "E5.2",
+      "sliceReport": "docs/development/post-g83-e52.md",
+      "review": "Delay and clock policy, distinct contexts, immutable end retry, canonical non-reward evidence and owner-retired panel",
+      "designComparison": "No original delayed-probe visual; ready/result and compact result reviewed; D01/D05 closed",
+      "representativeTest": "test/features/review/transfer_probe_use_cases_test.dart",
+      "status": "reviewed-with-affected-local-regressions"
+    }
+  ],
+  "dependencyReview": [
+    "Schema34/58 tables: migration rollback and retry, owner inventory/export/delete/upgrade integration; generated Drift output reproduced.",
+    "Runtime composition and navigation: default-off and emergency-off flags, current-owner generations, async retirement, restart/recovery and canonical learning writes.",
+    "Canonical learning repository: terminal timestamps, attempt/evidence identity and reward idempotency; packaged content owner/category/tombstone access.",
+    "VoiceUseCases cleanup serialization: failed cleanup prevents release/replacement playback until cleanup barrier is drained; provider/device outcomes remain separately gated.",
+    "Current test-plan generator: exact schema inventory and executable dedicated migration coverage; duplicate-command guard retained; historical schema26 plan canonical LF hash unchanged."
+  ],
+  "crossFeatureJourneys": [
+    "F01 selection to canonical activities and F02 plan to context/repair: integration fixtures plus runtime composition.",
+    "F04/F05 rubric result to eligibility guard; typed fallback remains typed evidence.",
+    "F07 restart/checkpoint to one canonical reward receipt.",
+    "F08 interruption to resume/practice with owner and media cleanup barriers.",
+    "Prior context attempt to F09 delayed probe to Review; terminal retry and retired panel covered by new regressions."
+  ],
+  "evidenceInterpretation": "Source and changed test-oracle review plus bounded local regressions. Unchanged G8.3 files inherited only with exact raw hash or Git-blob and EOL-equivalence proof. New/changed source does not inherit old review. Passed broad Runtime closures are superseded only on affected test targets with documented delta; no claim every historical closure equals current.",
+  "visualEvidence": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\E21-personal-set-preview-mobile.png",
+      "sha256": "d283a4fac7e9a96352f538fae5ce2f29cf1c9e1ccdbfdd6afe540a063cbbaff3",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e22-plan-proposal.png",
+      "sha256": "164931de9d543dc775d84a1be053f396e53487d7a39099e710ea6764422bf9cd",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e31-guided-repair.png",
+      "sha256": "f15129959082c5423eff6d71e1e5f952ceb923e8d6beeaf818593730cecfaa50",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e33-writing-result-320-text200.png",
+      "sha256": "9874c9031bcb7515783e8de1d1546fe188ef1a8af8df419615914d26328ee2fd",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e41-speaking-fallback-false-result-320-text200.png",
+      "sha256": "2c37b5b2e30b09d792be0f67534dda312de2f99172cd653f25eb5a9be3f2cf83",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e42-audio-fallback-false-320-text200.png",
+      "sha256": "002f580bdf5ba46f2dffde937dd8d5260cb9a340a15a4546a3987c7a8ef751f8",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\e32-context-why-320-text200.png",
+      "sha256": "a77bcb877ffe64dd5369675538433c6f0c0584db57e3dbd4c6e7df5bed9b854a",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\probe-ready-390-text100.png",
+      "sha256": "3254471c9093e9a4849dc48248d5c336d4ee95b15a4e8b72d848c65514323789",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\visual\\probe-result-320-text200.png",
+      "sha256": "55db2e1f170f3de30b052acb448871ae1e66b3009bd2d9fc6a36a62266afc459",
+      "observation": "AI visual inspection: readable controls/content; scrolling where content exceeds viewport. Widget output, not a physical device or assistive technology result."
+    }
+  ],
+  "limitations": [
+    "No independent human design or rubric calibration review.",
+    "No exact pixel-parity claim for references without matching original screens.",
+    "No physical-device, TalkBack, acoustic or live-provider acceptance inferred from mocks/widgets.",
+    "Analyzer reports one inherited warning and 109 inherited informational diagnostics; no analyzer-clean claim.",
+    "Standard/default requested; effective runtime service tier is not exposed."
+  ],
+  "retainedE7": [
+    "All 67 original package identities plus separate F01-F09 mappings.",
+    "G8.4 executable plan on immutable E6 source: 74 overlapping coverage records, 12 formula groups, 16 test families, TestCaseID-COV/MODE/MG/FORM mapping, negative cases, entry/exit, incident fields and NOT RUN ledger without duplicate commands.",
+    "G8.5-G8.9 original acceptance retained: local/emulator/system execution, actual APK/source/model/content/device pins, offline/restart/reopen, faults/performance and human assistive/audio separation, changed-code re-review/refreeze, final cleanup/artifact ledger.",
+    "Keep local, emulator, device, provider, research and release statuses separate; deployment/cost/research rollout is not authorized."
+  ]
+}

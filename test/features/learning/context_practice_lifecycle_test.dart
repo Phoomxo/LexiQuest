@@ -235,6 +235,57 @@ void main() {
     return review;
   }
 
+  for (final withdrawn in ['word', 'category']) {
+    test(
+      'guided repair rejects withdrawn $withdrawn without new writes',
+      () async {
+        final launch = await activities.start(
+          await sets.begin(),
+          setId: 'set',
+          revision: 1,
+          operationId: 'repair-withdrawal',
+          contextInput: ClozeInputMode.selected,
+        );
+        final review = await reviewFor(launch);
+        final q = review.currentItem.question!;
+        await review.answerSelected(
+          option: q.options.firstWhere((o) => o != q.correctAnswer),
+          responseTimeMs: 100,
+        );
+        final repair = GuidedRepairUseCases(
+          learning: learning.repository as DriftLearningRepository,
+          manifests: sets.repository.crosswalks.manifests,
+          ownerGeneration: sets.ownerGeneration,
+          ownerOperations: sets.ownerOperations,
+          nowUtc: () => now,
+          isAvailable: () => enabled,
+        );
+        final ticket = await repair.open(review.feedback!);
+        final attempts = await db.select(db.answerAttempts).get();
+        final events = await db.select(db.eventsV2).get();
+        if (withdrawn == 'word') {
+          await db.customStatement(
+            'UPDATE vocabulary_words SET is_deleted=1 WHERE id=?',
+            [q.wordId],
+          );
+        } else {
+          await db.customStatement(
+            'UPDATE vocabulary_categories SET is_deleted=1 WHERE id='
+            '(SELECT category_id FROM vocabulary_words WHERE id=?)',
+            [q.wordId],
+          );
+        }
+        await expectLater(repair.open(review.feedback!), throwsStateError);
+        await expectLater(
+          repair.act(ticket, operationId: 'late-hint', action: 'hint'),
+          throwsStateError,
+        );
+        expect(await db.select(db.guidedRepairOperations).get(), isEmpty);
+        expect(await db.select(db.answerAttempts).get(), attempts);
+        expect(await db.select(db.eventsV2).get(), events);
+      },
+    );
+  }
   test(
     'committed wrong answer reopens after real SQLite restart without a second answer',
     () async {

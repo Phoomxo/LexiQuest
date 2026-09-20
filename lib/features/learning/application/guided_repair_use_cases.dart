@@ -8,6 +8,7 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
+import '../../vocabulary/data/packaged_starter_access.dart';
 import '../data/drift_learning_repository.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/contrastive_explanation.dart';
@@ -185,15 +186,31 @@ final class GuidedRepairUseCases {
         manifest.publishedAtUtc == null) {
       throw StateError('Repair content is unavailable');
     }
-    final word = await (database.select(
-      database.vocabularyWords,
-    )..where((w) => w.id.equals(row.wordId))).getSingleOrNull();
+    final word =
+        await (database.select(database.vocabularyWords)..where(
+              (w) =>
+                  w.id.equals(row.wordId) &
+                  w.isDeleted.equals(false) &
+                  PackagedStarterAccess.wordsFor(database, owner.ownerId),
+            ))
+            .getSingleOrNull();
     if (word == null ||
         word.contentRevision != attempt.manifestIdentity.revision ||
         word.contentReviewState != 'approved' ||
         word.contentPublicationState != 'published' ||
         (!word.isGlobal && word.ownerId != owner.ownerId)) {
       throw StateError('Pinned repair word is unavailable');
+    }
+    final category =
+        await (database.select(database.vocabularyCategories)..where(
+              (c) =>
+                  c.id.equals(word.categoryId) &
+                  c.isDeleted.equals(false) &
+                  PackagedStarterAccess.categoriesFor(database, owner.ownerId),
+            ))
+            .getSingleOrNull();
+    if (category == null) {
+      throw StateError('Pinned repair category is unavailable');
     }
     if (word.contentProvenance != 'packaged' ||
         word.contentChecksumSha256 !=

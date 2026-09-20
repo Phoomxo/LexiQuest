@@ -21,6 +21,7 @@ import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 
 import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
@@ -515,6 +516,44 @@ void main() {
       );
     },
   );
+  test('ending probe retries retain terminal identity across reopen', () async {
+    await origin();
+    now = now.add(const Duration(days: 1));
+    final s = service();
+    final owner = await sets.begin();
+    final run = await s.start(
+      owner,
+      offer: (await s.offers(owner)).first,
+      operationId: 'start',
+    );
+    await s.abandon(owner, run.session.id);
+    final endedAt = now.millisecondsSinceEpoch;
+    final before = await db
+        .customSelect(
+          'SELECT * FROM learning_sessions WHERE id = ?',
+          variables: [Variable(run.session.id)],
+        )
+        .getSingle();
+    final eventCount = (await db.select(db.eventsV2).get()).length;
+    now = now.add(const Duration(minutes: 2));
+    await s.abandon(owner, run.session.id);
+    await db.close();
+    db = AppDatabase(NativeDatabase(databaseFile));
+    await wire();
+    now = now.add(const Duration(minutes: 2));
+    await service().abandon(await sets.begin(), run.session.id);
+    final after = await db
+        .customSelect(
+          'SELECT * FROM learning_sessions WHERE id = ?',
+          variables: [Variable(run.session.id)],
+        )
+        .getSingle();
+    expect(after.data, before.data);
+    expect(after.read<int>('ended_at_utc_ms'), endedAt);
+    expect(after.read<String>('state'), 'abandoned');
+    expect((await db.select(db.eventsV2).get()).length, eventCount);
+    expect((await db.select(db.answerAttempts).get()), hasLength(1));
+  });
   test(
     'wrong probe reaches canonical incorrect review with its exact item pin',
     () async {
@@ -546,6 +585,40 @@ void main() {
       );
     },
   );
+  testWidgets('Review probe offers clear when owner generation retires', (
+    tester,
+  ) async {
+    await tester.runAsync(origin);
+    now = now.add(const Duration(days: 1));
+    final s = service();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: TransferProbeReviewPanel(useCases: s)),
+      ),
+    );
+    Future<void> settle() async {
+      for (var i = 0; i < 35; i++) {
+        await tester.pump(const Duration(milliseconds: 30));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+      }
+    }
+
+    await settle();
+    expect(find.byKey(const ValueKey('probe-offer-0')), findsOneWidget);
+    await tester.runAsync(() => DriftOwnerGeneration(db).advance());
+    await settle();
+    expect(find.byKey(const ValueKey('probe-offer-0')), findsNothing);
+    expect(find.text('Check again'), findsOneWidget);
+    expect(
+      await tester.runAsync(() => db.select(db.answerAttempts).get()),
+      hasLength(1),
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await settle();
+  });
   testWidgets('Review entry opens probe and returns to canonical queue', (
     tester,
   ) async {

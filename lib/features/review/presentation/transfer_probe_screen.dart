@@ -282,6 +282,8 @@ class TransferProbeReviewPanel extends StatefulWidget {
 
 class _TransferProbeReviewPanelState extends State<TransferProbeReviewPanel> {
   OwnerGenerationToken? _owner;
+  StreamSubscription<bool>? _ownerWatch;
+  int _loadEpoch = 0;
   List<TransferProbeOffer> _offers = [];
   TransferProbeRun? _saved;
   String? _unavailableSession;
@@ -293,13 +295,42 @@ class _TransferProbeReviewPanelState extends State<TransferProbeReviewPanel> {
     _load();
   }
 
+  void _retireOwner() {
+    ++_loadEpoch;
+    if (!mounted) return;
+    setState(() {
+      _owner = null;
+      _offers = [];
+      _saved = null;
+      _unavailableSession = null;
+      _loading = false;
+      _error = 'The learner changed. Check again to load current practice.';
+    });
+  }
+
+  @override
+  void dispose() {
+    ++_loadEpoch;
+    _ownerWatch?.cancel();
+    super.dispose();
+  }
+
   Future<void> _load() async {
+    final epoch = ++_loadEpoch;
+    await _ownerWatch?.cancel();
     try {
       final owner = await widget.useCases.sets.begin();
+      if (!mounted || epoch != _loadEpoch) return;
+      _ownerWatch = widget.useCases.sets.watchOwnerCurrent(owner).listen((
+        current,
+      ) {
+        if (!current && epoch == _loadEpoch) _retireOwner();
+      });
       final recovery = await widget.useCases.learning.loadActivityRecovery(
         ownerId: owner.ownerId,
         activityType: transferProbeActivityType,
       );
+      if (!mounted || epoch != _loadEpoch) return;
       _unavailableSession = recovery?.session.state == 'active'
           ? recovery!.session.id
           : null;
@@ -308,7 +339,7 @@ class _TransferProbeReviewPanelState extends State<TransferProbeReviewPanel> {
           : await widget.useCases.resume(owner, _unavailableSession!);
       final offers = await widget.useCases.offers(owner);
       await widget.useCases.sets.ownerGeneration.requireCurrentAsync(owner);
-      if (mounted) {
+      if (mounted && epoch == _loadEpoch) {
         setState(() {
           _owner = owner;
           _saved = saved;
@@ -318,7 +349,7 @@ class _TransferProbeReviewPanelState extends State<TransferProbeReviewPanel> {
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && epoch == _loadEpoch) {
         setState(() {
           _loading = false;
           _offers = [];

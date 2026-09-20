@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "baseSha": "e0b7fb62e08f319463540409c6cf29eebdf0ce69",
+  "findings": [
+    {
+      "id": "E6-D01",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "path": "lib/features/review/application/transfer_probe_use_cases.dart",
+      "expected": "Retry ending an already abandoned probe reconciles the same terminal timestamp, including after database reopen.",
+      "observedSource": "Probe abandon supplies current time on each invocation; canonical repository rejects a changed terminal timestamp.",
+      "test": "ending probe retries retain terminal identity across reopen",
+      "redRun": "ad8472badf79-494a13af5301-d32caa15",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-47d19c76bb98e88c411107a8260dd9f8f209b06a1fefbb3dfa596deb7ed9da1f-5bf05328a079.json",
+      "fix": "Reuse persisted abandoned timestamp; regression retries before and after reopen."
+    },
+    {
+      "id": "E6-D02",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "path": "lib/features/learning/application/guided_repair_use_cases.dart",
+      "expected": "Withdrawn word/category prevents repair open and action without further writes.",
+      "observedSource": "Repair validation omitted tombstone and canonical owner/category access predicates.",
+      "redRun": "3bb81c27e324-1353b67ecbac-4dfe74d6",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-6b644f88e96824ee332f4a227b63ab84e17c72896edf73640badf2b9dca1166c-f2520b9a4c9e.json",
+      "fix": "Apply shared packaged word/category ownership and tombstone checks."
+    },
+    {
+      "id": "E6-D03",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "path": "lib/data/local/app_database.dart",
+      "expected": "Failed v28 extension upgrade rolls back all eight additive tables and preserves version/data; retry succeeds.",
+      "observed": "Late name collision rolled back six extensions but retained personal_set_members and personal_set_revisions.",
+      "redRun": "c57fb5d48397-9d800e37fe91-0303955f",
+      "fix": "Create v29 personal-set tables in the same v29-v34 additive transaction; historical rebuild boundaries unchanged.",
+      "test": "schema28 adds all extensions atomically and preserves sync; obstruction=true",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-9545c6789734c849255e43f5c78f44c38ae7e4bef2fc72a7e6d995b87211d713-c0039056072e.json"
+    },
+    {
+      "id": "E6-D04",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "paths": [
+        "test/database/migration_v25_to_v26_test.dart",
+        "test/database/migration_v14_to_v15_test.dart"
+      ],
+      "cause": "Current-schema oracles retained v29 52-table expectations after schema34 introduced six additional tables.",
+      "redRuns": [
+        "8632354f40db-aa18d7bcb20b-4db25f11",
+        "6230b8225f43-3e47cd0c12fb-6f294950"
+      ],
+      "fix": "Use exact current inventory in v25 layout check; retain explicit historical inventory and enumerate all six extensions in v14 difference assertion. Historical fixtures and retained-data/guard assertions unchanged.",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-9545c6789734c849255e43f5c78f44c38ae7e4bef2fc72a7e6d995b87211d713-c0039056072e.json"
+    },
+    {
+      "id": "E6-D05",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "path": "lib/features/review/presentation/transfer_probe_screen.dart",
+      "expected": "Review panel clears previous-owner offers and saved-session controls on generation retirement.",
+      "observed": "Use-case writes were fenced but panel retained stale offers.",
+      "redRun": "ed7f354797f4-db8cbde24159-c32974eb",
+      "fix": "Watch owner generation and invalidate asynchronous load epoch; clear owner-bound display on retirement and cancel watcher on disposal.",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-47d19c76bb98e88c411107a8260dd9f8f209b06a1fefbb3dfa596deb7ed9da1f-5bf05328a079.json"
+    },
+    {
+      "id": "E6-D06",
+      "severity": "P2",
+      "status": "closed-reviewed-and-verified",
+      "paths": [
+        "tool/final_test_plan/generate_final_test_plan.dart",
+        "test/architecture/final_8_44_test_plan_review_contract_test.dart",
+        "test/database/migration_v29_to_v30_test.dart",
+        "test/database/migration_v30_to_v31_test.dart",
+        "test/features/goals/study_plan_repository_test.dart"
+      ],
+      "redRun": "e8aafa3cd272-944589b07be0-872b3c16",
+      "cause": "Generator retained schema27 50-table count and could not discover v29/v30 migration cases located in domain suites. Historical plan byte oracle also assumed LF checkout; normalized canonical hash matches the original Git artifact.",
+      "fix": "Require exact 58-table inventory. Move the existing v29/v30 success/interruption fixtures into dedicated test/database migration files, preserving assertions and duplicate-command guard. Historical schema26 plan retains its exact canonical LF digest across CRLF checkouts. Historical artifacts unchanged; E7 execution remains pending.",
+      "greenReceipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e6\\evidence\\targeted-runtime-884797decb211d4ae1927c8d02965d96a59baefee65cfbccb7073308b2450213-93a8321488a0.json",
+      "additionalRedRun": "752f3c2e97ae-fc23e73b42b2-970bc4fa"
+    }
+  ],
+  "engineeringFailures": [
+    {
+      "id": "E6-R01",
+      "kind": "test-compile-and-environment-input-drift",
+      "run": "ad8472badf79-d791c483efd1-ffe27998",
+      "cause": "New regression omitted Variable import. First Flutter dependency resolution also created package metadata and rewrote generated platform files with equivalent line endings.",
+      "correction": "Add explicit drift Variable import; retain initialized dependency metadata and inspect generated-file diff before retrying bounded test.",
+      "acceptance": "No behavioral RED or PASS claimed from this run."
+    },
+    {
+      "id": "E6-R02",
+      "kind": "rejected-test-plan-mapping",
+      "run": "752f3c2e97ae-fc23e73b42b2-970bc4fa",
+      "cause": "Initial custom mapping duplicated migration cases already in domain suite; existing guard correctly rejected it.",
+      "correction": "Moved cases to dedicated migration targets, retained duplicate guard and exact current inventory; 30 relevant tests passed."
+    }
+  ],
+  "knownOpenInScopeDefects": 0
+}

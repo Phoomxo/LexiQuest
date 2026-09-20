@@ -632,23 +632,31 @@ final class TransferProbeUseCases {
     _clock(run);
     return _load(run.owner, run.session.id);
   });
-  Future<void> abandon(OwnerGenerationToken owner, String sessionId) =>
-      _run(owner, () async {
-        final row =
-            await (database.select(database.learningSessions)..where(
-                  (r) =>
-                      r.ownerId.equals(owner.ownerId) &
-                      r.id.equals(sessionId) &
-                      r.activityType.equals(transferProbeActivityType),
-                ))
-                .getSingleOrNull();
-        if (row == null) throw StateError('Probe unavailable');
-        await learning.abandonSession(
-          ownerId: owner.ownerId,
-          sessionId: sessionId,
-          abandonedAtUtc: sets.repository.nowUtc(),
-        );
-      }, available: false);
+  Future<void> abandon(OwnerGenerationToken owner, String sessionId) => _run(
+    owner,
+    () async {
+      final row =
+          await (database.select(database.learningSessions)..where(
+                (r) =>
+                    r.ownerId.equals(owner.ownerId) &
+                    r.id.equals(sessionId) &
+                    r.activityType.equals(transferProbeActivityType),
+              ))
+              .getSingleOrNull();
+      if (row == null) throw StateError('Probe unavailable');
+      // A lost acknowledgement must retry the committed terminal identity,
+      // including after reopen, rather than propose a second end time.
+      final when = row.state == 'abandoned' && row.endedAtUtcMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(row.endedAtUtcMs!, isUtc: true)
+          : sets.repository.nowUtc();
+      await learning.abandonSession(
+        ownerId: owner.ownerId,
+        sessionId: sessionId,
+        abandonedAtUtc: when,
+      );
+    },
+    available: false,
+  );
 }
 
 String _json(Object? value) => jsonEncode(value);

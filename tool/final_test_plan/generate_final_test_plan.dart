@@ -398,8 +398,8 @@ List<String> _readTableInventory(io.Directory root) {
           .map((match) => match.group(1)!)
           .toList(growable: false)
         ..sort();
-  // Schema v27 adds the preserved legacy learning table; the catalog is unchanged.
-  if (tables.length != tables.toSet().length || tables.length != 50) {
+  // Schema v34 includes the eight post-G8.3 extension tables; the 44-feature catalog is unchanged.
+  if (tables.length != tables.toSet().length || tables.length != 58) {
     throw FinalTestPlanContractFailure(
       'Current database table inventory is duplicate or stale: '
       '${tables.length}.',
