@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "phase": "V0",
+  "reviewDate": "2026-09-20",
+  "status": "DOCUMENT_REVIEW_COMPLETE_WITH_UNCONFIRMED_REQUIREMENTS",
+  "inputSourceSha": "c3617a2dcaa1e57eedaf2de750eb7dd9c8d25528",
+  "sourceBranch": "feature/ari-feasibility",
+  "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
+  "sourcePinVerification": "Accepted SHA supplied by user/state; no source modifications or test reruns.",
+  "taskId": "01a0bf7a-8427-78e3-bc73-ae1d57050622",
+  "workItems": [
+    {
+      "id": "V0.1",
+      "status": "REVIEWED",
+      "result": "Identity, resource grant and Codex managed model authentication separated.",
+      "sources": [
+        "S1",
+        "S2",
+        "S3",
+        "S5",
+        "S6"
+      ]
+    },
+    {
+      "id": "V0.2",
+      "status": "REVIEWED",
+      "result": "ChatGPT-auth Codex uses account entitlement; API billing is distinct. No end-to-end LexiQuest route has runtime PASS.",
+      "sources": [
+        "S5",
+        "S6",
+        "S7"
+      ]
+    },
+    {
+      "id": "V0.3",
+      "status": "UNCONFIRMED",
+      "result": "Free inclusion documented; Thai native-mobile combination remains unresolved. Device-code documented, Remote requires companion.",
+      "sources": [
+        "S5",
+        "S7",
+        "S11"
+      ]
+    }
+  ],
+  "routeMatrix": [
+    {
+      "id": "identity",
+      "route": "Sites / partner Sign in with ChatGPT",
+      "fact": "Identity and tool authorization are separate in existing S2/S3 evidence.",
+      "inference": "Identity login alone does not establish native inference rights.",
+      "status": "INSUFFICIENT_FOR_REQUIREMENTS",
+      "sources": [
+        "S2",
+        "S3"
+      ]
+    },
+    {
+      "id": "mcp",
+      "route": "ChatGPT/Codex calls LexiQuest MCP",
+      "fact": "MCP grants access to LexiQuest resources; the assistant client hosts the interaction.",
+      "inference": "No documented transfer of the user's inference quota to Flutter; current host-side UX does not meet requirements.",
+      "status": "DOES_NOT_MEET_UX",
+      "sources": [
+        "S1"
+      ]
+    },
+    {
+      "id": "api",
+      "route": "ChatKit / OpenAI API",
+      "fact": "Existing ChatKit evidence uses a server API key; API-key Codex usage is billed to the Platform account.",
+      "inference": "Not an authorized fallback for user-owned ChatGPT Free quota.",
+      "status": "OUT_OF_SCOPE_PAID_ROUTE",
+      "sources": [
+        "S4",
+        "S6"
+      ]
+    },
+    {
+      "id": "app_server",
+      "route": "Codex App Server managed ChatGPT auth",
+      "fact": "Product integration, managed browser/device-code OAuth and streamed events are documented; command and WebSocket transport are experimental and unsupported for production.",
+      "inference": "Candidate for further review; device-code may avoid a brittle callback but does not establish mobile runtime or regional entitlement.",
+      "unknown": "Native runtime or isolated hosted topology, Free Thailand access for this integration, cost enforcement and distribution/revoke.",
+      "status": "UNCONFIRMED",
+      "sources": [
+        "S5",
+        "S6",
+        "S7",
+        "S10"
+      ]
+    },
+    {
+      "id": "remote",
+      "route": "ChatGPT mobile Remote",
+      "fact": "Tasks run on a connected Mac or Windows computer using the ChatGPT mobile app.",
+      "inference": "Does not satisfy no-companion and in-LexiQuest conversation requirements.",
+      "status": "DOES_NOT_MEET_REQUIREMENTS",
+      "sources": [
+        "S11"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "U1",
+      "status": "UNCONFIRMED",
+      "question": "Does this third-party integration admit a real Free account in Thailand?",
+      "needed": "Official route-specific availability/eligibility evidence, then actual Free Thai account evidence when authorized and available."
+    },
+    {
+      "id": "U2",
+      "status": "UNCONFIRMED",
+      "question": "Which supported Android/iOS runtime, login return and transport keeps replies in LexiQuest without a companion?",
+      "needed": "Official supported topology. Local native binary support and isolated hosted App Server are separate possibilities; neither is validated here. Hosted compute would need separate cost/security review."
+    },
+    {
+      "id": "U3",
+      "status": "UNCONFIRMED",
+      "question": "Can the provider enforce included-quota-only inference without paid credits/overage?",
+      "needed": "Provider-enforced control; rate-limit reads alone are not proof. V1.1 owns review."
+    },
+    {
+      "id": "U4",
+      "status": "UNCONFIRMED",
+      "question": "How are distribution, provider revocation, logout and owner isolation supported?",
+      "needed": "Route-specific documented controls, later live evidence. V1.3 owns review."
+    }
+  ],
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://developers.openai.com/plugins/build/auth",
+      "section": "MCP resource authorization",
+      "method": "REUSED",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S2",
+      "url": "https://learn.chatgpt.com/docs/sites",
+      "section": "Sites identity",
+      "method": "REUSED",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S3",
+      "url": "https://learn.chatgpt.com/docs/plugins",
+      "section": "Partner identity and tool grants",
+      "method": "REUSED",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S4",
+      "url": "https://developers.openai.com/api/docs/guides/chatkit",
+      "section": "API-backed chat session",
+      "method": "REUSED",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S5",
+      "url": "https://learn.chatgpt.com/docs/app-server",
+      "section": "Auth endpoints; 3b device-code; protocol; experimental transport",
+      "method": "OPENED_V0",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S6",
+      "url": "https://learn.chatgpt.com/docs/auth",
+      "section": "OpenAI authentication; API billing separation",
+      "method": "OPENED_V0",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S7",
+      "url": "https://learn.chatgpt.com/docs/pricing",
+      "section": "Free inclusion and shared usage",
+      "method": "OPENED_V0",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    },
+    {
+      "id": "S10",
+      "url": "https://developers.openai.com/blog/codex-as-a-platform",
+      "section": "Embedded harness, not blanket mobile entitlement",
+      "method": "OPENED_V0",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": "2026-08-19"
+    },
+    {
+      "id": "S11",
+      "url": "https://learn.chatgpt.com/docs/remote",
+      "section": "Connected computer requirement",
+      "method": "OPENED_V0",
+      "retrievedDate": "2026-09-20",
+      "publishedDate": null
+    }
+  ],
+  "evidencePaths": {
+    "plan": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-feasibility.md",
+    "workflow": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-task-workflow.md",
+    "existingEvidence": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest/docs/development/ari-feasibility-evidence.json",
+    "report": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0.md",
+    "handoff": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/V0-handoff.json",
+    "state": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks/state.json"
+  },
+  "searchBoundary": {
+    "scope": "Official primary sources only; reused existing S1-S4 and searched only eligibility/mobile gaps.",
+    "queries": [
+      "site:learn.chatgpt.com/docs app-server mobile authentication Free Thailand",
+      "site:developers.openai.com Codex app server native mobile ChatGPT authentication",
+      "site:learn.chatgpt.com/docs Codex Thailand Free mobile",
+      "site:developers.openai.com Codex app-server Android iOS native",
+      "site:learn.chatgpt.com Thailand supported countries ChatGPT Free",
+      "site:developers.openai.com Thailand Codex"
+    ],
+    "result": "No route-specific Thai Free/native support established. Search absence is not impossibility evidence.",
+    "recovery": "Markdown retrieval failed/unsupported; used official HTML and actual navigation link successfully. No repeated failed method."
+  },
+  "notRun": [
+    "77 previously passed local rename tests (inputs unchanged)",
+    "T01-T08 live acceptance",
+    "Free account login or inference",
+    "Paid API requests",
+    "Token extraction",
+    "Source/schema changes",
+    "E7 closure",
+    "Prototype and pilot"
+  ],
+  "runtimePolicy": {
+    "requestedModel": "gpt-6-astra",
+    "requestedThinking": "medium",
+    "speed": "Standard/default; do not select Fast/1.5x or priority",
+    "effectiveTier": "UNCONFIRMED; tools do not expose effective tier"
+  },
+  "implementationWriter": null,
+  "nextPhase": "V1",
+  "nextActions": [
+    "V1.1 quota, billing and hosting separation; enforce no paid fallback.",
+    "V1.2 supported native reply topology and owner isolation; do not infer from SDK or Remote.",
+    "V1.3 route-specific distribution and revocation.",
+    "V1 alone decides V0+V1 gate. If unmet, create V3 and record V2/pilot NOT_RUN. Do not create V2 unless all gate evidence is met."
+  ],
+  "gate": {
+    "status": "NOT_MET",
+    "decisionOwner": "V1",
+    "V0Recommendation": "Do not authorize prototype from current evidence; not a claim of permanent impossibility."
+  },
+  "successor": {
+    "modelRequested": "gpt-6-astra",
+    "phase": "V1",
+    "thinkingRequested": "medium",
+    "hostId": "local",
+    "taskId": "01a0bf7d-e868-7df2-a2cb-db71829cd8d5",
+    "effectiveTier": "UNCONFIRMED",
+    "startVerification": {
+      "timeoutMs": 1000,
+      "boundedWaitCount": 1,
+      "observedStatus": "active",
+      "method": "wait_threads",
+      "turnId": "01a0bf7d-eb68-7410-bc39-8f35189c61b1",
+      "turnStatus": "inProgress",
+      "cursor": "316147af-765e-4977-b877-bcbd057d3e50:1",
+      "result": "V1 started; not a completion or runtime-tier confirmation"
+    }
+  },
+  "latestUserAuthorization": "User reaffirmed proceeding with development and sequential handoffs without repeated approval; all original requirements and V0-V1 gate remain unchanged."
+}

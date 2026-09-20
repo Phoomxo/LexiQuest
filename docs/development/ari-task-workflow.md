@@ -25,13 +25,14 @@
 
 ## ที่เก็บงานและส่งต่อ
 
-Control root: `C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/tasks`
+Control root ปัจจุบัน: `docs/development/ari/` ภายใน repository LexiQuest เริ่มที่ [ดัชนีงาน](ari/README.md) เสมอ เอกสารและหลักฐานของงานนี้ต้องติดตามด้วย Git; external visualizations เดิมเป็นประวัติเท่านั้น
 
 - `state.json`: ผู้รับงานปัจจุบัน, phase, task IDs และ gate; แยกจาก orchestration G/E เดิม
-- `Vn.md`: ผลของ 3 งานย่อย สรุปสั้นและอ้างแหล่งข้อมูลที่รองรับแต่ละ claim
-- `Vn-handoff.json`: input source SHA, ผลแต่ละงาน, route/unknowns, evidence paths, nextPhase, gate และงานที่ไม่รัน
-- V0/V1/V3 ใช้ task ไม่มี repository สำหรับงานตรวจเอกสาร อ่านโค้ดจาก path ที่ระบุแบบ read-only เขียนเฉพาะ control root นี้ เพื่อไม่สร้าง worktree/build cache โดยไม่จำเป็น
-- V2 ถ้าเข้าเกณฑ์จึงสร้าง project task ใน isolated worktree จาก accepted source ที่ระบุใน handoff ตรวจ SHA ก่อนเขียน ใช้ชื่อ branch `feature/` ตามคำสั่งผู้ใช้ล่าสุด ไม่ใช้ `codex/` หรือ `codeic/`
+- `Vn.md` และ `Vn-handoff.json` สำหรับงานใหม่: ผล 3 งานย่อย, input source SHA, sources, unknowns, nextPhase, gate และสิ่งที่ไม่ได้รัน ใช้ relative paths ภายใน repo
+- ผลเดิม V0/V1/V3 อยู่ `evidence/tasks/` เป็น snapshot ที่ตรวจ hash แล้ว พาธ absolute ภายในเป็น provenance เก่า ไม่ใช่ที่เก็บงานใหม่
+- **ทุก task ของ LexiQuest ต้องสร้างด้วย target.type=project** และ projectId `e0d28f74-0d26-40bc-b126-4cfebe4ff7a0` (saved path `C:/Users/Phet/Documents/LexiQuest`) ตรวจ list_projects ก่อนสร้าง ห้ามสร้าง projectless แม้งานนั้นเป็นเอกสาร
+- ใช้ isolated worktree และ accepted source ตาม handoff ตรวจ SHA ก่อนเขียน ไม่เพิ่ม build/cache หากไม่ได้รันงานที่ต้องใช้ ใช้ชื่อ branch `feature/` ตามผู้ใช้ล่าสุด ไม่ใช้ `codex/` หรือ `codeic/`
+- Task เดิม 3 อันยังผูกแบบ projectless เพราะเครื่องมือที่มีไม่มีคำสั่งเปลี่ยน project binding; จัด sidebar รวมกับโปรเจกต์ใน “LexiQuest · อารี” แล้ว การจัดกลุ่มไม่ได้เปลี่ยน binding ไม่สร้างงานซ้ำเพื่อซ่อนข้อผิดพลาดนี้
 
 ผู้จบ phase ตรวจว่ามี successor task ID อยู่หรือไม่ ถ้ามีห้ามสร้างซ้ำ ถ้ายังไม่มี ให้บันทึก handoff และปล่อย writer ก่อนสร้าง **หนึ่ง** successor ด้วย model/thinking และข้อกำหนดข้างบน ส่งเฉพาะแผน, workflow, handoff ล่าสุด, พาธหลักฐาน และ SHA ไม่ fork ประวัติแชททั้งหมด บันทึก task ID ที่เครื่องมือส่งกลับ; clientThreadId ยังไม่ใช่ threadId
 

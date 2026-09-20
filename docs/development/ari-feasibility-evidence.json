@@ -274,7 +274,7 @@
       "test/screens/ai_tutor_settings_screen_test.dart",
       "test/features/ai_tutor/ai_gateway_adapters_test.dart"
     ],
-    "fullResult": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\targeted-ai.json",
+    "fullResult": "ari/evidence/verification/targeted-ai.json",
     "fullResultSha256": "2045fc7657f6e2b4ab632a31f04a1bbc84fc76f30251c1db3936908af77c8944",
     "stdoutSha256": "9C8567A11F67CA431784B0A7D006505950A665DE95008BB5FEB2B0BD2B944AD4",
     "stderrSha256": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F",
@@ -311,7 +311,7 @@
         "test/features/ai_tutor/ai_gateway_adapters_test.dart"
       ],
       "result": "No issues found",
-      "log": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\ari-feasibility\\verification\\dart-analysis.log",
+      "log": "ari/evidence/verification/dart-analysis.log",
       "sha256": "458e4508222dc5f0b8f509f19c7497c8f9d7b45a67a9a6ade15eecb81e9e942e"
     },
     "format": {
@@ -332,7 +332,7 @@
     "productionApiAdded": false,
     "providerIntegrationAdded": false,
     "featureGatesChanged": false,
-    "historicalPlanReceipt": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/ari-feasibility/supersession-receipt.json"
+    "historicalPlanReceipt": "ari/evidence/supersession-receipt.json"
   },
   "feedback": [
     {
@@ -355,5 +355,6 @@
       "resolution": "Preserved existing line-ending convention; CR-aware whitespace check passed.",
       "status": "RESOLVED"
     }
-  ]
+  ],
+  "currentPhaseResults": "ari/README.md"
 }

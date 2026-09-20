@@ -1,5 +1,11 @@
 # LexiQuest Development Guardrails
 
+## Ari task storage — user correction 2026-09-20
+
+- All new LexiQuest tasks, including planning and documentation, belong to the saved LexiQuest project; do not create projectless tasks for this work.
+- Start Ari work from `docs/development/ari/README.md` and follow `docs/development/ari-task-workflow.md`. Keep active reports, state and handoffs in this repository using relative paths. External visualization/task-output folders are historical evidence, not the active write location.
+- Sidebar grouping does not change a legacy task's project binding. Preserve old task IDs and receipts; never claim grouping has moved their underlying project or create duplicate implementation tasks to conceal the mismatch.
+
 ## Mandatory recovery interpretation — user reaffirmed 2026-09-20
 
 - Missing paths, invalid Windows wildcards, command failures and failing tests are recoverable engineering work. Their repetition NEVER by itself authorizes ending the task or releasing the writer as blocked.
