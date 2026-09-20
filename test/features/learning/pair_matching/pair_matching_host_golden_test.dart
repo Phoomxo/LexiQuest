@@ -119,6 +119,22 @@ void _surface(WidgetTester tester) {
 }
 
 Future<void> _golden(WidgetTester tester, String name) async {
+  final ready = name == 'host_setup_thai_guardian.png'
+      ? find.byKey(const ValueKey('pair-resolved-count'))
+      : name == 'host_timeout_thai.png'
+      ? find.byKey(const ValueKey('pair-timer-action-continueUntimed'))
+      : find.byType(PairMatchingResultView);
+  // Drift recovery can settle after the last scheduled animation frame.
+  // Capture the actual ready screen, never a transient empty shell.
+  final wait = Stopwatch()..start();
+  while (ready.evaluate().isEmpty &&
+      wait.elapsed < const Duration(seconds: 5)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+  }
+  expect(ready, findsOneWidget);
   await tester.pumpAndSettle();
   expect(tester.takeException(), isNull);
   await expectLater(

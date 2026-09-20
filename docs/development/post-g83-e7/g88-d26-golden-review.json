@@ -1,0 +1,38 @@
+[
+  {
+    "path": "test\\features\\learning\\pair_matching\\goldens\\pair_board\\host_timeout_thai.png",
+    "beforeSha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d",
+    "afterSha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399",
+    "differenceBounds": [
+      0,
+      4,
+      412,
+      64
+    ],
+    "review": "Top shell surface now uses explicit scaffold background from D19. Entire image below y64 is pixel-identical; all visible controls retained."
+  },
+  {
+    "path": "test\\features\\learning\\pair_matching\\goldens\\pair_board\\host_result_thai_measured.png",
+    "beforeSha256": "3e97bb7c00b8b0d699b55d49f51894ec2e3b1af6ef0d5eba3498922bdf9fbc04",
+    "afterSha256": "aadec3bb321af35805571b3b8e75552e79e36d75d5247591f38b6f3f91d32f19",
+    "differenceBounds": [
+      0,
+      4,
+      412,
+      64
+    ],
+    "review": "Top shell surface now uses explicit scaffold background from D19. Entire image below y64 is pixel-identical; all visible controls retained."
+  },
+  {
+    "path": "test\\features\\learning\\pair_matching\\goldens\\pair_board\\host_replay_result_english.png",
+    "beforeSha256": "aed4993b2eb9a856e8783268bb9d7a4d843faa38210ca2a091fe0920bf0b50b4",
+    "afterSha256": "cde35a7774ec625cbedf67e53e1c46d61dc5bf3d31cc1db7f1e2462b0145c70d",
+    "differenceBounds": [
+      0,
+      4,
+      412,
+      88
+    ],
+    "review": "English two-line companion region receives explicit shell background; image below y88 is pixel-identical. Result/replay/no-additional-rewards copy and controls retained."
+  }
+]

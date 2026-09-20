@@ -569,6 +569,63 @@
     "expected": "Pinned reviewed sentence helper is permitted only for SentenceScrambleScreen and remains reachable only through existing authorized composition roots",
     "actual": "Guard rejects SentenceScrambleScreen constructor in reviewed_sentence_scramble_loader.dart",
     "evidence": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/56b564bbea3b-c3b018a4b252-3720ffd2/Explicit-Flutter-tests.stdout.log",
-    "status": "identified-fix-in-progress"
+    "status": "fixed-local-verified-G88-regression-in-progress",
+    "fixSHA": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+    "retest": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/targeted-learning-a91911da26da6ff0d0ffbfd8f11a2ae023d32189adc634cebd76bdc9be161269.json",
+    "affectedRegression": "g88-evidence-reconciliation.json; reviewed_sentence_scramble_loader and route tests retained or rerun against final imports"
+  },
+  {
+    "DefectID": "E7-D26",
+    "TestCaseID": "E7-COV-f10",
+    "sourceSHA": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+    "environment": "Windows/flutter-tester 412x915 Thai",
+    "title": "Pair host goldens predate explicit shell background",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "files": [
+      "test/features/learning/pair_matching/pair_matching_host_golden_test.dart"
+    ],
+    "steps": "Run G88 batch04 actual host goldens",
+    "expected": "Settled timeout/result controls remain visible and match reviewed layout",
+    "actual": "Two golden comparisons differ only in top shell surface;4.60percent timeout and4.74percent measured-result pixels.",
+    "rootCause": "D19 Material paints scaffoldBackgroundColor in top companion region, replacing implicit surface tint. RGB comparison confines mismatch to y4..64, with all pixels below identical. Initial visual suspicion of missing timeout content was not confirmed in settled captures.",
+    "evidence": "build/verification/3a56a391b9ef1b911e49c05dc8edaca6ebf8981d/ed65d8b3ec25-b78066201b5f-cbbb99d7/Explicit-Flutter-tests.stdout.log",
+    "imageEvidence": [
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2207b3aa97b96163-host_result_thai_measured_isolatedDiff.png",
+        "sha256": "2207b3aa97b961637a3c7604d9d7fb966543bcf94c04ae5d4eb646db0ad038cb"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\d248791186e703c9-host_result_thai_measured_maskedDiff.png",
+        "sha256": "d248791186e703c924ee3c257d6689604eb8d6fb9d33347efb0f8cfebcb828df"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\3e97bb7c00b8b0d6-host_result_thai_measured_masterImage.png",
+        "sha256": "3e97bb7c00b8b0d699b55d49f51894ec2e3b1af6ef0d5eba3498922bdf9fbc04"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\aadec3bb321af358-host_result_thai_measured_testImage.png",
+        "sha256": "aadec3bb321af35805571b3b8e75552e79e36d75d5247591f38b6f3f91d32f19"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\5aa330c2f7d2a4bb-host_timeout_thai_isolatedDiff.png",
+        "sha256": "5aa330c2f7d2a4bb8e072b5d65359a05bade0bf179e23bf3d70e433475da6451"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\2f42150eaea5ebb2-host_timeout_thai_maskedDiff.png",
+        "sha256": "2f42150eaea5ebb2be702612189729db2752db5640e6acda19c4607148074490"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\c76c9f57aceb1215-host_timeout_thai_masterImage.png",
+        "sha256": "c76c9f57aceb12156c2c118770b6b9d6002a1f0be113a6e0327678c38738d47d"
+      },
+      {
+        "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g88-d26-images\\679784a10a7a575f-host_timeout_thai_testImage.png",
+        "sha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399"
+      }
+    ],
+    "status": "reviewed-golden-update-retest-in-progress",
+    "review": "g88-d26-golden-review.json",
+    "testStrengthening": "Bounded readiness assertion now precedes capture; no screenshot matcher tolerance or business assertions weakened."
   }
 ]
