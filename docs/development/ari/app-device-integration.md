@@ -3,9 +3,12 @@
 Accepted base: `7407111bbb3f85ae1bc519dfe8b10ed37e501c05`.
 Task `01a0bfbd-9961-7da3-982b-77970bdc7027`; writer released for handoff.
 
-**Native private-login debug app built and verified; end-to-end application is
-not complete. Physical device, private login and authenticated inference are
-NOT_RUN.** ADB returned zero devices after the build. Inference remains disabled;
+**Native private-login debug app installed and launched on Vivo V2041 (SDK 33);
+end-to-end application is not complete.** Initial ADB absence was resolved when
+the user connected USB. APK hash rechecked, install succeeded, activity started
+and process remained present. The isolated bridge and adb reverse are active
+for a 15-minute private-login handoff. Browser return, UI visual acceptance and
+authenticated inference remain NOT_RUN. No screen/DOM/log inspection during login. Inference remains disabled;
 the bridge has no turn/thread/reply route. [Evidence](app-device-integration-evidence.json)
 and [handoff](app-device-integration-handoff.json) distinguish every layer.
 
@@ -107,3 +110,5 @@ No physical, login, Free-Thailand, provider-revoke, hosted-distribution, V2, E7 
 pilot acceptance is claimed. No successor task was dispatched: this checkpoint
 is an explicit handoff for missing device/account/provider prerequisites, not a
 claim that all requested software or acceptance work is finished.
+
+Physical update: designated Vivo connected; installation and process launch passed. User owns private login. Earlier zero-device/no-install statements above describe the initial build checkpoint. Full device behavior and account acceptance remain open.

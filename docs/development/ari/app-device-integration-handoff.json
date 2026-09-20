@@ -4,7 +4,7 @@
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
   "branch": "feature/ari-app-device-integration",
   "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
-  "status": "prelogin-debug-app-verified-device-and-authenticated-not-run",
+  "status": "vivo-install-launch-pass-private-login-pending",
   "writerReleased": true,
   "implementationPushed": true,
   "report": "app-device-integration.md",
@@ -23,10 +23,10 @@
     "bridge": 9,
     "analyze": "NO_ISSUES",
     "localBinary": "PRELOGIN_PASS",
-    "apk": "BUILD_SIGNATURE_PACKAGE_PASS"
+    "apk": "BUILD_SIGNATURE_PACKAGE_PASS",
+    "physical": "VIVO_V2041_INSTALL_LAUNCH_PASS"
   },
   "notRun": [
-    "Vivo install",
     "physical browser return",
     "private login",
     "authenticated acceptance",
@@ -38,14 +38,12 @@
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "Connect designated Vivo over USB and accept its RSA debugging prompt on phone if unauthorized; never restart global ADB or clear app data.",
-    "Install inspected isolated APK with adb -s <serial> install -r <apk>; recheck package/hash first.",
-    "Run documented local login bridge for that Vivo; launch isolated app; user opens OpenAI, completes private login, and explicitly taps status check. Do not capture/inspect browser, DOM, credentials, or logs during login.",
-    "Resolve quota-only enforcement and minimal-tool configuration before implementing/enabling inference; a logged-in Pro account cannot certify Free Thailand. No paid fallback."
+    "User completes private OpenAI login on Vivo and taps explicit return/status button; do not inspect screen/browser/DOM/logs during entry.",
+    "Bridge expires 15 minutes after launch; if expired, reprovision without clearing app data.",
+    "Inference remains gated and this account cannot by itself certify Free Thailand, quota-only billing, or provider revoke."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
-    "Vivo visible in ADB",
     "user private ChatGPT sign-in and device-code security setting",
     "supported provider enforcement for quota-only inference"
   ],

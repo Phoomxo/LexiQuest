@@ -3,7 +3,7 @@
   "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "date": "2026-09-21",
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
-  "status": "software-prelogin-verified-physical-and-authenticated-not-run",
+  "status": "vivo-install-launch-pass-private-login-pending",
   "sourceFiles": [
     {
       "path": "lib/main_ari_test.dart",
@@ -136,12 +136,25 @@
     "inference": "NOT_RUN"
   },
   "physical": {
-    "status": "NOT_RUN",
-    "adbCommand": "C:/Users/Phet/AppData/Local/Android/Sdk/platform-tools/adb.exe devices -l",
-    "observation": "List of devices attached; zero devices",
-    "installed": false,
+    "status": "INSTALL_LAUNCH_PASS_AUTH_PENDING",
+    "checkedAtUtc": "2026-09-20T17:26:12.122258+00:00",
+    "manufacturer": "vivo",
+    "model": "V2041",
+    "androidSdk": 33,
+    "installed": true,
+    "installResult": "Success",
+    "package": "com.lexiquest.app.ariTest",
+    "apkSha256": "21d82cb6be433bdce41fe78506372be009472cb7928147c98d258077817478db",
+    "activityLaunch": "PASS",
+    "processPresent": true,
+    "adbReverse": "tcp:8765 -> tcp:8765",
+    "privateBridge": "STARTED_15_MINUTE_LIFETIME",
+    "uiVisualInspection": "NOT_RUN_PRIVACY_HANDOFF",
     "browserReturn": "NOT_RUN",
-    "nativePluginLaunch": "COMPILED_NOT_DEVICE_TESTED"
+    "nativePluginLaunch": "NOT_RUN",
+    "privateLogin": "PENDING_USER",
+    "authenticatedAcceptance": "NOT_RUN",
+    "originalAppDataModified": false
   },
   "authenticatedAcceptance": "NOT_RUN",
   "inference": {

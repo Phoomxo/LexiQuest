@@ -2,7 +2,7 @@
 
 จุดติดตามงานเดียวใน repository · 2026-09-21 · branch `feature/ari-app-device-integration`
 
-**สถานะปัจจุบัน: debug app สำหรับ private login พร้อม build และ automated tests (Flutter 17 / bridge 9 PASS); Vivo ไม่พบใน ADB จึง physical/login NOT_RUN. ยังไม่เปิด inference จริงและไม่ถือว่าฝั่งแอปสมบูรณ์ตาม end-to-end acceptance. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json) · [handoff](app-device-integration-handoff.json). V2 NOT_MET.**
+**สถานะปัจจุบัน: ติดตั้งและเปิดรุ่นทดสอบบน Vivo V2041 จริงแล้ว (INSTALL/LAUNCH PASS); สะพาน USB เปิดชั่วคราว รอผู้ใช้ล็อกอิน OpenAI ส่วนตัว. ยังไม่ตรวจ browser return/authenticated acceptance และยังไม่เปิด inference จริง. [รายงาน](app-device-integration.md) · [หลักฐาน](app-device-integration-evidence.json). V2 NOT_MET.**
 
 **ผลก่อนหน้า: V1-R1 diagnostic เสร็จแล้ว — fake tests 17/17 และ binary smoke แบบไม่ล็อกอิน PASS** ตาม [รายงาน V1-R1](V1-R1.md); ยังไม่เริ่มต้นแบบเชื่อมบัญชีจริง V2 gate = NOT_MET; pilot = NOT_RUN; E7 ไม่เปลี่ยนสถานะ ผล 77 tests เดิมครอบคลุมการเปลี่ยนชื่อ ไม่ใช่ ChatGPT Free integration
 
