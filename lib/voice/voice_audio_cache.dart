@@ -40,6 +40,7 @@ final class VoiceAudioCacheKey {
     required this.speed,
     required this.engine,
     required this.modelVersion,
+    this.contentIdentity,
   });
 
   final String text;
@@ -48,6 +49,7 @@ final class VoiceAudioCacheKey {
   final double speed;
   final VoiceEngine engine;
   final String modelVersion;
+  final String? contentIdentity;
 
   factory VoiceAudioCacheKey.create({
     required VoiceRequest request,
@@ -68,6 +70,7 @@ final class VoiceAudioCacheKey {
       speed: request.speed,
       engine: engine,
       modelVersion: trimmedModelVersion,
+      contentIdentity: request.lessonCache == null ? null : request.contentId,
     );
   }
 
@@ -79,12 +82,13 @@ final class VoiceAudioCacheKey {
         other.voiceId == voiceId &&
         other.speed == speed &&
         other.engine == engine &&
-        other.modelVersion == modelVersion;
+        other.modelVersion == modelVersion &&
+        other.contentIdentity == contentIdentity;
   }
 
   @override
   int get hashCode =>
-      Object.hash(text, language, voiceId, speed, engine, modelVersion);
+      Object.hash(text, language, voiceId, speed, engine, modelVersion, contentIdentity);
 }
 
 /// Bounded, insertion-ordered (LRU) in-memory [VoiceAudioCache].

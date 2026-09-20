@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "slice": "E4.2",
+  "feature": "F08",
+  "status": "source/AI-assisted engineering review complete; empirical evidence limits retained",
+  "reviewKind": "source/AI-assisted engineering self-review; no independent human review",
+  "inventoryRevision": 1,
+  "formats": [
+    "wordAndExample",
+    "shortScenario"
+  ],
+  "segmentsPerSensePerFormat": 2,
+  "admittedSenses": [
+    {
+      "word": "book",
+      "review": "Noun with readable pages; scenario explicitly distinguishes reservation verb.",
+      "sense": "starter-object-v1"
+    },
+    {
+      "word": "pencil",
+      "review": "Writing/drawing tool; erase context matches the admitted tool sense.",
+      "sense": "starter-object-v1"
+    },
+    {
+      "word": "bottle",
+      "review": "Narrow-neck container; scenario distinguishes container, cup and water.",
+      "sense": "starter-object-v1"
+    }
+  ],
+  "checks": [
+    "Original authored scripts; no copied competitor teaching text",
+    "Two bounded segments per sense and format; each below provider 500-character bound",
+    "Exact lexical artifact hash and sense revision required; whole saved set validated",
+    "Transcript is exact segment concatenation; no alignment or duration claim",
+    "Local-only request; no new remote provider spending",
+    "Listening creates supplemental exposure checkpoints only"
+  ],
+  "references": [
+    "R7-01 format selection adopted, advertised durations excluded",
+    "R7-02 structured practical example adopted as original object scenario"
+  ],
+  "limitations": [
+    "No human content calibration",
+    "No actual acoustic or attached-device validation",
+    "Generic native completion does not establish exact segment end"
+  ],
+  "sourceSha256": "2039810853250affff360b22eb1ae93f20a44517950cf7ee81f5228d139a1f20",
+  "inventoryTests": "test/features/voice/audio_lesson_inventory_test.dart",
+  "reviewDate": "2026-09-20"
+}

@@ -149,6 +149,7 @@ final class VoiceOrchestrator implements VoiceProvider {
       capability: step.capability,
       privacyScope: step.privacyScope,
       localOnly: request.localOnly,
+      lessonCache: request.lessonCache,
     );
   }
 

@@ -49,6 +49,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
   ) async {
     cancellation.throwIfCancelled();
     _validateRoute(request);
+    final cache = request.lessonCache ?? _audioCache;
 
     final canCache =
         descriptor.allowsStandardCache &&
@@ -61,7 +62,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
         engine: descriptor.engine,
         modelVersion: _modelVersion,
       );
-      final cachedBytes = await _audioCache.get(lookupKey);
+      final cachedBytes = await cache.get(lookupKey);
       cancellation.throwIfCancelled();
       if (cachedBytes != null) {
         final playback = await _play(cachedBytes, cancellation);
@@ -88,7 +89,7 @@ final class SynthesizedVoiceRouteHandler implements VoiceRouteHandler {
         engine: descriptor.engine,
         modelVersion: audio.modelVersion,
       );
-      await _audioCache.put(storageKey, audio.bytes);
+      await cache.put(storageKey, audio.bytes);
       cancellation.throwIfCancelled();
     }
 

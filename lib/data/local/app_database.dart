@@ -26,6 +26,7 @@ import 'tables/study_plan_tables.dart';
 import 'tables/guided_repair_tables.dart';
 import 'tables/written_practice_tables.dart';
 import 'tables/speaking_practice_tables.dart';
+import 'tables/audio_lesson_tables.dart';
 import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
@@ -98,10 +99,11 @@ part 'app_database.g.dart';
     GuidedRepairOperations,
     WrittenPracticeResults,
     SpeakingPracticeResults,
+    AudioLessonCheckpoints,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 33;
+  static const int currentSchemaVersion = 34;
 
   AppDatabase(super.executor);
 
@@ -398,6 +400,9 @@ final class AppDatabase extends _$AppDatabase {
       // The v30/v31 extensions are one additive unit. Do not wrap historical table
       // rebuilds here: those own their foreign-key/transaction boundaries.
       await transaction(() async {
+        if (!await _tableExists('audio_lesson_checkpoints')) {
+          await migrator.createTable(audioLessonCheckpoints);
+        }
         if (!await _tableExists('speaking_practice_results')) {
           await migrator.createTable(speakingPracticeResults);
         }
@@ -417,6 +422,14 @@ final class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await customStatement("CREATE TRIGGER IF NOT EXISTS audio_lesson_immutable "
+          "BEFORE UPDATE OF activity_id, revision, operation_id, payload_json ON audio_lesson_checkpoints "
+          "BEGIN SELECT RAISE(ABORT, 'audio_lesson_immutable'); END");
+      await customStatement("CREATE TRIGGER IF NOT EXISTS audio_lesson_no_replace "
+          "BEFORE INSERT ON audio_lesson_checkpoints WHEN EXISTS (SELECT 1 FROM audio_lesson_checkpoints "
+          "WHERE owner_id=NEW.owner_id AND (operation_id=NEW.operation_id OR "
+          "(activity_id=NEW.activity_id AND revision=NEW.revision))) "
+          "BEGIN SELECT RAISE(ABORT, 'audio_lesson_duplicate'); END");
       await customStatement("CREATE TRIGGER IF NOT EXISTS written_practice_immutable "
           "BEFORE UPDATE OF activity_id, revision, operation_id, payload_json ON written_practice_results "
           "BEGIN SELECT RAISE(ABORT, 'written_practice_immutable'); END");

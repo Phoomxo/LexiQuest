@@ -39596,6 +39596,398 @@ class SpeakingPracticeResultsCompanion
   }
 }
 
+class $AudioLessonCheckpointsTable extends AudioLessonCheckpoints
+    with TableInfo<$AudioLessonCheckpointsTable, AudioLessonCheckpoint> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AudioLessonCheckpointsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
+  );
+  @override
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (revision > 0)',
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    activityId,
+    revision,
+    operationId,
+    payloadJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'audio_lesson_checkpoints';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AudioLessonCheckpoint> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('activity_id')) {
+      context.handle(
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, activityId, revision};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, operationId},
+  ];
+  @override
+  AudioLessonCheckpoint map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AudioLessonCheckpoint(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      activityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $AudioLessonCheckpointsTable createAlias(String alias) {
+    return $AudioLessonCheckpointsTable(attachedDatabase, alias);
+  }
+}
+
+class AudioLessonCheckpoint extends DataClass
+    implements Insertable<AudioLessonCheckpoint> {
+  final String ownerId;
+  final String activityId;
+  final int revision;
+  final String operationId;
+  final String payloadJson;
+  const AudioLessonCheckpoint({
+    required this.ownerId,
+    required this.activityId,
+    required this.revision,
+    required this.operationId,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['activity_id'] = Variable<String>(activityId);
+    map['revision'] = Variable<int>(revision);
+    map['operation_id'] = Variable<String>(operationId);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  AudioLessonCheckpointsCompanion toCompanion(bool nullToAbsent) {
+    return AudioLessonCheckpointsCompanion(
+      ownerId: Value(ownerId),
+      activityId: Value(activityId),
+      revision: Value(revision),
+      operationId: Value(operationId),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory AudioLessonCheckpoint.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AudioLessonCheckpoint(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      activityId: serializer.fromJson<String>(json['activityId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'activityId': serializer.toJson<String>(activityId),
+      'revision': serializer.toJson<int>(revision),
+      'operationId': serializer.toJson<String>(operationId),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  AudioLessonCheckpoint copyWith({
+    String? ownerId,
+    String? activityId,
+    int? revision,
+    String? operationId,
+    String? payloadJson,
+  }) => AudioLessonCheckpoint(
+    ownerId: ownerId ?? this.ownerId,
+    activityId: activityId ?? this.activityId,
+    revision: revision ?? this.revision,
+    operationId: operationId ?? this.operationId,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  AudioLessonCheckpoint copyWithCompanion(
+    AudioLessonCheckpointsCompanion data,
+  ) {
+    return AudioLessonCheckpoint(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AudioLessonCheckpoint(')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityId: $activityId, ')
+          ..write('revision: $revision, ')
+          ..write('operationId: $operationId, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(ownerId, activityId, revision, operationId, payloadJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AudioLessonCheckpoint &&
+          other.ownerId == this.ownerId &&
+          other.activityId == this.activityId &&
+          other.revision == this.revision &&
+          other.operationId == this.operationId &&
+          other.payloadJson == this.payloadJson);
+}
+
+class AudioLessonCheckpointsCompanion
+    extends UpdateCompanion<AudioLessonCheckpoint> {
+  final Value<String> ownerId;
+  final Value<String> activityId;
+  final Value<int> revision;
+  final Value<String> operationId;
+  final Value<String> payloadJson;
+  final Value<int> rowid;
+  const AudioLessonCheckpointsCompanion({
+    this.ownerId = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AudioLessonCheckpointsCompanion.insert({
+    required String ownerId,
+    required String activityId,
+    required int revision,
+    required String operationId,
+    required String payloadJson,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       activityId = Value(activityId),
+       revision = Value(revision),
+       operationId = Value(operationId),
+       payloadJson = Value(payloadJson);
+  static Insertable<AudioLessonCheckpoint> custom({
+    Expression<String>? ownerId,
+    Expression<String>? activityId,
+    Expression<int>? revision,
+    Expression<String>? operationId,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (activityId != null) 'activity_id': activityId,
+      if (revision != null) 'revision': revision,
+      if (operationId != null) 'operation_id': operationId,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AudioLessonCheckpointsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? activityId,
+    Value<int>? revision,
+    Value<String>? operationId,
+    Value<String>? payloadJson,
+    Value<int>? rowid,
+  }) {
+    return AudioLessonCheckpointsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      activityId: activityId ?? this.activityId,
+      revision: revision ?? this.revision,
+      operationId: operationId ?? this.operationId,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AudioLessonCheckpointsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('activityId: $activityId, ')
+          ..write('revision: $revision, ')
+          ..write('operationId: $operationId, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -39704,6 +40096,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WrittenPracticeResultsTable(this);
   late final $SpeakingPracticeResultsTable speakingPracticeResults =
       $SpeakingPracticeResultsTable(this);
+  late final $AudioLessonCheckpointsTable audioLessonCheckpoints =
+      $AudioLessonCheckpointsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -39766,6 +40160,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     guidedRepairOperations,
     writtenPracticeResults,
     speakingPracticeResults,
+    audioLessonCheckpoints,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -40915,6 +41310,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _speakingPracticeResultsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $AudioLessonCheckpointsTable,
+    List<AudioLessonCheckpoint>
+  >
+  _audioLessonCheckpointsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.audioLessonCheckpoints,
+        aliasName: 'local_owners__id__audio_lesson_checkpoints__owner_id',
+      );
+
+  $$AudioLessonCheckpointsTableProcessedTableManager
+  get audioLessonCheckpointsRefs {
+    final manager = $$AudioLessonCheckpointsTableTableManager(
+      $_db,
+      $_db.audioLessonCheckpoints,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _audioLessonCheckpointsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -42120,6 +42540,32 @@ class $$LocalOwnersTableFilterComposer
               }) => $$SpeakingPracticeResultsTableFilterComposer(
                 $db: $db,
                 $table: $db.speakingPracticeResults,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> audioLessonCheckpointsRefs(
+    Expression<bool> Function($$AudioLessonCheckpointsTableFilterComposer f) f,
+  ) {
+    final $$AudioLessonCheckpointsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.audioLessonCheckpoints,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AudioLessonCheckpointsTableFilterComposer(
+                $db: $db,
+                $table: $db.audioLessonCheckpoints,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -43388,6 +43834,32 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> audioLessonCheckpointsRefs<T extends Object>(
+    Expression<T> Function($$AudioLessonCheckpointsTableAnnotationComposer a) f,
+  ) {
+    final $$AudioLessonCheckpointsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.audioLessonCheckpoints,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AudioLessonCheckpointsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.audioLessonCheckpoints,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -43450,6 +43922,7 @@ class $$LocalOwnersTableTableManager
             bool guidedRepairOperationsRefs,
             bool writtenPracticeResultsRefs,
             bool speakingPracticeResultsRefs,
+            bool audioLessonCheckpointsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -43555,6 +44028,7 @@ class $$LocalOwnersTableTableManager
                 guidedRepairOperationsRefs = false,
                 writtenPracticeResultsRefs = false,
                 speakingPracticeResultsRefs = false,
+                audioLessonCheckpointsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -43608,6 +44082,7 @@ class $$LocalOwnersTableTableManager
                     if (guidedRepairOperationsRefs) db.guidedRepairOperations,
                     if (writtenPracticeResultsRefs) db.writtenPracticeResults,
                     if (speakingPracticeResultsRefs) db.speakingPracticeResults,
+                    if (audioLessonCheckpointsRefs) db.audioLessonCheckpoints,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -44578,6 +45053,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (audioLessonCheckpointsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          AudioLessonCheckpoint
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._audioLessonCheckpointsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).audioLessonCheckpointsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -44645,6 +45141,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool guidedRepairOperationsRefs,
         bool writtenPracticeResultsRefs,
         bool speakingPracticeResultsRefs,
+        bool audioLessonCheckpointsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -74144,6 +74641,351 @@ typedef $$SpeakingPracticeResultsTableProcessedTableManager =
       SpeakingPracticeResult,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$AudioLessonCheckpointsTableCreateCompanionBuilder =
+    AudioLessonCheckpointsCompanion Function({
+      required String ownerId,
+      required String activityId,
+      required int revision,
+      required String operationId,
+      required String payloadJson,
+      Value<int> rowid,
+    });
+typedef $$AudioLessonCheckpointsTableUpdateCompanionBuilder =
+    AudioLessonCheckpointsCompanion Function({
+      Value<String> ownerId,
+      Value<String> activityId,
+      Value<int> revision,
+      Value<String> operationId,
+      Value<String> payloadJson,
+      Value<int> rowid,
+    });
+
+final class $$AudioLessonCheckpointsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $AudioLessonCheckpointsTable,
+          AudioLessonCheckpoint
+        > {
+  $$AudioLessonCheckpointsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('audio_lesson_checkpoints__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AudioLessonCheckpointsTableFilterComposer
+    extends Composer<_$AppDatabase, $AudioLessonCheckpointsTable> {
+  $$AudioLessonCheckpointsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AudioLessonCheckpointsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AudioLessonCheckpointsTable> {
+  $$AudioLessonCheckpointsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AudioLessonCheckpointsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AudioLessonCheckpointsTable> {
+  $$AudioLessonCheckpointsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get activityId => $composableBuilder(
+    column: $table.activityId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AudioLessonCheckpointsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AudioLessonCheckpointsTable,
+          AudioLessonCheckpoint,
+          $$AudioLessonCheckpointsTableFilterComposer,
+          $$AudioLessonCheckpointsTableOrderingComposer,
+          $$AudioLessonCheckpointsTableAnnotationComposer,
+          $$AudioLessonCheckpointsTableCreateCompanionBuilder,
+          $$AudioLessonCheckpointsTableUpdateCompanionBuilder,
+          (AudioLessonCheckpoint, $$AudioLessonCheckpointsTableReferences),
+          AudioLessonCheckpoint,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$AudioLessonCheckpointsTableTableManager(
+    _$AppDatabase db,
+    $AudioLessonCheckpointsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AudioLessonCheckpointsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$AudioLessonCheckpointsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$AudioLessonCheckpointsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> activityId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AudioLessonCheckpointsCompanion(
+                ownerId: ownerId,
+                activityId: activityId,
+                revision: revision,
+                operationId: operationId,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String activityId,
+                required int revision,
+                required String operationId,
+                required String payloadJson,
+                Value<int> rowid = const Value.absent(),
+              }) => AudioLessonCheckpointsCompanion.insert(
+                ownerId: ownerId,
+                activityId: activityId,
+                revision: revision,
+                operationId: operationId,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AudioLessonCheckpointsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$AudioLessonCheckpointsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$AudioLessonCheckpointsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AudioLessonCheckpointsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AudioLessonCheckpointsTable,
+      AudioLessonCheckpoint,
+      $$AudioLessonCheckpointsTableFilterComposer,
+      $$AudioLessonCheckpointsTableOrderingComposer,
+      $$AudioLessonCheckpointsTableAnnotationComposer,
+      $$AudioLessonCheckpointsTableCreateCompanionBuilder,
+      $$AudioLessonCheckpointsTableUpdateCompanionBuilder,
+      (AudioLessonCheckpoint, $$AudioLessonCheckpointsTableReferences),
+      AudioLessonCheckpoint,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -74289,5 +75131,10 @@ class $AppDatabaseManager {
       $$SpeakingPracticeResultsTableTableManager(
         _db,
         _db.speakingPracticeResults,
+      );
+  $$AudioLessonCheckpointsTableTableManager get audioLessonCheckpoints =>
+      $$AudioLessonCheckpointsTableTableManager(
+        _db,
+        _db.audioLessonCheckpoints,
       );
 }

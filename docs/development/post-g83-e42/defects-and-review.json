@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "E4.2",
+  "reviewKind": "single-writer source/AI-assisted self-review; no subagents per user instruction",
+  "defects": [
+    {
+      "id": "E42-D01",
+      "kind": "tooling",
+      "cause": "Initial Flutter dependency setup changed ignored environment pins. The initial and stable receipts have identical 1422-file input closures but different environment fingerprints; generated plugin line-ending rewrites were incidental.",
+      "action": "Preserved InputDrift receipt and raw failed assertion; repeated after setup stabilized; missing checkpoint table failed as expected.",
+      "status": "resolved",
+      "environmentProof": {
+        "initial": "2f34579d0f7243efa9e1ca7bf96242ceb145004a41f52a354ed827ea1d9396ee",
+        "stable": "fd74ff34fc45b732febe033ffa7fc6df027196b9e1ae04237bf9dd04a1a80bf3",
+        "sourceInputDifferences": 0
+      }
+    },
+    {
+      "id": "E42-D02",
+      "kind": "fixture",
+      "cause": "Widget fixture disposed a stream while its pending work remained on a paused fake clock.",
+      "action": "Bounded real-time timeout plus fake-clock pumping preserves full cleanup assertions.",
+      "status": "resolved"
+    },
+    {
+      "id": "E42-D03",
+      "kind": "fixture",
+      "cause": "Lazy ListView did not build status text after scrolling to controls; added replay control exposed the same assumption in runtime interruption fixtures.",
+      "action": "Diagnostic printed visible text; scroll to status before unchanged assertion. Resume also verifies same segment request and exact checkpoint count.",
+      "status": "resolved; final 35-file regression passed"
+    },
+    {
+      "id": "E42-D04",
+      "kind": "implementation review",
+      "cause": "Replay and recovery after a failed drain needed explicit controls; asynchronous controller ticket/state should not be mutable by callers.",
+      "action": "Added replay without checkpoint mutation, owned cleanup retry, read-only controller state/ticket, post-await availability fences and synchronous ticket retirement before stream cancellation.",
+      "status": "resolved; final 35-file regression passed"
+    },
+    {
+      "id": "E42-D05",
+      "kind": "tooling",
+      "cause": "Discovery used two nonexistent proposed paths, a Windows wildcard argument, a formatted-test string match and system-default cp874 decoding.",
+      "action": "Repository-root discovery and exact-path inspection; structural replacement anchors, explicit UTF-8, literal existing paths. No task stop or acceptance bypass.",
+      "status": "resolved"
+    },
+    {
+      "id": "E42-D06",
+      "kind": "schema fixtures",
+      "cause": "Current-schema expectations still named schema33/57 tables/47 direct-owner descriptors.",
+      "action": "Advance current expectations to34/58/48 and explicitly exclude the new table from historical inventories. Preserve all sentinel, transaction, obstruction and integrity assertions.",
+      "status": "resolved; final 35-file regression passed"
+    }
+  ],
+  "reviewedProperties": [
+    "Exact saved set/sense/artifact/script/format pins",
+    "No scoring or rewards from playback",
+    "Private checkpoint advancement only after exact provider completion",
+    "Owner-generation and operation/segment fencing before and after async work",
+    "Retained cleanup prevents unsafe retry; local-only requests prevent remote spending",
+    "Aggregate owner cache bound across providers:20MiB/10 lessons; LRU and explicit deletion",
+    "Compatible immutable decoder, scoped backup/restore and privacy-count export",
+    "Default-off runtime composition, internal exercise, route/background/owner/feature retirement"
+  ],
+  "limitations": [
+    "No Android device attached: adb devices -l empty",
+    "Local gateway and routed synthesis/cache fixtures are not acoustic or physical-device evidence",
+    "Native generic completion remains fail-closed; unavailable capability shows text-only with no completion checkpoint",
+    "No human script calibration, provider quality/timing or general proficiency claims",
+    "Ephemeral cache is cleared on owner-generation change/app disposal; no downloaded-offline-library promise",
+    "Local-only requests: no new live-provider spend or deployment"
+  ],
+  "retainedGates": "E6 freeze/review/fixes and all E7/G8.4-G8.9 local/device/provider/assistive/release requirements",
+  "openRequiredImplementationDefects": [],
+  "finalAcceptance": "acceptance.json"
+}

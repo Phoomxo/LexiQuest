@@ -1,4 +1,5 @@
 import '../features/media_practice/application/speaking_scenario_use_cases.dart';
+import '../features/voice/application/audio_lesson_use_cases.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -470,6 +471,7 @@ final class AppBootstrap {
     FocusTimerRollout focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.contextPracticeRollout = const ContextPracticeRollout.implementedOff(),
     this.speakingScenarioRollout = const SpeakingScenarioRollout.implementedOff(),
+    this.audioLessonRollout = const AudioLessonRollout.implementedOff(),
     this.writtenPracticeRollout = const WrittenPracticeRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
@@ -595,6 +597,7 @@ final class AppBootstrap {
   final ContextPracticeRollout contextPracticeRollout;
   final WrittenPracticeRollout writtenPracticeRollout;
   final SpeakingScenarioRollout speakingScenarioRollout;
+  final AudioLessonRollout audioLessonRollout;
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
@@ -1808,6 +1811,15 @@ final class AppBootstrap {
       // screen-owned provider fallback.
     }
 
+    final audioLessons = AudioLessonUseCases(sets: personalSets, voice: voice,
+      isAvailable: () => audioLessonRollout.enabled && runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.speechPractice));
+    resources.own(audioLessons.dispose);
+    void retireAudioLessons() {
+      if (!audioLessons.isAvailable()) audioLessons.retire().ignore();
+    }
+    runtimeFeatures.addListener(retireAudioLessons);
+    resources.own(() => runtimeFeatures.removeListener(retireAudioLessons));
+
     // ── Wrap feature registry with runtime kill-switch support ────────────
     final featureControls = RuntimeFeatureControls(
       store: featureOverrideStore,
@@ -1929,6 +1941,7 @@ final class AppBootstrap {
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       personalSets: personalSets,
+      audioLessons: audioLessons,
       speakingScenarios: SpeakingScenarioUseCases(sets: personalSets,
         isAvailable: () => speakingScenarioRollout.enabled && runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.speechPractice)),
       writtenPractice: WrittenPracticeUseCases(sets: personalSets,

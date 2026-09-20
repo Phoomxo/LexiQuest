@@ -1,4 +1,5 @@
 import 'voice_capability.dart';
+import 'voice_audio_cache.dart';
 
 /// Provider-neutral value types and failure taxonomy for the hybrid voice
 /// pipeline.
@@ -59,6 +60,7 @@ class VoiceRequest {
     required this.capability,
     required this.privacyScope,
     required this.localOnly,
+    this.lessonCache,
   });
 
   final String text;
@@ -72,6 +74,8 @@ class VoiceRequest {
   final VoiceCapability capability;
   final VoicePrivacyScope privacyScope;
   final bool localOnly;
+  /// Opaque owner-generation cache capability. Never sent to a provider API.
+  final VoiceAudioCache? lessonCache;
 
   factory VoiceRequest.create({
     required String text,
@@ -85,6 +89,7 @@ class VoiceRequest {
     VoiceCapability capability = VoiceCapability.standardTargetSpeech,
     VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
     bool localOnly = false,
+    VoiceAudioCache? lessonCache,
   }) {
     final normalizedText = _normalizeText(text);
     if (normalizedText.isEmpty || normalizedText.length > 500) {
@@ -165,6 +170,7 @@ class VoiceRequest {
       capability: capability,
       privacyScope: privacyScope,
       localOnly: localOnly,
+      lessonCache: lessonCache,
     );
   }
 

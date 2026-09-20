@@ -118,8 +118,8 @@ void main() {
             reason: table,
           );
         }
-        expect(AppDatabase.currentSchemaVersion, 33);
-        expect(await currentDatabaseTableNames(database), hasLength(57));
+        expect(AppDatabase.currentSchemaVersion, 34);
+        expect(await currentDatabaseTableNames(database), hasLength(58));
         final rows = await database
             .customSelect(
               "SELECT * FROM quest_instances WHERE owner_id = 'owner:quest' ORDER BY instance_id",

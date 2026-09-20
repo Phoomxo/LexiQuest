@@ -1,4 +1,5 @@
 import '../features/media_practice/presentation/speaking_scenario_screen.dart';
+import '../features/voice/presentation/audio_lesson_screen.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -493,6 +494,14 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                         child: const Text('กลับไปแก้ไข'),
                       ),
                     ] else ...[
+                      if (dependencies?.audioLessons?.isAvailable() == true)
+                        OutlinedButton(onPressed: () {
+                          final owner = _owner;
+                          final app = dependencies?.audioLessons;
+                          if (owner == null || app == null) return;
+                          AppNavigator.pushPage<void>(context, AppPage<void>(name: 'learning/audio-lesson', builder: (_) =>
+                            AudioLessonScreen(useCases: app, owner: owner, set: revision)));
+                        }, child: const Text('Audio lesson · บทเรียนเสียง')),
                       if (dependencies?.speakingScenarios?.isAvailable() == true && dependencies?.speechPractice != null)
                         OutlinedButton(onPressed: () {
                           final owner = _owner;

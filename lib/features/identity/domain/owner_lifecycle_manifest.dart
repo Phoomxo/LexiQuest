@@ -158,6 +158,13 @@ final class OwnerLifecycleTableDescriptor {
 
 const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
   OwnerLifecycleTableDescriptor(
+    tableName: 'audio_lesson_checkpoints', alias: 'audioLessonCheckpoints',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
     tableName: 'written_practice_results', alias: 'writtenPracticeResults',
     authority: OwnerLifecycleAuthority.directOwner,
     exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
@@ -912,6 +919,7 @@ final Set<String> ownerLifecycleDirectOwnerTableNames =
 const ownerLifecyclePhysicalDeletionOrder = <String>[
   'written_practice_results',
   'speaking_practice_results',
+  'audio_lesson_checkpoints',
   'guided_repair_operations',
   'active_plan_pointers',
   'study_plan_revisions',

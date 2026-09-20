@@ -51,7 +51,7 @@ void main() {
         db = AppDatabase(NativeDatabase(file));
         try {
           await expectCurrentDatabaseContract(db);
-          expect(db.schemaVersion, 33);
+          expect(db.schemaVersion, 34);
           expect(
             (await db.select(db.outboxOperations).get())
                 .single

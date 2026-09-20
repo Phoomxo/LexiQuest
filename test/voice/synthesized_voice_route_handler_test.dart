@@ -1,3 +1,7 @@
+import 'package:vocab_learning_app/voice/voice_orchestrator.dart';
+import 'package:vocab_learning_app/voice/voice_policy.dart';
+import 'package:vocab_learning_app/voice/voice_provider_registry.dart';
+import 'package:vocab_learning_app/voice/lesson_audio_cache.dart';
 // RED phase: defines the behavior contract for SynthesizedVoiceRouteHandler
 // before its implementation exists. This file is expected NOT to compile until
 // the handler is added under lib/voice/.
@@ -196,6 +200,30 @@ VoiceProviderDescriptor _mirrorDescriptor() => VoiceProviderDescriptor(
 );
 
 void main() {
+  test('lesson capability uses scoped bytes and exact segment keys, never shared cache', () async {
+    final owner = LessonAudioCache(requireCurrent: () async {});
+    final scope = owner.lesson('pinned-lesson');
+    final shared = _RecordingAudioCache();
+    final provider = _RecordingSynthesisProvider(descriptor: _standardDescriptor());
+    final handler = SynthesizedVoiceRouteHandler(provider: provider, audioPlayer: _RecordingAudioPlayer(), audioCache: shared, modelVersion: _modelVersion);
+    final routed = VoiceOrchestrator(policySource: const StaticVoicePolicySource(VoiceRouteContext(
+      isOnline: true, remoteStandardEnabled: true, offlinePackAvailable: false, voiceMirrorEnabled: false,
+      hasVoiceMirrorConsent: false, hasActiveVoiceMirrorSession: false)), policyResolver: const VoicePolicyResolver(),
+      handlerRegistry: VoiceProviderRegistry<VoiceRouteHandler>([MapEntry(VoiceEngine.omniVoice, handler)]));
+    VoiceRequest request(String id) => VoiceRequest.create(text: 'Good morning.', language: 'en', voiceId: 'teacher_female', speed: 1,
+      contentId: id, contentType: 'audioLesson', mode: VoiceMode.practice, lessonCache: scope);
+    await routed.speak(request('segment-1'));
+    final hit = await routed.speak(request('segment-1'));
+    expect(hit.cacheHit, isTrue);
+    await routed.speak(request('segment-2'));
+    expect(provider.synthesizeCalls, hasLength(2));
+    expect(shared.getCalls, isEmpty); expect(shared.putCalls, isEmpty);
+    expect(owner.totalBytes, greaterThan(0));
+    await owner.deleteLesson('pinned-lesson');
+    await expectLater(routed.speak(request('segment-1')), throwsA(anything));
+    expect(owner.totalBytes, 0);
+  });
+
   test(
     'fresh playback returns at start with a distinct natural completion future',
     () async {

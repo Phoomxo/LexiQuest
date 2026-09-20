@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 const currentDatabaseTableInventory = <String>{
+  'audio_lesson_checkpoints',
   'written_practice_results',
   'speaking_practice_results',
   'guided_repair_operations',

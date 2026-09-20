@@ -1,3 +1,6 @@
+import 'package:vocab_learning_app/features/voice/application/audio_lesson_use_cases.dart';
+import 'package:vocab_learning_app/features/voice/presentation/audio_lesson_screen.dart';
+import '../features/voice/audio_lesson_use_cases_test.dart' as audio_fixture;
 import '../features/media_practice/speaking_capture_test.dart' as speaking_fixture;
 import 'package:vocab_learning_app/features/media_practice/application/speaking_scenario_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/presentation/speaking_scenario_screen.dart';
@@ -812,6 +815,77 @@ void main() {
           expect(await db.select(db.pointsLedgerEntries).get(), isEmpty);
           expect(await db.select(db.outboxOperations).get(), isEmpty);
         });
+        await tester.pumpWidget(const SizedBox.shrink()); await settle();
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    for (final retirement in ['owner', 'studyPlanning', 'speech', 'route', 'background']) {
+      testWidgets('audio runtime protects interrupted checkpoint on $retirement', (tester) async {
+        final gateway = _AudioRuntimeProvider()..autoComplete = false;
+        final dependencies = (await tester.runAsync(() => AppBootstrap(
+          createDatabase: _testDatabase, initializeFirebase: () async {}, initializeSupabase: () async {},
+          loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+          buildVoice: (_) => gateway, audioLessonRollout: const AudioLessonRollout.internal(),
+          learningPreviewEnabled: true, buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize()))!;
+        addTearDown(() => tester.runAsync(() => dependencies.dispose().timeout(const Duration(seconds: 10))));
+        expect(dependencies.audioLessons!.isAvailable(), isTrue);
+        final set = (await tester.runAsync(() async {
+          final sets = dependencies.personalSets!;
+          final owner = await sets.begin();
+          final pin = SenseCrosswalkPin.fromJson({'corpusManifestHash': PackagedSenseCrosswalk.corpusManifestHash,
+            'revision': 1, 'artifactHash': PackagedSenseCrosswalk.artifactHash});
+          final refs = (await sets.candidates(owner, pin)).entries.take(2).map((e) => e.ref).toList();
+          return sets.save(owner, PersonalSetRevision.create(setId: 'writing-set', operationId: 'writing-create', expectedPriorRevision: 0,
+            createdAtUtcMs: DateTime.now().toUtc().millisecondsSinceEpoch, title: 'Writing objects', crosswalkPin: pin, members: refs));
+        }))!;
+        final owner = (await tester.runAsync(dependencies.personalSets!.begin))!;
+        Future<void> settle() async {
+          for (var i = 0; i < 35; i++) {
+            await tester.pump(const Duration(milliseconds: 30));
+            await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+          }
+        }
+        await tester.pumpWidget(AppDependenciesScope(dependencies: dependencies,
+          child: MaterialApp(navigatorObservers: [appRouteObserver], home: AudioLessonScreen(useCases: dependencies.audioLessons!, owner: owner, set: set))));
+        await settle(); await tester.tap(find.text('Word and example')); await settle();
+        await tester.ensureVisible(find.byKey(const Key('audio-play')));
+        await tester.tap(find.byKey(const Key('audio-play'))); await settle();
+        expect(gateway.requests, hasLength(1));
+        if (retirement == 'route') {
+          Navigator.of(tester.element(find.byType(AudioLessonScreen))).push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Covered'))));
+        } else if (retirement == 'background') {
+          tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        } else if (retirement == 'owner') {
+          await tester.runAsync(() => DriftOwnerGeneration(dependencies.database!).advance());
+        } else {
+          (dependencies.features as RuntimeFeatureRegistry).emergencyOff(retirement == 'speech' ? Feature.speechPractice : Feature.studyPlanning);
+        }
+        await settle();
+        await tester.runAsync(() async { gateway.completions.single.complete(); }); await settle();
+        if (retirement == 'route') { Navigator.of(tester.element(find.text('Covered'))).pop(); await settle(); }
+        if (retirement == 'background') { tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed); await settle(); }
+        expect(gateway.requests, hasLength(1));
+        final rows = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.audioLessonCheckpoints).get());
+        expect(rows, hasLength(1));
+        if (retirement == 'owner' || retirement == 'studyPlanning' || retirement == 'speech') {
+          expect(find.textContaining('Session closed'), findsOneWidget);
+          expect(find.textContaining('Listen to the word'), findsNothing);
+        } else {
+          await tester.drag(find.byType(ListView).last, const Offset(0, 1500)); await settle();
+          expect(find.textContaining('Paused'), findsOneWidget);
+          gateway.autoComplete = true;
+          await tester.ensureVisible(find.byKey(const Key('audio-play')));
+          await tester.tap(find.byKey(const Key('audio-play'))); await settle();
+          expect(gateway.requests, hasLength(2));
+          expect(gateway.requests.last.contentId, gateway.requests.first.contentId);
+          final resumed = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.audioLessonCheckpoints).get());
+          expect(resumed, hasLength(2));
+        }
+        final cleanup = dependencies.audioLessons!.retire(); await settle();
+        await tester.runAsync(() => cleanup.timeout(const Duration(seconds: 5)));
         await tester.pumpWidget(const SizedBox.shrink()); await settle();
         expect(tester.takeException(), isNull);
       });
@@ -2611,6 +2685,7 @@ void main() {
       expect(identical(dependencies, repeated), isTrue);
       expect(identical(dependencies.aiTutor, ai), isTrue);
       expect(dependencies.voice, isNotNull);
+      expect(dependencies.audioLessons!.isAvailable(), isFalse);
       expect(aiBuilds, 1);
       expect(voiceBuilds, 1);
       expect(dependencies.localDataEraser, isNotNull);
@@ -8202,4 +8277,9 @@ final class _ReconcilingOfflineContentManager implements OfflineContentManager {
   @override
   Future<OfflineContentState> verify(ContentIdentity identity) =>
       throw UnimplementedError();
+}
+
+class _AudioRuntimeProvider extends audio_fixture.AudioProvider implements ManagedVoiceProvider {
+  @override
+  Future<void> dispose() async { await stop(); }
 }
