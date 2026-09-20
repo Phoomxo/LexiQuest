@@ -552,5 +552,23 @@
     "nativeRetest": [
       "g86-d24-native-proof.json"
     ]
+  },
+  {
+    "DefectID": "E7-D25",
+    "TestCaseID": "E7-COV-f16",
+    "sourceSHA": "5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f",
+    "environment": "Windows/flutter-tester",
+    "title": "Native composition guard omits reviewed sentence intermediary",
+    "severity": "medium",
+    "ownerPackage": "G8.8",
+    "rootCause": "D20 introduced a pinned-content helper within the existing native loader but the structural constructor allowlist still names only prior roots.",
+    "files": [
+      "test/architecture/lesson_mode_adapter_coverage_test.dart"
+    ],
+    "steps": "Run G88 bounded regression batch01; native screens composition test",
+    "expected": "Pinned reviewed sentence helper is permitted only for SentenceScrambleScreen and remains reachable only through existing authorized composition roots",
+    "actual": "Guard rejects SentenceScrambleScreen constructor in reviewed_sentence_scramble_loader.dart",
+    "evidence": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/56b564bbea3b-c3b018a4b252-3720ffd2/Explicit-Flutter-tests.stdout.log",
+    "status": "identified-fix-in-progress"
   }
 ]

@@ -267,6 +267,8 @@ void main() {
       'ShadowingChallengeScreen': 'lib/screens/shadowing_challenge_screen.dart',
       'CefrArticleReaderScreen': 'lib/screens/cefr_article_reader_screen.dart',
       'SentenceScrambleScreen': 'lib/screens/sentence_scramble_screen.dart',
+      'ReviewedSentenceScrambleLoader':
+          'lib/screens/reviewed_sentence_scramble_loader.dart',
       'WordScrambleScreen': 'lib/screens/word_scramble_screen.dart',
     };
     const authorizedRoots = <String>{
@@ -297,9 +299,16 @@ void main() {
             isNot(matches(RegExp(r'\b(sessionId|wordId|evidenceAdapter)\s*:'))),
           );
         }
+        // This intermediary admits reviewed pinned content inside the existing
+        // native shell. It may construct only the sentence screen; listing the
+        // intermediary above also fences its own callers to authorized roots.
+        final reviewedSentenceLoader =
+            screen.key == 'SentenceScrambleScreen' &&
+            path.endsWith('lib/screens/reviewed_sentence_scramble_loader.dart');
         expect(
           ownsDeclaration ||
               unscoredLibrary ||
+              reviewedSentenceLoader ||
               authorizedRoots.any(path.endsWith),
           isTrue,
           reason:
