@@ -1,0 +1,1562 @@
+[
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-after-sentence-abandon.png",
+    "sha256": "b6a5dc34466f74dab9c711aebcdc4dcc3a684c66be0a09242d9631e5f0f2a7ff"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-after-sentence-abandon.xml",
+    "sha256": "afada18feba1c01a208acd8e379150bee7b6b7ed5d4b832a445d5231d897fe84"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-apk-runtime.log",
+    "sha256": "2cbb6bf42de13e120a8209044bd72192ed13d38a2845b4e3722012dabcd51a9d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-entry.png",
+    "sha256": "ef31687d995e56138ff33fad383fce60ac080dadbc1cffc061c7ea59ed847bb6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-entry.xml",
+    "sha256": "32b35a6936e5eb3f9bf299e795cd3034fc05e347111c9f491a89f9ba12cc340a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-launcher.png",
+    "sha256": "38c6670c6904b51de2f5ac03de057905854320c1427511e82158851532b65c1d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-launcher.xml",
+    "sha256": "36641b93020c61f88e121dcd5862853c8a60a2efffdf541f1d9cce7e959d0504"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-reading.png",
+    "sha256": "73b483b7297874a5018c57ac47dae788620973b843bba737fc09dd14f2f7fe14"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-reading.xml",
+    "sha256": "dde3fed3848a6bbd025d1814bf536f1ec1a9c55c7317746397ca8cf9cfeae807"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-step2.png",
+    "sha256": "a84235436e3f365a407fc88a873c3776b2dfbd5ccd1374d2cd31a629f0c1b942"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-associative-step2.xml",
+    "sha256": "a2193f67cb40b69087d9611784a2123d11b8fa0aa3517f6cf81834da4e9c6220"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-build-debug-exit.txt",
+    "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-build-debug.log",
+    "sha256": "9c3fd93ce8527375816f2d12eba1e6dd24dec298aef101f6e7de4ebbbb938dbc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-build-preview-exit.txt",
+    "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-build-preview.log",
+    "sha256": "f3ae23216e1fb3ca5979d085b274387366b50e30673b62498375db821d6878db"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-bag.png",
+    "sha256": "53b8b92e0e9fb8113eb2448bfcd5568ec051e252d7cf1bd889c0df78477c6e1f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-bag.xml",
+    "sha256": "11599074ecbf32781b015c3153467ac23053a94a077822ebfe855ae8f53e23b2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-config.png",
+    "sha256": "40957346d2006b07c1519eaa40bfd4a3287c022903013d8509e536ef8cfb24fa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-config.xml",
+    "sha256": "c4b71f9a1a7638b8637a23a41abd7c14014ce500394fef226798741c6bd6f28e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-feedback.png",
+    "sha256": "908d3e36583f43966ea5e03c4e44765105d107f7fd1a2e8186796abcc28f2288"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-feedback.xml",
+    "sha256": "3e532e4989d9f14ca5c110c5f7bf40b59659d7d32f9d57ddb4083d51176db509"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-finish.png",
+    "sha256": "ee4b2b79368d4719647b5c8030f25274141fe97ee370b692e7fbea26f98915b5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-finish.xml",
+    "sha256": "010fdf2b36c1e90704dc1de3c9a75822478c4f99eab66885b896dfe1f99540d5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-next.png",
+    "sha256": "ed57c639001fffd09d384f0b0317fb4e380d6fe081f0f481a438a38c1775ce05"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-next.xml",
+    "sha256": "c6ca938e8aa1382f553afc4031f75b6ba5af3383f5db038a9b08e809462cd1e1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-one-config.png",
+    "sha256": "706886ef7ac5cbe2d0d10392ea6e2cfea37df2c38746ccb34ef2cbfd666f91e0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-one-config.xml",
+    "sha256": "bff6fdb9c9e1e95c0570c88fec8e933be6025b7260513e1a37df866ea90194f5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-prompt.png",
+    "sha256": "851a82dd629e5adf6483f33b60e4b075a611be9178fd0086b61e942f1c3db261"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-prompt.xml",
+    "sha256": "0607d6286bb59f6d97b7f80be9ead622f17ebe16c7b4113c88021be19438f86b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-result.png",
+    "sha256": "dc14779810d5fde9ea454001bea6759559b6635778c62c1511ba92029d6dbfb4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-result.xml",
+    "sha256": "6bd492dd62717a50ed2b3d5e8edf978d1f43ac1e91a540b10b909a50dba0f48f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-speech-skipped.png",
+    "sha256": "19e7954800b348cadc243a47a5973f9e07d14931c18d5bba113e0f752b1db66b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-speech-skipped.xml",
+    "sha256": "ff5866475f9acf050e35f26a52b9857273457c06b07773688423ae509d15ab87"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-typed.png",
+    "sha256": "90087ebd811c8719d8c0043c156dd82ddcb259e26cc072ee9e1f7259458435fc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-cloze-typed.xml",
+    "sha256": "2293ae71184fcc8578b3cfd60328c25e4d8a3129218af044f8f30acf294f62b0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-coldstart-logcat.txt",
+    "sha256": "fafd4396b541808c7be7f588e3685c15d72c44254e44bc7496ff912e01a2571d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-coldstart-ui.xml",
+    "sha256": "2f6c7d2181857c29c491d1a62f2eb8908bb1a49ed59a461df0b205b11ba31f66"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-coldstart.log",
+    "sha256": "a4d9c8d6e24b007352d7fcc26026d18de17994d134dabda25e93085bad3ceb0d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-coldstart.png",
+    "sha256": "adafa6c04992aa95665a4fc1bf8be182d34622dd1fc0e62e9ba861758d85697e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-consent-declined-home.png",
+    "sha256": "4486a0385230baed6f0c57d5e2d8a1bd62f80c56335521a504d3bd8b24ef29c3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-consent-declined-home.xml",
+    "sha256": "98e44b3030de5bc2915ea3aab968044e8a52325dd7d9b3e62f799e221b62c830"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-analyze.log",
+    "sha256": "f63ed5df7b6083d2ddeed44e0b895c23699721b1ee0368b2edded4d64f134aa6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-apk-runtime.log",
+    "sha256": "30f9eb16ed8f230a778a934193e06cd9e84ebe8a6f737e8a7248c1e352b4ee81"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-build-preview-exit.txt",
+    "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-build-preview.log",
+    "sha256": "a925f962ec7ea3bdc59da36bb0575ee05566acd0fbd8869717221987ed6f665e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-feedback.png",
+    "sha256": "d4536a041d4c703f2d099b9d74320d7602bdb6322b526a31fb6cad190708c6db"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-feedback.xml",
+    "sha256": "71af9b8d6f2643f3c78fc24b91e3e1060da35b9dd49e7feb8d61d75163ad6edb"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-home.png",
+    "sha256": "5854727456137a6a294b0d5f08cd96b3982c3b4cf5528578611179df03150029"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-home.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-install.log",
+    "sha256": "c4aa470acafcf8576c15b0f0b5ae7e852d1ec5413372d0e6a9272e788e1306d3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-keyboard-dismissed.png",
+    "sha256": "5a1e700f3785a8c9672f1ea4c4912e8f70eefd1ce192f4eb23baa662ed37a622"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-keyboard-dismissed.xml",
+    "sha256": "2e96c57fadc54f10bbd084c8aec3ec8e7992c273a24650d8a9c22367d258436d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-launch.log",
+    "sha256": "e41e27723c2d0b9a666eae180de4ff2bd22d455effe353d9d16bd66330e89444"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-modes-middle.png",
+    "sha256": "d51765d32df24c45e18636596897ced83781e36bf77d6dd5ae2c1f6af000db48"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-modes-middle.xml",
+    "sha256": "e24cf2595c715cd3f687bb3d999de3ab81839c9fba5d2c8c9fdc529e05341b4c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-config.png",
+    "sha256": "9fd96f73a1807ef8dd8bac39ee7e91f9e3b665f14a9d8e8d33c47837d243d73a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-config.xml",
+    "sha256": "61c7fb5573cf22708a98d8b33872a004d95426afa4576623b5b6867e77f1c630"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-input.png",
+    "sha256": "7977b5fa15f288d10a532109120af32d74415c5c2f220208df98ad8458de4846"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-input.xml",
+    "sha256": "156c1f67ededc3db308129040cb77fae506987424e0ae0b83de0f3e15419482e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-question.png",
+    "sha256": "c3552a3818db2f4de8b11013d0f1964dcca1eb4e66d14ca0123bea5088517ee9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-question.xml",
+    "sha256": "b8301f4b4c1fb6fa12ee266f4736d85e3870ad18de07fb0d5e3babb7e60e85ca"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-result.png",
+    "sha256": "d1498988d75f6ccb000d4b0182e64ecc5afad8d040d18a9d8b75367357c7dc1f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-result.xml",
+    "sha256": "0a437e9fdef641e8fb114edaf745ebb104fc11f9f230558efcb071d59e70e236"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-submit.png",
+    "sha256": "dc17fbb026c15313de4ffc6575799ad61986172a1caf16ebc292de56c5c6a8c5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d19-typed-submit.xml",
+    "sha256": "b54e4f8fff3770c1fcb62220327c6f4fa19883e584c13b0e3c54de91be494ec0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d20-analyze.log",
+    "sha256": "50ed8b95ede77bbf1d8eabb75adfd05c6ae6198fdae7e6230b0555197d373b11"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-answer.png",
+    "sha256": "c6e4c9d4c32c0f3f8f26388071117e19d96a94684845939b08be2f5c6c631c45"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-answer.xml",
+    "sha256": "f6c4d670254eacb98cceeacea9bc82c2ee0c3a5ace9712f8b100326a8bd3d061"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-feedback-scroll0.png",
+    "sha256": "b502440c0bc8ec7702c574df66a5505c91f9818a3c3e1fbc59055f16fa10a73c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-feedback-scroll0.xml",
+    "sha256": "77d695d0791c8aec5d39f97a74289ac5c981830fea8294f35d5ccff422bee2aa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-feedback-scroll1.png",
+    "sha256": "9a8ae6f1fa3c7c4cb66a2e79e3d8106daeb6a5d14d00e674264d43e7bd364794"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-feedback-scroll1.xml",
+    "sha256": "9cbd948ae17f6083fb4889f54349b0e3a05a10d167a758e5dca1156949069acc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-prompt.png",
+    "sha256": "dfffe680d223778dfabaa75816eb2e7fa3c3576d3a17fbc480e286d8e362761c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-01-prompt.xml",
+    "sha256": "772e8e02407644b9e66ddc917a66dff206e4c9a3ef5f958382233ef335b21a31"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-answer.png",
+    "sha256": "a705e1468ae07a50457328f1df7863d94b839041ec31df2ff4b68c034fdac956"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-answer.xml",
+    "sha256": "35b1e942b19a60c657e90519695b90bb152c62a6a531163b4809273cd8fc0e23"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-feedback-scroll0.png",
+    "sha256": "68529b916b4f1ce9ad8d969d95d81a4e24cdbc82b5cb5b3499bcd967220a3b01"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-feedback-scroll0.xml",
+    "sha256": "43ab47e512bfdd90996837b101a824301674c1573643fcb562e0ec94e56efb5c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-feedback-scroll1.png",
+    "sha256": "d25a168f859f58308b2f58e99688be07c8ce9627fd1fdda961c87f5b249f2921"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-feedback-scroll1.xml",
+    "sha256": "fed11f6076783a0d572f3a594a69d5975c5df677652352f4272a2db6877033a0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-prompt-top.png",
+    "sha256": "4f6262a4b2349ef327c1c666a5e3f0ff679152bb47afa3daa4e815257f4502cb"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-prompt-top.xml",
+    "sha256": "31f864c700feafd705c01767930d50905495d58513325df7f0c12bcf690ab2f5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-prompt.png",
+    "sha256": "10cc171164c78bf298ecba2551355636dd985e25fbb01e7a40e536868be0a95f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-02-prompt.xml",
+    "sha256": "04520f3717308e97b46bb0aa67c2d596a279e83373b68b21ca21e6adb73a2e6a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-answer.png",
+    "sha256": "9456b664d0d5b276a5e534cebcc65664a84bae61cfc2b13c4fd49be7f5284450"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-answer.xml",
+    "sha256": "950167939598b7a3aa0499ae7f94e2efdab4196a97f52211e3c3bbb6e018b1d6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-feedback-scroll0.png",
+    "sha256": "05ed59137c440c08e8437c2aa813ea515c019420b59cf627eb9a37b7791e8b94"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-feedback-scroll0.xml",
+    "sha256": "15f78a69d6c1b5cc9bc09b141979c3ea292137668e1f68d433c1338aa27e5e68"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-option-scroll0.png",
+    "sha256": "104bc2e0507a9a4ee9669b657d1f55cb162a50b6dde496ce00fb22b5ac3fbf69"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-option-scroll0.xml",
+    "sha256": "80017a3326fbf19efb953d1a9a06cc3b24195909ed9e5825be19d66e5472e1e5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-prompt-top.png",
+    "sha256": "0c1ea512547156d0a850b4004d17d7a4fd24f45f464c56e0be743b8b314dc78a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-prompt-top.xml",
+    "sha256": "cbb0c85d4fcca3a3fcf4e547fb351d05ff0b3b126452afd5ab92e0b26b561110"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-prompt.png",
+    "sha256": "104bc2e0507a9a4ee9669b657d1f55cb162a50b6dde496ce00fb22b5ac3fbf69"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-03-prompt.xml",
+    "sha256": "80017a3326fbf19efb953d1a9a06cc3b24195909ed9e5825be19d66e5472e1e5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-answer.png",
+    "sha256": "22dd595fb1373daa479632464f538a5da768cce3c1d7f57229918b2a8d2e40f7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-answer.xml",
+    "sha256": "45894d9e8797f0f5a262dc1f8d3a181f12fd071acc5b7a41c6102bb43531afad"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-feedback-scroll0.png",
+    "sha256": "05db7c37d2bf9b47a7ad61e3aff6bf0a3931ddaf9b74381ffbb3bdf794d10d14"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-feedback-scroll0.xml",
+    "sha256": "4f22519690e585c510d7e2614a8fb644521b14afa32ab0cd21c9650a9e0a7ec1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-option-scroll0.png",
+    "sha256": "fc92cbb8527b7d85b5c90c8c7fca9cb507e358788d908fbb510da6d5f7e24d6b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-option-scroll0.xml",
+    "sha256": "1cec79e625ff0711005a0b8210272801cd79d8004ad82423a8323e593d782bd3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-prompt-top.png",
+    "sha256": "2d69dcba3c333653a553efef4dac723ca1508c0720f60d2ac581d0c965d4db42"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-prompt-top.xml",
+    "sha256": "8f3a197c744e984ff611d67499aa77fc320ef027a75aa37dbc2d53b18994da76"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-prompt.png",
+    "sha256": "fc92cbb8527b7d85b5c90c8c7fca9cb507e358788d908fbb510da6d5f7e24d6b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-04-prompt.xml",
+    "sha256": "1cec79e625ff0711005a0b8210272801cd79d8004ad82423a8323e593d782bd3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-answer.png",
+    "sha256": "2e1d244ceff1acd137a4cac9c609f669a019453a1f955af7f84843fe97b6a67a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-answer.xml",
+    "sha256": "f1e1fca141bb3148e9daf49c0c566faf58f5b8cedf12b17bb45373b1e44d115b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-feedback-scroll0.png",
+    "sha256": "7aa9820cb3dfb662e8d455bc13a7fde6c93910542e3cc01eb2dc31614990fa0d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-feedback-scroll0.xml",
+    "sha256": "904f32a781b02880079113da4a46e45da95b29cdc000b0fee6b620f4701b3664"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-feedback-scroll1.png",
+    "sha256": "f9025c04991b136b21fc63e2ae8e9c5c4363e279fe4f358db2529abaddf24c69"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-feedback-scroll1.xml",
+    "sha256": "2c974655a9da523457528717c0ddcfd091eda895e15ddddf66c1820e3243babf"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-prompt-top.png",
+    "sha256": "d0e097bf875e505304a4a9fdd9c94293b9ad66ed2a5979f27ba475b3e86ed698"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-prompt-top.xml",
+    "sha256": "de385f371483e766d38a52ca0d122f81dafca4133642fa91df05b55aaaf49013"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-prompt.png",
+    "sha256": "531325374e46da77a73ed9335c896345fffdc563231c7f966421a511b1679c05"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-05-prompt.xml",
+    "sha256": "6b7468b87b51748c04717ee7ebb315d7621f807b54410e8e0ec7498c1a8283e3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-answer.png",
+    "sha256": "e016df47445d5e84b1641d274d99b118dbe3b814c32b9f94f1aa5e3b5869c5c5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-answer.xml",
+    "sha256": "d1b94e5e9b51ee3e0cc44fcf210529e51ebc782f6f5ebb08e1e94a84cdc5fa34"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-feedback-scroll0.png",
+    "sha256": "8300e008fea2e8a68c41e45c63b9d2d053688debd29d75ed34b8578aaec43498"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-feedback-scroll0.xml",
+    "sha256": "05200c61aa88d9d6b4a326b2284626a853ccc6049c8c947219716832be8a6dfc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-option-scroll0.png",
+    "sha256": "3a8e94ce82ec8b3ab9f57c3b24e4275977a228ca7bb1fc3d5517f83c5068c4d5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-option-scroll0.xml",
+    "sha256": "8b98107a16f7278f2511f33433204e3229a285ff6f4e4dec175348ce46d5ca08"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-prompt-top.png",
+    "sha256": "36ceeb0057db889d2df785ac30fd3cd79eb1a77aa41437d6f0670411c525d3d8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-prompt-top.xml",
+    "sha256": "a3fba40d5f450f2d957ff799ce89eeab3ba1a2067748b30f6ebae73a65fadc10"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-prompt.png",
+    "sha256": "3a8e94ce82ec8b3ab9f57c3b24e4275977a228ca7bb1fc3d5517f83c5068c4d5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-06-prompt.xml",
+    "sha256": "8b98107a16f7278f2511f33433204e3229a285ff6f4e4dec175348ce46d5ca08"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-answer.png",
+    "sha256": "67deffe4414f72d7399701b989653956f19eb805181c05516ff167e4ea3074da"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-answer.xml",
+    "sha256": "41741e96b4d7ee00cb6dd68d5882b272d4a82a6770833d9a81b9f9d8b8a1142d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-feedback-scroll0.png",
+    "sha256": "549bbafcb11fea837b55d0c365afb6e315de1202e104b40f4a30b5804d626777"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-feedback-scroll0.xml",
+    "sha256": "b097655d3fa49b64af5226b3f83062f96a357efc000982b7cc0e308b064263d3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-option-scroll0.png",
+    "sha256": "44f5750ee0ecbb6084ea413d3ea85b1da138525992a764d9bccf2cc359d71607"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-option-scroll0.xml",
+    "sha256": "e614adc7fef4f1458335756803317b4a35bee08fa204f18481300ffc96a31212"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-prompt-top.png",
+    "sha256": "b4800f6d191ed279b40ec5c5f3f1c81b8f8c5cab6c62a0e0b57d07f79a1770e0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-prompt-top.xml",
+    "sha256": "8dd6a3e8a4ca4d7f8aa03c262d26b5382b6b1d29b85e344bc7a4dc2bf257ed1a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-prompt.png",
+    "sha256": "44f5750ee0ecbb6084ea413d3ea85b1da138525992a764d9bccf2cc359d71607"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-07-prompt.xml",
+    "sha256": "e614adc7fef4f1458335756803317b4a35bee08fa204f18481300ffc96a31212"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-answer.png",
+    "sha256": "6670a8a0a15f1012c2b34d6531e115a103b7ffa8658c6cbdd8c78d2d6b4bdf59"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-answer.xml",
+    "sha256": "0f6059a3607f62413903b7a153c8441ffe0a9b2dbb969be2101c5203e4e3f2f7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-feedback-scroll0.png",
+    "sha256": "7c0a420e55e5504f5052821b6812508576052c7ce075b6e072ad7be26cca862e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-feedback-scroll0.xml",
+    "sha256": "c1044478ed706b7e6b4edf60a83de59fe2dd9510b5f5c00149b6b06907e7b71d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-option-scroll0.png",
+    "sha256": "b6ce189ac61ff7f3b1f1d9e976f0956f48c20ffc9ed4a22873b7334e27d2d8c4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-option-scroll0.xml",
+    "sha256": "8b4c6cef53c83b77d16b25cdd716a0e630f094cb2f52b9db783edc5dcbd931cd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-prompt-top.png",
+    "sha256": "585757ac9d7f035e12ef242a04ab6171d214f61dd8528c98b8972a91f774bba9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-prompt-top.xml",
+    "sha256": "9a03cf4a81898d1fcebe14f30ad9f4fa23e60f67aad6f3deedc7ff606af14829"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-prompt.png",
+    "sha256": "b6ce189ac61ff7f3b1f1d9e976f0956f48c20ffc9ed4a22873b7334e27d2d8c4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-08-prompt.xml",
+    "sha256": "8b4c6cef53c83b77d16b25cdd716a0e630f094cb2f52b9db783edc5dcbd931cd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-answer.png",
+    "sha256": "0274cf6bede860b510df39fdf2becd25bdac13a5cbd61fe7c1ad5da034a2e6ef"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-answer.xml",
+    "sha256": "8e1826c91ab4f6844a310889bfe4a08876e2d02093dcd67fb35e2ae0b6e89950"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-feedback-scroll0.png",
+    "sha256": "ef1ece9eace9537adfeeb695afaca9291470172555c7a6131aa5753f5ccbe35f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-feedback-scroll0.xml",
+    "sha256": "025ef6c8763dfe92385b47c87a4c7bca6f3268a9a50af8a80212d04543b5c784"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-feedback-scroll1.png",
+    "sha256": "7b13590ff5f93f62e11c37dc2e5aa6f9c198056744bbff462f29f90a8f1824f4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-feedback-scroll1.xml",
+    "sha256": "5bc1ec13397dbe4f0bad9897375603ffdf70f8b046c23727da380ffffbd183ff"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-prompt-top.png",
+    "sha256": "95e58bb72d68d2cf7231bd0fe5e6dae7d8b708bd99b7abaa3017547b310d64b9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-prompt-top.xml",
+    "sha256": "a352d647e58802f22eb41f5e90609df8e23aeb196c37d03ac7f883d2dff53060"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-prompt.png",
+    "sha256": "1b5cece0218e4fbdbed900e64efb3fc4d693ceb5928317470c004837b019a81f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-09-prompt.xml",
+    "sha256": "bf9fafb625d03ba41d100f4cad6cca73fd1318f030d0756a185ba89cdeb3ed50"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-answer.png",
+    "sha256": "e82fc02fd3593f5b62639b36bd933b67f5d75004b80f64f5790d786c81b1c2fc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-answer.xml",
+    "sha256": "27303669bba4264b9ead38c6b8aaaa6e3525d7b347928c774bda7f7c6dec5fb1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-feedback-scroll0.png",
+    "sha256": "3b3a678b6acee07183b46a2ff4cc3a6084ae55090cb3d8a91e1263db051cfe2a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-feedback-scroll0.xml",
+    "sha256": "511041f3326a9ef2c6ca41cf90f5b5e1fcf0458f7e689579258a540177a26f40"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-option-scroll0.png",
+    "sha256": "eb2fe4f6e821bc9603036cfacf41aa62cf296e72e71829baf12e349f49571783"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-option-scroll0.xml",
+    "sha256": "707c88e7596cf9add3663e6538d7a56defa91b0ebe69328a54408acf66328c22"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-prompt-top.png",
+    "sha256": "adad2c1a4afcf04e14b6eb0e4488bfc0e2763db34ac132ddf76ebdfb999d9eda"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-prompt-top.xml",
+    "sha256": "c5ddfdcc251dd7980e89dac02b5a8134795f492b48e6700d3f0db9f27fb666bf"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-prompt.png",
+    "sha256": "eb2fe4f6e821bc9603036cfacf41aa62cf296e72e71829baf12e349f49571783"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-10-prompt.xml",
+    "sha256": "707c88e7596cf9add3663e6538d7a56defa91b0ebe69328a54408acf66328c22"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-config.png",
+    "sha256": "6becbbd63e127500d160aa2471d258f81cd651e5faf8624551871d05db32cb4d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-config.xml",
+    "sha256": "d5ac1c10a59122674b60fdd1aea0254909a0aa3c2f1a64f0d46ca72d90425566"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-question.png",
+    "sha256": "2c2ce5d79301d98bb592287b2545b22f829b8868fb9280eb66bbde6d4a1e224f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-question.xml",
+    "sha256": "772e8e02407644b9e66ddc917a66dff206e4c9a3ef5f958382233ef335b21a31"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-result.png",
+    "sha256": "66b6eb244976f3120700e5e4f3ba27e47d8989aa1416a72bc656cd68f9314582"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-definition-result.xml",
+    "sha256": "d612729652aa7bc8b58e4d58cfb89fa659fcbe15ed30e18401dda00ae59bdb6d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-device-package-before.txt",
+    "sha256": "0ac48d9f0559ee80127fedbc8fa3a52b4c55f50147ffd6feeee04b2abc749f55"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-device-properties.txt",
+    "sha256": "2a9cbb4607a042dd5d8ebf55072adb3d8f44b4777adfe4e09c739ca45f9952c5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-emulator.stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-emulator.stdout.log",
+    "sha256": "1c7e9d1d1a2a93c22599931146ec0206d4face16d550ff4ed92f23f5885328bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-answer.png",
+    "sha256": "048ab71ecfacdb52952902262a096574387a6e1dc8598207bfb8e39626ae6c19"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-answer.xml",
+    "sha256": "6d2d284ff8fcca333854833c835623a08623fb11362875d5dbc2a46407a7ee0e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-lesson-config.png",
+    "sha256": "9f41fe7a7096e183ffa8d1ab122fb3deade7b24439476cf272cdaecd8779d275"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-lesson-config.xml",
+    "sha256": "cf0aeb5d48aee559700e7f27bc3ab806ab806e14abd0994677c0f23facdece92"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-lesson.png",
+    "sha256": "0e18a0a3d2e8410515abbb04daa5a1fa245ad0ce57580388b9b3be38e2b97a4c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-first-lesson.xml",
+    "sha256": "f71905a4a47c383225030d6687e6b6e4822e2d28889b73dbec7d1fc35db69169"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-flashcard-config.png",
+    "sha256": "ed8fcda8f1c935a55b503b65a2b41aaaadfd904a4e102414d134d81ef72018e6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-flashcard-config.xml",
+    "sha256": "2001677395fc2fbca6e57714909af929f91db3a90f51570dc9d2323207ae66d6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-flashcard-entry.png",
+    "sha256": "d03c65cb852ea504b0e5d07cd53fa107b21d66eec1591dc9f955722b747ae6e6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-flashcard-entry.xml",
+    "sha256": "0accd42f7bf932151c0e5e8333d1cd8646b16000316f9929bde84ea2e2323c74"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-guest-home.png",
+    "sha256": "240b7aff3970c99b4cbb9e2cbf4499d574796b2a4ac44788bd1a8cdfb2445bcd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-guest-home.xml",
+    "sha256": "067bc8424fc2594ca66f41fd465d761528d4f514ef48ec9d0feb71db9fd94d5b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-clear.png",
+    "sha256": "8db87af0cdd59699f4ee5aff7bc5ecf5daf0bb76e159f16d627c692b26b633bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-clear.xml",
+    "sha256": "8ca304f55b7f552fc4152922c84db48c95a4802f9c3005b9aee7277631de7e5a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-entry.png",
+    "sha256": "8db87af0cdd59699f4ee5aff7bc5ecf5daf0bb76e159f16d627c692b26b633bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-entry.xml",
+    "sha256": "8ca304f55b7f552fc4152922c84db48c95a4802f9c3005b9aee7277631de7e5a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-self-check.png",
+    "sha256": "dae1d7a7c1bb47f6d7be6a8265d90871724f5ff27c730d7744f15277e174f4c6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-self-check.xml",
+    "sha256": "8ca304f55b7f552fc4152922c84db48c95a4802f9c3005b9aee7277631de7e5a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-strokes.png",
+    "sha256": "cafaff2ed4746ff24b618158b4a173386e5510ef511acaf7a9bb92afb768d2e5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-strokes.xml",
+    "sha256": "9e6ca3dfc7f004eb6f2f3ec11f05a0af658d5cb3a4072ce7d524a56a9ba8a3c6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-undo.png",
+    "sha256": "f08c75ef07625d6dab0982d98ef9198cd67d37ee5325ba190acd9d2f3a9f5451"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-handwriting-undo.xml",
+    "sha256": "9e6ca3dfc7f004eb6f2f3ec11f05a0af658d5cb3a4072ce7d524a56a9ba8a3c6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-errors.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-open.png",
+    "sha256": "631e7fec291b416004651a0304f619536457b755451c0c1692d6f8de28dd4751"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-open.xml",
+    "sha256": "ccbcae844d10e31615a827880eacc8bf18d179282f239d29b364fc84aecc149d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-pair.png",
+    "sha256": "fafaed43416611a57da60e1cc8756b823981a6a569980d4325e978cc8b717092"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-pair.xml",
+    "sha256": "0b953dadc658e1129e8351f5b3cb2c71d0e15b0c2a09e7e5fb5a4df2e5c44a2d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-settled.png",
+    "sha256": "6552b2ff56afa562469851a00536ebe1ce834ad0c0caa21609ad77c44c82bd1a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history-settled.xml",
+    "sha256": "45afb6691ef77e5de2fcd6df77aa81319312502236df196a797cbf23328382f3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history.png",
+    "sha256": "6552b2ff56afa562469851a00536ebe1ce834ad0c0caa21609ad77c44c82bd1a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-history.xml",
+    "sha256": "45afb6691ef77e5de2fcd6df77aa81319312502236df196a797cbf23328382f3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-input-method.txt",
+    "sha256": "d611e25c09be0889ee1e157509a5a5e67fcca42591878006014ec109ea194f5a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-install.log",
+    "sha256": "c4aa470acafcf8576c15b0f0b5ae7e852d1ec5413372d0e6a9272e788e1306d3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-installed-sha.txt",
+    "sha256": "be7323eee5658807164914b19f0912a51246191f587057b18a8922726a1998af"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-last-question.png",
+    "sha256": "7b26e924c84bf0655cb5262bcfc1046804e0de81435fc44cad4f2e13516166bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-last-question.xml",
+    "sha256": "2bbbe20d9a89a352daea3a1c4b066e397e3204d774ef634b8ebb401265e2e5dc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-lesson-result.png",
+    "sha256": "df293d0171487e18a38d59887d8df70d1dd03a47e8d52640de12a5c8b3a083af"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-lesson-result.xml",
+    "sha256": "e4c784435aa17ea66e7515203f895e4fe3d7f3a889808929be136bc87944a33e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu-closed.png",
+    "sha256": "1908c3053badc049cbb48444cad1648528ab9627570a7cceec2648eec947fe8c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu-closed.xml",
+    "sha256": "98e44b3030de5bc2915ea3aab968044e8a52325dd7d9b3e62f799e221b62c830"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu-open.png",
+    "sha256": "86508d18dae469e8ed82b382507624b70e41492d8e0f7b8349ec57821540bdb7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu-open.xml",
+    "sha256": "e091364f6257c60caf9ea0eef5f3cb293c796d0b2850dccdb0d2249f7a298c83"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu.png",
+    "sha256": "65c8b47967f029bcddfe84e0bc642c8a732e7998f0db1f13c055365dad0121cb"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-menu.xml",
+    "sha256": "98e44b3030de5bc2915ea3aab968044e8a52325dd7d9b3e62f799e221b62c830"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-bottom.png",
+    "sha256": "9b113331ff74a389885280ebaf9cd550b3f574547783ecc28ed4b302d6a38d19"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-bottom.xml",
+    "sha256": "053b7df9155ab51a28fe2e13227394dfe7a7d2752889d2367ff611cb931d0dfa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-middle.png",
+    "sha256": "051001c29acdbac2afef4701f3bf55a8f6d12d468ded47583030144ec1feb818"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-middle.xml",
+    "sha256": "ff4bfe864e594f979a138d5ff6d1130f630d389f95a1401662bfc099bf43f564"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-top.png",
+    "sha256": "8eb2a381d6c187d9108a5c5aec6c6868eeda9c13686138558d43a79405c082a6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-modes-top.xml",
+    "sha256": "98e44b3030de5bc2915ea3aab968044e8a52325dd7d9b3e62f799e221b62c830"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-after2.png",
+    "sha256": "887186d677178781d2a30065395f112f4c5b7d22bf62a294a6cbd2788a9217e4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-board-settled.png",
+    "sha256": "cbbcab3917a29d2d635362c24d6ffb23aeb36170968d87f53ac1fd742161e120"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-board-settled.xml",
+    "sha256": "e8c979dbe8973c6178ecaf9efd1b85344c24afca8a1d3b24a701bd3f5fe6e8c4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-board.png",
+    "sha256": "e782a8ec7b84c277be2406b5f495f189bb47863f7e2fba789809a506152e7d00"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-board.xml",
+    "sha256": "e8c979dbe8973c6178ecaf9efd1b85344c24afca8a1d3b24a701bd3f5fe6e8c4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-completed.png",
+    "sha256": "a791ce0bd033f93a955159cf9c4189dd0eb4bb05d165f0aec4ad4ff0c0b60f30"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-config.png",
+    "sha256": "8688637d0457c4aff08f7a5c928be110b7dcd59fe424fab1e894871c1c655025"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-config.xml",
+    "sha256": "a8d615bf27da92c7467cdfbc0f42e6694ebb21c0c3177fdd5e06c59fa4428a55"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-errors.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-history-after-restart.png",
+    "sha256": "2fc52d038d03cf59ac4430533156b8598ff458d097c5ead925eb78e08e5566ab"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-history-after-restart.xml",
+    "sha256": "0b953dadc658e1129e8351f5b3cb2c71d0e15b0c2a09e7e5fb5a4df2e5c44a2d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-match1-confirmed.png",
+    "sha256": "64e1ab427aaf117be9fdcf9176dcaef6871088e83ea8601c6692f4ef6cb80dd5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-match1-settled.png",
+    "sha256": "f2c267c7c7db971c235995ec8938da8181e61ec71028499332ac38cc854e6237"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-match1.png",
+    "sha256": "894fe07ef2e23e5a28ee35f39640b7c673be55350020ed43bd0a46eb112f17cc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-match2.png",
+    "sha256": "552b549869ae66a4e36ff2f8b50806e9a20843a73bd338909a18eb63fe9ce152"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-reopen.log",
+    "sha256": "20c1dd249d5ebc25ca6ac656e90b825c76d0e2e71380cf92c7e9a6b1b69e30d0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-reopened-home.png",
+    "sha256": "c11759bc9518535d82a47542349209c30231772a48a253e6cc4517f516e68473"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-reopened-home.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-reopened-today.png",
+    "sha256": "5f9514c7165a9be8947873fdc2f99e87d96a36798b38b9c3ed37f4ed5b311dc0"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-reopened-today.xml",
+    "sha256": "45afb6691ef77e5de2fcd6df77aa81319312502236df196a797cbf23328382f3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-result.png",
+    "sha256": "1ba08f93d0e746d34b8b6808363f849f4fa41d697a355ab59c39224914cb7c7b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-result.xml",
+    "sha256": "ae68abea574b6d26144702f1def1509c24789a3b1b6cf883396ebe42d7252fbc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-return.png",
+    "sha256": "51f16a30fe4c17bbcc0009ddd50bc591608207f2da28fad5a10a80d79611a1ce"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-return.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-selected.png",
+    "sha256": "90fd1cbd3375de140b7a19c7f1c74dd2149901643bec0003456fa285e5e8ad1c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pair-selected.xml",
+    "sha256": "e8c979dbe8973c6178ecaf9efd1b85344c24afca8a1d3b24a701bd3f5fe6e8c4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pid-after-restart.txt",
+    "sha256": "963a5c45dd1f35d38f34e959add2dd77028407d9f0bab0cf8e961d54422e807d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-pid-before-restart.txt",
+    "sha256": "2387b4161a2edd1c3a3eb0a09e7f31e41aed3f070b3a6da5652dcdb833df7833"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-post-replay-reopen.log",
+    "sha256": "1e4c8e2a436424b13c278bb3727264d53f3021f2779b9b6f0d8b47fd5979a2e7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preinstall.png",
+    "sha256": "716ddf2df3c35c13c3862a2be93864f7e72ca4a6443a675f5f8586d4b6f3aabd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-flutter.log",
+    "sha256": "6f9f456a6a77170016471a213ff85ae945f24660d08be6ed49603a5ca1cf5bf8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-home.png",
+    "sha256": "14806f6b68f5269c22efcfead8d08efaabe60da262fe9e38071b127da978fbe8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-home.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-install.log",
+    "sha256": "c4aa470acafcf8576c15b0f0b5ae7e852d1ec5413372d0e6a9272e788e1306d3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-launch.log",
+    "sha256": "ad2baa643a02a2c5f12300fb697a3d9f033d7b92b890df0426a888e86e9b5f4a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-return.png",
+    "sha256": "7ec36a6dcf44392bb4cc7e8eb40816e0512ea62e832edced48dca82603bf3d19"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-return.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-preview-runtime.log",
+    "sha256": "2cbb6bf42de13e120a8209044bd72192ed13d38a2845b4e3722012dabcd51a9d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile-details.png",
+    "sha256": "875d90311163b0bc29f3c0722d1973063d27e9a942014c9d5f564a3999927385"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile-details.xml",
+    "sha256": "a109916f50b8115087d17a0a9f207767a856ecf0d1d9be796e70a5e6cf585cf4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile-expanded.png",
+    "sha256": "f4b23a0596f1f2d585bb2e9b34d44fdd3d8d2d68e743757a2b52abbdc32ee700"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile-expanded.xml",
+    "sha256": "545a400725d2e9693176da03bc461636c3b4b38a3185c772c0f50dae84732389"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile.png",
+    "sha256": "875d90311163b0bc29f3c0722d1973063d27e9a942014c9d5f564a3999927385"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-profile.xml",
+    "sha256": "a109916f50b8115087d17a0a9f207767a856ecf0d1d9be796e70a5e6cf585cf4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-after-restart.png",
+    "sha256": "84f598ef1076ae4fafd34004a79af8715ea6363e55cd36ae8092b5bd6b08a420"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-after-restart.xml",
+    "sha256": "fc9305fe82aee6c937ae4fa0dc9320721740b1481e47cff56f589ef97439ebc9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-before.png",
+    "sha256": "782c961b744e8e8a157dfef3b1d238184add8c6427082b94bcc17c6f92a77109"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-before.xml",
+    "sha256": "fc9305fe82aee6c937ae4fa0dc9320721740b1481e47cff56f589ef97439ebc9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-bottom.png",
+    "sha256": "161d183c21d0fd41d3cdb48ee3d8cc6d92f87c31b8d9e8e7832a948ba8db85aa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-bottom.xml",
+    "sha256": "a212cc47ce7ff69a110357925105b30f9370bb2a32755b1e8cf634002c5febd2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-lower.png",
+    "sha256": "7e6a2c2b3b32cda57a626a5c0357b006d1bf6d9fb453830fb27ecb73a2756b82"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-progress-lower.xml",
+    "sha256": "343046319aeb926f8941a2ce807b49c98a55f6eb86b81ebeab534b7048400d10"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q02-answered.png",
+    "sha256": "69db843d785944c256f341fe9300785478b6dd9016b74a957ea3e44e3d6ed7b5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q02-answered.xml",
+    "sha256": "ca3feec2988812f24515fe99d481f11406f2aac3e6e9a82ce88b9d92913eb0ee"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q02-before.png",
+    "sha256": "9a8345a5853fd1598903f598fb3b68b6c29ca4f1fec99d8b372f4cc6b2d1a4a5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q02-before.xml",
+    "sha256": "883458852c928b0cadcfb6f7e007c0ae9fde7d8e26b91d1aa2999eff7f3ef2f1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q03-answered.png",
+    "sha256": "7594b9d6c6ba498ab4da3d01e453b16e6d94839ca3d5645d867158875d06410f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q03-answered.xml",
+    "sha256": "1b141da7c71fdd224d5ed42cac17d37f4e91edab38ad66c427c115027eb94323"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q03-before.png",
+    "sha256": "d3a7d7c4f1afbe71aec2a3c5382e58a82f38bf168787443419b954085ef05e00"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q03-before.xml",
+    "sha256": "44a54c1bb4a566fd50ab726b6ed58acca7040182874ceee89ed5df12f4def014"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q04-answered.png",
+    "sha256": "bf852e1a188713300413fa94b9464f66ee045d2c4f8a8b20b3b81d5c276b9844"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q04-answered.xml",
+    "sha256": "f65054857895563d40c5567a6b2b968b2d9715422d9cd36e27d81896b963f437"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q04-before.png",
+    "sha256": "f033894c7d7e9c61e683cdbdc76199b592a78b31049ffd9eefd3a6309702e685"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q04-before.xml",
+    "sha256": "37cc9066671376fc757b53ca0ad39e1e8d85b9acbc2a49adf9826e606ed5b82d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q05-answered.png",
+    "sha256": "45ecca9aa674c900296bdfbe6f8bddf65586abfbd4ebe8745d7e9d0c633ee9b6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q05-answered.xml",
+    "sha256": "6a359521d5b952cb4d433111974b4f9c46b164761c19faa0f5d9db8961ea925a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q05-before.png",
+    "sha256": "c8d9a941480824806d27db07ff62b97d01c8d2807b1db04febcb324359b445c7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q05-before.xml",
+    "sha256": "752b33bba4f3e8125d5ffa70e68ba5194fc88cf7475a6f52e0909ba967a071ad"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q06-answered.png",
+    "sha256": "2bc406c85c36ba4460a027ef32e93dbeea7695fa600316c7bdeb52161c7b691b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q06-answered.xml",
+    "sha256": "ba5b665f37468544cfa44bf8b267386f0035b749c5cc4bc62e03f7f21bfa135b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q06-before.png",
+    "sha256": "32bcf913fb9577072506b1b95eb20a518082a8ec2616bcd0cdcc577e92233b3a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q06-before.xml",
+    "sha256": "8e5db398ac30b1faaa64ff510889184b62ee9f931018b64b369810f220b99de1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q07-answered.png",
+    "sha256": "c7e7dfe2153da68d6f6fbc28d2c23c9120dc976912081cb2af0ad6d5d7567d40"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q07-answered.xml",
+    "sha256": "c85beea94791b86dad47e3070a2c1b153ab9d7879655a6bc7e9860755406d6c5"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q07-before.png",
+    "sha256": "b71385949f41a1acbe958ccb7e81bbfb9d966503c129fc310eeafcd331f3f461"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q07-before.xml",
+    "sha256": "7aa9bd5579f9411601bbe4582f282c78253e0172ce47c318b74106de6b265979"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q08-answered.png",
+    "sha256": "b1a3d86d4517471cbf8317b68580145e5c10f438c6287559dc20f91595dd6951"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q08-answered.xml",
+    "sha256": "84269cd9029d0ada37867d41cac3debe1160c97aee85680b97eb633aef06b1cf"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q08-before.png",
+    "sha256": "0f8c40c819ffb703bee550091d1388f2ba95f3b689848ea2eda39eb5e4a57891"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q08-before.xml",
+    "sha256": "3938c41db92edee89ae7c4868b268456a1f174d88c1a49d9134393d626da8b41"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q09-answered.png",
+    "sha256": "3da6809fffca7c2741ea6cf243a1ba9ed4f71a688c9963266ac9d9afc8828cb2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q09-answered.xml",
+    "sha256": "e2b29e069d06e33a599af0b62df245b01d6376c9aaf4a0b7aa1393d0d136d165"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q09-before.png",
+    "sha256": "4235af96738b5cf600b36ccf99d71bfe476c0b2733b6b69be471fc4e1de833bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q09-before.xml",
+    "sha256": "62884ec4f3b5e5572e26014d1dba80c0797006a4a8cb8d324bb7222b5a1cee5c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q10-answered.png",
+    "sha256": "7b26e924c84bf0655cb5262bcfc1046804e0de81435fc44cad4f2e13516166bd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q10-answered.xml",
+    "sha256": "2bbbe20d9a89a352daea3a1c4b066e397e3204d774ef634b8ebb401265e2e5dc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q10-before.png",
+    "sha256": "d449c09de376e52d81bda06869365a048730962a6849284b5097502cb792b0ce"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-q10-before.xml",
+    "sha256": "a6937b3c0b08100acf8d339714b5dd6fba56c279032eb9d0d167bf2f75d4be53"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-question02.png",
+    "sha256": "77e42e355400e33e72d18d37be583e9145b40a134ff8fc00283a5ad3630b84f4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-question02.xml",
+    "sha256": "883458852c928b0cadcfb6f7e007c0ae9fde7d8e26b91d1aa2999eff7f3ef2f1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-reading-modes.png",
+    "sha256": "8d67ad62b126e2b41262b324028789d3abe35c54c7845a25a372f1b2da41c37e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-reading-modes.xml",
+    "sha256": "afada18feba1c01a208acd8e379150bee7b6b7ed5d4b832a445d5231d897fe84"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-reopened-home.png",
+    "sha256": "9b9c32641a4b0bc17ae07a9701b145e384e76fa88a737b28fee8bf259b866087"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-reopened-home.xml",
+    "sha256": "98e44b3030de5bc2915ea3aab968044e8a52325dd7d9b3e62f799e221b62c830"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-match1.png",
+    "sha256": "4bc277d66c61ae9ae47658a22c915a31c80c56e551410bba77f2ea6b3af98023"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-match2.png",
+    "sha256": "9a0780a1d3a0e27d6847356a98f25da80fc67aa3fa21305ea9d7725c5287e328"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-match3.png",
+    "sha256": "2db3eebb847f57bf6005033345c5fb48af681fde98791b34e38d2525ae416b70"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-match4.png",
+    "sha256": "25043a4e4985e46cd2b3b0dd0e820f70915016cfe7f5b4f4aac098ee275ecadd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-reopened.png",
+    "sha256": "1e5b93cd483a1168f5c47c8c1b6731bfa2e4048cabb3fa535da56013faf870e8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-reopened.xml",
+    "sha256": "8cb2b6e467bee8d59178cf065619f64d0c158983a45eee764db49ec74feb5a02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-result.png",
+    "sha256": "25043a4e4985e46cd2b3b0dd0e820f70915016cfe7f5b4f4aac098ee275ecadd"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-result.xml",
+    "sha256": "fb8b3002812c699f50b05664dfb29338f7c9f6a4690c62971324010b37b2efc7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-replay-start.png",
+    "sha256": "3475069380cf8cea537720209945534d3b997664a8740bc4eed011ca8758ba6a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-restart.log",
+    "sha256": "9950cf366b338aba89aa4e75f5ccf5e104bac82a5ded5f90d2cd6f1d653e1ec2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-sentence-board.png",
+    "sha256": "22b5defd9305a21be0cf65c5676f05d09e89105daaddc5cc4b7bb3c86d160106"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-sentence-board.xml",
+    "sha256": "870447bc559c950c2092dd02482e586278f01742f2b553a33d49f670de89792e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-sentence-config.png",
+    "sha256": "0530fb7a1f54138e7b97dabf8c62c662abb9d04ed26577e768084f533ec25e83"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-sentence-config.xml",
+    "sha256": "11f2af2fb1f3c3e561b425edd620490581a5a9af592ecc1b16e8b6171fead4fa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-audio-result.png",
+    "sha256": "53c6a74f3c6eca994f6034dace591b2d02844ff2e8734ee2f89dc5f6a13cb9b7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-audio-result.xml",
+    "sha256": "134b016cb34bb263eeefa12dad68bcd68c956e73154adaf2594dbc5cb63685cc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-entry.png",
+    "sha256": "d55f41cf05c829cd170553b4db037c07482768c8201f67d093a8d676f302f2b2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-entry.xml",
+    "sha256": "dfba910704cfcd5a319a4b009e09eaa77c84e4858612ffc4857423bc64ad8a01"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-exit.png",
+    "sha256": "2fd373cf16e2d5901aa79665ea001aabc9fce502dd3ac2894493bef7551061b9"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-exit.xml",
+    "sha256": "053b7df9155ab51a28fe2e13227394dfe7a7d2752889d2367ff611cb931d0dfa"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-offline.png",
+    "sha256": "53c6a74f3c6eca994f6034dace591b2d02844ff2e8734ee2f89dc5f6a13cb9b7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-shadowing-offline.xml",
+    "sha256": "134b016cb34bb263eeefa12dad68bcd68c956e73154adaf2594dbc5cb63685cc"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-today-after-pair.png",
+    "sha256": "b01befa3129ac653dddcd3900f20a702dd463acf1c85960e84036f7079643365"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-today-after-pair.xml",
+    "sha256": "45afb6691ef77e5de2fcd6df77aa81319312502236df196a797cbf23328382f3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-today.png",
+    "sha256": "6552b2ff56afa562469851a00536ebe1ce834ad0c0caa21609ad77c44c82bd1a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-today.xml",
+    "sha256": "45afb6691ef77e5de2fcd6df77aa81319312502236df196a797cbf23328382f3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-config.png",
+    "sha256": "45b4f19754dd62de40718160c8bfba5bc5b8d0675a11a295633a33d3f66c60a2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-config.xml",
+    "sha256": "a0362cd20b9ace7d5dae0c94e92de0672d7ad18e95ed598fbfe5a8798b0235ab"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-feedback.png",
+    "sha256": "11e8436846a4548193b0864735d0c395d1f0612e0561b76ab1193c4ba54326ff"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-feedback.xml",
+    "sha256": "0fc9130f42693e8b0638a97f68f6ab2f7f1f2d98dd01eef34ff6de54911de303"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-layout-logcat.txt",
+    "sha256": "27220e48341b37f641a7c91227ab344c478396e53cdfbd04c4f63ee374c39b73"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-mixed-choice.png",
+    "sha256": "714a5bc5fc632090d618eb1d0bff9fd7e0f0a0814d0f915f707fe1cc8454815b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-mixed-choice.xml",
+    "sha256": "c78856c553f4272946d59f635e129c69fb51c2fc8ea4c0a0709fe8f76dd1e9a2"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-mixed-result.png",
+    "sha256": "6d87a59198d97ffed16fe2a4097f24d012c26b0f6d696d07891143661148ef8f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-mixed-result.xml",
+    "sha256": "6bd492dd62717a50ed2b3d5e8edf978d1f43ac1e91a540b10b909a50dba0f48f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-one.png",
+    "sha256": "fe4701b0edd6d2a7a389c398914cdffaac433e2e351f62b9f369ec0aca11e607"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-one.xml",
+    "sha256": "6f550432ec8e2d1aa5645acde7583b0e808f03d2444e557ede8e86d757135868"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-options.png",
+    "sha256": "d0ab0a9380e2e56091da0c1a9108db7458ca574be8739d9dd88a6653db78445a"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-options.xml",
+    "sha256": "da90d787ce097021849c7ac35311dd3f4767baa11d8afd2164a23284c8a64ec3"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-question.png",
+    "sha256": "d620a3b7b2129e74ed4ca9b64573a75a3ad43d1b6617d8448dc2955186135ed4"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-question.xml",
+    "sha256": "04c1cd59933998811e4e0602970a90bd3afc86ac713dda88cd6cd5cb2a187f66"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-scroll.png",
+    "sha256": "c4a7ae6a0cc5577c89cf50536353424cd3f8f0ea8bb5d1399ec22eeb88add161"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-scroll.xml",
+    "sha256": "9d879d4e503201b6f91100dc3ee8f4578c20b1a60a54e916afe742f1563f6225"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-second-config.png",
+    "sha256": "ab2e8a75202b61d84109fb26f244f55b8788bb10beda3711e79570bbb7543506"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-second-config.xml",
+    "sha256": "0d6cb66cde0ca107b1cc3272291f7a7f835c1be45080cb47a5ef2c4a8243e429"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-submitted.png",
+    "sha256": "de5a5ce8b9eeaf094d7689084b7183a68e59a2ae81167baf9dc11976cd7c1801"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-submitted.xml",
+    "sha256": "a1d44655442482faaf1fbd9404d8f9a37e42e9f4acd357b34638159893a2211f"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-config.png",
+    "sha256": "214f8acdfeb18fb111794f803d918c04fe04adc7ba4bb7d1d537cb69d4acfbd8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-config.xml",
+    "sha256": "2e96c57fadc54f10bbd084c8aec3ec8e7992c273a24650d8a9c22367d258436d"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1-answer.png",
+    "sha256": "858030c28e4aacff7f089e974b586027d98739d869a9c2a2663e6e0aa5aaa290"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1-answer.xml",
+    "sha256": "eefdbef2adbf63a620477e69be5b137a870606e131fee68dcadd7e9530620933"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1-next.png",
+    "sha256": "8ac9f13271333e9941378fc50de58ea7a4603c0fbacfa22079323858f9c6ddb8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1-next.xml",
+    "sha256": "afa153279be5c458b324535bb9504ab4c92d354a48ff87a4590812f73b6bc1be"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1.png",
+    "sha256": "ff93f326c1eb9444425d73a9844e685bc9cb3a0b6f998f563fb8ff7a7278b8d6"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q1.xml",
+    "sha256": "7cce1e7466445def559dd44ccf0c55d3a0d99883b2a413e3ecc5105e75c6fee7"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q2.png",
+    "sha256": "6496113d03e074ad7e1101a0b3d505ff2429111c3c036fbed9806131cdfc1db1"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-q2.xml",
+    "sha256": "75b18698288823fb0a5c79042aed31d9b581a04155024fb0d7b2bbe6af5bd4a8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-result.png",
+    "sha256": "55dad7a89c85a7bc10847b9c991ebc72e2cd715ff724724925209e7f5432ee83"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-typed-two-result.xml",
+    "sha256": "0a437e9fdef641e8fb114edaf745ebb104fc11f9f230558efcb071d59e70e236"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-window-displays.txt",
+    "sha256": "06c2c5be4de2329c74ce3808a90917c7dc1158f736ef5fc4a5cc42a243c45dea"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-b.png",
+    "sha256": "0278a5137032571a6dab0adec3e28d7997fef6ecf53d6fb95010ff6d6ef6f51e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-b.xml",
+    "sha256": "a7dffbaaefe5d973b160e62b9f91b3a5db0b2897f4d6f553eab32e3f60b8fc1e"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-ba.png",
+    "sha256": "0d7dff671d256ce9e0969c5afb2c84a74f9fb26e465aa37033f6bfc5ce156fdb"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-ba.xml",
+    "sha256": "7af9f43207dac43dd456d7315365e0610f228a23932d3bf2d290b58fd0f0f362"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-bag.png",
+    "sha256": "089eff0f6bc44a0db2d91cfcad7dd703e28ddd5edc657e8fd06481a69cf66d69"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-bag.xml",
+    "sha256": "3058f9e8a86754b3338ead981794e002b09ff63dc5d964e5a6c9525f7d787370"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-board.png",
+    "sha256": "c91f9a97cdccd7cad36fa084d2d89fca4c868e0297984a4f426d354753082b1c"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-board.xml",
+    "sha256": "2f28d722ed2a88bddca2cf9b63e0d95358fcfdf31a2aa9905fa66a4a0b79727b"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-config.png",
+    "sha256": "2188a5f9e5a94ed575307d10fffe3240f978821942d9c87b981af3d9fd61aa02"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-config.xml",
+    "sha256": "c171bbcc07a0bd92325a5fab0d4f311cf8d8040a2787ea56a747b77e98a17e24"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-result.png",
+    "sha256": "7d4edc1f80273f70346170b2ed590dc12dd413652bfed45003b71cc9cdc396e8"
+  },
+  {
+    "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-word-scramble-result.xml",
+    "sha256": "1d8b6a3761fcf3f5bd111082a25fe16f290aa92479b094979d47d99d524f5546"
+  }
+]

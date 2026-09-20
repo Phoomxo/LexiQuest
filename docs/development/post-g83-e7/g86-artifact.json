@@ -191,5 +191,19 @@
     "all33PackagedAssetsMatch": true,
     "nativeRuntimeIntegrity": "PASS: g86-preview-runtime.log",
     "research": "unchanged off; consent declined"
+  },
+  "d19Preview": {
+    "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-ae29ec3d-local-preview-debug.apk",
+    "apkSha256": "af01003bc111863cc53371906782af1f449db8261e72214507419bcda62d4ea3",
+    "installedSha256": "af01003bc111863cc53371906782af1f449db8261e72214507419bcda62d4ea3",
+    "apkBytes": 268598290,
+    "dartDefines": {
+      "LEXIQUEST_LEARNING_PREVIEW": "true",
+      "LEXIQUEST_CLOUD_SYNC_ENABLED": "false",
+      "LEXIQUEST_BUILD_ID": "ae29ec3dd110-e7-preview"
+    },
+    "all33PackagedAssetsMatch": true,
+    "nativeRuntimeIntegrity": "PASS: g86-d19-apk-runtime.log"
   }
 }

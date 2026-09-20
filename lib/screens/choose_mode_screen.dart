@@ -35,7 +35,7 @@ import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
 import 'matching_mode_screen.dart';
 import 'pair_matching_learn_screen.dart';
-import 'sentence_scramble_screen.dart';
+import 'reviewed_sentence_scramble_loader.dart';
 import 'shadowing_challenge_screen.dart';
 import 'speak_to_text_screen.dart';
 import 'srs_flashcards_screen.dart';
@@ -259,14 +259,8 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             LessonMode.sentenceScramble,
             (_, adapter, configuration, _) => NativeVocabularyLessonModeLoader(
               sessionConfiguration: configuration,
-              builder: (_, session, question) => SentenceScrambleScreen(
-                targetSentence:
-                    '${question.word.spelling} means '
-                    '${question.word.meaning}',
-                translation: question.word.meaning,
-                ownerId: session.ownerId,
-                sessionId: session.id,
-                wordId: question.word.id,
+              builder: (_, session, question) => ReviewedSentenceScrambleLoader(
+                session: session,
                 modeAdapter: adapter as SentenceScrambleModeAdapter,
               ),
             ),

@@ -1296,11 +1296,13 @@ void main() {
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.sentenceScramble) {
-          final screen = tester.widget<SentenceScrambleScreen>(
-            find.byType(SentenceScrambleScreen),
+          // User-authored words without reviewed examples must not become
+          // fabricated "word means translation" sentence exercises.
+          expect(find.byType(SentenceScrambleScreen), findsNothing);
+          expect(
+            find.byKey(const ValueKey('sentence-example-unavailable')),
+            findsOneWidget,
           );
-          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
-          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.wordScramble) {

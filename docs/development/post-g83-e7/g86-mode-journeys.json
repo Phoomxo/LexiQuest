@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceCommit": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
-  "status": "partial; D19 source fix requires native layout retest",
+  "status": "partial; remaining native journeys and D21 open",
   "emulator": "LexiQuest_API_35",
   "modes": [
     {
@@ -57,23 +57,54 @@
     },
     {
       "mode": "flashcard",
-      "status": "pending"
+      "status": "empty-due-state-verified",
+      "result": "Due queue is empty; no answer journey claimed",
+      "evidence": [
+        "g86-flashcard-entry.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     },
     {
       "mode": "cloze",
-      "status": "pending"
+      "status": "completed",
+      "result": "Typed bag accepted, optional speech skipped,1/1",
+      "evidence": [
+        "g86-cloze-result.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     },
     {
       "mode": "wordScramble",
-      "status": "pending"
+      "status": "completed",
+      "result": "bag arranged and completed100%",
+      "evidence": [
+        "g86-word-scramble-result.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     },
     {
       "mode": "sentenceScramble",
-      "status": "pending"
+      "status": "defect-D20-native-retest-pending",
+      "result": "Mixed-language fabricated sentence found; source fix tested",
+      "evidence": [
+        "g86-sentence-board.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     },
     {
       "mode": "associativeReading",
-      "status": "pending"
+      "status": "defect-D21-open",
+      "result": "Stage1→2 works but cue-fading retains translations",
+      "evidence": [
+        "g86-associative-reading.xml",
+        "g86-associative-step2.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     },
     {
       "mode": "cefrReading",
@@ -89,7 +120,15 @@
     },
     {
       "mode": "handwritingScratchpad",
-      "status": "pending"
+      "status": "partial-native-controls",
+      "result": "Two strokes, undo, clear; no OCR, reward or self-check completion claim",
+      "evidence": [
+        "g86-handwriting-strokes.xml",
+        "g86-handwriting-undo.xml",
+        "g86-handwriting-clear.xml"
+      ],
+      "sourceCommit": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+      "configuration": "local-preview"
     }
   ],
   "otherPaths": {

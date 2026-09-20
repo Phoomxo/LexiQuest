@@ -37,8 +37,20 @@
         "g86-typed-mixed-result.png",
         "g86-input-method.txt"
       ],
-      "status": "diagnosis-pending",
-      "acceptance": "Do not claim flawless device layout; investigate before G86 completion"
+      "status": "layout-resolved-D19-native-retest-passed",
+      "acceptance": "Black unused viewport resolved on ae29 preview. Green emulator border origin unasserted; no physical-device claim.",
+      "nativeRetest": [
+        "g86-d19-feedback.png",
+        "g86-d19-typed-result.xml"
+      ]
+    },
+    {
+      "id": "E7-G86-TEST-FIXTURE-02",
+      "kind": "test-compilation",
+      "observed": "Session replacement test used const with session.questions getter; compiler rejected it.",
+      "resolution": "Use runtime QuizSession construction; assertions unchanged; 77 affected tests passed.",
+      "evidence": "3ccf866735e6-c1acfc2f0f77-f13106f2/Explicit-Flutter-tests.stdout.log",
+      "status": "resolved-test-fixture"
     }
   ]
 }

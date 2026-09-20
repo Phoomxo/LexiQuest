@@ -410,10 +410,55 @@
     "expected": "Activity fills all remaining space beneath a short hint; opaque background covers shell; long auxiliary content stays bounded and scrollable.",
     "actual": "Activity bottom376 rather than600; no Material ancestor; native screenshot retained black areas.",
     "evidence": "build/verification/5535da0e29bb32a70c65a62a88dc33b41de7930d/896bf1280c1c-cda49c509e50-36a22597/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-280-tests-analyzer-pass-native-retest-pending",
-    "fixSHA": null,
+    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "fixSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
     "retest": "targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json",
     "affectedRegression": "9 shared shell consumers, 280 tests passed: targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json",
-    "fix": "Opaque themed Material and bounded intrinsic-height auxiliary scroll; activity Expanded gets remaining actual height."
+    "fix": "Opaque themed Material and bounded intrinsic-height auxiliary scroll; activity Expanded gets remaining actual height.",
+    "nativeRetest": [
+      "g86-d19-feedback.png",
+      "g86-d19-typed-result.xml"
+    ]
+  },
+  {
+    "DefectID": "E7-D20",
+    "TestCaseID": "G86-sentence-scramble-content",
+    "sourceSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "title": "Sentence route fabricates mixed-language sentence from word and meaning",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "environment": "LexiQuest_API_35 local preview",
+    "rootCause": "Route interpolated spelling means meaning instead of loading reviewed example metadata.",
+    "expected": "Use an exact reviewed example at pinned revision, or unavailable state.",
+    "actual": "bag means Thai bag translation used as English sentence activity.",
+    "evidence": [
+      "g86-sentence-board.xml",
+      "build/verification/ae29ec3dd1107d6b6196ecdb3020e221da6f19da/31c903d620c8-267b91a682ec-0c943b9e/Explicit-Flutter-tests.stdout.log"
+    ],
+    "status": "fixed-local-verified-native-retest-pending",
+    "fixSHA": null,
+    "fix": "ReviewedSentenceScrambleLoader uses existing reviewed cloze example pinning; no fabricated fallback; cached load retired on session replacement.",
+    "retest": [
+      "targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json (93, earlier loader)",
+      "targeted-learning-0c71f3187526ad69753d214c0858c98318a1b30a608f18e5a29ad545733bf6c6.json (77, final route/loader)",
+      "g86-d20-analyze.log (No issues)"
+    ]
+  },
+  {
+    "DefectID": "E7-D21",
+    "TestCaseID": "G86-associative-cue-fading",
+    "sourceSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
+    "title": "Cue-fading reading stage retains embedded translations",
+    "severity": "medium",
+    "ownerPackage": "G8.6/G8.8",
+    "rootCause": "Launcher constructs passage from word means translation; both reading stages show same passage.",
+    "expected": "Cue-fading stage removes translation cues.",
+    "actual": "All ten Thai meanings remain visible under without translations instruction.",
+    "evidence": [
+      "g86-associative-reading.xml",
+      "g86-associative-step2.xml"
+    ],
+    "status": "diagnosed-fix-pending",
+    "fixSHA": null
   }
 ]
