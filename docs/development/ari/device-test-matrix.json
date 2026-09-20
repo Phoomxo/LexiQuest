@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAtUtc": "2026-09-20T19:42:18.572905+00:00",
+  "updatedAtUtc": "2026-09-20T20:07:13.226148+00:00",
   "authorization": "User delegates physical Vivo control, menu/function testing, evidence capture, diagnosis and repairs; no repeated screenshot handoffs. Preserve native ChatGPT account.",
   "status": "IN_PROGRESS_VIVO_CONNECTED",
   "device": {
@@ -38,8 +38,9 @@
     },
     {
       "id": "VOCABULARY",
-      "status": "PASS_LIST_ONLY",
-      "actual": "Starter category opens and lists bag/book/bottle/chair/clock/cup/door/key/pencil/plate; CRUD pending."
+      "status": "PASS_TEST_DATA",
+      "actual": "Created DeviceTest0921; empty form validation; added testword, edited meaning, confirmed delete; imported importword (1 added/0duplicate/0invalid); deleted only test category with confirmation. Starter data preserved.",
+      "latestEvidenceCase": "VOCABULARY_CRUD"
     },
     {
       "id": "AI_MAIN",
@@ -48,92 +49,116 @@
     },
     {
       "id": "SHADOWING",
-      "status": "PARTIAL",
-      "actual": "Configuration/start opens bag exercise; tapped playback and returned. Audible output and human pronunciation quality unverified."
+      "status": "PASS_SILENCE_RECOVERY_ONLY",
+      "actual": "Recording starts; silence yields retry/read-text guidance, progress0. Audible quality and pronunciation scoring pending.",
+      "latestEvidenceCase": "SHADOWING"
     },
     {
       "id": "GHOST_DUEL",
-      "status": "EMPTY_STATE_OBSERVED",
-      "actual": "20 evidence records shown; no qualifying weakness available to start. Gameplay not run."
+      "status": "PASS_ONE_ROUND",
+      "actual": "Snapshot31answers55%; bag/book/bottle/chair correct; opponent HP55to0; end reports4realanswers.",
+      "latestEvidenceCase": "GHOST_DUEL"
     },
     {
       "id": "QUESTS",
-      "status": "PARTIAL",
-      "actual": "Current daily goal 0/5 and historical cards open; expanding shows details. Completion/reward transaction pending."
+      "status": "PASS_DAILY_COMPLETION_ONLY",
+      "actual": "Daily correct quest reached5/5. Separate quest reward-claim transaction not yet established."
     },
     {
       "id": "SHOP",
-      "status": "PARTIAL",
-      "actual": "Avatar level4, XP70, coins70 and catalog open; no purchase made."
+      "status": "PASS_LOCAL_PURCHASE_EQUIP",
+      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. Restart persistence pending. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase.",
+      "latestEvidenceCase": "SHOP"
     },
     {
       "id": "EXPORT_CSV",
-      "status": "PASS_FILE_CREATION_ONLY",
-      "actual": "Native save picker accepted; /sdcard/Download/lexiquest-20260920T182935.csv exists, 2641 bytes. Content integrity not yet verified."
+      "status": "PASS_FILE_PARSE",
+      "actual": "/sdcard/Download/lexiquest-20260920T192124.csv; 5191 bytes; UTF8 CSV parse succeeds, 44 rows including metadata. Semantic reconciliation pending.",
+      "latestEvidenceCase": "CSV_EXPORT_CURRENT"
     },
     {
       "id": "SETTINGS",
-      "status": "PARTIAL",
-      "actual": "Theme controls respond, restored original system theme; rendering persistence not yet verified. Research consent remains off; no data deletion."
+      "status": "PASS",
+      "actual": "Dark theme selected and reduced motion checked remain after test-package force-stop/relaunch. Restored system theme and reduced-motion off.",
+      "latestEvidenceCase": "SETTINGS_PERSISTENCE"
     },
     {
       "id": "QUIZ_COUNT",
-      "status": "PASS_FIXED_PHYSICAL_RETEST",
-      "actual": "Configuration accepts20 while visible starter category has10 words; starting shows no vocabulary. Input automation intended2 but field became20; selected20 was explicitly observed before launch. Retest interrupted by USB offline.",
+      "status": "PASS",
+      "actual": "20 requested; explicit insufficient-count message shown; recovery button returns to home",
       "sourceDiagnosis": "LearningUseCases.startQuiz returns empty if configured count differs from selected words; screen used generic no-vocabulary message.",
-      "fix": "Count-specific20 message and return action physically verified on isolated APK;31 screen tests passed."
+      "fix": "Count-specific20 message and return action physically verified on isolated APK;31 screen tests passed.",
+      "latestEvidenceCase": "QUIZ_SHORTAGE_RECOVERY"
     },
     {
       "id": "CAMERA",
-      "status": "NOT_RUN"
+      "status": "PARTIAL_PHYSICAL",
+      "actual": "Live preview and capture/inference ran on cluttered desktop scene with central jar. Returned unidentified object; no confident label. Not a held-out accuracy evaluation; no model tuning.",
+      "latestEvidenceCase": "CAMERA"
     },
     {
       "id": "TYPED_RECALL",
-      "status": "NOT_RUN"
+      "status": "PASS_MIXED_TWO_ITEM_ROUND",
+      "actual": "Mixed round: bag meaning choice and typed book correct;2/0,100%. Empty typed submit disabled. Focus timer start/pause/resume observed7seconds paused and10seconds resumed.",
+      "latestEvidenceCase": "TYPED_RECALL"
     },
     {
       "id": "MATCHING",
-      "status": "NOT_RUN"
+      "status": "PASS_ROUND_WITH_REPAIR",
+      "actual": "4 pairs completed; first answers3/4,repair1/1,2/3 stars,133seconds. Some rapid automation taps were missed; screenshot fallback used after accessibility dump failed; no permanent hang established.",
+      "latestEvidenceCase": "PAIR_MATCHING"
     },
     {
       "id": "DEFINITION_QUIZ",
-      "status": "NOT_RUN"
+      "status": "PASS_ONE_ITEM_ROUND_CONTENT_LIMITATION",
+      "actual": "Definition bag correct; summary1/0,100%. Only one choice in configured1 round; not distractor-quality acceptance.",
+      "latestEvidenceCase": "DEFINITION_COMPLETE"
     },
     {
       "id": "OTHER_LEARNING_MODES",
-      "status": "INVENTORY_PENDING"
+      "status": "PARTIAL_SEE_DETAILED_CASES",
+      "actual": "Word/sentence scramble,dictation,associative/cloze completed;handwriting repaired. CEFR A1 checked;SRS has no due cards;human speech quality pending."
     },
     {
       "id": "TODAY_AND_PLANNING",
-      "status": "NOT_RUN"
+      "status": "PARTIAL_TODAY_PLANNING_HIDDEN",
+      "actual": "Today,review/history open. Study planning hidden by build registry; no physical acceptance for hidden routes."
     },
     {
       "id": "REVIEW_AND_WEAKNESS",
-      "status": "NOT_RUN"
+      "status": "PASS_BOUNDED",
+      "actual": "Review quiz1/1 and weakness list31answers;due0 disabled. Future due behavior pending."
     },
     {
       "id": "HISTORY_AND_RESTART",
-      "status": "NOT_RUN"
+      "status": "PASS_FIXED_PHYSICAL_RETEST",
+      "actual": "Canonical reading configuration used established associativeReading storage alias, while history expected associative-reading. Narrow alias mapping repaired;wrong-mode rejection preserved.37history regressions plus copied16-session device diagnostic PASS(38 total).Vivo list loads and matching summary opens replay.",
+      "latestEvidenceCase": "HISTORY"
     },
     {
       "id": "NETWORK_FAILURE_RECOVERY",
-      "status": "NOT_RUN"
+      "status": "NOT_RUN_LIVE_NETWORK",
+      "actual": "Preview cloud sync disabled;no claim about live offline/reconnect behavior."
     },
     {
       "id": "AUDIO_RECORDING",
-      "status": "NOT_RUN"
+      "status": "PASS_SILENCE_RECOVERY_ONLY",
+      "actual": "Speaking deny/allowonce and silence retry;shadowing silence retry. Human audible/pronunciation quality pending."
     },
     {
       "id": "ACCOUNT_SYNC",
-      "status": "NOT_RUN_NO_NEW_SIGNOUT"
+      "status": "NOT_RUN_LIVE_SYNC",
+      "actual": "Active owner firebaseBound;cloud sync disabled. No signout/password/data-clear actions."
     },
     {
       "id": "OTHER_EXPORT_FORMATS",
-      "status": "NOT_RUN"
+      "status": "PARTIAL_VERIFIED_ARTIFACTS",
+      "actual": "JSON/CSV cross-check39answers+1reading;PDF2pages visually checked;Anki TSV exact created row;SVG XML valid. Actual Anki import and58-table reconciliation pending."
     },
     {
       "id": "ACCESSIBILITY_RESOURCES",
-      "status": "NOT_RUN"
+      "status": "PARTIAL",
+      "actual": "Theme/motion persistence passed. Pair gameplay accessibility tree unavailable;screen-reader acceptance not established."
     }
   ],
   "blocker": {
@@ -174,326 +199,326 @@
     {
       "id": "home/vocabulary",
       "label": "คำศัพท์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn",
       "label": "เรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/today-experience",
       "label": "ภารกิจวันนี้",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "home/today",
       "label": "วันนี้",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/study-planning",
       "label": "วางแผนการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "home/mastery",
       "label": "ความก้าวหน้า",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/weakness",
       "label": "จุดที่ควรฝึกเพิ่ม",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/achievements",
       "label": "รางวัล",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/profile",
       "label": "โปรไฟล์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/rewards/shop",
       "label": "ร้านค้า",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/practice/object-scanner",
       "label": "สแกนวัตถุ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/practice/shadowing",
       "label": "ฝึกพูดตาม",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/learning/ghost-duel",
       "label": "ดวลกับสถิติเดิม",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/ai-tutor/chat",
       "label": "ผู้ช่วยสอน AI",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/ai-tutor/settings",
       "label": "ตั้งค่าการเชื่อมต่อ AI",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/export/center",
       "label": "ส่งออกข้อมูล",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/rewards/quests",
       "label": "ภารกิจการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "drawer/settings",
       "label": "ตั้งค่า",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/associative-reading",
       "label": "อ่านเชื่อมโยงความจำ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz",
       "label": "แบบทดสอบจากคลังคำศัพท์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/typed-recall",
       "label": "นึกคำแล้วพิมพ์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/matching",
       "label": "จับคู่คำศัพท์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/cloze",
       "label": "เติมคำในประโยค",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/definition",
       "label": "เลือกคำจากคำอธิบาย",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/handwriting-scratchpad",
       "label": "กระดานฝึกเขียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/srs",
       "label": "ทบทวนคำศัพท์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/reading/cefr",
       "label": "อ่านตามระดับภาษา CEFR",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/dictation",
       "label": "ฟังแล้วพิมพ์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/sentence-scramble",
       "label": "เรียงประโยค",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/quiz/word-scramble",
       "label": "เรียงตัวอักษร",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/speech/speaking",
       "label": "ฝึกออกเสียง",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/learn/speech/shadowing",
       "label": "ฝึกพูดตาม",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "today-hub-resume-action",
       "label": "เรียนต่อ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "today-hub-start-recommendation",
       "label": "เริ่มกิจกรรมที่แนะนำ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "today-hub-assessment-action",
       "label": "เริ่มแบบประเมิน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "today-hub-open-review",
       "label": "เปิดศูนย์ทบทวน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "today-hub-open-history",
       "label": "ดูประวัติการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "study-planning/open-catalog",
       "label": "เลือกชุดเนื้อหาการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "study-planning/open-goals",
       "label": "เป้าหมายการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "study-planning/open-learning-preferences",
       "label": "การตั้งค่าการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "settings/display",
       "label": "การแสดงผล",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "theme-system",
       "label": "ระบบ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "theme-light",
       "label": "สว่าง",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "theme-dark",
       "label": "มืด",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "reduced-motion-switch",
       "label": "ลดการเคลื่อนไหว",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "settings/account",
       "label": "บัญชีผู้ใช้",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "settings/offline-content",
       "label": "เนื้อหาออฟไลน์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "settings/research-consent",
       "label": "ความยินยอมงานวิจัย",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "settings/cloud-status",
       "label": "สถานะการเชื่อมต่อระบบออนไลน์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "settings/change-password",
       "label": "เปลี่ยนรหัสผ่าน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "NOT_EXECUTED_ACCOUNT_PRESERVATION"
     },
     {
       "id": "settings/logout",
       "label": "ออกจากระบบ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "NOT_EXECUTED_ACCOUNT_PRESERVATION"
     },
     {
       "id": "erase-local-data",
       "label": "ลบข้อมูลในเครื่องทั้งหมด",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "NOT_EXECUTED_ACCOUNT_PRESERVATION"
     },
     {
       "id": "profile/mastery",
       "label": "ความชำนาญ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "profile/srs",
       "label": "ทบทวนคำศัพท์",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "profile/effort",
       "label": "เวลาเรียนจริง",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "profile/accuracy",
       "label": "ความแม่นยำ",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "profile/weakness",
       "label": "จุดที่ควรฝึกเพิ่ม",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "profile/engagement",
       "label": "ความต่อเนื่องในการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/today/review",
       "label": "ศูนย์ทบทวน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "home/today/history",
       "label": "ประวัติการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "SEE_CASES_FOR_BOUNDED_COVERAGE_NOT_FULL_ACCEPTANCE"
     },
     {
       "id": "research/assessment",
       "label": "แบบประเมิน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "study-planning/catalog",
       "label": "ชุดเนื้อหาการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "study-planning/goals",
       "label": "เป้าหมายการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     },
     {
       "id": "study-planning/learning-preferences",
       "label": "การตั้งค่าการเรียน",
-      "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
+      "status": "HIDDEN_IN_CURRENT_PREVIEW_NOT_PHYSICALLY_TESTED"
     }
   ],
-  "observationsSha256": "393d3ffb702496c172874206763770b556b8fcfcb6efe028240976efc75c7f27",
-  "currentTestAccount": "Isolated local Guest; research consent declined; no native ChatGPT signout",
+  "observationsSha256": "f972b5829c3af447933e1f0a4f31b68bd14d35999b7a7d8b449938b608d93483",
+  "currentTestAccount": "Isolated test package; active owner firebaseBound per read-only database diagnostic. Research consent declined; native ChatGPT/main app account preserved.",
   "newPhysicalResults": [
     {
       "case": "QUIZ_FULL_ROUND",
@@ -659,12 +684,57 @@
       "id": "PAIR_REPLAY",
       "status": "PASS_ROUND_NO_EXTRA_REWARD",
       "actual": "History replay completed4pairs;3/4first,1/1repair,3independent1assisted,2/3stars,87seconds. Pre-replay isolated snapshot points67;post-replay UI67. Fast batched taps raced save/layout;guided repair recovery and paced final pair worked."
+    },
+    {
+      "id": "TYPED_RECALL",
+      "status": "PASS_MIXED_TWO_ITEM_ROUND",
+      "actual": "Mixed round: bag meaning choice and typed book correct;2/0,100%. Empty typed submit disabled. Focus timer start/pause/resume observed7seconds paused and10seconds resumed."
+    },
+    {
+      "id": "ASSOCIATIVE_READING_COMPLETE",
+      "status": "PASS_ONE_WORD_SIX_STAGE_ROUND",
+      "actual": "bottle recalled1/1; mnemonic A bottle holds water; transfer I carry a bottle to school.;stage6 finish returned to activity start. Content-quality limitation remains: vocabulary statements, not connected story."
+    },
+    {
+      "id": "CLOZE_COMPLETE",
+      "status": "PASS_ONE_ITEM_ROUND_CONTENT_LIMITATION",
+      "actual": "Choice branch bag; unselected submit disabled, selected enabled; summary1/0,100%. Only one choice when configured1; not difficulty acceptance. Earlier typed branch passed separately."
+    },
+    {
+      "id": "DEFINITION_COMPLETE",
+      "status": "PASS_ONE_ITEM_ROUND_CONTENT_LIMITATION",
+      "actual": "Definition bag correct; summary1/0,100%. Only one choice in configured1 round; not distractor-quality acceptance."
+    },
+    {
+      "id": "HANDWRITING_FEEDBACK",
+      "status": "PASS_FIXED_PHYSICAL_RETEST",
+      "actual": "Before fix both self-check buttons gave no visible feedback. Added transient Thai messages for empty input and both self-check choices. RED reproduced;11tests pass and analyze clean. Vivo verifies blank prompt, typed bottle self-check message and practice-more message (immediate screenshot inspected; UI dump can miss transient snackbar). No scoring/storage behavior changed."
+    },
+    {
+      "id": "ANKI_POPULATED",
+      "status": "PASS_EXACT_TSV_CONTENT",
+      "actual": "Created ExportTest0921/exportword/export test only; saved /sdcard/Download/lexiquest-20260920T200120.tsv (144bytes,SHA256 d51a33cffc10b079b59a89de901627f5129c373da70dd9b353372347415d652c). Four directives plus exact spelling/meaning/category/id verified. Initial ad-hoc two-column expectation failed; inspected documented source format and verified all4fields/directives instead. Actual import in Anki not tested. Only test category deleted afterwards."
+    },
+    {
+      "id": "EXPORT_RECONCILIATION",
+      "status": "PASS_BOUNDED_CROSS_FORMAT",
+      "actual": "Personal JSON content hash verified; all39 answer tuples(mode,correctness,responseTime,timestamp) equal CSV;39answers,1reading,0owned-vocabulary counts match. Full58-table semantic acceptance remains pending."
+    },
+    {
+      "id": "MENU_AVAILABILITY",
+      "status": "SOURCE_AND_DEVICE_CONFIRMED",
+      "actual": "Preview enables ordinary Today and local timers only; studyPlanning/researchAssessment/offlineContent/adventureMotivation remain hidden by fieldDefaults. Home and drawer confirm no planning entry. Hidden paths not claimed as physical PASS."
+    },
+    {
+      "id": "CEFR_ALL_LEVEL_NAVIGATION",
+      "status": "PASS_NAVIGATION_ONLY",
+      "actual": "A1 previously read/word tap/mark-read;A2 A change of plan,B1 The shared garden,B2 Repair before replacement,C1 Measuring a useful service,C2 The convenience of certainty each opens rendered word controls and returns to list. No claim of certified CEFR quality or verified audible output."
     }
   ],
   "currentInstalledPreview": {
     "package": "com.lexiquest.app.ariTest",
-    "apkSha256": "ac41a8e198aae730eab2beff8f783bcb3e6c08773e056c174abae45dec20805f",
-    "source": "fe30b8c7 plus dictation guard and history alias repair",
+    "apkSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
+    "source": "72472a553e6cc740cda21e9ef00be7ec305c215c plus handwriting self-check feedback repair",
     "cloudSync": false,
     "installed": true
   },
@@ -675,5 +745,30 @@
     "result": "build/verification/fe30b8c7a39012242f526a72b22561a381fc5cfd/targeted-learning-425eb6fbb71b8c3ac651db8bea520b045f178b724c1a90f3d73e4fd0f28dd445.json",
     "sourceFingerprint": "a629ff22d145247b79fcf12c3a4f33a1401ba15bcada7e240a12263e85146801",
     "analyze": "NO_ISSUES"
-  }
+  },
+  "handwritingRegression": {
+    "status": "PASS",
+    "tests": 11,
+    "analyze": "NO_ISSUES",
+    "result": "build/verification/72472a553e6cc740cda21e9ef00be7ec305c215c/targeted-learning-8afdc85c1e3b95a231e862c84c44bf1ac8692e527ff1a56e95cf2add37260d1e.json",
+    "red": "b403330573a5-f1f2a111d111-c59e7d11/Explicit-Flutter-tests.stdout.log",
+    "fixtureCorrection": "Wait for transient snackbar before bottom-control interaction; initial GREEN attempt hit snackbar overlay in small widget-test viewport. Assertions retained. Physical full-height buttons remain above snackbar."
+  },
+  "openFindings": [
+    {
+      "id": "CONTENT_SINGLE_CHOICE",
+      "status": "OPEN_QUALITY_LIMITATION",
+      "actual": "Configured one-item cloze and definition rounds expose only one choice; scoring completion is not evidence of learning challenge."
+    },
+    {
+      "id": "ASSOCIATIVE_CONTENT",
+      "status": "OPEN_QUALITY_LIMITATION",
+      "actual": "Generated local reading resembles a vocabulary list rather than a connected story."
+    },
+    {
+      "id": "PAIR_ACCESSIBILITY",
+      "status": "OPEN_ACCESSIBILITY_LIMITATION",
+      "actual": "Active pair game unavailable in UIAutomator tree; screenshot-based control works,screen-reader acceptance unproven."
+    }
+  ]
 }

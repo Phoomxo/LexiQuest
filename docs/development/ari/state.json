@@ -10,7 +10,7 @@
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": {
     "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
-    "scope": "User-authorized sequential Vivo testing and reproduced defects: quiz shortage, dictation blank response, history load failure.",
+    "scope": "User-authorized sequential Vivo testing and reproduced quiz/dictation/history/handwriting feedback repairs.",
     "branch": "feature/ari-app-device-integration"
   },
   "model": "gpt-6-astra",

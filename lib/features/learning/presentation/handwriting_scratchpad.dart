@@ -172,6 +172,17 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
     _submittedTypedRevision = typedRevision;
     _submittedSelection = selection;
     _lastOutcome = outcome;
+    final message = outcome.inputMethod == HandwritingInputMethod.none
+        ? 'เขียนหรือพิมพ์คำตอบก่อนตรวจด้วยตัวเอง'
+        : switch (selection) {
+            HandwritingSelfCheckSelection.looksCorrect =>
+              'คุณตรวจด้วยตัวเองแล้ว ไม่มีการเพิ่มคะแนนหรือรางวัล',
+            HandwritingSelfCheckSelection.needsMorePractice =>
+              'คุณเลือกฝึกเพิ่ม เขียนหรือพิมพ์ต่อได้เลย',
+          };
+    ScaffoldMessenger.of(context)
+      ..removeCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
     widget.onSelfCheck?.call(outcome);
   }
 

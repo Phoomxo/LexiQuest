@@ -8,6 +8,44 @@ import 'package:vocab_learning_app/features/learning/presentation/handwriting_sc
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 
 void main() {
+  testWidgets('standalone self-check gives visible feedback for each choice', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: HandwritingScratchpad())),
+    );
+    await tester.ensureVisible(find.text('ตรวจด้วยตัวเองแล้ว'));
+    await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
+    await tester.pumpAndSettle();
+    expect(find.text('เขียนหรือพิมพ์คำตอบก่อนตรวจด้วยตัวเอง'), findsOneWidget);
+    // Let the transient feedback leave before interacting with bottom controls.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'bottle');
+    await tester.ensureVisible(find.text('ตรวจด้วยตัวเองแล้ว'));
+    await tester.tap(find.text('ตรวจด้วยตัวเองแล้ว'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('คุณตรวจด้วยตัวเองแล้ว ไม่มีการเพิ่มคะแนนหรือรางวัล'),
+      findsOneWidget,
+    );
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('อยากฝึกเพิ่ม'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('คุณเลือกฝึกเพิ่ม เขียนหรือพิมพ์ต่อได้เลย'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('คุณตรวจด้วยตัวเองแล้ว ไม่มีการเพิ่มคะแนนหรือรางวัล'),
+      findsNothing,
+    );
+  });
+
   test(
     'self-check is guided practice with no default learning side effects',
     () {
@@ -237,13 +275,19 @@ void main() {
     expect(undo.onPressed, isNotNull);
   });
 
-  testWidgets('B06 rotation keeps bounded scratch work until exit', (tester) async {
+  testWidgets('B06 rotation keeps bounded scratch work until exit', (
+    tester,
+  ) async {
     final controller = HandwritingScratchpadController();
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 800);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
-    await tester.pumpWidget(MaterialApp(home: Scaffold(body: HandwritingScratchpad(controller: controller))));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: HandwritingScratchpad(controller: controller)),
+      ),
+    );
     final canvas = find.bySemanticsLabel('พื้นที่ฝึกเขียนในเครื่อง');
     await tester.ensureVisible(canvas);
     await tester.drag(canvas, const Offset(80, 0));

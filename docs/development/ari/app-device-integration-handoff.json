@@ -36,10 +36,10 @@
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "History repair physically passed;continue remaining reachable menu/function cases in matrix,then report explicit external acceptance gaps.",
-    "Continue pending cases in device-test-matrix.json;dictation and quiz physical regressions passed.",
-    "User confirmed touching phone concurrently;coordinate exclusive taps for controlled results.",
-    "Recovery authorization remains: fix/retest automatically;no weaker gates,no successor bypass,no original app/account clearing."
+    "Continue unresolved physical acceptance from current matrix; do not repeat unchanged passed gates.",
+    "Handwriting feedback,dictation,history,quiz shortage physically retested;populated Anki TSV and bounded JSON/CSV reconciliation pass.",
+    "Exclusive taps needed; user confirmed earlier concurrent phone input.",
+    "Recovery authorization: diagnose/fix/retest automatically;no weakened gates,no successor bypass,no original app/account clearing."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
@@ -52,5 +52,7 @@
     "speed": "Standard/default requested; runtime tier not observable"
   },
   "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
-  "deviceCoverage": "device-test-matrix.json"
+  "deviceCoverage": "device-test-matrix.json",
+  "physicalFixBase": "72472a553e6cc740cda21e9ef00be7ec305c215c",
+  "installedPreviewSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0"
 }
