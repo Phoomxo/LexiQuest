@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
-  "authorization": "Latest user authorization prioritizes a working chatbot and MCP demonstration, adapting AllTCAS and Astra AI; historical quota-only sequencing is superseded for this bounded prototype. No credit purchase or unapproved paid fallback.",
+  "revision": 23,
+  "authorization": "2026-09-21: User authorizes MCP integration across all menus, autonomous testing, diagnosis and fixes; preserve original accounts/data and do not purchase credits or deploy.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "chat-mcp-live-checkpoint",
+  "status": "all-menu-mcp-debug-accepted",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": null,
   "model": "gpt-6-astra",
@@ -97,7 +97,7 @@
     "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
     "writerReleased": true
   },
-  "deviceAcceptance": "INSTALL_LAUNCH_LOGIN_PASS_INFERENCE_NOT_RUN",
+  "deviceAcceptance": "ISOLATED_APP_LIVE_MENU_MCP_PASS_NOT_WHOLE_APP_RELEASE",
   "applicationFoundation": {
     "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
     "status": "complete-within-authorized-foundation-scope",
@@ -116,24 +116,41 @@
   },
   "applicationIntegration": {
     "branch": "feature/ari-app-device-integration",
-    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
-    "sourceSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
-    "amendment": "app implementation -> automated tests -> physical device tests -> user-owned private login -> authenticated acceptance",
-    "status": "vivo-device-login-pass-inference-gated",
-    "writerReleased": false,
+    "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+    "baseCommit": "503864cac44d7ebeaffa101a79a82c324d820f9e",
+    "status": "DEBUG_MENU_INTEGRATION_ACCEPTED_NOT_WHOLE_APP_RELEASE",
+    "writerReleased": true,
     "report": "app-device-integration.md",
-    "evidence": "app-device-integration-evidence.json",
-    "handoff": "app-device-integration-handoff.json",
-    "flutterTests": 17,
-    "bridgeTests": 9,
-    "authenticatedAcceptance": "LOGIN_ONLY_PASS_INFERENCE_NOT_RUN",
-    "inference": "NOT_IMPLEMENTED_GATED",
+    "evidence": "all-menu-mcp-001.json",
+    "sourceManifest": "evidence/all-menu-mcp-001/source-manifest.json",
+    "inference": "LIVE_CHAT_AND_APP_MENU_MCP_PASS",
+    "physical": "INSTALL_LOGIN_MCP_NAVIGATION_RECONNECT_CONTEXT_PASS",
     "successor": null,
-    "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
-    "implementationPushed": true,
-    "physical": "INSTALL_LAUNCH_LOGIN_PASS"
+    "productionDistribution": "NOT_CERTIFIED"
   },
   "deviceCoverage": "device-test-matrix.json",
   "chatMcpExecution": "chat-mcp-001.json",
-  "currentWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest"
+  "currentWorktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
+  "allMenuMcpExecution": "all-menu-mcp-001.json",
+  "historicalIntegrationCheckpoints": [
+    {
+      "branch": "feature/ari-app-device-integration",
+      "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\d38e\\LexiQuest",
+      "sourceSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
+      "amendment": "app implementation -> automated tests -> physical device tests -> user-owned private login -> authenticated acceptance",
+      "status": "vivo-device-login-pass-inference-gated",
+      "writerReleased": false,
+      "report": "app-device-integration.md",
+      "evidence": "app-device-integration-evidence.json",
+      "handoff": "app-device-integration-handoff.json",
+      "flutterTests": 17,
+      "bridgeTests": 9,
+      "authenticatedAcceptance": "LOGIN_ONLY_PASS_INFERENCE_NOT_RUN",
+      "inference": "NOT_IMPLEMENTED_GATED",
+      "successor": null,
+      "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
+      "implementationPushed": true,
+      "physical": "INSTALL_LAUNCH_LOGIN_PASS"
+    }
+  ]
 }

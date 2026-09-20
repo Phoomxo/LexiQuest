@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/assessment/domain/assessment_models.dart';
@@ -335,7 +336,7 @@ final class _TodayHubViewState extends State<TodayHubView> {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 960),
-          child: ListView.separated(
+          child: MenuActionListView(
             key: const ValueKey('today-hub-view'),
             padding: EdgeInsets.fromLTRB(
               MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
@@ -343,10 +344,13 @@ final class _TodayHubViewState extends State<TodayHubView> {
               MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
               32,
             ),
-            itemCount: children.length,
-            separatorBuilder: (_, index) =>
-                SizedBox(height: sectionStarts.contains(index + 1) ? 24 : 12),
-            itemBuilder: (_, index) => children[index],
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                if (index > 0)
+                  SizedBox(height: sectionStarts.contains(index) ? 24 : 12),
+                children[index],
+              ],
+            ],
           ),
         ),
       ),
@@ -780,13 +784,18 @@ final class _TodayHubViewState extends State<TodayHubView> {
     required Widget child,
   }) => Tooltip(
     message: entry.tooltip,
-    child: Semantics(
-      button: true,
-      enabled: onTap != null,
-      label: entry.semanticsLabel,
-      onTap: onTap,
-      excludeSemantics: true,
-      child: child,
+    child: MenuActionBinding(
+      id: entry.id,
+      label: entry.fullThaiLabel,
+      onInvoke: onTap,
+      child: Semantics(
+        button: true,
+        enabled: onTap != null,
+        label: entry.semanticsLabel,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: child,
+      ),
     ),
   );
 

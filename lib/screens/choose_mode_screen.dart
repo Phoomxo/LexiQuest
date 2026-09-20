@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/accessibility/presentation/accessibility_scope.dart';
@@ -383,91 +384,95 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 960),
-            child: ListView(
+            child: SingleChildScrollView(
+              key: const ValueKey('learning-menu-scroll'),
               padding: EdgeInsets.fromLTRB(
                 MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
                 8,
                 MediaQuery.sizeOf(context).width < 600 ? 16 : 24,
                 32,
               ),
-              children: [
-                for (final card in widget.leadingCards)
-                  _supplementaryCard(context, card),
-                if (starter != null) ...[
-                  Card(
-                    margin: EdgeInsets.zero,
-                    elevation: 0,
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Semantics(
-                            header: true,
-                            child: Text(
-                              'เริ่มฝึกสั้น ๆ',
-                              style: Theme.of(context).textTheme.titleLarge,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final card in widget.leadingCards)
+                    _supplementaryCard(context, card),
+                  if (starter != null) ...[
+                    Card(
+                      margin: EdgeInsets.zero,
+                      elevation: 0,
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Semantics(
+                              header: true,
+                              child: Text(
+                                'เริ่มฝึกสั้น ๆ',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(_modeDescription(starter.glossary.id)),
-                          const SizedBox(height: 12),
-                          FilledButton.icon(
-                            key: const ValueKey('learn-starter'),
-                            onPressed: _openingMode ? null : starter.onTap,
-                            icon: const Icon(Icons.play_arrow),
-                            label: Text(
-                              'เริ่ม${starter.glossary.shortThaiLabel}',
+                            const SizedBox(height: 8),
+                            Text(_modeDescription(starter.glossary.id)),
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                              key: const ValueKey('learn-starter'),
+                              onPressed: _openingMode ? null : starter.onTap,
+                              icon: const Icon(Icons.play_arrow),
+                              label: Text(
+                                'เริ่ม${starter.glossary.shortThaiLabel}',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (widget.secondaryCards.isNotEmpty) ...[
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      'วันนี้และแผนเรียน',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final card in widget.secondaryCards)
-                    _supplementaryCard(context, card),
-                  const SizedBox(height: 12),
-                ],
-                for (final group in visibleGroups) ...[
-                  Padding(
-                    padding: EdgeInsets.only(
-                      top: group == visibleGroups.first ? 8 : 24,
-                      bottom: 12,
-                    ),
-                    child: Semantics(
+                    const SizedBox(height: 24),
+                  ],
+                  if (widget.secondaryCards.isNotEmpty) ...[
+                    Semantics(
                       header: true,
                       child: Text(
-                        group.key,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        'วันนี้และแผนเรียน',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
-                  ),
-                  _LearningChoiceGrid(
-                    tiles: [
-                      for (final id in group.value)
-                        for (final tile in tiles)
-                          if (tile.glossary.id == id) tile,
-                    ],
-                  ),
+                    const SizedBox(height: 12),
+                    for (final card in widget.secondaryCards)
+                      _supplementaryCard(context, card),
+                    const SizedBox(height: 12),
+                  ],
+                  for (final group in visibleGroups) ...[
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: group == visibleGroups.first ? 8 : 24,
+                        bottom: 12,
+                      ),
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          group.key,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ),
+                    _LearningChoiceGrid(
+                      tiles: [
+                        for (final id in group.value)
+                          for (final tile in tiles)
+                            if (tile.glossary.id == id) tile,
+                      ],
+                    ),
+                  ],
+                  if (tiles.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
+                    ),
                 ],
-                if (tiles.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Text('ยังไม่มีกิจกรรมที่เปิดใช้งาน'),
-                  ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1189,49 +1194,54 @@ class _LearningTile extends StatelessWidget {
       ),
       child: Tooltip(
         message: glossary.tooltip,
-        child: Semantics(
-          button: true,
-          label: glossary.semanticsLabel,
-          onTap: onTap,
-          excludeSemantics: true,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
+        child: MenuActionBinding(
+          id: glossary.id,
+          label: glossary.fullThaiLabel,
+          onInvoke: onTap,
+          child: Semantics(
+            button: true,
+            label: glossary.semanticsLabel,
             onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(14),
+            excludeSemantics: true,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        glossary.icon,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
                     ),
-                    child: Icon(
-                      glossary.icon,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    const SizedBox(height: 12),
+                    Text(
+                      glossary.shortThaiLabel,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    glossary.shortThaiLabel,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _modeDescription(glossary.id),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    const SizedBox(height: 6),
+                    Text(
+                      _modeDescription(glossary.id),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

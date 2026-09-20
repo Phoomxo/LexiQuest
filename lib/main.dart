@@ -47,12 +47,18 @@ class MyApp extends StatefulWidget {
     super.key,
     required this.dependencies,
     this.ownsDependencies = true,
+    this.shellBuilder,
+    this.navigatorKey,
+    this.additionalNavigatorObservers = const [],
   });
 
   final AppDependencies dependencies;
 
   /// Embedded hosts may retain and dispose their shared runtime themselves.
   final bool ownsDependencies;
+  final Widget Function(BuildContext, Widget)? shellBuilder;
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final List<NavigatorObserver> additionalNavigatorObservers;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -115,6 +121,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     Widget buildApp() => MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'LexiQuest - AI Vocab Learning',
+      navigatorKey: widget.navigatorKey,
       locale: const Locale('th'),
       supportedLocales: const [Locale('th')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -130,10 +137,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             platform,
             reduceMotion: displayPreferences?.reducedMotionEnabled ?? false,
           ),
-          child: AccessibilityScope(child: child ?? const SizedBox.shrink()),
+          child: AccessibilityScope(
+            child:
+                widget.shellBuilder?.call(
+                  context,
+                  child ?? const SizedBox.shrink(),
+                ) ??
+                child ??
+                const SizedBox.shrink(),
+          ),
         );
       },
-      navigatorObservers: <NavigatorObserver>[appRouteObserver],
+      navigatorObservers: <NavigatorObserver>[
+        appRouteObserver,
+        ...widget.additionalNavigatorObservers,
+      ],
       initialRoute: widget.dependencies.initialRoute.path,
       onGenerateInitialRoutes: (platformRoute) {
         final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)

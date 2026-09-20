@@ -274,7 +274,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(ListView)).width, lessThanOrEqualTo(960));
+    expect(
+      tester.getSize(find.byKey(const ValueKey('learning-menu-scroll'))).width,
+      lessThanOrEqualTo(960),
+    );
     await _scrollToModeEntry(tester, 'home/learn/quiz/cloze');
     expect(
       tester
@@ -406,7 +409,10 @@ void main() {
         ),
       );
       await _scrollToModeEntry(tester, 'home/learn/quiz');
-      await tester.drag(find.byType(ListView), const Offset(0, -160));
+      await tester.drag(
+        find.byKey(const ValueKey('learning-menu-scroll')),
+        const Offset(0, -160),
+      );
       await tester.pump();
       final cards = find.byType(Card);
       final first = tester.getRect(

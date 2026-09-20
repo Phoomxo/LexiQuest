@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +23,60 @@ import 'package:vocab_learning_app/config/m3_theme.dart';
 import '../support/r15_visual_capture.dart';
 
 void main() {
+  testWidgets(
+    'MCP Today actions deliver exact snapshot data without scrolling',
+    (tester) async {
+      final registry = MenuActionRegistry(currentOwner: () => 'a');
+      final actions = _Actions();
+      final snapshot = _snapshot(
+        resumableSession: _resumableSession(),
+        recommendation: _freshRecommendation(contentId: 'word:airport'),
+        reviewWork: [_reviewWork()],
+        assignedAssessment: _assignedAssessment(),
+      );
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: _app(snapshot: snapshot, actions: actions),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final id in NavigationGlossary.todayActionIds) {
+        final current = registry.snapshot();
+        expect(
+          (current['actions'] as List).any((a) => a['id'] == id),
+          isTrue,
+          reason: id,
+        );
+        final result = await registry.execute(
+          id: id,
+          owner: 'a',
+          revision: current['revision'] as int,
+          requestId: id,
+        );
+        await tester.pumpAndSettle();
+        expect(result['status'], 'invoked', reason: id);
+      }
+      expect(actions.resumeCalls, 1);
+      expect(actions.recommendationCalls, 1);
+      expect(actions.reviewCalls, 1);
+      expect(actions.historyCalls, 1);
+      expect(actions.assessmentCalls, 1);
+      expect(
+        identical(actions.resumedSession, snapshot.resumableSession),
+        isTrue,
+      );
+      expect(
+        identical(actions.startedRecommendation, snapshot.recommendation),
+        isTrue,
+      );
+      expect(
+        identical(actions.startedAssessment, snapshot.assignedAssessment),
+        isTrue,
+      );
+      expect(actions.reviewWork, snapshot.reviewWork);
+    },
+  );
   testWidgets('A-UI-03 Today keyboard follows primary then manual practice', (
     tester,
   ) async {

@@ -16,8 +16,10 @@ class ManagedTutorTestScreen extends StatefulWidget {
     required this.bridge,
     required this.openLogin,
     this.loadWords,
+    this.embedded = false,
   });
   final Future<List<Map<String, dynamic>>> Function()? loadWords;
+  final bool embedded;
   final ManagedTutorHost host;
   final LocalLoginBridge bridge;
   final Future<void> Function(Uri) openLogin;
@@ -49,7 +51,7 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final route = ModalRoute.of(context);
+    final route = widget.embedded ? null : ModalRoute.of(context);
     if (route is PageRoute && route != _route) {
       appRouteObserver.unsubscribe(this);
       _route = route;
@@ -203,7 +205,9 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('อารี · ห้องสนทนาทดสอบ')),
+    appBar: widget.embedded
+        ? null
+        : AppBar(title: const Text('อารี · ห้องสนทนาทดสอบ')),
     body: SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
@@ -305,13 +309,13 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
                     },
             ),
           const Text(
-            'อารีใช้เฉพาะข้อมูลคำที่เลือกในบทสนทนานี้ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่',
+            'อารีใช้คำศัพท์ที่เลือกและข้อมูลเมนูที่เปิดอยู่ การเปลี่ยนคำจะเริ่มบทสนทนาใหม่',
           ),
           ManagedTutorPanel(controller: widget.host.controller),
-          if (widget.host.controller.state == ManagedTutorState.ready &&
-              widget.bridge.selectedWord != null)
+          if (widget.host.controller.state == ManagedTutorState.ready)
             for (final receipt in widget.bridge.toolResults)
-              if (receipt['name'] == 'create_practice_draft')
+              if (receipt['name'] == 'create_practice_draft' &&
+                  widget.bridge.selectedWord != null)
                 ManagedPracticeCard(
                   word: widget.bridge.selectedWord!,
                   receipt: receipt,
@@ -319,8 +323,8 @@ class _ManagedTutorTestScreenState extends State<ManagedTutorTestScreen>
               else
                 Text(
                   receipt['status'] == 'completed'
-                      ? 'อ่านข้อมูลคำศัพท์สำเร็จ'
-                      : 'อ่านข้อมูลคำศัพท์ไม่สำเร็จ',
+                      ? 'เครื่องมือ ${receipt['name']}: ${receipt['data']['status'] ?? 'สำเร็จ'}'
+                      : 'เครื่องมือ ${receipt['name']}: ไม่สำเร็จ',
                 ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -170,6 +172,42 @@ Future<void> _pumpUntilComplete(
 }
 
 void main() {
+  testWidgets(
+    'MCP opens drawer and settings through real production callbacks',
+    (tester) async {
+      final registry = MenuActionRegistry(currentOwner: () => 'fixture');
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MyApp(dependencies: _dependencies()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      Future<void> execute(String id, String request) async {
+        final result = await registry.execute(
+          id: id,
+          owner: 'fixture',
+          revision: registry.snapshot()['revision'] as int,
+          requestId: request,
+        );
+        expect(result['status'], 'invoked');
+        await tester.pumpAndSettle();
+      }
+
+      await execute('navigation/open-menu', 'open');
+      expect(find.byType(Drawer), findsOneWidget);
+      await execute('drawer/settings', 'settings');
+      expect(find.byType(SettingScreen), findsOneWidget);
+      expect(
+        ModalRoute.of(
+          tester.element(find.byType(SettingScreen)),
+        )?.settings.name,
+        'settings',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('supported cold-start email action overrides bootstrap route', (
     tester,
   ) async {

@@ -721,6 +721,21 @@ void main() {
             )
             .first,
       );
+      final profileScroll = find
+          .descendant(
+            of: find.byType(ProfileSettingsScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      for (
+        var step = 0;
+        step < 8 && button.hitTestable().evaluate().isEmpty;
+        step++
+      ) {
+        await tester.drag(profileScroll, const Offset(0, -120));
+        await tester.pumpAndSettle();
+      }
+      expect(button.hitTestable(), findsOneWidget);
       await tester.tap(button);
       await tester.pumpAndSettle();
       expect(
@@ -2338,7 +2353,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('ร้านค้า'), findsOneWidget);
       expect(find.text('สแกนวัตถุ'), findsOneWidget);
-      expect(find.text('ฝึกพูดตาม'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(Drawer),
+          matching: find.text('ฝึกพูดตาม'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('ผู้ช่วยสอน AI'), findsOneWidget);
       expect(find.text('ตั้งค่าการเชื่อมต่อ AI'), findsOneWidget);
 

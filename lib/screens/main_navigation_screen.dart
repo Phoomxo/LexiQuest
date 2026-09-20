@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -267,21 +268,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       margin: EdgeInsets.zero,
       child: Tooltip(
         message: entry.tooltip,
-        child: Semantics(
-          button: true,
-          label: entry.semanticsLabel,
-          onTap: onTap,
-          excludeSemantics: true,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            leading: Icon(entry.icon),
-            title: Text(entry.fullThaiLabel),
-            subtitle: Text(description),
-            trailing: const Icon(Icons.chevron_right),
+        child: MenuActionBinding(
+          id: entry.id,
+          label: entry.fullThaiLabel,
+          onInvoke: onTap,
+          child: Semantics(
+            button: true,
+            label: entry.semanticsLabel,
             onTap: onTap,
+            excludeSemantics: true,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: Icon(entry.icon),
+              title: Text(entry.fullThaiLabel),
+              subtitle: Text(description),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: onTap,
+            ),
           ),
         ),
       ),
@@ -1605,7 +1611,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
     final showBanner = status != null;
-    return Scaffold(
+    Widget shell = Scaffold(
       key: _scaffoldKey,
       body: SafeArea(
         bottom: false,
@@ -1674,170 +1680,177 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       drawer: Drawer(
         child: SafeArea(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'เมนู',
-                        style: Theme.of(context).textTheme.titleLarge,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 8, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'เมนู',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                       ),
+                      IconButton(
+                        tooltip: 'ปิดเมนู',
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                _drawerSection('กิจกรรมและการเรียน'),
+                if (!_learningVisible &&
+                    _secondaryAvailable(
+                      Feature.dailyContinuity,
+                      requireComposition: true,
+                    ))
+                  _glossaryDrawerTile(
+                    key: const ValueKey('home/today'),
+                    entry: NavigationGlossary.require('home/today'),
+                    onTap: _openToday,
+                  ),
+                if (!_learningVisible &&
+                    _secondaryAvailable(
+                      Feature.studyPlanning,
+                      requireComposition: true,
+                    ))
+                  _glossaryDrawerTile(
+                    key: const ValueKey('home/study-planning'),
+                    entry: NavigationGlossary.require('home/study-planning'),
+                    onTap: _openPlanning,
+                  ),
+                if (!_secondaryAvailable(Feature.mastery) &&
+                    _secondaryAvailable(Feature.weakness))
+                  _glossaryDrawerTile(
+                    key: const ValueKey('home/weakness'),
+                    entry: NavigationGlossary.require('home/weakness'),
+                    onTap: _openWeakness,
+                  ),
+                if (features?.isVisible(Feature.objectScanner) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>(
+                      'drawer/practice/object-scanner',
                     ),
-                    IconButton(
-                      tooltip: 'ปิดเมนู',
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
+                    entry: NavigationGlossary.require(
+                      'drawer/practice/object-scanner',
                     ),
-                  ],
-                ),
-              ),
-              _drawerSection('กิจกรรมและการเรียน'),
-              if (!_learningVisible &&
-                  _secondaryAvailable(
-                    Feature.dailyContinuity,
-                    requireComposition: true,
-                  ))
-                _glossaryDrawerTile(
-                  key: const ValueKey('home/today'),
-                  entry: NavigationGlossary.require('home/today'),
-                  onTap: _openToday,
-                ),
-              if (!_learningVisible &&
-                  _secondaryAvailable(
-                    Feature.studyPlanning,
-                    requireComposition: true,
-                  ))
-                _glossaryDrawerTile(
-                  key: const ValueKey('home/study-planning'),
-                  entry: NavigationGlossary.require('home/study-planning'),
-                  onTap: _openPlanning,
-                ),
-              if (!_secondaryAvailable(Feature.mastery) &&
-                  _secondaryAvailable(Feature.weakness))
-                _glossaryDrawerTile(
-                  key: const ValueKey('home/weakness'),
-                  entry: NavigationGlossary.require('home/weakness'),
-                  onTap: _openWeakness,
-                ),
-              if (features?.isVisible(Feature.objectScanner) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/practice/object-scanner'),
-                  entry: NavigationGlossary.require(
-                    'drawer/practice/object-scanner',
+                    onTap: () => _pushFeatureDestination(
+                      'practice/object-scanner',
+                      Feature.objectScanner,
+                      (_) => const ObjectScannerScreen(),
+                    ),
                   ),
-                  onTap: () => _pushFeatureDestination(
-                    'practice/object-scanner',
-                    Feature.objectScanner,
-                    (_) => const ObjectScannerScreen(),
+                if (shadowingFeature != null &&
+                    features?.isVisible(shadowingFeature) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/practice/shadowing'),
+                    entry: NavigationGlossary.require(
+                      'drawer/practice/shadowing',
+                    ),
+                    onTap: _pushRegisteredShadowing,
+                  ),
+                if (features?.isVisible(Feature.ghostDuel) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/learning/ghost-duel'),
+                    entry: NavigationGlossary.require(
+                      'drawer/learning/ghost-duel',
+                    ),
+                    onTap: () => _pushFeatureDestination(
+                      'learning/ghost-duel',
+                      Feature.ghostDuel,
+                      (_) => const GhostShadowDuelScreen(),
+                    ),
+                  ),
+                if (features?.isVisible(Feature.aiTutor) == true) ...[
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/ai-tutor/chat'),
+                    entry: NavigationGlossary.require('drawer/ai-tutor/chat'),
+                    onTap: () => _pushFeatureDestination(
+                      'ai-tutor/chat',
+                      Feature.aiTutor,
+                      (_) => const AiTutorScreen(),
+                    ),
+                  ),
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/ai-tutor/settings'),
+                    entry: NavigationGlossary.require(
+                      'drawer/ai-tutor/settings',
+                    ),
+                    onTap: () => _pushFeatureDestination(
+                      'ai-tutor/settings',
+                      Feature.aiTutor,
+                      (_) => const AiTutorSettingsScreen(),
+                    ),
+                  ),
+                ],
+                if (features?.isVisible(Feature.questV2) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/rewards/quests'),
+                    entry: NavigationGlossary.require('drawer/rewards/quests'),
+                    onTap: _openQuests,
+                  ),
+                if (features?.isVisible(Feature.shop) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/rewards/shop'),
+                    entry: NavigationGlossary.require('drawer/rewards/shop'),
+                    onTap: _openShop,
+                  ),
+                _drawerSection('ข้อมูลของฉัน'),
+                if (features?.isVisible(Feature.vocabulary) == true)
+                  _glossaryDrawerTile(
+                    entry: NavigationGlossary.require('home/vocabulary'),
+                    onTap: () {
+                      _scaffoldKey.currentState?.closeDrawer();
+                      setState(() {
+                        _selectedEntryId = 'vocabulary';
+                      });
+                    },
+                  ),
+                if (features?.isVisible(Feature.export) == true)
+                  _glossaryDrawerTile(
+                    key: const ValueKey<String>('drawer/export/center'),
+                    entry: NavigationGlossary.require('drawer/export/center'),
+                    onTap: () => _pushFeatureDestination(
+                      'export/center',
+                      Feature.export,
+                      (_) => const ExportCenterScreen(),
+                    ),
+                  ),
+                _drawerSection('การตั้งค่า'),
+                _glossaryDrawerTile(
+                  key: const ValueKey<String>('drawer/settings'),
+                  entry: NavigationGlossary.require('drawer/settings'),
+                  onTap: () => _pushDestination(
+                    'settings',
+                    (_) => const SettingScreen(),
                   ),
                 ),
-              if (shadowingFeature != null &&
-                  features?.isVisible(shadowingFeature) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/practice/shadowing'),
-                  entry: NavigationGlossary.require(
-                    'drawer/practice/shadowing',
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                  onTap: _pushRegisteredShadowing,
-                ),
-              if (features?.isVisible(Feature.ghostDuel) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/learning/ghost-duel'),
-                  entry: NavigationGlossary.require(
-                    'drawer/learning/ghost-duel',
-                  ),
-                  onTap: () => _pushFeatureDestination(
-                    'learning/ghost-duel',
-                    Feature.ghostDuel,
-                    (_) => const GhostShadowDuelScreen(),
+                  child: Text(
+                    _runtimeStatusSummary(context),
+                    key: const ValueKey<String>('runtime-status-summary'),
                   ),
                 ),
-              if (features?.isVisible(Feature.aiTutor) == true) ...[
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/ai-tutor/chat'),
-                  entry: NavigationGlossary.require('drawer/ai-tutor/chat'),
-                  onTap: () => _pushFeatureDestination(
-                    'ai-tutor/chat',
-                    Feature.aiTutor,
-                    (_) => const AiTutorScreen(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
                   ),
-                ),
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/ai-tutor/settings'),
-                  entry: NavigationGlossary.require('drawer/ai-tutor/settings'),
-                  onTap: () => _pushFeatureDestination(
-                    'ai-tutor/settings',
-                    Feature.aiTutor,
-                    (_) => const AiTutorSettingsScreen(),
+                  child: Text(
+                    _buildIdentity(context),
+                    key: const ValueKey<String>('build-identity'),
                   ),
                 ),
               ],
-              if (features?.isVisible(Feature.questV2) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/rewards/quests'),
-                  entry: NavigationGlossary.require('drawer/rewards/quests'),
-                  onTap: _openQuests,
-                ),
-              if (features?.isVisible(Feature.shop) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/rewards/shop'),
-                  entry: NavigationGlossary.require('drawer/rewards/shop'),
-                  onTap: _openShop,
-                ),
-              _drawerSection('ข้อมูลของฉัน'),
-              if (features?.isVisible(Feature.vocabulary) == true)
-                _glossaryDrawerTile(
-                  entry: NavigationGlossary.require('home/vocabulary'),
-                  onTap: () {
-                    _scaffoldKey.currentState?.closeDrawer();
-                    setState(() {
-                      _selectedEntryId = 'vocabulary';
-                    });
-                  },
-                ),
-              if (features?.isVisible(Feature.export) == true)
-                _glossaryDrawerTile(
-                  key: const ValueKey<String>('drawer/export/center'),
-                  entry: NavigationGlossary.require('drawer/export/center'),
-                  onTap: () => _pushFeatureDestination(
-                    'export/center',
-                    Feature.export,
-                    (_) => const ExportCenterScreen(),
-                  ),
-                ),
-              _drawerSection('การตั้งค่า'),
-              _glossaryDrawerTile(
-                key: const ValueKey<String>('drawer/settings'),
-                entry: NavigationGlossary.require('drawer/settings'),
-                onTap: () =>
-                    _pushDestination('settings', (_) => const SettingScreen()),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: Text(
-                  _runtimeStatusSummary(context),
-                  key: const ValueKey<String>('runtime-status-summary'),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Text(
-                  _buildIdentity(context),
-                  key: const ValueKey<String>('build-identity'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1909,6 +1922,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
               ],
             ),
+    );
+    for (final (index, entry) in _visibleEntries.indexed) {
+      shell = MenuActionBinding(
+        id: entry.productionEntryId,
+        label: entry.glossary.fullThaiLabel,
+        onInvoke: () => _selectDestination(index),
+        child: shell,
+      );
+    }
+    return MenuActionBinding(
+      id: 'navigation/open-menu',
+      label: 'เปิดเมนู',
+      onInvoke: () => _scaffoldKey.currentState?.openDrawer(),
+      child: shell,
     );
   }
 }
@@ -2292,16 +2319,21 @@ Widget _glossaryDrawerTile({
 }) {
   return Tooltip(
     message: entry.tooltip,
-    child: Semantics(
-      button: true,
-      label: entry.semanticsLabel,
-      onTap: onTap,
-      excludeSemantics: true,
-      child: ListTile(
-        key: key,
-        leading: Icon(entry.icon),
-        title: Text(entry.fullThaiLabel),
+    child: MenuActionBinding(
+      id: entry.id,
+      label: entry.fullThaiLabel,
+      onInvoke: onTap,
+      child: Semantics(
+        button: true,
+        label: entry.semanticsLabel,
         onTap: onTap,
+        excludeSemantics: true,
+        child: ListTile(
+          key: key,
+          leading: Icon(entry.icon),
+          title: Text(entry.fullThaiLabel),
+          onTap: onTap,
+        ),
       ),
     ),
   );

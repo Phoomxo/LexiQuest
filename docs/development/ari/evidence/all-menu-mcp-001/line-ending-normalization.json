@@ -1,0 +1,173 @@
+{
+  "meaning": "Only line endings aligned to existing HEAD; normalized bytes equal before/after. No behavior edits after final APK build.",
+  "files": [
+    {
+      "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "before": "4a35af1b77c82e48d677fbeed87a5648a46da1a4c8db4a507c71ca56a68f6a2b",
+      "after": "16becd3d2c0fbcb53545861fe5d275f66dcefa8c08593e57f02095909c0045cf",
+      "normalizedSha256": "16becd3d2c0fbcb53545861fe5d275f66dcefa8c08593e57f02095909c0045cf"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/local_login_bridge.dart",
+      "before": "a5ec7d626900e8d3d92fc15ea2fbea3fea42eb1002db48768d19bff8112a5e86",
+      "after": "742bc6f1cf95c2cc17bc5452663e96cae2bd3fc3bf4471f1ab6f2b1939a820e9",
+      "normalizedSha256": "742bc6f1cf95c2cc17bc5452663e96cae2bd3fc3bf4471f1ab6f2b1939a820e9"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart",
+      "before": "dcb1753f1107c50f0d1d39b250e3bb442033eb894d5ee039a0a8f22223266923",
+      "after": "664457cc691bd9b40068c0fe311abdda94ef552a1931bb9eb8688ab2eef52524",
+      "normalizedSha256": "664457cc691bd9b40068c0fe311abdda94ef552a1931bb9eb8688ab2eef52524"
+    },
+    {
+      "path": "lib/main.dart",
+      "before": "54f0efc5cfa3bc5d056721ccfeb56a58596d1a5b0e6bccfed0b7fed23f080fee",
+      "after": "c6d9f64990be5225f1bd8c260970a6146be19fc5dffa0668b042bdc4660984e6",
+      "normalizedSha256": "c6d9f64990be5225f1bd8c260970a6146be19fc5dffa0668b042bdc4660984e6"
+    },
+    {
+      "path": "lib/main_ari_test.dart",
+      "before": "07702c84afc9db524545b69cdf6dcee40bed8bb00f9549c94975b9905bfafbaa",
+      "after": "52fd4075b5dfb7f6846f95b88595b99027eabfc150ee2b718fc55e2cf957ea05",
+      "normalizedSha256": "52fd4075b5dfb7f6846f95b88595b99027eabfc150ee2b718fc55e2cf957ea05"
+    },
+    {
+      "path": "lib/screens/choose_mode_screen.dart",
+      "before": "4cdec4593a2417df262fa11643af0ca2ebe42c9907c3b7dc7dfd4be50d8137d3",
+      "after": "50abf1d7f20b6b41381f2d23ff4c6d11b7c04e177f5ba082d585892b72537151",
+      "normalizedSha256": "50abf1d7f20b6b41381f2d23ff4c6d11b7c04e177f5ba082d585892b72537151"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "before": "81cad93df3c962c51278bc68d366ed1e02490b8f3691bc24515c2df743a900c0",
+      "after": "9c9a36c140fb633ec1b31f284e6e70d3170ae05025efa8ea88431bc7ae3150fd",
+      "normalizedSha256": "9c9a36c140fb633ec1b31f284e6e70d3170ae05025efa8ea88431bc7ae3150fd"
+    },
+    {
+      "path": "lib/screens/profile_settings_screen.dart",
+      "before": "387097b944ec3bb69111d677f0becd0464fbc28f385ec6adfcbc4e8ac5adccc9",
+      "after": "d96a019a6815a40f0d6b558332b976d52dc12b3d921217d4797912d3ad7f0c22",
+      "normalizedSha256": "d96a019a6815a40f0d6b558332b976d52dc12b3d921217d4797912d3ad7f0c22"
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "before": "9166c32582ac2903d3eec15d8520b08665c960220cea5cae885ce8c8d118f4f6",
+      "after": "2d006f654cea037bcf2e253dfdff1aae91c9f551f0a25f405b83be991306dd3f",
+      "normalizedSha256": "2d006f654cea037bcf2e253dfdff1aae91c9f551f0a25f405b83be991306dd3f"
+    },
+    {
+      "path": "lib/screens/study_planning_hub_screen.dart",
+      "before": "5ea1dad5c1a7a2d923b24a322e3b77ecdf80eea0bd55b0dab9675c8e58ccec45",
+      "after": "932a7681e8ff28531758422eea47b84408b7eb40f8266be44469e2156b59f1ea",
+      "normalizedSha256": "932a7681e8ff28531758422eea47b84408b7eb40f8266be44469e2156b59f1ea"
+    },
+    {
+      "path": "lib/screens/today_hub_view.dart",
+      "before": "f4a538b3498104e1415aeb285e901eacab9005cb599be626a92c6e02bb85d445",
+      "after": "59ab8ef50ad209ecd8fc51c6ea3079348b48efe1f359d34f67444c05073dd8cc",
+      "normalizedSha256": "59ab8ef50ad209ecd8fc51c6ea3079348b48efe1f359d34f67444c05073dd8cc"
+    },
+    {
+      "path": "test/screens/choose_mode_screen_test.dart",
+      "before": "036c5dec4626e23500b0ae8bc2ccb4ab05c55ee8f1e40495823832508841e7aa",
+      "after": "d7b8139fbd7a7621f793d192d23e3821761251b5a853e56a71c7ca2ebe5207a1",
+      "normalizedSha256": "d7b8139fbd7a7621f793d192d23e3821761251b5a853e56a71c7ca2ebe5207a1"
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "before": "6fb8bcee6fb474b0083ae8fcf275062515add9857631523c8d8057b44af93703",
+      "after": "9bc65356e7790c56917e7be38683953fdce9bc3f6e9604eb62831e581485c606",
+      "normalizedSha256": "9bc65356e7790c56917e7be38683953fdce9bc3f6e9604eb62831e581485c606"
+    },
+    {
+      "path": "test/screens/production_shell_navigation_test.dart",
+      "before": "42b71dba6dafa64f98297d60e15157652f0a2d4a9a0dc22a31cfd0954423451a",
+      "after": "f093ff79cb6586c78428a3da92a717a5e211caef0ccae12c8ac31bd7f6fc45cf",
+      "normalizedSha256": "f093ff79cb6586c78428a3da92a717a5e211caef0ccae12c8ac31bd7f6fc45cf"
+    },
+    {
+      "path": "test/screens/profile_settings_screen_test.dart",
+      "before": "c1e7d6f1d020c41c17da85578cedbd9bb3ac5f083066033542226161318d169a",
+      "after": "c1acf0c1e152e5d0d7308fb72a4d2ca7ab73ead1c89d9261630e2ac262caa2ff",
+      "normalizedSha256": "c1acf0c1e152e5d0d7308fb72a4d2ca7ab73ead1c89d9261630e2ac262caa2ff"
+    },
+    {
+      "path": "test/screens/setting_screen_test.dart",
+      "before": "9ef64b2a4c6ee3ec75fe1b3048926469cb8310101854b31b0443dbb261e563a1",
+      "after": "7ee245e56dc9ee9c216abf9cb172b91071393eccd0d5981f641a57f7814c5437",
+      "normalizedSha256": "7ee245e56dc9ee9c216abf9cb172b91071393eccd0d5981f641a57f7814c5437"
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "before": "0e67a205806d71c2fb7936375dc78a761ddbf9ac97f51e610353872fd5b54016",
+      "after": "bf880ba1e858dce6706f946d009cbd344a01e56090a2bd4a85ec1cba23db15ad",
+      "normalizedSha256": "bf880ba1e858dce6706f946d009cbd344a01e56090a2bd4a85ec1cba23db15ad"
+    },
+    {
+      "path": "test/screens/today_hub_screen_test.dart",
+      "before": "c79d196ccb42e718dc4ce1e44e78fe8a617b104d538d0e183f9dc6ca98c9e4da",
+      "after": "8237fce9b5e1fb07a35c301812172367d401748dc2fe72ec8dc21f85600d6a55",
+      "normalizedSha256": "c79d196ccb42e718dc4ce1e44e78fe8a617b104d538d0e183f9dc6ca98c9e4da"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/menu_action_binding.dart",
+      "before": "b115cf1e5b7da9960af3277114e54403855a837223810c7dcf024dbe3b5f6426",
+      "after": "7a60caf6dd94af4f25a5ab9d7b7e0c1188901d55176fbe8b331ef0db537452a4",
+      "normalizedSha256": "7a60caf6dd94af4f25a5ab9d7b7e0c1188901d55176fbe8b331ef0db537452a4"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/full_menu_navigation_test.dart",
+      "before": "cc014338a2225be4a97eb072c3f552301c09c88b6075f6e1fa888082e21465d8",
+      "after": "e7a7cd0446e4d36bc423c0fa51df2efe5725bea1c5f91ef9938bcb8bc50efeae",
+      "normalizedSha256": "e7a7cd0446e4d36bc423c0fa51df2efe5725bea1c5f91ef9938bcb8bc50efeae"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/menu_bridge_test.dart",
+      "before": "364d49a0ef61eb36c9398b97263d0dfa823ffa31b5f64001cafb728c1a3389c0",
+      "after": "f7b31439990694665e4356547a420e279eb3ce7031bfde31ed4ae94315d2a519",
+      "normalizedSha256": "f7b31439990694665e4356547a420e279eb3ce7031bfde31ed4ae94315d2a519"
+    },
+    {
+      "path": "docs/development/ari/app-device-integration.md",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "8099f24f8847fa84183ef1d6e3c9a04daf7a42d72663cd8e737abdc0a25c5568",
+      "after": "dee2412a0332a5d4a0ab573fb94b36c58f9b7c5bc74c25d50fccfa48f35924c9",
+      "normalizedSha256": "dee2412a0332a5d4a0ab573fb94b36c58f9b7c5bc74c25d50fccfa48f35924c9"
+    },
+    {
+      "path": "docs/development/ari/device-observations.jsonl",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "f152568052eb31523cc3dbf093003003405f7f424729f52ffd2450e93c62b841",
+      "after": "2a08a5ba8a66bcf66ad4e14bf1a38fa4e41af4a4d327f1239cdfb8656b0b09ea",
+      "normalizedSha256": "2a08a5ba8a66bcf66ad4e14bf1a38fa4e41af4a4d327f1239cdfb8656b0b09ea"
+    },
+    {
+      "path": "docs/development/ari/state.json",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "cffdb565fe4d992bcd2abd68ac256c05ed2c0f55516fc425a51c1647d6151f29",
+      "after": "4e28353270464d5dc103f26a03f388374be75821ead41561ee8aa3dde6646069",
+      "normalizedSha256": "4e28353270464d5dc103f26a03f388374be75821ead41561ee8aa3dde6646069"
+    },
+    {
+      "path": "lib/main.dart",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "c6d9f64990be5225f1bd8c260970a6146be19fc5dffa0668b042bdc4660984e6",
+      "after": "b797c90eb68c925a9309a734f6883a77ccd0494fc362b4d9873618338394c0f5",
+      "normalizedSha256": "c6d9f64990be5225f1bd8c260970a6146be19fc5dffa0668b042bdc4660984e6"
+    },
+    {
+      "path": "lib/screens/study_planning_hub_screen.dart",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "932a7681e8ff28531758422eea47b84408b7eb40f8266be44469e2156b59f1ea",
+      "after": "5607df65ed2658f9440e737471e82f7c68113cacfcd69d8526cfd538481fb369",
+      "normalizedSha256": "932a7681e8ff28531758422eea47b84408b7eb40f8266be44469e2156b59f1ea"
+    },
+    {
+      "path": "test/screens/production_shell_navigation_test.dart",
+      "reason": "Retain existing per-line HEAD endings for unchanged lines",
+      "before": "f093ff79cb6586c78428a3da92a717a5e211caef0ccae12c8ac31bd7f6fc45cf",
+      "after": "df5312209f7c4e03fb4c0c25c1d623d8180093d978ca146a3a4fe7bf04cae417",
+      "normalizedSha256": "f093ff79cb6586c78428a3da92a717a5e211caef0ccae12c8ac31bd7f6fc45cf"
+    }
+  ]
+}

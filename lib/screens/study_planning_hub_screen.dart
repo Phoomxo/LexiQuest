@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/app_routes.dart';
@@ -78,14 +79,29 @@ final class StudyPlanningHubScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              OutlinedButton.icon(
-                onPressed: () => openStudyPlan(context),
-                icon: const Icon(Icons.schedule), label: const Text('แผนการเรียนของฉัน'),
+              MenuActionBinding(
+                id: 'study-planning/open-plan',
+                label: 'แผนการเรียนของฉัน',
+                onInvoke: () {
+                  openStudyPlan(context);
+                },
+                child: OutlinedButton.icon(
+                  onPressed: () => openStudyPlan(context),
+                  icon: const Icon(Icons.schedule),
+                  label: const Text('แผนการเรียนของฉัน'),
+                ),
               ),
-              OutlinedButton.icon(
-                onPressed: () => openPersonalSets(context),
-                icon: const Icon(Icons.collections_bookmark_outlined),
-                label: const Text('ชุดคำส่วนตัว'),
+              MenuActionBinding(
+                id: 'study-planning/open-personal-sets',
+                label: 'ชุดคำส่วนตัว',
+                onInvoke: () {
+                  openPersonalSets(context);
+                },
+                child: OutlinedButton.icon(
+                  onPressed: () => openPersonalSets(context),
+                  icon: const Icon(Icons.collections_bookmark_outlined),
+                  label: const Text('ชุดคำส่วนตัว'),
+                ),
               ),
               const Text(
                 'เลือกชุดเนื้อหาที่ตรวจสอบแล้วเพื่อวางแผนการฝึกครั้งถัดไป',
@@ -141,11 +157,16 @@ Widget _glossaryAction({
   required Widget child,
 }) => Tooltip(
   message: entry.tooltip,
-  child: Semantics(
-    button: true,
-    label: entry.semanticsLabel,
-    onTap: onTap,
-    excludeSemantics: true,
-    child: child,
+  child: MenuActionBinding(
+    id: entry.id,
+    label: entry.fullThaiLabel,
+    onInvoke: onTap,
+    child: Semantics(
+      button: true,
+      label: entry.semanticsLabel,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: child,
+    ),
   ),
 );

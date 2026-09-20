@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../domain/ai_tutor_contracts.dart';
 import '../domain/managed_tutor_transport.dart';
+import '../application/menu_action_registry.dart';
 
 final class DeviceLoginChallenge {
   const DeviceLoginChallenge(this.userCode);
@@ -25,6 +26,7 @@ final class LocalLoginBridge implements ManagedTutorTransport {
   bool inferenceEnabled = false;
   ManagedTutorBinding? _connectedBinding;
   Map<String, dynamic>? selectedWord;
+  MenuActionRegistry? menuActions;
   List<Map<String, dynamic>> toolResults = const [];
   final _network = StreamController<bool>.broadcast(sync: true);
   Stream<bool> get network => _network.stream;
@@ -84,6 +86,7 @@ final class LocalLoginBridge implements ManagedTutorTransport {
 
   Future<void> disconnect() async {
     _connectedBinding = null;
+    menuActions?.invalidateSession(preserveContext: true);
     inferenceEnabled = false;
     toolResults = const [];
     await _post('/disconnect');
@@ -93,6 +96,8 @@ final class LocalLoginBridge implements ManagedTutorTransport {
     if (_disposed) return;
     _disposed = true;
     _connectedBinding = null;
+    menuActions?.invalidateSession(preserveContext: true);
+    menuActions = null;
     selectedWord = null;
     toolResults = const [];
     _token = '';
@@ -106,6 +111,7 @@ final class LocalLoginBridge implements ManagedTutorTransport {
     required AiCancellation cancellation,
   }) async {
     _connectedBinding = null;
+    menuActions?.invalidateSession(preserveContext: true);
     if (cancellation.isCancelled) {
       throw const AiTutorException(AiFailureCode.cancelled);
     }
@@ -148,6 +154,67 @@ final class LocalLoginBridge implements ManagedTutorTransport {
     }
     toolResults = const [];
     var finished = false;
+    final requestId = const Uuid().v4();
+    Future<void> serviceMenus() async {
+      // Poll only during an explicit learner turn, never in the background.
+      while (!finished && !cancellation.isCancelled && !_disposed) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        if (finished || cancellation.isCancelled || _disposed) return;
+        try {
+          final envelope = await _post('/menu/next', {
+            'binding': _bindingJson(binding),
+            'requestId': requestId,
+          });
+          if (finished ||
+              cancellation.isCancelled ||
+              _disposed ||
+              !identical(_connectedBinding, connected)) {
+            return;
+          }
+          final request = envelope['request'];
+          if (request == null) continue;
+          if (request is! Map<String, dynamic> ||
+              request['requestId'] is! String ||
+              !RegExp(
+                r'^[A-Za-z0-9_-]{1,80}$',
+              ).hasMatch(request['requestId'] as String) ||
+              request['arguments'] is! Map<String, dynamic>) {
+            return;
+          }
+          final arguments = request['arguments'] as Map<String, dynamic>;
+          final registry = menuActions;
+          Map<String, Object?> result = {'status': 'unavailable'};
+          if (registry != null &&
+              request['name'] == 'list_menu_actions' &&
+              arguments.isEmpty) {
+            result = {'status': 'available', ...registry.snapshot()};
+          } else if (registry != null &&
+              request['name'] == 'execute_menu_action' &&
+              arguments.length == 2 &&
+              arguments['id'] is String &&
+              arguments['revision'] is int) {
+            result = await registry.execute(
+              id: arguments['id'] as String,
+              owner: binding.ownerId,
+              revision: arguments['revision'] as int,
+              requestId: request['requestId'] as String,
+            );
+          }
+          if (finished || cancellation.isCancelled || _disposed) return;
+          await _post('/menu/result', {
+            'binding': _bindingJson(binding),
+            'requestId': requestId,
+            'response': {'requestId': request['requestId'], 'result': result},
+          });
+        } on Object {
+          // The provider reply/cancel path remains authoritative. A closed turn
+          // rejects a late poll; never retry a possibly applied app command.
+          return;
+        }
+      }
+    }
+
+    if (menuActions != null) unawaited(serviceMenus());
     unawaited(
       cancellation.whenCancelled.then((_) async {
         if (!finished && !_disposed) {
@@ -163,7 +230,7 @@ final class LocalLoginBridge implements ManagedTutorTransport {
       final result = await _post('/reply', {
         'binding': _bindingJson(binding),
         'message': learnerMessage,
-        'requestId': const Uuid().v4(),
+        'requestId': requestId,
       });
       if (cancellation.isCancelled) {
         throw const AiTutorException(AiFailureCode.cancelled);
@@ -181,6 +248,8 @@ final class LocalLoginBridge implements ManagedTutorTransport {
                 !{
                   'read_selected_word',
                   'create_practice_draft',
+                  'list_menu_actions',
+                  'execute_menu_action',
                 }.contains(r['name']) ||
                 !{'completed', 'failed'}.contains(r['status']) ||
                 r['data'] is! Map<String, dynamic>,

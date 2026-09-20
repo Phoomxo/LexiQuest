@@ -1,0 +1,151 @@
+{
+  "baseCommit": "503864cac44d7ebeaffa101a79a82c324d820f9e",
+  "branch": "feature/ari-app-device-integration",
+  "files": [
+    {
+      "path": "lib/features/adventure/presentation/adventure_today_entry_card.dart",
+      "sha256": "16becd3d2c0fbcb53545861fe5d275f66dcefa8c08593e57f02095909c0045cf",
+      "normalizedLfSha256": "16becd3d2c0fbcb53545861fe5d275f66dcefa8c08593e57f02095909c0045cf"
+    },
+    {
+      "path": "lib/features/ai_tutor/application/menu_action_registry.dart",
+      "sha256": "1d43bdd196294d2ac30ed4eaa7fe3364ce9e15bb15fa9089eb755903d6cc0d26",
+      "normalizedLfSha256": "1d43bdd196294d2ac30ed4eaa7fe3364ce9e15bb15fa9089eb755903d6cc0d26"
+    },
+    {
+      "path": "lib/features/ai_tutor/data/local_login_bridge.dart",
+      "sha256": "742bc6f1cf95c2cc17bc5452663e96cae2bd3fc3bf4471f1ab6f2b1939a820e9",
+      "normalizedLfSha256": "742bc6f1cf95c2cc17bc5452663e96cae2bd3fc3bf4471f1ab6f2b1939a820e9"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/managed_tutor_test_screen.dart",
+      "sha256": "664457cc691bd9b40068c0fe311abdda94ef552a1931bb9eb8688ab2eef52524",
+      "normalizedLfSha256": "664457cc691bd9b40068c0fe311abdda94ef552a1931bb9eb8688ab2eef52524"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/menu_action_binding.dart",
+      "sha256": "7a60caf6dd94af4f25a5ab9d7b7e0c1188901d55176fbe8b331ef0db537452a4",
+      "normalizedLfSha256": "7a60caf6dd94af4f25a5ab9d7b7e0c1188901d55176fbe8b331ef0db537452a4"
+    },
+    {
+      "path": "lib/main.dart",
+      "sha256": "b797c90eb68c925a9309a734f6883a77ccd0494fc362b4d9873618338394c0f5",
+      "normalizedLfSha256": "c6d9f64990be5225f1bd8c260970a6146be19fc5dffa0668b042bdc4660984e6"
+    },
+    {
+      "path": "lib/main_ari_test.dart",
+      "sha256": "52fd4075b5dfb7f6846f95b88595b99027eabfc150ee2b718fc55e2cf957ea05",
+      "normalizedLfSha256": "52fd4075b5dfb7f6846f95b88595b99027eabfc150ee2b718fc55e2cf957ea05"
+    },
+    {
+      "path": "lib/screens/choose_mode_screen.dart",
+      "sha256": "50abf1d7f20b6b41381f2d23ff4c6d11b7c04e177f5ba082d585892b72537151",
+      "normalizedLfSha256": "50abf1d7f20b6b41381f2d23ff4c6d11b7c04e177f5ba082d585892b72537151"
+    },
+    {
+      "path": "lib/screens/main_navigation_screen.dart",
+      "sha256": "9c9a36c140fb633ec1b31f284e6e70d3170ae05025efa8ea88431bc7ae3150fd",
+      "normalizedLfSha256": "9c9a36c140fb633ec1b31f284e6e70d3170ae05025efa8ea88431bc7ae3150fd"
+    },
+    {
+      "path": "lib/screens/mastery_dashboard_screen.dart",
+      "sha256": "1e0efa4113d3ef8b486198e681a5f81aa5d6932c746bead0d905c05b5c430800",
+      "normalizedLfSha256": "4e4b7b28d2a26a71898db667bee18f2cb8841a2a05fb8a96cf80bf7f3110fcb4"
+    },
+    {
+      "path": "lib/screens/profile_settings_screen.dart",
+      "sha256": "d96a019a6815a40f0d6b558332b976d52dc12b3d921217d4797912d3ad7f0c22",
+      "normalizedLfSha256": "d96a019a6815a40f0d6b558332b976d52dc12b3d921217d4797912d3ad7f0c22"
+    },
+    {
+      "path": "lib/screens/setting_screen.dart",
+      "sha256": "2d006f654cea037bcf2e253dfdff1aae91c9f551f0a25f405b83be991306dd3f",
+      "normalizedLfSha256": "2d006f654cea037bcf2e253dfdff1aae91c9f551f0a25f405b83be991306dd3f"
+    },
+    {
+      "path": "lib/screens/study_planning_hub_screen.dart",
+      "sha256": "5607df65ed2658f9440e737471e82f7c68113cacfcd69d8526cfd538481fb369",
+      "normalizedLfSha256": "932a7681e8ff28531758422eea47b84408b7eb40f8266be44469e2156b59f1ea"
+    },
+    {
+      "path": "lib/screens/today_hub_view.dart",
+      "sha256": "59ab8ef50ad209ecd8fc51c6ea3079348b48efe1f359d34f67444c05073dd8cc",
+      "normalizedLfSha256": "59ab8ef50ad209ecd8fc51c6ea3079348b48efe1f359d34f67444c05073dd8cc"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/full_menu_navigation_test.dart",
+      "sha256": "96f7e3ee5c9cb5eb73cab944f43d014986f7509806dd97bdbfc8f281e97c59d8",
+      "normalizedLfSha256": "96f7e3ee5c9cb5eb73cab944f43d014986f7509806dd97bdbfc8f281e97c59d8"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/menu_action_binding_test.dart",
+      "sha256": "ec58ae03432c8059394427be5b0c66d261f24b8508b13c445096d0538ee7bdf8",
+      "normalizedLfSha256": "ec58ae03432c8059394427be5b0c66d261f24b8508b13c445096d0538ee7bdf8"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/menu_action_registry_test.dart",
+      "sha256": "44419e1c4267257cbd4d9a1a2387511b31a2d96ce2419ab8202d435aacb1912e",
+      "normalizedLfSha256": "44419e1c4267257cbd4d9a1a2387511b31a2d96ce2419ab8202d435aacb1912e"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/menu_bridge_test.dart",
+      "sha256": "f7b31439990694665e4356547a420e279eb3ce7031bfde31ed4ae94315d2a519",
+      "normalizedLfSha256": "f7b31439990694665e4356547a420e279eb3ce7031bfde31ed4ae94315d2a519"
+    },
+    {
+      "path": "test/screens/choose_mode_screen_test.dart",
+      "sha256": "d7b8139fbd7a7621f793d192d23e3821761251b5a853e56a71c7ca2ebe5207a1",
+      "normalizedLfSha256": "d7b8139fbd7a7621f793d192d23e3821761251b5a853e56a71c7ca2ebe5207a1"
+    },
+    {
+      "path": "test/screens/main_navigation_screen_test.dart",
+      "sha256": "9bc65356e7790c56917e7be38683953fdce9bc3f6e9604eb62831e581485c606",
+      "normalizedLfSha256": "9bc65356e7790c56917e7be38683953fdce9bc3f6e9604eb62831e581485c606"
+    },
+    {
+      "path": "test/screens/production_shell_navigation_test.dart",
+      "sha256": "df5312209f7c4e03fb4c0c25c1d623d8180093d978ca146a3a4fe7bf04cae417",
+      "normalizedLfSha256": "f093ff79cb6586c78428a3da92a717a5e211caef0ccae12c8ac31bd7f6fc45cf"
+    },
+    {
+      "path": "test/screens/profile_settings_screen_test.dart",
+      "sha256": "c1acf0c1e152e5d0d7308fb72a4d2ca7ab73ead1c89d9261630e2ac262caa2ff",
+      "normalizedLfSha256": "c1acf0c1e152e5d0d7308fb72a4d2ca7ab73ead1c89d9261630e2ac262caa2ff"
+    },
+    {
+      "path": "test/screens/setting_screen_test.dart",
+      "sha256": "7ee245e56dc9ee9c216abf9cb172b91071393eccd0d5981f641a57f7814c5437",
+      "normalizedLfSha256": "7ee245e56dc9ee9c216abf9cb172b91071393eccd0d5981f641a57f7814c5437"
+    },
+    {
+      "path": "test/screens/study_planning_hub_screen_test.dart",
+      "sha256": "bf880ba1e858dce6706f946d009cbd344a01e56090a2bd4a85ec1cba23db15ad",
+      "normalizedLfSha256": "bf880ba1e858dce6706f946d009cbd344a01e56090a2bd4a85ec1cba23db15ad"
+    },
+    {
+      "path": "test/screens/today_hub_screen_test.dart",
+      "sha256": "8237fce9b5e1fb07a35c301812172367d401748dc2fe72ec8dc21f85600d6a55",
+      "normalizedLfSha256": "c79d196ccb42e718dc4ce1e44e78fe8a617b104d538d0e183f9dc6ca98c9e4da"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/chat_bridge.py",
+      "sha256": "82442ae9930bd22a837017745f70c77b42e530cdecfa1172ee3936f7626c91e5",
+      "normalizedLfSha256": "82442ae9930bd22a837017745f70c77b42e530cdecfa1172ee3936f7626c91e5"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/menu_channel.py",
+      "sha256": "ec0e989801b4f4f4cb524e77335e3c80e51fe0fe7ce7a2c4354b1bf10ef69f3b",
+      "normalizedLfSha256": "ec0e989801b4f4f4cb524e77335e3c80e51fe0fe7ce7a2c4354b1bf10ef69f3b"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/test_menu_channel.py",
+      "sha256": "bff3e20eff2a6702cc861cda40d15af86032cd7908840119b5384cc65d72be37",
+      "normalizedLfSha256": "bff3e20eff2a6702cc861cda40d15af86032cd7908840119b5384cc65d72be37"
+    },
+    {
+      "path": "tool/experiments/ari_app_server/tutor_mcp.py",
+      "sha256": "f9372590758ba157a773e8860357dbe4253ac3a4c1293e918ff060ebd97c365e",
+      "normalizedLfSha256": "f9372590758ba157a773e8860357dbe4253ac3a4c1293e918ff060ebd97c365e"
+    }
+  ]
+}

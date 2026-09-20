@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,6 +38,47 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  for (final (action, screen) in [
+    ('study-planning/open-catalog', LearningPackCatalogScreen),
+    ('study-planning/open-goals', LearningGoalsScreen),
+    ('study-planning/open-learning-preferences', LearningPreferenceQuizScreen),
+  ]) {
+    testWidgets('MCP executes actual planning control $action', (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final registry = MenuActionRegistry(currentOwner: () => 'fixture');
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: AppDependenciesScope(
+            dependencies: _dependencies(database),
+            child: const MaterialApp(home: StudyPlanningHubScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final snapshot = registry.snapshot();
+      expect(
+        (snapshot['actions'] as List).any((a) => a['id'] == action),
+        isTrue,
+      );
+      final result = await registry.execute(
+        id: action,
+        owner: 'fixture',
+        revision: snapshot['revision'] as int,
+        requestId: 'mcp-test',
+      );
+      await tester.pumpAndSettle();
+      expect(result['status'], 'invoked');
+      expect(find.byType(screen), findsOneWidget);
+      expect(
+        (registry.snapshot()['actions'] as List).any((a) => a['id'] == action),
+        isFalse,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('Thai glossary planning actions expose one semantic action', (
     tester,
   ) async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/account/application/account_use_cases.dart';
@@ -450,7 +452,7 @@ class _SettingScreenState extends State<SettingScreen> {
           titleTextStyle: Theme.of(context).textTheme.titleMedium,
           subtitleTextStyle: Theme.of(context).textTheme.bodySmall,
         ),
-        child: ListView(
+        child: MenuActionListView(
           padding: const EdgeInsets.all(16),
           children: [
             if (_displayPreferences case final display?)
@@ -461,22 +463,31 @@ class _SettingScreenState extends State<SettingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Tooltip(
-                        message: displayEntry.tooltip,
-                        child: Semantics(
-                          header: true,
-                          label: displayEntry.semanticsLabel,
-                          child: Row(
-                            children: [
-                              Icon(displayEntry.icon),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  displayEntry.fullThaiLabel,
-                                  style: Theme.of(context).textTheme.titleLarge,
+                      MenuActionBinding(
+                        id: displayEntry.id,
+                        label: displayEntry.fullThaiLabel,
+                        onInvoke: null,
+                        readValue:
+                            'ธีม ${display.themeMode.name} · ลดการเคลื่อนไหว ${display.reducedMotionEnabled}',
+                        child: Tooltip(
+                          message: displayEntry.tooltip,
+                          child: Semantics(
+                            header: true,
+                            label: displayEntry.semanticsLabel,
+                            child: Row(
+                              children: [
+                                Icon(displayEntry.icon),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    displayEntry.fullThaiLabel,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleLarge,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -488,67 +499,90 @@ class _SettingScreenState extends State<SettingScreen> {
                         children: [
                           Tooltip(
                             message: systemThemeEntry.tooltip,
-                            child: Semantics(
-                              button: true,
-                              enabled: !_displayBusy,
-                              label: systemThemeEntry.semanticsLabel,
-                              selected: display.themeMode == ThemeMode.system,
-                              onTap: _displayBusy
+                            child: MenuActionBinding(
+                              id: systemThemeEntry.id,
+                              label: systemThemeEntry.fullThaiLabel,
+                              onInvoke: _displayBusy
                                   ? null
                                   : () => _selectTheme(ThemeMode.system),
-                              excludeSemantics: true,
-                              child: ChoiceChip(
-                                key: const ValueKey<String>('theme-system'),
+                              child: Semantics(
+                                button: true,
+                                enabled: !_displayBusy,
+                                label: systemThemeEntry.semanticsLabel,
                                 selected: display.themeMode == ThemeMode.system,
-                                onSelected: _displayBusy
+                                onTap: _displayBusy
                                     ? null
-                                    : (_) => _selectTheme(ThemeMode.system),
-                                label: Text(systemThemeEntry.fullThaiLabel),
-                                avatar: Icon(systemThemeEntry.icon),
+                                    : () => _selectTheme(ThemeMode.system),
+                                excludeSemantics: true,
+                                child: ChoiceChip(
+                                  key: const ValueKey<String>('theme-system'),
+                                  selected:
+                                      display.themeMode == ThemeMode.system,
+                                  onSelected: _displayBusy
+                                      ? null
+                                      : (_) => _selectTheme(ThemeMode.system),
+                                  label: Text(systemThemeEntry.fullThaiLabel),
+                                  avatar: Icon(systemThemeEntry.icon),
+                                ),
                               ),
                             ),
                           ),
                           Tooltip(
                             message: lightThemeEntry.tooltip,
-                            child: Semantics(
-                              button: true,
-                              enabled: !_displayBusy,
-                              label: lightThemeEntry.semanticsLabel,
-                              selected: display.themeMode == ThemeMode.light,
-                              onTap: _displayBusy
+                            child: MenuActionBinding(
+                              id: lightThemeEntry.id,
+                              label: lightThemeEntry.fullThaiLabel,
+                              onInvoke: _displayBusy
                                   ? null
                                   : () => _selectTheme(ThemeMode.light),
-                              excludeSemantics: true,
-                              child: ChoiceChip(
-                                key: const ValueKey<String>('theme-light'),
+                              child: Semantics(
+                                button: true,
+                                enabled: !_displayBusy,
+                                label: lightThemeEntry.semanticsLabel,
                                 selected: display.themeMode == ThemeMode.light,
-                                onSelected: _displayBusy
+                                onTap: _displayBusy
                                     ? null
-                                    : (_) => _selectTheme(ThemeMode.light),
-                                label: Text(lightThemeEntry.fullThaiLabel),
-                                avatar: Icon(lightThemeEntry.icon),
+                                    : () => _selectTheme(ThemeMode.light),
+                                excludeSemantics: true,
+                                child: ChoiceChip(
+                                  key: const ValueKey<String>('theme-light'),
+                                  selected:
+                                      display.themeMode == ThemeMode.light,
+                                  onSelected: _displayBusy
+                                      ? null
+                                      : (_) => _selectTheme(ThemeMode.light),
+                                  label: Text(lightThemeEntry.fullThaiLabel),
+                                  avatar: Icon(lightThemeEntry.icon),
+                                ),
                               ),
                             ),
                           ),
                           Tooltip(
                             message: darkThemeEntry.tooltip,
-                            child: Semantics(
-                              button: true,
-                              enabled: !_displayBusy,
-                              label: darkThemeEntry.semanticsLabel,
-                              selected: display.themeMode == ThemeMode.dark,
-                              onTap: _displayBusy
+                            child: MenuActionBinding(
+                              id: darkThemeEntry.id,
+                              label: darkThemeEntry.fullThaiLabel,
+                              onInvoke: _displayBusy
                                   ? null
                                   : () => _selectTheme(ThemeMode.dark),
-                              excludeSemantics: true,
-                              child: ChoiceChip(
-                                key: const ValueKey<String>('theme-dark'),
+                              child: Semantics(
+                                button: true,
+                                enabled: !_displayBusy,
+                                label: darkThemeEntry.semanticsLabel,
                                 selected: display.themeMode == ThemeMode.dark,
-                                onSelected: _displayBusy
+                                onTap: _displayBusy
                                     ? null
-                                    : (_) => _selectTheme(ThemeMode.dark),
-                                label: Text(darkThemeEntry.fullThaiLabel),
-                                avatar: Icon(darkThemeEntry.icon),
+                                    : () => _selectTheme(ThemeMode.dark),
+                                excludeSemantics: true,
+                                child: ChoiceChip(
+                                  key: const ValueKey<String>('theme-dark'),
+                                  selected: display.themeMode == ThemeMode.dark,
+                                  onSelected: _displayBusy
+                                      ? null
+                                      : (_) => _selectTheme(ThemeMode.dark),
+                                  label: Text(darkThemeEntry.fullThaiLabel),
+                                  avatar: Icon(darkThemeEntry.icon),
+                                ),
                               ),
                             ),
                           ),
@@ -557,30 +591,41 @@ class _SettingScreenState extends State<SettingScreen> {
                       const SizedBox(height: 12),
                       Tooltip(
                         message: reducedMotionEntry.tooltip,
-                        child: Semantics(
-                          enabled: !_displayBusy,
-                          label: reducedMotionEntry.semanticsLabel,
-                          hint:
-                              'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
-                          toggled: display.reducedMotionEnabled,
-                          onTap: _displayBusy
+                        child: MenuActionBinding(
+                          id: reducedMotionEntry.id,
+                          label: reducedMotionEntry.fullThaiLabel,
+                          onInvoke: _displayBusy
                               ? null
                               : () => _setReducedMotion(
                                   !display.reducedMotionEnabled,
                                 ),
-                          excludeSemantics: true,
-                          child: SwitchListTile(
-                            key: const ValueKey<String>(
-                              'reduced-motion-switch',
+                          child: Semantics(
+                            enabled: !_displayBusy,
+                            label: reducedMotionEntry.semanticsLabel,
+                            hint:
+                                'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                            toggled: display.reducedMotionEnabled,
+                            onTap: _displayBusy
+                                ? null
+                                : () => _setReducedMotion(
+                                    !display.reducedMotionEnabled,
+                                  ),
+                            excludeSemantics: true,
+                            child: SwitchListTile(
+                              key: const ValueKey<String>(
+                                'reduced-motion-switch',
+                              ),
+                              contentPadding: EdgeInsets.zero,
+                              secondary: Icon(reducedMotionEntry.icon),
+                              title: Text(reducedMotionEntry.fullThaiLabel),
+                              subtitle: const Text(
+                                'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                              ),
+                              value: display.reducedMotionEnabled,
+                              onChanged: _displayBusy
+                                  ? null
+                                  : _setReducedMotion,
                             ),
-                            contentPadding: EdgeInsets.zero,
-                            secondary: Icon(reducedMotionEntry.icon),
-                            title: Text(reducedMotionEntry.fullThaiLabel),
-                            subtitle: const Text(
-                              'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
-                            ),
-                            value: display.reducedMotionEnabled,
-                            onChanged: _displayBusy ? null : _setReducedMotion,
                           ),
                         ),
                       ),
@@ -588,23 +633,35 @@ class _SettingScreenState extends State<SettingScreen> {
                   ),
                 ),
               ),
-            Tooltip(
-              message: accountEntry.tooltip,
-              child: Semantics(
-                label: accountEntry.semanticsLabel,
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: Icon(
-                      session == null ? accountEntry.icon : Icons.verified_user,
-                    ),
-                    title: Text(session?.email ?? 'โหมดใช้งานในเครื่อง'),
-                    subtitle: Text(
-                      session == null
-                          ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
-                          : session.emailVerified
-                          ? 'ยืนยันอีเมลแล้ว'
-                          : 'รอยืนยันอีเมล',
+            MenuActionBinding(
+              id: accountEntry.id,
+              label: accountEntry.fullThaiLabel,
+              onInvoke: null,
+              readValue: session == null
+                  ? 'ข้อมูลในเครื่อง'
+                  : session.emailVerified
+                  ? 'ยืนยันอีเมลแล้ว'
+                  : 'รอยืนยันอีเมล',
+              child: Tooltip(
+                message: accountEntry.tooltip,
+                child: Semantics(
+                  label: accountEntry.semanticsLabel,
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: Icon(
+                        session == null
+                            ? accountEntry.icon
+                            : Icons.verified_user,
+                      ),
+                      title: Text(session?.email ?? 'โหมดใช้งานในเครื่อง'),
+                      subtitle: Text(
+                        session == null
+                            ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
+                            : session.emailVerified
+                            ? 'ยืนยันอีเมลแล้ว'
+                            : 'รอยืนยันอีเมล',
+                      ),
                     ),
                   ),
                 ),
@@ -614,23 +671,28 @@ class _SettingScreenState extends State<SettingScreen> {
                 _featureRegistry?.isVisible(Feature.offlineContent) == true)
               Tooltip(
                 message: offlineContentEntry.tooltip,
-                child: Semantics(
-                  button: true,
-                  enabled: true,
-                  label: offlineContentEntry.semanticsLabel,
-                  hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
-                  onTap: _openOfflineContent,
-                  excludeSemantics: true,
-                  child: Card(
-                    child: ListTile(
-                      key: const ValueKey<String>('settings/offline-content'),
-                      minTileHeight: 48,
-                      leading: Icon(offlineContentEntry.icon),
-                      title: Text(offlineContentEntry.fullThaiLabel),
-                      subtitle: const Text(
-                        'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                child: MenuActionBinding(
+                  id: offlineContentEntry.id,
+                  label: offlineContentEntry.fullThaiLabel,
+                  onInvoke: _openOfflineContent,
+                  child: Semantics(
+                    button: true,
+                    enabled: true,
+                    label: offlineContentEntry.semanticsLabel,
+                    hint: 'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                    onTap: _openOfflineContent,
+                    excludeSemantics: true,
+                    child: Card(
+                      child: ListTile(
+                        key: const ValueKey<String>('settings/offline-content'),
+                        minTileHeight: 48,
+                        leading: Icon(offlineContentEntry.icon),
+                        title: Text(offlineContentEntry.fullThaiLabel),
+                        subtitle: const Text(
+                          'ดาวน์โหลด ตรวจสอบ ซ่อมแซม และลบไฟล์ในเครื่อง',
+                        ),
+                        onTap: _openOfflineContent,
                       ),
-                      onTap: _openOfflineContent,
                     ),
                   ),
                 ),
@@ -659,71 +721,80 @@ class _SettingScreenState extends State<SettingScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Tooltip(
                       message: researchConsentEntry.tooltip,
-                      child: Semantics(
-                        button: true,
-                        enabled: enabled || failed,
-                        label: researchConsentEntry.semanticsLabel,
-                        value: description,
-                        hint: failed
-                            ? 'ลองอ่านสถานะอีกครั้ง'
-                            : 'อ่านรายละเอียดก่อนตัดสินใจเกี่ยวกับชุดข้อมูลวิจัย',
-                        onTap: failed
+                      child: MenuActionBinding(
+                        id: researchConsentEntry.id,
+                        label: researchConsentEntry.fullThaiLabel,
+                        onInvoke: failed
                             ? () => _reloadConsent(consent)
                             : enabled
                             ? () => _openResearchConsentDetails(accepted)
                             : null,
-                        excludeSemantics: true,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    accepted
-                                        ? researchConsentEntry.icon
-                                        : Icons.assignment_outlined,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
+                        child: Semantics(
+                          button: true,
+                          enabled: enabled || failed,
+                          label: researchConsentEntry.semanticsLabel,
+                          value: description,
+                          hint: failed
+                              ? 'ลองอ่านสถานะอีกครั้ง'
+                              : 'อ่านรายละเอียดก่อนตัดสินใจเกี่ยวกับชุดข้อมูลวิจัย',
+                          onTap: failed
+                              ? () => _reloadConsent(consent)
+                              : enabled
+                              ? () => _openResearchConsentDetails(accepted)
+                              : null,
+                          excludeSemantics: true,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      accepted
+                                          ? researchConsentEntry.icon
+                                          : Icons.assignment_outlined,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        researchConsentEntry.fullThaiLabel,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  description,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                const SizedBox(height: 12),
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: TextButton(
+                                    key: ValueKey(
+                                      failed
+                                          ? 'research-consent-retry'
+                                          : 'research-consent-details',
+                                    ),
+                                    onPressed: failed
+                                        ? () => _reloadConsent(consent)
+                                        : enabled
+                                        ? () => _openResearchConsentDetails(
+                                            accepted,
+                                          )
+                                        : null,
                                     child: Text(
-                                      researchConsentEntry.fullThaiLabel,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
+                                      failed ? 'ลองใหม่' : 'รายละเอียด',
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                description,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 12),
-                              Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: TextButton(
-                                  key: ValueKey(
-                                    failed
-                                        ? 'research-consent-retry'
-                                        : 'research-consent-details',
-                                  ),
-                                  onPressed: failed
-                                      ? () => _reloadConsent(consent)
-                                      : enabled
-                                      ? () => _openResearchConsentDetails(
-                                          accepted,
-                                        )
-                                      : null,
-                                  child: Text(
-                                    failed ? 'ลองใหม่' : 'รายละเอียด',
-                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -764,23 +835,31 @@ class _SettingScreenState extends State<SettingScreen> {
                   },
                 ),
               ),
-            Tooltip(
-              message: cloudStatusEntry.tooltip,
-              child: Semantics(
-                label: cloudStatusEntry.semanticsLabel,
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: Icon(
-                      cloudReady
-                          ? cloudStatusEntry.icon
-                          : Icons.cloud_off_outlined,
-                    ),
-                    title: Text(cloudStatusEntry.fullThaiLabel),
-                    subtitle: Text(
-                      cloudReady
-                          ? 'พร้อมใช้งาน'
-                          : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+            MenuActionBinding(
+              id: cloudStatusEntry.id,
+              label: cloudStatusEntry.fullThaiLabel,
+              onInvoke: null,
+              readValue: cloudReady
+                  ? 'พร้อมใช้งาน'
+                  : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+              child: Tooltip(
+                message: cloudStatusEntry.tooltip,
+                child: Semantics(
+                  label: cloudStatusEntry.semanticsLabel,
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: Icon(
+                        cloudReady
+                            ? cloudStatusEntry.icon
+                            : Icons.cloud_off_outlined,
+                      ),
+                      title: Text(cloudStatusEntry.fullThaiLabel),
+                      subtitle: Text(
+                        cloudReady
+                            ? 'พร้อมใช้งาน'
+                            : 'ไม่พร้อมใช้งาน · การเรียนออฟไลน์ยังทำงานได้',
+                      ),
                     ),
                   ),
                 ),
@@ -789,40 +868,54 @@ class _SettingScreenState extends State<SettingScreen> {
             if (session != null && !session.isAnonymous) ...[
               Tooltip(
                 message: changePasswordEntry.tooltip,
-                child: Semantics(
-                  button: true,
-                  enabled: !_busy,
-                  label: changePasswordEntry.semanticsLabel,
-                  onTap: _busy ? null : _changePassword,
-                  excludeSemantics: true,
-                  child: Card(
-                    child: ListTile(
-                      minTileHeight: 48,
-                      leading: Icon(changePasswordEntry.icon),
-                      title: Text(changePasswordEntry.fullThaiLabel),
-                      onTap: _busy ? null : _changePassword,
+                child: MenuActionBinding(
+                  id: changePasswordEntry.id,
+                  label: changePasswordEntry.fullThaiLabel,
+                  onInvoke: _busy
+                      ? null
+                      : () {
+                          unawaited(_changePassword());
+                        },
+                  child: Semantics(
+                    button: true,
+                    enabled: !_busy,
+                    label: changePasswordEntry.semanticsLabel,
+                    onTap: _busy ? null : _changePassword,
+                    excludeSemantics: true,
+                    child: Card(
+                      child: ListTile(
+                        minTileHeight: 48,
+                        leading: Icon(changePasswordEntry.icon),
+                        title: Text(changePasswordEntry.fullThaiLabel),
+                        onTap: _busy ? null : _changePassword,
+                      ),
                     ),
                   ),
                 ),
               ),
               Tooltip(
                 message: logoutEntry.tooltip,
-                child: Semantics(
-                  button: true,
-                  enabled: !_busy,
-                  label: logoutEntry.semanticsLabel,
-                  hint: 'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
-                  onTap: _busy ? null : _logout,
-                  excludeSemantics: true,
-                  child: Card(
-                    child: ListTile(
-                      minTileHeight: 48,
-                      leading: Icon(logoutEntry.icon),
-                      title: Text(logoutEntry.fullThaiLabel),
-                      subtitle: const Text(
-                        'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                child: MenuActionBinding(
+                  id: logoutEntry.id,
+                  label: logoutEntry.fullThaiLabel,
+                  onInvoke: null,
+                  child: Semantics(
+                    button: true,
+                    enabled: !_busy,
+                    label: logoutEntry.semanticsLabel,
+                    hint: 'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                    onTap: _busy ? null : _logout,
+                    excludeSemantics: true,
+                    child: Card(
+                      child: ListTile(
+                        minTileHeight: 48,
+                        leading: Icon(logoutEntry.icon),
+                        title: Text(logoutEntry.fullThaiLabel),
+                        subtitle: const Text(
+                          'สร้างพื้นที่ใช้งานในเครื่องใหม่โดยไม่ลบข้อมูลบัญชี',
+                        ),
+                        onTap: _busy ? null : _logout,
                       ),
-                      onTap: _busy ? null : _logout,
                     ),
                   ),
                 ),
@@ -831,21 +924,30 @@ class _SettingScreenState extends State<SettingScreen> {
             if (_localDataEraser != null && _localOwners != null)
               Tooltip(
                 message: eraseLocalDataEntry.tooltip,
-                child: Semantics(
-                  button: true,
-                  enabled: !_busy,
-                  label: eraseLocalDataEntry.semanticsLabel,
-                  hint: eraseLocalDataEntry.tooltip,
-                  onTap: _busy ? null : _eraseLocalData,
-                  excludeSemantics: true,
-                  child: Card(
-                    child: ListTile(
-                      key: const ValueKey<String>('erase-local-data'),
-                      minTileHeight: 48,
-                      leading: Icon(eraseLocalDataEntry.icon),
-                      title: Text(eraseLocalDataEntry.fullThaiLabel),
-                      subtitle: Text(eraseLocalDataEntry.tooltip),
-                      onTap: _busy ? null : _eraseLocalData,
+                child: MenuActionBinding(
+                  id: eraseLocalDataEntry.id,
+                  label: eraseLocalDataEntry.fullThaiLabel,
+                  onInvoke: _busy
+                      ? null
+                      : () {
+                          unawaited(_eraseLocalData());
+                        },
+                  child: Semantics(
+                    button: true,
+                    enabled: !_busy,
+                    label: eraseLocalDataEntry.semanticsLabel,
+                    hint: eraseLocalDataEntry.tooltip,
+                    onTap: _busy ? null : _eraseLocalData,
+                    excludeSemantics: true,
+                    child: Card(
+                      child: ListTile(
+                        key: const ValueKey<String>('erase-local-data'),
+                        minTileHeight: 48,
+                        leading: Icon(eraseLocalDataEntry.icon),
+                        title: Text(eraseLocalDataEntry.fullThaiLabel),
+                        subtitle: Text(eraseLocalDataEntry.tooltip),
+                        onTap: _busy ? null : _eraseLocalData,
+                      ),
                     ),
                   ),
                 ),

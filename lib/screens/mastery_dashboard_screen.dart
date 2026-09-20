@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'package:flutter/material.dart';
 
 import '../features/progress/domain/learning_calendar.dart';
@@ -140,29 +141,41 @@ class _DashboardBody extends StatelessWidget {
         ),
         if (onOpenReview != null) ...[
           const SizedBox(height: 12),
-          FilledButton.icon(
-            key: const ValueKey('mastery-open-review'),
-            onPressed: onOpenReview,
-            icon: const Icon(Icons.event_repeat),
-            label: const Text('เปิดศูนย์ทบทวน'),
+          MenuActionBinding(
+            id: 'mastery-open-review',
+            label: 'เปิดศูนย์ทบทวน',
+            onInvoke: onOpenReview,
+            child: FilledButton.icon(
+              key: const ValueKey('mastery-open-review'),
+              onPressed: onOpenReview,
+              icon: const Icon(Icons.event_repeat),
+              label: const Text('เปิดศูนย์ทบทวน'),
+            ),
           ),
         ],
         if (onOpenWeakness != null) ...[
           const SizedBox(height: 12),
-          Tooltip(
-            message: NavigationGlossary.require('home/weakness').tooltip,
-            child: Semantics(
-              button: true,
-              enabled: true,
-              label: NavigationGlossary.require('home/weakness').semanticsLabel,
-              onTap: onOpenWeakness,
-              excludeSemantics: true,
-              child: OutlinedButton.icon(
-                key: const ValueKey('home/weakness'),
-                onPressed: onOpenWeakness,
-                icon: const Icon(Icons.psychology_outlined),
-                label: Text(
-                  NavigationGlossary.require('home/weakness').fullThaiLabel,
+          MenuActionBinding(
+            id: 'home/weakness',
+            label: NavigationGlossary.require('home/weakness').fullThaiLabel,
+            onInvoke: onOpenWeakness,
+            child: Tooltip(
+              message: NavigationGlossary.require('home/weakness').tooltip,
+              child: Semantics(
+                button: true,
+                enabled: true,
+                label: NavigationGlossary.require(
+                  'home/weakness',
+                ).semanticsLabel,
+                onTap: onOpenWeakness,
+                excludeSemantics: true,
+                child: OutlinedButton.icon(
+                  key: const ValueKey('home/weakness'),
+                  onPressed: onOpenWeakness,
+                  icon: const Icon(Icons.psychology_outlined),
+                  label: Text(
+                    NavigationGlossary.require('home/weakness').fullThaiLabel,
+                  ),
                 ),
               ),
             ),

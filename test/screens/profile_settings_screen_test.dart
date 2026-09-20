@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -9,16 +11,71 @@ import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
-  testWidgets('replacement clears loaded axes and ignores pending old loader', (tester) async {
+  testWidgets(
+    'MCP reads actual profile axes and expands details without account data',
+    (tester) async {
+      final registry = MenuActionRegistry(currentOwner: () => 'fixture');
+      await tester.pumpWidget(
+        MenuActionScope(
+          registry: registry,
+          child: MaterialApp(
+            home: ProfileSettingsScreen(loader: () async => _profile),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final before = registry.snapshot();
+      expect(
+        (before['context'] as List).any(
+          (e) => e['id'] == 'profile/mastery' && e['value'] == '2 คำที่ชำนาญ',
+        ),
+        isTrue,
+      );
+      expect(
+        (await registry.execute(
+          id: 'profile/show-learning-details',
+          owner: 'fixture',
+          revision: before['revision'] as int,
+          requestId: 'expand',
+        ))['status'],
+        'invoked',
+      );
+      await tester.pumpAndSettle();
+      final context = registry.snapshot()['context'] as List;
+      expect(
+        context.map((e) => e['id']).toSet(),
+        NavigationGlossary.profileAxisIds,
+      );
+      expect(
+        context.any(
+          (e) =>
+              e['id'] == 'profile/accuracy' && e['value'] == '80% จาก 10 คำตอบ',
+        ),
+        isTrue,
+      );
+      expect(context.toString(), isNot(contains('@')));
+    },
+  );
+
+  testWidgets('replacement clears loaded axes and ignores pending old loader', (
+    tester,
+  ) async {
     final first = Completer<PersonalLearningProfile>();
     final second = Completer<PersonalLearningProfile>();
     final third = Completer<PersonalLearningProfile>();
-    final loader = ValueNotifier<ProfileSettingsProfileLoader>(() => first.future);
+    final loader = ValueNotifier<ProfileSettingsProfileLoader>(
+      () => first.future,
+    );
     addTearDown(loader.dispose);
-    await tester.pumpWidget(MaterialApp(home: ValueListenableBuilder<ProfileSettingsProfileLoader>(
-      valueListenable: loader,
-      builder: (context, current, _) => ProfileSettingsScreen(loader: current),
-    )));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder<ProfileSettingsProfileLoader>(
+          valueListenable: loader,
+          builder: (context, current, _) =>
+              ProfileSettingsScreen(loader: current),
+        ),
+      ),
+    );
     first.complete(_profile);
     await tester.pumpAndSettle();
     expect(find.text('2 คำที่ชำนาญ'), findsOneWidget);
@@ -33,34 +90,47 @@ void main() {
     second.complete(_profile);
     await tester.pumpAndSettle();
     expect(find.text('2 คำที่ชำนาญ'), findsNothing);
-    expect(find.text('ยังไม่มีหลักฐานการเรียนสำหรับโปรไฟล์นี้'), findsOneWidget);
+    expect(
+      find.text('ยังไม่มีหลักฐานการเรียนสำหรับโปรไฟล์นี้'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('same loader reloads on tab reactivation and contains synchronous failure', (tester) async {
-    var calls = 0;
-    final active = ValueNotifier<bool>(true);
-    addTearDown(active.dispose);
-    Future<PersonalLearningProfile> loader() {
-      calls++;
-      if (calls == 2) throw StateError('synthetic read failure');
-      return Future.value(_profile);
-    }
-    await tester.pumpWidget(MaterialApp(home: ValueListenableBuilder<bool>(
-      valueListenable: active,
-      builder: (context, enabled, _) => TickerMode(enabled: enabled,
-        child: ProfileSettingsScreen(loader: loader)),
-    )));
-    await tester.pumpAndSettle();
-    expect(calls, 1);
-    active.value = false;
-    await tester.pump();
-    expect(calls, 1);
-    active.value = true;
-    await tester.pumpAndSettle();
-    expect(calls, 2);
-    expect(tester.takeException(), isNull);
-    expect(find.text('ไม่สามารถอ่านข้อมูลในเครื่องได้'), findsOneWidget);
-  });
+  testWidgets(
+    'same loader reloads on tab reactivation and contains synchronous failure',
+    (tester) async {
+      var calls = 0;
+      final active = ValueNotifier<bool>(true);
+      addTearDown(active.dispose);
+      Future<PersonalLearningProfile> loader() {
+        calls++;
+        if (calls == 2) throw StateError('synthetic read failure');
+        return Future.value(_profile);
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: active,
+            builder: (context, enabled, _) => TickerMode(
+              enabled: enabled,
+              child: ProfileSettingsScreen(loader: loader),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+      active.value = false;
+      await tester.pump();
+      expect(calls, 1);
+      active.value = true;
+      await tester.pumpAndSettle();
+      expect(calls, 2);
+      expect(tester.takeException(), isNull);
+      expect(find.text('ไม่สามารถอ่านข้อมูลในเครื่องได้'), findsOneWidget);
+    },
+  );
 
   testWidgets('profile stays compact and delegates its full overview', (
     tester,

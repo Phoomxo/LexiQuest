@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/ai_tutor/application/menu_action_registry.dart';
+import 'package:vocab_learning_app/features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:drift/native.dart';
@@ -24,6 +26,145 @@ import 'package:vocab_learning_app/navigation/navigation_glossary.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
 
 void main() {
+  testWidgets('MCP theme action persists and erasure only opens confirmation', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final controller = DisplayPreferencesController(
+      LearnerPreferencesUseCases(
+        repository: DriftLearnerPreferencesRepository(database),
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'settings-owner',
+          nowUtc: () => DateTime.utc(2026, 9, 21),
+        ),
+        nowUtc: () => DateTime.utc(2026, 9, 21),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+    final eraser = _StaticLocalDataEraser();
+    final consentRepository = _ConsentRepository();
+    final account = AccountUseCases(
+      gateway: const _StaticAccountGateway(
+        AccountSession(
+          uid: 'test-account',
+          email: 'private@example.test',
+          isAnonymous: false,
+          emailVerified: true,
+        ),
+      ),
+      owners: _StaticLocalOwners(),
+      upgradeGuestOwner: UpgradeGuestOwner(_StaticOwnerUpgradeRepository()),
+      entryState: _StaticAppEntryStateStore(),
+    );
+    final registry = MenuActionRegistry(currentOwner: () => 'settings-owner');
+    await tester.pumpWidget(
+      MenuActionScope(
+        registry: registry,
+        child: MaterialApp(
+          home: SettingScreen(
+            account: account,
+            researchConsent: ResearchConsentUseCases(
+              owners: _StaticLocalOwners(),
+              repository: consentRepository,
+              nowUtc: () => DateTime.utc(2026, 9, 21),
+            ),
+            displayPreferences: controller,
+            localDataEraser: eraser,
+            localOwners: _StaticLocalOwners(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final result = registry.execute(
+      id: 'theme-dark',
+      owner: 'settings-owner',
+      revision: registry.snapshot()['revision'] as int,
+      requestId: 'theme',
+    );
+    await tester.pumpAndSettle();
+    expect((await result)['status'], 'invoked');
+    expect(controller.themeMode, ThemeMode.dark);
+    for (final mode in [ThemeMode.light, ThemeMode.system, ThemeMode.dark]) {
+      final changed = await registry.execute(
+        id: 'theme-${mode.name}',
+        owner: 'settings-owner',
+        revision: registry.snapshot()['revision'] as int,
+        requestId: 'mode-${mode.name}',
+      );
+      await tester.pumpAndSettle();
+      expect(changed['status'], 'invoked');
+      expect(controller.themeMode, mode);
+    }
+    for (final enabled in [true, false]) {
+      await registry.execute(
+        id: 'reduced-motion-switch',
+        owner: 'settings-owner',
+        revision: registry.snapshot()['revision'] as int,
+        requestId: 'motion-$enabled',
+      );
+      await tester.pumpAndSettle();
+      expect(controller.reducedMotionEnabled, enabled);
+    }
+    final context = registry.snapshot()['context'] as List;
+    expect(
+      context.map((row) => row['id']),
+      containsAll([
+        'settings/display',
+        'settings/account',
+        'settings/cloud-status',
+      ]),
+    );
+    expect(context.toString(), isNot(contains('private@example.test')));
+    for (final id in [
+      'settings/change-password',
+      'settings/research-consent',
+    ]) {
+      final opened = await registry.execute(
+        id: id,
+        owner: 'settings-owner',
+        revision: registry.snapshot()['revision'] as int,
+        requestId: id.replaceAll('/', '-'),
+      );
+      await tester.pumpAndSettle();
+      expect(opened['status'], 'invoked');
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(registry.snapshot()['actions'], isEmpty);
+      Navigator.of(tester.element(find.byType(AlertDialog))).pop();
+      await tester.pumpAndSettle();
+      expect(consentRepository.accepted, isFalse);
+    }
+    final snapshot = registry.snapshot();
+    expect(
+      (snapshot['actions'] as List).any((a) => a['id'] == 'settings/logout'),
+      isFalse,
+    );
+    final erased = await registry.execute(
+      id: 'erase-local-data',
+      owner: 'settings-owner',
+      revision: snapshot['revision'] as int,
+      requestId: 'erase',
+    );
+    await tester.pumpAndSettle();
+    expect(erased['status'], 'invoked');
+    expect(find.text('ลบข้อมูลในเครื่องทั้งหมดหรือไม่?'), findsOneWidget);
+    expect(eraser.calls, 0);
+    expect(
+      (registry.snapshot()['actions'] as List).any(
+        (a) => a['id'] == 'erase-local-data',
+      ),
+      isFalse,
+    );
+    await tester.tap(find.text('ยกเลิก'));
+    await tester.pumpAndSettle();
+    expect(controller.themeMode, ThemeMode.dark);
+    expect(tester.takeException(), isNull);
+    expect(eraser.calls, 0);
+  });
+
   for (final readable in [true, false]) {
     testWidgets('uncertain consent write reconciles readable=$readable', (
       tester,
@@ -483,8 +624,12 @@ void _expectSingleThaiGlossaryAction({
 }
 
 final class _StaticLocalDataEraser implements LocalDataEraser {
+  int calls = 0;
   @override
-  Future<int> eraseAll({required String ownerId}) async => 0;
+  Future<int> eraseAll({required String ownerId}) async {
+    calls++;
+    return 0;
+  }
 }
 
 final class _ConsentClearingEraser implements LocalDataEraser {

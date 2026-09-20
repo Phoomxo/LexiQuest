@@ -1,3 +1,4 @@
+import '../features/ai_tutor/presentation/menu_action_binding.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  final _details = ExpansibleController();
   Future<_ProfileView>? _load;
   AppDependencies? _dependencies;
   StreamSubscription<_ProfileOwner?>? _ownerSubscription;
@@ -97,7 +99,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     final dependencies = _dependencies;
     final loader =
         widget.loader ?? dependencies?.progress?.loadPersonalLearningProfile;
-    if (widget.loader == null && dependencies?.progress != null && !_ownerReady) {
+    if (widget.loader == null &&
+        dependencies?.progress != null &&
+        !_ownerReady) {
       return;
     }
     final owner = _profileOwner;
@@ -131,6 +135,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   @override
   void dispose() {
     _ownerSubscription?.cancel().ignore();
+    _details.dispose();
     super.dispose();
   }
 
@@ -152,7 +157,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           }
           final profile = snapshot.data!.profile;
           final account = snapshot.data!.account;
-          return ListView(
+          return MenuActionListView(
             padding: const EdgeInsets.all(16),
             children: [
               Card(
@@ -210,44 +215,55 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
               ),
               if (widget.onOpenMastery != null) ...[
-                FilledButton.icon(
-                  key: const ValueKey('profile-open-mastery'),
-                  onPressed: widget.onOpenMastery,
-                  icon: const Icon(Icons.insights_outlined),
-                  label: const Text('ดูภาพรวมการเรียน'),
+                MenuActionBinding(
+                  id: 'profile-open-mastery',
+                  label: 'ดูภาพรวมการเรียน',
+                  onInvoke: widget.onOpenMastery,
+                  child: FilledButton.icon(
+                    key: const ValueKey('profile-open-mastery'),
+                    onPressed: widget.onOpenMastery,
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('ดูภาพรวมการเรียน'),
+                  ),
                 ),
               ],
               SizedBox(height: widget.onOpenMastery != null ? 24 : 12),
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: const Text('รายละเอียดการเรียน'),
-                key: const ValueKey('profile-learning-details'),
-                children: [
-                  _AxisCard(
-                    entry: NavigationGlossary.require('profile/accuracy'),
-                    value: profile.accuracy.value == null
-                        ? 'ยังไม่มีหลักฐาน'
-                        : '${(profile.accuracy.value! * 100).toStringAsFixed(0)}% '
-                              'จาก ${profile.accuracy.sampleSize} คำตอบ',
-                  ),
-                  _AxisCard(
-                    entry: NavigationGlossary.require('profile/weakness'),
-                    value: _available(
-                      profile.weakness.availability,
-                      profile.weakness.items.isEmpty
-                          ? 'ไม่พบจุดอ่อนในหลักฐานปัจจุบัน'
-                          : '${profile.weakness.items.length} คำที่ควรทบทวน',
+              MenuActionBinding(
+                id: 'profile/show-learning-details',
+                label: 'รายละเอียดการเรียน',
+                onInvoke: () => _details.expand(),
+                child: ExpansionTile(
+                  controller: _details,
+                  tilePadding: EdgeInsets.zero,
+                  title: const Text('รายละเอียดการเรียน'),
+                  key: const ValueKey('profile-learning-details'),
+                  children: [
+                    _AxisCard(
+                      entry: NavigationGlossary.require('profile/accuracy'),
+                      value: profile.accuracy.value == null
+                          ? 'ยังไม่มีหลักฐาน'
+                          : '${(profile.accuracy.value! * 100).toStringAsFixed(0)}% '
+                                'จาก ${profile.accuracy.sampleSize} คำตอบ',
                     ),
-                  ),
-                  _AxisCard(
-                    entry: NavigationGlossary.require('profile/engagement'),
-                    value: _available(
-                      profile.engagement.availability,
-                      '${profile.engagement.totalXp} XP · '
-                      'ต่อเนื่อง ${profile.engagement.currentStreakDays} วัน',
+                    _AxisCard(
+                      entry: NavigationGlossary.require('profile/weakness'),
+                      value: _available(
+                        profile.weakness.availability,
+                        profile.weakness.items.isEmpty
+                            ? 'ไม่พบจุดอ่อนในหลักฐานปัจจุบัน'
+                            : '${profile.weakness.items.length} คำที่ควรทบทวน',
+                      ),
                     ),
-                  ),
-                ],
+                    _AxisCard(
+                      entry: NavigationGlossary.require('profile/engagement'),
+                      value: _available(
+                        profile.engagement.availability,
+                        '${profile.engagement.totalXp} XP · '
+                        'ต่อเนื่อง ${profile.engagement.currentStreakDays} วัน',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -265,26 +281,35 @@ class _AxisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: entry.tooltip,
-      child: Semantics(
-        label: entry.semanticsLabel,
-        value: value,
-        readOnly: true,
-        excludeSemantics: true,
-        child: Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
+    return MenuActionBinding(
+      id: entry.id,
+      label: entry.fullThaiLabel,
+      onInvoke: null,
+      readValue: value,
+      child: Tooltip(
+        message: entry.tooltip,
+        child: Semantics(
+          label: entry.semanticsLabel,
+          value: value,
+          readOnly: true,
+          excludeSemantics: true,
+          child: Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: Icon(entry.icon),
+              title: Text(
+                entry.fullThaiLabel,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              subtitle: Text(
+                value,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
-            leading: Icon(entry.icon),
-            title: Text(
-              entry.fullThaiLabel,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            subtitle: Text(value, style: Theme.of(context).textTheme.bodySmall),
           ),
         ),
       ),
