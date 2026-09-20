@@ -1,3 +1,5 @@
+import 'package:vocab_learning_app/features/learning/application/context_practice_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/presentation/context_practice_screen.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -648,6 +650,99 @@ void main() {
       }
       await settle();
       expect(find.byType(QuizScreen), findsNothing);
+      if (retirement == 'owner') {
+        expect(find.text('บัญชีเปลี่ยนแล้ว กิจกรรมนี้สิ้นสุดแล้ว'), findsOneWidget);
+      }
+      final closedBeforeUnmount = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).getSingle());
+      expect(closedBeforeUnmount!.state, 'abandoned');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle();
+      final retired = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).getSingle());
+      expect(retired!.state, 'abandoned');
+      expect(tester.takeException(), isNull);
+    });
+    }
+
+    for (final retirement in ['owner', 'studyPlanning', 'quiz']) {
+    testWidgets('context practice opens exact saved context and retires on $retirement', (tester) async {
+      final dependencies = (await tester.runAsync(() => AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {}, initializeSupabase: () async {},
+        loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+        contextPracticeRollout: const ContextPracticeRollout.internal(),
+        learningPreviewEnabled: true, buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+      ).initialize()))!;
+      addTearDown(dependencies.dispose);
+      expect(dependencies.personalSetActivities!.canPracticeContext, isTrue);
+      await tester.runAsync(() async {
+        final sets = dependencies.personalSets!;
+        final owner = await sets.begin();
+        final pin = SenseCrosswalkPin.fromJson({'corpusManifestHash': PackagedSenseCrosswalk.corpusManifestHash,
+          'revision': 1, 'artifactHash': PackagedSenseCrosswalk.artifactHash});
+        final refs = (await sets.candidates(owner, pin)).entries.take(2).map((e) => e.ref).toList();
+        await sets.save(owner, PersonalSetRevision.create(setId: 'ui-set', operationId: 'ui-create', expectedPriorRevision: 0,
+          createdAtUtcMs: DateTime.now().toUtc().millisecondsSinceEpoch, title: 'UI objects', crosswalkPin: pin, members: refs));
+      });
+      Future<void> settle() async {
+        for (var i = 0; i < 35; i++) {
+          await tester.pump(const Duration(milliseconds: 30));
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+        }
+      }
+      await tester.pumpWidget(AppDependenciesScope(dependencies: dependencies,
+        child: const MaterialApp(home: PersonalSetsScreen())));
+      await settle();
+      await tester.tap(find.text('UI objects'));
+      await settle();
+      final featureRegistry = dependencies.features as RuntimeFeatureRegistry;
+      featureRegistry.emergencyOff(Feature.quiz);
+      await settle();
+      expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'เริ่มแบบทดสอบความหมาย')).onPressed, isNull);
+      expect(find.text('แบบทดสอบยังไม่พร้อมใช้งาน'), findsOneWidget);
+      expect(await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).get()), isEmpty);
+      featureRegistry.clearOverride(Feature.quiz);
+      await settle();
+      await tester.ensureVisible(find.text('ฝึกบริบท · เลือกคำที่สับสน'));
+      await tester.tap(find.text('ฝึกบริบท · เลือกคำที่สับสน'));
+      await settle();
+      expect(find.byType(ContextPracticeScreen), findsOneWidget);
+      final contextScreen = tester.widget<ContextPracticeScreen>(find.byType(ContextPracticeScreen));
+      expect(contextScreen.launch.session.questions.map((q) => q.word.id), ['word:starter-book', 'word:starter-pencil']);
+      final sessions = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.learningSessions).get());
+      expect(sessions, hasLength(1));
+      expect(sessions!.single.activityType, 'contextPractice');
+      expect(sessions.single.state, 'active');
+      final answer = find.byKey(const ValueKey('cloze-option-word:starter-book-book'));
+      await tester.ensureVisible(answer);
+      await tester.tap(answer);
+      await settle();
+      final submit = find.byKey(const ValueKey('cloze-submit-selected'));
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await settle();
+      final attempts = await tester.runAsync(() => dependencies.database!.select(dependencies.database!.answerAttempts).get());
+      expect(attempts, hasLength(1));
+      expect(attempts!.single.wordId, 'word:starter-book');
+      expect(attempts.single.isCorrect, isTrue);
+      await tester.runAsync(() async {
+        final database = dependencies.database!;
+        for (final table in ['experiment_assignments', 'assessment_runs', 'motivation_measurement_runs',
+          'motivation_responses', 'research_participation_permits', 'measurement_opportunities', 'research_session_proofs']) {
+          expect(await database.customSelect('SELECT * FROM $table').get(), isEmpty, reason: table);
+        }
+        final events = await database.select(database.eventsV2).get();
+        expect(events.where((e) => ResearchSyncContract.eventTypes.contains(e.eventType)), isEmpty);
+        final outbox = await database.select(database.outboxOperations).get();
+        expect(outbox.where((o) => ResearchSyncContract.collectionForEntityType(o.entityType) != null), isEmpty);
+      });
+      if (retirement == 'owner') {
+        await tester.runAsync(() => DriftOwnerGeneration(dependencies.database!).advance());
+      } else {
+        featureRegistry.emergencyOff(retirement == 'quiz' ? Feature.quiz : Feature.studyPlanning);
+      }
+      await settle();
+      expect(find.byType(ContextPracticeScreen), findsNothing);
       if (retirement == 'owner') {
         expect(find.text('บัญชีเปลี่ยนแล้ว กิจกรรมนี้สิ้นสุดแล้ว'), findsOneWidget);
       }

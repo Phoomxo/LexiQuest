@@ -1,4 +1,6 @@
 import 'package:drift/drift.dart';
+import '../../learning/application/cloze_mode_adapter.dart';
+import '../../learning/domain/context_practice.dart';
 import '../../identity/application/owner_generation.dart';
 import '../../ai_tutor/domain/ai_tutor_contracts.dart';
 import '../../learning/application/learning_use_cases.dart';
@@ -15,9 +17,13 @@ final class PersonalSetActivityLaunch {
   PersonalSetActivityLaunch(
     this.session,
     this.revision,
-    List<ReviewedLexicalContentSnapshot> items,
-  ) : items = List.unmodifiable(items);
+    List<ReviewedLexicalContentSnapshot> items, {
+    this.contextInput,
+    this.recovery,
+  }) : items = List.unmodifiable(items);
   final QuizSession session;
+  final ClozeInputMode? contextInput;
+  final LearningActivityRecovery? recovery;
   final PersonalSetRevision revision;
   final List<ReviewedLexicalContentSnapshot> items;
 }
@@ -27,15 +33,20 @@ final class PersonalSetActivities {
     required this.sets,
     required this.learning,
     required this.isAvailable,
+    this.contextAvailable,
   });
   final PersonalSetsUseCases sets;
   final LearningUseCases learning;
   final bool Function() isAvailable;
+  final bool Function()? contextAvailable;
+  bool get canPracticeContext =>
+      isAvailable() && (contextAvailable?.call() ?? false);
   Future<PersonalSetActivityLaunch> start(
     OwnerGenerationToken owner, {
     required String setId,
     required int revision,
     required String operationId,
+    ClozeInputMode? contextInput,
   }) async {
     if (operationId.isEmpty ||
         operationId != operationId.trim() ||
@@ -43,6 +54,16 @@ final class PersonalSetActivities {
         RegExp(r'[\x00-\x1f\x7f]').hasMatch(operationId)) {
       throw ArgumentError('Invalid personal set launch operation');
     }
+    final activityType = contextInput == null
+        ? 'personalSetMeaningQuiz'
+        : 'contextPractice';
+    void contextFence() {
+      if (contextInput != null && !canPracticeContext) {
+        throw StateError('Context practice is disabled');
+      }
+    }
+
+    contextFence();
     await sets.ownerGeneration.requireCurrentAsync(owner);
     _requireAvailable();
     final database = sets.repository.database;
@@ -58,6 +79,7 @@ final class PersonalSetActivities {
         throw StateError('Personal set owner changed');
       }
       Future<void> fence() async {
+        contextFence();
         _requireAvailable();
         await sets.ownerGeneration.requireCurrentAsync(owner);
         await DriftOwnerOperationGate(database).requireOwned(
@@ -88,10 +110,11 @@ final class PersonalSetActivities {
           );
         }
         final (pins, items) = await _scoredPins(owner.ownerId, saved);
+        if (contextInput != null) await _requireContextInventory(saved);
         final existing = await database
             .customSelect(
               "SELECT aggregate_id FROM events_v2 WHERE owner_id = ? AND event_type = 'LearningActivityCheckpoint' "
-              "AND json_extract(payload_json, '\$.state.kind') = 'personalSetMeaningQuiz' "
+              "AND json_extract(payload_json, '\$.state.kind') IN ('personalSetMeaningQuiz', 'contextPractice') "
               "AND json_extract(payload_json, '\$.state.launchOperationId') = ?",
               variables: [
                 Variable<String>(owner.ownerId),
@@ -106,14 +129,20 @@ final class PersonalSetActivities {
           final recovery = await learning.loadExactActivityRecovery(
             ownerId: owner.ownerId,
             sessionId: existing.single.read<String>('aggregate_id'),
-            activityType: 'personalSetMeaningQuiz',
+            activityType: activityType,
           );
           final state = recovery?.checkpoint?.state;
           if (recovery == null ||
               state == null ||
-              state.length != 4 ||
+              (contextInput == null ? state.length != 4 : state.length != 7) ||
               state['schemaVersion'] != 1 ||
-              state['kind'] != 'personalSetMeaningQuiz' ||
+              state['kind'] != activityType ||
+              (contextInput != null &&
+                  (state['inputMode'] != contextInput.name ||
+                      state['inventoryRevision'] !=
+                          ContextPracticeInventory.revision ||
+                      state['inventoryHash'] !=
+                          ContextPracticeInventory.fingerprint)) ||
               state['launchOperationId'] != operationId ||
               PersonalSetRevision.fromJson(
                     Map<String, Object?>.from(
@@ -123,10 +152,10 @@ final class PersonalSetActivities {
                   saved.payloadHash) {
             throw StateError('Personal set launch operation collision');
           }
-          // A lost launch acknowledgement can replay only an untouched active
-          // session. Never restart an answered/terminal session as new evidence.
+          // Meaning-quiz launch retries require an untouched session. Context
+          // recovery authenticates attempts and reopens acknowledged feedback.
           if (recovery.session.state != 'active' ||
-              recovery.attempts.isNotEmpty) {
+              (contextInput == null && recovery.attempts.isNotEmpty)) {
             throw StateError(
               'This launch already has activity; start a new operation',
             );
@@ -139,15 +168,26 @@ final class PersonalSetActivities {
             },
           );
           await fence();
-          return PersonalSetActivityLaunch(replay, saved, items);
+          return PersonalSetActivityLaunch(
+            replay,
+            saved,
+            items,
+            contextInput: contextInput,
+            recovery: recovery,
+          );
         }
         final session = await learning.startCheckpointedQuiz(
-          activityType: 'personalSetMeaningQuiz',
+          activityType: activityType,
           limit: pins.length,
           pinnedContent: pins,
           initialState: (_) => {
             'schemaVersion': 1,
-            'kind': 'personalSetMeaningQuiz',
+            'kind': activityType,
+            if (contextInput != null) ...{
+              'inputMode': contextInput.name,
+              'inventoryRevision': ContextPracticeInventory.revision,
+              'inventoryHash': ContextPracticeInventory.fingerprint,
+            },
             'launchOperationId': operationId,
             // Owner is held in the canonical event envelope so guest remap
             // retains the immutable owner-independent revision hash.
@@ -158,10 +198,45 @@ final class PersonalSetActivities {
           throw StateError('Personal set admission failed');
         }
         await _scoredPins(owner.ownerId, saved);
+        if (contextInput != null) await _requireContextInventory(saved);
         await fence();
-        return PersonalSetActivityLaunch(session, saved, items);
+        return PersonalSetActivityLaunch(
+          session,
+          saved,
+          items,
+          contextInput: contextInput,
+        );
       });
     });
+  }
+
+  Future<void> _requireContextInventory(PersonalSetRevision saved) async {
+    for (final member in saved.members) {
+      final entry = const ContextPracticeInventory().find(member.wordId);
+      if (entry == null ||
+          member.senseKey != 'starter-object-v1' ||
+          member.senseRevision != 1 ||
+          member.lexicalArtifactHash != entry.artifactHash) {
+        throw StateError('Reviewed context is unavailable for this sense');
+      }
+      final identity = ContentIdentity(
+        type: ContentType.lexicalMetadata,
+        id: entry.distractorId,
+        revision: 1,
+      );
+      final alternative = await sets.repository.crosswalks.manifests
+          .requireVerified(identity);
+      final manifest = alternative.manifest;
+      if (manifest.identity != identity ||
+          manifest.checksumSha256 != entry.distractorArtifactHash ||
+          manifest.provenance != ContentProvenance.packaged ||
+          manifest.reviewState != ContentReviewState.approved ||
+          manifest.publicationState != ContentPublicationState.published ||
+          manifest.reviewedAtUtc == null ||
+          manifest.publishedAtUtc == null) {
+        throw StateError('Reviewed context alternative is unavailable');
+      }
+    }
   }
 
   void _requireAvailable() {

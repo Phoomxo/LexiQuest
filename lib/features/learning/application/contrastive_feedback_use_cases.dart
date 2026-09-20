@@ -2,6 +2,7 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/contrastive_explanation.dart';
+import '../domain/context_practice.dart';
 
 enum ContrastiveFeedbackRolloutStage { implementedOff, internal }
 
@@ -97,6 +98,26 @@ final class ContrastiveFeedbackUseCases {
         verifiedArtifactChecksumSha256: manifest.checksumSha256,
       );
       final rationale = metadata.contrastiveFeedback[attempt.promptMode];
+      // Versioned supplemental inventory preserves the unchanged starter
+      // artifact. Resolve only its exact reviewed sentence and alternative.
+      final context = const ContextPracticeInventory().find(attempt.wordId);
+      if (rationale == null &&
+          context != null &&
+          attempt.promptMode == 'clozeSelected' &&
+          attempt.manifestIdentity.revision == 1 &&
+          attempt.manifestChecksumSha256 == context.artifactHash &&
+          metadata.examples.length == 1 &&
+          metadata.examples.single == context.sentence &&
+          attempt.correctOptionId == context.wordId &&
+          attempt.selectedDistractorId == context.distractorId) {
+        return ContrastiveExplanation.reviewed(
+          manifestIdentity: attempt.manifestIdentity,
+          correctOptionId: context.wordId,
+          selectedDistractorId: context.distractorId,
+          correctRationale: context.correctRationale,
+          distractorRationale: context.distractorRationale,
+        );
+      }
       if (rationale == null ||
           rationale.correctOptionId != attempt.correctOptionId) {
         return null;

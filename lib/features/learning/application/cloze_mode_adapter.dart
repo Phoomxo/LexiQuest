@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
+import '../../learning_packs/domain/personal_sets.dart';
 import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/contrastive_explanation.dart';
+import '../domain/context_practice.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
+import '../domain/learning_repository.dart';
 import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
@@ -190,6 +193,7 @@ final class ClozeModeAdapter
   List<ClozeItem> pinItems({
     required QuizSession session,
     required Iterable<VocabularyWord> lexicalWords,
+    bool contextPractice = false,
   }) {
     final lexicalById = <String, VocabularyWord?>{};
     for (final word in lexicalWords) {
@@ -266,6 +270,47 @@ final class ClozeModeAdapter
           );
         }
         final correct = _canonicalDisplay(candidate.lexical.spelling);
+        if (contextPractice) {
+          const inventory = ContextPracticeInventory();
+          final entry = inventory.find(candidate.word.id);
+          if (entry == null ||
+              candidate.lexical.partOfSpeech != 'noun' ||
+              candidate.lexical.contentRevision != 1 ||
+              correct != entry.answer ||
+              !inventory.admits(
+                wordId: candidate.word.id,
+                artifactHash: candidate.manifestChecksumSha256,
+                sentence: candidate.completeSentence,
+                options: [entry.answer, entry.distractor],
+              )) {
+            return const ClozeItem.skipped(ClozeSkipReason.ambiguousExample);
+          }
+          return ClozeItem.question(
+            ClozeQuestion(
+              wordId: candidate.word.id,
+              identity: ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: candidate.word.id,
+                revision: candidate.lexical.contentRevision,
+              ),
+              checksumSha256: candidate.checksumSha256,
+              typedChecksumSha256: candidate.typedChecksumSha256,
+              manifestChecksumSha256: candidate.manifestChecksumSha256,
+              prompt: candidate.prompt,
+              completeSentence: candidate.completeSentence,
+              correctAnswer: correct,
+              options: _pinOptions(
+                correctOption: correct,
+                candidates: [entry.distractor],
+                seed: _stableSeed(candidate.word.id),
+              ),
+              optionIdentities: Map.unmodifiable({
+                correct: candidate.word.id,
+                entry.distractor: entry.distractorId,
+              }),
+            ),
+          );
+        }
         final answerKey = normalizeVocabularyText(correct);
         final byKey = <String, String>{};
         final identityByKey = <String, String>{};
@@ -323,6 +368,8 @@ final class ClozeModeAdapter
     ClozeInteractionRecorder? recordInteraction,
     ClozeOperationAcceptance? acceptsOperation,
     ClozeEvidenceOperation? runEvidenceOperation,
+    bool contextPractice = false,
+    ClozeInputMode? fixedInputMode,
   }) {
     if (session.isEmpty) {
       throw ArgumentError.value(session, 'session', 'must contain an item');
@@ -334,7 +381,13 @@ final class ClozeModeAdapter
     }
     return ClozeReviewController._(
       session: session,
-      items: pinItems(session: session, lexicalWords: lexicalWords),
+      items: pinItems(
+        session: session,
+        lexicalWords: lexicalWords,
+        contextPractice: contextPractice,
+      ),
+      contextPractice: contextPractice,
+      fixedInputMode: fixedInputMode,
       learning: learning,
       evidence: evidence,
       hintUsage: hintUsage,
@@ -425,12 +478,16 @@ final class ClozeReviewController extends ChangeNotifier {
     required this._runEvidenceOperation,
     required this._scoreAnswer,
     required this._classifyResponse,
+    required this.contextPractice,
+    required this.fixedInputMode,
   }) : items = List<ClozeItem>.unmodifiable(items),
        _phase = items.first.question == null
            ? ClozeReviewPhase.skipped
            : ClozeReviewPhase.awaitingAnswer;
 
   final QuizSession session;
+  final bool contextPractice;
+  final ClozeInputMode? fixedInputMode;
   final List<ClozeItem> items;
   final LearningUseCases _learning;
   final CurrentActivityEvidenceAdapter _evidence;
@@ -518,6 +575,9 @@ final class ClozeReviewController extends ChangeNotifier {
   ClozeQuestion _requireAnswer(ClozeInputMode mode, int responseTimeMs) {
     _requireOperationAccepted();
     _requirePhase(ClozeReviewPhase.awaitingAnswer, 'answer');
+    if (fixedInputMode != null && mode != fixedInputMode) {
+      throw StateError('Context input mode is pinned for this session');
+    }
     if (responseTimeMs < 0) {
       throw ArgumentError.value(
         responseTimeMs,
@@ -700,6 +760,147 @@ final class ClozeReviewController extends ChangeNotifier {
     if (!_acceptsOperation()) {
       throw StateError('The cloze route is no longer accepting actions.');
     }
+  }
+
+  /// Authenticate persisted canonical attempts; never submit them again.
+  /// Reopens the last acknowledged answer so its explanation remains reachable.
+  Future<void> restoreContextProgress() async {
+    _requireOperationAccepted();
+    if (!contextPractice ||
+        fixedInputMode == null ||
+        _phase != ClozeReviewPhase.awaitingAnswer) {
+      throw StateError('Context restore requires an untouched pinned review');
+    }
+    final recovery = await _learning.loadExactActivityRecovery(
+      ownerId: session.ownerId!,
+      sessionId: session.id,
+      activityType: 'contextPractice',
+    );
+    final state = recovery?.checkpoint?.state;
+    if (recovery == null ||
+        recovery.session.state != 'active' ||
+        state == null ||
+        state.length != 7 ||
+        state['schemaVersion'] != 1 ||
+        state['kind'] != 'contextPractice' ||
+        state['inputMode'] != fixedInputMode!.name ||
+        state['inventoryRevision'] != ContextPracticeInventory.revision ||
+        state['inventoryHash'] != ContextPracticeInventory.fingerprint ||
+        items.any((item) => item.question == null) ||
+        recovery.attempts.length > items.length) {
+      throw StateError('Context checkpoint is unavailable or unsupported');
+    }
+    final saved = PersonalSetRevision.fromJson(
+      Map<String, Object?>.from(state['personalSetRevision'] as Map),
+    );
+    if (saved.members.length != items.length ||
+        saved.members.indexed.any((entry) {
+          final q = items[entry.$1].question!;
+          return entry.$2.wordId != q.wordId ||
+              entry.$2.senseKey != 'starter-object-v1' ||
+              entry.$2.senseRevision != 1 ||
+              entry.$2.lexicalArtifactHash != q.manifestChecksumSha256;
+        })) {
+      throw StateError(
+        'Context session order or sense does not match its saved revision',
+      );
+    }
+    final attempts = [...recovery.attempts]
+      ..sort((a, b) => a.attemptNumber.compareTo(b.attemptNumber));
+    for (var i = 0; i < attempts.length; i++) {
+      final a = attempts[i];
+      final q = items[i].question!;
+      final expectedChecksum = fixedInputMode == ClozeInputMode.typed
+          ? q.typedChecksumSha256
+          : q.checksumSha256;
+      if (a.attemptNumber != i + 1 ||
+          a.wordId != q.wordId ||
+          a.ownerId != session.ownerId ||
+          a.sessionId != session.id ||
+          a.promptMode !=
+              (fixedInputMode == ClozeInputMode.typed
+                  ? 'clozeTyped'
+                  : 'clozeSelected') ||
+          a.evidenceContext.contentRevision !=
+              'lexical-cloze:${q.wordId}@${q.identity.revision}:$expectedChecksum') {
+        throw StateError(
+          'Context answer history does not match the pinned activity',
+        );
+      }
+      if (!a.isCorrect && a.promptMode == 'clozeSelected') {
+        final entry = const ContextPracticeInventory().find(q.wordId)!;
+        final frozen = ContrastiveFeedbackContext(
+          manifestIdentity: q.identity,
+          manifestChecksumSha256: q.manifestChecksumSha256,
+          promptMode: a.promptMode,
+          evidenceContentRevision: a.evidenceContext.contentRevision,
+          correctOptionId: entry.wordId,
+          selectedDistractorId: entry.distractorId,
+        ).freeze();
+        if (a.providerProvenance !=
+            contrastiveFeedbackAttemptProvenance(frozen)) {
+          throw StateError(
+            'Context choice history is missing its reviewed alternative',
+          );
+        }
+      }
+    }
+    _requireOperationAccepted();
+    if (attempts.isEmpty) return;
+    final repository = _learning.repository;
+    if (repository is! LearningEvidenceReplayRepository) {
+      throw StateError('Canonical replay unavailable');
+    }
+    final a = attempts.last;
+    final replay = await (repository as LearningEvidenceReplayRepository)
+        .replayCommittedAnswer(a);
+    if (replay == null) throw StateError('Canonical answer is unavailable');
+    var result = replay.result;
+    if (isContrastiveFeedbackAttemptProvenance(a.providerProvenance)) {
+      final q = items[attempts.length - 1].question!;
+      final entry = const ContextPracticeInventory().find(q.wordId)!;
+      final frozen = ContrastiveFeedbackContext(
+        manifestIdentity: q.identity,
+        manifestChecksumSha256: q.manifestChecksumSha256,
+        promptMode: a.promptMode,
+        evidenceContentRevision: a.evidenceContext.contentRevision,
+        correctOptionId: entry.wordId,
+        selectedDistractorId: entry.distractorId,
+      ).freeze();
+      if (a.isCorrect ||
+          a.promptMode != 'clozeSelected' ||
+          contrastiveFeedbackAttemptProvenance(frozen) !=
+              a.providerProvenance) {
+        throw StateError(
+          'Context answer provenance does not match its reviewed alternative',
+        );
+      }
+      result = result.withCommittedContrastiveAttempt(
+        CommittedContrastiveAttempt(
+          attemptIdentity: a.id,
+          ownerId: a.ownerId,
+          sessionId: a.sessionId,
+          wordId: a.wordId,
+          promptMode: a.promptMode,
+          evidenceContentRevision: a.evidenceContext.contentRevision,
+          manifestIdentity: frozen.manifestIdentity,
+          manifestChecksumSha256: frozen.manifestChecksumSha256,
+          correctOptionId: frozen.correctOptionId,
+          selectedDistractorId: frozen.selectedDistractorId,
+        ),
+      );
+    }
+    _requireOperationAccepted();
+    _index = attempts.length - 1;
+    _submittedMode = fixedInputMode;
+    _feedback = AnswerFeedback.fromCommittedResult(
+      result: result,
+      context: AnswerFeedbackContext(
+        canonicalCorrectAnswer: currentItem.question!.correctAnswer,
+        bookmarkIdentity: currentItem.question!.identity,
+      ),
+    );
+    _setPhase(ClozeReviewPhase.answered);
   }
 
   void _requirePhase(ClozeReviewPhase required, String action) {

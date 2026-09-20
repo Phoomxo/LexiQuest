@@ -1,0 +1,77 @@
+{
+  "sliceId": "E3.2",
+  "feature": "F06",
+  "status": "accepted",
+  "baseSha": "0244314a2bd9a3588ff968f21a075c48da9c9c64",
+  "sourceSha": "containing commit; external handoff pins exact SHA",
+  "branch": "lexiquest/post-g83-e32",
+  "verification": {
+    "status": "Passed",
+    "tests": 399,
+    "targets": 15,
+    "fingerprint": "dd9d1e9ed8434f9307c8240c6c1f0b7f542d0ddd87d5bc810ec75f9b25baf751",
+    "environmentFingerprint": "58ebde4344bc5d90ba8d87f9f2caa214443f15553ee1925f4348322969789f52",
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E3.2\\all-runs\\targeted-learning-e7640bb9882ef771143ee12d919258f095b505abc5b7230df69cbb78e4870f68.json",
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "da17743e3b9da56e4a2e4b9f6393e8bf1f50b368690c79a6290a00042a798e4b",
+        "fingerprint": "dd9d1e9ed8434f9307c8240c6c1f0b7f542d0ddd87d5bc810ec75f9b25baf751",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T02:05:52.4241569+00:00",
+        "FinishedAt": "2026-09-20T02:07:37.6956448+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\3666\\LexiQuest\\build\\verification\\0244314a2bd9a3588ff968f21a075c48da9c9c64\\da17743e3b9d-dd9d1e9ed843-f8ea2012\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\3666\\LexiQuest\\build\\verification\\0244314a2bd9a3588ff968f21a075c48da9c9c64\\da17743e3b9d-dd9d1e9ed843-f8ea2012\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "dd9d1e9ed8434f9307c8240c6c1f0b7f542d0ddd87d5bc810ec75f9b25baf751",
+        "StdoutHash": "594CC33274C142C1BEDAA72695B799AE752635A664BF0D2C87B18CBE3133F949",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "sourceFilesSha256": {
+    "lib/features/learning/application/cloze_mode_adapter.dart": "fa5f73779a9846dd6cfd31381080235af5c232d351d72ad54ea6cb1ed7f9d861",
+    "lib/features/learning/application/contrastive_feedback_use_cases.dart": "32bdda3f3e28275639e57ea135865c542a3bbac1c07ecb54b94646a3a85133f4",
+    "lib/features/learning_packs/application/personal_set_activities.dart": "3be5fed40df954762ec6698b40ec91417c8a67033bf05ca38cc8bd7bd7bf78ad",
+    "lib/runtime/app_bootstrap.dart": "7037eaafbeae52b7b7eceed701844f633541e32c788d312183399d8bfb60664f",
+    "lib/screens/fill_in_the_blanks_screen.dart": "d3a8adb265cdd155e5027ab3c57fb82d27c954cf44a7655d0b1165a85e84bd7d",
+    "lib/screens/personal_sets_screen.dart": "8ed04ecb21cff16e58711a89dd5325bc1080a21d0b52c8840ef5942a30cb000c",
+    "test/runtime/app_bootstrap_test.dart": "aff6d4741171f226f3b04053a6edfc039436f3dbf4875129a7aa9628339a9758",
+    "lib/features/learning/application/context_practice_use_cases.dart": "ffccae7dfb41fd2ffaa3ba1a1706382d96c75496ba5c91be9c55a4ace41b76a2",
+    "lib/features/learning/domain/context_practice.dart": "7c10ce69d1d7990e64d7ad7fbd1dec23bf969f5cf200d504b65969ef0f6a280d",
+    "lib/features/learning/presentation/context_practice_screen.dart": "eed9065550f524a80563a967d264887c24ae54a79c1da399e204b1f176158e8b",
+    "test/features/learning/context_practice_lifecycle_test.dart": "8937b5dd6c6a6cf9d5999b225b75d3d02c6c5cafd94d5d652bdef9f1ba2ea342",
+    "test/features/learning/context_practice_screen_test.dart": "53bd24dbce31b8dc4ce128c27c901b5db676a4c424f041d9fa68ac6b868c44bd",
+    "test/features/learning/context_practice_use_cases_test.dart": "fb6d1df0e79d28a53c5e6fccf54ff455165eee9449d99fc631f5ca262e74401f"
+  },
+  "analysis": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 0,
+    "inheritedInfos": 6,
+    "baseline": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E3.2\\baseline-analysis.txt"
+  },
+  "visual": {
+    "path": "context-why-320-text200.png",
+    "width": 320,
+    "textScale": 2,
+    "result": "Thai explanation readable; no overflow in reachable full UI"
+  },
+  "scope": [
+    "Three exact original contexts: book, pencil, bottle; cup only reviewed distractor",
+    "Canonical selected recognition and typed recall; fixed input and no hints before first answer",
+    "Durable canonical restart, reviewed wrong-choice provenance and guided repair",
+    "Feature retirement, owner A-B-A and guest merge/export/delete; research data/events/outbox zero"
+  ],
+  "limits": [
+    "Default-off; internal rollout tested",
+    "Original12 scored meanings unchanged; original assets unchanged; no editorial5500 admission",
+    "Source/AI-assisted engineering inventory review; no independent human or efficacy claim",
+    "Scoped checkpoint/restart evidence, not full database archive restore certification",
+    "Typed raw response is not restored; guided repair requires a selected distractor",
+    "No device, live provider, Android build or full release verification",
+    "E6 and E7/G8.4-G8.9 remain required",
+    "Standard/default requested; effective service tier unverified"
+  ],
+  "review": "writer self-review; no subagents; no unresolved in-scope defects"
+}

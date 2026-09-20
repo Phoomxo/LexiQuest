@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../features/accessibility/domain/accessibility_policy.dart';
 import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/cloze_mode_adapter.dart';
+import '../features/learning/domain/context_practice.dart';
+import '../features/learning_packs/application/personal_set_activities.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/hint_policy.dart';
@@ -32,9 +34,11 @@ class FillInTheBlanksScreen extends StatefulWidget {
     this.modeAdapter,
     this.loadLexicalWords,
     this.sessionConfiguration,
+    this.contextLaunch,
   });
 
   final String? categoryId;
+  final PersonalSetActivityLaunch? contextLaunch;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final ClozeModeAdapter? modeAdapter;
@@ -130,6 +134,8 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         ? Future<QuizSession>.error(
             StateError('cloze learning authority mismatch'),
           )
+        : widget.contextLaunch != null
+        ? Future.value(widget.contextLaunch!.session)
         : learning.startQuiz(
             categoryId: widget.categoryId,
             limit: widget.sessionConfiguration?.itemCount ?? 10,
@@ -158,6 +164,8 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
       if (lifecycle?.acceptsOperations == false) return session;
       _review = _adapter!.createReview(
         session: session,
+        contextPractice: widget.contextLaunch != null,
+        fixedInputMode: widget.contextLaunch?.contextInput,
         lexicalWords: words,
         learning: _learning!,
         evidence: _evidence!,
@@ -174,7 +182,15 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         runEvidenceOperation: lifecycle == null
             ? null
             : (operation) => lifecycle.runAcceptedOperation(operation),
-      )..addListener(_onReviewChanged);
+      );
+      if (widget.contextLaunch != null) {
+        _inputMode = widget.contextLaunch!.contextInput;
+        if (_inputMode == null) {
+          throw StateError('Context input mode is missing');
+        }
+        await _review!.restoreContextProgress();
+      }
+      _review!.addListener(_onReviewChanged);
       _responseStopwatch
         ..reset()
         ..start();
@@ -215,7 +231,13 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         unawaited(_confirmExit());
       },
       child: AccessibilityModeScaffold(
-        appBar: AppBar(title: const Text('เติมคำในประโยค')),
+        appBar: AppBar(
+          title: Text(
+            widget.contextLaunch == null
+                ? 'เติมคำในประโยค'
+                : 'คำที่ใช้ร่วมกันและคำที่สับสน',
+          ),
+        ),
         body: FutureBuilder<QuizSession>(
           future: _load,
           builder: (context, snapshot) {
@@ -463,7 +485,49 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 const SizedBox(height: 12),
                 AccessibilitySemanticRegion(
                   role: AccessibilitySemanticRole.feedback,
-                  child: AnswerFeedbackPanel(feedback: feedback),
+                  child: AnswerFeedbackPanel(
+                    feedback: feedback,
+                    contrastiveFeedback: AppDependenciesScope.maybeOf(
+                      context,
+                    )?.contrastiveFeedback,
+                    onOpenGuidedRepair:
+                        feedback.committedContrastiveAttempt == null
+                        ? null
+                        : (app) => app.open(feedback),
+                  ),
+                ),
+              ],
+              if (review.isAnswered && widget.contextLaunch != null) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  liveRegion: true,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'เหตุผลในบริบทนี้',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text(
+                            const ContextPracticeInventory()
+                                .find(question.wordId)!
+                                .correctRationale,
+                          ),
+                          Text(
+                            const ContextPracticeInventory()
+                                .find(question.wordId)!
+                                .distractorRationale,
+                          ),
+                          const Text(
+                            'คำอธิบายไม่เปลี่ยนคำตอบเดิม การแก้ไขเป็นการฝึกแบบมีตัวช่วย',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
               if (review.isAnswered) ...<Widget>[
@@ -576,7 +640,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         return;
       }
       _typedAnswer.clear();
-      _inputMode = null;
+      _inputMode = widget.contextLaunch?.contextInput;
       _selectedAnswer = null;
       _responseStopwatch
         ..reset()

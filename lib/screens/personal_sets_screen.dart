@@ -5,6 +5,10 @@ import 'package:uuid/uuid.dart';
 import '../features/identity/application/owner_generation.dart';
 import '../features/learning_packs/application/personal_set_activities.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
+import '../features/learning/application/cloze_mode_adapter.dart';
+import '../features/learning/application/context_practice_use_cases.dart';
+import '../features/learning/domain/context_practice.dart';
+import '../features/learning/presentation/context_practice_screen.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import 'quiz_screen.dart';
@@ -264,14 +268,18 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
     }
   });
 
-  Future<void> _launchActivity() => _work(() async {
+  Future<void> _launchActivity({
+    ClozeInputMode? contextInput,
+    bool resumeContext = false,
+  }) => _work(() async {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final activities = dependencies?.personalSetActivities;
     if (activities == null || !identical(activities.sets, _app)) {
       throw StateError('Activity unavailable');
     }
     final owner = _owner!;
-    final saved = _detail!;
+    final saved = _detail;
+    final contextual = contextInput != null || resumeContext;
     PersonalSetActivityLaunch? launch;
     UnifiedLessonShellLease? destination;
     var destinationOwnsSession = false;
@@ -279,33 +287,52 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
       // Check composition before creating any durable session.
       final factory = dependencies?.createLessonController;
       final registration = dependencies?.lessonModes?.resolve(
-        LessonMode.meaningQuiz,
+        contextual ? LessonMode.cloze : LessonMode.meaningQuiz,
       );
       if (factory == null ||
-          registration?.adapter is! MeaningQuizModeAdapter ||
+          (contextual
+              ? registration?.adapter is! ClozeModeAdapter
+              : registration?.adapter is! MeaningQuizModeAdapter) ||
           dependencies?.currentActivityEvidence == null ||
           !identical(dependencies?.learning, activities.learning)) {
         throw StateError('Canonical quiz destination unavailable');
       }
-      launch = await activities.start(
-        owner,
-        setId: saved.setId,
-        revision: saved.revision,
-        operationId: _launchOperation ??= const Uuid().v4(),
-      );
+      launch = resumeContext
+          ? await ContextPracticeUseCases(activities).resume(owner)
+          : await activities.start(
+              owner,
+              setId: saved!.setId,
+              revision: saved.revision,
+              operationId: _launchOperation ??= const Uuid().v4(),
+              contextInput: contextInput,
+            );
+      if (launch == null) {
+        _error = 'ไม่มีกิจกรรมบริบทที่ค้างอยู่';
+        return;
+      }
       await _app!.ownerGeneration.requireCurrentAsync(owner);
       final accepted = launch;
       destination = UnifiedLessonShellLease(
-        controller: factory(registration!.adapter),
+        controller: factory(
+          contextual
+              ? const ContextPracticeModeAdapter()
+              : registration!.adapter,
+        ),
         learning: activities.learning,
         nowUtc: () => DateTime.now().toUtc(),
         contrastiveFeedback: dependencies?.contrastiveFeedback,
-        builder: (_) => QuizScreen(
-          learning: activities.learning,
-          evidenceAdapter: dependencies!.currentActivityEvidence,
-          modeAdapter: registration.adapter as MeaningQuizModeAdapter,
-          attachedSession: accepted.session,
-        ),
+        builder: (_) => contextual
+            ? ContextPracticeScreen(
+                launch: accepted,
+                learning: activities.learning,
+                evidence: dependencies!.currentActivityEvidence!,
+              )
+            : QuizScreen(
+                learning: activities.learning,
+                evidenceAdapter: dependencies!.currentActivityEvidence,
+                modeAdapter: registration!.adapter as MeaningQuizModeAdapter,
+                attachedSession: accepted.session,
+              ),
       );
       if (!destination.usesLearningAuthority(activities.learning)) {
         throw StateError('Activity authority mismatch');
@@ -321,7 +348,9 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
       await AppNavigator.pushPage<void>(
         context,
         AppPage<void>(
-          name: 'study-planning/personal-sets/activity',
+          name: contextual
+              ? 'learning/context'
+              : 'study-planning/personal-sets/activity',
           builder: (_) => ProductionFeatureGate(
             feature: Feature.studyPlanning,
             registry: dependencies?.features,
@@ -387,6 +416,11 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                 children: [
                   if (_error != null)
                     Semantics(liveRegion: true, child: Text(_error!)),
+                  if (_owner != null && activities?.canPracticeContext == true)
+                    OutlinedButton(
+                      onPressed: () => _launchActivity(resumeContext: true),
+                      child: const Text('กลับสู่กิจกรรมบริบทที่ค้างอยู่'),
+                    ),
                   if (_owner == null) ...[
                     FilledButton(
                       onPressed: _load,
@@ -458,9 +492,36 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                       ),
                     ] else ...[
                       FilledButton(
-                        onPressed: activityReady ? _launchActivity : null,
+                        onPressed: activityReady
+                            ? () => _launchActivity()
+                            : null,
                         child: const Text('เริ่มแบบทดสอบความหมาย'),
                       ),
+                      if (activities?.canPracticeContext == true &&
+                          activityReady &&
+                          revision.members.every(
+                            (m) =>
+                                const ContextPracticeInventory().find(
+                                  m.wordId,
+                                ) !=
+                                null,
+                          )) ...[
+                        OutlinedButton(
+                          onPressed: () => _launchActivity(
+                            contextInput: ClozeInputMode.selected,
+                          ),
+                          child: const Text('ฝึกบริบท · เลือกคำที่สับสน'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => _launchActivity(
+                            contextInput: ClozeInputMode.typed,
+                          ),
+                          child: const Text('ฝึกบริบท · พิมพ์คำที่ใช้ร่วมกัน'),
+                        ),
+                      ] else
+                        const Text(
+                          'กิจกรรมบริบทยังไม่พร้อม: ต้องเปิดใช้งานและมีบริบทพร้อมเหตุผลที่ตรวจทานครบทุกคำ',
+                        ),
                       if (!activityReady)
                         const Text('แบบทดสอบยังไม่พร้อมใช้งาน'),
                       const Text(

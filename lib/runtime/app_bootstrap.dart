@@ -84,6 +84,7 @@ import '../features/learning_packs/application/personal_set_activities.dart';
 import '../features/learning_packs/data/drift_personal_set_repository.dart';
 import '../features/learning_packs/domain/sense_crosswalk_repository.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/context_practice_use_cases.dart';
 import '../features/learning/application/contrastive_feedback_use_cases.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
@@ -465,6 +466,7 @@ final class AppBootstrap {
     LearningTimeCaptureRollout learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
     FocusTimerRollout focusTimerRollout = const FocusTimerRollout.implementedOff(),
+    this.contextPracticeRollout = const ContextPracticeRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
@@ -586,6 +588,7 @@ final class AppBootstrap {
   final Duration activeLearningIdleTimeout;
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
   final FocusTimerRollout focusTimerRollout;
+  final ContextPracticeRollout contextPracticeRollout;
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
@@ -1931,6 +1934,7 @@ final class AppBootstrap {
         isAvailable: () => runtimeFeatures.isEnabled(Feature.studyPlanning),
       ),
       personalSetActivities: PersonalSetActivities(
+        contextAvailable: () => contextPracticeRollout.enabled && runtimeFeatures.isEnabled(Feature.quiz),
         sets: personalSets,
         learning: learning,
         isAvailable: () => runtimeFeatures.isEnabled(Feature.studyPlanning) &&
