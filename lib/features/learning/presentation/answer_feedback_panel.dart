@@ -9,12 +9,15 @@ import '../../../runtime/registries/feature_registry.dart';
 import '../application/contrastive_feedback_use_cases.dart';
 import '../domain/answer_feedback.dart';
 import 'contrastive_feedback_panel.dart';
+import 'guided_repair_screen.dart';
+import '../application/guided_repair_use_cases.dart';
 
 final class AnswerFeedbackPanel extends StatelessWidget {
   const AnswerFeedbackPanel({
     super.key,
     required this.feedback,
     this.onRetry,
+    this.onOpenGuidedRepair,
     this.onNext,
     this.bookmarkIdentity,
     this.onBookmark,
@@ -26,6 +29,7 @@ final class AnswerFeedbackPanel extends StatelessWidget {
 
   final AnswerFeedback feedback;
   final VoidCallback? onRetry;
+  final Future<GuidedRepairTicket> Function(GuidedRepairUseCases)? onOpenGuidedRepair;
   final VoidCallback? onNext;
   final ContentIdentity? bookmarkIdentity;
   final BookmarkLearningItemAction? onBookmark;
@@ -93,6 +97,7 @@ final class AnswerFeedbackPanel extends StatelessWidget {
                 const SizedBox(height: 12),
                 const ExplanationUnavailable(),
               ],
+              GuidedRepairEntry(feedback: feedback, open: onOpenGuidedRepair),
               if (bookmarkIdentity case final identity?)
                 if (onBookmark case final bookmark?) ...[
                   const SizedBox(height: 12),

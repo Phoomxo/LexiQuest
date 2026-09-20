@@ -17,6 +17,43 @@ typedef AiGatewayResolver =
 AiGatewayResolver _retainGatewayResolver(AiGatewayResolver value) => value;
 
 final class AiTutorUseCases implements AiTutorController {
+  /// Optional display-only help. The caller supplies the existing consented
+  /// tutor path; this wrapper never interprets generated text as a score.
+  static Future<({String text, bool generated})> guidedRepairHelp({
+    required Future<String> Function(AiCancellation) request,
+    required AiCancellation cancellation,
+    required String fallback,
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (timeout <= Duration.zero || timeout > const Duration(seconds: 8)) {
+      throw ArgumentError.value(timeout, 'timeout');
+    }
+    try {
+      if (cancellation.isCancelled) return (text: fallback, generated: false);
+      final text =
+          await Future.any<String>([
+            request(cancellation),
+            cancellation.whenCancelled.then(
+              (_) => throw const AiTutorException(AiFailureCode.cancelled),
+            ),
+          ]).timeout(
+            timeout,
+            onTimeout: () {
+              cancellation.cancel();
+              throw const AiTutorException(AiFailureCode.timeout);
+            },
+          );
+      if (!cancellation.isCancelled &&
+          text.trim().isNotEmpty &&
+          text.length <= 2000) {
+        return (text: text.trim(), generated: true);
+      }
+    } on Object {
+      // Offline, consent, quota, timeout and malformed responses use authored help.
+    }
+    return (text: fallback, generated: false);
+  }
+
   AiTutorUseCases({
     required this.store,
     required this.nowUtc,

@@ -207,6 +207,19 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool get configurationAcceptsOperations =>
       !_disposed && !_configurationLimitReached;
   AnswerFeedback? get feedback => _feedback;
+
+  /// Read-only entry to supplemental repair; the original answer stays frozen.
+  AnswerFeedback requireGuidedRepairFeedback() {
+    _requireNotDisposed();
+    _requireNoTerminalMutation('open guided repair');
+    _requireNoUncommittedSubmission('open guided repair');
+    final value = _feedback;
+    if ((_state.status != LessonSessionStatus.active && _state.status != LessonSessionStatus.paused) ||
+        value == null || value.isCorrect) {
+      throw StateError('Guided repair requires committed incorrect feedback');
+    }
+    return value;
+  }
   CompanionReaction? get companionReaction => _companionReaction;
   HintState? get hintState => _hints?.state;
   HintUsageSnapshot snapshotHintUsageForAcceptedEvidence() {

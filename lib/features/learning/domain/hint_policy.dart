@@ -201,6 +201,23 @@ final class HintPolicy {
     return EvidenceContext.fromJson(json);
   }
 
+  /// Only for authenticated committed origins, never caller-submitted claims.
+  static EvidenceContext applyToRepairEvidence(
+    EvidenceContext origin,
+    HintUsageSnapshot hint,
+  ) {
+    final current = classifyEvidence(
+      declaredClass: EvidenceClass.guidedPractice,
+      hint: hint,
+    );
+    final json = Map<String, Object?>.of(origin.toJson())
+      ..['evidenceClass'] = EvidenceClass.guidedPractice.name
+      ..['hintLevel'] = origin.hintLevel > current.hintLevel
+          ? origin.hintLevel
+          : current.hintLevel;
+    return EvidenceContext.fromJson(json);
+  }
+
   bool _isValid(HintState state) {
     if (state.availability == HintAvailability.unknown) return false;
     if (!_available) {

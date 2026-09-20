@@ -77,6 +77,17 @@ const _companionUseCases = CompanionReactionUseCases(
 );
 
 void main() {
+  test('guided repair entry requires acknowledged incorrect feedback', () async {
+    final fixture = await _fixture();
+    expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
+    await fixture.controller.start(fixture.startCommand);
+    await fixture.controller.submit(fixture.submission(isCorrect: false));
+    final original = fixture.controller.feedback;
+    expect(fixture.controller.requireGuidedRepairFeedback(), same(original));
+    expect(fixture.controller.feedback, same(original));
+    await fixture.controller.abandon(fixture.now.add(const Duration(seconds: 2)));
+    expect(fixture.controller.requireGuidedRepairFeedback, throwsStateError);
+  });
   testWidgets('lesson progress semantics describe lifecycle in Thai', (
     tester,
   ) async {

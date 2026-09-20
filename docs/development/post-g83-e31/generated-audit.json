@@ -1,0 +1,31 @@
+{
+  "changed": [
+    "$$LocalOwnersTableTableManager",
+    "$$AnswerAttemptsTableAnnotationComposer",
+    "$$LocalOwnersTableReferences",
+    "$$LocalOwnersTableFilterComposer",
+    "_$AppDatabase",
+    "$$LocalOwnersTableAnnotationComposer",
+    "$AppDatabaseManager",
+    "$$LocalOwnersTableProcessedTableManager",
+    "$$AnswerAttemptsTableFilterComposer",
+    "$$AnswerAttemptsTableTableManager",
+    "$$AnswerAttemptsTableReferences",
+    "$$AnswerAttemptsTableProcessedTableManager"
+  ],
+  "removed": [],
+  "unchanged": 581,
+  "new": [
+    "$$GuidedRepairOperationsTableReferences",
+    "$$GuidedRepairOperationsTableUpdateCompanionBuilder",
+    "$$GuidedRepairOperationsTableAnnotationComposer",
+    "$$GuidedRepairOperationsTableOrderingComposer",
+    "GuidedRepairOperationsCompanion",
+    "$$GuidedRepairOperationsTableFilterComposer",
+    "$$GuidedRepairOperationsTableProcessedTableManager",
+    "$$GuidedRepairOperationsTableTableManager",
+    "$GuidedRepairOperationsTable",
+    "$$GuidedRepairOperationsTableCreateCompanionBuilder",
+    "GuidedRepairOperation"
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "slice": "E3.1",
+  "feature": "F03",
+  "status": "Passed",
+  "baseSha": "d63e356f919931bdddeb2394609dd925cf4a38e7",
+  "sourcePinsSha256": {
+    "lib/data/local/app_database.dart": "6d879faa129b4b3252008a0cef8708167dbff109cff49059c13e5313d256ab8b",
+    "lib/data/local/app_database.g.dart": "4951fe7c385e822cd5c16c3120cd7ee0d29211458a3951684942e97002e223d9",
+    "lib/data/local/tables/guided_repair_tables.dart": "3fa7660fc874c2e9e4c315d7c93a909925e3b908139bf7aeda4f88808597ac60",
+    "lib/features/ai_tutor/application/ai_tutor_use_cases.dart": "70d5322f874558d9325ebe343f01fb5885a077e80d3be8bed028b3729e010d37",
+    "lib/features/identity/domain/owner_lifecycle_manifest.dart": "d6029fe2d61bdb8af106b4d2bbcbca2f84cda62b1f9b73b4e8c4a9aebe4f4358",
+    "lib/features/learning/application/contrastive_feedback_use_cases.dart": "9003f78088b218d8b495acf1120dc180f0f1da49e6cfdb504b6c3f448aa129a1",
+    "lib/features/learning/application/guided_repair_use_cases.dart": "9024ada7f3201a29bcc2fd7106c1a2b64f673834708d0ca6cc3fb04d01cb7dc2",
+    "lib/features/learning/application/unified_lesson_controller.dart": "db8eb5a3bd55d966f76832f43899d4a7eff81771bda22d9068cede1a0a3bae0a",
+    "lib/features/learning/domain/guided_repair.dart": "4ec2b4f21010a8fba853adaec4b6168bd4c7ed34d2d679afb27a846305aeafc2",
+    "lib/features/learning/domain/hint_policy.dart": "7464ec9aa9ab12b26daf05594242444667729d7ab048ac3f17c818d6d613caea",
+    "lib/features/learning/presentation/answer_feedback_panel.dart": "3e6c8f133291398eb74f47553569168375918849b611f037d30afa6fe7f3d816",
+    "lib/features/learning/presentation/guided_repair_screen.dart": "ec320b2336b8fbe788adc2cf310a8e8672a322b705ec1dd25da973e224c435f0",
+    "lib/features/learning/presentation/unified_lesson_shell.dart": "5d2c201f0c4e14f445bdf434a82692ae55fa9467bc01e2ec761a5c5c6d48bd1f",
+    "lib/runtime/app_bootstrap.dart": "1ac4d8441c54df4c6b488ff83f069f22e5b874867cc9e3e8fb90f85307d07e24",
+    "lib/runtime/app_dependencies.dart": "9fc7ee61cdbc74a5821ede9c6cc92eeb105196f769f13e09bab0713e5c447e09",
+    "test/features/ai_tutor/guided_repair_help_test.dart": "5a1b9c38c4797f1faea89a57de10e493a962e22486a1f1ba5864d8a557131829",
+    "test/features/goals/study_plan_repository_test.dart": "bd4c41d4800b070e2aa7c11783859c651b1ae6a89f70b9c35d2dc3f6c50e1831",
+    "test/features/learning/contrastive_feedback_test.dart": "0f2d2862d207625bf35dac18706e58e1473b8f5b5bc45d5e8cfbc4f36c504871",
+    "test/features/learning/guided_repair_panel_test.dart": "16a21fb24ed4f0fdcdb744502641f6a50d733bbb9ecbe889b4459218252c10f5",
+    "test/features/learning/guided_repair_storage_test.dart": "272b411731bc74d2cb0b2b84b0e7dc3da72ff423611814da7af9271df32c27b4",
+    "test/features/learning/guided_repair_use_cases_test.dart": "15ec6f295281504a80336d279d4f735c9ac2cf5d39e90c3f51f75c5809321a3c",
+    "test/features/learning/hint_policy_test.dart": "4805b4d4e6e8715ff3727ae4e4d8fcbf1bf4a578a1ebada8b432db75913f38b1",
+    "test/features/learning/unified_lesson_controller_test.dart": "99745412448e86ddf91ef8b0c30bc9bddd471ef95be741e899e811f4b6306db1",
+    "test/scenarios/complete_owner_export_delete_test.dart": "06728b5ad7d6db4adc5c63049a93816ef5bc1e1ed226d79804f30c762aee5877",
+    "test/support/current_database_contract.dart": "343f997ce11044fa33bed12577b10870f03b44d791d74395be28115ef9f2b017"
+  },
+  "verification": {
+    "postFingerprint": "30486d2a6358f623b84d194448607e8f7e3ff393309e53d752a89b277d0ebef3",
+    "fingerprint": "30486d2a6358f623b84d194448607e8f7e3ff393309e53d752a89b277d0ebef3",
+    "receipt": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E3.1/all-runs/targeted-runtime-ea0ee5e5f418178775611e3e4392ed9d22580c4757d4014697aa417aed2629e9.json",
+    "targets": 13,
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "fdd3908ad7f940a4ccc16790687926f7919edead6b570148ac714b3f08b9bea2",
+        "fingerprint": "30486d2a6358f623b84d194448607e8f7e3ff393309e53d752a89b277d0ebef3",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T08:24:59.2844886+07:00",
+        "FinishedAt": "2026-09-20T08:26:09.1660339+07:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\caa1\\LexiQuest\\build\\verification\\d63e356f919931bdddeb2394609dd925cf4a38e7\\fdd3908ad7f9-30486d2a6358-c1aebacd\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\caa1\\LexiQuest\\build\\verification\\d63e356f919931bdddeb2394609dd925cf4a38e7\\fdd3908ad7f9-30486d2a6358-c1aebacd\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "30486d2a6358f623b84d194448607e8f7e3ff393309e53d752a89b277d0ebef3",
+        "StdoutHash": "AE67D89D7A70009E97A05BC76EB991CA72BAE8B56938F79DA7A7EDE27B95D4F1",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ],
+    "tests": 366
+  },
+  "outcomes": {
+    "content": "Verified original manifest/core and fresh explanation revalidation; unapproved content unavailable",
+    "restore": "Scoped repair-history import, contiguous replay, exact idempotency, future-reader and cross-owner rejection",
+    "restart": "Close and reopen SQLite file, recreate generation and coordinator, reconstruct exact repair",
+    "bounded": "Two total hints and three attempts per original, terminal success/exit/exhaustion",
+    "assistance": "Authenticated origin hint provenance retained; all repair outcomes guidedPractice",
+    "lifecycle": "Schema31 additive upgrade/rollback, canonical owner export/delete, guest account transfer, wrong-owner rejection",
+    "researchOff": "Zero research fixture rows, no research outbox, canonical events unchanged",
+    "original": "Canonical answers/events unchanged; no repair SRS/XP/coin writer",
+    "lostAck": "Exact persisted operation replay adds no row; changed payload collides"
+  },
+  "analysis": {
+    "newFiles": "No issues found",
+    "log": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E3.1/analysis.txt",
+    "integration": "exit0; two inherited bootstrap info notices verified against predecessor"
+  },
+  "review": {
+    "type": "writer self-review only; no independent reviewer",
+    "generatedAudit": "generated-audit.json",
+    "defects": "defects-and-review.json",
+    "unresolved": []
+  },
+  "visual": {
+    "sha256": "f15129959082c5423eff6d71e1e5f952ceb923e8d6beeaf818593730cecfaa50",
+    "checked": "Visible controls, wrapped input label, scrollability; not physical-device or screen-reader evidence",
+    "path": "repair.png",
+    "kind": "Flutter widget rendering, 320px/text200, real Thai fonts"
+  },
+  "limitations": [
+    "Original12 starter scored admission unchanged; editorial5500 not approved",
+    "Supplemental repair history, not canonical mastery or reward",
+    "Scoped repair-history restore only; canonical origin must exist; not full DB/redacted archive restore",
+    "No live provider, full release suite, Android build, device or camera claim",
+    "E6 review/freeze and all E7 G8.4-G8.9 retained",
+    "Standard/default requested; effective tier unverified"
+  ]
+}

@@ -23,6 +23,7 @@ import 'tables/motivation_tables.dart';
 import 'tables/planning_tables.dart';
 import 'tables/personal_set_tables.dart';
 import 'tables/study_plan_tables.dart';
+import 'tables/guided_repair_tables.dart';
 import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
@@ -92,10 +93,11 @@ part 'app_database.g.dart';
     PersonalSetMembers,
     StudyPlanRevisions,
     ActivePlanPointers,
+    GuidedRepairOperations,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 30;
+  static const int currentSchemaVersion = 31;
 
   AppDatabase(super.executor);
 
@@ -389,9 +391,12 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 25) await _upgradeQuestPeriods(migrator);
       if (from < 26) await _upgradeResearchSessionProofs(migrator);
-      // The v30 extension is one additive unit. Do not wrap historical table
+      // The v30/v31 extensions are one additive unit. Do not wrap historical table
       // rebuilds here: those own their foreign-key/transaction boundaries.
       await transaction(() async {
+        if (!await _tableExists('guided_repair_operations')) {
+          await migrator.createTable(guidedRepairOperations);
+        }
         if (!await _tableExists('study_plan_revisions')) {
           await migrator.createTable(studyPlanRevisions);
         }
@@ -407,6 +412,13 @@ final class AppDatabase extends _$AppDatabase {
         BEFORE UPDATE OF id, source_table, payload_json ON legacy_learning_records
         BEGIN SELECT RAISE(ABORT, 'legacy_learning_history_immutable'); END
       """);
+      await customStatement("CREATE TRIGGER IF NOT EXISTS guided_repair_immutable "
+          "BEFORE UPDATE OF operation_id, origin_id, revision, payload_json ON guided_repair_operations "
+          "BEGIN SELECT RAISE(ABORT, 'guided_repair_immutable'); END");
+      await customStatement("CREATE TRIGGER IF NOT EXISTS guided_repair_no_replace "
+          "BEFORE INSERT ON guided_repair_operations WHEN EXISTS (SELECT 1 FROM guided_repair_operations "
+          "WHERE owner_id=NEW.owner_id AND operation_id=NEW.operation_id) "
+          "BEGIN SELECT RAISE(ABORT, 'guided_repair_duplicate'); END");
       await _createLearningIndexes();
       await _createEventIndexes();
       await _createAiUsageIndexes();

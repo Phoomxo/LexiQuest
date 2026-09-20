@@ -1,3 +1,4 @@
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
@@ -5,6 +6,22 @@ import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
 
 void main() {
+  test('reapplying hints cannot erase assistance already on the evidence', () {
+    final original = EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.guidedPractice,
+      skillId: 'typed-recall',
+      hintLevel: 1,
+      contentRevision: 'r1',
+      rolloutMode: EvidencePolicyRolloutMode.legacy,
+    );
+    final repaired = HintPolicy.applyToRepairEvidence(
+      original,
+      const HintUsageSnapshot.known(0),
+    );
+    expect(repaired.hintLevel, 1);
+    expect(repaired.evidenceClass, EvidenceClass.guidedPractice);
+    expect(original.hintLevel, 1);
+  });
   test('reveals strategy then context under one deterministic budget', () {
     final hints = HintUseCases(policy: _policy());
 

@@ -38419,6 +38419,399 @@ class ActivePlanPointersCompanion extends UpdateCompanion<ActivePlanPointer> {
   }
 }
 
+class $GuidedRepairOperationsTable extends GuidedRepairOperations
+    with TableInfo<$GuidedRepairOperationsTable, GuidedRepairOperation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GuidedRepairOperationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _originIdMeta = const VerificationMeta(
+    'originId',
+  );
+  @override
+  late final GeneratedColumn<String> originId = GeneratedColumn<String>(
+    'origin_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES answer_attempts (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (revision BETWEEN 1 AND 6)',
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    operationId,
+    originId,
+    revision,
+    payloadJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'guided_repair_operations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GuidedRepairOperation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('origin_id')) {
+      context.handle(
+        _originIdMeta,
+        originId.isAcceptableOrUnknown(data['origin_id']!, _originIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_originIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, operationId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, originId, revision},
+  ];
+  @override
+  GuidedRepairOperation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GuidedRepairOperation(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      originId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $GuidedRepairOperationsTable createAlias(String alias) {
+    return $GuidedRepairOperationsTable(attachedDatabase, alias);
+  }
+}
+
+class GuidedRepairOperation extends DataClass
+    implements Insertable<GuidedRepairOperation> {
+  final String ownerId;
+  final String operationId;
+  final String originId;
+  final int revision;
+  final String payloadJson;
+  const GuidedRepairOperation({
+    required this.ownerId,
+    required this.operationId,
+    required this.originId,
+    required this.revision,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['operation_id'] = Variable<String>(operationId);
+    map['origin_id'] = Variable<String>(originId);
+    map['revision'] = Variable<int>(revision);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  GuidedRepairOperationsCompanion toCompanion(bool nullToAbsent) {
+    return GuidedRepairOperationsCompanion(
+      ownerId: Value(ownerId),
+      operationId: Value(operationId),
+      originId: Value(originId),
+      revision: Value(revision),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory GuidedRepairOperation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GuidedRepairOperation(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      originId: serializer.fromJson<String>(json['originId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'operationId': serializer.toJson<String>(operationId),
+      'originId': serializer.toJson<String>(originId),
+      'revision': serializer.toJson<int>(revision),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  GuidedRepairOperation copyWith({
+    String? ownerId,
+    String? operationId,
+    String? originId,
+    int? revision,
+    String? payloadJson,
+  }) => GuidedRepairOperation(
+    ownerId: ownerId ?? this.ownerId,
+    operationId: operationId ?? this.operationId,
+    originId: originId ?? this.originId,
+    revision: revision ?? this.revision,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  GuidedRepairOperation copyWithCompanion(
+    GuidedRepairOperationsCompanion data,
+  ) {
+    return GuidedRepairOperation(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      originId: data.originId.present ? data.originId.value : this.originId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GuidedRepairOperation(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId, ')
+          ..write('originId: $originId, ')
+          ..write('revision: $revision, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(ownerId, operationId, originId, revision, payloadJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GuidedRepairOperation &&
+          other.ownerId == this.ownerId &&
+          other.operationId == this.operationId &&
+          other.originId == this.originId &&
+          other.revision == this.revision &&
+          other.payloadJson == this.payloadJson);
+}
+
+class GuidedRepairOperationsCompanion
+    extends UpdateCompanion<GuidedRepairOperation> {
+  final Value<String> ownerId;
+  final Value<String> operationId;
+  final Value<String> originId;
+  final Value<int> revision;
+  final Value<String> payloadJson;
+  final Value<int> rowid;
+  const GuidedRepairOperationsCompanion({
+    this.ownerId = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.originId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GuidedRepairOperationsCompanion.insert({
+    required String ownerId,
+    required String operationId,
+    required String originId,
+    required int revision,
+    required String payloadJson,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       operationId = Value(operationId),
+       originId = Value(originId),
+       revision = Value(revision),
+       payloadJson = Value(payloadJson);
+  static Insertable<GuidedRepairOperation> custom({
+    Expression<String>? ownerId,
+    Expression<String>? operationId,
+    Expression<String>? originId,
+    Expression<int>? revision,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (operationId != null) 'operation_id': operationId,
+      if (originId != null) 'origin_id': originId,
+      if (revision != null) 'revision': revision,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GuidedRepairOperationsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? operationId,
+    Value<String>? originId,
+    Value<int>? revision,
+    Value<String>? payloadJson,
+    Value<int>? rowid,
+  }) {
+    return GuidedRepairOperationsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      operationId: operationId ?? this.operationId,
+      originId: originId ?? this.originId,
+      revision: revision ?? this.revision,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (originId.present) {
+      map['origin_id'] = Variable<String>(originId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GuidedRepairOperationsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId, ')
+          ..write('originId: $originId, ')
+          ..write('revision: $revision, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -38521,6 +38914,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $StudyPlanRevisionsTable(this);
   late final $ActivePlanPointersTable activePlanPointers =
       $ActivePlanPointersTable(this);
+  late final $GuidedRepairOperationsTable guidedRepairOperations =
+      $GuidedRepairOperationsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -38580,6 +38975,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     personalSetMembers,
     studyPlanRevisions,
     activePlanPointers,
+    guidedRepairOperations,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -38697,6 +39093,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('study_reminders', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'answer_attempts',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('guided_repair_operations', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -39645,6 +40050,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _activePlanPointersRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $GuidedRepairOperationsTable,
+    List<GuidedRepairOperation>
+  >
+  _guidedRepairOperationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.guidedRepairOperations,
+        aliasName: 'local_owners__id__guided_repair_operations__owner_id',
+      );
+
+  $$GuidedRepairOperationsTableProcessedTableManager
+  get guidedRepairOperationsRefs {
+    final manager = $$GuidedRepairOperationsTableTableManager(
+      $_db,
+      $_db.guidedRepairOperations,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _guidedRepairOperationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -40778,6 +41208,32 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> guidedRepairOperationsRefs(
+    Expression<bool> Function($$GuidedRepairOperationsTableFilterComposer f) f,
+  ) {
+    final $$GuidedRepairOperationsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.guidedRepairOperations,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$GuidedRepairOperationsTableFilterComposer(
+                $db: $db,
+                $table: $db.guidedRepairOperations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -41961,6 +42417,32 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> guidedRepairOperationsRefs<T extends Object>(
+    Expression<T> Function($$GuidedRepairOperationsTableAnnotationComposer a) f,
+  ) {
+    final $$GuidedRepairOperationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.guidedRepairOperations,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$GuidedRepairOperationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.guidedRepairOperations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -42020,6 +42502,7 @@ class $$LocalOwnersTableTableManager
             bool personalSetRevisionsRefs,
             bool studyPlanRevisionsRefs,
             bool activePlanPointersRefs,
+            bool guidedRepairOperationsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -42122,6 +42605,7 @@ class $$LocalOwnersTableTableManager
                 personalSetRevisionsRefs = false,
                 studyPlanRevisionsRefs = false,
                 activePlanPointersRefs = false,
+                guidedRepairOperationsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -42172,6 +42656,7 @@ class $$LocalOwnersTableTableManager
                     if (personalSetRevisionsRefs) db.personalSetRevisions,
                     if (studyPlanRevisionsRefs) db.studyPlanRevisions,
                     if (activePlanPointersRefs) db.activePlanPointers,
+                    if (guidedRepairOperationsRefs) db.guidedRepairOperations,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -43079,6 +43564,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (guidedRepairOperationsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          GuidedRepairOperation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._guidedRepairOperationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).guidedRepairOperationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -43143,6 +43649,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool personalSetRevisionsRefs,
         bool studyPlanRevisionsRefs,
         bool activePlanPointersRefs,
+        bool guidedRepairOperationsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -55853,6 +56360,31 @@ final class $$AnswerAttemptsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $GuidedRepairOperationsTable,
+    List<GuidedRepairOperation>
+  >
+  _guidedRepairOperationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.guidedRepairOperations,
+        aliasName: 'answer_attempts__id__guided_repair_operations__origin_id',
+      );
+
+  $$GuidedRepairOperationsTableProcessedTableManager
+  get guidedRepairOperationsRefs {
+    final manager = $$GuidedRepairOperationsTableTableManager(
+      $_db,
+      $_db.guidedRepairOperations,
+    ).filter((f) => f.originId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _guidedRepairOperationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$AnswerAttemptsTableFilterComposer
@@ -55976,6 +56508,32 @@ class $$AnswerAttemptsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> guidedRepairOperationsRefs(
+    Expression<bool> Function($$GuidedRepairOperationsTableFilterComposer f) f,
+  ) {
+    final $$GuidedRepairOperationsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.guidedRepairOperations,
+          getReferencedColumn: (t) => t.originId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$GuidedRepairOperationsTableFilterComposer(
+                $db: $db,
+                $table: $db.guidedRepairOperations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
   }
 }
 
@@ -56221,6 +56779,32 @@ class $$AnswerAttemptsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> guidedRepairOperationsRefs<T extends Object>(
+    Expression<T> Function($$GuidedRepairOperationsTableAnnotationComposer a) f,
+  ) {
+    final $$GuidedRepairOperationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.guidedRepairOperations,
+          getReferencedColumn: (t) => t.originId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$GuidedRepairOperationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.guidedRepairOperations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$AnswerAttemptsTableTableManager
@@ -56236,7 +56820,12 @@ class $$AnswerAttemptsTableTableManager
           $$AnswerAttemptsTableUpdateCompanionBuilder,
           (AnswerAttempt, $$AnswerAttemptsTableReferences),
           AnswerAttempt,
-          PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool sessionId,
+            bool wordId,
+            bool guidedRepairOperationsRefs,
+          })
         > {
   $$AnswerAttemptsTableTableManager(
     _$AppDatabase db,
@@ -56320,10 +56909,17 @@ class $$AnswerAttemptsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ownerId = false, sessionId = false, wordId = false}) {
+              ({
+                ownerId = false,
+                sessionId = false,
+                wordId = false,
+                guidedRepairOperationsRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (guidedRepairOperationsRefs) db.guidedRepairOperations,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -56389,7 +56985,29 @@ class $$AnswerAttemptsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (guidedRepairOperationsRefs)
+                        await $_getPrefetchedData<
+                          AnswerAttempt,
+                          $AnswerAttemptsTable,
+                          GuidedRepairOperation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AnswerAttemptsTableReferences
+                              ._guidedRepairOperationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AnswerAttemptsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).guidedRepairOperationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.originId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -56409,7 +57027,12 @@ typedef $$AnswerAttemptsTableProcessedTableManager =
       $$AnswerAttemptsTableUpdateCompanionBuilder,
       (AnswerAttempt, $$AnswerAttemptsTableReferences),
       AnswerAttempt,
-      PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+      PrefetchHooks Function({
+        bool ownerId,
+        bool sessionId,
+        bool wordId,
+        bool guidedRepairOperationsRefs,
+      })
     >;
 typedef $$SrsStatesTableCreateCompanionBuilder =
     SrsStatesCompanion Function({
@@ -71404,6 +72027,438 @@ typedef $$ActivePlanPointersTableProcessedTableManager =
       ActivePlanPointer,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$GuidedRepairOperationsTableCreateCompanionBuilder =
+    GuidedRepairOperationsCompanion Function({
+      required String ownerId,
+      required String operationId,
+      required String originId,
+      required int revision,
+      required String payloadJson,
+      Value<int> rowid,
+    });
+typedef $$GuidedRepairOperationsTableUpdateCompanionBuilder =
+    GuidedRepairOperationsCompanion Function({
+      Value<String> ownerId,
+      Value<String> operationId,
+      Value<String> originId,
+      Value<int> revision,
+      Value<String> payloadJson,
+      Value<int> rowid,
+    });
+
+final class $$GuidedRepairOperationsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $GuidedRepairOperationsTable,
+          GuidedRepairOperation
+        > {
+  $$GuidedRepairOperationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('guided_repair_operations__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AnswerAttemptsTable _originIdTable(_$AppDatabase db) => db
+      .answerAttempts
+      .createAlias('guided_repair_operations__origin_id__answer_attempts__id');
+
+  $$AnswerAttemptsTableProcessedTableManager get originId {
+    final $_column = $_itemColumn<String>('origin_id')!;
+
+    final manager = $$AnswerAttemptsTableTableManager(
+      $_db,
+      $_db.answerAttempts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_originIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$GuidedRepairOperationsTableFilterComposer
+    extends Composer<_$AppDatabase, $GuidedRepairOperationsTable> {
+  $$GuidedRepairOperationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableFilterComposer get originId {
+    final $$AnswerAttemptsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableFilterComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GuidedRepairOperationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $GuidedRepairOperationsTable> {
+  $$GuidedRepairOperationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableOrderingComposer get originId {
+    final $$AnswerAttemptsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableOrderingComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GuidedRepairOperationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GuidedRepairOperationsTable> {
+  $$GuidedRepairOperationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AnswerAttemptsTableAnnotationComposer get originId {
+    final $$AnswerAttemptsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.originId,
+      referencedTable: $db.answerAttempts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AnswerAttemptsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.answerAttempts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$GuidedRepairOperationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GuidedRepairOperationsTable,
+          GuidedRepairOperation,
+          $$GuidedRepairOperationsTableFilterComposer,
+          $$GuidedRepairOperationsTableOrderingComposer,
+          $$GuidedRepairOperationsTableAnnotationComposer,
+          $$GuidedRepairOperationsTableCreateCompanionBuilder,
+          $$GuidedRepairOperationsTableUpdateCompanionBuilder,
+          (GuidedRepairOperation, $$GuidedRepairOperationsTableReferences),
+          GuidedRepairOperation,
+          PrefetchHooks Function({bool ownerId, bool originId})
+        > {
+  $$GuidedRepairOperationsTableTableManager(
+    _$AppDatabase db,
+    $GuidedRepairOperationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GuidedRepairOperationsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$GuidedRepairOperationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$GuidedRepairOperationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<String> originId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GuidedRepairOperationsCompanion(
+                ownerId: ownerId,
+                operationId: operationId,
+                originId: originId,
+                revision: revision,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String operationId,
+                required String originId,
+                required int revision,
+                required String payloadJson,
+                Value<int> rowid = const Value.absent(),
+              }) => GuidedRepairOperationsCompanion.insert(
+                ownerId: ownerId,
+                operationId: operationId,
+                originId: originId,
+                revision: revision,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$GuidedRepairOperationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, originId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$GuidedRepairOperationsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$GuidedRepairOperationsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (originId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.originId,
+                                referencedTable:
+                                    $$GuidedRepairOperationsTableReferences
+                                        ._originIdTable(db),
+                                referencedColumn:
+                                    $$GuidedRepairOperationsTableReferences
+                                        ._originIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$GuidedRepairOperationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GuidedRepairOperationsTable,
+      GuidedRepairOperation,
+      $$GuidedRepairOperationsTableFilterComposer,
+      $$GuidedRepairOperationsTableOrderingComposer,
+      $$GuidedRepairOperationsTableAnnotationComposer,
+      $$GuidedRepairOperationsTableCreateCompanionBuilder,
+      $$GuidedRepairOperationsTableUpdateCompanionBuilder,
+      (GuidedRepairOperation, $$GuidedRepairOperationsTableReferences),
+      GuidedRepairOperation,
+      PrefetchHooks Function({bool ownerId, bool originId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -71535,4 +72590,9 @@ class $AppDatabaseManager {
       $$StudyPlanRevisionsTableTableManager(_db, _db.studyPlanRevisions);
   $$ActivePlanPointersTableTableManager get activePlanPointers =>
       $$ActivePlanPointersTableTableManager(_db, _db.activePlanPointers);
+  $$GuidedRepairOperationsTableTableManager get guidedRepairOperations =>
+      $$GuidedRepairOperationsTableTableManager(
+        _db,
+        _db.guidedRepairOperations,
+      );
 }

@@ -1619,6 +1619,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                           role: AccessibilitySemanticRole.feedback,
                           child: AnswerFeedbackPanel(
                             feedback: feedback,
+                            onOpenGuidedRepair: (app) => app.open(controller.requireGuidedRepairFeedback()),
                             bookmarkIdentity: feedback.bookmarkIdentity,
                             onBookmark: bookmarkLearningItem,
                             reportIdentity: feedback.bookmarkIdentity,

@@ -60,6 +60,19 @@ final class ContrastiveFeedbackUseCases {
     return resolution;
   }
 
+  /// A repair can reopen after content withdrawal; do not reuse a display cache.
+  Future<ContrastiveExplanation?> resolveForRepair({
+    required AnswerFeedback committedFeedback,
+  }) {
+    final attempt = committedFeedback.committedContrastiveAttempt;
+    if (committedFeedback.isCorrect ||
+        attempt == null ||
+        !attempt.isSelfConsistent) {
+      return Future<ContrastiveExplanation?>.value();
+    }
+    return _resolve(attempt);
+  }
+
   Future<ContrastiveExplanation?> _resolve(
     CommittedContrastiveAttempt attempt,
   ) async {

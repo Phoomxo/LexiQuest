@@ -1,4 +1,13 @@
+import 'package:vocab_learning_app/features/learning/application/guided_repair_use_cases.dart';
+import 'package:vocab_learning_app/features/identity/application/owner_generation.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_generation.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -29,6 +38,14 @@ import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
+  test('repair explanation revalidates content after cached feedback', () async {
+    final artifacts = <ContentIdentity, VerifiedContentManifest>{_identity('word:station', 4): _verifiedArtifact(identity: _identity('word:station', 4))};
+    final repository = _MemoryManifestRepository(artifacts);
+    final app = ContrastiveFeedbackUseCases(manifests: repository);
+    expect(await app.resolveAfterCommit(committedFeedback: _feedback()), isNotNull);
+    artifacts.clear();
+    expect(await app.resolveForRepair(committedFeedback: _feedback()), isNull);
+  });
   testWidgets('B07 explanation expansion preserves outer reading position', (tester) async {
     final scroll = ScrollController();
     addTearDown(scroll.dispose);
@@ -188,8 +205,11 @@ void main() {
     test(
       'real Drift f04 lexical artifact verifies exact bytes and checksum',
       () async {
-        final database = AppDatabase(NativeDatabase.memory());
-        addTearDown(database.close);
+        final directory = await Directory.systemTemp.createTemp('e31-repair-restart-');
+        addTearDown(() => directory.delete(recursive: true));
+        final file = File('${directory.path}/repair.sqlite');
+        var database = AppDatabase(NativeDatabase(file));
+        addTearDown(() => database.close());
         final identity = _identity('word:station', 4);
         final bytes = _lexicalArtifactBytes(identity: identity);
         final checksum = sha256.convert(bytes).toString();
@@ -217,7 +237,7 @@ void main() {
                 ),
               ),
             );
-        final manifests = DriftContentManifestRepository(
+        var manifests = DriftContentManifestRepository(
           database,
           loadArtifactBytes: (requested) async =>
               requested == identity ? bytes : null,
@@ -266,8 +286,11 @@ void main() {
     test(
       'real meaning review publishes exact token only after canonical commit',
       () async {
-        final database = AppDatabase(NativeDatabase.memory());
-        addTearDown(database.close);
+        final directory = await Directory.systemTemp.createTemp('e31-repair-restart-');
+        addTearDown(() => directory.delete(recursive: true));
+        final file = File('${directory.path}/repair.sqlite');
+        var database = AppDatabase(NativeDatabase(file));
+        addTearDown(() => database.close());
         final now = DateTime.utc(2026, 8, 26, 9);
         final owners = DriftLocalOwnerRepository(
           database,
@@ -391,7 +414,7 @@ void main() {
           stationIdentity: stationBytes,
           terminalIdentity: terminalBytes,
         };
-        final manifests = DriftContentManifestRepository(
+        var manifests = DriftContentManifestRepository(
           database,
           loadArtifactBytes: (identity) async => artifactBytes[identity],
         );
@@ -508,6 +531,76 @@ void main() {
           await database.select(database.eventsV2).get(),
           eventsAfterCommit,
         );
+        Future<String> activeOwner() async => (await database.customSelect('SELECT id FROM local_owners WHERE is_active=1').getSingle()).read<String>('id');
+        var generation = OwnerGeneration(activeOwnerId: activeOwner,
+          readDurableStamp: DriftOwnerGeneration(database).read);
+        GuidedRepairUseCases makeRepair() => GuidedRepairUseCases(
+          learning: DriftLearningRepository(database), manifests: manifests,
+          ownerGeneration: generation, nowUtc: () => now,
+          ownerOperations: OwnerOperationCoordinator(gate: DriftOwnerOperationGate(database),
+            activeOwnerId: activeOwner, nowUtc: () => now), isAvailable: () => true);
+        final repair = makeRepair();
+        final ticket = await repair.open(review.feedback!);
+        expect(ticket.state.attempts, 0);
+        var routeChecks = 0;
+        await expectLater(repair.act(ticket, operationId: 'retired-before-commit', action: 'hint',
+          mutationAllowed: () => ++routeChecks == 1), throwsStateError);
+        expect(await database.select(database.guidedRepairOperations).get(), isEmpty);
+        final hinted = await repair.act(ticket, operationId: 'repair-hint', action: 'hint');
+        expect(hinted.state.hintLevel, 1);
+        final retried = await repair.act(hinted, operationId: 'repair-answer', action: 'answer', answer: 'wrong');
+        expect(retried.state.attempts, 1);
+        final replay = await repair.act(hinted, operationId: 'repair-answer', action: 'answer', answer: 'wrong');
+        expect(replay.state.toJson(), retried.state.toJson());
+        await expectLater(repair.act(hinted, operationId: 'repair-answer', action: 'answer', answer: 'changed'), throwsStateError);
+        final reopened = await makeRepair().open(review.feedback!);
+        expect(reopened.state.hintLevel, 1);
+        expect(reopened.state.attempts, 1);
+        final done = await repair.act(reopened, operationId: 'repair-correct', action: 'answer', answer: question.word.spelling);
+        expect(done.state.correct, isTrue);
+        expect(done.state.evidenceClass, 'guidedPractice');
+        await expectLater(repair.act(done, operationId: 'fourth', action: 'answer', answer: 'wrong'), throwsStateError);
+        expect(await database.select(database.answerAttempts).get(), attemptsAfterCommit);
+        expect(await database.select(database.eventsV2).get(), eventsAfterCommit);
+        await expectLater(database.customStatement("UPDATE guided_repair_operations SET payload_json='{}'"), throwsA(anything));
+        await expectLater(database.customStatement('INSERT OR REPLACE INTO guided_repair_operations SELECT * FROM guided_repair_operations'), throwsA(anything));
+        for (final table in ['assessment_runs', 'motivation_responses', 'measurement_opportunities', 'research_participation_permits']) {
+          expect((await database.customSelect('SELECT COUNT(*) AS n FROM $table').getSingle()).read<int>('n'), 0);
+        }
+        expect((await database.select(database.outboxOperations).get()).where((r) => r.entityType.contains('research')), isEmpty);
+        final archive = await repair.exportArchive(done.owner);
+        await database.customStatement('DELETE FROM guided_repair_operations');
+        await repair.restoreArchive(done.owner, archive);
+        await expectLater(repair.restoreArchive(done.owner, {...archive, 'schemaVersion': 999}), throwsFormatException);
+        expect((await makeRepair().resume(attempt.attemptIdentity)).state.toJson(), done.state.toJson());
+        final rows = await database.select(database.guidedRepairOperations).get();
+        await expectLater(repair.act(hinted, operationId: 'stale', action: 'hint'), throwsStateError);
+        expect(await database.select(database.guidedRepairOperations).get(), rows);
+        await database.customStatement("INSERT INTO local_owners(id,firebase_uid,account_state,created_at_utc_ms,is_active) VALUES('account','repair-user','firebaseBound',2,0)");
+        await database.customStatement("UPDATE local_owners SET is_active=CASE WHEN id='account' THEN 1 ELSE 0 END");
+        await expectLater(repair.act(done, operationId: 'late-owner', action: 'exit'), throwsStateError);
+        await expectLater(makeRepair().resume(attempt.attemptIdentity), throwsStateError);
+        await database.customStatement('UPDATE local_owners SET is_active=CASE WHEN id=? THEN 1 ELSE 0 END', [owner.id]);
+        await database.close();
+        database = AppDatabase(NativeDatabase(file));
+        manifests = DriftContentManifestRepository(database, loadArtifactBytes: (identity) async => artifactBytes[identity]);
+        generation = OwnerGeneration(activeOwnerId: activeOwner, readDurableStamp: DriftOwnerGeneration(database).read);
+        final restarted = await makeRepair().resume(attempt.attemptIdentity);
+        expect(restarted.state.toJson(), done.state.toJson());
+        expect(await database.select(database.answerAttempts).get(), attemptsAfterCommit);
+        final upgrade = DriftOwnerUpgradeRepository(database, nowUtc: () => now,
+          generateConflictId: () => 'repair-conflict:${++id}', generateOwnerId: () => 'new-guest',
+          generateOwnerOperationToken: () => 'upgrade-lease', deleteOwnerSecrets: (_) async {});
+        await upgrade.upgrade(activeOwnerId: owner.id, firebaseUid: 'repair-user');
+        final merged = await makeRepair().resume(attempt.attemptIdentity);
+        expect(merged.state.toJson(), done.state.toJson());
+        expect((await database.select(database.guidedRepairOperations).get()).every((r) => r.ownerId == 'account'), isTrue);
+        final exported = await OwnerLifecycleArchiveExporter(database: database, nowUtc: () => now).prepareActive();
+        final tables = ((jsonDecode(utf8.decode(exported.bytes)) as Map)['content'] as Map)['tables'] as List;
+        final group = tables.cast<Map>().singleWhere((t) => t['alias'] == 'guidedRepairOperations');
+        expect((group['records'] as List).single['recordCount'], 3);
+        await LocalDataDeletion(database, deleteOwnerSecrets: (_) async {}).eraseAll(ownerId: 'account');
+        expect(await database.select(database.guidedRepairOperations).get(), isEmpty);
       },
     );
   });
