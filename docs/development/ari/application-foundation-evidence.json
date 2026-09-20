@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
+  "sourceSha": "80b227813483b630128c78edd4f8b31554f4f1c0",
+  "scope": "Application foundation only; simulated transport, no provider calls",
+  "implemented": [
+    "keyless injected transport boundary, separate from BYOK",
+    "owner/account/generation and lease fenced lifecycle",
+    "bounded connect/reply including delayed owner lookup",
+    "Thai reusable panel; no login action; no production registration"
+  ],
+  "simulatedTested": {
+    "status": "Passed",
+    "count": 63,
+    "newTests": 26,
+    "existingRegressionTests": 37,
+    "selection": [
+      {
+        "Name": "Explicit Flutter tests",
+        "FilePath": "flutter",
+        "Arguments": [
+          "test",
+          "test/features/ai_tutor/managed/managed_tutor_controller_test.dart",
+          "test/features/ai_tutor/managed/managed_tutor_panel_test.dart",
+          "test/features/ai_tutor/owner_operation_coordinator_test.dart",
+          "test/features/ai_tutor/ai_tutor_use_cases_test.dart",
+          "--reporter",
+          "compact"
+        ],
+        "SourceArea": "AI",
+        "commandKey": "e85526256ddc446f17cb3e646cdf7d45b2a1c7e8594e7b689833f46899b2017b"
+      }
+    ],
+    "fingerprint": "46024f00d91fcc858178c593665e291c6395edd4ab6898ba76c2363860890115",
+    "postFingerprint": "46024f00d91fcc858178c593665e291c6395edd4ab6898ba76c2363860890115",
+    "startedAt": "2026-09-20T23:41:56.0698181+07:00",
+    "finishedAt": "2026-09-20T23:42:03.7926054+07:00",
+    "exitCode": 0,
+    "stdoutHash": "B08AA75BB6C4C09DB426FD1EA0F91278A7AC179707B27F7A458518EDB543A801",
+    "stderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F",
+    "summary": "63 tests passed; 23 new controller + 3 widget/controller/transport integration + 37 existing owner coordinator/BYOK tests",
+    "localResult": "build/verification/80b227813483b630128c78edd4f8b31554f4f1c0/targeted-ai-44c9f44fc9e1e08607f66b48ea1f416311499544e64bbc784e10c262e850cae6.json"
+  },
+  "analyze": {
+    "status": "PASS",
+    "exitCode": 0,
+    "command": "dart analyze lib/features/ai_tutor/application/managed_tutor_controller.dart lib/features/ai_tutor/domain/managed_tutor_transport.dart lib/features/ai_tutor/presentation/managed_tutor_panel.dart test/features/ai_tutor/managed",
+    "summary": "No issues found!",
+    "logHash": "7C18989EB1EB2FEECBE9B809AA1E107CD1B2CF5249A5BD3E87B4D8786EB068B4"
+  },
+  "sourceFiles": [
+    {
+      "path": "lib/features/ai_tutor/application/managed_tutor_controller.dart",
+      "sha256": "6E79ED8E5F412DD9DEA63EFCA26C3DF18BF137F76ED71A2AC94CD88D18DB9ACD"
+    },
+    {
+      "path": "lib/features/ai_tutor/domain/managed_tutor_transport.dart",
+      "sha256": "9BEE9974982D8E19F6D1BAFAF62FDB93F73094623233B11A68EB51AEAEAE44DD"
+    },
+    {
+      "path": "lib/features/ai_tutor/presentation/managed_tutor_panel.dart",
+      "sha256": "1768E390462157BF5105D1638FAAE88A42D0F45536D3F6496A24D6D6284739F9"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/support.dart",
+      "sha256": "5033706C3008111D5618D21280D250E6801F0DA1EEFFBABE658CF6ABFE5B035D"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_controller_test.dart",
+      "sha256": "E58FAB812F47EBFB3D9812E43A5773714733B2FCFA46F46D83CEE878F1E74D97"
+    },
+    {
+      "path": "test/features/ai_tutor/managed/managed_tutor_panel_test.dart",
+      "sha256": "F0D01D13364607E52F0CAC1D90D2C5378CADC01EEC2AA467C52148EAF557C763"
+    }
+  ],
+  "redGreen": [
+    {
+      "test": "pending connection can be cancelled without waiting for transport",
+      "red": "Expected pending, actual disconnected (scaffold)",
+      "logHash": "36274588D19683B1FCF4CB10ED4206C76D982AD8F5524BC3BCE6C3DE122DE618"
+    },
+    {
+      "test": "panel integrates pending cancel, in-app reply, owner clear and no login",
+      "red": "Missing Ari title in scaffold view",
+      "logHash": "EAA94C1900ED9C2586BD9B2326B8ED82E2EE2D28EB01E1A39C29BE39CE6F3A42"
+    },
+    {
+      "test": "deadline remains visible while owner lookup is delayed",
+      "red": "Expected expired, actual pending",
+      "fix": "Race cancellation outside coordinator as well as inside transport body; coordinator retains cleanup ownership",
+      "logHash": "79B07ADA4B4D9F4EB10A78C3A9C31447CD72A3775C987880C84F6996CFB73C74"
+    }
+  ],
+  "recoveredIssues": [
+    "PowerShell directory creation argument corrected using apply_patch; no outside-worktree writes",
+    "Reconnect test now waits for actual transport dispatch, avoiding double completion of old connection",
+    "Cancellation test observes gate release event separately from UI cancellation completion",
+    "Analyzer brace-style finding fixed"
+  ],
+  "review": {
+    "method": "Self-review of staged diff and existing integration contracts; no subagents",
+    "byokContracts": "UNCHANGED",
+    "productionComposition": "UNCHANGED; new components not imported",
+    "apiAndPersistedSchema": "UNCHANGED",
+    "fallback": "NONE",
+    "testTransport": "test/ only",
+    "immutableEvidence": "UNCHANGED"
+  },
+  "live": {
+    "login": "NOT_RUN",
+    "inference": "NOT_RUN",
+    "freeThailand": "NOT_RUN",
+    "mobile": "NOT_RUN",
+    "providerRevoke": "NOT_RUN",
+    "pilot": "NOT_RUN",
+    "v2": "NOT_RUN",
+    "v2Gate": "NOT_MET",
+    "e7": "UNCHANGED_NOT_CLOSED"
+  },
+  "deviceAcceptance": "deferred-until-implementation-complete"
+}

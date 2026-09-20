@@ -36,3 +36,5 @@ Task เดิมถูกสร้างแบบ projectless ผิดจา�
 V1-R1 completed; writer released: task `01a0bf9c-3cc6-7a91-8355-6b857c613a75` · branch `feature/ari-app-server-probe` · [แผนและรายงาน](V1-R1.md) · [สถานะ](state.json).
 
 หลักฐานใหม่: [V1-R1 evidence](V1-R1-evidence.json) · [binary smoke](V1-R1-binary-smoke.json) · [handoff](V1-R1-handoff.json). ไม่มี successor/V2 dispatch.
+
+Application foundation writer: task `01a0bfa7-c450-7f10-8974-3dafeef31c43` · worktree `C:/Users/Phet/.codex/worktrees/bb3c/LexiQuest` · branch `feature/ari-managed-session-foundation`. Device acceptance: deferred-until-implementation-complete. [Design/report](application-foundation.md).
