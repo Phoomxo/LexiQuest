@@ -85,6 +85,8 @@ void main() {
       List<TypedRecallPrompt>? recallPrompts,
       FeatureRegistry? featureRegistry,
       String? sessionId,
+      String? passageText,
+      String? documentId,
     }) {
       final resolvedLearning = learningUseCases ?? learning;
       final resolvedPrompts =
@@ -109,7 +111,9 @@ void main() {
           cefrLevel: 'B2',
           targetWords: targetWords,
           targetWordIds: targetWordIds,
+          documentId: documentId,
           passageText:
+              passageText ??
               'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
           learning: resolvedLearning,
           evidenceAdapter:
@@ -363,6 +367,32 @@ void main() {
         expect(find.text('คำเป้าหมาย: ephemeral, resilient'), findsNothing);
       },
     );
+
+    testWidgets('stage 2 removes inline translations from generated glossary', (
+      tester,
+    ) async {
+      const passage = 'bag means กระเป๋า. book means หนังสือ.';
+      await tester.pumpWidget(
+        session(
+          targetWords: ['bag', 'book'],
+          passageText: passage,
+          documentId:
+              'associative-reading:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        ),
+      );
+      await pumpUntilFound(tester, find.text('ขั้นที่ 1: อ่านพร้อมตัวช่วย'));
+      expect(find.text(passage), findsOneWidget);
+      await tester.tap(find.text('เสร็จแล้ว ไปขั้นถัดไป'));
+      await pumpUntilFound(tester, find.text('ขั้นที่ 2: อ่านโดยลดตัวช่วย'));
+      expect(find.text(passage), findsNothing);
+      expect(find.text('bag. book.'), findsOneWidget);
+      expect(find.textContaining('กระเป๋า'), findsNothing);
+      expect(find.textContaining('หนังสือ'), findsNothing);
+      final screen = tester.widget<AssociativeReadingSessionScreen>(
+        find.byType(AssociativeReadingSessionScreen),
+      );
+      expect(screen.passageText, passage);
+    });
 
     testWidgets(
       'f38 ultra review: Stage 3 inputs belong to the response region',

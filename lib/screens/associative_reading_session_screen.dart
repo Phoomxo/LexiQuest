@@ -13,6 +13,7 @@ import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/domain/associative_reading_checkpoint.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/reading_cue_fading.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
@@ -1354,7 +1355,13 @@ class _AssociativeReadingSessionScreenState
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(widget.passageText),
+                  child: Text(
+                    cueFadedReadingPassage(
+                      passage: widget.passageText,
+                      documentId: widget.documentId,
+                      targetWords: widget.targetWords,
+                    ),
+                  ),
                 ),
               ),
             ],

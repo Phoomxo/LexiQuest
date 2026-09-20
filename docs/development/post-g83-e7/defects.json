@@ -436,7 +436,7 @@
       "build/verification/ae29ec3dd1107d6b6196ecdb3020e221da6f19da/31c903d620c8-267b91a682ec-0c943b9e/Explicit-Flutter-tests.stdout.log"
     ],
     "status": "fixed-local-verified-native-retest-pending",
-    "fixSHA": null,
+    "fixSHA": "0fdcf59e38e363376803044114be439b545347c6",
     "fix": "ReviewedSentenceScrambleLoader uses existing reviewed cloze example pinning; no fabricated fallback; cached load retired on session replacement.",
     "retest": [
       "targeted-learning-c4d5ef9b5ee807c868b028b5775d0e3e12307baf4b8e3bb55cc6772c5915a0ba.json (93, earlier loader)",
@@ -458,7 +458,13 @@
       "g86-associative-reading.xml",
       "g86-associative-step2.xml"
     ],
-    "status": "diagnosed-fix-pending",
-    "fixSHA": null
+    "status": "fixed-local-verified-native-retest-pending",
+    "fixSHA": null,
+    "fix": "Stage-two view removes inline meanings only from an exact app-generated glossary with its generated document ID. Ordinary passages and persisted original document identity remain unchanged. Bounded deterministic parsing avoids dynamic backtracking.",
+    "retest": [
+      "targeted-learning-e6edb2e5f4e6339cd5f3482bc8b835381f759b1dc841aefa01015fbb12dbbe3f.json (initial3targets)",
+      "targeted-learning-a8a327eb02e9d7705da9057dcbf79fbf1787057c492463c87637b53bd613c3f5.json (finalparser2targets)",
+      "g86-d21-analyze.log (No issues)"
+    ]
   }
 ]
