@@ -13,12 +13,12 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 29);
+    expect(AppDatabase.currentSchemaVersion, 32);
     final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
       15,
     );
     expect(v15Inventory, hasLength(33));
-    expect(currentDatabaseTableInventory, hasLength(52));
+    expect(currentDatabaseTableInventory, hasLength(56));
     expect(currentDatabaseTableInventory.difference(v15Inventory), {
       'learning_packs',
       'learning_pack_items',
@@ -39,6 +39,10 @@ void main() {
       'legacy_learning_records',
       'personal_set_revisions',
       'personal_set_members',
+      'study_plan_revisions',
+      'active_plan_pointers',
+      'guided_repair_operations',
+      'written_practice_results',
     });
     await expectCurrentDatabaseContract(database);
 

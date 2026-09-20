@@ -1,0 +1,103 @@
+{
+  "sliceId": "E3.3",
+  "feature": "F04",
+  "status": "accepted",
+  "baseSha": "b7a7c8fbee8d41e53a13fc867772a7185e20efe6",
+  "sourceSha": "containing commit; external handoff pins exact SHA",
+  "branch": "lexiquest/post-g83-e33",
+  "verification": {
+    "receipt": "C:/Users/Phet/.codex/visualizations/2026/09/13/01a09888-61dd-7680-9b19-c33035043d59/full-system-orchestration/evidence/E3.3/all-runs/targeted-runtime-c626cec52c88906d3a06d052d6bc4a0f80a8016e7a3e3ceb1f4276e16bfd9ef3.json",
+    "status": "Passed",
+    "fingerprint": "7ba95ffd19fce0d1c848b2bb0534814bd081401f101c99cda3f6f04ba87df607",
+    "targets": 26,
+    "environmentFingerprint": "296304b5ce436f9e2abd23f7caea0f173ae1d3f6043e427f67597707ea4a3700",
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "e37d9ba013b59200f323cdd23fbfbcebec07d042a8f2a956ae5d6f7027ffe2a1",
+        "fingerprint": "7ba95ffd19fce0d1c848b2bb0534814bd081401f101c99cda3f6f04ba87df607",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T09:43:38.6402618+07:00",
+        "FinishedAt": "2026-09-20T09:45:19.5265234+07:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\aa5a\\LexiQuest\\build\\verification\\b7a7c8fbee8d41e53a13fc867772a7185e20efe6\\e37d9ba013b5-7ba95ffd19fc-913df222\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\aa5a\\LexiQuest\\build\\verification\\b7a7c8fbee8d41e53a13fc867772a7185e20efe6\\e37d9ba013b5-7ba95ffd19fc-913df222\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "7ba95ffd19fce0d1c848b2bb0534814bd081401f101c99cda3f6f04ba87df607",
+        "StdoutHash": "745D97A8B0D92FDA05C57589D3731E05327AB62FC6A0CA9C0E6F049B73E886F4",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ],
+    "tests": 414
+  },
+  "sourceFilesSha256": {
+    "lib/data/local/app_database.dart": "1e5821456664778517fc3dbf8b7743432c78389089a3470fc0806a8fe926d38f",
+    "lib/data/local/app_database.g.dart": "eef03f6a2b10ba9f0314a193193002ab76ee21732fee97034d67a718a2a03a25",
+    "lib/data/local/tables/written_practice_tables.dart": "2ad2e5848192a903984bc348e2a08e987b27beb17aff44a9fc55881b38e56f0c",
+    "lib/features/identity/domain/owner_lifecycle_manifest.dart": "e5b9e991892b40812ff99d10c2130e0763a572aae997c150aead3f28d3292e0b",
+    "lib/features/learning/application/written_practice_use_cases.dart": "90e20877d1fe62750874547b42c7925fed4cb15e8aaaa1d3c2b2bceecd9a83ca",
+    "lib/features/learning/domain/written_rubric.dart": "de6d033a51935a347b91fbef6c9ab2ee749018bac225d87e3040bda40fa2e19a",
+    "lib/features/learning/presentation/written_practice_screen.dart": "156d03e7fc01c7c691514419fd03b17958771a7eeb3cad17c390fcc041e429e5",
+    "lib/runtime/app_bootstrap.dart": "ee1a4b6e8a602898aa82dfd5bf84e1fd87dd5e6897ceb2a3a365ca4a3a022a74",
+    "lib/runtime/app_dependencies.dart": "5d53d5af7fb30d3b9e9704d74dd95469bd62157273cd19d9246a14922a244f90",
+    "lib/screens/personal_sets_screen.dart": "804e7b7a6f0fac1bdda45ee9121e54c81c9e861aa2509b2ff3e1836b87fe12d8",
+    "test/database/migration_v15_to_v16_test.dart": "45b72216d522c5e41ff705ab151ff68382b92c6efdd82cb0cd12d005c84938fd",
+    "test/database/migration_v16_to_v17_test.dart": "b9c4734b0bfe646b7c05acb1364c101d4d22fb61387b636495372a1e5151a4c1",
+    "test/database/migration_v17_to_v18_test.dart": "ed7390205f03d912f8a34167a046424ef6c649ed0b92b4f7228c5d1ad70dac0d",
+    "test/database/migration_v18_to_v19_test.dart": "ebfe8693a7d88852f4d2c545765dabd31eecb8a76f09eee5f7e3d44e324e92c4",
+    "test/database/migration_v20_to_v21_test.dart": "f274e42a9fd483f1df788782cc2bbac8586c7705030624615897e55238a5bdc9",
+    "test/database/migration_v21_to_v22_test.dart": "875772018d4aa44b3905a66bb8d3e4b266a62be80fd25a51cc05db5c598a7e50",
+    "test/database/migration_v22_to_v23_test.dart": "8066889b9d52c4d056afb3c0aa47cdc9a211b722ff9a60949d1622ec91a152d4",
+    "test/database/migration_v23_to_v24_test.dart": "1a34efe30064026ad7e2b13984379930d52eced5988f54d56c641f34c53ac6ab",
+    "test/database/migration_v24_to_v25_test.dart": "444235f75f813897c1adaedc7bc8b417b14ed0a6e72be189a11f2df0b8769e97",
+    "test/database/migration_v28_to_v29_test.dart": "16e1ed252c97020b1579cb56d17b273d51737e9659e9bccb52122485cdcaee29",
+    "test/database/migration_v31_to_v32_test.dart": "a51a1128d68867d7b556ac99c22282277148f39f9d3b2684a3a5b427d57f0c33",
+    "test/features/learning/written_practice_lifecycle_test.dart": "b5f717ff5c61f964b063f399fd8763ef566f15a380c1b2dd3a1d26e9c2f92b2f",
+    "test/features/learning/written_practice_navigation_test.dart": "b155ee00acde03b810de6048d6fd182e04738fe86a31f24e59cda222be12c345",
+    "test/features/learning/written_rubric_calibration_test.dart": "1bb6961bcc4bda910e76a5345ccdbe7d21d875f58e150077d5b1884d70975200",
+    "test/features/learning/written_rubric_test.dart": "ca8e4a36cd1a40a18a2b4243d58b2d85c28201f243d92867e181e0575010b08f",
+    "test/runtime/app_bootstrap_test.dart": "320b267ba96a77098914da72618fc8e5dc3af4a7397d683345f4899a94efef98",
+    "test/scenarios/complete_owner_export_delete_test.dart": "8eeea7819e0e0b31a139c7b8d7e4c594bf9d9b71387fa24e28984886a65ffc46",
+    "test/support/current_database_contract.dart": "0a3f5688a8be2aa0a7da25517aade4d5d9c790b4cc6e85bfd94f36ca3b422440"
+  },
+  "analysis": {
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "inheritedInfos": 2,
+    "path": "external evidence/E3.3/analysis.txt"
+  },
+  "calibration": {
+    "review": "rubric-review.json",
+    "scope": "Finite reviewed local catalog; no human or generalization claim",
+    "uncertainFixtures": 8,
+    "assessedFixtures": 15
+  },
+  "visual": {
+    "path": "writing-result-320-text200.png",
+    "width": 320,
+    "result": "Real set-to-writing flow, readable dimensions/spans/revise; no overflow",
+    "textScale": 2
+  },
+  "schemaVersion": 32,
+  "scope": [
+    "Three original object senses with exact F01 set/sense/content/rubric pins",
+    "Separate meaning/use/form scores, alternate valid responses, uncertain/unassessable and evidence spans",
+    "Immutable supplemental revisions, exact replay and bounded20 revision flow",
+    "Real SQLite restart, schema28/31 migration, interruption recovery, scoped backup/restore",
+    "Guest merge, redacted export, deletion, owner generation and late cancellation rollback",
+    "Default-off production wiring with real internal navigation and runtime retirement checks",
+    "Frozen evidence codecs, canonical content, SRS, reward and research semantics preserved"
+  ],
+  "limits": [
+    "Exact-response local catalog only; unfamiliar valid responses remain uncertain",
+    "Self-review / AI-assisted engineering calibration; no independent human assessment or efficacy claim",
+    "Scoped writing backup requires exact personal-set revisions restored first; not full database restore certification",
+    "No device, live provider, Android build, deployment or full release verification",
+    "E6 and E7/G8.4-G8.9 remain required",
+    "Standard/default requested and config default observed; effective tier unverified"
+  ],
+  "review": {
+    "kind": "writer self-review",
+    "unresolvedRequiredDefects": 0
+  }
+}

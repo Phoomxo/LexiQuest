@@ -14,9 +14,9 @@ void main() {
         NativeDatabase.memory(setup: createSchemaTwentyThreeFixture),
       );
       addTearDown(database.close);
-      expect(AppDatabase.currentSchemaVersion, 29);
+      expect(AppDatabase.currentSchemaVersion, 32);
       await expectCurrentDatabaseContract(database);
-      expect(await currentDatabaseTableNames(database), hasLength(52));
+      expect(await currentDatabaseTableNames(database), hasLength(56));
       for (final table in researchTables) {
         expect(
           await database.customSelect('SELECT * FROM $table').get(),
@@ -759,7 +759,7 @@ void main() {
           );
           expect(await researchSqlSnapshot(db), before);
           await expectCurrentDatabaseContract(db);
-          expect(await currentDatabaseTableNames(db), hasLength(52));
+          expect(await currentDatabaseTableNames(db), hasLength(56));
           await expectResearchSqlRejected(
             db,
             () => updateResearchTestRow(

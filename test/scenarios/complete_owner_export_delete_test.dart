@@ -29,7 +29,7 @@ import '../features/identity/research_lifecycle_fixtures.dart';
 
 void main() {
   test(
-    'current v26 lifecycle classifies owner and non-owner tables exactly once',
+    'current v32 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -62,7 +62,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(45),
+        hasLength(46),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(

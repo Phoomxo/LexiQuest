@@ -69,6 +69,7 @@ import '../features/export/domain/export_contracts.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/goals/application/study_plan_use_cases.dart';
 import '../features/learning/application/guided_repair_use_cases.dart';
+import '../features/learning/application/written_practice_use_cases.dart';
 import '../features/goals/data/drift_study_plan_repository.dart';
 import '../features/goals/data/drift_learning_goal_repository.dart';
 import '../features/history/application/learning_history_use_cases.dart';
@@ -467,6 +468,7 @@ final class AppBootstrap {
         const LearningTimeCaptureRollout.implementedOff(),
     FocusTimerRollout focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.contextPracticeRollout = const ContextPracticeRollout.implementedOff(),
+    this.writtenPracticeRollout = const WrittenPracticeRollout.implementedOff(),
     this.contrastiveFeedbackRollout =
         const ContrastiveFeedbackRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
@@ -589,6 +591,7 @@ final class AppBootstrap {
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
   final FocusTimerRollout focusTimerRollout;
   final ContextPracticeRollout contextPracticeRollout;
+  final WrittenPracticeRollout writtenPracticeRollout;
   final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
@@ -1923,6 +1926,9 @@ final class AppBootstrap {
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       personalSets: personalSets,
+      writtenPractice: WrittenPracticeUseCases(sets: personalSets,
+        isAvailable: () => writtenPracticeRollout.enabled &&
+          runtimeFeatures.isEnabled(Feature.studyPlanning) && runtimeFeatures.isEnabled(Feature.quiz)),
       guidedRepair: GuidedRepairUseCases(learning: learningRepository, manifests: contentManifests,
         ownerGeneration: personalSetOwnerGeneration, ownerOperations: localErasureCoordinator,
         nowUtc: () => DateTime.now().toUtc(), isAvailable: () => runtimeFeatures.isEnabled(Feature.quiz)),

@@ -14,8 +14,8 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 29);
-      expect(currentDatabaseTableInventory, hasLength(52));
+      expect(AppDatabase.currentSchemaVersion, 32);
+      expect(currentDatabaseTableInventory, hasLength(56));
       await expectCurrentDatabaseContract(database);
       expect(await _tableNames(database), currentDatabaseTableInventory);
       expect((await _columnNames(database, 'learner_preferences')).toSet(), {

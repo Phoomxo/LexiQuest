@@ -9,6 +9,7 @@ import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/context_practice_use_cases.dart';
 import '../features/learning/domain/context_practice.dart';
 import '../features/learning/presentation/context_practice_screen.dart';
+import '../features/learning/presentation/written_practice_screen.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import 'quiz_screen.dart';
@@ -491,6 +492,16 @@ class _PersonalSetsScreenState extends State<PersonalSetsScreen> {
                         child: const Text('กลับไปแก้ไข'),
                       ),
                     ] else ...[
+                      if (dependencies?.writtenPractice?.isAvailable() == true)
+                        OutlinedButton(onPressed: () {
+                          final owner = _owner;
+                          final app = dependencies?.writtenPractice;
+                          if (owner == null || app == null) return;
+                          AppNavigator.pushPage<void>(context,
+                            AppPage<void>(name: 'learning/written-practice', builder: (_) =>
+                              WrittenPracticeScreen(useCases: app, owner: owner, set: revision)));
+                        },
+                          child: const Text('Use the word · เขียนประโยค')),
                       FilledButton(
                         onPressed: activityReady
                             ? () => _launchActivity()

@@ -24,6 +24,7 @@ import 'tables/planning_tables.dart';
 import 'tables/personal_set_tables.dart';
 import 'tables/study_plan_tables.dart';
 import 'tables/guided_repair_tables.dart';
+import 'tables/written_practice_tables.dart';
 import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
@@ -94,10 +95,11 @@ part 'app_database.g.dart';
     StudyPlanRevisions,
     ActivePlanPointers,
     GuidedRepairOperations,
+    WrittenPracticeResults,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 31;
+  static const int currentSchemaVersion = 32;
 
   AppDatabase(super.executor);
 
@@ -394,6 +396,9 @@ final class AppDatabase extends _$AppDatabase {
       // The v30/v31 extensions are one additive unit. Do not wrap historical table
       // rebuilds here: those own their foreign-key/transaction boundaries.
       await transaction(() async {
+        if (!await _tableExists('written_practice_results')) {
+          await migrator.createTable(writtenPracticeResults);
+        }
         if (!await _tableExists('guided_repair_operations')) {
           await migrator.createTable(guidedRepairOperations);
         }
@@ -407,6 +412,14 @@ final class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await customStatement("CREATE TRIGGER IF NOT EXISTS written_practice_immutable "
+          "BEFORE UPDATE OF activity_id, revision, operation_id, payload_json ON written_practice_results "
+          "BEGIN SELECT RAISE(ABORT, 'written_practice_immutable'); END");
+      await customStatement("CREATE TRIGGER IF NOT EXISTS written_practice_no_replace "
+          "BEFORE INSERT ON written_practice_results WHEN EXISTS (SELECT 1 FROM written_practice_results "
+          "WHERE owner_id=NEW.owner_id AND (operation_id=NEW.operation_id OR "
+          "(activity_id=NEW.activity_id AND revision=NEW.revision))) "
+          "BEGIN SELECT RAISE(ABORT, 'written_practice_duplicate'); END");
       await customStatement("""
         CREATE TRIGGER IF NOT EXISTS legacy_learning_records_immutable
         BEFORE UPDATE OF id, source_table, payload_json ON legacy_learning_records

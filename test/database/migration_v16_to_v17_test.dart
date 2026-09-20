@@ -14,8 +14,8 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 29);
-      expect(currentDatabaseTableInventory, hasLength(52));
+      expect(AppDatabase.currentSchemaVersion, 32);
+      expect(currentDatabaseTableInventory, hasLength(56));
       expect(
         currentDatabaseTableInventory.difference(schemaSixteenInventory),
         const {
@@ -23,6 +23,14 @@ void main() {
       'legacy_learning_records',
       'personal_set_revisions',
       'personal_set_members',
+      'study_plan_revisions',
+      'active_plan_pointers',
+      'guided_repair_operations',
+      'written_practice_results',
+      'motivation_measurement_runs',
+      'motivation_responses',
+      'research_participation_permits',
+      'measurement_opportunities',
           'saved_learning_items',
           'content_quality_reports',
           'learning_time_segments',
@@ -111,6 +119,14 @@ final schemaSixteenInventory = currentDatabaseTableInventory.difference(const {
       'legacy_learning_records',
       'personal_set_revisions',
       'personal_set_members',
+      'study_plan_revisions',
+      'active_plan_pointers',
+      'guided_repair_operations',
+      'written_practice_results',
+      'motivation_measurement_runs',
+      'motivation_responses',
+      'research_participation_permits',
+      'measurement_opportunities',
   'saved_learning_items',
   'content_quality_reports',
   'learning_time_segments',

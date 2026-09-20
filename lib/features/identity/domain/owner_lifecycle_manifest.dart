@@ -158,6 +158,13 @@ final class OwnerLifecycleTableDescriptor {
 
 const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
   OwnerLifecycleTableDescriptor(
+    tableName: 'written_practice_results', alias: 'writtenPracticeResults',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
     tableName: 'guided_repair_operations', alias: 'guidedRepairOperations',
     authority: OwnerLifecycleAuthority.directOwner,
     exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
@@ -896,6 +903,7 @@ final Set<String> ownerLifecycleDirectOwnerTableNames =
 /// Exact physical action order. `runtime_flags` means selective deletion of
 /// target-owner credential metadata, never deletion of the global table.
 const ownerLifecyclePhysicalDeletionOrder = <String>[
+  'written_practice_results',
   'guided_repair_operations',
   'active_plan_pointers',
   'study_plan_revisions',

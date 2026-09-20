@@ -20,6 +20,7 @@ import '../features/export/application/export_use_cases.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/goals/application/study_plan_use_cases.dart';
 import '../features/learning/application/guided_repair_use_cases.dart';
+import '../features/learning/application/written_practice_use_cases.dart';
 import '../features/history/application/learning_history_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -123,6 +124,7 @@ final class AppDependencies {
     this.personalSets,
     this.studyPlans,
     this.guidedRepair,
+    this.writtenPractice,
     this.personalSetActivities,
     this.learningGoals,
     this.learnerPreferences,
@@ -204,6 +206,7 @@ final class AppDependencies {
   final PersonalSetsUseCases? personalSets;
   final StudyPlanUseCases? studyPlans;
   final GuidedRepairUseCases? guidedRepair;
+  final WrittenPracticeUseCases? writtenPractice;
   final PersonalSetActivities? personalSetActivities;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;
