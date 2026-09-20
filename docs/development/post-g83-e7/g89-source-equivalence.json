@@ -1,0 +1,57 @@
+[
+  {
+    "name": "native-production-equivalence",
+    "base": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+    "through": "2b310904b6811d037c0911ea82ad099473d6464a",
+    "paths": [
+      "lib",
+      "assets",
+      "android",
+      "pubspec.yaml",
+      "pubspec.lock"
+    ],
+    "changedPaths": [],
+    "status": "identical-Git-inputs"
+  },
+  {
+    "name": "camera-evaluator-retention",
+    "base": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "through": "2b310904b6811d037c0911ea82ad099473d6464a",
+    "paths": [
+      "tools"
+    ],
+    "changedPaths": [],
+    "status": "identical-Git-inputs"
+  },
+  {
+    "name": "backend-retention",
+    "base": "c657cef72162401c67e015d85fc265155d24d8e9",
+    "through": "2b310904b6811d037c0911ea82ad099473d6464a",
+    "paths": [
+      "backend"
+    ],
+    "changedPaths": [],
+    "status": "identical-Git-inputs"
+  },
+  {
+    "name": "post-freeze-executable-equivalence",
+    "base": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+    "through": "2b310904b6811d037c0911ea82ad099473d6464a",
+    "paths": [
+      "lib",
+      "test",
+      "integration_test",
+      "tool",
+      "tools",
+      "assets",
+      "backend",
+      "android",
+      "pubspec.yaml",
+      "pubspec.lock",
+      "firestore.rules",
+      "storage.rules"
+    ],
+    "changedPaths": [],
+    "status": "identical-Git-inputs"
+  }
+]

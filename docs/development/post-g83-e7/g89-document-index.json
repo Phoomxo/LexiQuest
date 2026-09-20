@@ -1,0 +1,262 @@
+[
+  {
+    "path": "docs/development/post-g83-e7/defects.json",
+    "sha256": "0fcd261f0bcd0c65c35fc3d290f4498921765d29725682ae7dcee7c437c54b74"
+  },
+  {
+    "path": "docs/development/post-g83-e7/environment-incidents.json",
+    "sha256": "ae4858436f12a36d4f736ab1497cc37f4855b2b44494f42c75c7872eaee0235f"
+  },
+  {
+    "path": "docs/development/post-g83-e7/execution-schedule.json",
+    "sha256": "e531850b50b5dca52105ceb1dc33d88017068e2e872a2e1949be99f1b834455f"
+  },
+  {
+    "path": "docs/development/post-g83-e7/final-ledger.json",
+    "sha256": "31525b125b48f59ab8b8f7ead2d641e3d7e050f9b3a9501bd0d88eaa29b1158f"
+  },
+  {
+    "path": "docs/development/post-g83-e7/fix-eol-proof.json",
+    "sha256": "1d407f0186fe63f47bc461a24bac3bf21b79a1d7f304b45f76ebe16697d87e76"
+  },
+  {
+    "path": "docs/development/post-g83-e7/format-evidence.json",
+    "sha256": "f51c818f5df298637f3b65ffa5ad4f341839e89cb487225913894a0e28ed5b94"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g85-checkpoint.json",
+    "sha256": "2e3a72c42fe7bb4e3a6b9f65f779c4c1c290f36b380a0dc59f98100407c54834"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-artifact.json",
+    "sha256": "dee5c9518c2b53a23071de7b7d17009d1be08a5a1a91cd4cd6ddf6e606893499"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-checkpoint.json",
+    "sha256": "f702787f5ff4edc1fdeec3d3f146f23413f63ea6b17d6460b040898db6c8aa51"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-d24-native-proof.json",
+    "sha256": "d8aac41aff6f0042fc840f1b1dbdefef284fcfcba5e6aa3873c15cf997997483"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-device-plan.json",
+    "sha256": "83e4e040f3ab83160e0ccf51c486ecda03034a02c530660960d4458328158b74"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-final-durable-proof.json",
+    "sha256": "fad8ae0a1da4969764563799dfac304b967550ba262c3f92d5f080a50a5bcc14"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-generated-eol-proof.json",
+    "sha256": "b6554d2290213644b78c3632ea413b654e93ab9a2f61259813b12bf32be83ad1"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-ghost-proof.json",
+    "sha256": "76f43fd5bf48de6f7d14eb789630574246d0901a003642d937ce558c2cfe2093"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-incidents.json",
+    "sha256": "4ab14c1baff25633f75be3a0bed78509693b756b353819ef321bc400613253d0"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-local-run-index.json",
+    "sha256": "9db9b8a1dd6987e6d21ef7b9be6489c7adc25caeda13b51ffc7799dcb3647bcb"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-mode-journeys.json",
+    "sha256": "4debedb2196c6c4d162337de9636ff705621948cb6e7198c7a12f9b38cfea810"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-native-evidence-index.json",
+    "sha256": "1bbbae51cfa1ced4891f1e9213be6634c5f0003548961d162be18abeff8750d9"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-replay-invariance.json",
+    "sha256": "c1155c43992584bbb8577ebc1a576f309b931a5f3398e0c78fbbd6a72b4536b6"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g86-srs-fixture-proof.json",
+    "sha256": "047ae0d070171bdb850f903630c60a128ca7f09a786727055df45a8e14d6686a"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-checkpoint.json",
+    "sha256": "827b7a13c51503c55ff937c0b500e01d32701970992f797bf892620489c284ec"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-fault-fresh.json",
+    "sha256": "d599b16346e7e92fe8114a3bc8c9edced60ca44753447f83301e641c9915ee38"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-fault-reuse.json",
+    "sha256": "30b70f3a64982d6df41875e8656617ee41b20a1a5ebdbd24ee61e28916bc4fad"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-fault-target-inventory.json",
+    "sha256": "a13eaaf0893b431d4781ee9ee7828187812c71c6c1ac6841c2f7d7e8f501afdf"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-focus-native.json",
+    "sha256": "303d4642e0498937601590ac2c93c4122b8608ee9fb2fbe3279f185bfa5c6090"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-layout-timezone-proof.json",
+    "sha256": "a512663f962cc26458b282924d64ce003ca812902b5cb21bb315ecb9e79839b1"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-local-evidence-index.json",
+    "sha256": "1290a7ebf4a7b9ec9c0c41315426b955f087cb171050fbde8858ad6513d8e356"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-native-evidence-index.json",
+    "sha256": "ad33dab3c4c02922a3d49bc69a105b6a6d356136bee0d5a485fa8605ec47faa6"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-resource-native.json",
+    "sha256": "cc7a382fd236edb8982e91d5ee4dbb285a5969d9ed4fcae9d2900ff6b2d49e3e"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-resource-plan.json",
+    "sha256": "11a8703895cb3f064cebac9c61d95c6df29a5738cde05555acb839c839bf31db"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g87-timezone-reuse.json",
+    "sha256": "fd599272dde7eb14fa3ee3dad347d39107289543c8857611d13d60461063a321"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-cleanup-intermediate.json",
+    "sha256": "cd4e2e0ff8c7c66e689def942b0e7184369977967e4f3b69051d7ac4c43a95d0"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-d26-golden-review.json",
+    "sha256": "062af0ee9d5dc28cdff94f043d618aebdcf4354dabf7d83fa0b83608d1f0b0f7"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-evidence-reconciliation.json",
+    "sha256": "72d689731b256158b40f13610bd97fd8b9b35f55dde81c02703dfcb7f473a371"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-extension-boundaries.json",
+    "sha256": "e8e3489265046c380b571c90f2d26c149b3791e980d3fb5e7fe9bdaf06bb5781"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-freeze.json",
+    "sha256": "e263d7f2920a34fb93a95d3386c8cd490d8c2bb6ff24c966f7d753b9891bbb07"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-independent-input-recheck.json",
+    "sha256": "03e53d6ec564852c0ec81fc88ccae2e0b0fc058e4cfa1735c084122a6725701c"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-input-drift-reconciliation.json",
+    "sha256": "2699e03e19fd2c658dcde937ec60efc0c03b84cfd5c1394a153ee699ced427f8"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-method-incidents.json",
+    "sha256": "103bf79cd3fe07f86a7815ab1fd91a4d6596fdb98d731cc9bea505d681cc688a"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-raw-evidence-index.json",
+    "sha256": "cd8b3bfe04908814aebdb79bc929d5ecf5134a91e5cedb40a069b9591d6093fb"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-rules-cli-recheck.json",
+    "sha256": "b8dc1ae9f60b05e44f46748058d25ffda20c2b1afc1a2d885ad15df13b2ea1d2"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g88-source-review.json",
+    "sha256": "b6e8b7efc4000acb256540ba69ed0cf7bffc30d32d3c518939958e5f50941cf3"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g89-artifact-verification.json",
+    "sha256": "a7c9b02210df6229b0d325c3ba54828038481793ab8762471a3e696311ac6efc"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g89-cleanup-manifest.json",
+    "sha256": "03d5477b50cc150ec68f01de47e677d54e917f684eb9a1223e3ea9fb09535b9b"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g89-device-cleanup.json",
+    "sha256": "dd72e9380b90f95d5ed1dd58383c002c73c771969b55eb2de4f2cbfb8d629a56"
+  },
+  {
+    "path": "docs/development/post-g83-e7/g89-source-equivalence.json",
+    "sha256": "0b857e7acb022bc0e7957f06409080c5a05b53c2aa2c89415fa252b08dde8e5c"
+  },
+  {
+    "path": "docs/development/post-g83-e7/generated/docs/generated/alltcas-8-44-final-test-plan.json",
+    "sha256": "1084fd52f0247ab4b99c4c70fbe487413a6a7b8b91aab749cddbb2452f0f4624"
+  },
+  {
+    "path": "docs/development/post-g83-e7/generated/docs/generated/alltcas-8-44-final-test-plan.md",
+    "sha256": "c013d3f3f4f271992c985b4f5aef093c25ee1342e5353430be716c36ddbaf20f"
+  },
+  {
+    "path": "docs/development/post-g83-e7/generated-e7-2/docs/generated/alltcas-8-44-final-test-plan.json",
+    "sha256": "c76956587ac8a44d8a69235311383d0b595442161d564a668b054b2bba46bbbb"
+  },
+  {
+    "path": "docs/development/post-g83-e7/generated-e7-2/docs/generated/alltcas-8-44-final-test-plan.md",
+    "sha256": "f9bf468d0beef50b38d0e79dedf06fbcbba32680d476ed23469f807f87071d6e"
+  },
+  {
+    "path": "docs/development/post-g83-e7/generated-output-restoration.json",
+    "sha256": "1c08e1e71a7777f1468edea1cf18ad0b17f13673c3fb229340cbf46bfbea7f23"
+  },
+  {
+    "path": "docs/development/post-g83-e7/golden-review.json",
+    "sha256": "ba32e8a39790daa4d1fc110b934278a638380526bde44706fad34d5ff5d48a18"
+  },
+  {
+    "path": "docs/development/post-g83-e7/independent-command-reconciliation.json",
+    "sha256": "cdf2f38a297cf516f1d5ccb807e87bc0879edd961d9591fc97adaf49234c9471"
+  },
+  {
+    "path": "docs/development/post-g83-e7/initial-not-run-ledger.json",
+    "sha256": "b8e7fa76c7aedacc603ad973bbb367dee22d07354e986122275680763ecd46c5"
+  },
+  {
+    "path": "docs/development/post-g83-e7/local-platform-disposition.json",
+    "sha256": "0bdbcc417f185f681785c952e991bedff5eac6d6fdafe8f06e3b22a57f042a7f"
+  },
+  {
+    "path": "docs/development/post-g83-e7/post-lint-regression.json",
+    "sha256": "dab07506bf8da9108cabf5a2dae34245ad46effb80ddb16a5251203284b9d206"
+  },
+  {
+    "path": "docs/development/post-g83-e7/precommit-platform-eol-proof.json",
+    "sha256": "65687784214813328254d0a1666d1e6d2966380c01881df96c8d0f073a2add22"
+  },
+  {
+    "path": "docs/development/post-g83-e7/raw-log-index.json",
+    "sha256": "fc61b07e47c8a0e08cb9362aa2c3b2a8809657c0a4c7f697077475b91cc0d2a3"
+  },
+  {
+    "path": "docs/development/post-g83-e7/reuse-evidence.json",
+    "sha256": "5e67caadc01d5824f871eb570083ea803bcd612f889c1d501920921fc67fd2ec"
+  },
+  {
+    "path": "docs/development/post-g83-e7/runs.json",
+    "sha256": "98353ab01cea63e116d489efd6e5609fc10f238c8b50bb6567d6cf16c08a9993"
+  },
+  {
+    "path": "docs/development/post-g83-e7/setup-eol-proof.json",
+    "sha256": "641ea84b8229d2570c3cda8e26ff7cdc33b1064a752a6fac011c0bf642de9b98"
+  },
+  {
+    "path": "docs/development/post-g83-e7/supplemental-commands.json",
+    "sha256": "dc45297de18b8f28a47d76f8fc6606b7b8c0791c608aab1d22b86b74a823d6f3"
+  },
+  {
+    "path": "docs/development/post-g83-e7/system-test-plan-v2.json",
+    "sha256": "d2ac318e9e532fc2ef33c92bfb6f04f4113e8b86724420bb0dad355a4e68a64c"
+  },
+  {
+    "path": "docs/development/post-g83-e7/system-test-plan.json",
+    "sha256": "6111127a95ce41a23729acf1e0d9600932d83c1ea466de9d259c8cba91df5372"
+  },
+  {
+    "path": "docs/development/post-g83-e7.md",
+    "sha256": "e703c422638886e95c78c3b96136080c51b64ab93d5eac4f1f8f417958fd6f26"
+  }
+]

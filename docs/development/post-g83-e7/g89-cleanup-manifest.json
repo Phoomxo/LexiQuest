@@ -1,0 +1,23 @@
+{
+  "policy": "Preserve learner data, historical evidence/receipts, accepted golden oracles and source history. No broad deletion or uninstall.",
+  "workspace": {
+    "generatedAndDiagnosticRestoration": "g88-cleanup-intermediate.json",
+    "archivedCurrentDiagnostics": 12,
+    "EolEquivalentGeneratedPathsRestored": 7,
+    "historicalSchema26AndE7_1Artifacts": "retained unchanged",
+    "generatedE7_2": "versioned checked artifact at frozen source",
+    "applicationSourceDeltaAfterFreeze": "none; verify before final commit"
+  },
+  "android": {
+    "evidence": "g89-device-cleanup.json",
+    "data": "All58tables unchanged versus G87;60attempts44rewards28sessions retained",
+    "temporaryFixtures": "SRS temporary reveal-only due timestamp restored in G86; no fixture deletion or database reset",
+    "knownSettings": "G87display/locale/timezone restored; known airplane original0 restored; prior Wi-Fi/data unknown documented",
+    "resourceRelease": "task-owned LexiQuest_API_35 emulator gracefully stopped; unrelated AVD untouched"
+  },
+  "artifactRetention": {
+    "indexes": "g89-artifact-verification.json",
+    "historicalFailures": "retained; no failed batch reclassified",
+    "fullReleaseVerifier": "NOT RUN: no frozen release PR/deployment acceptance; targeted and subsystem evidence retained"
+  }
+}

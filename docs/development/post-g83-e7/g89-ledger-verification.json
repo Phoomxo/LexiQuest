@@ -1,0 +1,24 @@
+{
+  "status": "PASS-LEDGER-INTEGRITY-NOT-RELEASE-ACCEPTANCE",
+  "counts": {
+    "requirements": 67,
+    "coverageRecords": 74,
+    "formulaGroups": 12,
+    "families": 16,
+    "extensionMappings": 9,
+    "cases": 106,
+    "pendingCases": 7,
+    "localDefectsClosed": 27
+  },
+  "checks": [
+    "Exact plan/case/package/coverage identity sets retained",
+    "All case evidence references and target paths exist",
+    "All27defects have fixSHA and G88 local closure",
+    "All E7 JSON artifacts parse",
+    "Document hashes captured after final report update",
+    "Source equivalence and1191artifact hashes verified separately"
+  ],
+  "documentCount": 65,
+  "runtimeTier": "Standard/default requested; effective tier unexposed/unverified",
+  "releaseAcceptance": false
+}

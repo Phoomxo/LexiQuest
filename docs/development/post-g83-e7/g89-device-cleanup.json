@@ -1,0 +1,30 @@
+{
+  "device": "emulator-5554 / LexiQuest_API_35",
+  "installedApkSha256": "77c5014a6bed0a36d6ef36315ac9bb982fac3a77324ad6d71d5562008e3f0604",
+  "finalSnapshot": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g89-final-db",
+  "all58TablesUnchangedSinceG87": true,
+  "tableCount": 58,
+  "counts": {
+    "learning_sessions": 28,
+    "answer_attempts": 60,
+    "reward_transactions": 44,
+    "srs_states": 11,
+    "reading_progress_entries": 3
+  },
+  "settingsAfterKnownRestoration": {
+    "airplane_mode_on": "0",
+    "wifi_on": "0",
+    "mobile_data": "0",
+    "font_scale": "1.0",
+    "animator_duration_scale": "null"
+  },
+  "networkLimitation": "Pre-test Wi-Fi/mobile-data values were not captured. No restoration claim for those values; task-owned AVD retains preserved synthetic data. Airplane restored to known original0 through supported connectivity service.",
+  "methodIncident": {
+    "firstMethod": "am broadcast android.intent.action.AIRPLANE_MODE after setting global flag0",
+    "failure": "Android SecurityException: uid2000 not allowed to send protected broadcast; exit255",
+    "recovery": "Inspected cmd connectivity help, then airplane-mode disable and queried disabled. No blind retry.",
+    "status": "resolved"
+  },
+  "dataPolicy": "No uninstall, clear-data, database deletion or destructive reset.",
+  "shutdown": "OK: killing emulator, bye bye\r\r\nOK"
+}
