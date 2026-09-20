@@ -67,14 +67,14 @@
     {
       "id": "SHOP",
       "status": "PASS_LOCAL_PURCHASE_EQUIP",
-      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. Restart persistence pending. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase.",
+      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase.",
       "latestEvidenceCase": "SHOP"
     },
     {
       "id": "EXPORT_CSV",
-      "status": "PASS_FILE_PARSE",
-      "actual": "/sdcard/Download/lexiquest-20260920T192124.csv; 5191 bytes; UTF8 CSV parse succeeds, 44 rows including metadata. Semantic reconciliation pending.",
-      "latestEvidenceCase": "CSV_EXPORT_CURRENT"
+      "status": "PASS_BOUNDED_CROSS_FORMAT",
+      "actual": "CSV parsed;all39answer tuples reconciled against JSON plus1reading count. Full58-group archive reconciliation remains pending.",
+      "latestEvidenceCase": "EXPORT_RECONCILIATION"
     },
     {
       "id": "SETTINGS",
@@ -117,7 +117,7 @@
     {
       "id": "OTHER_LEARNING_MODES",
       "status": "PARTIAL_SEE_DETAILED_CASES",
-      "actual": "Word/sentence scramble,dictation,associative/cloze completed;handwriting repaired. CEFR A1 checked;SRS has no due cards;human speech quality pending."
+      "actual": "Word/sentence scramble,dictation,associative/cloze completed;handwriting repaired. CEFR A1 mark-read checked and A1-C2 navigation checked;SRS has no due cards;human speech quality pending."
     },
     {
       "id": "TODAY_AND_PLANNING",
@@ -528,7 +528,8 @@
     {
       "case": "WRONG_ANSWER",
       "status": "PASS",
-      "actual": "Typed-recall mixed mode first item uses choice; intentionally wrong answer summary0/1,0%; typed input branch pending"
+      "actual": "Typed-recall mixed mode first item uses choice; intentionally wrong answer summary0/1,0%; typed input branch pending",
+      "laterCoverageCase": "TYPED_RECALL"
     },
     {
       "case": "RESTART_REWARDS",
@@ -558,12 +559,14 @@
     {
       "id": "DEFINITION",
       "status": "PARTIAL",
-      "actual": "Correct bag answer; confirmed early exit. Full round pending."
+      "actual": "Correct bag answer; confirmed early exit. Full round pending.",
+      "laterCoverageCase": "DEFINITION_COMPLETE"
     },
     {
       "id": "HANDWRITING",
       "status": "PARTIAL",
-      "actual": "Stroke input and undo enabled/disabled verified. Self-check and text alternative pending."
+      "actual": "Stroke input and undo enabled/disabled verified. Self-check and text alternative pending.",
+      "laterCoverageCase": "HANDWRITING_FEEDBACK"
     },
     {
       "id": "SRS",
@@ -578,17 +581,20 @@
     {
       "id": "ASSOCIATIVE_READING",
       "status": "PARTIAL",
-      "actual": "Stages1-4 open; missing mnemonic notes blocked. Full completion pending. Text resembles vocabulary list rather than connected story."
+      "actual": "Stages1-4 open; missing mnemonic notes blocked. Full completion pending. Text resembles vocabulary list rather than connected story.",
+      "laterCoverageCase": "ASSOCIATIVE_READING_COMPLETE"
     },
     {
       "id": "CLOZE",
       "status": "PARTIAL",
-      "actual": "Empty typed submit disabled; typed bag correct; early-exit confirmation. Full round pending."
+      "actual": "Empty typed submit disabled; typed bag correct; early-exit confirmation. Full round pending.",
+      "laterCoverageCase": "CLOZE_COMPLETE"
     },
     {
       "id": "CEFR",
       "status": "PARTIAL",
-      "actual": "A1 A book for May opens; word selection and mark-read work. Other levels and audible output pending."
+      "actual": "A1 A book for May opens; word selection and mark-read work. Other levels and audible output pending.",
+      "laterCoverageCase": "CEFR_ALL_LEVEL_NAVIGATION"
     },
     {
       "id": "SENTENCE_SCRAMBLE",
@@ -633,7 +639,7 @@
     {
       "id": "SHOP",
       "status": "PASS_LOCAL_PURCHASE_EQUIP",
-      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. Restart persistence pending. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase."
+      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase."
     },
     {
       "id": "ACHIEVEMENT_EXPORT",
@@ -653,7 +659,8 @@
     {
       "id": "ANKI_EXPORT",
       "status": "PASS_EMPTY_STATE_ONLY",
-      "actual": "After deleting test vocabulary, export reports no data. Populated export pending."
+      "actual": "After deleting test vocabulary, export reports no data. Populated export pending.",
+      "laterCoverageCase": "ANKI_POPULATED"
     },
     {
       "id": "PDF_EXPORT",
@@ -668,7 +675,8 @@
     {
       "id": "CSV_EXPORT_CURRENT",
       "status": "PASS_FILE_PARSE",
-      "actual": "/sdcard/Download/lexiquest-20260920T192124.csv; 5191 bytes; UTF8 CSV parse succeeds, 44 rows including metadata. Semantic reconciliation pending."
+      "actual": "/sdcard/Download/lexiquest-20260920T192124.csv; 5191 bytes; UTF8 CSV parse succeeds, 44 rows including metadata. Semantic reconciliation pending.",
+      "laterCoverageCase": "EXPORT_RECONCILIATION"
     },
     {
       "id": "SETTINGS_PERSISTENCE",
@@ -770,5 +778,6 @@
       "status": "OPEN_ACCESSIBILITY_LIMITATION",
       "actual": "Active pair game unavailable in UIAutomator tree; screenshot-based control works,screen-reader acceptance unproven."
     }
-  ]
+  ],
+  "autonomousPlan": "autonomous-test-plan.json"
 }

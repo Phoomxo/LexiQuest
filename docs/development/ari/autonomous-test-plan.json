@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "planId": "ari-autonomous-coverage-2026-09-21",
+  "status": "DESIGNED_NOT_EXECUTED",
+  "createdAtUtc": "2026-09-20T20:22:59.212521+00:00",
+  "sourceSha": "79baf922176a3554fd0e410f933bb09a0f4f5008",
+  "report": "app-device-integration.md#autonomous-test-plan-2026-09-21",
+  "scope": "Current-task autonomous coverage and defect recovery; does not dispatch B19 or certify full-system release.",
+  "execution": "sequential one writer; no subagents or background implementation workers",
+  "existingCoverage": "device-test-matrix.json",
+  "domains": [
+    {
+      "id": "A01",
+      "name": "Launch/navigation/configuration",
+      "scenarioFamilies": [
+        "cold/warm launch and back stack",
+        "all registered visible entries and guarded hidden routes",
+        "empty,loading,error and retry states",
+        "count min/max/outside range; hints/direction/timing combinations"
+      ],
+      "references": [
+        "lib/navigation/navigation_glossary.dart",
+        "lib/runtime/registries/feature_registry.dart",
+        "test/features/learning/lesson_mode_registry_test.dart"
+      ],
+      "acceptance": "Expected route/state, actionable failure, no lost session or inaccessible recovery.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A02",
+      "name": "Vocabulary and content",
+      "scenarioFamilies": [
+        "create/edit/search/import/delete in disposable owner",
+        "duplicate,invalid,Unicode,empty/oversize data",
+        "starter data immutable; category deletion scoped"
+      ],
+      "references": [
+        "test/features/vocabulary",
+        "test/scenarios/device_certification_journey_test.dart"
+      ],
+      "acceptance": "Exact row/value changes and owner isolation; no duplicate side effects.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A03",
+      "name": "All learning modes",
+      "scenarioFamilies": [
+        "derive exact mode inventory from registry",
+        "correct/wrong/blank/whitespace and supported alternative responses",
+        "hint/repair/skip/exit/replay/finish and rapid double submit",
+        "configured1 with meaningful distractors and shortage recovery"
+      ],
+      "references": [
+        "test/features/learning",
+        "test/screens",
+        "integration_test/field_trial_core_journey_test.dart"
+      ],
+      "acceptance": "Expected feedback and exact evidence/reward deltas; guided/replay actions never create independent evidence improperly.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A04",
+      "name": "Reading and pedagogical content",
+      "scenarioFamilies": [
+        "all6associative stages preserve actual passage and required inputs",
+        "CEFR entries,position/mark-read/reopen",
+        "content approval and unknown/missing content",
+        "single-choice and list-like-story findings investigated against content contracts"
+      ],
+      "references": [
+        "lib/screens/associative_reading_session_screen.dart",
+        "test/features/learning"
+      ],
+      "acceptance": "Content present and internally consistent; automated checks do not certify language level or teaching effectiveness.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A05",
+      "name": "SRS/time/progress",
+      "scenarioFamilies": [
+        "due0,due1,many,overdue and boundary instant",
+        "correct/wrong updates,next-due and timezone/day boundary",
+        "pause/resume/background/restart and idle time",
+        "Today/review/weakness/history reconcile against canonical evidence"
+      ],
+      "references": [
+        "test/features/learning/srs_policy_test.dart",
+        "test/screens/srs_flashcards_screen_test.dart",
+        "test/features/history/learning_history_reader_test.dart"
+      ],
+      "acceptance": "Reference schedule and evidence counts match; fake clock only in fixture, phone wall clock unchanged.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A06",
+      "name": "Rewards/quests/shop",
+      "scenarioFamilies": [
+        "claim once,duplicate claim,restart during claim",
+        "insufficient/exact/surplus balance,owned item,equip/replay",
+        "achievement/streak/daily reset with fixture clock",
+        "concurrent duplicate commands at repository boundary"
+      ],
+      "references": [
+        "test/features/rewards",
+        "test/features/sync/reward_transaction_sync_test.dart"
+      ],
+      "acceptance": "Ledger reconciles opening+earned-spent=closing; one transaction per logical action.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A07",
+      "name": "Planning/preferences/assessment/offline",
+      "scenarioFamilies": [
+        "hidden production routes remain guarded",
+        "test-only feature composition exercises create/edit/cancel/reopen goals/plans",
+        "reminder validation/time and package-owned schedule/cancel",
+        "assessment isolation and synthetic consent gating",
+        "offline artifact missing/corrupt/version/checksum/quota failure"
+      ],
+      "references": [
+        "test/screens/study_planning_hub_screen_test.dart",
+        "test/features/goals/study_plan_use_cases_test.dart",
+        "test/features/assessment/assessment_isolation_test.dart"
+      ],
+      "acceptance": "Production defaults unchanged; fixtures prove domain/UI behavior only, no live study enrollment or rollout.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A08",
+      "name": "Identity/storage/migration",
+      "scenarioFamilies": [
+        "disposable owners A/B guest/bound transitions",
+        "restart/upgrade migration rollback/error handling",
+        "export-delete and pending-operation fences",
+        "deletion only for explicitly created disposable test data"
+      ],
+      "references": [
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/scenarios/device_certification_journey_test.dart"
+      ],
+      "acceptance": "Owner A cannot read/write/delete B; migrated data preserves declared invariants; existing user sessions untouched.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A09",
+      "name": "Network and sync",
+      "scenarioFamilies": [
+        "local emulator/gateway timeout,offline,reconnect",
+        "retry/backoff,out-of-order,duplicate and partial acknowledgement",
+        "process death with pending queue,conflict and isolation",
+        "expired authorization injected at boundary"
+      ],
+      "references": [
+        "test/features/sync/sync_engine_test.dart",
+        "test/features/sync/firestore_sync_gateway_test.dart",
+        "test/scenarios/file_backed_sync_recovery_test.dart"
+      ],
+      "acceptance": "Queue converges exactly once with durable restart; real hosted sync remains separate acceptance.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A10",
+      "name": "AI/login orchestration",
+      "scenarioFamilies": [
+        "reuse unchanged login evidence with identity/date",
+        "local fake provider cancellation,expired session,quota denial,timeout,malformed output",
+        "late reply after owner switch/background and tool/RPC rejection",
+        "verify no paid/live outbound call in autonomous fixture"
+      ],
+      "references": [
+        "tool/experiments/ari_app_server/login_bridge.py",
+        "docs/development/ari/app-device-integration-evidence.json"
+      ],
+      "acceptance": "State recovery/isolation under simulated provider; no claim of working inference or guaranteed provider billing.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A11",
+      "name": "Speech/audio",
+      "scenarioFamilies": [
+        "real device permission denial,granted,silence,cancel,background and retry",
+        "known audio files through accessible offline decoding/scoring interfaces",
+        "local TTS invocation/completion and resource release",
+        "simulate service missing/error and audio interruption at app boundary"
+      ],
+      "references": [
+        "test/features/media_practice/plugin_speech_recognition_gateway_test.dart",
+        "test/features/media_practice/speech_practice_use_cases_test.dart",
+        "test/voice/voice_response_lifecycle_test.dart"
+      ],
+      "acceptance": "Native lifecycle separately evidenced from injected waveform tests; microphone recognition/hearing quality remains external when no verified unattended audio path exists.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A12",
+      "name": "Camera/model",
+      "scenarioFamilies": [
+        "native preview/capture/cancel/permission/background",
+        "real pinned model on rights-cleared labeled known/unknown images",
+        "orientation,crop,lighting transformations,size/corrupt input",
+        "CPU/XNNPACK latency/memory against accepted budget"
+      ],
+      "references": [
+        "test/features/media_practice/plugin_camera_gateway_test.dart",
+        "test/features/device_model/device_model_use_cases_test.dart",
+        "tool/cli/verify-device-model.ps1"
+      ],
+      "acceptance": "Report model metrics separately from live-camera capture; held-out set frozen before run,no tuning on it; no web-image score substitutes for camera accuracy.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A13",
+      "name": "Exports",
+      "scenarioFamilies": [
+        "CSV/JSON/PDF/SVG/Anki exact semantics including Unicode/escaping",
+        "reconcile all58manifest groups and metadata-only/redacted exclusions",
+        "picker cancel/write failure/restart and partial-file cleanup",
+        "Anki import in isolated test profile only if compatible runtime available"
+      ],
+      "references": [
+        "test/features/export/export_use_cases_test.dart",
+        "test/scenarios/complete_owner_export_delete_test.dart",
+        "test/screens/export_center_flow_test.dart",
+        "tool/cli/tests/android_export_lifecycle.py"
+      ],
+      "acceptance": "Expected fields,counts,hashes and rendered text match independent expectations; TSV validity alone is not Anki import success.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A14",
+      "name": "Accessibility/layout",
+      "scenarioFamilies": [
+        "Thai copy,small/large text,theme/contrast,touch targets",
+        "focus order,labels,enabled/selected and error announcements",
+        "pair board semantics with production widget integration driver",
+        "rotation/keyboard/bottom controls and modal navigation"
+      ],
+      "references": [
+        "test/support/production_accessibility_surface_matrix.dart",
+        "test/screens/accessibility_smoke_test.dart",
+        "test/features/learning/pair_matching/pair_board_accessibility_test.dart"
+      ],
+      "acceptance": "Semantic and visual checks pass on tested configurations; human TalkBack usability not inferred.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A15",
+      "name": "Resilience/performance/endurance",
+      "scenarioFamilies": [
+        "process death at owned transaction checkpoints",
+        "repeated mode switches/cancel/resume/export and resource release",
+        "real180minute sequential journey with checkpoints",
+        "frame times,RSS,CPU,thermal/battery observations and bounded logs"
+      ],
+      "references": [
+        "tool/cli/collect-android-field-evidence.ps1",
+        "docs/development/2026-09-08-autonomous-device-results.md"
+      ],
+      "acceptance": "Real elapsed time required; no crash/ANR/data mismatch; budgets pinned before run,charging bias disclosed; no human dependency for unattended soak.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    },
+    {
+      "id": "A16",
+      "name": "Final integrated journeys and evidence closure",
+      "scenarioFamilies": [
+        "new vocabulary→lesson→feedback→history→SRS→reward→export",
+        "same journey after restart and local-sync failures",
+        "release-sha integration only when repository freeze gate permits",
+        "cleanup/process inventory/package/source provenance and final open-defect review"
+      ],
+      "references": [
+        "integration_test/field_trial_core_journey_test.dart",
+        "tool/cli/verify-scope.ps1"
+      ],
+      "acceptance": "All applicable declared assertions evidenced with exact source/artifact; no unresolved mandatory defects or undocumented omissions.",
+      "status": "PLANNED_NEEDS_INVENTORY_MAPPING"
+    }
+  ],
+  "evidenceLevels": [
+    "HOST_RULE",
+    "HOST_INTEGRATION",
+    "LOCAL_SERVICE_INTEGRATION",
+    "DEVICE_FIXTURE",
+    "DEVICE_NATIVE",
+    "EXTERNAL_LIVE",
+    "HUMAN"
+  ],
+  "caseStatuses": [
+    "NOT_RUN",
+    "RUNNING",
+    "PASS",
+    "FAIL_PRODUCT",
+    "FAIL_RUNNER",
+    "BLOCKED_EXTERNAL",
+    "NOT_APPLICABLE",
+    "STALE"
+  ],
+  "caseRequiredFields": [
+    "caseId",
+    "requirementIds",
+    "routeOrModeId",
+    "evidenceLevel",
+    "sourceSha",
+    "inputFingerprint",
+    "apkSha256",
+    "deviceAndOs",
+    "fixtureVersion",
+    "seed",
+    "preconditions",
+    "actionSteps",
+    "expectedUi",
+    "expectedDomainState",
+    "expectedSideEffects",
+    "observedResults",
+    "status",
+    "evidenceRefs",
+    "defectId",
+    "cleanupOutcome",
+    "supersedes"
+  ],
+  "phases": [
+    {
+      "id": "P0",
+      "deliverable": "Inventory and reconcile current versus historical evidence; map every registry entry/requirement to a case or justified exclusion."
+    },
+    {
+      "id": "P1",
+      "deliverable": "Build safe disposable-owner fixture and state-aware driver; verify startup/cleanup/owner fences before destructive synthetic cases."
+    },
+    {
+      "id": "P2",
+      "deliverable": "Independent rule/repository references, fake clock and local-service faults; bounded tests per affected subsystem."
+    },
+    {
+      "id": "P3",
+      "deliverable": "Sequential real-Vivo native and fixture journeys; record exact data side effects,not merely taps/screens."
+    },
+    {
+      "id": "P4",
+      "deliverable": "Reproduce and fix each product defect with RED/GREEN then physical retest; runner failures repaired separately."
+    },
+    {
+      "id": "P5",
+      "deliverable": "Pinned-budget performance and real180minute endurance on stable source; reusable checkpoints and meaningful progress."
+    },
+    {
+      "id": "P6",
+      "deliverable": "Reconcile required case closure,artifacts,data/process cleanup; publish explicit autonomous and external coverage denominators."
+    }
+  ],
+  "coveragePolicy": "Do not invent total case count before inventory; report passed/required separately per evidence level and domain. Hidden features remain in denominator; historical fingerprint mismatch is STALE. No multiplied Cartesian count presented as meaningful coverage.",
+  "externalAcceptance": [
+    "Real provider inference/entitlement/quota-only assurance and live revoke",
+    "Production hosted account sync and service configuration",
+    "Actual hearing/pronunciation/learner usability",
+    "New independent held-out physical camera scenes",
+    "Actual Anki import if no compatible isolated runtime"
+  ],
+  "notExternalBlockers": [
+    "SRS due data and day boundaries",
+    "Synthetic owner switch/logout/delete",
+    "Hidden feature domain/UI under test-only composition",
+    "Offline/retry/conflict via local service fixtures",
+    "Schema-level exports and visual review",
+    "Real-clock180minute endurance"
+  ],
+  "recovery": "Stop failed method,inspect evidence,correct runner/fixture/product and retest affected cases;never weaken acceptance or promote simulated evidence. Continue independent authorized work while genuine external prerequisites remain."
+}

@@ -119,3 +119,67 @@ Fourth reproduced defect: handwriting self-check buttons returned no visible fee
 Populated Anki TSV144bytes exactly matches created test word, meaning, category and source ID plus4directives; test category removed. Actual Anki import remains untested. Personal JSON content hash matches; all39answer tuples(mode/correctness/latency/time) equal CSV, plus1reading count. Full58-table semantic reconciliation remains outside this bounded check. Matrix top-level cases and Thai inventory labels now reflect current evidence.
 
 A1–C2 reading entries all open and return on Vivo; A1 mark-read was verified earlier. Certification, audio quality and full accessibility remain unclaimed. Open quality findings: single-option short cloze/definition rounds, list-like associative content, and absent active-pair UIAutomator semantics. The physical pass is a bounded checkpoint, not whole-system release acceptance.
+
+
+## Autonomous test plan 2026-09-21
+
+User request: design exhaustive, independently executable testing with no present user participation. Machine-readable plan: [autonomous-test-plan.json](autonomous-test-plan.json). This section is the execution design, not a claim that these tests have run. Continue in the existing task/worktree with one writer; do not create a parallel implementation or dispatch B19. Existing authorization permits scoped fixtures, testing and reproduced-defect repairs. This plan does not authorize paid calls, deployment, research activation or changes to the original account.
+
+### Outcome and coverage boundary
+
+Every current requirement, navigation entry, mode, storage side effect and applicable failure transition must map to a stable case ID and evidence level. Inventory is drawn from the current registry/glossary, actual UI, runtime flags, owner/export manifests and accepted requirement ledger. The historical generated full-system plans are reference material; their old PASS counts are not current-device acceptance. Final counts are derived after mapping; no guessed “hundreds of tests” or blanket 100% claim.
+
+There are two separate totals: autonomous technical acceptance and externally dependent acceptance. Within the autonomous total report native-device, device-with-fixture, local-service and host-only results separately. Opening a screen does not satisfy domain/persistence acceptance. A test unavailable on-device can still yield a host result but the device obligation remains unpassed. Hidden features stay in the inventory; test-only exposure does not prove production availability.
+
+### P0: repair the ledger before adding more results
+
+Use device-test-matrix.json as the current summary and device-observations.jsonl as append-only historical actions. Mark superseded partial observations with the newer case ID; preserve original results. Cases receive requirements/routes, test level, source/input fingerprint, fixture identity, expected UI/data/economy changes, actual result, defect and cleanup evidence. Reuse passed checks only when their complete relevant dependency/configuration/artifact fingerprint is unchanged. Ambiguous provenance becomes STALE, not PASS. Existing four fixes retain their accepted bounded evidence.
+
+Inventory the exact accepted source and active single-writer state before product changes. Do not conflate these physical tests with the full-system B18/B19 acceptance gates. Validate proposed script parameters locally before invoking a verifier; paths are references, not proof that a ready-made harness exists.
+
+### P1: establish a recoverable test environment
+
+Preserve the original com.lexiquest.app and native ChatGPT sessions. The current ariTest owner is firebaseBound, not a disposable guest: destructive cases must never target it. Use a new named disposable owner/database, and if the current debug package cannot isolate that safely, a separately identified test package with explicit denylisted original package IDs. Capture package/version/signature/APK hash, source revision, device serial/SDK and fixture version. Backup only the required test state, with restricted temporary files and deterministic cleanup.
+
+Prefer existing integration_test/field_trial_core_journey_test.dart and repository interfaces after inspecting their reset/install behavior. Add missing test seams only to the fixture/composition; do not bypass production validation or force result rows into the database. Seed via normal use cases wherever possible. Migration/corruption tests use disposable copies and explicitly declared malformed fixtures. Give fixtures at least two owners, correct/wrong/guided/replay evidence, empty and due SRS sets, known economy transactions and Unicode/invalid content.
+
+Clock injection advances synthetic study days without changing the phone clock. Local gateways/emulators inject timeout, denial, malformed data, duplicate/out-of-order delivery and conflicts without turning off the user's global network. Test-only flags can expose planning/preferences/assessment/offline UI using isolated dependencies, but production defaults and real research consent remain unchanged. Permission/settings tests affect only test-package resources and restore any state they change.
+
+The UI driver verifies foreground package, expected screen and enabled controls before each action, then waits for a bounded observable state transition. It records intention/result and stops issuing taps on unexpected user input or a wrong screen, while host verification can continue. Use semantic finders and actual screenshots; use a production-widget integration driver when UIAutomator cannot expose a pair board. Do not equate missing automation semantics with an app crash or automatically claim TalkBack failure. Add stable accessibility identifiers where appropriate and verify they represent real controls.
+
+### P2–P4: test, diagnose and repair sequentially
+
+Execute domains A01–A16 in the structured plan. Apply relevant transitions rather than a blind full Cartesian product: normal path, invalid/empty/boundary input, cancellation, retry, duplicate action, background/resume, process death, persistence and owner isolation. Unsupported combinations need a documented NOT_APPLICABLE reason. Derive expected values from published product/domain contracts and hand-calculated fixtures, not by calling the same implementation to compute its expected output.
+
+Example complete scenario: create a synthetic vocabulary item -> answer correctly -> inspect feedback -> verify one durable answer -> verify history/progress/SRS -> verify the expected reward ledger delta -> restart -> replay -> prove replay grants no duplicate reward -> export -> reconcile that row. A second scenario terminates the test app around a save/acknowledgement checkpoint, restarts it and checks that the result is either absent or committed once according to its transactional contract, never duplicated or cross-owner.
+
+For every defect: preserve the minimal failing reproduction and source/artifact identity; distinguish FAIL_PRODUCT from FAIL_RUNNER; create a meaningful failing assertion; fix the cause; run the affected bounded tests; rebuild only when necessary; retest the changed device path and directly affected neighbors. Do not skip a failure, loosen a threshold, edit output data to pass or hand it to another task to bypass acceptance. If a test method fails, discover the actual path/state and change method. Keep working on independent cases when a true external prerequisite is unavailable.
+
+Bounded entry points already present:
+
+```powershell
+& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/features/learning/srs_policy_test.dart
+& ./tool/cli/verify-scope.ps1 -Level Targeted -Area Learning -TestTargets test/features/history/learning_history_reader_test.dart
+```
+
+These are examples, not instructions to rerun unchanged PASS gates. Select the appropriate supported area/target for each change, and inspect the existing Android runner/profile before a device invocation. No full Flutter/backend/Android/GPU work runs concurrently. Full release verification is reserved for an authorized frozen SHA after the repository's prior gates, not triggered by this planning request.
+
+### Media, AI and integration honesty
+
+A known waveform can test parsing, scoring and error handling when the relevant interface accepts it; it does not prove that the physical microphone captures a person's speech correctly. Real TTS callbacks and native resource release can be tested autonomously; perceived sound quality remains separate. Live camera capture and an offline evaluation using the actual pinned model are distinct results. Freeze labeled known/unknown image sets and existing acceptance thresholds before testing. Images already inspected or used in repair become development data; use a new held-out set for acceptance. Do not pretend software can reposition physical objects around the phone.
+
+Test AI orchestration autonomously with a local provider stub: timeout, cancellation, expired session, quota denial and late replies must produce correct user state and no unintended tool/network action. This does not supply the missing live inference adapter or prove provider billing behavior. Similarly, local sync faults do not prove production service configuration. Record each actual external prerequisite without classifying all AI/sync testing as blocked.
+
+Anki file parsing is separate from importing into Anki. Use a compatible isolated runtime/profile if available; do not import into a user's existing deck. Reconcile exports against the full owner-lifecycle manifest, including intentionally count-only/redacted groups, not by demanding forbidden raw data be exported. Render PDF/SVG for visual review; validate escaping and formulas/markup as required by export contracts.
+
+### P5: real endurance and resource budgets
+
+First complete short smoke/fault cycles, then run a real 180-minute sequential journey on a stable source: study, switch modes, pause/resume, history, export, restart and local-sync recovery with periodic invariants. Simulated time does not satisfy elapsed-time endurance. Pin accepted frame-time/memory/latency/resource budgets before running; if no authoritative budget exists, define a provisional engineering target transparently before collecting results, without claiming formal release acceptance. Old performance failures must be reconciled against current source, not ignored or copied as present failures.
+
+Measure crash/ANR, frame latency, memory trend/resource release and data/transaction counts at checkpoints. Disclose USB charging and debug/profile build effects on performance and battery observations; plugged-in measurements do not certify unplugged battery life. This is autonomous work, not human-dependent. Keep bounded tool waits and meaningful progress updates; do not claim any unattended execution is scheduled or continuing after a response unless actually configured and authorized.
+
+### P6: stop conditions and delivery
+
+Autonomous acceptance closes only when the inventory has no unmapped entries, every applicable required case has qualifying evidence, required product defects are fixed/retested, all synthetic state is reconciled/cleaned, no test process remains unexplained, and a final artifact/source identity is recorded. An outstanding runner failure is not a product PASS. No unresolved quality issue can disappear into a summary.
+
+Deliver: current coverage matrix; detailed cases with evidence levels; defect/fix/retest ledger; exact artifact/source/fixture hashes; performance/endurance results; and a concise Thai report separating autonomous completion from genuinely external acceptance. External gaps remain visible: live provider rights/billing/revoke, hosted service credentials/configuration, human hearing/pronunciation/usability, fresh independent physical camera scenes, and Anki runtime availability if absent. Retain original app/account data throughout. No routine approval question is needed to continue already authorized independent work.

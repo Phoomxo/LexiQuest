@@ -36,10 +36,10 @@
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "Continue unresolved physical acceptance from current matrix; do not repeat unchanged passed gates.",
-    "Handwriting feedback,dictation,history,quiz shortage physically retested;populated Anki TSV and bounded JSON/CSV reconciliation pass.",
-    "Exclusive taps needed; user confirmed earlier concurrent phone input.",
-    "Recovery authorization: diagnose/fix/retest automatically;no weakened gates,no successor bypass,no original app/account clearing."
+    "P0:map exact current requirements/routes/modes and reconcile case provenance using autonomous-test-plan.json.",
+    "P1:inspect existing integration runner and implement isolated disposable-owner fixtures;current firebaseBound test owner is not safe for destructive cases.",
+    "Then execute A01-A16 sequentially with controlled device input,independent data oracles,defect repair and180minute real endurance.",
+    "Recovery authorization remains active:fix/retest automatically;never weaken acceptance,clear original accounts or bypass gates through successors."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
@@ -54,5 +54,6 @@
   "implementationCommit": "b9ee766679cfc650722ec9092919a184da119d9a",
   "deviceCoverage": "device-test-matrix.json",
   "physicalFixBase": "72472a553e6cc740cda21e9ef00be7ec305c215c",
-  "installedPreviewSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0"
+  "installedPreviewSha256": "2f32fd76ab32c47438023096108830dc36c81e61ccff7f05c39ca66a4ced33f0",
+  "autonomousPlan": "autonomous-test-plan.json"
 }
