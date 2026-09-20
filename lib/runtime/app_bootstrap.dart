@@ -67,6 +67,8 @@ import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
 import '../features/export/domain/export_contracts.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
+import '../features/goals/application/study_plan_use_cases.dart';
+import '../features/goals/data/drift_study_plan_repository.dart';
 import '../features/goals/data/drift_learning_goal_repository.dart';
 import '../features/history/application/learning_history_use_cases.dart';
 import '../features/history/data/drift_learning_history_reader.dart';
@@ -1917,6 +1919,13 @@ final class AppBootstrap {
       activeOwnerIdentities: activeOwnerIdentities,
       studyPlanning: studyPlanning,
       personalSets: personalSets,
+      studyPlans: StudyPlanUseCases(
+        repository: DriftStudyPlanRepository(database, nowUtc: () => DateTime.now().toUtc()),
+        ownerGeneration: personalSetOwnerGeneration,
+        ownerOperations: localErasureCoordinator,
+        nowUtc: () => DateTime.now().toUtc(), timezoneId: resolvedLearningTimezoneId,
+        isAvailable: () => runtimeFeatures.isEnabled(Feature.studyPlanning),
+      ),
       personalSetActivities: PersonalSetActivities(
         sets: personalSets,
         learning: learning,

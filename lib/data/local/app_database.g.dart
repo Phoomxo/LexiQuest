@@ -37803,6 +37803,622 @@ class PersonalSetMembersCompanion
   }
 }
 
+class $StudyPlanRevisionsTable extends StudyPlanRevisions
+    with TableInfo<$StudyPlanRevisionsTable, StudyPlanRevisionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StudyPlanRevisionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (revision > 0)',
+  );
+  static const VerificationMeta _payloadHashMeta = const VerificationMeta(
+    'payloadHash',
+  );
+  @override
+  late final GeneratedColumn<String> payloadHash = GeneratedColumn<String>(
+    'payload_hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    operationId,
+    revision,
+    payloadHash,
+    payloadJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'study_plan_revisions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudyPlanRevisionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('payload_hash')) {
+      context.handle(
+        _payloadHashMeta,
+        payloadHash.isAcceptableOrUnknown(
+          data['payload_hash']!,
+          _payloadHashMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadHashMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, operationId};
+  @override
+  StudyPlanRevisionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudyPlanRevisionRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      payloadHash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_hash'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $StudyPlanRevisionsTable createAlias(String alias) {
+    return $StudyPlanRevisionsTable(attachedDatabase, alias);
+  }
+}
+
+class StudyPlanRevisionRow extends DataClass
+    implements Insertable<StudyPlanRevisionRow> {
+  final String ownerId;
+  final String operationId;
+  final int revision;
+  final String payloadHash;
+  final String payloadJson;
+  const StudyPlanRevisionRow({
+    required this.ownerId,
+    required this.operationId,
+    required this.revision,
+    required this.payloadHash,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['operation_id'] = Variable<String>(operationId);
+    map['revision'] = Variable<int>(revision);
+    map['payload_hash'] = Variable<String>(payloadHash);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  StudyPlanRevisionsCompanion toCompanion(bool nullToAbsent) {
+    return StudyPlanRevisionsCompanion(
+      ownerId: Value(ownerId),
+      operationId: Value(operationId),
+      revision: Value(revision),
+      payloadHash: Value(payloadHash),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory StudyPlanRevisionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudyPlanRevisionRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      payloadHash: serializer.fromJson<String>(json['payloadHash']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'operationId': serializer.toJson<String>(operationId),
+      'revision': serializer.toJson<int>(revision),
+      'payloadHash': serializer.toJson<String>(payloadHash),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  StudyPlanRevisionRow copyWith({
+    String? ownerId,
+    String? operationId,
+    int? revision,
+    String? payloadHash,
+    String? payloadJson,
+  }) => StudyPlanRevisionRow(
+    ownerId: ownerId ?? this.ownerId,
+    operationId: operationId ?? this.operationId,
+    revision: revision ?? this.revision,
+    payloadHash: payloadHash ?? this.payloadHash,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  StudyPlanRevisionRow copyWithCompanion(StudyPlanRevisionsCompanion data) {
+    return StudyPlanRevisionRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      payloadHash: data.payloadHash.present
+          ? data.payloadHash.value
+          : this.payloadHash,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyPlanRevisionRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId, ')
+          ..write('revision: $revision, ')
+          ..write('payloadHash: $payloadHash, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(ownerId, operationId, revision, payloadHash, payloadJson);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudyPlanRevisionRow &&
+          other.ownerId == this.ownerId &&
+          other.operationId == this.operationId &&
+          other.revision == this.revision &&
+          other.payloadHash == this.payloadHash &&
+          other.payloadJson == this.payloadJson);
+}
+
+class StudyPlanRevisionsCompanion
+    extends UpdateCompanion<StudyPlanRevisionRow> {
+  final Value<String> ownerId;
+  final Value<String> operationId;
+  final Value<int> revision;
+  final Value<String> payloadHash;
+  final Value<String> payloadJson;
+  final Value<int> rowid;
+  const StudyPlanRevisionsCompanion({
+    this.ownerId = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.payloadHash = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StudyPlanRevisionsCompanion.insert({
+    required String ownerId,
+    required String operationId,
+    required int revision,
+    required String payloadHash,
+    required String payloadJson,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       operationId = Value(operationId),
+       revision = Value(revision),
+       payloadHash = Value(payloadHash),
+       payloadJson = Value(payloadJson);
+  static Insertable<StudyPlanRevisionRow> custom({
+    Expression<String>? ownerId,
+    Expression<String>? operationId,
+    Expression<int>? revision,
+    Expression<String>? payloadHash,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (operationId != null) 'operation_id': operationId,
+      if (revision != null) 'revision': revision,
+      if (payloadHash != null) 'payload_hash': payloadHash,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StudyPlanRevisionsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? operationId,
+    Value<int>? revision,
+    Value<String>? payloadHash,
+    Value<String>? payloadJson,
+    Value<int>? rowid,
+  }) {
+    return StudyPlanRevisionsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      operationId: operationId ?? this.operationId,
+      revision: revision ?? this.revision,
+      payloadHash: payloadHash ?? this.payloadHash,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (payloadHash.present) {
+      map['payload_hash'] = Variable<String>(payloadHash.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyPlanRevisionsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId, ')
+          ..write('revision: $revision, ')
+          ..write('payloadHash: $payloadHash, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ActivePlanPointersTable extends ActivePlanPointers
+    with TableInfo<$ActivePlanPointersTable, ActivePlanPointer> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivePlanPointersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _operationIdMeta = const VerificationMeta(
+    'operationId',
+  );
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+    'operation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [ownerId, operationId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'active_plan_pointers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivePlanPointer> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+        _operationIdMeta,
+        operationId.isAcceptableOrUnknown(
+          data['operation_id']!,
+          _operationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  ActivePlanPointer map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivePlanPointer(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      operationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation_id'],
+      )!,
+    );
+  }
+
+  @override
+  $ActivePlanPointersTable createAlias(String alias) {
+    return $ActivePlanPointersTable(attachedDatabase, alias);
+  }
+}
+
+class ActivePlanPointer extends DataClass
+    implements Insertable<ActivePlanPointer> {
+  final String ownerId;
+  final String operationId;
+  const ActivePlanPointer({required this.ownerId, required this.operationId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['operation_id'] = Variable<String>(operationId);
+    return map;
+  }
+
+  ActivePlanPointersCompanion toCompanion(bool nullToAbsent) {
+    return ActivePlanPointersCompanion(
+      ownerId: Value(ownerId),
+      operationId: Value(operationId),
+    );
+  }
+
+  factory ActivePlanPointer.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivePlanPointer(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'operationId': serializer.toJson<String>(operationId),
+    };
+  }
+
+  ActivePlanPointer copyWith({String? ownerId, String? operationId}) =>
+      ActivePlanPointer(
+        ownerId: ownerId ?? this.ownerId,
+        operationId: operationId ?? this.operationId,
+      );
+  ActivePlanPointer copyWithCompanion(ActivePlanPointersCompanion data) {
+    return ActivePlanPointer(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      operationId: data.operationId.present
+          ? data.operationId.value
+          : this.operationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivePlanPointer(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(ownerId, operationId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivePlanPointer &&
+          other.ownerId == this.ownerId &&
+          other.operationId == this.operationId);
+}
+
+class ActivePlanPointersCompanion extends UpdateCompanion<ActivePlanPointer> {
+  final Value<String> ownerId;
+  final Value<String> operationId;
+  final Value<int> rowid;
+  const ActivePlanPointersCompanion({
+    this.ownerId = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivePlanPointersCompanion.insert({
+    required String ownerId,
+    required String operationId,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       operationId = Value(operationId);
+  static Insertable<ActivePlanPointer> custom({
+    Expression<String>? ownerId,
+    Expression<String>? operationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (operationId != null) 'operation_id': operationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivePlanPointersCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? operationId,
+    Value<int>? rowid,
+  }) {
+    return ActivePlanPointersCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      operationId: operationId ?? this.operationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivePlanPointersCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('operationId: $operationId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -37901,6 +38517,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $PersonalSetRevisionsTable(this);
   late final $PersonalSetMembersTable personalSetMembers =
       $PersonalSetMembersTable(this);
+  late final $StudyPlanRevisionsTable studyPlanRevisions =
+      $StudyPlanRevisionsTable(this);
+  late final $ActivePlanPointersTable activePlanPointers =
+      $ActivePlanPointersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -37958,6 +38578,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learnerPreferences,
     personalSetRevisions,
     personalSetMembers,
+    studyPlanRevisions,
+    activePlanPointers,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -38978,6 +39600,51 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _personalSetRevisionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $StudyPlanRevisionsTable,
+    List<StudyPlanRevisionRow>
+  >
+  _studyPlanRevisionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.studyPlanRevisions,
+        aliasName: 'local_owners__id__study_plan_revisions__owner_id',
+      );
+
+  $$StudyPlanRevisionsTableProcessedTableManager get studyPlanRevisionsRefs {
+    final manager = $$StudyPlanRevisionsTableTableManager(
+      $_db,
+      $_db.studyPlanRevisions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _studyPlanRevisionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ActivePlanPointersTable, List<ActivePlanPointer>>
+  _activePlanPointersRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.activePlanPointers,
+        aliasName: 'local_owners__id__active_plan_pointers__owner_id',
+      );
+
+  $$ActivePlanPointersTableProcessedTableManager get activePlanPointersRefs {
+    final manager = $$ActivePlanPointersTableTableManager(
+      $_db,
+      $_db.activePlanPointers,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _activePlanPointersRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -40055,6 +40722,56 @@ class $$LocalOwnersTableFilterComposer
           }) => $$PersonalSetRevisionsTableFilterComposer(
             $db: $db,
             $table: $db.personalSetRevisions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> studyPlanRevisionsRefs(
+    Expression<bool> Function($$StudyPlanRevisionsTableFilterComposer f) f,
+  ) {
+    final $$StudyPlanRevisionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studyPlanRevisions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudyPlanRevisionsTableFilterComposer(
+            $db: $db,
+            $table: $db.studyPlanRevisions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> activePlanPointersRefs(
+    Expression<bool> Function($$ActivePlanPointersTableFilterComposer f) f,
+  ) {
+    final $$ActivePlanPointersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.activePlanPointers,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivePlanPointersTableFilterComposer(
+            $db: $db,
+            $table: $db.activePlanPointers,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -41192,6 +41909,58 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> studyPlanRevisionsRefs<T extends Object>(
+    Expression<T> Function($$StudyPlanRevisionsTableAnnotationComposer a) f,
+  ) {
+    final $$StudyPlanRevisionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.studyPlanRevisions,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$StudyPlanRevisionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.studyPlanRevisions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> activePlanPointersRefs<T extends Object>(
+    Expression<T> Function($$ActivePlanPointersTableAnnotationComposer a) f,
+  ) {
+    final $$ActivePlanPointersTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.activePlanPointers,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ActivePlanPointersTableAnnotationComposer(
+                $db: $db,
+                $table: $db.activePlanPointers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -41249,6 +42018,8 @@ class $$LocalOwnersTableTableManager
             bool studyRemindersRefs,
             bool learnerPreferencesRefs,
             bool personalSetRevisionsRefs,
+            bool studyPlanRevisionsRefs,
+            bool activePlanPointersRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -41349,6 +42120,8 @@ class $$LocalOwnersTableTableManager
                 studyRemindersRefs = false,
                 learnerPreferencesRefs = false,
                 personalSetRevisionsRefs = false,
+                studyPlanRevisionsRefs = false,
+                activePlanPointersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -41397,6 +42170,8 @@ class $$LocalOwnersTableTableManager
                     if (studyRemindersRefs) db.studyReminders,
                     if (learnerPreferencesRefs) db.learnerPreferences,
                     if (personalSetRevisionsRefs) db.personalSetRevisions,
+                    if (studyPlanRevisionsRefs) db.studyPlanRevisions,
+                    if (activePlanPointersRefs) db.activePlanPointers,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -42262,6 +43037,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (studyPlanRevisionsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StudyPlanRevisionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._studyPlanRevisionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studyPlanRevisionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (activePlanPointersRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ActivePlanPointer
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._activePlanPointersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).activePlanPointersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -42324,6 +43141,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool studyRemindersRefs,
         bool learnerPreferencesRefs,
         bool personalSetRevisionsRefs,
+        bool studyPlanRevisionsRefs,
+        bool activePlanPointersRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -69968,6 +70787,623 @@ typedef $$PersonalSetMembersTableProcessedTableManager =
       PersonalSetMemberRow,
       PrefetchHooks Function()
     >;
+typedef $$StudyPlanRevisionsTableCreateCompanionBuilder =
+    StudyPlanRevisionsCompanion Function({
+      required String ownerId,
+      required String operationId,
+      required int revision,
+      required String payloadHash,
+      required String payloadJson,
+      Value<int> rowid,
+    });
+typedef $$StudyPlanRevisionsTableUpdateCompanionBuilder =
+    StudyPlanRevisionsCompanion Function({
+      Value<String> ownerId,
+      Value<String> operationId,
+      Value<int> revision,
+      Value<String> payloadHash,
+      Value<String> payloadJson,
+      Value<int> rowid,
+    });
+
+final class $$StudyPlanRevisionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $StudyPlanRevisionsTable,
+          StudyPlanRevisionRow
+        > {
+  $$StudyPlanRevisionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('study_plan_revisions__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StudyPlanRevisionsTableFilterComposer
+    extends Composer<_$AppDatabase, $StudyPlanRevisionsTable> {
+  $$StudyPlanRevisionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyPlanRevisionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $StudyPlanRevisionsTable> {
+  $$StudyPlanRevisionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyPlanRevisionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StudyPlanRevisionsTable> {
+  $$StudyPlanRevisionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadHash => $composableBuilder(
+    column: $table.payloadHash,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyPlanRevisionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StudyPlanRevisionsTable,
+          StudyPlanRevisionRow,
+          $$StudyPlanRevisionsTableFilterComposer,
+          $$StudyPlanRevisionsTableOrderingComposer,
+          $$StudyPlanRevisionsTableAnnotationComposer,
+          $$StudyPlanRevisionsTableCreateCompanionBuilder,
+          $$StudyPlanRevisionsTableUpdateCompanionBuilder,
+          (StudyPlanRevisionRow, $$StudyPlanRevisionsTableReferences),
+          StudyPlanRevisionRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$StudyPlanRevisionsTableTableManager(
+    _$AppDatabase db,
+    $StudyPlanRevisionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StudyPlanRevisionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StudyPlanRevisionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StudyPlanRevisionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> payloadHash = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StudyPlanRevisionsCompanion(
+                ownerId: ownerId,
+                operationId: operationId,
+                revision: revision,
+                payloadHash: payloadHash,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String operationId,
+                required int revision,
+                required String payloadHash,
+                required String payloadJson,
+                Value<int> rowid = const Value.absent(),
+              }) => StudyPlanRevisionsCompanion.insert(
+                ownerId: ownerId,
+                operationId: operationId,
+                revision: revision,
+                payloadHash: payloadHash,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StudyPlanRevisionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$StudyPlanRevisionsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$StudyPlanRevisionsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StudyPlanRevisionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StudyPlanRevisionsTable,
+      StudyPlanRevisionRow,
+      $$StudyPlanRevisionsTableFilterComposer,
+      $$StudyPlanRevisionsTableOrderingComposer,
+      $$StudyPlanRevisionsTableAnnotationComposer,
+      $$StudyPlanRevisionsTableCreateCompanionBuilder,
+      $$StudyPlanRevisionsTableUpdateCompanionBuilder,
+      (StudyPlanRevisionRow, $$StudyPlanRevisionsTableReferences),
+      StudyPlanRevisionRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$ActivePlanPointersTableCreateCompanionBuilder =
+    ActivePlanPointersCompanion Function({
+      required String ownerId,
+      required String operationId,
+      Value<int> rowid,
+    });
+typedef $$ActivePlanPointersTableUpdateCompanionBuilder =
+    ActivePlanPointersCompanion Function({
+      Value<String> ownerId,
+      Value<String> operationId,
+      Value<int> rowid,
+    });
+
+final class $$ActivePlanPointersTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ActivePlanPointersTable,
+          ActivePlanPointer
+        > {
+  $$ActivePlanPointersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('active_plan_pointers__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ActivePlanPointersTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivePlanPointersTable> {
+  $$ActivePlanPointersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivePlanPointersTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivePlanPointersTable> {
+  $$ActivePlanPointersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivePlanPointersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivePlanPointersTable> {
+  $$ActivePlanPointersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get operationId => $composableBuilder(
+    column: $table.operationId,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivePlanPointersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActivePlanPointersTable,
+          ActivePlanPointer,
+          $$ActivePlanPointersTableFilterComposer,
+          $$ActivePlanPointersTableOrderingComposer,
+          $$ActivePlanPointersTableAnnotationComposer,
+          $$ActivePlanPointersTableCreateCompanionBuilder,
+          $$ActivePlanPointersTableUpdateCompanionBuilder,
+          (ActivePlanPointer, $$ActivePlanPointersTableReferences),
+          ActivePlanPointer,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ActivePlanPointersTableTableManager(
+    _$AppDatabase db,
+    $ActivePlanPointersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivePlanPointersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivePlanPointersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivePlanPointersTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> operationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivePlanPointersCompanion(
+                ownerId: ownerId,
+                operationId: operationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String operationId,
+                Value<int> rowid = const Value.absent(),
+              }) => ActivePlanPointersCompanion.insert(
+                ownerId: ownerId,
+                operationId: operationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ActivePlanPointersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$ActivePlanPointersTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ActivePlanPointersTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActivePlanPointersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActivePlanPointersTable,
+      ActivePlanPointer,
+      $$ActivePlanPointersTableFilterComposer,
+      $$ActivePlanPointersTableOrderingComposer,
+      $$ActivePlanPointersTableAnnotationComposer,
+      $$ActivePlanPointersTableCreateCompanionBuilder,
+      $$ActivePlanPointersTableUpdateCompanionBuilder,
+      (ActivePlanPointer, $$ActivePlanPointersTableReferences),
+      ActivePlanPointer,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -70095,4 +71531,8 @@ class $AppDatabaseManager {
       $$PersonalSetRevisionsTableTableManager(_db, _db.personalSetRevisions);
   $$PersonalSetMembersTableTableManager get personalSetMembers =>
       $$PersonalSetMembersTableTableManager(_db, _db.personalSetMembers);
+  $$StudyPlanRevisionsTableTableManager get studyPlanRevisions =>
+      $$StudyPlanRevisionsTableTableManager(_db, _db.studyPlanRevisions);
+  $$ActivePlanPointersTableTableManager get activePlanPointers =>
+      $$ActivePlanPointersTableTableManager(_db, _db.activePlanPointers);
 }

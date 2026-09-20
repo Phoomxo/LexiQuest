@@ -3282,9 +3282,33 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {
+    final sourcePlan = await (_database.select(_database.activePlanPointers)
+      ..where((r) => r.ownerId.equals(sourceId))).getSingleOrNull();
+    final targetPlan = await (_database.select(_database.activePlanPointers)
+      ..where((r) => r.ownerId.equals(targetId))).getSingleOrNull();
+    // Remove only the source pointer before FK owner cascades. Both immutable
+    // histories survive; an existing target plan remains the active choice.
+    await (_database.delete(_database.activePlanPointers)
+      ..where((r) => r.ownerId.equals(sourceId))).go();
+    final sourcePlans = await (_database.select(_database.studyPlanRevisions)
+      ..where((r) => r.ownerId.equals(sourceId))).get();
+    for (final plan in sourcePlans) {
+      final duplicate = await (_database.select(_database.studyPlanRevisions)..where(
+        (r) => r.ownerId.equals(targetId) & r.operationId.equals(plan.operationId))).getSingleOrNull();
+      if (duplicate == null) continue;
+      if (duplicate.payloadHash != plan.payloadHash || duplicate.payloadJson != plan.payloadJson) {
+        throw StateError('Study plan operation collision during owner merge');
+      }
+      await (_database.delete(_database.studyPlanRevisions)..where(
+        (r) => r.ownerId.equals(sourceId) & r.operationId.equals(plan.operationId))).go();
+    }
     for (final table in ownerUpgradeInventory) {
-      if (table == 'learner_preferences') continue;
+      if (table == 'learner_preferences' || table == 'active_plan_pointers') continue;
       await _updateOwner(table, sourceId, targetId);
+    }
+    if (targetPlan == null && sourcePlan != null) {
+      await _database.into(_database.activePlanPointers).insert(
+        db.ActivePlanPointersCompanion.insert(ownerId: targetId, operationId: sourcePlan.operationId));
     }
     await _database.customUpdate(
       "UPDATE sync_checkpoints SET id = owner_id || ':' || collection_name "

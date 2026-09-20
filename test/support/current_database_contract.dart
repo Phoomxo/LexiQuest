@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 const currentDatabaseTableInventory = <String>{
+  'study_plan_revisions',
+  'active_plan_pointers',
   'personal_set_revisions',
   'personal_set_members',
   'local_owners',

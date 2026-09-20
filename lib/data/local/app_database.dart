@@ -22,6 +22,7 @@ import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
 import 'tables/planning_tables.dart';
 import 'tables/personal_set_tables.dart';
+import 'tables/study_plan_tables.dart';
 import 'tables/preference_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
@@ -89,10 +90,12 @@ part 'app_database.g.dart';
     LearnerPreferences,
     PersonalSetRevisions,
     PersonalSetMembers,
+    StudyPlanRevisions,
+    ActivePlanPointers,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 29;
+  static const int currentSchemaVersion = 30;
 
   AppDatabase(super.executor);
 
@@ -386,6 +389,16 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 25) await _upgradeQuestPeriods(migrator);
       if (from < 26) await _upgradeResearchSessionProofs(migrator);
+      // The v30 extension is one additive unit. Do not wrap historical table
+      // rebuilds here: those own their foreign-key/transaction boundaries.
+      await transaction(() async {
+        if (!await _tableExists('study_plan_revisions')) {
+          await migrator.createTable(studyPlanRevisions);
+        }
+        if (!await _tableExists('active_plan_pointers')) {
+          await migrator.createTable(activePlanPointers);
+        }
+      });
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -401,6 +414,15 @@ final class AppDatabase extends _$AppDatabase {
       await _createLearningTimeGuards();
       await _createQuestGuards();
       await _createPersonalSetGuards();
+      await customStatement("CREATE TRIGGER IF NOT EXISTS study_plan_immutable "
+          "BEFORE UPDATE OF operation_id, revision, payload_hash, payload_json ON study_plan_revisions "
+          "WHEN OLD.operation_id IS NOT NEW.operation_id OR OLD.revision IS NOT NEW.revision "
+          "OR OLD.payload_hash IS NOT NEW.payload_hash OR OLD.payload_json IS NOT NEW.payload_json "
+          "BEGIN SELECT RAISE(ABORT, 'study_plan_immutable'); END");
+      await customStatement("CREATE TRIGGER IF NOT EXISTS study_plan_no_replace "
+          "BEFORE INSERT ON study_plan_revisions WHEN EXISTS (SELECT 1 FROM study_plan_revisions "
+          "WHERE owner_id=NEW.owner_id AND operation_id=NEW.operation_id) "
+          "BEGIN SELECT RAISE(ABORT, 'study_plan_duplicate'); END");
       await installResearchSchemaGuards((sql) => customStatement(sql));
     },
   );

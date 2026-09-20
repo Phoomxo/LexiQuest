@@ -20,6 +20,7 @@ import '../../time_tracking/domain/learning_time_segment.dart';
 import '../../learning_packs/data/drift_personal_set_repository.dart';
 import '../../learning_packs/data/drift_content_manifest_repository.dart';
 import '../../learning_packs/domain/sense_crosswalk_repository.dart';
+import '../../goals/data/drift_study_plan_repository.dart';
 
 final class OwnerLifecycleArchiveArtifact {
   const OwnerLifecycleArchiveArtifact({
@@ -162,6 +163,8 @@ final class OwnerLifecycleArchiveExporter {
   }) async {
     return switch (descriptor.tableName) {
       'personal_set_revisions' => _personalSetRevisions(ownerId),
+      'study_plan_revisions' => _studyPlanRevisions(ownerId),
+      'active_plan_pointers' => _activePlanPointers(ownerId),
       'local_owners' => _ownerRoot(ownerId),
       'legacy_learning_records' => _legacyLearningHistory(ownerId),
       'research_consents' => _researchConsents(ownerId),
@@ -205,6 +208,13 @@ final class OwnerLifecycleArchiveExporter {
     }
     return records;
   }
+
+  Future<List<Map<String, Object?>>> _studyPlanRevisions(String ownerId) async =>
+      (await DriftStudyPlanRepository(database, nowUtc: nowUtc).history(ownerId))
+          .map((p) => <String, Object?>{'revision': p.toJson()}).toList();
+  Future<List<Map<String, Object?>>> _activePlanPointers(String ownerId) async =>
+      (await (database.select(database.activePlanPointers)..where((r) => r.ownerId.equals(ownerId))).get())
+          .map((r) => <String, Object?>{'operationId': r.operationId}).toList();
 
   Future<List<Map<String, Object?>>> _legacyLearningHistory(
     String ownerId,

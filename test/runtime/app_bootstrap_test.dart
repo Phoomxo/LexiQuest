@@ -544,6 +544,35 @@ void main() {
   group('AppBootstrap.initialize', () {
     setUp(_installApplicationSupportDirectory);
 
+    test('study plans share production owner lifecycle and live planning flag', () async {
+      _installNoOpSecureStorage();
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {}, initializeSupabase: () async {},
+        loadConfig: _validConfig, guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState, cloudSyncEnabled: false,
+        learningPreviewEnabled: true, buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+      ).initialize();
+      addTearDown(dependencies.dispose);
+      final plans = dependencies.studyPlans!;
+      final owner = await plans.begin();
+      final p = await plans.propose(owner, operationId: 'production-plan', availableMinutes: 0);
+      await plans.accept(owner, p);
+      expect((await plans.active(owner))!.operationId, p.operationId);
+      final features = dependencies.features as RuntimeFeatureRegistry;
+      features.emergencyOff(Feature.studyPlanning);
+      await expectLater(plans.accept(owner, p), throwsStateError);
+      features.setOverride(Feature.studyPlanning, FeatureState.enabled);
+      final guest = await dependencies.upgradeGuestOwner!.createLocalGuestAfterLogout(sourceOwnerId: owner.ownerId);
+      await dependencies.upgradeGuestOwner!.rollbackLocalGuestLogout(previousOwnerId: owner.ownerId, guestOwnerId: guest.targetOwnerId);
+      await expectLater(plans.accept(owner, p), throwsStateError);
+      final current = await plans.begin();
+      expect((await plans.active(current))!.operationId, p.operationId);
+      await dependencies.localDataEraser!.eraseAll(ownerId: current.ownerId);
+      await expectLater(plans.active(current), throwsStateError);
+      expect(await plans.repository.history(current.ownerId), isEmpty);
+    });
+
     for (final retirement in ['owner', 'studyPlanning', 'quiz']) {
     testWidgets('personal set opens exact saved quiz and retires on $retirement', (tester) async {
       final dependencies = (await tester.runAsync(() => AppBootstrap(

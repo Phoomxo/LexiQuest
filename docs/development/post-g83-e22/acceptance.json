@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "slice": "E2.2",
+  "feature": "F02",
+  "status": "Passed",
+  "baseSha": "ade446bc8242e492c73b0c6a987416ebce7b2fd6",
+  "sourcePinsSha256": {
+    "lib/data/local/app_database.dart": "f2f49e72614f439769c363d9f43c778297fbc9d7e04f9020acd9f3c0a0d72765",
+    "lib/data/local/app_database.g.dart": "215963166943c18175fee40e519bef929d9c0a4ba775d6e2c00b5f97d484effb",
+    "lib/features/export/application/owner_lifecycle_archive.dart": "3ac6e810f8c5ad81867492892946fe7878564b2fd7eae230763a1bf9ff0b5478",
+    "lib/features/identity/data/drift_owner_upgrade_repository.dart": "e10ffde9186c36dcad64378862493520c7b809147f0e5e76e526f84459501aa0",
+    "lib/features/identity/domain/owner_lifecycle_manifest.dart": "31ad588de7cca344620a43ba6ce00677b4fc680694a9af1524ceb24de628e8a8",
+    "lib/runtime/app_bootstrap.dart": "53a986bbada8e651f243450ba49fb495bbfb275872376376a38b24fcb317f895",
+    "lib/runtime/app_dependencies.dart": "ccc8d05801d9524ea096d6a274a04af9d54bf6cbdaa2b552dc0586f9fca51c8f",
+    "lib/screens/study_planning_hub_screen.dart": "ca93f7d32f28df9f50068bf517c2096df9bfe723bc9d877c70f9721c29f4b9cc",
+    "test/features/identity/drift_owner_upgrade_repository_test.dart": "923422ba3769d0a6148fa60e7e21cf7fdd76eaeebc245884f5502b268445e81a",
+    "test/runtime/app_bootstrap_test.dart": "cb168d0db80e1e7e035b66ab85a6fe0c2f34ef3a2601f97f4ba0042b5b15bec5",
+    "test/scenarios/complete_owner_export_delete_test.dart": "7fb53f09d1c407e6320473c0993a947a523194a1ce3c49cc604f9f911c1420a0",
+    "test/support/current_database_contract.dart": "4a1a2b65f178547a1cff694882982b4b446abca16313aec4f3e5ea01d4097720",
+    "lib/data/local/tables/study_plan_tables.dart": "6fb4563de3d542f3515d8c414833ef6a26f22e86dfb4957170ce7fdbc679e05c",
+    "lib/features/goals/application/study_plan_use_cases.dart": "9567357da72550a3f4ee6cd9b77c22c4054693eb20ffe22d2a1eb93f16c4f89a",
+    "lib/features/goals/data/drift_study_plan_repository.dart": "f1eb4aca590cf191e4dc5cbe471580ab7df40ea29e6ce464bcb147ff6938e55c",
+    "lib/features/goals/domain/study_plan.dart": "3a81f0ac2ec5870ee512e8b81db4a82af4aecd79e3a597d74a54c6e712441a1e",
+    "lib/screens/study_plan_screen.dart": "508f1c64b2c86ef8137fecb8112f505ca905268fc813e30d6e09c328424014c6",
+    "test/features/goals/study_plan_lifecycle_test.dart": "2441f5208d45e4db47d4d09433c962a51d6528d2a4d2c2e857badc1f9b8cd6d5",
+    "test/features/goals/study_plan_repository_test.dart": "c86b315dabfdabce9aeaec40b301d88612deb5e40f73741e2b467df49c8b455d",
+    "test/features/goals/study_plan_test.dart": "a37ebc2ac6fadf5578cb040aeba4899cbf4064b2fef8e5ff2338f460b6f07ed2",
+    "test/features/goals/study_plan_use_cases_test.dart": "7cbf13a8a24234ab938096c29759a6b1693301f25f1f3633e623f627771ddb46",
+    "test/screens/study_plan_screen_test.dart": "5eda22217829843c34fbbc586c472eabac39e055d7f3d99766e081642fca6da3"
+  },
+  "verification": {
+    "tests": 332,
+    "targets": 13,
+    "receipt": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\evidence\\E2.2\\all-runs\\targeted-runtime-f1613397c90ba7753b0ba3e408701caf54fdc74ecc36cbae08300c101a6f71ac.json",
+    "fingerprint": "99977c339ee78a1860c44224e4a95511691baf1c5c9c35d2eb941e0aee5351ed",
+    "postFingerprint": "99977c339ee78a1860c44224e4a95511691baf1c5c9c35d2eb941e0aee5351ed",
+    "commands": [
+      {
+        "Name": "Explicit Flutter tests",
+        "commandKey": "c3d8dc5db67d1b41e39a7f6c1549c9ab18cf653d7d4a8920339599dd5149aad6",
+        "fingerprint": "99977c339ee78a1860c44224e4a95511691baf1c5c9c35d2eb941e0aee5351ed",
+        "Status": "Passed",
+        "ExitCode": 0,
+        "StartedAt": "2026-09-20T00:42:40.5892209+00:00",
+        "FinishedAt": "2026-09-20T00:43:57.0143071+00:00",
+        "Stdout": "C:\\Users\\Phet\\.codex\\worktrees\\f097\\LexiQuest\\build\\verification\\ade446bc8242e492c73b0c6a987416ebce7b2fd6\\c3d8dc5db67d-99977c339ee7-ac0f533a\\Explicit-Flutter-tests.stdout.log",
+        "Stderr": "C:\\Users\\Phet\\.codex\\worktrees\\f097\\LexiQuest\\build\\verification\\ade446bc8242e492c73b0c6a987416ebce7b2fd6\\c3d8dc5db67d-99977c339ee7-ac0f533a\\Explicit-Flutter-tests.stderr.log",
+        "postFingerprint": "99977c339ee78a1860c44224e4a95511691baf1c5c9c35d2eb941e0aee5351ed",
+        "StdoutHash": "0F66FF42AA986D68907C2BDBDFECC8C970BBE3873F70F1921C1F5796BCB23699",
+        "StderrHash": "A3639AF5E23464FC391DAE127FD5493F02C8178068A35866D9C7FDD35DCD623F"
+      }
+    ]
+  },
+  "analysis": {
+    "newFiles": "No issues found; exit 0",
+    "integrationFiles": "exit 0; 11 info-level findings; each three-line location matched accepted predecessor; no warnings/errors"
+  },
+  "review": {
+    "type": "writer self-review; no independent reviewer claim",
+    "resolved": [
+      "atomic v30 migration rollback",
+      "owner transfer pointer collision",
+      "strict rehashed import validation",
+      "normalized F01 membership authority",
+      "fresh active plan for preview diff",
+      "invalid factory goal/deadline validation"
+    ],
+    "unresolved": [],
+    "generatedAudit": "20 new declarations; 0 removed; 514 unchanged ignoring whitespace; expected database/owner wiring plus one comment normalization"
+  },
+  "visual": {
+    "path": "plan-proposal.png",
+    "sha256": "164931de9d543dc775d84a1be053f396e53487d7a39099e710ea6764422bf9cd",
+    "kind": "rendered Flutter widget, not physical device",
+    "checked": "Thai labels, due12/budget10/carry2, visible actions; 320px/text200 exercised by tests"
+  },
+  "limitations": [
+    "No full suite, Android build, physical device, live provider or release claim",
+    "Original12 starter scored content unchanged; editorial5500 not approved",
+    "Scoped plan-history restore only; not full DB/redacted owner export restore",
+    "E6 and all E7 G8.4-G8.9 obligations remain",
+    "Standard/default requested; effective tier unverified"
+  ]
+}

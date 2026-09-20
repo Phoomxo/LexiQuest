@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:vocab_learning_app/features/goals/domain/study_plan.dart';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/features/learning_packs/data/packaged_sense_crosswalk.dart';
@@ -4903,7 +4904,7 @@ void main() {
       );
       expect(pair.guestRun.databaseSchemaVersion, 28);
       expect(pair.targetRun.databaseSchemaVersion, 28);
-      expect(database.schemaVersion, 29);
+      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       final assessments = DriftAssessmentRepository(database);
       await assessments.complete(
         runId: pair.guestRun.id,
@@ -5993,6 +5994,14 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  final plan = StudyPlanRevision.propose(operationId: 'plan:upgrade', expectedPriorRevision: 0,
+    createdAtUtc: DateTime.utc(2026, 7, 1), timezoneId: 'Asia/Bangkok', availableMinutes: 0,
+    authorityHash: 'upgrade-fixture', goalId: null, deadlineAtUtc: null, dueItemIds: [], newItemIds: []);
+  await database.into(database.studyPlanRevisions).insert(StudyPlanRevisionsCompanion.insert(
+    ownerId: 'guest-owner', operationId: plan.operationId, revision: plan.revision,
+    payloadHash: plan.payloadHash, payloadJson: jsonEncode(plan.toJson())));
+  await database.into(database.activePlanPointers).insert(ActivePlanPointersCompanion.insert(
+    ownerId: 'guest-owner', operationId: plan.operationId));
   final crosswalk = SenseCrosswalk.fromBytes(
     await File(PackagedSenseCrosswalk.assetPath).readAsBytes(),
     expectedSha256: PackagedSenseCrosswalk.artifactHash,

@@ -9,6 +9,7 @@ import 'learning_pack_catalog_screen.dart';
 import 'learning_goals_screen.dart';
 import 'learning_preference_quiz_screen.dart';
 import 'personal_sets_screen.dart';
+import 'study_plan_screen.dart';
 
 /// The sole production study-planning parent. Future study-planning actions
 /// remain children of this hub and do not receive their own feature delivery.
@@ -77,6 +78,10 @@ final class StudyPlanningHubScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              OutlinedButton.icon(
+                onPressed: () => openStudyPlan(context),
+                icon: const Icon(Icons.schedule), label: const Text('แผนการเรียนของฉัน'),
+              ),
               OutlinedButton.icon(
                 onPressed: () => openPersonalSets(context),
                 icon: const Icon(Icons.collections_bookmark_outlined),
