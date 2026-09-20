@@ -1,0 +1,22 @@
+{
+  "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+  "acceptedPredecessor": "133e382db5e4c59d29975b39a47e5dfa3820d2d2",
+  "status": "LOCAL-REVIEW-AND-REGRESSION-PASS; SYSTEM-RELEASE-PENDING",
+  "manifest": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\reviewed-source-manifest-final.json",
+  "manifestSha256": "cd14bcf91c765aa6d24aed746cbe87c5da3074222b8a40f6a118ce3ef8ddd409",
+  "trackedFiles": 3981,
+  "review": "g88-source-review.json",
+  "reconciliation": "g88-evidence-reconciliation.json",
+  "plan": "system-test-plan-v2.json",
+  "generatedCheck": {
+    "exitCode": 0,
+    "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+    "fingerprint": "e6e83c5956542aad8dcbcb982da0e7f8cf532bb0522588f9e93fff3cf91627b3"
+  },
+  "nativeSourceUnchangedSince": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
+  "limitations": [
+    "No release/device/provider acceptance inferred.",
+    "Runtime service tier remains unexposed/unverified.",
+    "No deployment or research activation."
+  ]
+}

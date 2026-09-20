@@ -1,0 +1,23 @@
+[
+  {
+    "command": "backendai",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendai.json",
+    "priorStatus": "Passed",
+    "changedInputs": [],
+    "inputCount": 23
+  },
+  {
+    "command": "backendvoice",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendvoice.json",
+    "priorStatus": "Passed",
+    "changedInputs": [],
+    "inputCount": 30
+  },
+  {
+    "command": "backendlm",
+    "receipt": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\subsystem-backendlm.json",
+    "priorStatus": "Passed",
+    "changedInputs": [],
+    "inputCount": 37
+  }
+]

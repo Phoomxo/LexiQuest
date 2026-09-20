@@ -1,0 +1,81 @@
+{
+  "case": "E7-EXTENSION-JOURNEYS",
+  "status": "PARTIAL-native-entry-and-off-boundaries; full on-path NOT RUN",
+  "sourceCommit": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+  "sourcePins": [
+    {
+      "path": "lib/runtime/app_bootstrap.dart",
+      "sha256": "7e36d105b333a92f1a396b34421fa4e983e36754293b70b003847b676027a547"
+    },
+    {
+      "path": "lib/runtime/registries/feature_registry.dart",
+      "sha256": "543cd306761930ad79fc31e10ecb66344622dbe95157700392a934d2d8c2f348"
+    },
+    {
+      "path": "lib/runtime/learning_preview_feature_registry.dart",
+      "sha256": "d483a5661254d09d2177c2bab46bb405ab345b749181956ad94287211f0339c7"
+    }
+  ],
+  "features": [
+    {
+      "id": "F01",
+      "name": "My vocabulary sets",
+      "nativeBoundary": "studyPlanning hidden; native set-activity on-path unavailable",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F02",
+      "name": "My study plan",
+      "nativeBoundary": "studyPlanning hidden in default and learning preview",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F03",
+      "name": "Explain this",
+      "nativeBoundary": "Native incorrect-answer help entry/back exercised at320dp; complete help/repair chain covered locally, not native accepted",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F04",
+      "name": "Use the word",
+      "nativeBoundary": "writtenPracticeRollout implementedOff and studyPlanning hidden; human rubric pending",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F05",
+      "name": "Speaking scenario",
+      "nativeBoundary": "speakingScenarioRollout implementedOff and studyPlanning hidden; real speech/human rubric pending",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F06",
+      "name": "Context practice",
+      "nativeBoundary": "contextPracticeRollout implementedOff; native context activity unavailable",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F07",
+      "name": "Dialogue mission",
+      "nativeBoundary": "dialogueMissionRollout implementedOff and Adventure hidden; native restart/reward unavailable",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F08",
+      "name": "Audio lesson",
+      "nativeBoundary": "audioLessonRollout implementedOff and studyPlanning hidden; native interrupted audio path unavailable",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    },
+    {
+      "id": "F09",
+      "name": "New-context recall",
+      "nativeBoundary": "transferProbeRollout implementedOff even with preview dailyContinuity enabled",
+      "localEvidence": "system-test-plan.json F01\u2013F09 mappings; g88-evidence-reconciliation.json retains local targets separately"
+    }
+  ],
+  "limitations": [
+    "No feature rollout was enabled to substitute for native unavailable paths.",
+    "Native owner switch was not executed; local owner/lifecycle/upgrade fault suites remain separate evidence.",
+    "Available legacy speaking/shadowing controls are not F05 scenario or acoustic acceptance.",
+    "Full extension journey acceptance remains pending an explicitly configured test build and required physical/provider/human resources."
+  ]
+}

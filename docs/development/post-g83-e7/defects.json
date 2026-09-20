@@ -15,10 +15,17 @@
     "expected": "Exact inventory and all participant pages use typed navigation",
     "actual": "Failed assertion; original stdout retained",
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D02",
@@ -38,10 +45,17 @@
     "expected": "Exact inventory and all participant pages use typed navigation",
     "actual": "Failed assertion; original stdout retained",
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/6c6f468a346b-f82d80331cf6-3f31547f/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-e145cb5fa41fc010d294a2f03f96292b83b75f6297cdb88ce5dc25f288ed6dda.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D03",
@@ -59,10 +73,17 @@
     "expected": "Genuine v26 shape upgrades to exact current 58-table inventory and preserves populated owner",
     "actual": "Expected 27, actual 34; fixture retained eight extensions and v28 column",
     "evidence": "BATCH-01 original verifier logs",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-f2d02d1b7af92373c4b91c8d57739cb77ed834d60f3f1cfad1daaa5ac6cc4769.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D04",
@@ -80,10 +101,17 @@
       "test/features/adventure/adventure_pair_renderer_parity_test.dart"
     ],
     "fix": "Bounded condition-based frame pumping before original visible and durable assertions; no assertion removed",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-85d01be73d854af0c8ef0c3326e41cd3374d7d08043e744a506dae4abfc4c405.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D05",
@@ -104,10 +132,17 @@
       "test\\features\\adventure\\presentation\\goldens\\adventure_mixed_review_screen\\adventure_flashcard_revealed_narrow_text_200_reduced_motion.png"
     ],
     "fix": "Reviewed all eight original/current images; updated only four obsolete snapshots, exact equality remains required.",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-3ba17442bfde50c2f23e2c9d2d783d656785b9fe9cce190cd4d83770213e5c65.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D06",
@@ -124,10 +159,17 @@
     "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D07",
@@ -146,10 +188,17 @@
     "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D08",
@@ -167,10 +216,17 @@
     "expected": "Current exact inventory, valid chronological fixture and reviewed exact images",
     "actual": "Recorded assertion or pixel comparison failure",
     "evidence": "Original batch stdout retained externally",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build\\verification\\c657cef72162401c67e015d85fc265155d24d8e9\\targeted-learning-ba095ed34d513708c89fc06753541febc3e66083156ac15d9e6d6e3160af0900.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D09",
@@ -186,7 +242,7 @@
       "test/features/recommendation/recommendation_use_cases_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
@@ -194,7 +250,14 @@
       "testsInCombinedCommand": 318,
       "countInterpretation": "overlapping combined command, not unique per defect"
     },
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D10",
@@ -214,7 +277,7 @@
       "test/security/firestore-rules.test.cjs"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d2723c19e006-ad532b891251-84f69b28/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "receipt": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-9af21c012d7ef9ad7669a2dc38d558c5fe09e80a64352f8175ea0a6c464bb98c.json",
@@ -223,7 +286,14 @@
       "countInterpretation": "overlapping combined command, not unique per defect"
     },
     "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
-    "rulesRetest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-economy-rules.json"
+    "rulesRetest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-economy-rules.json",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D11",
@@ -238,10 +308,17 @@
       "test/features/sync/sync_engine_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/0153c5563fcf-a1ef2f6baaf5-8e38654a/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-a53ff962810dd17ff9418500c89dc0f1e6e6345f45f18fcec4d0cdd65c7dc740.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D12",
@@ -257,10 +334,17 @@
       "tool/cli/tests/verify-scope-integration.tests.ps1"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/3095beabbdc7-c60646767053-5fae7ff6/verify-scope-integration.tests.ps1.stderr.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-runtime-cli-c0371a91ec2ba4cbaa90baaa1898c3b507809c4055c0276b62f88f13d72c8d3f.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D13",
@@ -275,13 +359,20 @@
       "test/scenarios/production_learning_restart_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
       "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
     },
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D14",
@@ -296,10 +387,17 @@
       "test/scenarios/guest_upgrade_restart_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D15",
@@ -314,13 +412,20 @@
       "test/scenarios/production_feature_navigation_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/2a7afb31a1cf-12b18c8cfe07-6765ce30/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "log": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
       "disposition": "All cases in this target passed; aggregate failed solely on guest upgrade inventory D16, separately fixed and passed. No aggregate PASS claimed."
     },
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D16",
@@ -335,10 +440,17 @@
       "test/scenarios/guest_upgrade_restart_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/02209eb66825-5fd21c27c0b1-f3cf4e40/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-8cef5c486ba0cd5d0d2829793b017c4b7b1380dacada3aebec30a7a10445aaa3.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D17",
@@ -353,10 +465,17 @@
       "test/screens/matching_mode_screen_test.dart"
     ],
     "evidence": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/d68b3f8db0c4-71c43cceb4b2-0500554d/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": "build/verification/c657cef72162401c67e015d85fc265155d24d8e9/targeted-learning-bf66f655b04095db53f910fa0427f72cb7a18173da54f888c6199e6dbe1929ff.json",
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D18",
@@ -375,7 +494,7 @@
       "tool/cli/tests/verify-scope-selection.tests.ps1"
     ],
     "evidence": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\flutter-analyze.log",
-    "status": "fixed-local-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
     "retest": {
       "static": "No issues found",
@@ -391,7 +510,14 @@
       "sha256": "a43ccdc6e7a44328f37379c3538caaf9facaf87a51091043c06cf3f0fc25d23c",
       "result": "No issues found"
     },
-    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts"
+    "affectedRegression": "post-lint-regression.json; exact final receipts in runs.json (48 targets), plus unchanged reviewed golden and CLI receipts",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D19",
@@ -410,7 +536,7 @@
     "expected": "Activity fills all remaining space beneath a short hint; opaque background covers shell; long auxiliary content stays bounded and scrollable.",
     "actual": "Activity bottom376 rather than600; no Material ancestor; native screenshot retained black areas.",
     "evidence": "build/verification/5535da0e29bb32a70c65a62a88dc33b41de7930d/896bf1280c1c-cda49c509e50-36a22597/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "ae29ec3dd1107d6b6196ecdb3020e221da6f19da",
     "retest": "targeted-learning-91328d6ed3a41b859acaa94c9e6f1e6891a640a0ea82a6c277497597719e4259.json",
     "affectedRegression": "9 shared shell consumers, 280 tests passed: targeted-learning-8ba3cb6818e286ca966d027eef9539bcc322440cc0ce172cd444e921aae2e553.json",
@@ -418,7 +544,14 @@
     "nativeRetest": [
       "g86-d19-feedback.png",
       "g86-d19-typed-result.xml"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D20",
@@ -435,7 +568,7 @@
       "g86-sentence-board.xml",
       "build/verification/ae29ec3dd1107d6b6196ecdb3020e221da6f19da/31c903d620c8-267b91a682ec-0c943b9e/Explicit-Flutter-tests.stdout.log"
     ],
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "0fdcf59e38e363376803044114be439b545347c6",
     "fix": "ReviewedSentenceScrambleLoader uses existing reviewed cloze example pinning; no fabricated fallback; cached load retired on session replacement.",
     "retest": [
@@ -446,7 +579,14 @@
     "nativeRetest": [
       "g86-d20-board.xml",
       "g86-d20-result.xml"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D21",
@@ -462,7 +602,7 @@
       "g86-associative-reading.xml",
       "g86-associative-step2.xml"
     ],
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "e25c3bf53cd77355ea376a5d435bd5c5a86a1015",
     "fix": "Stage-two view removes inline meanings only from an exact app-generated glossary with its generated document ID. Ordinary passages and persisted original document identity remain unchanged. Bounded deterministic parsing avoids dynamic backtracking.",
     "retest": [
@@ -474,7 +614,14 @@
       "g86-d21-stage2.xml",
       "g86-d21-resumed-stage2.xml",
       "g86-reading-stage6.xml"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D22",
@@ -492,14 +639,21 @@
       "77a513263baf-93eae16bea52-a4a6e6f1/Explicit-Flutter-tests.stdout.log"
     ],
     "fix": "Observe committed controller terminal state immediately; remove listener before disposal. Preserve existing compensation and owner/session identity checks.",
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "75b44bab67872c8a785eff3228839bbb1e3815c8",
     "retest": "targeted-learning-f1c4d9c8fd961fa35f166d22f539ed19af23ced83fd00c9e6128bc9c6a107df6.json; g86-d22-analyze.log",
     "diagnostic": "Copied native database recovery and10correct canonical attempts pass; exact diagnostic source archived externally, excluded from portable tests.",
     "nativeRetest": [
       "g86-d22-native-return.xml",
       "g86-final-durable-proof.json"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D23",
@@ -512,14 +666,21 @@
     "expected": "Explain insufficient requested count and suggest reducing it without admitting a partial or fake session.",
     "actual": "Two due words with ten requested showed no due words.",
     "fix": "Use count-shortage copy for multi-item configuration; admission and evidence policies unchanged.",
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "4fa8cdcc0a5f0eb92a917d9c2e4ccec3c50f1444",
     "evidence": "59e4d601672a-60de5aa32875-ec353b01/Explicit-Flutter-tests.stdout.log",
     "retest": "targeted-learning-3873e2dbe93cd3ee38e7a80e0c63fc5ace63f8281ec4a8866ccc23f6c6692fb7.json; g86-d23-analyze.log",
     "nativeRetest": [
       "g86-d23-message.xml",
       "g86-d23-final-db/rows.json"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D24",
@@ -537,7 +698,7 @@
       "g86-single-result-view.xml",
       "3640e6a8996c-e7655690da7b-de2776e4/Explicit-Flutter-tests.stdout.log"
     ],
-    "status": "fixed-local-and-native-verified-G88-review-pending",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "1ec4071dc8db345309d4d257098cf6b2c1a019e2",
     "fix": "Read owner-scoped distractors when a question lacks options; preserve selected question count and attached-review authority; pass bank to mixed typed recall; retain admitted session for explicit cleanup if preparation is unavailable.",
     "fixtureCorrection": "Existing one-question lifecycle fixtures now include a genuine alternative in a different category; original one-question lifecycle/persistence assertions unchanged. Six route fixtures explicitly opt into a real alternate word; no assertions relaxed.",
@@ -551,7 +712,14 @@
     },
     "nativeRetest": [
       "g86-d24-native-proof.json"
-    ]
+    ],
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D25",
@@ -569,10 +737,17 @@
     "expected": "Pinned reviewed sentence helper is permitted only for SentenceScrambleScreen and remains reachable only through existing authorized composition roots",
     "actual": "Guard rejects SentenceScrambleScreen constructor in reviewed_sentence_scramble_loader.dart",
     "evidence": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/56b564bbea3b-c3b018a4b252-3720ffd2/Explicit-Flutter-tests.stdout.log",
-    "status": "fixed-local-verified-G88-regression-in-progress",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "fixSHA": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
     "retest": "build/verification/5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f/targeted-learning-a91911da26da6ff0d0ffbfd8f11a2ae023d32189adc634cebd76bdc9be161269.json",
-    "affectedRegression": "g88-evidence-reconciliation.json; reviewed_sentence_scramble_loader and route tests retained or rerun against final imports"
+    "affectedRegression": "g88-evidence-reconciliation.json; reviewed_sentence_scramble_loader and route tests retained or rerun against final imports",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D26",
@@ -624,12 +799,19 @@
         "sha256": "679784a10a7a575fe570086619799e69f934f50b2367b4df5610f843134f6399"
       }
     ],
-    "status": "fixed-local-verified-G88-regression-in-progress",
+    "status": "closed-local-G88-reviewed-regression-verified",
     "review": "g88-d26-golden-review.json",
     "testStrengthening": "Bounded readiness assertion now precedes capture; no screenshot matcher tolerance or business assertions weakened.",
     "fixSHA": "0ae0bdf9263e3388b0ee02187ea710128f02d2c6",
     "retest": "build/verification/3a56a391b9ef1b911e49c05dc8edaca6ebf8981d/targeted-learning-43c47ea71d6b0f23f07d9bcbdf18ed779ecdcf46e19445467fcac48ffd45f3f4.json",
-    "affectedRegression": "Actual Pair host golden file all3tests pass; other Pair behavior targets retain individual successful results from G88 batch04 with failed golden target explicitly superseded."
+    "affectedRegression": "Actual Pair host golden file all3tests pass; other Pair behavior targets retain individual successful results from G88 batch04 with failed golden target explicitly superseded.",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    }
   },
   {
     "DefectID": "E7-D27",
@@ -651,7 +833,17 @@
       "839bf3f81962-3974f68b53f4-cafb334a/Explicit-Flutter-tests.stdout.log"
     ],
     "fix": "Exercise explicit confirmation; strengthen active-before/abandoned-after and no-answer assertions. No production change.",
-    "status": "fixed-local-verified-G88-regression-in-progress",
-    "retest": "build/verification/0ae0bdf9263e3388b0ee02187ea710128f02d2c6/targeted-learning-6feddb3ffd30d2063ad1974162da345c6ac132a46c685a3d71d37df5667d48cd.json"
+    "status": "closed-local-G88-reviewed-regression-verified",
+    "retest": "build/verification/0ae0bdf9263e3388b0ee02187ea710128f02d2c6/targeted-learning-6feddb3ffd30d2063ad1974162da345c6ac132a46c685a3d71d37df5667d48cd.json",
+    "g88Closure": {
+      "status": "local-defect-fixed-original-repro-and-affected-regression-verified",
+      "sourceCommit": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+      "evidence": "g88-evidence-reconciliation.json",
+      "review": "g88-source-review.json",
+      "boundary": "Local closure does not grant unexecuted physical/provider/human release gates."
+    },
+    "fixSHA": "c06eb59212fce77dfb94a974a5c8aa603f8a612c",
+    "retestFormatFinal": "g88-navigation-formatted-retest.log; same named command receipt updated by verified final run",
+    "analyzer": "g88-final-analyze.log; No issues found"
   }
 ]

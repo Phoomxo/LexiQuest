@@ -1,0 +1,24 @@
+[
+  {
+    "area": "rules",
+    "baseline": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "paths": [
+      "firestore.rules",
+      "storage.rules",
+      "test/security",
+      "package.json",
+      "package-lock.json"
+    ],
+    "changed": [],
+    "disposition": "Retain G85 recorded passing evidence; exact version-controlled scope unchanged"
+  },
+  {
+    "area": "cli",
+    "baseline": "5535da0e29bb32a70c65a62a88dc33b41de7930d",
+    "paths": [
+      "tool/cli"
+    ],
+    "changed": [],
+    "disposition": "Retain G85 recorded passing evidence; exact version-controlled scope unchanged"
+  }
+]

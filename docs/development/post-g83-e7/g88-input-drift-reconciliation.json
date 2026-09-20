@@ -1,0 +1,30 @@
+[
+  {
+    "receipt": "build\\verification\\5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f\\targeted-learning-b7625fb9fb6fa44481a85f50444e97d01037697ab83c043414cd008476456090.json",
+    "receiptSha256": "ab8acba221e9819f39e147e3fc04786da4ed6ca0d632a1cd92ef8ecc5aae709f",
+    "wrapperStatus": "InputDrift",
+    "commands": [
+      {
+        "status": "InputDrift",
+        "exitCode": 0,
+        "stdout": "C:\\Users\\Phet\\.codex\\worktrees\\daea\\LexiQuest\\build\\verification\\5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f\\9746c3b35e6e-c6012b684fdc-71b561b4\\Explicit-Flutter-tests.stdout.log",
+        "stdoutHash": "7952ABFD8A397F603603A3CF922A34891E938C3DBD4DAA598A02A81365A4B809"
+      }
+    ],
+    "currentInputDelta": [
+      "test/features/learning/pair_matching/failures/host_result_thai_measured_isolatedDiff.png",
+      "test/features/learning/pair_matching/failures/host_result_thai_measured_maskedDiff.png",
+      "test/features/learning/pair_matching/failures/host_result_thai_measured_masterImage.png",
+      "test/features/learning/pair_matching/failures/host_result_thai_measured_testImage.png",
+      "test/features/learning/pair_matching/failures/host_timeout_thai_isolatedDiff.png",
+      "test/features/learning/pair_matching/failures/host_timeout_thai_maskedDiff.png",
+      "test/features/learning/pair_matching/failures/host_timeout_thai_masterImage.png",
+      "test/features/learning/pair_matching/failures/host_timeout_thai_testImage.png"
+    ],
+    "originalHead": "5076d292c10e7ab6d5c0ae48b5c1a2831409fe4f",
+    "finalHead": "3a56a391b9ef1b911e49c05dc8edaca6ebf8981d",
+    "reason": "D25 commit advanced HEAD while batch ran; file edit preceded batch start. Verify input closure exactly before retaining command-level results; do not reclassify wrapper.",
+    "deltaDisposition": "Eight generated golden-failure output PNGs changed; these are diagnostics, not source or golden oracle inputs. All other recorded source/config/assets exactly match.",
+    "commandDisposition": "474 tests passed; retain command-level result after source reconciliation. Wrapper remains InputDrift."
+  }
+]
