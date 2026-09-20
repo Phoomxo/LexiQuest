@@ -1,0 +1,126 @@
+{
+  "status": "emulator-controls-and-durability-verified",
+  "artifact": {
+    "sourceCommit": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508",
+    "apkPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-f25a7313-focus-preview-debug.apk",
+    "apkSha256": "5cdead5d5e1df25cf25d11ea9f43ea4ec2e972040f4c795bdf2615a624bfbb5e",
+    "installedSha256": "5cdead5d5e1df25cf25d11ea9f43ea4ec2e972040f4c795bdf2615a624bfbb5e",
+    "defines": {
+      "LEXIQUEST_LEARNING_PREVIEW": "true",
+      "LEXIQUEST_CLOUD_SYNC_ENABLED": "false",
+      "LEXIQUEST_BUILD_ID": "e7-g87-preview"
+    },
+    "all33AssetsMatch": true
+  },
+  "observations": [
+    "Running 0:00:07",
+    "Explicit pause 0:00:12 remained stable",
+    "Background return paused 0:00:16",
+    "Resume then finish 0:00:25",
+    "Confirmed exit returned to launcher"
+  ],
+  "newSession": {
+    "id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+    "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+    "activity_type": "quiz",
+    "state": "abandoned",
+    "started_at_utc_ms": 1789903518913,
+    "ended_at_utc_ms": 1789903654412,
+    "correct_count": 0,
+    "wrong_count": 0,
+    "score": null,
+    "app_version": "1.0.0+14",
+    "build_id": "e7-g87-preview",
+    "session_configuration_identity": "sha256:e455b7b24ef4f31d3bc39b4b05256ad45494c01eee37d8e0505e45b6229e1c92",
+    "session_configuration_json": "{\"schemaVersion\":1,\"contentIdentity\":\"sha256:e455b7b24ef4f31d3bc39b4b05256ad45494c01eee37d8e0505e45b6229e1c92\",\"configuration\":{\"schemaVersion\":1,\"policyVersion\":\"session-configuration-policy-v1\",\"ownerId\":\"local:1afec27c-9240-4cc9-82a4-95871004f45d\",\"mode\":\"meaningQuiz\",\"itemCount\":1,\"direction\":\"forward\",\"difficulty\":\"standard\",\"hintBudget\":0,\"timing\":{\"kind\":\"timed\",\"seconds\":600},\"packIdentity\":null,\"protocolId\":\"protocol:local-standard\",\"protocolVersion\":\"1\",\"protocolLimitsIdentity\":\"sha256:a730e17e6c410f64d5351dbe18e895c2c6b49439ea3185cbad230de83bfd63b0\"}}",
+    "configuration_active_effort_us": 131315555
+  },
+  "newSegments": [
+    {
+      "id": "learning-time-segment:a27d837b51d4e19c45b579a345c958976a9c7a81dae4fef8c7d9d48bc397a127",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 0,
+      "active_duration_ms": 14349,
+      "started_at_utc_ms": 1789903518913,
+      "ended_at_utc_ms": 1789903533440,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "automaticLesson"
+    },
+    {
+      "id": "learning-time-segment:395ca75dde6e5fb2429efbb0abda1771eb27e93b077fa2dfb527fd0f36ab12f2",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 14349,
+      "active_duration_ms": 12780,
+      "started_at_utc_ms": 1789903533440,
+      "ended_at_utc_ms": 1789903546222,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "focusTimer"
+    },
+    {
+      "id": "learning-time-segment:388805064637e9897c23c1cd73119ee6eba638c53f3d7f20f9b4fb7ebc7d2954",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 27129,
+      "active_duration_ms": 3986,
+      "started_at_utc_ms": 1789903589467,
+      "ended_at_utc_ms": 1789903593453,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "focusTimer"
+    },
+    {
+      "id": "learning-time-segment:63bfd3fa4daf49eed39465e35a66ce8fe6118b44188c2fbed025b5311e2e9a48",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 31115,
+      "active_duration_ms": 26542,
+      "started_at_utc_ms": 1789903597849,
+      "ended_at_utc_ms": 1789903624392,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "automaticLesson"
+    },
+    {
+      "id": "learning-time-segment:49a28d971a3f371723181f7acc99979e1bd03f87d3594a0209319cd5187e2110",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 57657,
+      "active_duration_ms": 8536,
+      "started_at_utc_ms": 1789903624392,
+      "ended_at_utc_ms": 1789903632929,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "focusTimer"
+    },
+    {
+      "id": "learning-time-segment:ad25db10399ddef0812ee149145da7d85528c85c0f5719a0d46d46de07581de6",
+      "owner_id": "local:1afec27c-9240-4cc9-82a4-95871004f45d",
+      "session_id": "session:541ce3eb-ae79-4659-b2aa-db40e96363e4",
+      "active_start_offset_ms": 66193,
+      "active_duration_ms": 21483,
+      "started_at_utc_ms": 1789903632929,
+      "ended_at_utc_ms": 1789903654412,
+      "timezone_id": "Asia/Bangkok",
+      "timezone_offset_minutes": 420,
+      "capture_source": "automaticLesson"
+    }
+  ],
+  "focusDurationMs": 25302,
+  "nonoverlappingContiguousActiveOffsets": true,
+  "protectedTablesUnchanged": [
+    "answer_attempts",
+    "reward_transactions",
+    "srs_states",
+    "reading_progress_entries"
+  ],
+  "restoredDefaultApkSha256": "77c5014a6bed0a36d6ef36315ac9bb982fac3a77324ad6d71d5562008e3f0604",
+  "limitations": [
+    "Debug emulator; no physical endurance or acoustic/assistive acceptance",
+    "Focus timer is elapsed active time, not a countdown",
+    "Native owner switch and disabled feature on-path journeys remain unexecuted"
+  ]
+}

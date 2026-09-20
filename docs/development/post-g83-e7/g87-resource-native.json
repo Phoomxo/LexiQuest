@@ -1,0 +1,250 @@
+{
+  "pid": "19289",
+  "device": "emulator-5554 / LexiQuest_API_35",
+  "source": "f25a7313b1cc499c2c290eb3abeefc5a8ae4c508",
+  "artifact": "e7-f25a7313-resource-debug.apk",
+  "nativePassMarker": true,
+  "result": {
+    "buildMode": "debug",
+    "platform": "android",
+    "sampleCount": 30,
+    "samplesUs": [
+      62978,
+      66435,
+      64291,
+      56698,
+      63082,
+      62844,
+      53000,
+      77719,
+      58006,
+      43677,
+      41941,
+      61198,
+      54626,
+      51548,
+      60858,
+      52389,
+      53538,
+      51728,
+      49569,
+      45737,
+      54332,
+      56703,
+      41169,
+      42729,
+      50187,
+      48196,
+      46306,
+      54975,
+      44669,
+      99180
+    ],
+    "p50Us": 53538,
+    "p95Us": 77719,
+    "method": "Monotonic tap to first pumped frame exposing next enabled answer; real quiz, real Drift memory database; persistence outside timed span; three warmups; excludes ADB transport and does not measure raster completion.",
+    "installedLearnerDatabaseOpened": false
+  },
+  "pssSamples": [
+    {
+      "elapsedSeconds": 0.93,
+      "phase": "baseline",
+      "pssKb": 367398
+    },
+    {
+      "elapsedSeconds": 2.135,
+      "phase": "baseline",
+      "pssKb": 364561
+    },
+    {
+      "elapsedSeconds": 3.325,
+      "phase": "loaded",
+      "pssKb": 378057
+    },
+    {
+      "elapsedSeconds": 4.883,
+      "phase": "loaded",
+      "pssKb": 378233
+    },
+    {
+      "elapsedSeconds": 6.065,
+      "phase": "loaded",
+      "pssKb": 378125
+    },
+    {
+      "elapsedSeconds": 7.31,
+      "phase": "loaded",
+      "pssKb": 388309
+    },
+    {
+      "elapsedSeconds": 8.565,
+      "phase": "loaded",
+      "pssKb": 393721
+    },
+    {
+      "elapsedSeconds": 9.783,
+      "phase": "loaded",
+      "pssKb": 390233
+    },
+    {
+      "elapsedSeconds": 11.073,
+      "phase": "loaded",
+      "pssKb": 402933
+    },
+    {
+      "elapsedSeconds": 12.262,
+      "phase": "loaded",
+      "pssKb": 397137
+    },
+    {
+      "elapsedSeconds": 13.518,
+      "phase": "loaded",
+      "pssKb": 400953
+    },
+    {
+      "elapsedSeconds": 14.713,
+      "phase": "loaded",
+      "pssKb": 401789
+    },
+    {
+      "elapsedSeconds": 15.964,
+      "phase": "loaded",
+      "pssKb": 398543
+    },
+    {
+      "elapsedSeconds": 17.151,
+      "phase": "loaded",
+      "pssKb": 393357
+    },
+    {
+      "elapsedSeconds": 18.369,
+      "phase": "loaded",
+      "pssKb": 391749
+    },
+    {
+      "elapsedSeconds": 19.573,
+      "phase": "loaded",
+      "pssKb": 394965
+    },
+    {
+      "elapsedSeconds": 20.767,
+      "phase": "loaded",
+      "pssKb": 400137
+    },
+    {
+      "elapsedSeconds": 22.067,
+      "phase": "loaded",
+      "pssKb": 397101
+    },
+    {
+      "elapsedSeconds": 23.256,
+      "phase": "loaded",
+      "pssKb": 412253
+    },
+    {
+      "elapsedSeconds": 24.504,
+      "phase": "loaded",
+      "pssKb": 394249
+    },
+    {
+      "elapsedSeconds": 25.708,
+      "phase": "loaded",
+      "pssKb": 393625
+    },
+    {
+      "elapsedSeconds": 26.952,
+      "phase": "loaded",
+      "pssKb": 402209
+    },
+    {
+      "elapsedSeconds": 28.164,
+      "phase": "loaded",
+      "pssKb": 393265
+    },
+    {
+      "elapsedSeconds": 29.432,
+      "phase": "loaded",
+      "pssKb": 399629
+    },
+    {
+      "elapsedSeconds": 30.646,
+      "phase": "loaded",
+      "pssKb": 396377
+    },
+    {
+      "elapsedSeconds": 31.906,
+      "phase": "loaded",
+      "pssKb": 404565
+    },
+    {
+      "elapsedSeconds": 33.195,
+      "phase": "loaded",
+      "pssKb": 396741
+    },
+    {
+      "elapsedSeconds": 34.377,
+      "phase": "peak",
+      "pssKb": 391205
+    },
+    {
+      "elapsedSeconds": 35.572,
+      "phase": "peak",
+      "pssKb": 391193
+    },
+    {
+      "elapsedSeconds": 36.784,
+      "phase": "after-close",
+      "pssKb": 392306
+    },
+    {
+      "elapsedSeconds": 37.958,
+      "phase": "after-close",
+      "pssKb": 392470
+    },
+    {
+      "elapsedSeconds": 39.13,
+      "phase": "after-close",
+      "pssKb": 392470
+    },
+    {
+      "elapsedSeconds": 40.305,
+      "phase": "after-close",
+      "pssKb": 392472
+    }
+  ],
+  "observedPeakPssKb": 412253,
+  "method": "ADB dumpsys meminfo at approximately1s intervals; observed maximum, not a continuous peak; phase snapshots retained. App timing samples from native Flutter test harness, not ADB transport.",
+  "artifactPath": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\e7-f25a7313-resource-debug.apk",
+  "artifactSha256": "cf7dbabd1f2f21bd02d05a38895ebd24812d8d7aa7a1cc836c6cd949d913ab5f",
+  "installedSha256": "cf7dbabd1f2f21bd02d05a38895ebd24812d8d7aa7a1cc836c6cd949d913ab5f",
+  "installedLearnerDataUnchanged": true,
+  "sourceTestSha256": "623ccb48ad90afd98bb49237655cd802dbc32da37566434f2fb5ec4020125d8c",
+  "limitations": [
+    "Debug emulator timing; not physical or release performance acceptance",
+    "Tap-to-next-ready-UI-frame; raster completion not measured",
+    "Memory sampled about1s; observed maximum is not a continuous peak",
+    "Isolated fixture DB; all58installed learner tables unchanged"
+  ],
+  "pins": [
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-logcat.txt",
+      "sha256": "41834deb8e35507a0608e672d07faa31703c4ac12c51d5f618844727d9aaed3c"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-result.json",
+      "sha256": "06e0a58072067e50ec78c16bb570312a249b30869471eec7bfa4c9a0794dee09"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-resource-native-screen.png",
+      "sha256": "62ca4c16339e33fc9a7caa240170b00777dbfd083632f73a2e436b454a296c05"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g87-after-resource-db\\rows.json",
+      "sha256": "5a993159f50d863b3dff8ebcbe77523eb45d2e40e4e454f068d9986e19a0b6cf"
+    },
+    {
+      "path": "C:\\Users\\Phet\\.codex\\visualizations\\2026\\09\\13\\01a09888-61dd-7680-9b19-c33035043d59\\full-system-orchestration\\post-g83-e7\\g86-d24-final-db\\rows.json",
+      "sha256": "5a993159f50d863b3dff8ebcbe77523eb45d2e40e4e454f068d9986e19a0b6cf"
+    }
+  ]
+}
