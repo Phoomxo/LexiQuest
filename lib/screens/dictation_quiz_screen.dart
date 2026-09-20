@@ -140,7 +140,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
   }
 
   Future<void> _checkAnswer() async {
-    if (!_audioReady ||
+    if (_textController.text.trim().isEmpty ||
+        !_audioReady ||
         _audioUnavailable ||
         _interactionLocked ||
         !(_lifecycle?.acceptsOperations ?? true)) {
@@ -401,6 +402,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
                                     const SizedBox(height: 40),
                                     TextField(
                                       controller: _textController,
+                                      onChanged: (_) => setState(() {}),
                                       enabled:
                                           _audioReady && !_interactionLocked,
                                       decoration: const InputDecoration(
@@ -414,7 +416,11 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
                                     const SizedBox(height: 20),
                                     ElevatedButton(
                                       onPressed:
-                                          !_audioReady || _interactionLocked
+                                          !_audioReady ||
+                                              _interactionLocked ||
+                                              _textController.text
+                                                  .trim()
+                                                  .isEmpty
                                           ? null
                                           : _checkAnswer,
                                       style: ElevatedButton.styleFrom(

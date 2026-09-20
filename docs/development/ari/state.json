@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 19,
+  "revision": 20,
   "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "app-device-integration",
-  "status": "physical-testing-awaiting-vivo-adb-transport",
+  "status": "physical-testing-in-progress",
   "currentTaskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
   "implementationWriter": {
     "taskId": "01a0bfbd-9961-7da3-982b-77970bdc7027",
-    "scope": "user-authorized sequential physical device testing and reproduced quiz empty-state recovery",
+    "scope": "User-authorized sequential Vivo testing and reproduced defects: quiz shortage, dictation blank response, history load failure.",
     "branch": "feature/ari-app-device-integration"
   },
   "model": "gpt-6-astra",

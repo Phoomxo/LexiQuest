@@ -36,6 +36,34 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  testWidgets('blank dictation cannot submit by button or keyboard', (
+    tester,
+  ) async {
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DictationQuizScreen(targetWord: 'bag', voice: voice),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final button = find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ');
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+    await tester.enterText(find.byType(TextField), '   ');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('ลองใหม่อีกครั้ง!'), findsNothing);
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+    await tester.enterText(find.byType(TextField), 'bag');
+    await tester.pump();
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNotNull);
+    await tester.enterText(find.byType(TextField), '');
+    await tester.pump();
+    expect(tester.widget<ElevatedButton>(button).onPressed, isNull);
+  });
   testWidgets(
     'replaying during pending audio ignores superseded cancellation',
     (tester) async {
@@ -55,6 +83,8 @@ void main() {
       await tester.pump();
       provider.allowPlayback!.complete();
       await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'station');
+      await tester.pump();
       expect(
         find.byKey(const ValueKey('media-dependency-unavailable')),
         findsNothing,
@@ -346,6 +376,7 @@ void main() {
 
     final inputFinder = find.byType(TextField);
     await tester.enterText(inputFinder, 'elephant');
+    await tester.pump();
     await tester.tap(find.text('ตรวจคำตอบ'));
     await tester.pumpAndSettle();
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "updatedAtUtc": "2026-09-20T18:36:06.053161+00:00",
+  "updatedAtUtc": "2026-09-20T19:42:18.572905+00:00",
   "authorization": "User delegates physical Vivo control, menu/function testing, evidence capture, diagnosis and repairs; no repeated screenshot handoffs. Preserve native ChatGPT account.",
-  "status": "IN_PROGRESS_DEVICE_ADB_OFFLINE",
+  "status": "IN_PROGRESS_VIVO_CONNECTED",
   "device": {
     "model": "Vivo V2041",
     "sdk": 33,
@@ -78,10 +78,10 @@
     },
     {
       "id": "QUIZ_COUNT",
-      "status": "FAIL_MISLEADING_EMPTY_STATE",
+      "status": "PASS_FIXED_PHYSICAL_RETEST",
       "actual": "Configuration accepts20 while visible starter category has10 words; starting shows no vocabulary. Input automation intended2 but field became20; selected20 was explicitly observed before launch. Retest interrupted by USB offline.",
       "sourceDiagnosis": "LearningUseCases.startQuiz returns empty if configured count differs from selected words; screen used generic no-vocabulary message.",
-      "fix": "Count-specific message and return action implemented; full Quiz screen test file passes; physical retest pending."
+      "fix": "Count-specific20 message and return action physically verified on isolated APK;31 screen tests passed."
     },
     {
       "id": "CAMERA",
@@ -143,7 +143,8 @@
       "Verified only expected SDK ADB process",
       "Targeted adb -s designated-device reconnect; remains offline"
     ],
-    "needed": "Restore USB debugging transport on Vivo; no global ADB restart or data clear."
+    "needed": "Restore USB debugging transport on Vivo; no global ADB restart or data clear.",
+    "resolved": "USB reconnected by user; designated device state device. Prior offline is historical."
   },
   "acceptance": "Not all menus/functions tested; navigation is not end-to-end acceptance. Prior accepted source tests not rerun.",
   "regression": {
@@ -152,7 +153,7 @@
     "fingerprint": "f3163ffd2fcd728bbd72cdad53a02fbc43f0ecd80a1566a1453ff6d982afa30a",
     "redResult": "build/verification/7a2b971cad84a8decf43bc992c6b3fefc54cec13/617fc2381877-990113562e7f-2f278888/Explicit-Flutter-tests.stdout.log",
     "redCause": "Recovery button absent before fix",
-    "physicalRetest": "PENDING_ADB_OFFLINE",
+    "physicalRetest": "PASS_COUNT20_MESSAGE_AND_RETURN",
     "count": 31,
     "analyze": "NO_ISSUES"
   },
@@ -166,7 +167,7 @@
     "scope": "Full local learning preview, not live cloud acceptance",
     "build": "PASS",
     "signatureV2": "PASS",
-    "installed": "NOT_RUN_ADB_OFFLINE",
+    "installed": "PASS_ADB_INSTALL_REPLACE",
     "priorLoginApk": "build/ari-login-verified.apk"
   },
   "remainingSourceMenuInventory": [
@@ -491,5 +492,188 @@
       "status": "REQUIRES_CASE_MAPPING_AND_DEVICE_VERIFICATION"
     }
   ],
-  "observationsSha256": "393d3ffb702496c172874206763770b556b8fcfcb6efe028240976efc75c7f27"
+  "observationsSha256": "393d3ffb702496c172874206763770b556b8fcfcb6efe028240976efc75c7f27",
+  "currentTestAccount": "Isolated local Guest; research consent declined; no native ChatGPT signout",
+  "newPhysicalResults": [
+    {
+      "case": "QUIZ_FULL_ROUND",
+      "status": "PASS",
+      "actual": "Ten correct answers; summary10/0,100%"
+    },
+    {
+      "case": "WRONG_ANSWER",
+      "status": "PASS",
+      "actual": "Typed-recall mixed mode first item uses choice; intentionally wrong answer summary0/1,0%; typed input branch pending"
+    },
+    {
+      "case": "RESTART_REWARDS",
+      "status": "PASS_BOUNDED",
+      "actual": "Force-stop/relaunch preserves60 reward points and10 answer evidence; daily quest5/5 complete"
+    },
+    {
+      "case": "QUIZ_SHORTAGE_RECOVERY",
+      "status": "PASS",
+      "actual": "20 requested; explicit insufficient-count message shown; recovery button returns to home"
+    },
+    {
+      "case": "PAIR_MATCHING",
+      "status": "PASS_ROUND_WITH_REPAIR",
+      "actual": "4 pairs completed; first answers3/4,repair1/1,2/3 stars,133seconds. Some rapid automation taps were missed; screenshot fallback used after accessibility dump failed; no permanent hang established."
+    },
+    {
+      "case": "CAMERA",
+      "status": "PARTIAL_PHYSICAL",
+      "actual": "Live preview and capture/inference ran on cluttered desktop scene with central jar. Returned unidentified object; no confident label. Not a held-out accuracy evaluation; no model tuning."
+    },
+    {
+      "id": "CAMERA_BENCHMARK",
+      "status": "PASS_BENCHMARK_ONLY",
+      "actual": "CPU n20 median31.5ms p90 33.3ms peakRSS656.0MB; XNNPACK n20 median39.6ms p90 42.1ms peakRSS659.5MB. Not recognition accuracy."
+    },
+    {
+      "id": "DEFINITION",
+      "status": "PARTIAL",
+      "actual": "Correct bag answer; confirmed early exit. Full round pending."
+    },
+    {
+      "id": "HANDWRITING",
+      "status": "PARTIAL",
+      "actual": "Stroke input and undo enabled/disabled verified. Self-check and text alternative pending."
+    },
+    {
+      "id": "SRS",
+      "status": "EMPTY_STATE_OBSERVED",
+      "actual": "Selected10 exceeds currently due vocabulary; actionable shortage message. Due-card flow pending."
+    },
+    {
+      "id": "WORD_SCRAMBLE",
+      "status": "PASS_ONE_ROUND",
+      "actual": "Arranged bag, correct and completed100%."
+    },
+    {
+      "id": "ASSOCIATIVE_READING",
+      "status": "PARTIAL",
+      "actual": "Stages1-4 open; missing mnemonic notes blocked. Full completion pending. Text resembles vocabulary list rather than connected story."
+    },
+    {
+      "id": "CLOZE",
+      "status": "PARTIAL",
+      "actual": "Empty typed submit disabled; typed bag correct; early-exit confirmation. Full round pending."
+    },
+    {
+      "id": "CEFR",
+      "status": "PARTIAL",
+      "actual": "A1 A book for May opens; word selection and mark-read work. Other levels and audible output pending."
+    },
+    {
+      "id": "SENTENCE_SCRAMBLE",
+      "status": "PASS_ONE_ROUND",
+      "actual": "I carry my clothes in a bag. accepted, completed100%."
+    },
+    {
+      "id": "SPEAKING",
+      "status": "PASS_SILENCE_RECOVERY_ONLY",
+      "actual": "Denied microphone then allowed once; start enters listening; no speech yields clear retry message and progress stays0. Real pronunciation quality pending."
+    },
+    {
+      "id": "DICTATION_BLANK",
+      "status": "PASS_FIXED_CONTROLLED_PHYSICAL_RETEST",
+      "actual": "User confirmed concurrent touches earlier. After coordination, controlled sequence verified disabled blank tap leaves0%, typed bag enables submit and completes100%.11tests PASS;analyze clean."
+    },
+    {
+      "id": "SHADOWING",
+      "status": "PASS_SILENCE_RECOVERY_ONLY",
+      "actual": "Recording starts; silence yields retry/read-text guidance, progress0. Audible quality and pronunciation scoring pending."
+    },
+    {
+      "id": "VOCABULARY_CRUD",
+      "status": "PASS_TEST_DATA",
+      "actual": "Created DeviceTest0921; empty form validation; added testword, edited meaning, confirmed delete; imported importword (1 added/0duplicate/0invalid); deleted only test category with confirmation. Starter data preserved."
+    },
+    {
+      "id": "REVIEW_CENTER",
+      "status": "PASS_ONE_ROUND",
+      "actual": "Past-wrong words listed; selected book; completed1correct/0wrong/100%."
+    },
+    {
+      "id": "WEAKNESS_CLINIC",
+      "status": "PASS_DISPLAY_ONLY",
+      "actual": "31answer ranking displayed; due-review disabled at0due. Longitudinal due behavior pending."
+    },
+    {
+      "id": "GHOST_DUEL",
+      "status": "PASS_ONE_ROUND",
+      "actual": "Snapshot31answers55%; bag/book/bottle/chair correct; opponent HP55to0; end reports4realanswers."
+    },
+    {
+      "id": "SHOP",
+      "status": "PASS_LOCAL_PURCHASE_EQUIP",
+      "actual": "65coins;80coin item rejected insufficient;60coin focus background purchased leaves5coins/1transaction; equip leaves5coins/2transactions. Restart persistence pending. After restart purchased focus background remains owned/equipped;2transactions retained. Balance7 reflects later2learning points,not an extra purchase."
+    },
+    {
+      "id": "ACHIEVEMENT_EXPORT",
+      "status": "PASS_FILE_PARSE",
+      "actual": "Saved /sdcard/Download/lexiquest-first_answer-v1.svg;779bytes valid SVG XML. Rendering pending."
+    },
+    {
+      "id": "PERSONAL_EXPORT",
+      "status": "PASS_FILE_PARSE",
+      "actual": "/sdcard/Download/lexiquest-20260920T191728.json;109870bytes;validJSON;58table groups;answerAttempts39allowlisted records plus count metadata. Full semantic reconciliation pending."
+    },
+    {
+      "id": "RESEARCH_EXPORT_GATE",
+      "status": "PASS_DENIED",
+      "actual": "Without export consent explicit consent-required message; no file picker or consent activation."
+    },
+    {
+      "id": "ANKI_EXPORT",
+      "status": "PASS_EMPTY_STATE_ONLY",
+      "actual": "After deleting test vocabulary, export reports no data. Populated export pending."
+    },
+    {
+      "id": "PDF_EXPORT",
+      "status": "PASS_PARSE_AND_VISUAL",
+      "actual": "/sdcard/Download/lexiquest-20260920T192030.pdf;13570bytes;2A4pages;Thai renders legibly with no observed overlap/clipping.39answers plus1reading row. Poppler rendered both pages."
+    },
+    {
+      "id": "PROFILE",
+      "status": "OBSERVED_ACCOUNT_BOUND",
+      "actual": "Awaiting-email status observed. Read-only diagnostic finds active owner firebaseBound,so guest assumption cannot establish a defect. No account signout or credential inspection."
+    },
+    {
+      "id": "CSV_EXPORT_CURRENT",
+      "status": "PASS_FILE_PARSE",
+      "actual": "/sdcard/Download/lexiquest-20260920T192124.csv; 5191 bytes; UTF8 CSV parse succeeds, 44 rows including metadata. Semantic reconciliation pending."
+    },
+    {
+      "id": "SETTINGS_PERSISTENCE",
+      "status": "PASS",
+      "actual": "Dark theme selected and reduced motion checked remain after test-package force-stop/relaunch. Restored system theme and reduced-motion off."
+    },
+    {
+      "id": "HISTORY",
+      "status": "PASS_FIXED_PHYSICAL_RETEST",
+      "actual": "Canonical reading configuration used established associativeReading storage alias, while history expected associative-reading. Narrow alias mapping repaired;wrong-mode rejection preserved.37history regressions plus copied16-session device diagnostic PASS(38 total).Vivo list loads and matching summary opens replay."
+    },
+    {
+      "id": "PAIR_REPLAY",
+      "status": "PASS_ROUND_NO_EXTRA_REWARD",
+      "actual": "History replay completed4pairs;3/4first,1/1repair,3independent1assisted,2/3stars,87seconds. Pre-replay isolated snapshot points67;post-replay UI67. Fast batched taps raced save/layout;guided repair recovery and paced final pair worked."
+    }
+  ],
+  "currentInstalledPreview": {
+    "package": "com.lexiquest.app.ariTest",
+    "apkSha256": "ac41a8e198aae730eab2beff8f783bcb3e6c08773e056c174abae45dec20805f",
+    "source": "fe30b8c7 plus dictation guard and history alias repair",
+    "cloudSync": false,
+    "installed": true
+  },
+  "historyRegression": {
+    "tests": 38,
+    "includesDeviceSnapshotDiagnostic": true,
+    "deviceSessionsRead": 16,
+    "result": "build/verification/fe30b8c7a39012242f526a72b22561a381fc5cfd/targeted-learning-425eb6fbb71b8c3ac651db8bea520b045f178b724c1a90f3d73e4fd0f28dd445.json",
+    "sourceFingerprint": "a629ff22d145247b79fcf12c3a4f33a1401ba15bcada7e240a12263e85146801",
+    "analyze": "NO_ISSUES"
+  }
 }

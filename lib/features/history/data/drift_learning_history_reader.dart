@@ -490,6 +490,10 @@ SELECT * FROM candidates
 
   bool _matchesConfiguredActivity(String activityType, LessonMode mode) {
     if (activityType == mode.id) return true;
+    // The reading launcher and recovery store retain this established alias.
+    if (activityType == 'associativeReading') {
+      return mode == LessonMode.associativeReading;
+    }
     // startQuiz is the established storage path for these configured native
     // vocabulary modes. The pinned configuration supplies their display mode;
     // its identity/owner and all canonical answer/event checks still apply.

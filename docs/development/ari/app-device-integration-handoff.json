@@ -4,9 +4,9 @@
   "baseSha": "7407111bbb3f85ae1bc519dfe8b10ed37e501c05",
   "branch": "feature/ari-app-device-integration",
   "worktree": "C:/Users/Phet/.codex/worktrees/d38e/LexiQuest",
-  "status": "physical-testing-awaiting-vivo-adb-transport",
+  "status": "physical-testing-in-progress",
   "writerReleased": false,
-  "implementationPushed": true,
+  "implementationPushed": false,
   "report": "app-device-integration.md",
   "evidence": "app-device-integration-evidence.json",
   "implemented": [
@@ -36,10 +36,10 @@
   "e7": "UNCHANGED_NOT_CLOSED",
   "successor": null,
   "nextActions": [
-    "Restore designated Vivo ADB transport; device remains offline after targeted reconnect. Do not clear data or sign out native ChatGPT.",
-    "Install prepared local-preview APK to isolated ariTest package after confirming source/hash/signature; preserve original main package.",
-    "Retest quiz count shortage recovery and complete remaining device cases from matrix; source tests pass31 but no physical retest PASS.",
-    "Respect latest authorization: control device, diagnose and fix recoverable failures autonomously; stop failed methods, never weaken acceptance or dispatch unresolved work to bypass gates."
+    "History repair physically passed;continue remaining reachable menu/function cases in matrix,then report explicit external acceptance gaps.",
+    "Continue pending cases in device-test-matrix.json;dictation and quiz physical regressions passed.",
+    "User confirmed touching phone concurrently;coordinate exclusive taps for controlled results.",
+    "Recovery authorization remains: fix/retest automatically;no weaker gates,no successor bypass,no original app/account clearing."
   ],
   "amendment": "implementation -> automated tests -> physical test -> user-owned private login -> authenticated acceptance",
   "externalPrerequisites": [
