@@ -1,19 +1,14 @@
 {
   "schemaVersion": 1,
-  "revision": 12,
+  "revision": 13,
   "authorization": "User authorized one task per main phase V0-V3 and sequential work; prerequisite gate remains in force.",
   "sourceSha": "c6dfb6d80c1494d3d085706b70776557ac20ec49",
   "sourceWorktree": "C:/Users/Phet/.codex/worktrees/daea/LexiQuest",
   "sourceBranch": "feature/ari-feasibility",
   "activePhase": "application-foundation",
-  "status": "implementing",
+  "status": "application-foundation-implemented-simulated-tested-live-not-run",
   "currentTaskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
-  "implementationWriter": {
-    "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
-    "worktree": "C:\\Users\\Phet\\.codex\\worktrees\\bb3c\\LexiQuest",
-    "branch": "feature/ari-managed-session-foundation",
-    "sourceSha": "80b227813483b630128c78edd4f8b31554f4f1c0"
-  },
+  "implementationWriter": null,
   "model": "gpt-6-astra",
   "thinking": "medium",
   "speedPolicy": "Standard/default; no Fast or priority; runtime enforcement not verified by create_thread",
@@ -102,5 +97,21 @@
     "implementationCommit": "903ce34e0143823c6097f0c127f82fc6ecdda9b7",
     "writerReleased": true
   },
-  "deviceAcceptance": "deferred-until-implementation-complete"
+  "deviceAcceptance": "deferred-until-implementation-complete",
+  "applicationFoundation": {
+    "taskId": "01a0bfa7-c450-7f10-8974-3dafeef31c43",
+    "status": "complete-within-authorized-foundation-scope",
+    "sourceSha": "80b227813483b630128c78edd4f8b31554f4f1c0",
+    "implementationCommit": "adcda70cc79b71ad468fd7ab6e965f11d60d9680",
+    "branch": "feature/ari-managed-session-foundation",
+    "worktree": "C:/Users/Phet/.codex/worktrees/bb3c/LexiQuest",
+    "writerReleased": true,
+    "report": "application-foundation.md",
+    "evidence": "application-foundation-evidence.json",
+    "handoff": "application-foundation-handoff.json",
+    "simulatedTests": 63,
+    "live": "NOT_RUN",
+    "v2Gate": "NOT_MET",
+    "successor": "application host lifecycle integration; proposed, not dispatched"
+  }
 }
